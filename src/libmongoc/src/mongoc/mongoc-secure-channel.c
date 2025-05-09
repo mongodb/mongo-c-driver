@@ -41,15 +41,92 @@
 #define SECBUFFER_ALERT 17
 #endif
 
+// `read_file_and_null_terminate` reads a file into a NUL-terminated string.
+// On success: returns a NUL-terminated string and (optionally) sets `*out_len` excluding NUL.
+// On error: returns NULL.
+static char *
+read_file_and_null_terminate (const char *filename, size_t *out_len)
+{
+   BSON_ASSERT_PARAM (filename);
+   BSON_OPTIONAL_PARAM (out_len);
+
+   bool ok = false;
+   char *contents = NULL;
+   char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+
+   FILE *file = fopen (filename, "rb");
+   if (!file) {
+      MONGOC_ERROR ("Failed to open file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   if (0 != fseek (file, 0, SEEK_END)) {
+      MONGOC_ERROR ("Failed to seek in file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   long file_len = ftell (file);
+   if (file_len < 0) {
+      MONGOC_ERROR ("Failed to get length of file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   if (file_len > LONG_MAX - 1) {
+      MONGOC_ERROR ("Failed to get length of file: '%s'. File too large", filename);
+      goto fail;
+   }
+
+   if (0 != fseek (file, 0, SEEK_SET)) {
+      MONGOC_ERROR ("Failed to seek in file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   // Read the whole file into one nul-terminated string:
+   contents = (char *) bson_malloc ((size_t) file_len + 1u);
+   contents[file_len] = '\0';
+   if ((size_t) file_len != fread (contents, 1, file_len, file)) {
+      if (feof (file)) {
+         MONGOC_ERROR ("Unexpected EOF reading file: '%s'", filename);
+         goto fail;
+      } else {
+         MONGOC_ERROR ("Failed to read file: '%s' with error: '%s'",
+                       filename,
+                       bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+         goto fail;
+      }
+   }
+   if (out_len) {
+      *out_len = (size_t) file_len;
+   }
+
+   ok = true;
+fail:
+   if (file) {
+      fclose (file); // Ignore error.
+   }
+   if (!ok) {
+      bson_free (contents);
+      contents = NULL;
+   }
+   return contents;
+}
+
 
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
    char *pem;
-   FILE *file;
    bool ret = false;
    bool success;
-   long pem_length;
+   size_t pem_length;
    HCRYPTPROV provider;
    CERT_BLOB public_blob;
    const char *pem_public;
@@ -60,25 +137,10 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    DWORD encrypted_private_len = 0;
    LPBYTE encrypted_private = NULL;
 
-
-   file = fopen (filename, "rb");
-   if (!file) {
-      MONGOC_ERROR ("Couldn't open file '%s'", filename);
-      return NULL;
+   pem = read_file_and_null_terminate (filename, &pem_length);
+   if (!pem) {
+      goto fail;
    }
-
-   fseek (file, 0, SEEK_END);
-   pem_length = ftell (file);
-   fseek (file, 0, SEEK_SET);
-   if (pem_length < 1 || length > LONG_MAX - 1) {
-      MONGOC_ERROR ("Couldn't determine file size of '%s'", filename);
-      return NULL;
-   }
-
-   // Read the whole file into one nul-terminated string
-   pem = (char *) bson_malloc0 ((size_t) pem_length + 1u);
-   fread ((void *) pem, 1, pem_length, file);
-   fclose (file);
 
    pem_public = strstr (pem, "-----BEGIN CERTIFICATE-----");
    pem_private = strstr (pem, "-----BEGIN ENCRYPTED PRIVATE KEY-----");
@@ -258,8 +320,6 @@ bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
 {
    bool ok = false;
-   FILE *file;
-   long length;
    char *pem = NULL;
    const char *pem_key;
    HCERTSTORE cert_store = NULL;
@@ -267,28 +327,9 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    DWORD encrypted_cert_len = 0;
    LPBYTE encrypted_cert = NULL;
 
-   file = fopen (opt->ca_file, "rb");
-   if (!file) {
-      MONGOC_ERROR ("Couldn't open file '%s'", opt->ca_file);
+   pem = read_file_and_null_terminate (opt->ca_file, NULL);
+   if (!pem) {
       return false;
-   }
-
-   fseek (file, 0, SEEK_END);
-   length = ftell (file);
-   fseek (file, 0, SEEK_SET);
-   if (length < 1 || length > LONG_MAX - 1) {
-      MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
-      fclose (file);
-      return false;
-   }
-
-   // Read the whole file into one nul-terminated string
-   pem = (char *) bson_malloc0 ((size_t) length + 1u);
-   bool read_ok = (size_t) length == fread ((void *) pem, 1, length, file);
-   fclose (file);
-   if (!read_ok) {
-      MONGOC_WARNING ("Couldn't read certificate file '%s'", opt->ca_file);
-      goto fail;
    }
 
    /* If we have private keys or other fuzz, seek to the good stuff */
