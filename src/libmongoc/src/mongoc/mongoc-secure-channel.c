@@ -49,7 +49,6 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    FILE *file;
    bool ret = false;
    bool success;
-   HCRYPTKEY hKey;
    long pem_length;
    HCRYPTPROV provider;
    CERT_BLOB public_blob;
@@ -193,6 +192,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
+   HCRYPTKEY hKey;
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380207%28v=vs.85%29.aspx
     */
    success = CryptImportKey (provider,         /* hProv */
@@ -205,6 +205,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       MONGOC_ERROR ("CryptImportKey for private key failed with error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
+   CryptDestroyKey (hKey);
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa376573%28v=vs.85%29.aspx
     */
