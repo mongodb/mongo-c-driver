@@ -47,6 +47,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
    char *pem;
    FILE *file;
+   bool ret = false;
    bool success;
    HCRYPTKEY hKey;
    long pem_length;
@@ -211,12 +212,13 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                                 CERT_KEY_PROV_HANDLE_PROP_ID, /* dwPropId */
                                                 0,                            /* dwFlags */
                                                 (const void *) provider);     /* pvData */
-   if (success) {
-      TRACE ("%s", "Successfully loaded client certificate");
-      return cert;
+   if (!success) {
+      MONGOC_ERROR ("Can't associate private key with public key: 0x%.8X", (unsigned int) GetLastError ());
+      goto fail;
    }
 
-   MONGOC_ERROR ("Can't associate private key with public key: 0x%.8X", (unsigned int) GetLastError ());
+   TRACE ("%s", "Successfully loaded client certificate");
+   ret = true;
 
 fail:
    SecureZeroMemory (pem, pem_length);
@@ -231,7 +233,14 @@ fail:
       bson_free (blob_private);
    }
 
-   return NULL;
+   if (!ret) {
+      if (cert) {
+         CertFreeCertificateContext (cert);
+      }
+      return NULL;
+   }
+
+   return cert;
 }
 
 PCCERT_CONTEXT
