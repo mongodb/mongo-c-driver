@@ -254,8 +254,10 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
 bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
 {
+   bool ok = false;
    FILE *file;
    long length;
+   char *pem = NULL;
    const char *pem_key;
    HCERTSTORE cert_store = NULL;
    PCCERT_CONTEXT cert = NULL;
@@ -278,38 +280,38 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    }
 
    // Read the whole file into one nul-terminated string
-   pem_key = (const char *) bson_malloc0 ((size_t) length + 1u);
-   bool read_ok = (size_t) length == fread ((void *) pem_key, 1, length, file);
+   pem = (char *) bson_malloc0 ((size_t) length + 1u);
+   bool read_ok = (size_t) length == fread ((void *) pem, 1, length, file);
    fclose (file);
    if (!read_ok) {
       MONGOC_WARNING ("Couldn't read certificate file '%s'", opt->ca_file);
-      return false;
+      goto fail;
    }
 
    /* If we have private keys or other fuzz, seek to the good stuff */
-   pem_key = strstr (pem_key, "-----BEGIN CERTIFICATE-----");
+   pem_key = strstr (pem, "-----BEGIN CERTIFICATE-----");
    /*printf ("%s\n", pem_key);*/
 
    if (!pem_key) {
       MONGOC_WARNING ("Couldn't find certificate in '%s'", opt->ca_file);
-      return false;
+      goto fail;
    }
 
    if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, NULL, &encrypted_cert_len, NULL, NULL)) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
-      return false;
+      goto fail;
    }
 
    encrypted_cert = (LPBYTE) LocalAlloc (0, encrypted_cert_len);
    if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, encrypted_cert, &encrypted_cert_len, NULL, NULL)) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
-      return false;
+      goto fail;
    }
 
    cert = CertCreateCertificateContext (X509_ASN_ENCODING, encrypted_cert, encrypted_cert_len);
    if (!cert) {
       MONGOC_WARNING ("Could not convert certificate");
-      return false;
+      goto fail;
    }
 
 
@@ -321,17 +323,24 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
 
    if (cert_store == NULL) {
       MONGOC_ERROR ("Error opening certificate store");
-      return false;
+      goto fail;
    }
 
-   if (CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      TRACE ("%s", "Added the certificate !");
+   if (!CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
+      MONGOC_WARNING ("Failed adding the cert");
       CertCloseStore (cert_store, 0);
-      return true;
+      goto fail;
    }
-   MONGOC_WARNING ("Failed adding the cert");
-   CertCloseStore (cert_store, 0);
 
+   TRACE ("%s", "Added the certificate !");
+   CertCloseStore (cert_store, 0);
+   ok = true;
+fail:
+   LocalFree (encrypted_cert);
+   if (cert) {
+      CertFreeCertificateContext (cert);
+   }
+   bson_free (pem);
    return false;
 }
 
