@@ -587,7 +587,6 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
          _mongoc_client_kill_cursor (cursor->client,
                                      cursor->server_id,
                                      cursor->cursor_id,
-                                     cursor->operation_id,
                                      db,
                                      cursor->ns + cursor->dblen + 1,
                                      cursor->client_session);

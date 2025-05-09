@@ -237,6 +237,7 @@ fail:
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
 {
+   BSON_UNUSED (secure_channel);
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
@@ -244,6 +245,8 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
 bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
 {
+   BSON_UNUSED (secure_channel);
+
    FILE *file;
    long length;
    const char *pem_key;
@@ -328,6 +331,8 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
 bool
 mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
 {
+   BSON_UNUSED (secure_channel);
+
    HCERTSTORE cert_store = NULL;
    PCCERT_CONTEXT cert = NULL;
    LPWSTR str;

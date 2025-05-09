@@ -26,6 +26,7 @@ mongoc_dump_mkdir_p (const char *path, int mode)
    int r;
 
 #ifdef _WIN32
+   (void) mode;
    r = _mkdir (path);
 #else
    r = mkdir (path, mode);

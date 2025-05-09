@@ -3,6 +3,7 @@
 
 #include <bson/bson.h>
 #include <common-atomic-private.h>
+#include <mlib/config.h>
 
 /**
  * Toggle this to enable/disable checks that all items are returned to the pool
@@ -28,7 +29,17 @@ static const bool audit_pool_enabled = false;
 typedef struct pool_node {
    struct pool_node *next;
    mongoc_ts_pool *owner_pool;
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4200)
+#endif
+
    unsigned char data[];
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 } pool_node;
 
 // Flexible member array member should not contribute to sizeof result.
