@@ -1207,6 +1207,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
          RETURN (ret ? ret : -1);
       }
 
+      BSON_ASSERT (mlib_cmp (wrote, <=, SSIZE_MAX - ret));
       ret += wrote;
 
       if (mlib_cmp (wrote, !=, iov[i].iov_len)) {
