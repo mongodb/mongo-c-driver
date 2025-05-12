@@ -262,6 +262,48 @@ test_x509_auth (void *unused)
                              "" /* message differs between server versions */);
       mongoc_uri_destroy (uri);
    }
+
+   // Test auth fails when client certificate does not contain public certificate:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (
+            mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_TEST_DIR "/client-private.pem"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+         ASSERT (mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, true)); // Fail quickly.
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         capture_logs (true); // Capture logs before connecting. OpenSSL reads PEM file during client construction.
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Type is not supported");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Can't find public certificate");
+#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Cannot find certificate");
+#endif
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+      // OpenSSL and Secure Transport fail to create stream (prior to TLS). Resulting in a server selection error.
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection error");
+#else
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+#endif
+      mongoc_uri_destroy (uri);
+   }
    drop_x509_user (false);
 }
 #endif // MONGOC_ENABLE_SSL

@@ -139,6 +139,11 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    }
 
    pem_public = strstr (pem, "-----BEGIN CERTIFICATE-----");
+   if (!pem_public) {
+      MONGOC_ERROR ("Can't find public certificate in '%s'", filename);
+      goto fail;
+   }
+
    pem_private = strstr (pem, "-----BEGIN ENCRYPTED PRIVATE KEY-----");
 
    if (pem_private) {
