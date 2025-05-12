@@ -134,8 +134,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    LPBYTE blob_private = NULL;
    PCCERT_CONTEXT cert = NULL;
    DWORD blob_private_len = 0;
-   DWORD encrypted_private_len = 0;
-   LPBYTE encrypted_private = NULL;
+   DWORD encoded_private_len = 0;
+   LPBYTE encoded_private = NULL;
 
    pem = read_file_and_null_terminate (filename, &pem_length);
    if (!pem) {
@@ -189,7 +189,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                    0,                         /* cchString */
                                    CRYPT_STRING_BASE64HEADER, /* dwFlags */
                                    NULL,                      /* pbBinary */
-                                   &encrypted_private_len,    /* pcBinary, IN/OUT */
+                                   &encoded_private_len,      /* pcBinary, IN/OUT */
                                    NULL,                      /* pdwSkip */
                                    NULL);                     /* pdwFlags */
    if (!success) {
@@ -197,9 +197,9 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   encrypted_private = (LPBYTE) bson_malloc0 (encrypted_private_len);
+   encoded_private = (LPBYTE) bson_malloc0 (encoded_private_len);
    success = CryptStringToBinaryA (
-      pem_private, 0, CRYPT_STRING_BASE64HEADER, encrypted_private, &encrypted_private_len, NULL, NULL);
+      pem_private, 0, CRYPT_STRING_BASE64HEADER, encoded_private, &encoded_private_len, NULL, NULL);
    if (!success) {
       MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
@@ -209,8 +209,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
     */
    success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
                                   PKCS_RSA_PRIVATE_KEY,                    /* lpszStructType */
-                                  encrypted_private,                       /* pbEncoded */
-                                  encrypted_private_len,                   /* cbEncoded */
+                                  encoded_private,                         /* pbEncoded */
+                                  encoded_private_len,                     /* cbEncoded */
                                   0,                                       /* dwFlags */
                                   NULL,                                    /* pDecodePara */
                                   NULL,                                    /* pvStructInfo */
@@ -232,8 +232,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    blob_private = (LPBYTE) bson_malloc0 (blob_private_len);
    success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
                                   PKCS_RSA_PRIVATE_KEY,
-                                  encrypted_private,
-                                  encrypted_private_len,
+                                  encoded_private,
+                                  encoded_private_len,
                                   0,
                                   NULL,
                                   blob_private,
@@ -289,9 +289,9 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 fail:
    SecureZeroMemory (pem, pem_length);
    bson_free (pem);
-   if (encrypted_private) {
-      SecureZeroMemory (encrypted_private, encrypted_private_len);
-      bson_free (encrypted_private);
+   if (encoded_private) {
+      SecureZeroMemory (encoded_private, encoded_private_len);
+      bson_free (encoded_private);
    }
 
    if (blob_private) {
@@ -324,8 +324,8 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    const char *pem_key;
    HCERTSTORE cert_store = NULL;
    PCCERT_CONTEXT cert = NULL;
-   DWORD encrypted_cert_len = 0;
-   LPBYTE encrypted_cert = NULL;
+   DWORD encoded_cert_len = 0;
+   LPBYTE encoded_cert = NULL;
 
    pem = read_file_and_null_terminate (opt->ca_file, NULL);
    if (!pem) {
@@ -340,18 +340,18 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
       goto fail;
    }
 
-   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, NULL, &encrypted_cert_len, NULL, NULL)) {
+   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, NULL, &encoded_cert_len, NULL, NULL)) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
 
-   encrypted_cert = (LPBYTE) LocalAlloc (0, encrypted_cert_len);
-   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, encrypted_cert, &encrypted_cert_len, NULL, NULL)) {
+   encoded_cert = (LPBYTE) LocalAlloc (0, encoded_cert_len);
+   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, encoded_cert, &encoded_cert_len, NULL, NULL)) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
 
-   cert = CertCreateCertificateContext (X509_ASN_ENCODING, encrypted_cert, encrypted_cert_len);
+   cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
    if (!cert) {
       MONGOC_WARNING ("Could not convert certificate");
       goto fail;
@@ -379,7 +379,7 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    CertCloseStore (cert_store, 0);
    ok = true;
 fail:
-   LocalFree (encrypted_cert);
+   LocalFree (encoded_cert);
    if (cert) {
       CertFreeCertificateContext (cert);
    }
