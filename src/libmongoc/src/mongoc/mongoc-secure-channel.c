@@ -41,6 +41,26 @@
 #define SECBUFFER_ALERT 17
 #endif
 
+// `decode_pem_base64` decodes a base-64 PEM blob with headers.
+// Returns NULL on error. Use GetLastError() to retrieve Windows error code.
+static LPBYTE
+decode_pem_base64 (const char *base64_in, DWORD *out_len)
+{
+   // Get needed output length:
+   if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, NULL, out_len, NULL, NULL)) {
+      return NULL;
+   }
+
+   BSON_ASSERT (*out_len > 0);
+   LPBYTE out = (LPBYTE) bson_malloc (*out_len);
+
+   if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, out, out_len, NULL, NULL)) {
+      bson_free (out);
+      return NULL;
+   }
+   return out;
+}
+
 // `read_file_and_null_terminate` reads a file into a NUL-terminated string.
 // On success: returns a NUL-terminated string and (optionally) sets `*out_len` excluding NUL.
 // On error: returns NULL.
@@ -186,22 +206,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380285%28v=vs.85%29.aspx
     */
-   success = CryptStringToBinaryA (pem_private,               /* pszString */
-                                   0,                         /* cchString */
-                                   CRYPT_STRING_BASE64HEADER, /* dwFlags */
-                                   NULL,                      /* pbBinary */
-                                   &encoded_private_len,      /* pcBinary, IN/OUT */
-                                   NULL,                      /* pdwSkip */
-                                   NULL);                     /* pdwFlags */
-   if (!success) {
-      MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", (unsigned int) GetLastError ());
-      goto fail;
-   }
-
-   encoded_private = (LPBYTE) bson_malloc0 (encoded_private_len);
-   success = CryptStringToBinaryA (
-      pem_private, 0, CRYPT_STRING_BASE64HEADER, encoded_private, &encoded_private_len, NULL, NULL);
-   if (!success) {
+   encoded_private = decode_pem_base64 (pem_private, &encoded_private_len);
+   if (!encoded_private) {
       MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
@@ -341,13 +347,8 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
       goto fail;
    }
 
-   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, NULL, &encoded_cert_len, NULL, NULL)) {
-      MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
-      goto fail;
-   }
-
-   encoded_cert = (LPBYTE) LocalAlloc (0, encoded_cert_len);
-   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, encoded_cert, &encoded_cert_len, NULL, NULL)) {
+   encoded_cert = decode_pem_base64 (pem_key, &encoded_cert_len);
+   if (!encoded_cert) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
@@ -380,7 +381,7 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    CertCloseStore (cert_store, 0);
    ok = true;
 fail:
-   LocalFree (encoded_cert);
+   bson_free (encoded_cert);
    if (cert) {
       CertFreeCertificateContext (cert);
    }
