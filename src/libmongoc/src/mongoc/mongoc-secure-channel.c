@@ -78,14 +78,10 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
    }
 
    if (file_len > LONG_MAX - 1) {
-      MONGOC_ERROR ("Failed to get length of file: '%s'. File too large", filename);
       goto fail;
    }
 
    if (0 != fseek (file, 0, SEEK_SET)) {
-      MONGOC_ERROR ("Failed to seek in file: '%s' with error: '%s'",
-                    filename,
-                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
       goto fail;
    }
 
