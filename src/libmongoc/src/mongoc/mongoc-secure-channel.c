@@ -274,7 +274,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa376573%28v=vs.85%29.aspx
     */
-   // CertSetCertificateContextProperty takes ownership of `provider`.
+   // The CERT_KEY_PROV_HANDLE_PROP_ID property takes ownership of `provider`.
    success = CertSetCertificateContextProperty (cert,                         /* pCertContext */
                                                 CERT_KEY_PROV_HANDLE_PROP_ID, /* dwPropId */
                                                 0,                            /* dwFlags */
