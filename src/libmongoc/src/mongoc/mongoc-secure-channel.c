@@ -144,7 +144,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    bool success;
    size_t pem_length;
    HCRYPTPROV provider;
-   CERT_BLOB public_blob;
+   DWORD encoded_cert_len;
+   LPBYTE encoded_cert = NULL;
    const char *pem_public;
    const char *pem_private;
    LPBYTE blob_private = NULL;
@@ -181,23 +182,12 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   public_blob.cbData = (DWORD) strlen (pem_public);
-   public_blob.pbData = (BYTE *) pem_public;
-
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380264%28v=vs.85%29.aspx
-    */
-   CryptQueryObject (CERT_QUERY_OBJECT_BLOB,      /* dwObjectType, blob or file */
-                     &public_blob,                /* pvObject, Unicode filename */
-                     CERT_QUERY_CONTENT_FLAG_ALL, /* dwExpectedContentTypeFlags */
-                     CERT_QUERY_FORMAT_FLAG_ALL,  /* dwExpectedFormatTypeFlags */
-                     0,                           /* dwFlags, reserved for "future use" */
-                     NULL,                        /* pdwMsgAndCertEncodingType, OUT, unused */
-                     NULL,                        /* pdwContentType (dwExpectedContentTypeFlags), OUT, unused */
-                     NULL,                        /* pdwFormatType (dwExpectedFormatTypeFlags,), OUT, unused */
-                     NULL,                        /* phCertStore, OUT, HCERTSTORE.., unused, for now */
-                     NULL,                        /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
-                     (const void **) &cert        /* ppvContext, OUT, the Certificate Context */
-   );
+   encoded_cert = decode_pem_base64 (pem_public, &encoded_cert_len);
+   if (!encoded_cert) {
+      MONGOC_ERROR ("Failed to convert base64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
+      goto fail;
+   }
+   cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
 
    if (!cert) {
       MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X", filename, (unsigned int) GetLastError ());
@@ -296,6 +286,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 fail:
    SecureZeroMemory (pem, pem_length);
    bson_free (pem);
+   bson_free (encoded_cert);
    if (encoded_private) {
       SecureZeroMemory (encoded_private, encoded_private_len);
       bson_free (encoded_private);
