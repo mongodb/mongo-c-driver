@@ -38,6 +38,10 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
 bool
 mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt);
 
+// mongoc_secure_channel_load_crl is used in tests.
+PCCRL_CONTEXT
+mongoc_secure_channel_load_crl (const char* crl_file);
+
 ssize_t
 mongoc_secure_channel_read (mongoc_stream_tls_t *tls, void *data, size_t data_length);
 

@@ -380,23 +380,22 @@ fail:
    return ok;
 }
 
-bool
-mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
+PCCRL_CONTEXT
+mongoc_secure_channel_load_crl (const char *crl_file)
 {
-   HCERTSTORE cert_store = NULL;
    PCCRL_CONTEXT crl = NULL;
    bool ok = false;
    DWORD encoded_crl_len = 0;
    LPBYTE encoded_crl = NULL;
 
-   char *pem = read_file_and_null_terminate (opt->crl_file, NULL);
+   char *pem = read_file_and_null_terminate (crl_file, NULL);
    if (!pem) {
-      return false;
+      goto fail;
    }
 
    const char *pem_begin = strstr (pem, "-----BEGIN X509 CRL-----");
    if (!pem_begin) {
-      MONGOC_WARNING ("Couldn't find CRL in '%s'", opt->crl_file);
+      MONGOC_WARNING ("Couldn't find CRL in '%s'", crl_file);
       goto fail;
    }
 
@@ -409,10 +408,31 @@ mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_chan
    crl = CertCreateCRLContext (X509_ASN_ENCODING, encoded_crl, encoded_crl_len);
 
    if (!crl) {
-      MONGOC_WARNING ("Can't extract CRL from '%s'", opt->crl_file);
+      MONGOC_WARNING ("Can't extract CRL from '%s'", crl_file);
       goto fail;
    }
 
+   ok = true;
+fail:
+   bson_free (encoded_crl);
+   bson_free (pem);
+   if (!ok) {
+      CertFreeCRLContext (crl);
+      crl = NULL;
+   }
+   return crl;
+}
+
+bool
+mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
+{
+   HCERTSTORE cert_store = NULL;
+   bool ok = false;
+
+   PCCRL_CONTEXT crl = mongoc_secure_channel_load_crl (opt->crl_file);
+   if (!crl) {
+      goto fail;
+   }
 
    cert_store = CertOpenStore (CERT_STORE_PROV_SYSTEM,                  /* provider */
                                X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
@@ -440,8 +460,6 @@ fail:
    if (crl) {
       CertFreeCRLContext (crl);
    }
-   bson_free (encoded_crl);
-   bson_free (pem);
    return ok;
 }
 
