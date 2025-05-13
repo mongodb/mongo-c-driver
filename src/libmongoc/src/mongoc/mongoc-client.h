@@ -40,6 +40,7 @@
 #include <mongoc/mongoc-write-concern.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-server-description.h>
+#include <mongoc/mongoc-oidc-callback.h>
 
 BSON_BEGIN_DECLS
 
@@ -78,9 +79,6 @@ typedef struct _mongoc_client_t mongoc_client_t;
 typedef struct _mongoc_client_session_t mongoc_client_session_t;
 typedef struct _mongoc_session_opt_t mongoc_session_opt_t;
 typedef struct _mongoc_transaction_opt_t mongoc_transaction_opt_t;
-
-typedef struct _mongoc_oidc_callback_params_t mongoc_oidc_callback_params_t;
-typedef struct _mongoc_oidc_credential_t mongoc_oidc_credential_t;
 
 /**
  * mongoc_stream_initiator_t:
@@ -278,25 +276,14 @@ MONGOC_EXPORT (bool)
 mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t *api, bson_error_t *error);
 
 MONGOC_EXPORT (void)
-mongoc_client_set_oidc_callback (mongoc_client_t *client,
-                                 bool (*oidc_callback) (const mongoc_oidc_callback_params_t *,
-                                                        mongoc_oidc_credential_t * /* OUT */));
+mongoc_client_set_oidc_callback (mongoc_client_t *client, const mongoc_oidc_callback_t *callback);
+
+MONGOC_EXPORT (const mongoc_oidc_callback_t *)
+mongoc_client_get_oidc_callback (const mongoc_client_t *client);
 
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_handshake_description (mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
-
-MONGOC_EXPORT (int64_t)
-mongoc_oidc_callback_params_get_timeout_ms (const mongoc_oidc_callback_params_t *callback_params);
-
-MONGOC_EXPORT (int64_t)
-mongoc_oidc_callback_params_get_version (const mongoc_oidc_callback_params_t *callback_params);
-
-MONGOC_EXPORT (void)
-mongoc_oidc_credential_set_access_token (mongoc_oidc_credential_t *credential, char *access_token);
-
-MONGOC_EXPORT (void)
-mongoc_oidc_credential_set_expires_in_seconds (mongoc_oidc_credential_t *credential, int64_t expires_in_seconds);
 
 MONGOC_EXPORT (void)
 mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token);

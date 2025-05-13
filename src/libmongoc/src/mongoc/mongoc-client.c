@@ -2686,16 +2686,27 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
 }
 
 void
-mongoc_client_set_oidc_callback (mongoc_client_t *client,
-                                 bool (*oidc_callback) (const mongoc_oidc_callback_params_t *,
-                                                        mongoc_oidc_credential_t * /* OUT */))
+mongoc_client_set_oidc_callback (mongoc_client_t *client, const mongoc_oidc_callback_t *callback)
 {
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (callback);
+
    if (!client->topology->single_threaded) {
       MONGOC_ERROR ("mongoc_client_set_oidc_callback must only be used for single threaded clients. "
                     "For client pools, use mongoc_client_pool_set_oidc_callback instead.");
       return;
    }
-   client->topology->oidc_callback = oidc_callback;
+
+   mongoc_oidc_callback_destroy (client->topology->oidc_callback);
+   client->topology->oidc_callback = mongoc_oidc_callback_copy (callback);
+}
+
+const mongoc_oidc_callback_t *
+mongoc_client_get_oidc_callback (const mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (client);
+
+   return client->topology->oidc_callback;
 }
 
 mongoc_server_description_t *
