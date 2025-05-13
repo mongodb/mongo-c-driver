@@ -384,38 +384,33 @@ bool
 mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
 {
    HCERTSTORE cert_store = NULL;
-   PCCERT_CONTEXT cert = NULL;
-   LPWSTR str;
-   int chars;
+   PCCRL_CONTEXT crl = NULL;
+   bool ok = false;
+   DWORD encoded_crl_len = 0;
+   LPBYTE encoded_crl = NULL;
 
-   chars = MultiByteToWideChar (CP_ACP, 0, opt->crl_file, -1, NULL, 0);
-   if (chars < 1) {
-      MONGOC_WARNING ("Can't determine opt->crl_file length");
+   char *pem = read_file_and_null_terminate (opt->crl_file, NULL);
+   if (!pem) {
       return false;
    }
-   str = (LPWSTR) bson_malloc0 (chars * sizeof (*str));
-   MultiByteToWideChar (CP_ACP, 0, opt->crl_file, -1, str, chars);
 
+   const char *pem_begin = strstr (pem, "-----BEGIN X509 CRL-----");
+   if (!pem_begin) {
+      MONGOC_WARNING ("Couldn't find CRL in '%s'", opt->crl_file);
+      goto fail;
+   }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380264%28v=vs.85%29.aspx
-    */
-   CryptQueryObject (CERT_QUERY_OBJECT_FILE,      /* dwObjectType, blob or file */
-                     str,                         /* pvObject, Unicode filename */
-                     CERT_QUERY_CONTENT_FLAG_CRL, /* dwExpectedContentTypeFlags */
-                     CERT_QUERY_FORMAT_FLAG_ALL,  /* dwExpectedFormatTypeFlags */
-                     0,                           /* dwFlags, reserved for "future use" */
-                     NULL,                        /* pdwMsgAndCertEncodingType, OUT, unused */
-                     NULL,                        /* pdwContentType (dwExpectedContentTypeFlags), OUT, unused */
-                     NULL,                        /* pdwFormatType (dwExpectedFormatTypeFlags,), OUT, unused */
-                     NULL,                        /* phCertStore, OUT, HCERTSTORE.., unused, for now */
-                     NULL,                        /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
-                     (const void **) &cert        /* ppvContext, OUT, the Certificate Context */
-   );
-   bson_free (str);
+   encoded_crl = decode_pem_base64 (pem_begin, &encoded_crl_len);
+   if (!encoded_crl) {
+      MONGOC_ERROR ("Failed to convert BASE64 CRL. Error 0x%.8X", (unsigned int) GetLastError ());
+      goto fail;
+   }
 
-   if (!cert) {
+   crl = CertCreateCRLContext (X509_ASN_ENCODING, encoded_crl, encoded_crl_len);
+
+   if (!crl) {
       MONGOC_WARNING ("Can't extract CRL from '%s'", opt->crl_file);
-      return false;
+      goto fail;
    }
 
 
@@ -427,22 +422,27 @@ mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_chan
 
    if (cert_store == NULL) {
       MONGOC_ERROR ("Error opening certificate store");
-      CertFreeCertificateContext (cert);
-      return false;
+      goto fail;
    }
 
-   if (CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      TRACE ("%s", "Added the certificate !");
-      CertFreeCertificateContext (cert);
+   if (!CertAddCRLContextToStore (cert_store, crl, CERT_STORE_ADD_USE_EXISTING, NULL)) {
+      MONGOC_WARNING ("Failed adding the CRL");
+      goto fail;
+   }
+
+   TRACE ("%s", "Added the CRL!");
+   ok = true;
+
+fail:
+   if (cert_store) {
       CertCloseStore (cert_store, 0);
-      return true;
    }
-
-   MONGOC_WARNING ("Failed adding the cert");
-   CertFreeCertificateContext (cert);
-   CertCloseStore (cert_store, 0);
-
-   return false;
+   if (crl) {
+      CertFreeCRLContext (crl);
+   }
+   bson_free (encoded_crl);
+   bson_free (pem);
+   return ok;
 }
 
 ssize_t
