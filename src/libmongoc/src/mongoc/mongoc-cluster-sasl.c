@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-/* for size_t */
 #include <bson/bson.h>
 #include <mongoc/mongoc-config.h>
 
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-stream-private.h>

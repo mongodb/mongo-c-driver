@@ -30,6 +30,7 @@
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-cluster-sasl-private.h>
+#include <mongoc/mongoc-cluster-oidc-private.h>
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
@@ -2637,8 +2638,8 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    const bool is_retryable =
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
-   mongoc_server_stream_t *stream =
-      _mongoc_cluster_stream_for_optype (cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
+   mongoc_server_stream_t *stream = _mongoc_cluster_stream_for_optype (
+      cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
    return stream;
 }
 
@@ -3292,8 +3293,6 @@ _mongoc_cluster_run_opmsg_recv (
          goto done;
       }
    }
-
-   bson_t body;
 
    if (!mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-prelude.h"
+#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_CLUSTER_OIDC_PRIVATE_H
 #define MONGOC_CLUSTER_OIDC_PRIVATE_H
 
-#include "bson/bson.h"
-#include "mcd-time.h"
-#include "mongoc/mongoc-cluster-private.h"
-#include "common-thread-private.h"
+#include <bson/bson.h>
+#include <mongoc/mcd-time.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-thread-private.h>
 
 bool
 _mongoc_cluster_auth_node_oidc (mongoc_cluster_t *cluster,

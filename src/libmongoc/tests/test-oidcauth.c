@@ -6,16 +6,13 @@
 #include <stdio.h>
 
 #include <mongoc/mongoc.h>
-
-#include "common-thread-private.h"
+#include <mongoc/mongoc-thread-private.h>
 
 static char *username = "test_user1";
 static bson_mutex_t _callback_counter_mtx;
 static size_t callback_counter = 0;
 
-enum {
-   NUM_THREADS = 10
-};
+enum { NUM_THREADS = 10 };
 
 static BSON_THREAD_FUN (_run_ping, data)
 {
@@ -266,11 +263,11 @@ callback_is_called_during_authentication (void)
    client = mongoc_client_new_from_uri (uri);
    mongoc_client_set_oidc_callback (client, _oidc_callback);
 
-   coll = mongoc_client_get_collection(client, "test", "test");
+   coll = mongoc_client_get_collection (client, "test", "test");
    query = bson_new ();
-   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, query, NULL, NULL);
 
-   while (mongoc_cursor_next(cursor, &doc)) {
+   while (mongoc_cursor_next (cursor, &doc)) {
       ;
    }
 
@@ -285,9 +282,9 @@ callback_is_called_during_authentication (void)
    BSON_ASSERT (callback_counter == 1);
 
 done:
-   mongoc_cursor_destroy(cursor);
-   bson_destroy(query);
-   mongoc_collection_destroy(coll);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (query);
+   mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 
@@ -308,11 +305,11 @@ multiple_connections_thread_func (void *data)
    mongoc_client_t *client = data;
 
    for (size_t i = 0; i < 100; i++) {
-      coll = mongoc_client_get_collection(client, "test", "test");
+      coll = mongoc_client_get_collection (client, "test", "test");
       query = bson_new ();
-      cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (coll, query, NULL, NULL);
 
-      while (mongoc_cursor_next(cursor, &doc)) {
+      while (mongoc_cursor_next (cursor, &doc)) {
          ;
       }
 
@@ -324,9 +321,9 @@ multiple_connections_thread_func (void *data)
          BSON_ASSERT (ok);
       }
 
-      mongoc_cursor_destroy(cursor);
-      bson_destroy(query);
-      mongoc_collection_destroy(coll);
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (query);
+      mongoc_collection_destroy (coll);
    }
 
    return NULL;
@@ -415,11 +412,11 @@ valid_callback_inputs (void)
    client = mongoc_client_new_from_uri (uri);
    mongoc_client_set_oidc_callback (client, _oidc_callback);
 
-   coll = mongoc_client_get_collection(client, "test", "test");
+   coll = mongoc_client_get_collection (client, "test", "test");
    query = bson_new ();
-   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, query, NULL, NULL);
 
-   while (mongoc_cursor_next(cursor, &doc)) {
+   while (mongoc_cursor_next (cursor, &doc)) {
       ;
    }
 
@@ -432,9 +429,9 @@ valid_callback_inputs (void)
    }
 
 done:
-   mongoc_cursor_destroy(cursor);
-   bson_destroy(query);
-   mongoc_collection_destroy(coll);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (query);
+   mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 
@@ -484,11 +481,11 @@ oidc_callback_returns_null (void)
    /* Set the callback to a callback that errors and sets the token to NULL. */
    mongoc_client_set_oidc_callback (client, _oidc_failing_callback);
 
-   coll = mongoc_client_get_collection(client, "test", "test");
+   coll = mongoc_client_get_collection (client, "test", "test");
    query = bson_new ();
-   cursor = mongoc_collection_find_with_opts(coll, query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (coll, query, NULL, NULL);
 
-   while (mongoc_cursor_next(cursor, &doc)) {
+   while (mongoc_cursor_next (cursor, &doc)) {
       ;
    }
 
@@ -496,9 +493,9 @@ oidc_callback_returns_null (void)
    BSON_ASSERT (!mongoc_cursor_error_document (cursor, &error, &reply));
 
 done:
-   mongoc_cursor_destroy(cursor);
-   bson_destroy(query);
-   mongoc_collection_destroy(coll);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (query);
+   mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 

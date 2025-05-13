@@ -19,6 +19,8 @@
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-bulkwrite.h>
 #include <mongoc/mongoc-util-private.h> // hex_to_bin
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include "result.h"
 #include "test-diagnostics.h"
 #include "test-libmongoc.h"
@@ -26,9 +28,6 @@
 #include <mongoc/utlist.h>
 #include <common-bson-dsl-private.h>
 #include <mlib/cmp.h>
-
-#include "mongoc-error.h"
-#include "mongoc-error-private.h"
 
 typedef struct {
    char *name;

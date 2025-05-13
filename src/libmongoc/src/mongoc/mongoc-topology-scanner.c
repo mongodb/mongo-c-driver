@@ -404,7 +404,7 @@ _begin_hello_cmd (mongoc_topology_t *topology,
 
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (ts->uri);
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty (&node->speculative_auth_response) &&
-      ((node->scram.step == 0) || (!strcasecmp (mechanism, "MONGODB-OIDC")))) {
+       ((node->scram.step == 0) || (!strcasecmp (mechanism, "MONGODB-OIDC")))) {
       mongoc_ssl_opt_t *ssl_opts = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
