@@ -19,6 +19,7 @@
 #include <common-b64-private.h>
 #include <mongoc/mcd-time.h>
 #include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-cluster-sasl-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list-private.h>
@@ -34,13 +35,6 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
-
-#define AUTH_ERROR_AND_FAIL(...)                                                                     \
-   do {                                                                                              \
-      _mongoc_set_error (error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, __VA_ARGS__); \
-      goto fail;                                                                                     \
-   } while (0)
-
 
 #ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
 #include <kms_message/kms_message.h>
