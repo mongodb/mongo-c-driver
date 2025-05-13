@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
 #include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-oidc-callback.h>
 #include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-crypt-private.h>
@@ -235,12 +236,15 @@ struct _mongoc_topology_t {
 
    bson_mutex_t oidc_mtx;
 
-   /* Spec:
+   /* Owned mongoc_oidc_callback_t, or NULL when unset.
+    *
+    * Spec:
     * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
     */
-   bool (*oidc_callback) (const mongoc_oidc_callback_params_t *, mongoc_oidc_credential_t * /* OUT */);
+   mongoc_oidc_callback_t *oidc_callback;
 
    /* OIDC credential cache
+    * An owned mongoc_oidc_credential_t, or NULL when unset.
     *
     * Spec:
     * "Drivers MUST cache the most recent access token per MongoClient"
