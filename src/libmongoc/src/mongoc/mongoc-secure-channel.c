@@ -377,7 +377,7 @@ fail:
       CertFreeCertificateContext (cert);
    }
    bson_free (pem);
-   return false;
+   return ok;
 }
 
 bool
