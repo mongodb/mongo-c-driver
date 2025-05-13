@@ -25,6 +25,7 @@ The callback may be used to integrate with OIDC providers that are not supported
 
     mongoc_oidc_callback_new
     mongoc_oidc_callback_new_with_user_data
+    mongoc_oidc_callback_copy
     mongoc_oidc_callback_destroy
     mongoc_oidc_callback_get_fn
     mongoc_oidc_callback_get_user_data
