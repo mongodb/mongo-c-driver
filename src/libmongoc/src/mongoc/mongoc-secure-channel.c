@@ -89,7 +89,7 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
       goto fail;
    }
 
-   long file_len = ftell (file);
+   const long file_len = ftell (file);
    if (file_len < 0) {
       MONGOC_ERROR ("Failed to get length of file: '%s' with error: '%s'",
                     filename,
