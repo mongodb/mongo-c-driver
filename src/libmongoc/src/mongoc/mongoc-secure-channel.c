@@ -131,7 +131,7 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
    ok = true;
 fail:
    if (file) {
-      fclose (file); // Ignore error.
+      (void) fclose (file); // Ignore error.
    }
    if (!ok) {
       bson_free (contents);
