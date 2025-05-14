@@ -174,9 +174,8 @@ _mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology
    bson_t jwt_doc = BSON_INITIALIZER;
 
    bson_mutex_lock (&topology->oidc_mtx);
-   const char *access_token = topology->oidc_credential->access_token;
-   if (access_token) {
-      BSON_APPEND_UTF8 (&jwt_doc, "jwt", access_token);
+   if (topology->oidc_credential) {
+      BSON_APPEND_UTF8 (&jwt_doc, "jwt", mongoc_oidc_credential_get_access_token (topology->oidc_credential));
       BCON_APPEND (auth_cmd,
                    "saslStart",
                    BCON_INT32 (1),
@@ -405,13 +404,7 @@ _begin_hello_cmd (mongoc_topology_t *topology,
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (ts->uri);
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty (&node->speculative_auth_response) &&
        ((node->scram.step == 0) || (!strcasecmp (mechanism, "MONGODB-OIDC")))) {
-      mongoc_ssl_opt_t *ssl_opts = NULL;
-
-#ifdef MONGOC_ENABLE_SSL
-      ssl_opts = ts->ssl_opts;
-#endif
-
-      _mongoc_topology_scanner_add_speculative_authentication (topology, &cmd, ts->uri, ssl_opts, &node->scram);
+      _mongoc_topology_scanner_add_speculative_authentication (topology, &cmd, ts->uri, &node->scram);
    }
 
    if (!bson_empty (&ts->cluster_time)) {

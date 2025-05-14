@@ -234,6 +234,9 @@ struct _mongoc_topology_t {
    // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
    bool srv_prefer_tcp;
 
+   // Mutex must be held when accessing oidc_credential.
+   // If the global OIDC callback lock is required as well, lock ranking must be observed: always acquire this mutex
+   // first.
    bson_mutex_t oidc_mtx;
 
    /* Owned mongoc_oidc_callback_t, or NULL when unset.

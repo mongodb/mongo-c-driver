@@ -352,16 +352,6 @@ _detect_nongenuine_hosts (const mongoc_uri_t *uri)
    }
 }
 
-static mongoc_oidc_credential_t *
-_mongoc_oidc_credential_new (char *access_token, int64_t expires_in_seconds)
-{
-   mongoc_oidc_credential_t *cred = bson_malloc (sizeof (*cred));
-
-   cred->access_token = access_token;
-   cred->expires_in_seconds = expires_in_seconds;
-
-   return cred;
-}
 
 /*
  *-------------------------------------------------------------------------
@@ -420,7 +410,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    bson_mutex_init (&topology->oidc_mtx);
 
    topology->oidc_callback = NULL;
-   topology->oidc_credential = _mongoc_oidc_credential_new (NULL, 0);
+   topology->oidc_credential = NULL;
 
    topology->valid = false;
 
@@ -656,20 +646,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    return topology;
 }
 
-static void
-_mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
-{
-   if (!cred) {
-      return;
-   }
-
-   if (cred->access_token) {
-      bson_zero_free (cred->access_token, strlen (cred->access_token));
-      cred->access_token = NULL;
-   }
-   bson_free (cred);
-}
-
 
 /*
  *-------------------------------------------------------------------------
@@ -748,7 +724,8 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    bson_mutex_destroy (&topology->tpld_modification_mtx);
 
    bson_destroy (topology->encrypted_fields_map);
-   _mongoc_oidc_credential_destroy (topology->oidc_credential);
+   mongoc_oidc_callback_destroy (topology->oidc_callback);
+   mongoc_oidc_credential_destroy (topology->oidc_credential);
 
    bson_free (topology);
 }

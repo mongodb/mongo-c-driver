@@ -1094,25 +1094,25 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
 void
 mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token)
 {
-   BSON_ASSERT (access_token);
-   BSON_ASSERT (client);
-   BSON_ASSERT (client->topology);
-   BSON_ASSERT (client->topology->oidc_credential);
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (access_token);
 
-   bson_mutex_lock (&client->topology->oidc_mtx);
+   mongoc_topology_t *topology = client->topology;
+   BSON_ASSERT (topology);
 
-   if (!client->topology->oidc_credential->access_token) {
+   bson_mutex_lock (&topology->oidc_mtx);
+
+   if (!topology->oidc_credential) {
       goto done;
    }
 
-   if (!strcmp (access_token, client->topology->oidc_credential->access_token)) {
-      bson_zero_free (client->topology->oidc_credential->access_token,
-                      strlen (client->topology->oidc_credential->access_token));
-      client->topology->oidc_credential->access_token = NULL;
+   if (!strcmp (access_token, mongoc_oidc_credential_get_access_token (topology->oidc_credential))) {
+      mongoc_oidc_credential_destroy (topology->oidc_credential);
+      topology->oidc_credential = NULL;
    }
 
 done:
-   bson_mutex_unlock (&client->topology->oidc_mtx);
+   bson_mutex_unlock (&topology->oidc_mtx);
 }
 
 

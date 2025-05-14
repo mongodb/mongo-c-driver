@@ -121,13 +121,12 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
       } else if (0 == strcmp ("authMechanism", key)) {
          BSON_ASSERT (mongoc_uri_set_auth_mechanism (uri, bson_iter_utf8 (&iter, NULL)));
       } else if (0 == strcmp ("authMechanismProperties", key)) {
-         bson_t properties_doc = BSON_INITIALIZER;
          const uint8_t *data;
          uint32_t len;
          bson_iter_document (&iter, &len, &data);
+         bson_t properties_doc;
          BSON_ASSERT (bson_init_static (&properties_doc, data, len));
          BSON_ASSERT (mongoc_uri_set_mechanism_properties (uri, &properties_doc));
-         bson_destroy (&properties_doc);
       } else {
          test_set_error (error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
@@ -469,7 +468,6 @@ command_failed (const mongoc_apm_command_failed_t *failed)
 
    event_store_or_destroy (entity, event_new ("commandFailedEvent", "command", serialized, is_sensitive));
    printf ("command failed: %s\n", tmp_json (mongoc_apm_command_failed_get_reply (failed)));
-   apm_command_callback (funcs, "commandFailedEvent", failed);
 }
 
 static void
@@ -739,23 +737,19 @@ _truncate_on_whitespace (char *str)
    }
 }
 
-static bool
-_oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credential_t *cred /* OUT */)
+static mongoc_oidc_credential_t *
+_oidc_callback (mongoc_oidc_callback_params_t *params)
 {
-   int64_t timeout = 0;
-   int64_t version = 0;
    long size = 0;
    FILE *token_file = NULL;
    int rc = 0;
    char *token = NULL;
-   bool ok = true;
-   size_t nread = 0;
+   mongoc_oidc_credential_t *cred = NULL;
 
    fprintf (stderr, "OPENING TOKEN FILE\n");
    token_file = fopen ("/tmp/tokens/test_user1", "r");
    if (!token_file) {
       perror ("fopen");
-      ok = false;
       goto done;
    }
 
@@ -763,13 +757,11 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    rc = fseek (token_file, 0, SEEK_END);
    if (rc != 0) {
       perror ("seek");
-      ok = false;
       goto done;
    }
    size = ftell (token_file);
    if (size < 0) {
       perror ("ftell");
-      ok = false;
       goto done;
    }
    rewind (token_file);
@@ -777,15 +769,13 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    /* Allocate buffer for token string */
    token = malloc (size + 1);
    if (!token) {
-      ok = false;
       goto done;
    }
 
    /* Read file into token buffer */
-   nread = fread (token, 1, size, token_file);
-   if (nread != size) {
+   size_t nread = fread (token, 1, size, token_file);
+   if (nread != (size_t) size) {
       perror ("fread");
-      ok = false;
       goto done;
    }
    token[size] = '\0';
@@ -793,17 +783,18 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    /* The file might have trailing whitespaces such as "\n" or "\r\n"*/
    _truncate_on_whitespace (token);
 
-   timeout = mongoc_oidc_callback_params_get_timeout_ms (params);
-   version = mongoc_oidc_callback_params_get_version (params);
+   const int64_t *timeout = mongoc_oidc_callback_params_get_timeout (params);
+   int32_t version = mongoc_oidc_callback_params_get_version (params);
 
    /* Provide your OIDC token to the MongoDB C Driver via the 'creds' out
     * parameter. Remember to free your token string. The C driver stores its
     * own copy */
-   mongoc_oidc_credential_set_access_token (cred, token);
-   mongoc_oidc_credential_set_expires_in_seconds (cred, 200);
+   cred = mongoc_oidc_credential_new_with_expires_in (token, 200ll * 1000ll * 1000ll);
 
-   printf ("version: %" PRId64 "\n", version);
-   printf ("timeout: %" PRId64 "\n", timeout);
+   printf ("version: %d\n", version);
+   if (timeout) {
+      printf ("timeout: %" PRId64 "\n", *timeout);
+   }
 
    fprintf (stderr, "GOT TOKEN FROM FILE\n");
 
@@ -812,7 +803,7 @@ done:
       fclose (token_file);
    }
    free (token);
-   return ok;
+   return cred;
 }
 
 entity_t *
@@ -1017,7 +1008,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    /* TODO: If authMechanism is MONGODB-OIDC, then set OIDC callback */
    const char *auth_mechanism = mongoc_uri_get_auth_mechanism (uri);
    if (auth_mechanism && !bson_strcasecmp (auth_mechanism, "MONGODB-OIDC")) {
-      mongoc_client_set_oidc_callback (client, _oidc_callback);
+      mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (_oidc_callback);
+      mongoc_client_set_oidc_callback (client, callback);
+      mongoc_oidc_callback_destroy (callback);
    }
 
    ret = true;
