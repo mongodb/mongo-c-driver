@@ -114,6 +114,7 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
    contents = (char *) bson_malloc ((size_t) file_len + 1u);
    contents[file_len] = '\0';
    if ((size_t) file_len != fread (contents, 1, file_len, file)) {
+      SecureZeroMemory (contents, file_len);
       if (feof (file)) {
          MONGOC_ERROR ("Unexpected EOF reading file: '%s'", filename);
          goto fail;
