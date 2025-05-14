@@ -105,7 +105,7 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
       goto fail;
    }
 
-   // Read the whole file into one nul-terminated string:
+   // Read the whole file into one NUL-terminated string:
    contents = (char *) bson_malloc ((size_t) file_len + 1u);
    contents[file_len] = '\0';
    if ((size_t) file_len != fread (contents, 1, file_len, file)) {
