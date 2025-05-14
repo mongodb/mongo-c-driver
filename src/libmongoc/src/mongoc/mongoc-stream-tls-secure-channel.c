@@ -162,9 +162,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
       /* if the handle was not cached and the refcount is zero */
       TRACE ("%s", "clear credential handle");
       FreeCredentialsHandle (&secure_channel->cred->cred_handle);
-      if (secure_channel->cred->cert != NULL) {
-         CertFreeCertificateContext (secure_channel->cred->cert);
-      }
+      CertFreeCertificateContext (secure_channel->cred->cert);
       bson_free (secure_channel->cred);
    }
 

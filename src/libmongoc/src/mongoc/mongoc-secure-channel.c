@@ -306,9 +306,7 @@ fail:
    }
 
    if (!ret) {
-      if (cert) {
-         CertFreeCertificateContext (cert);
-      }
+      CertFreeCertificateContext (cert);
       return NULL;
    }
 
@@ -372,18 +370,15 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
 
    if (!CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
       MONGOC_WARNING ("Failed adding the cert");
-      CertCloseStore (cert_store, 0);
       goto fail;
    }
 
    TRACE ("%s", "Added the certificate !");
-   CertCloseStore (cert_store, 0);
    ok = true;
 fail:
+   CertCloseStore (cert_store, 0);
    bson_free (encoded_cert);
-   if (cert) {
-      CertFreeCertificateContext (cert);
-   }
+   CertFreeCertificateContext (cert);
    bson_free (pem);
    return ok;
 }
@@ -462,12 +457,8 @@ mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_chan
    ok = true;
 
 fail:
-   if (cert_store) {
-      CertCloseStore (cert_store, 0);
-   }
-   if (crl) {
-      CertFreeCRLContext (crl);
-   }
+   CertCloseStore (cert_store, 0);
+   CertFreeCRLContext (crl);
    return ok;
 }
 
