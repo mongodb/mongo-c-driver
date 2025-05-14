@@ -290,8 +290,10 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    ret = true;
 
 fail:
-   SecureZeroMemory (pem, pem_length);
-   bson_free (pem);
+   if (pem) {
+      SecureZeroMemory (pem, pem_length);
+      bson_free (pem);
+   }
    bson_free (encoded_cert);
    if (encoded_private) {
       SecureZeroMemory (encoded_private, encoded_private_len);

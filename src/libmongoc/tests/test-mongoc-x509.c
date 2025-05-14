@@ -308,6 +308,47 @@ test_x509_auth (void *unused)
 #endif
       mongoc_uri_destroy (uri);
    }
+
+   // Test auth fails when client certificate does not exist:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_TEST_DIR "/foobar.pem"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+         ASSERT (mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, true)); // Fail quickly.
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         capture_logs (true);
+         ok = try_insert (client, &error);
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Cannot find certificate");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Failed to open file");
+#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
+         ASSERT_NO_CAPTURED_LOGS ("tls");
+#endif
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+      // OpenSSL fails to create stream (prior to TLS). Resulting in a server selection error.
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection error");
+#else
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+#endif
+      mongoc_uri_destroy (uri);
+   }
    drop_x509_user (false);
 }
 
