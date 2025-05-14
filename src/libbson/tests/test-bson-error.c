@@ -40,6 +40,10 @@ test_bson_strerror_r (void)
    char *errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
    // Check a message is returned. Do not check platform-dependent contents:
    ASSERT (errmsg);
+   const char *unknown_msg = "Unknown error";
+   if (strstr (errmsg, unknown_msg)) {
+      test_error ("Expected error message not to contain '%s', but got: '%s'", unknown_msg, errmsg);
+   }
 }
 
 void
