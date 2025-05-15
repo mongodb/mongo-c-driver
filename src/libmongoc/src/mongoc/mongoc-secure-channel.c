@@ -46,6 +46,9 @@
 static LPBYTE
 decode_pem_base64 (const char *base64_in, DWORD *out_len)
 {
+   BSON_ASSERT_PARAM (base64_in);
+   BSON_ASSERT_PARAM (out_len);
+
    // Get needed output length:
    if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, NULL, out_len, NULL, NULL)) {
       return NULL;
