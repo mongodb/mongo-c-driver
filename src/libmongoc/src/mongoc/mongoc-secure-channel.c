@@ -42,22 +42,31 @@
 #endif
 
 // `decode_pem_base64` decodes a base-64 PEM blob with headers.
-// Returns NULL on error. Use GetLastError() to retrieve Windows error code.
+// Returns NULL on error.
 static LPBYTE
-decode_pem_base64 (const char *base64_in, DWORD *out_len)
+decode_pem_base64 (const char *base64_in, DWORD *out_len, const char *descriptor, const char *filename)
 {
    BSON_ASSERT_PARAM (base64_in);
    BSON_ASSERT_PARAM (out_len);
+   BSON_ASSERT_PARAM (descriptor);
+   BSON_ASSERT_PARAM (filename);
 
    // Get needed output length:
    if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, NULL, out_len, NULL, NULL)) {
+      MONGOC_ERROR (
+         "Failed to convert base64 %s from '%s'. Error 0x%.8X", descriptor, filename, (unsigned int) GetLastError ());
       return NULL;
    }
 
-   BSON_ASSERT (*out_len > 0);
+   if (*out_len == 0) {
+      return NULL;
+   }
+
    LPBYTE out = (LPBYTE) bson_malloc (*out_len);
 
    if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, out, out_len, NULL, NULL)) {
+      MONGOC_ERROR (
+         "Failed to convert base64 %s from '%s'. Error 0x%.8X", descriptor, filename, (unsigned int) GetLastError ());
       bson_free (out);
       return NULL;
    }
@@ -186,9 +195,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   encoded_cert = decode_pem_base64 (pem_public, &encoded_cert_len);
+   encoded_cert = decode_pem_base64 (pem_public, &encoded_cert_len, "public key", filename);
    if (!encoded_cert) {
-      MONGOC_ERROR ("Failed to convert base64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
    cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
@@ -200,9 +208,8 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380285%28v=vs.85%29.aspx
     */
-   encoded_private = decode_pem_base64 (pem_private, &encoded_private_len);
+   encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
    if (!encoded_private) {
-      MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -342,9 +349,8 @@ mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
       goto fail;
    }
 
-   encoded_cert = decode_pem_base64 (pem_key, &encoded_cert_len);
+   encoded_cert = decode_pem_base64 (pem_key, &encoded_cert_len, "public key", opt->ca_file);
    if (!encoded_cert) {
-      MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -400,9 +406,8 @@ mongoc_secure_channel_load_crl (const char *crl_file)
       goto fail;
    }
 
-   encoded_crl = decode_pem_base64 (pem_begin, &encoded_crl_len);
+   encoded_crl = decode_pem_base64 (pem_begin, &encoded_crl_len, "CRL", crl_file);
    if (!encoded_crl) {
-      MONGOC_ERROR ("Failed to convert BASE64 CRL. Error 0x%.8X", (unsigned int) GetLastError ());
       goto fail;
    }
 
