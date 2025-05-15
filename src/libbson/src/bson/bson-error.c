@@ -113,7 +113,7 @@ bson_strerror_r (int err_code,                    /* IN */
 #if defined(_WIN32)
    // Windows does not provide `strerror_l` or `strerror_r`, but it does
    // unconditionally provide `strerror_s`.
-   if (strerror_s (buf, buflen, err_code) != 0) {
+   if (strerror_s (buf, buflen, err_code) == 0) {
       ret = buf;
    }
 #elif defined(_AIX)
