@@ -913,15 +913,15 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *
    }
 
    if (opt->ca_file) {
-      mongoc_secure_channel_setup_ca (secure_channel, opt);
+      mongoc_secure_channel_setup_ca (opt);
    }
 
    if (opt->crl_file) {
-      mongoc_secure_channel_setup_crl (secure_channel, opt);
+      mongoc_secure_channel_setup_crl (opt);
    }
 
    if (opt->pem_file) {
-      cert = mongoc_secure_channel_setup_certificate (secure_channel, opt);
+      cert = mongoc_secure_channel_setup_certificate (opt);
 
       if (cert) {
          schannel_cred.cCreds = 1;
