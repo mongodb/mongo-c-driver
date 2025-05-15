@@ -49,6 +49,8 @@ _mongoc_rand_simple (unsigned int *seed)
 {
 #ifdef _WIN32
    /* ignore the seed */
+   BSON_UNUSED (seed);
+
    unsigned int ret = 0;
    errno_t err;
 

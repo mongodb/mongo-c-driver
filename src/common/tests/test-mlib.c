@@ -309,7 +309,8 @@ _test_cmp (void)
    mlib_diagnostic_push ();
    mlib_gnu_warning_disable ("-Wsign-compare");
    mlib_disable_constant_conditional_expression_warnings ();
-   ASSERT (-27 > 20u);
+   mlib_msvc_warning (disable : 4308);
+   ASSERT (-27 > 20u); // Deliberate signed -> unsigned implicit conversion check.
    mlib_diagnostic_pop ();
    // mlib_cmp produces the correct answer:
    ASSERT (mlib_cmp (-27, <, 20u));

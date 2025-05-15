@@ -18,6 +18,8 @@
 #include <bson/bson.h>
 #include <bson/bson-vector-private.h>
 
+#include <mlib/config.h>
+
 
 static BSON_INLINE bool
 bson_vector_binary_header_impl_init (bson_vector_binary_header_impl_t *header_out,
@@ -349,7 +351,11 @@ bson_append_vector_packed_bit_uninit (
    }
    uint8_t *binary;
    if (bson_append_binary_uninit (bson, key, key_length, BSON_SUBTYPE_VECTOR, &binary, length)) {
+      mlib_diagnostic_push ();
+      mlib_msvc_warning (disable : 4146);
       size_t padding = (size_t) 7 & -element_count;
+      mlib_diagnostic_pop ();
+
       bson_vector_binary_header_impl_t header = {
          .bytes[0] = bson_vector_header_byte_0 (BSON_VECTOR_ELEMENT_UNSIGNED_INT, BSON_VECTOR_ELEMENT_1_BIT),
          .bytes[1] = bson_vector_header_byte_1 (padding)};

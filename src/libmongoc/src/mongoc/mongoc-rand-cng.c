@@ -56,12 +56,17 @@ _mongoc_rand_bytes (uint8_t *buf, int num)
 void
 mongoc_rand_seed (const void *buf, int num)
 {
+   BSON_UNUSED (buf);
+   BSON_UNUSED (num);
    /* N/A - OS Does not need entropy seed */
 }
 
 void
 mongoc_rand_add (const void *buf, int num, double entropy)
 {
+   BSON_UNUSED (buf);
+   BSON_UNUSED (num);
+   BSON_UNUSED (entropy);
    /* N/A - OS Does not need entropy seed */
 }
 

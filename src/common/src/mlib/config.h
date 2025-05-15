@@ -355,4 +355,11 @@
  */
 #define mlib_disable_constant_conditional_expression_warnings() mlib_msvc_warning (disable : 4127)
 
+/**
+ * @brief Disable warnings for potentially unused parameters.
+ */
+#define mlib_disable_unused_parameter_warnings()                       \
+   MLIB_IF_GNU_LIKE (mlib_gnu_warning_disable ("-Wunused-parameter");) \
+   MLIB_IF_MSVC (mlib_msvc_warning (disable : 4100);) mlib_static_assert (true, "")
+
 #endif // MLIB_CONFIG_H_INCLUDED
