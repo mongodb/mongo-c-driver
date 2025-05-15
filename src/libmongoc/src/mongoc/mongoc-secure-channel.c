@@ -77,16 +77,11 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
    char *contents = NULL;
    char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
 
-   errno = 0; // C99 does not require `fopen` set errno.
    FILE *file = fopen (filename, "rb");
    if (!file) {
-      if (0 != errno) {
-         MONGOC_ERROR ("Failed to open file: '%s' with error: '%s'",
-                       filename,
-                       bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
-      } else {
-         MONGOC_ERROR ("Failed to open file: '%s'", filename);
-      }
+      MONGOC_ERROR ("Failed to open file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
       goto fail;
    }
 
