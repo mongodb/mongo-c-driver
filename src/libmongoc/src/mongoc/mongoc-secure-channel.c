@@ -88,7 +88,7 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
    if (0 != fseek (file, 0, SEEK_END)) {
       MONGOC_ERROR ("Failed to seek in file: '%s' with error: '%s'",
                     filename,
-                    bson_strerror_r (ferror (file), errmsg_buf, sizeof errmsg_buf));
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
       goto fail;
    }
 
@@ -119,7 +119,7 @@ read_file_and_null_terminate (const char *filename, size_t *out_len)
       } else {
          MONGOC_ERROR ("Failed to read file: '%s' with error: '%s'",
                        filename,
-                       bson_strerror_r (ferror (file), errmsg_buf, sizeof errmsg_buf));
+                       bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
          goto fail;
       }
    }
