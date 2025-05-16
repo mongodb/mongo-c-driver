@@ -50,16 +50,14 @@ _truncate_on_whitespace (char *str)
    }
 }
 
-static bool
-_oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credential_t *cred /* OUT */)
+static mongoc_oidc_credential_t *
+_oidc_callback (mongoc_oidc_callback_params_t *params)
 {
-   int64_t timeout = 0;
-   int64_t version = 0;
    long size = 0;
    FILE *token_file = NULL;
    int rc = 0;
    char *token = NULL;
-   bool ok = true;
+   mongoc_oidc_credential_t *cred = NULL;
    size_t nread = 0;
    char *token_file_path = NULL;
 
@@ -72,7 +70,6 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    token_file = fopen (token_file_path, "r");
    if (!token_file) {
       perror ("fopen");
-      ok = false;
       goto done;
    }
 
@@ -80,13 +77,11 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    rc = fseek (token_file, 0, SEEK_END);
    if (rc != 0) {
       perror ("seek");
-      ok = false;
       goto done;
    }
    size = ftell (token_file);
    if (size < 0) {
       perror ("ftell");
-      ok = false;
       goto done;
    }
    rewind (token_file);
@@ -94,15 +89,13 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    /* Allocate buffer for token string */
    token = bson_malloc (size + 1);
    if (!token) {
-      ok = false;
       goto done;
    }
 
    /* Read file into token buffer */
    nread = fread (token, 1, size, token_file);
-   if (nread != size) {
+   if (nread != (size_t) size) {
       perror ("fread");
-      ok = false;
       goto done;
    }
    token[size] = '\0';
@@ -110,17 +103,17 @@ _oidc_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credent
    /* The file might have trailing whitespaces such as "\n" or "\r\n" */
    _truncate_on_whitespace (token);
 
-   version = mongoc_oidc_callback_params_get_version (params);
-   timeout = mongoc_oidc_callback_params_get_timeout_ms (params);
+   int32_t version = mongoc_oidc_callback_params_get_version (params);
+   const int64_t *timeout = mongoc_oidc_callback_params_get_timeout (params);
 
    BSON_ASSERT (version == 1);
-   BSON_ASSERT (timeout == 60000);
+   BSON_ASSERT (timeout);
+   BSON_ASSERT (*timeout == 60000000ll);
 
    /* Provide your OIDC token to the MongoDB C Driver via the 'creds' out
     * parameter. Remember to free your token string. The C driver stores its
     * own copy */
-   mongoc_oidc_credential_set_access_token (cred, token);
-   mongoc_oidc_credential_set_expires_in_seconds (cred, 200);
+   cred = mongoc_oidc_credential_new_with_expires_in (token, 200ll * 1000ll * 1000ll);
 
 done:
    if (token_file) {
@@ -128,7 +121,7 @@ done:
    }
    bson_free (token_file_path);
    bson_free (token);
-   return ok;
+   return cred;
 }
 
 static bool
@@ -154,7 +147,9 @@ connect_with_oidc (void)
       goto done;
    }
 
-   mongoc_client_set_oidc_callback (client, _oidc_callback);
+   mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (_oidc_callback);
+   mongoc_client_set_oidc_callback (client, callback);
+   mongoc_oidc_callback_destroy (callback);
 
    _run_ping (client);
 
@@ -189,7 +184,9 @@ connect_with_oidc_pooled (void)
       goto done;
    }
 
-   mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
+   mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (_oidc_callback);
+   mongoc_client_pool_set_oidc_callback (pool, callback);
+   mongoc_oidc_callback_destroy (callback);
 
    for (size_t i = 0; i < NUM_THREADS; i++) {
       clients[i] = mongoc_client_pool_pop (pool);
@@ -261,7 +258,9 @@ callback_is_called_during_authentication (void)
    }
 
    client = mongoc_client_new_from_uri (uri);
-   mongoc_client_set_oidc_callback (client, _oidc_callback);
+   mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (_oidc_callback);
+   mongoc_client_set_oidc_callback (client, callback);
+   mongoc_oidc_callback_destroy (callback);
 
    coll = mongoc_client_get_collection (client, "test", "test");
    query = bson_new ();
@@ -273,7 +272,7 @@ callback_is_called_during_authentication (void)
 
    ok = !mongoc_cursor_error_document (cursor, &error, &reply);
    if (!ok) {
-      char *json = bson_as_json (reply, NULL);
+      char *json = bson_as_relaxed_extended_json (reply, NULL);
       fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
       bson_free (json);
       goto done;
@@ -315,7 +314,7 @@ multiple_connections_thread_func (void *data)
 
       ok = !mongoc_cursor_error_document (cursor, &error, &reply);
       if (!ok) {
-         char *json = bson_as_json (reply, NULL);
+         char *json = bson_as_relaxed_extended_json (reply, NULL);
          fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
          bson_free (json);
          BSON_ASSERT (ok);
@@ -357,7 +356,9 @@ callback_is_called_once_for_multiple_connections (void)
    }
 
    pool = mongoc_client_pool_new (uri);
-   mongoc_client_pool_set_oidc_callback (pool, _oidc_callback);
+   mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (_oidc_callback);
+   mongoc_client_pool_set_oidc_callback (pool, callback);
+   mongoc_oidc_callback_destroy (callback);
 
    for (size_t i = 0; i < NUM_THREADS; i++) {
       clients[i] = mongoc_client_pool_pop (pool);
@@ -410,7 +411,9 @@ valid_callback_inputs (void)
    }
 
    client = mongoc_client_new_from_uri (uri);
-   mongoc_client_set_oidc_callback (client, _oidc_callback);
+   mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (_oidc_callback);
+   mongoc_client_set_oidc_callback (client, callback);
+   mongoc_oidc_callback_destroy (callback);
 
    coll = mongoc_client_get_collection (client, "test", "test");
    query = bson_new ();
@@ -422,7 +425,7 @@ valid_callback_inputs (void)
 
    ok = !mongoc_cursor_error_document (cursor, &error, &reply);
    if (!ok) {
-      char *json = bson_as_json (reply, NULL);
+      char *json = bson_as_relaxed_extended_json (reply, NULL);
       fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, json);
       bson_free (json);
       goto done;
@@ -438,14 +441,12 @@ done:
    return ok;
 }
 
-static bool
-_oidc_failing_callback (const mongoc_oidc_callback_params_t *params, mongoc_oidc_credential_t *cred /* OUT */)
+static mongoc_oidc_credential_t *
+_oidc_failing_callback (mongoc_oidc_callback_params_t *params)
 {
    BSON_ASSERT (params);
-   BSON_ASSERT (cred);
 
-   mongoc_oidc_credential_set_access_token (cred, NULL);
-   return false;
+   return NULL;
 }
 
 /*
@@ -479,7 +480,9 @@ oidc_callback_returns_null (void)
    client = mongoc_client_new_from_uri (uri);
 
    /* Set the callback to a callback that errors and sets the token to NULL. */
-   mongoc_client_set_oidc_callback (client, _oidc_failing_callback);
+   mongoc_oidc_callback_t *failing_callback = mongoc_oidc_callback_new (_oidc_failing_callback);
+   mongoc_client_set_oidc_callback (client, failing_callback);
+   mongoc_oidc_callback_destroy (failing_callback);
 
    coll = mongoc_client_get_collection (client, "test", "test");
    query = bson_new ();
@@ -512,8 +515,8 @@ main (void)
    BSON_ASSERT (callback_is_called_once_for_multiple_connections ());
    BSON_ASSERT (valid_callback_inputs ());
    BSON_ASSERT (oidc_callback_returns_null ());
+   BSON_ASSERT (ping_server ());
 
-done:
    bson_mutex_destroy (&_callback_counter_mtx);
    mongoc_cleanup ();
    return 0;
