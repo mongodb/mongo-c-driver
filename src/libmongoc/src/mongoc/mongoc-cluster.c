@@ -1639,7 +1639,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
 
    if (!ret) {
       mongoc_counter_auth_failure_inc ();
-      MONGOC_DEBUG ("Authentication failed: %s", error->message);
+      MONGOC_ERROR ("Authentication failed: %s", error->message);
    } else {
       mongoc_counter_auth_success_inc ();
       TRACE ("%s", "Authentication succeeded");

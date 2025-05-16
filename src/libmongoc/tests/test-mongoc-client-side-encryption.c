@@ -1142,7 +1142,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                           "'endpoint': 'doesnotexist.invalid'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
-   bson_concat (kms_providers_invalid, tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.local:5698' }}"));
+   bson_concat (kms_providers_invalid, tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.invalid:5698' }}"));
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts, kms_providers);
@@ -1284,18 +1284,13 @@ test_custom_endpoint (void *unused)
     * included.
     * Expect to fail with socket error */
    _endpoint_setup (keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("region",
-                         "us-east-1",
-                         "key",
-                         "arn:aws:kms:us-east-1:579766882180:key/"
-                         "89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
-                         "endpoint",
-                         "kms.us-east-1.amazonaws.com:12345");
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "localhost:12345");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, masterkey);
-   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", datakey_opts, &keyid, &error);
+   res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to connect");
    BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
+
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1447,7 +1442,7 @@ test_custom_endpoint (void *unused)
 
    /* Case 12: KMIP overriding with invalid endpoint. */
    _endpoint_setup (keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.local:5698");
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.invalid:5698");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, masterkey);
    res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Failed to resolve");
@@ -2940,7 +2935,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_no_client_cert, "azure", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
    ASSERT (!res);
@@ -2950,7 +2945,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_with_names, "azure:no_client_cert", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
@@ -2961,7 +2956,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_with_tls, "azure", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, mongocrypt_errno, "HTTP status=404");
    ASSERT (!res);
@@ -2971,7 +2966,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res =
       mongoc_client_encryption_create_datakey (client_encryption_with_names, "azure:with_tls", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, mongocrypt_errno, "HTTP status=404");
@@ -2982,7 +2977,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_expired, "azure", dkopts, &keyid, &error);
    ASSERT_EXPIRED (error);
    ASSERT (!res);
@@ -2992,7 +2987,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_invalid_hostname, "azure", dkopts, &keyid, &error);
    ASSERT_INVALID_HOSTNAME (error);
    ASSERT (!res);
