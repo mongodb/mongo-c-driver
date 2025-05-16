@@ -171,9 +171,14 @@
               "encryptedInt": {
                 "$$type": "binData"
               },
-              "__safeContent__": {
-                "$$type": "array"
-              }
+              "__safeContent__": [
+                {
+                  "$binary": {
+                    "base64": "rhS16TJojgDDBtbluxBokvcotP1mQTGeYpNt8xd3MJQ=",
+                    "subType": "00"
+                  }
+                }
+              ]
             }
           ]
         }
