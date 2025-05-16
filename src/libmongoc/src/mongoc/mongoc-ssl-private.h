@@ -31,9 +31,6 @@ typedef struct {
    bool tls_disable_ocsp_endpoint_check;
 } _mongoc_internal_tls_opts_t;
 
-char *
-mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
-
 void
 _mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, _mongoc_internal_tls_opts_t *internal, mongoc_uri_t *uri);
 void

@@ -1431,8 +1431,7 @@ test_crud_install (TestSuite *suite)
                       prose_test_1,
                       NULL, /* dtor */
                       NULL, /* ctx */
-                      test_framework_skip_if_no_failpoint,
-                      test_framework_skip_if_max_wire_version_less_than_7);
+                      test_framework_skip_if_no_failpoint);
 
    TestSuite_AddFull (suite,
                       "/crud/prose_test_2",

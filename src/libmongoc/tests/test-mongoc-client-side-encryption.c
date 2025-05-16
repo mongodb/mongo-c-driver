@@ -1142,7 +1142,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                           "'endpoint': 'doesnotexist.invalid'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
-   bson_concat (kms_providers_invalid, tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.local:5698' }}"));
+   bson_concat (kms_providers_invalid, tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.invalid:5698' }}"));
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts, kms_providers);
@@ -1284,18 +1284,13 @@ test_custom_endpoint (void *unused)
     * included.
     * Expect to fail with socket error */
    _endpoint_setup (keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("region",
-                         "us-east-1",
-                         "key",
-                         "arn:aws:kms:us-east-1:579766882180:key/"
-                         "89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
-                         "endpoint",
-                         "kms.us-east-1.amazonaws.com:12345");
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "localhost:12345");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, masterkey);
-   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", datakey_opts, &keyid, &error);
+   res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to connect");
    BSON_ASSERT (!res);
    bson_value_destroy (&keyid);
+
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1447,7 +1442,7 @@ test_custom_endpoint (void *unused)
 
    /* Case 12: KMIP overriding with invalid endpoint. */
    _endpoint_setup (keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.local:5698");
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.invalid:5698");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts, masterkey);
    res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Failed to resolve");
@@ -2940,7 +2935,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_no_client_cert, "azure", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
    ASSERT (!res);
@@ -2950,7 +2945,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_with_names, "azure:no_client_cert", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
@@ -2961,7 +2956,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_with_tls, "azure", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, mongocrypt_errno, "HTTP status=404");
    ASSERT (!res);
@@ -2971,7 +2966,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res =
       mongoc_client_encryption_create_datakey (client_encryption_with_names, "azure:with_tls", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, mongocrypt_errno, "HTTP status=404");
@@ -2982,7 +2977,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_expired, "azure", dkopts, &keyid, &error);
    ASSERT_EXPIRED (error);
    ASSERT (!res);
@@ -2992,7 +2987,7 @@ test_kms_tls_options (void *unused)
    memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+      dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.invalid', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (client_encryption_invalid_hostname, "azure", dkopts, &keyid, &error);
    ASSERT_INVALID_HOSTNAME (error);
    ASSERT (!res);
@@ -6887,7 +6882,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/datakey_and_double_encryption",
@@ -6895,7 +6890,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/external_key_vault",
@@ -6903,7 +6898,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_no_auth /* requires auth for error check */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bson_size_limits_and_batch_splitting",
@@ -6911,21 +6906,21 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/views_are_prohibited",
                       test_views_are_prohibited,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/corpus",
                       test_corpus,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/custom_endpoint",
@@ -6933,7 +6928,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
@@ -6942,7 +6937,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassAutoEncryption",
@@ -6950,7 +6945,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassQueryAnalysis",
@@ -6958,7 +6953,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "cryptSharedLibLoaded",
@@ -6966,7 +6961,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _skip_if_no_crypt_shared);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/valid",
@@ -6974,35 +6969,35 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
                       test_kms_tls_cert_expired,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
                       test_kms_tls_cert_wrong_host,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/unique_index_on_keyaltnames",
                       test_unique_index_on_keyaltnames,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/prose_test_16/case1",
                       test_rewrap_with_separate_client_encryption,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/prose_test_16/case2",
@@ -7010,7 +7005,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,
@@ -7019,28 +7014,28 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/multi_threaded",
                       test_multi_threaded,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/malformed_explicit",
                       test_malformed_explicit,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls_options",
                       test_kms_tls_options,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       test_framework_skip_if_offline /* requires AWS, Azure, and GCP */,
                       /* Do not run on Windows due to CDRIVER-4181. Tests use a literal IP with
                          a TLS connection. */
@@ -7120,7 +7115,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case2",
@@ -7128,7 +7123,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/decryption_events/case3",
@@ -7136,7 +7131,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
 
    TestSuite_AddFull (suite,
@@ -7145,7 +7140,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/qe_docs_example",
@@ -7164,7 +7159,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL, // dtor
                       NULL, // ctx
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms/auto-aws/fail",
@@ -7172,7 +7167,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _not_have_aws_creds_env);
 
    TestSuite_AddFull (suite,
@@ -7181,7 +7176,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8,
+                      TestSuite_CheckLive,
                       _have_aws_creds_env);
 
    TestSuite_AddFull (suite,
@@ -7190,7 +7185,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      TestSuite_CheckLive);
 
    TestSuite_AddFull (suite, "/client_side_encryption/auto_datakeys", test_auto_datakeys, NULL, NULL, NULL);
 

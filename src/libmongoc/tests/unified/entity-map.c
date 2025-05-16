@@ -1772,7 +1772,10 @@ done:
 }
 
 entity_t *
-entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
+entity_session_new (entity_map_t *entity_map,
+                    bson_t *bson,
+                    const bson_t *cluster_time_after_initial_data,
+                    bson_error_t *error)
 {
    bson_parser_t *parser = NULL;
    entity_t *entity = NULL;
@@ -1811,6 +1814,9 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    session = mongoc_client_start_session (client, session_opts, error);
    if (!session) {
       goto done;
+   }
+   if (cluster_time_after_initial_data) {
+      mongoc_client_session_advance_cluster_time (session, cluster_time_after_initial_data);
    }
    entity->value = session;
    /* Ending a session destroys the session object.
@@ -1906,7 +1912,10 @@ done:
  * object immediately.
  */
 bool
-entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
+entity_map_create (entity_map_t *entity_map,
+                   bson_t *bson,
+                   const bson_t *cluster_time_after_initial_data,
+                   bson_error_t *error)
 {
    bson_iter_t iter;
    const char *entity_type;
@@ -1937,7 +1946,7 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    } else if (0 == strcmp (entity_type, "collection")) {
       entity = entity_collection_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "session")) {
-      entity = entity_session_new (entity_map, &entity_bson, error);
+      entity = entity_session_new (entity_map, &entity_bson, cluster_time_after_initial_data, error);
    } else if (0 == strcmp (entity_type, "bucket")) {
       entity = entity_bucket_new (entity_map, &entity_bson, error);
    } else {
