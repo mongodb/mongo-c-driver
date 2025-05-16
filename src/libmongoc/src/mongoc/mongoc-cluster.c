@@ -104,7 +104,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster, const mongoc_server_stream
                                           MONGOC_SDAM_APP_ERROR_COMMAND,
                                           reply,
                                           NULL,
-                                          server_stream->sd->max_wire_version,
                                           server_stream->sd->generation,
                                           &server_stream->sd->service_id)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
@@ -136,7 +135,6 @@ _handle_network_error (mongoc_cluster_t *cluster, mongoc_server_stream_t *server
                                       type,
                                       NULL,
                                       why,
-                                      server_stream->sd->max_wire_version,
                                       server_stream->sd->generation,
                                       &server_stream->sd->service_id);
    /* Always disconnect the current connection on network error. */
