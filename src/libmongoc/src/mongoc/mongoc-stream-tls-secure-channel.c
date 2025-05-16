@@ -162,6 +162,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
       /* if the handle was not cached and the refcount is zero */
       TRACE ("%s", "clear credential handle");
       FreeCredentialsHandle (&secure_channel->cred->cred_handle);
+      CertFreeCertificateContext (secure_channel->cred->cert);
       bson_free (secure_channel->cred);
    }
 
@@ -912,15 +913,15 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *
    }
 
    if (opt->ca_file) {
-      mongoc_secure_channel_setup_ca (secure_channel, opt);
+      mongoc_secure_channel_setup_ca (opt);
    }
 
    if (opt->crl_file) {
-      mongoc_secure_channel_setup_crl (secure_channel, opt);
+      mongoc_secure_channel_setup_crl (opt);
    }
 
    if (opt->pem_file) {
-      cert = mongoc_secure_channel_setup_certificate (secure_channel, opt);
+      cert = mongoc_secure_channel_setup_certificate (opt);
 
       if (cert) {
          schannel_cred.cCreds = 1;
@@ -932,6 +933,10 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *
    schannel_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
    secure_channel->cred = (mongoc_secure_channel_cred *) bson_malloc0 (sizeof (mongoc_secure_channel_cred));
+   if (cert) {
+      // Store client cert to free later.
+      secure_channel->cred->cert = cert;
+   }
 
    /* Example:
     *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa375454%28v=vs.85%29.aspx

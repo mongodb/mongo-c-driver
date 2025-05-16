@@ -5,6 +5,10 @@
 #include <mongoc/mongoc-openssl-private.h>
 #endif
 
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+#include <mongoc/mongoc-secure-channel-private.h>
+#endif
+
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include "test-conveniences.h" // tmp_bson
@@ -262,7 +266,164 @@ test_x509_auth (void *unused)
                              "" /* message differs between server versions */);
       mongoc_uri_destroy (uri);
    }
+
+   // Test auth fails when client certificate does not contain public certificate:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (
+            mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_TEST_DIR "/client-private.pem"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+         ASSERT (mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, true)); // Fail quickly.
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         capture_logs (true); // Capture logs before connecting. OpenSSL reads PEM file during client construction.
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Type is not supported");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Can't find public certificate");
+#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Cannot find certificate");
+#endif
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+      // OpenSSL and Secure Transport fail to create stream (prior to TLS). Resulting in a server selection error.
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection error");
+#else
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+#endif
+      mongoc_uri_destroy (uri);
+   }
+
+   // Test auth fails when client certificate does not exist:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_TEST_DIR "/foobar.pem"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+         ASSERT (mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, true)); // Fail quickly.
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         capture_logs (true);
+         ok = try_insert (client, &error);
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Cannot find certificate");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+         ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Failed to open file");
+#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
+         ASSERT_NO_CAPTURED_LOGS ("tls");
+#endif
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT (!ok);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+      // OpenSSL fails to create stream (prior to TLS). Resulting in a server selection error.
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection error");
+#else
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "" /* message differs between server versions */);
+#endif
+      mongoc_uri_destroy (uri);
+   }
    drop_x509_user (false);
+}
+
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+static void
+remove_crl_for_secure_channel (const char *crl_path)
+{
+   // Load CRL from file to query system store.
+   PCCRL_CONTEXT crl_from_file = mongoc_secure_channel_load_crl (crl_path);
+   ASSERT (crl_from_file);
+
+   HCERTSTORE cert_store = CertOpenStore (CERT_STORE_PROV_SYSTEM,                  /* provider */
+                                          X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
+                                          0,                                       /* unused */
+                                          CERT_SYSTEM_STORE_LOCAL_MACHINE,         /* dwFlags */
+                                          L"Root"); /* system store name. "My" or "Root" */
+   ASSERT (cert_store);
+
+   PCCRL_CONTEXT crl_from_store = CertFindCRLInStore (cert_store, 0, 0, CRL_FIND_EXISTING, crl_from_file, NULL);
+   ASSERT (crl_from_store);
+
+   if (!CertDeleteCRLFromStore (crl_from_store)) {
+      test_error (
+         "Failed to delete CRL from store. Delete CRL manually to avoid test errors verifying server certificate.");
+   }
+   CertFreeCRLContext (crl_from_file);
+   CertFreeCRLContext (crl_from_store);
+   CertCloseStore (cert_store, 0);
+}
+#endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
+
+// test_crl tests connection fails when server certificate is in CRL list.
+static void
+test_crl (void *unused)
+{
+   BSON_UNUSED (unused);
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   if (!test_framework_getenv_bool ("MONGOC_TEST_SCHANNEL_CRL")) {
+      printf ("Skipping. Test temporarily adds CRL to Windows certificate store. If removing the CRL fails, this may "
+              "cause later test failures and require removing the CRL file manually. To run test anyway, set the "
+              "environment variable MONGOC_TEST_SCHANNEL_CRL=ON\n");
+      return;
+   }
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+   printf ("Skipping. Secure Transport does not support crl_file.\n");
+   return;
+#endif
+
+   // Create URI:
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   ASSERT (mongoc_uri_set_option_as_bool (uri, MONGOC_URI_SERVERSELECTIONTRYONCE, true)); // Fail quickly.
+
+   // Create SSL options with CRL file:
+   mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+   ssl_opts.crl_file = CERT_TEST_DIR "/crl.pem";
+
+   // Try insert:
+   bson_error_t error = {0};
+   mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+   mongoc_client_set_ssl_opts (client, &ssl_opts);
+   capture_logs (true);
+   bool ok = try_insert (client, &error);
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+   remove_crl_for_secure_channel (ssl_opts.crl_file);
+   ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Mutual Authentication failed");
+#else
+   ASSERT_NO_CAPTURED_LOGS ("tls");
+#endif
+   ASSERT (!ok);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "no suitable servers");
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
 }
 #endif // MONGOC_ENABLE_SSL
 
@@ -271,6 +432,7 @@ test_x509_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_AddFull (suite, "/X509/auth", test_x509_auth, NULL, NULL, test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite, "/X509/crl", test_crl, NULL, NULL, test_framework_skip_if_no_server_ssl);
 #endif
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
