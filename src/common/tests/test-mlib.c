@@ -45,6 +45,11 @@ _test_checks (void)
    mlib_assert_aborts () {
       mlib_check (1, neq, 1);
    }
+   // "because" string
+   mlib_check (true, because, "just true");
+   mlib_assert_aborts () {
+      mlib_check (false, because, "this will fail");
+   }
 }
 
 static void
@@ -743,6 +748,10 @@ _test_str_view (void)
       // Drop too many:
       mlib_str_split_at (sv, 0, 5000, &a, &b);
       mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      // Past-the-end and also drop
+      mlib_str_split_at (sv, 4000, 42, &a, &b);
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo bar baz")));
       mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
    }
 }
