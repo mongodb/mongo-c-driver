@@ -73,9 +73,6 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
   . ./activate-kmstlsvenv.sh
   echo "Running activate-kmstlsvenv.sh... done."
   echo "Running set-temp-creds.sh..."
-
-  unset AWS_SESSION_TOKEN
-
   # shellcheck source=/dev/null
   . ./set-temp-creds.sh
   echo "Running set-temp-creds.sh... done."
