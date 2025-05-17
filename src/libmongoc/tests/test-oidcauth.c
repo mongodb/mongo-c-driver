@@ -290,8 +290,7 @@ done:
    return ok;
 }
 
-static void *
-multiple_connections_thread_func (void *data)
+static BSON_THREAD_FUN (multiple_connections_thread_func, data)
 {
    mongoc_collection_t *coll = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -343,7 +342,7 @@ callback_is_called_once_for_multiple_connections (void)
    const char *uri_str = "mongodb://localhost:27017/?authMechanism=MONGODB-OIDC";
    mongoc_uri_t *uri = NULL;
    bool ok = true;
-   pthread_t threads[NUM_THREADS] = {0};
+   bson_thread_t threads[NUM_THREADS] = {0};
    mongoc_client_t *clients[NUM_THREADS];
 
    callback_counter = 0;
