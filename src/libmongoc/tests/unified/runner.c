@@ -2152,8 +2152,7 @@ run_one_test_file (void *bson_vp)
    test_runner = test_runner_new ();
    test_file = test_file_new (test_runner, bson);
 
-   test_diagnostics_test_info ("test file: %s\n", test_file->description);
-   fprintf (stderr, "test file: %s\n", test_file->description);
+   test_diagnostics_test_info ("test file: %s", test_file->description);
 
    if (is_test_file_skipped (test_file)) {
       MONGOC_DEBUG ("SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'", test_file->description);
@@ -2177,12 +2176,11 @@ run_one_test_file (void *bson_vp)
       bson_error_t error = {0};
 
       test_diagnostics_reset ();
-      test_diagnostics_test_info ("test file: %s\n", test_file->description);
-      fprintf (stderr, "test file: %s\n", test_file->description);
+      test_diagnostics_test_info ("test file: %s", test_file->description);
 
       bson_iter_bson (&test_iter, &test_bson);
       test = test_new (test_file, &test_bson);
-      test_diagnostics_test_info ("\n\n\n\n***running test: %s", test->description);
+      test_diagnostics_test_info ("running test: %s", test->description);
       test_ok = test_run (test, &error);
       if (!test_ok) {
          test_diagnostics_abort (&error);
