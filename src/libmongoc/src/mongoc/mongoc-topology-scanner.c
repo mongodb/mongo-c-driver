@@ -153,6 +153,8 @@ _reset_hello (mongoc_topology_scanner_t *ts)
 const char *
 _mongoc_topology_scanner_get_speculative_auth_mechanism (const mongoc_uri_t *uri)
 {
+   BSON_ASSERT_PARAM (uri);
+
    const char *mechanism = mongoc_uri_get_auth_mechanism (uri);
    bool requires_auth = mechanism || mongoc_uri_get_username (uri);
 
@@ -442,6 +444,13 @@ mongoc_topology_scanner_new (const mongoc_uri_t *uri,
                              void *data,
                              int64_t connect_timeout_msec)
 {
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (topology_id);
+   BSON_ASSERT_PARAM (log_and_monitor);
+   BSON_ASSERT_PARAM (setup_err_cb);
+   BSON_ASSERT_PARAM (cb);
+   BSON_OPTIONAL_PARAM (data);
+
    mongoc_topology_scanner_t *ts = BSON_ALIGNED_ALLOC0 (mongoc_topology_scanner_t);
 
    ts->async = mongoc_async_new ();

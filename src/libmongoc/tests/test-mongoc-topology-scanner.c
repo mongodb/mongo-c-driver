@@ -20,6 +20,16 @@
 #define NSERVERS 10
 
 static void
+test_topology_scanner_setup_err_cb (uint32_t id, void *data, const bson_error_t *error /* IN */)
+{
+   BSON_UNUSED (id);
+   BSON_UNUSED (data);
+   BSON_ASSERT_PARAM (error);
+
+   ASSERT_OR_PRINT (!error->code, (*error));
+}
+
+static void
 test_topology_scanner_helper (
    uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
@@ -60,8 +70,16 @@ _test_topology_scanner (bool with_ssl)
    mcommon_oid_set_zero (&topology_id);
    mongoc_log_and_monitor_instance_t log_and_monitor;
    mongoc_log_and_monitor_instance_init (&log_and_monitor);
-   mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (
-      NULL, &topology_id, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (uri,
+                                                                              &topology_id,
+                                                                              &log_and_monitor,
+                                                                              test_topology_scanner_setup_err_cb,
+                                                                              test_topology_scanner_helper,
+                                                                              &finished,
+                                                                              TIMEOUT);
+   mongoc_uri_destroy (uri);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
