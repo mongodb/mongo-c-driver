@@ -22,6 +22,7 @@ check_var_opt SINGLE_MONGOS_LB_URI
 check_var_opt SKIP_CRYPT_SHARED_LIB
 check_var_opt SSL "nossl"
 check_var_opt URI
+check_var_opt OIDC
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
