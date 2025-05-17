@@ -19,8 +19,6 @@
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-bulkwrite.h>
 #include <mongoc/mongoc-util-private.h> // hex_to_bin
-#include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-error-private.h>
 #include "result.h"
 #include "test-diagnostics.h"
 #include "test-libmongoc.h"
@@ -1322,7 +1320,6 @@ done:
    bson_destroy (&op_reply);
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
-
    return ret;
 }
 
@@ -4362,7 +4359,6 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
          if (!op_to_fn_map[i].fn (test, op, result, error)) {
             goto done;
          }
-
          if (check_result && !result_check (result, test->entity_map, op->expect_result, op->expect_error, error)) {
             test_diagnostics_error_info ("checking for result (%s) / error (%s)",
                                          bson_val_to_json (op->expect_result),
