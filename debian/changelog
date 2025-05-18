@@ -1,4 +1,4 @@
-mongo-c-driver (1.17.6-1+deb11u1) UNRELEASED; urgency=medium
+mongo-c-driver (1.17.6-1+deb11u1) bullseye-security; urgency=medium
 
   * Fix CVE-2021-32050: Some MongoDB Drivers may erroneously publish events
     containing authentication-related data to a command listener configured
@@ -25,7 +25,7 @@ mongo-c-driver (1.17.6-1+deb11u1) UNRELEASED; urgency=medium
     maximum allowable size (INT32_MAX), resulting in a segmentation fault and
     possible application crash.
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Sun, 18 May 2025 17:59:52 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Sun, 18 May 2025 18:14:32 -0400
 
 mongo-c-driver (1.17.6-1) unstable; urgency=medium
 
