@@ -662,6 +662,7 @@ test_aws_and_container (void *test_ctx)
    ASSERT (bson_iter_find_descendant(&iter, "container.orchestrator", &iter));
    ASSERT (BSON_ITER_HOLDS_UTF8(&iter));
    ASSERT (strcmp("kubernetes", bson_iter_utf8(&iter, NULL)) == 0);
+   _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
 
    bson_destroy (doc);
    clear_faas_env ();
