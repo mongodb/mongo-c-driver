@@ -396,6 +396,7 @@ clear_faas_env (void)
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", ""));
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", ""));
    ASSERT (_mongoc_setenv ("K_SERVICE", ""));
+   ASSERT (_mongoc_setenv ("KUBERNETES_SERVICE_HOST", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_MEMORY_MB", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_REGION", ""));
@@ -637,6 +638,30 @@ test_aws_not_lambda (void *test_ctx)
    _handshake_check_required_fields (doc);
 
    ASSERT (!bson_has_field (doc, "env"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_aws_and_container (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+   ASSERT (_mongoc_setenv ("KUBERNETES_SERVICE_HOST", "1"));
+
+   _override_host_platform_os ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+
+   bson_iter_t iter;
+   ASSERT (bson_iter_init(&iter, doc));
+   ASSERT (bson_iter_find_descendant(&iter, "container.orchestrator", &iter));
+   ASSERT (BSON_ITER_HOLDS_UTF8(&iter));
+   ASSERT (strcmp("kubernetes", bson_iter_utf8(&iter, NULL)) == 0);
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -1393,6 +1418,12 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/MongoDB/handshake/faas/aws_not_lambda",
                       test_aws_not_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/aws_and_container",
+                      test_aws_and_container,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_setenv);
