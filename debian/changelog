@@ -1,6 +1,13 @@
 mongo-c-driver (1.17.6-1+deb11u1) UNRELEASED; urgency=medium
 
-  * 
+  * Fix CVE-2021-32050: Some MongoDB Drivers may erroneously publish events
+    containing authentication-related data to a command listener configured
+    by an application. The published events may contain security-sensitive
+    data when specific authentication-related commands are executed. Without
+    due care, an application may inadvertently expose this sensitive
+    information, e.g., by writing it to a log file. This issue only arises if
+    an application enables the command listener feature (this is not enabled
+    by default).
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Sun, 18 May 2025 17:59:52 -0400
 
