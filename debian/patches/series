@@ -1,1 +1,2 @@
 0001_drop_implicit_link_libraries_from_pkg-config.patch
+CVE-2021-32050.patch
