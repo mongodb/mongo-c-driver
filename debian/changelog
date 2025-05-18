@@ -8,6 +8,9 @@ mongo-c-driver (1.14.0-1+deb10u1) UNRELEASED; urgency=medium
     information, e.g., by writing it to a log file. This issue only arises if
     an application enables the command listener feature (this is not enabled
     by default).
+  * Fix CVE-2023-0437: When calling bson_utf8_validate on some inputs a loop
+    with an exit condition that cannot be reached may occur, i.e. an infinite
+    loop.
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 19 May 2025 17:21:14 -0400
 
