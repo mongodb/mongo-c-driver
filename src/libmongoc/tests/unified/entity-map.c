@@ -995,6 +995,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    client = test_framework_client_new_from_uri (uri, api);
+   BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;

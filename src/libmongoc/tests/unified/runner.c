@@ -799,14 +799,18 @@ check_run_on_requirement (test_runner_t *test_runner,
             test_error ("Unexpected type for authMechanism, should be string");
          }
          const char *mechanism = bson_iter_utf8 (&req_iter, NULL);
+
+         // This only tests for MONGODB-OIDC.
+         // TODO: Refactor for a general approach.
          if (strcasecmp (mechanism, "MONGODB-OIDC") != 0) {
             test_error ("Unexpected authMechanism value: %s", mechanism);
          }
 
-         if (test_framework_has_auth ()) {
+         if (test_framework_getenv_bool ("OIDC")) {
             continue;
          }
 
+         *fail_reason = bson_strdup ("Test requires authMechanism MONGODB-OIDC, skipped unless OIDC=on");
          return false;
       }
 
