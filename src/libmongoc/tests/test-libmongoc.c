@@ -1105,6 +1105,9 @@ test_framework_get_uri_str (void)
    if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
       // User and password is already embedded in URI.
       return test_framework_get_uri_str_no_auth (NULL);
+   } else if (test_framework_getenv_bool ("OIDC")) {
+      // MONGODB-OIDC auth requires password to remain unset
+      return test_framework_get_uri_str_no_auth (NULL);
    } else {
       /* no_auth also contains compressors. */
       uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
