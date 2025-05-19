@@ -531,7 +531,7 @@ mongoc_lowercase_inplace (char *src)
 {
    for (; *src; ++src) {
       /* UTF8 non-ascii characters have a 1 at the leftmost bit. If this is the
-       * case, just copy */
+       * case, just leave as-is */
       if ((*src & (0x1 << 7)) == 0) {
          *src = (char) tolower (*src);
       }

@@ -165,6 +165,9 @@ usecs_since_epoch (void)
 const char *
 mongoc_strcasestr (const char *haystack, const char *needle)
 {
+   BSON_ASSERT_PARAM (haystack);
+   BSON_ASSERT_PARAM (needle);
+
    if (!*needle) {
       return haystack;
    }
