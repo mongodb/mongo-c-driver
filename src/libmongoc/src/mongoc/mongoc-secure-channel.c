@@ -321,7 +321,6 @@ fail:
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate (mongoc_ssl_opt_t *opt)
 {
-   BSON_UNUSED (secure_channel);
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
@@ -433,8 +432,6 @@ fail:
 bool
 mongoc_secure_channel_setup_crl (mongoc_ssl_opt_t *opt)
 {
-   BSON_UNUSED (secure_channel);
-
    HCERTSTORE cert_store = NULL;
    bool ok = false;
 
