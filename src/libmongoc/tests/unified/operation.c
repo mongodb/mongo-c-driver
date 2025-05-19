@@ -1141,6 +1141,9 @@ operation_drop_collection (test_t *test, operation_t *op, result_t *result, bson
       goto done;
    }
 
+   /* Forward all arguments other than collection name as-is. */
+   BSON_ASSERT (bson_concat (opts, bson_parser_get_extra (parser)));
+
    coll = mongoc_database_get_collection (db, collection);
    mongoc_collection_drop_with_opts (coll, opts, &op_error);
 
@@ -1850,7 +1853,7 @@ operation_distinct (test_t *test, operation_t *op, result_t *result, bson_error_
    }
 
    distinct = BCON_NEW (
-      "distinct", mongoc_collection_get_name (coll), "key", BCON_UTF8 (field_name), "query", "{", &filter, "}");
+      "distinct", mongoc_collection_get_name (coll), "key", BCON_UTF8 (field_name), "query", BCON_DOCUMENT (filter));
 
    bson_destroy (&op_reply);
    mongoc_collection_read_command_with_opts (coll, distinct, NULL /* read prefs */, opts, &op_reply, &op_error);
