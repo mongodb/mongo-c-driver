@@ -44,6 +44,7 @@ typedef enum {
 typedef struct {
    CredHandle cred_handle;
    TimeStamp time_stamp;
+   PCCERT_CONTEXT cert; /* Owning. Optional client cert. */
 } mongoc_secure_channel_cred;
 
 typedef struct {
