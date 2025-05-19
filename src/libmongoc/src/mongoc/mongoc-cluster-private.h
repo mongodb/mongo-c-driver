@@ -65,7 +65,6 @@ typedef struct _mongoc_cluster_t {
    mongoc_array_t iov;
 } mongoc_cluster_t;
 
-
 void
 mongoc_cluster_init (mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *client);
 

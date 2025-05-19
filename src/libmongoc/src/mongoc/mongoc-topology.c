@@ -44,18 +44,18 @@ static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
 
 static bool
-_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, mongoc_topology_scanner_t *scanner)
+_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, mongoc_topology_t *topology)
 {
    mongoc_topology_scanner_node_t *node;
 
    /* Search by ID and update hello_ok */
-   node = mongoc_topology_scanner_get_node (scanner, sd->id);
+   node = mongoc_topology_scanner_get_node (topology->scanner, sd->id);
    if (node) {
       node->hello_ok = sd->hello_ok;
-   } else if (!mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
+   } else if (!mongoc_topology_scanner_has_node_for_host (topology->scanner, &sd->host)) {
       /* A node for this host was retired in this scan. */
-      mongoc_topology_scanner_add (scanner, &sd->host, sd->id, sd->hello_ok);
-      mongoc_topology_scanner_scan (scanner, sd->id);
+      mongoc_topology_scanner_add (topology->scanner, &sd->host, sd->id, sd->hello_ok);
+      mongoc_topology_scanner_scan (topology, sd->id);
    }
 
    return true;
@@ -67,7 +67,7 @@ _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd, mongoc_to
  * Not called for multi threaded monitoring.
  */
 void
-mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_description_t *td)
+mongoc_topology_reconcile (mongoc_topology_t *topology, mongoc_topology_description_t *td)
 {
    mongoc_set_t *servers;
    mongoc_server_description_t *sd;
@@ -78,7 +78,7 @@ mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_de
    /* Add newly discovered nodes */
    for (size_t i = 0u; i < servers->items_len; i++) {
       sd = mongoc_set_get_item (servers, i);
-      _mongoc_topology_reconcile_add_nodes (sd, topology->scanner);
+      _mongoc_topology_reconcile_add_nodes (sd, topology);
    }
 
    /* Remove removed nodes */
@@ -186,7 +186,7 @@ _mongoc_topology_scanner_cb (
 
       /* add another hello call to the current scan - the scan continues
        * until all commands are done */
-      mongoc_topology_scanner_scan (topology->scanner, sd->id);
+      mongoc_topology_scanner_scan (topology, sd->id);
    } else {
       _mongoc_topology_update_no_lock (id, hello_response, rtt_msec, td, &topology->log_and_monitor, error);
 
@@ -352,6 +352,7 @@ _detect_nongenuine_hosts (const mongoc_uri_t *uri)
    }
 }
 
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -405,6 +406,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    // Capture default structured log options from the environment
    mongoc_log_and_monitor_instance_init (&topology->log_and_monitor);
+
+   bson_mutex_init (&topology->oidc_mtx);
+
+   topology->oidc_callback = NULL;
+   topology->oidc_credential = NULL;
 
    topology->valid = false;
 
@@ -640,6 +646,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    return topology;
 }
 
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -678,6 +685,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       mongoc_set_destroy (topology->server_monitors);
       mongoc_set_destroy (topology->rtt_monitors);
       bson_mutex_destroy (&topology->srv_polling_mtx);
+      bson_mutex_destroy (&topology->oidc_mtx);
       mongoc_cond_destroy (&topology->srv_polling_cond);
    }
 
@@ -716,6 +724,8 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    bson_mutex_destroy (&topology->tpld_modification_mtx);
 
    bson_destroy (topology->encrypted_fields_map);
+   mongoc_oidc_callback_destroy (topology->oidc_callback);
+   mongoc_oidc_credential_destroy (topology->oidc_credential);
 
    bson_free (topology);
 }
@@ -910,7 +920,7 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
    td = mc_tpld_unsafe_get_mutable (topology);
    mongoc_topology_reconcile (topology, td);
 
-   mongoc_topology_scanner_start (topology->scanner, obey_cooldown);
+   mongoc_topology_scanner_start (topology, obey_cooldown);
    mongoc_topology_scanner_work (topology->scanner);
 
    _mongoc_topology_scanner_finish (topology->scanner);

@@ -557,6 +557,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-side-encryption.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-aws.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sasl.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-collection.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-compression.c
@@ -1199,6 +1200,7 @@ if (ENABLE_TESTS)
    mongoc_add_test (test-azurekms ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
    mongoc_add_test (test-gcpkms ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
    mongoc_add_test (test-awsauth ${PROJECT_SOURCE_DIR}/tests/test-awsauth.c)
+   mongoc_add_test (test-oidcauth ${PROJECT_SOURCE_DIR}/tests/test-oidcauth.c)
 
    # "make test" doesn't compile tests, so we create "make check" which compiles
    # and runs tests: https://gitlab.kitware.com/cmake/cmake/issues/8774

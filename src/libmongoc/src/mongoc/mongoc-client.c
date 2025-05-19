@@ -1083,6 +1083,38 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
    RETURN (client);
 }
 
+/*
+ * Spec:
+ * Drivers MUST have a way to invalidate a specific access token from the
+ * Client Cache. Invalidation MUST only clear the cached access token if it is
+ * the same as the invalid access token.
+ *
+ * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
+ */
+void
+mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token)
+{
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (access_token);
+
+   mongoc_topology_t *topology = client->topology;
+   BSON_ASSERT (topology);
+
+   bson_mutex_lock (&topology->oidc_mtx);
+
+   if (!topology->oidc_credential) {
+      goto done;
+   }
+
+   if (!strcmp (access_token, mongoc_oidc_credential_get_access_token (topology->oidc_credential))) {
+      mongoc_oidc_credential_destroy (topology->oidc_credential);
+      topology->oidc_credential = NULL;
+   }
+
+done:
+   bson_mutex_unlock (&topology->oidc_mtx);
+}
+
 
 /* precondition: topology is valid */
 mongoc_client_t *
@@ -2651,6 +2683,30 @@ mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t
    client->api = mongoc_server_api_copy (api);
    _mongoc_topology_scanner_set_server_api (client->topology->scanner, api);
    return true;
+}
+
+void
+mongoc_client_set_oidc_callback (mongoc_client_t *client, const mongoc_oidc_callback_t *callback)
+{
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (callback);
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR ("mongoc_client_set_oidc_callback must only be used for single threaded clients. "
+                    "For client pools, use mongoc_client_pool_set_oidc_callback instead.");
+      return;
+   }
+
+   mongoc_oidc_callback_destroy (client->topology->oidc_callback);
+   client->topology->oidc_callback = mongoc_oidc_callback_copy (callback);
+}
+
+const mongoc_oidc_callback_t *
+mongoc_client_get_oidc_callback (const mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (client);
+
+   return client->topology->oidc_callback;
 }
 
 mongoc_server_description_t *

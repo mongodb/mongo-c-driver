@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
 #include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-oidc-callback.h>
 #include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-crypt-private.h>
@@ -109,7 +110,7 @@ typedef union mc_shared_tpld {
 /** A null-pointer initializer for an `mc_shared_tpld` */
 #define MC_SHARED_TPLD_NULL ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
 
-typedef struct _mongoc_topology_t {
+struct _mongoc_topology_t {
    /**
     * @brief The topology description. Do not access directly. Instead, use
     * mc_tpld_take_ref()
@@ -232,7 +233,30 @@ typedef struct _mongoc_topology_t {
    // DNS implementations are expected to try UDP first, then retry with TCP if the UDP response indicates truncation.
    // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
    bool srv_prefer_tcp;
-} mongoc_topology_t;
+
+   // Mutex must be held when accessing oidc_credential.
+   // If the global OIDC callback lock is required as well, lock ranking must be observed: always acquire this mutex
+   // first.
+   bson_mutex_t oidc_mtx;
+
+   /* Owned mongoc_oidc_callback_t, or NULL when unset.
+    *
+    * Spec:
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#oidc-callback
+    */
+   mongoc_oidc_callback_t *oidc_callback;
+
+   /* OIDC credential cache
+    * An owned mongoc_oidc_credential_t, or NULL when unset.
+    *
+    * Spec:
+    * "Drivers MUST cache the most recent access token per MongoClient"
+    * "Drivers MAY store the Client Cache on the MongoClient object or any object that guarantees exactly 1 cached
+    * access token per MongoClient"
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#credential-caching
+    */
+   mongoc_oidc_credential_t *oidc_credential;
+};
 
 mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
@@ -245,7 +269,7 @@ void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
 void
-mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_description_t *td);
+mongoc_topology_reconcile (mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,

@@ -121,6 +121,23 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    return pool;
 }
 
+void
+mongoc_client_pool_set_oidc_callback (mongoc_client_pool_t *pool, const mongoc_oidc_callback_t *callback)
+{
+   BSON_ASSERT_PARAM (pool);
+   BSON_ASSERT_PARAM (callback);
+
+   mongoc_oidc_callback_destroy (pool->topology->oidc_callback);
+   pool->topology->oidc_callback = mongoc_oidc_callback_copy (callback);
+}
+
+const mongoc_oidc_callback_t *
+mongoc_client_pool_get_oidc_callback (const mongoc_client_pool_t *pool)
+{
+   BSON_ASSERT_PARAM (pool);
+
+   return pool->topology->oidc_callback;
+}
 
 mongoc_client_pool_t *
 mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)

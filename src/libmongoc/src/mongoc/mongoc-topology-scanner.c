@@ -153,6 +153,8 @@ _reset_hello (mongoc_topology_scanner_t *ts)
 const char *
 _mongoc_topology_scanner_get_speculative_auth_mechanism (const mongoc_uri_t *uri)
 {
+   BSON_ASSERT_PARAM (uri);
+
    const char *mechanism = mongoc_uri_get_auth_mechanism (uri);
    bool requires_auth = mechanism || mongoc_uri_get_username (uri);
 
@@ -167,12 +169,38 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism (const mongoc_uri_t *uri
    return mechanism;
 }
 
+static bool
+_mongoc_oidc_add_speculative_auth (bson_t *auth_cmd, mongoc_topology_t *topology)
+{
+   bool has_auth = false;
+   bson_t jwt_doc = BSON_INITIALIZER;
+
+   bson_mutex_lock (&topology->oidc_mtx);
+   if (topology->oidc_credential) {
+      BSON_APPEND_UTF8 (&jwt_doc, "jwt", mongoc_oidc_credential_get_access_token (topology->oidc_credential));
+      BCON_APPEND (auth_cmd,
+                   "saslStart",
+                   BCON_INT32 (1),
+                   "mechanism",
+                   "MONGODB-OIDC",
+                   "payload",
+                   BCON_BIN (BSON_SUBTYPE_BINARY, bson_get_data (&jwt_doc), jwt_doc.len),
+                   "db",
+                   "$external");
+      has_auth = true;
+   }
+   bson_mutex_unlock (&topology->oidc_mtx);
+   bson_destroy (&jwt_doc);
+   return has_auth;
+}
+
 void
-_mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
+_mongoc_topology_scanner_add_speculative_authentication (mongoc_topology_t *topology,
+                                                         bson_t *cmd,
                                                          const mongoc_uri_t *uri,
                                                          mongoc_scram_t *scram /* OUT */)
 {
-   bson_t auth_cmd;
+   bson_t auth_cmd = BSON_INITIALIZER;
    bson_error_t error;
    bool has_auth = false;
    const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (uri);
@@ -189,6 +217,8 @@ _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
          has_auth = true;
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
+   } else if ((strcasecmp (mechanism, "MONGODB-OIDC") == 0)) {
+      has_auth = _mongoc_oidc_add_speculative_auth (&auth_cmd, topology);
    }
 
 #ifdef MONGOC_ENABLE_CRYPTO
@@ -347,7 +377,8 @@ after_init:
 }
 
 static void
-_begin_hello_cmd (mongoc_topology_scanner_node_t *node,
+_begin_hello_cmd (mongoc_topology_t *topology,
+                  mongoc_topology_scanner_node_t *node,
                   mongoc_stream_t *stream,
                   bool is_setup_done,
                   struct addrinfo *dns_result,
@@ -372,9 +403,10 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
       _mongoc_handshake_append_sasl_supported_mechs (ts->uri, &cmd);
    }
 
+   const char *mechanism = _mongoc_topology_scanner_get_speculative_auth_mechanism (ts->uri);
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty (&node->speculative_auth_response) &&
-       node->scram.step == 0) {
-      _mongoc_topology_scanner_add_speculative_authentication (&cmd, ts->uri, &node->scram);
+       ((node->scram.step == 0) || (!strcasecmp (mechanism, "MONGODB-OIDC")))) {
+      _mongoc_topology_scanner_add_speculative_authentication (topology, &cmd, ts->uri, &node->scram);
    }
 
    if (!bson_empty (&ts->cluster_time)) {
@@ -412,6 +444,13 @@ mongoc_topology_scanner_new (const mongoc_uri_t *uri,
                              void *data,
                              int64_t connect_timeout_msec)
 {
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (topology_id);
+   BSON_ASSERT_PARAM (log_and_monitor);
+   BSON_ASSERT_PARAM (setup_err_cb);
+   BSON_ASSERT_PARAM (cb);
+   BSON_OPTIONAL_PARAM (data);
+
    mongoc_topology_scanner_t *ts = BSON_ALIGNED_ALLOC0 (mongoc_topology_scanner_t);
 
    ts->async = mongoc_async_new ();
@@ -509,15 +548,16 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts, const mongoc_host_li
 }
 
 void
-mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts, uint32_t id)
+mongoc_topology_scanner_scan (mongoc_topology_t *topology, uint32_t id)
 {
    mongoc_topology_scanner_node_t *node;
+   const mongoc_topology_scanner_t *ts = topology->scanner;
 
    node = mongoc_topology_scanner_get_node (ts, id);
 
    /* begin non-blocking connection, don't wait for success */
    if (node) {
-      mongoc_topology_scanner_node_setup (node, &node->last_error);
+      mongoc_topology_scanner_node_setup (topology, node, &node->last_error);
    }
 
    /* if setup fails the node stays in the scanner. destroyed after the scan. */
@@ -591,7 +631,7 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool
  *--------------------------------------------------------------------------
  */
 mongoc_topology_scanner_node_t *
-mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id)
+mongoc_topology_scanner_get_node (const mongoc_topology_scanner_t *ts, uint32_t id)
 {
    mongoc_topology_scanner_node_t *ele, *tmp;
 
@@ -846,7 +886,9 @@ _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd)
  */
 
 bool
-mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_setup_tcp (mongoc_topology_t *topology,
+                                        mongoc_topology_scanner_node_t *node,
+                                        bson_error_t *error)
 {
    struct addrinfo hints;
    struct addrinfo *iter;
@@ -892,7 +934,8 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    }
 
    if (node->successful_dns_result) {
-      _begin_hello_cmd (node,
+      _begin_hello_cmd (topology,
+                        node,
                         NULL /* stream */,
                         false /* is_setup_done */,
                         node->successful_dns_result,
@@ -901,7 +944,8 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    } else {
       LL_FOREACH2 (node->dns_results, iter, ai_next)
       {
-         _begin_hello_cmd (node, NULL /* stream */, false /* is_setup_done */, iter, delay, true /* use_handshake */);
+         _begin_hello_cmd (
+            topology, node, NULL /* stream */, false /* is_setup_done */, iter, delay, true /* use_handshake */);
          /* each subsequent DNS result will have an additional 250ms delay. */
          delay += HAPPY_EYEBALLS_DELAY_MS;
       }
@@ -911,7 +955,9 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
 }
 
 bool
-mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_connect_unix (mongoc_topology_t *topology,
+                                           mongoc_topology_scanner_node_t *node,
+                                           bson_error_t *error)
 {
 #ifdef _WIN32
    ENTRY;
@@ -963,8 +1009,13 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 
    stream = _mongoc_topology_scanner_node_setup_stream_for_tls (node, mongoc_stream_socket_new (sock));
    if (stream) {
-      _begin_hello_cmd (
-         node, stream, false /* is_setup_done */, NULL /* dns result */, 0 /* delay */, true /* use_handshake */);
+      _begin_hello_cmd (topology,
+                        node,
+                        stream,
+                        false /* is_setup_done */,
+                        NULL /* dns result */,
+                        0 /* delay */,
+                        true /* use_handshake */);
       RETURN (true);
    }
    _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to create TLS stream");
@@ -987,7 +1038,9 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
  */
 
 void
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_setup (mongoc_topology_t *topology,
+                                    mongoc_topology_scanner_node_t *node,
+                                    bson_error_t *error)
 {
    bool success = false;
    mongoc_stream_t *stream;
@@ -998,7 +1051,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_e
 
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
-      _begin_hello_cmd (node,
+      _begin_hello_cmd (topology,
+                        node,
                         node->stream,
                         true /* is_setup_done */,
                         NULL /* dns_result */,
@@ -1027,7 +1081,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_e
       stream = node->ts->initiator (node->ts->uri, &node->host, node->ts->initiator_context, error);
       if (stream) {
          success = true;
-         _begin_hello_cmd (node,
+         _begin_hello_cmd (topology,
+                           node,
                            stream,
                            false /* is_setup_done */,
                            NULL /* dns_result */,
@@ -1036,9 +1091,9 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_e
       }
    } else {
       if (node->host.family == AF_UNIX) {
-         success = mongoc_topology_scanner_node_connect_unix (node, error);
+         success = mongoc_topology_scanner_node_connect_unix (topology, node, error);
       } else {
-         success = mongoc_topology_scanner_node_setup_tcp (node, error);
+         success = mongoc_topology_scanner_node_setup_tcp (topology, node, error);
       }
    }
 
@@ -1133,13 +1188,17 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts, int64_t when
  */
 
 void
-mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts, bool obey_cooldown)
+mongoc_topology_scanner_start (mongoc_topology_t *topology, bool obey_cooldown)
 {
+   mongoc_topology_scanner_t *ts = NULL;
    mongoc_topology_scanner_node_t *node, *tmp;
    bool skip;
    int64_t now;
 
-   BSON_ASSERT (ts);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (topology->scanner);
+
+   ts = topology->scanner;
 
    _delete_retired_nodes (ts);
 
@@ -1150,7 +1209,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts, bool obey_cooldown
       skip = obey_cooldown && mongoc_topology_scanner_node_in_cooldown (node, now);
 
       if (!skip) {
-         mongoc_topology_scanner_node_setup (node, &node->last_error);
+         mongoc_topology_scanner_node_setup (topology, node, &node->last_error);
       }
    }
 }

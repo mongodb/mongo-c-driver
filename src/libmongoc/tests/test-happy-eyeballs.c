@@ -155,6 +155,16 @@ _mock_initiator (mongoc_async_cmd_t *acmd)
 }
 
 static void
+_test_scanner_setup_err_cb (uint32_t id, void *data, const bson_error_t *error /* IN */)
+{
+   BSON_UNUSED (id);
+   BSON_UNUSED (data);
+   BSON_ASSERT_PARAM (error);
+
+   ASSERT_OR_PRINT (!error->code, (*error));
+}
+
+static void
 _test_scanner_callback (
    uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
@@ -251,8 +261,16 @@ _testcase_setup (he_testcase_t *testcase)
    bson_oid_t topology_id;
    mcommon_oid_set_zero (&topology_id);
    mongoc_log_and_monitor_instance_init (&testcase->state.log_and_monitor);
-   testcase->state.ts = mongoc_topology_scanner_new (
-      NULL, &topology_id, &testcase->state.log_and_monitor, NULL, &_test_scanner_callback, testcase, TIMEOUT);
+
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   testcase->state.ts = mongoc_topology_scanner_new (uri,
+                                                     &topology_id,
+                                                     &testcase->state.log_and_monitor,
+                                                     _test_scanner_setup_err_cb,
+                                                     &_test_scanner_callback,
+                                                     testcase,
+                                                     TIMEOUT);
+   mongoc_uri_destroy (uri);
 
    testcase->state.mock_server = mock_server;
 
@@ -290,6 +308,7 @@ _testcase_run (he_testcase_t *testcase)
    mongoc_topology_scanner_t *ts = testcase->state.ts;
    mongoc_topology_scanner_node_t *node;
    he_testcase_expected_t *expected = &testcase->expected;
+   mongoc_topology_t topology;
 #ifndef _WIN32
    uint64_t duration_ms;
 #endif
@@ -299,7 +318,8 @@ _testcase_run (he_testcase_t *testcase)
    testcase->state.start = bson_get_monotonic_time ();
 
    mongoc_topology_scanner_add (ts, &testcase->state.host, 1 /* any server id is ok. */, false);
-   mongoc_topology_scanner_scan (ts, 1);
+   topology.scanner = ts;
+   mongoc_topology_scanner_scan (&topology, 1);
    /* how many commands should we have initially? */
    ASSERT_CMPINT ((int) (ts->async->ncmds), ==, expected->initial_acmds);
 

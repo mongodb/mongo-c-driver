@@ -37,6 +37,9 @@ MONGOC_EXPORT (mongoc_oidc_callback_t *)
 mongoc_oidc_callback_new (mongoc_oidc_callback_fn_t fn);
 
 MONGOC_EXPORT (mongoc_oidc_callback_t *)
+mongoc_oidc_callback_copy (const mongoc_oidc_callback_t *callback);
+
+MONGOC_EXPORT (mongoc_oidc_callback_t *)
 mongoc_oidc_callback_new_with_user_data (mongoc_oidc_callback_fn_t fn, void *user_data);
 
 MONGOC_EXPORT (void)

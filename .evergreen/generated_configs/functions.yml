@@ -728,6 +728,125 @@ functions:
         local_file: mongoc/mongoc-man-pages.html
         permissions: public-read
         remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
+  "assume ec2 role":
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+  "fetch source":
+    # Executes clone and applies the submitted patch, if any
+    - command: git.get_project
+      params:
+        directory: "src"
+    # Applies the submitted patch, if any
+    # Deprecated. Should be removed. But still needed for certain agents (ZAP)
+    - command: git.apply_patch
+    # Make an evergreen expansion file with dynamic values
+    - command: shell.exec
+      params:
+        working_dir: "src"
+        script: |
+           set +x
+           # Get the current unique version of this checkout
+           if [ "${is_patch}" = "true" ]; then
+              CURRENT_VERSION=$(git describe)-patch-${version_id}
+           else
+              CURRENT_VERSION=latest
+           fi
+
+           export DRIVERS_TOOLS="$(dirname $(pwd))/drivers-tools"
+           export PROJECT_DIRECTORY="$(pwd)"
+
+           # Python has cygwin path problems on Windows. Detect prospective mongo-orchestration home directory
+           if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
+              export DRIVERS_TOOLS=$(cygpath -m $DRIVERS_TOOLS)
+              export PROJECT_DIRECTORY=$(cygpath -m $PROJECT_DIRECTORY)
+           fi
+
+           export MONGO_ORCHESTRATION_HOME="$DRIVERS_TOOLS/.evergreen/orchestration"
+           export MONGODB_BINARIES="$DRIVERS_TOOLS/mongodb/bin"
+           export UPLOAD_BUCKET="${project}"
+
+           cat <<EOT > expansion.yml
+           CURRENT_VERSION: "$CURRENT_VERSION"
+           DRIVERS_TOOLS: "$DRIVERS_TOOLS"
+           MONGO_ORCHESTRATION_HOME: "$MONGO_ORCHESTRATION_HOME"
+           MONGODB_BINARIES: "$MONGODB_BINARIES"
+           UPLOAD_BUCKET: "$UPLOAD_BUCKET"
+           PROJECT_DIRECTORY: "$PROJECT_DIRECTORY"
+           PREPARE_SHELL: |
+              set -o errexit
+              export SKIP_LEGACY_SHELL=1
+              export DRIVERS_TOOLS="$DRIVERS_TOOLS"
+              export MONGO_ORCHESTRATION_HOME="$MONGO_ORCHESTRATION_HOME"
+              export MONGODB_BINARIES="$MONGODB_BINARIES"
+              export UPLOAD_BUCKET="$UPLOAD_BUCKET"
+              export PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
+
+              export TMPDIR="$MONGO_ORCHESTRATION_HOME/db"
+              export PATH="$MONGODB_BINARIES:$PATH"
+              export PROJECT="${project}"
+              export PIP_QUIET=1
+           EOT
+
+    # Load the expansion file to make an evergreen variable with the current unique version
+    - command: expansions.update
+      params:
+        file: src/expansion.yml
+  bootstrap-oidc:
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        shell: bash
+        script: |
+          set -x
+          echo "RUNNING BOOTSTRAP OIDC"
+          if [[ ! -d drivers-evergreen-tools ]]; then
+              git clone --depth=1 git@github.com:mongodb-labs/drivers-evergreen-tools.git
+          fi
+          ${PREPARE_SHELL}
+          if [ "${skip_EC2_auth_test}" = "true" ]; then
+             echo "This platform does not support the oidc auth test, skipping..."
+             exit 0
+          fi
+          cd drivers-evergreen-tools/.evergreen/auth_oidc
+          export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+          export OIDC_TOKEN_DIR=/tmp/tokens
+
+          # Z Series fails with the following error messages:
+          # error: can't find Rust compiler
+          # ModuleNotFoundError: No module named 'jwkest'
+          # We will skip this test on Z Series.
+          if [[ `uname -m` == "s390x" ]]; then
+              echo "OIDC Setup scripts do not work on Z Series, skipping."
+              exit 0
+          fi
+
+          . ./activate-authoidcvenv.sh
+
+          # The OIDC scripts require at least Python version 3.6 in order to function.
+          if python -c "import sys; sys.exit(0 if sys.version_info >= (3, 6) else 1)"; then
+              echo "Python version is 3.6 or greater, will run OIDC setup scripts"
+          else
+              echo "Python version is less than 3.6, cannot use OIDC setup scripts"
+              exit 0
+          fi
+
+          export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+          export TOPOLOGY=replica_set
+          export ORCHESTRATION_FILE=auth-oidc.json
+          echo "RUNNING OIDC SETUP"
+          ./setup.sh
+
+          #python oidc_write_orchestration.py
+          #python oidc_get_tokens.py
   upload-mo-artifacts:
     - command: subprocess.exec
       params:

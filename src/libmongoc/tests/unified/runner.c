@@ -672,6 +672,9 @@ check_run_on_requirement (test_runner_t *test_runner,
       if (0 == strcmp (key, "minServerVersion")) {
          semver_t min_server_version;
 
+         if (!BSON_ITER_HOLDS_UTF8 (&req_iter)) {
+            test_error ("Unexpected type for minServerVersion, should be string");
+         }
          semver_parse (bson_iter_utf8 (&req_iter, NULL), &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
             *fail_reason = bson_strdup_printf ("Server version(%s) is lower than minServerVersion(%s)",
@@ -685,6 +688,9 @@ check_run_on_requirement (test_runner_t *test_runner,
       if (0 == strcmp (key, "maxServerVersion")) {
          semver_t max_server_version;
 
+         if (!BSON_ITER_HOLDS_UTF8 (&req_iter)) {
+            test_error ("Unexpected type for maxServerVersion, should be string");
+         }
          semver_parse (bson_iter_utf8 (&req_iter, NULL), &max_server_version);
          if (semver_cmp (server_version, &max_server_version) > 0) {
             *fail_reason = bson_strdup_printf ("Server version(%s) is higher than maxServerVersion (%s)",
@@ -700,9 +706,15 @@ check_run_on_requirement (test_runner_t *test_runner,
          bson_t topologies;
          bson_iter_t topology_iter;
 
+         if (!BSON_ITER_HOLDS_ARRAY (&req_iter)) {
+            test_error ("Unexpected type for topologies, should be array");
+         }
          bson_iter_bson (&req_iter, &topologies);
          BSON_FOREACH (&topologies, topology_iter)
          {
+            if (!BSON_ITER_HOLDS_UTF8 (&topology_iter)) {
+               test_error ("Unexpected type for topologies item, should be string");
+            }
             const char *test_topology_type = bson_iter_utf8 (&topology_iter, NULL);
             if (is_topology_type_compatible (test_topology_type, server_topology_type)) {
                found = true;
@@ -739,6 +751,9 @@ check_run_on_requirement (test_runner_t *test_runner,
       }
 
       if (0 == strcmp (key, "serverless")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&req_iter)) {
+            test_error ("Unexpected type for serverless, should be string");
+         }
          const char *serverless_mode = bson_iter_utf8 (&req_iter, NULL);
 
          if (0 == strcmp (serverless_mode, "allow")) {
@@ -765,6 +780,9 @@ check_run_on_requirement (test_runner_t *test_runner,
       }
 
       if (0 == strcmp (key, "auth")) {
+         if (!BSON_ITER_HOLDS_BOOL (&req_iter)) {
+            test_error ("Unexpected type for auth, should be bool");
+         }
          bool auth_requirement = bson_iter_bool (&req_iter);
 
          if (auth_requirement == test_framework_has_auth ()) {
@@ -777,9 +795,32 @@ check_run_on_requirement (test_runner_t *test_runner,
          return false;
       }
 
-#if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
+      if (0 == strcmp (key, "authMechanism")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&req_iter)) {
+            test_error ("Unexpected type for authMechanism, should be string");
+         }
+         const char *mechanism = bson_iter_utf8 (&req_iter, NULL);
+
+         // This only tests for MONGODB-OIDC.
+         // TODO: Refactor for a general approach.
+         if (strcasecmp (mechanism, "MONGODB-OIDC") != 0) {
+            test_error ("Unexpected authMechanism value: %s", mechanism);
+         }
+
+         if (test_framework_getenv_bool ("OIDC")) {
+            continue;
+         }
+
+         *fail_reason = bson_strdup ("Test requires authMechanism MONGODB-OIDC, skipped unless OIDC=on");
+         return false;
+      }
+
       if (0 == strcmp (key, "csfle")) {
+         if (!BSON_ITER_HOLDS_BOOL (&req_iter)) {
+            test_error ("Unexpected type for csfle, should be bool");
+         }
          const bool csfle_required = bson_iter_bool (&req_iter);
+#if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
          semver_t min_server_version;
 
          semver_parse ("4.2.0", &min_server_version);
@@ -797,21 +838,15 @@ check_run_on_requirement (test_runner_t *test_runner,
 
          *fail_reason = bson_strdup_printf ("CSFLE is not allowed but libmongoc was built "
                                             "with MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
-
-         return false;
 #else
-      if (0 == strcmp (key, "csfle")) {
-         const bool csfle_required = bson_iter_bool (&req_iter);
-
          if (!csfle_required) {
             continue;
          }
 
          *fail_reason = bson_strdup_printf ("CSFLE is required but libmongoc was built "
                                             "without MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION=ON");
-
-         return false;
 #endif /* !defined(MONGOC_CLIENT_SIDE_ENCRYPTION) */
+         return false;
       }
 
       test_error ("Unexpected runOnRequirement field: %s", key);

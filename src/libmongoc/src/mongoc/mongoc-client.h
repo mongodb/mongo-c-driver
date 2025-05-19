@@ -40,6 +40,7 @@
 #include <mongoc/mongoc-write-concern.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-server-description.h>
+#include <mongoc/mongoc-oidc-callback.h>
 
 BSON_BEGIN_DECLS
 
@@ -274,9 +275,18 @@ mongoc_client_get_crypt_shared_version (const mongoc_client_t *client) BSON_GNUC
 MONGOC_EXPORT (bool)
 mongoc_client_set_server_api (mongoc_client_t *client, const mongoc_server_api_t *api, bson_error_t *error);
 
+MONGOC_EXPORT (void)
+mongoc_client_set_oidc_callback (mongoc_client_t *client, const mongoc_oidc_callback_t *callback);
+
+MONGOC_EXPORT (const mongoc_oidc_callback_t *)
+mongoc_client_get_oidc_callback (const mongoc_client_t *client);
+
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_handshake_description (mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT (void)
+mongoc_client_oidc_credential_invalidate (mongoc_client_t *client, const char *access_token);
 
 BSON_END_DECLS
 

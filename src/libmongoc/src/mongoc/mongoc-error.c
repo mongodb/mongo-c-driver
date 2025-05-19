@@ -256,6 +256,16 @@ _mongoc_error_is_not_primary (bson_error_t *error)
 }
 
 bool
+_mongoc_error_is_reauthentication_required (const bson_error_t *error)
+{
+   if (!error) {
+      return false;
+   }
+
+   return error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED;
+}
+
+bool
 _mongoc_error_is_recovering (bson_error_t *error)
 {
    if (!_mongoc_error_is_server (error)) {

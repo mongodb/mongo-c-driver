@@ -20,6 +20,16 @@
 #define NSERVERS 10
 
 static void
+test_topology_scanner_setup_err_cb (uint32_t id, void *data, const bson_error_t *error /* IN */)
+{
+   BSON_UNUSED (id);
+   BSON_UNUSED (data);
+   BSON_ASSERT_PARAM (error);
+
+   ASSERT_OR_PRINT (!error->code, (*error));
+}
+
+static void
 test_topology_scanner_helper (
    uint32_t id, const bson_t *bson, int64_t rtt_msec, void *data, const bson_error_t *error /* IN */)
 {
@@ -60,8 +70,16 @@ _test_topology_scanner (bool with_ssl)
    mcommon_oid_set_zero (&topology_id);
    mongoc_log_and_monitor_instance_t log_and_monitor;
    mongoc_log_and_monitor_instance_init (&log_and_monitor);
-   mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (
-      NULL, &topology_id, &log_and_monitor, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
+
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   mongoc_topology_scanner_t *topology_scanner = mongoc_topology_scanner_new (uri,
+                                                                              &topology_id,
+                                                                              &log_and_monitor,
+                                                                              test_topology_scanner_setup_err_cb,
+                                                                              test_topology_scanner_helper,
+                                                                              &finished,
+                                                                              TIMEOUT);
+   mongoc_uri_destroy (uri);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -93,7 +111,9 @@ _test_topology_scanner (bool with_ssl)
    }
 
    for (i = 0; i < 3; i++) {
-      mongoc_topology_scanner_start (topology_scanner, false);
+      mongoc_topology_t topology;
+      topology.scanner = topology_scanner;
+      mongoc_topology_scanner_start (&topology, false);
       mongoc_topology_scanner_work (topology_scanner);
    }
 
@@ -481,7 +501,9 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    bson_free (host_str);
 
    mongoc_topology_scanner_add (ts, &host, 1, false);
-   mongoc_topology_scanner_scan (ts, 1 /* any server id is ok. */);
+   mongoc_topology_t topology;
+   topology.scanner = ts;
+   mongoc_topology_scanner_scan (&topology, 1 /* any server id is ok. */);
    ASSERT_CMPINT ((int) (ts->async->ncmds), ==, testcase->expected_ncmds);
    mongoc_topology_scanner_work (ts);
    node = mongoc_topology_scanner_get_node (ts, 1);
@@ -590,7 +612,9 @@ test_topology_retired_fails_to_initiate (void)
    BSON_ASSERT (_mongoc_host_list_from_string (&host_list, mock_server_get_host_and_port (server)));
 
    mongoc_topology_scanner_add (scanner, &host_list, 1, false);
-   mongoc_topology_scanner_start (scanner, false);
+   mongoc_topology_t topology;
+   topology.scanner = scanner;
+   mongoc_topology_scanner_start (&topology, false);
    BSON_ASSERT (scanner->async->ncmds > 0);
    /* retire the node */
    scanner->nodes->retired = true;

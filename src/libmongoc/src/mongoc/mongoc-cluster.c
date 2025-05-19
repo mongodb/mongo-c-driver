@@ -30,6 +30,7 @@
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-cluster-sasl-private.h>
+#include <mongoc/mongoc-cluster-oidc-private.h>
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
@@ -81,6 +82,7 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 
 static mongoc_server_stream_t *
 _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
+                              mongoc_topology_t *topology,
                               const mongoc_topology_description_t *td,
                               uint32_t server_id,
                               bool reconnect_ok,
@@ -492,7 +494,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    mongoc_apm_command_started_t started_event;
    mongoc_apm_command_succeeded_t succeeded_event;
    mongoc_apm_command_failed_t failed_event;
-   int64_t started = bson_get_monotonic_time ();
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
    bson_error_t error_local;
@@ -501,6 +502,11 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    bson_t decrypted = BSON_INITIALIZER;
    mongoc_cmd_t encrypted_cmd;
    bool is_redacted_by_apm = false;
+   bool first_time = true;
+   int64_t started;
+
+again:
+   started = bson_get_monotonic_time ();
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -660,6 +666,17 @@ fail_no_events:
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_id);
 
+   /* Spec:
+    * https://github.com/mongodb/specifications/blob/master/source/auth/auth.md#reauthentication-1 */
+   if (!retval && _mongoc_error_is_reauthentication_required (error)) {
+      bool ok = _mongoc_cluster_oidc_reauthenticate (cluster, server_stream->stream, server_stream->sd, error);
+      if (!ok) {
+         MONGOC_ERROR ("failed to reauthenticate after receiving a ReauthenticationRequired error");
+      } else if (first_time) {
+         first_time = false;
+         goto again;
+      }
+   }
    return retval;
 }
 
@@ -725,7 +742,6 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    }
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_stream->sd->id);
-
    return retval;
 }
 
@@ -787,6 +803,7 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
 static mongoc_server_description_t *
 _stream_run_hello (mongoc_cluster_t *cluster,
                    mongoc_stream_t *stream,
+                   mongoc_topology_t *topology,
                    const char *address,
                    uint32_t server_id,
                    bool negotiate_sasl_supported_mechs,
@@ -804,7 +821,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &handshake_command);
 
    if (cluster->requires_auth && speculative_auth_response) {
-      _mongoc_topology_scanner_add_speculative_authentication (&handshake_command, cluster->uri, scram);
+      _mongoc_topology_scanner_add_speculative_authentication (topology, &handshake_command, cluster->uri, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -923,6 +940,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
  */
 static mongoc_server_description_t *
 _cluster_run_hello (mongoc_cluster_t *cluster,
+                    mongoc_topology_t *topology,
                     mongoc_cluster_node_t *node,
                     uint32_t server_id,
                     mongoc_scram_t *scram /* OUT */,
@@ -936,9 +954,11 @@ _cluster_run_hello (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
    BSON_ASSERT (node->stream);
+   BSON_ASSERT (topology);
 
    sd = _stream_run_hello (cluster,
                            node->stream,
+                           topology,
                            node->connection_address,
                            server_id,
                            _mongoc_uri_requires_auth_negotiation (cluster->uri),
@@ -1629,6 +1649,8 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
       ret = _mongoc_cluster_auth_node_plain (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "MONGODB-AWS")) {
       ret = _mongoc_cluster_auth_node_aws (cluster, stream, sd, error);
+   } else if (0 == strcasecmp (mechanism, "MONGODB-OIDC")) {
+      ret = _mongoc_cluster_auth_node_oidc (cluster, stream, sd, error);
    } else {
       _mongoc_set_error (error,
                          MONGOC_ERROR_CLIENT,
@@ -1746,6 +1768,11 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
       return false;
    }
 
+   if (strcasecmp (mechanism, "MONGODB-OIDC") == 0) {
+      ret = true;
+      auth_handled = true;
+   }
+
 #ifdef MONGOC_ENABLE_SSL
    if (strcasecmp (mechanism, "MONGODB-X509") == 0) {
       /* For X509, a successful hello with speculativeAuthenticate field
@@ -1804,6 +1831,7 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
  */
 static mongoc_cluster_node_t *
 _cluster_add_node (mongoc_cluster_t *cluster,
+                   mongoc_topology_t *topology,
                    const mongoc_topology_description_t *td,
                    uint32_t server_id,
                    bson_error_t *error /* OUT */)
@@ -1841,7 +1869,8 @@ _cluster_add_node (mongoc_cluster_t *cluster,
    /* take critical fields from a fresh hello */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
 
-   handshake_sd = _cluster_run_hello (cluster, cluster_node, server_id, &scram, &speculative_auth_response, error);
+   handshake_sd =
+      _cluster_run_hello (cluster, topology, cluster_node, server_id, &scram, &speculative_auth_response, error);
    if (!handshake_sd) {
       GOTO (error);
    }
@@ -1946,6 +1975,7 @@ stream_not_found (const mongoc_topology_description_t *td,
 
 static mongoc_server_stream_t *
 _try_get_server_stream (mongoc_cluster_t *cluster,
+                        mongoc_topology_t *topology,
                         const mongoc_topology_description_t *td,
                         uint32_t server_id,
                         bool reconnect_ok,
@@ -1955,7 +1985,7 @@ _try_get_server_stream (mongoc_cluster_t *cluster,
       /* in the single-threaded use case we share topology's streams */
       return _cluster_fetch_stream_single (cluster, td, server_id, reconnect_ok, error);
    } else {
-      return _cluster_fetch_stream_pooled (cluster, td, server_id, reconnect_ok, error);
+      return _cluster_fetch_stream_pooled (cluster, topology, td, server_id, reconnect_ok, error);
    }
 }
 
@@ -1980,7 +2010,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref (topology);
 
-   ret_server_stream = _try_get_server_stream (cluster, td.ptr, server_id, reconnect_ok, err_ptr);
+   ret_server_stream = _try_get_server_stream (cluster, topology, td.ptr, server_id, reconnect_ok, err_ptr);
 
    if (!ret_server_stream) {
       /* TODO CDRIVER-3654. A null server stream could be due to:
@@ -2266,6 +2296,7 @@ _mongoc_cluster_create_server_stream (mongoc_topology_description_t const *td,
 
 static mongoc_server_stream_t *
 _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
+                              mongoc_topology_t *topology,
                               const mongoc_topology_description_t *td,
                               uint32_t server_id,
                               bool reconnect_ok,
@@ -2310,7 +2341,7 @@ _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       return NULL;
    }
 
-   cluster_node = _cluster_add_node (cluster, td, server_id, error);
+   cluster_node = _cluster_add_node (cluster, topology, td, server_id, error);
    if (cluster_node) {
       return _mongoc_cluster_create_server_stream (td, cluster_node->handshake_sd, cluster_node->stream);
    } else {
@@ -2601,8 +2632,9 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    const bool is_retryable =
       mongoc_uri_get_option_as_bool (cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
 
-   return _mongoc_cluster_stream_for_optype (
+   mongoc_server_stream_t *stream = _mongoc_cluster_stream_for_optype (
       cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
+   return stream;
 }
 
 mongoc_server_stream_t *
@@ -3170,6 +3202,7 @@ _mongoc_cluster_run_opmsg_recv (
    BSON_ASSERT_PARAM (error);
 
    bool ret = false;
+   bson_t body = BSON_INITIALIZER;
 
    mongoc_server_stream_t *const server_stream = cmd->server_stream;
 
@@ -3255,8 +3288,6 @@ _mongoc_cluster_run_opmsg_recv (
       }
    }
 
-   bson_t body;
-
    if (!mcd_rpc_message_get_body (rpc, &body)) {
       RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
       _handle_network_error (cluster, server_stream, error);
@@ -3275,9 +3306,9 @@ _mongoc_cluster_run_opmsg_recv (
    }
 
    bson_copy_to (&body, reply);
-   bson_destroy (&body);
 
 done:
+   bson_destroy (&body);
    _mongoc_buffer_destroy (&buffer);
 
    return ret;

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-/* for size_t */
 #include <bson/bson.h>
 #include <mongoc/mongoc-config.h>
 
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-stream-private.h>
@@ -36,6 +36,36 @@
 #endif
 
 #endif
+
+/*
+ * Run a single command on a stream.
+ *
+ * On success, returns true.
+ * On failure, returns false and sets error.
+ * reply is always initialized.
+ */
+bool
+_mongoc_sasl_run_command (mongoc_cluster_t *cluster,
+                          mongoc_stream_t *stream,
+                          mongoc_server_description_t *sd,
+                          bson_t *command,
+                          bson_t *reply,
+                          bson_error_t *error)
+{
+   mongoc_cmd_parts_t parts;
+   mongoc_server_stream_t *server_stream;
+   bool ret;
+   mc_shared_tpld td = mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+
+   mongoc_cmd_parts_init (&parts, cluster->client, "$external", MONGOC_QUERY_NONE /* unused for OP_MSG */, command);
+   /* Drivers must not append session ids to auth commands per sessions spec. */
+   parts.prohibit_lsid = true;
+   server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
+   mc_tpld_drop_ref (&td);
+   ret = mongoc_cluster_run_command_parts (cluster, server_stream, &parts, reply, error);
+   mongoc_server_stream_cleanup (server_stream);
+   return ret;
+}
 
 void
 _mongoc_cluster_build_sasl_start (bson_t *cmd, const char *mechanism, const char *buf, uint32_t buflen)

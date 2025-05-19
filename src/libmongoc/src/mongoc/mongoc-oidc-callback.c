@@ -64,6 +64,16 @@ mongoc_oidc_callback_new_with_user_data (mongoc_oidc_callback_fn_t fn, void *use
    return ret;
 }
 
+mongoc_oidc_callback_t *
+mongoc_oidc_callback_copy (const mongoc_oidc_callback_t *callback)
+{
+   BSON_ASSERT_PARAM (callback);
+   mongoc_oidc_callback_t *const ret = mongoc_oidc_callback_new_with_user_data (
+      mongoc_oidc_callback_get_fn (callback), mongoc_oidc_callback_get_user_data (callback));
+   BSON_ASSERT (ret);
+   return ret;
+}
+
 void
 mongoc_oidc_callback_destroy (mongoc_oidc_callback_t *callback)
 {
@@ -238,7 +248,7 @@ void
 mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
 {
    if (cred) {
-      bson_free (cred->access_token);
+      bson_zero_free (cred->access_token, strlen (cred->access_token));
       bson_free (cred);
    }
 }

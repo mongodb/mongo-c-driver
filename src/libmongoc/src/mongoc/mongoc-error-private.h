@@ -19,11 +19,10 @@
 #ifndef MONGOC_ERROR_PRIVATE_H
 #define MONGOC_ERROR_PRIVATE_H
 
-#include "mongoc-error.h"
-
 #include <bson/bson.h>
 #include <stddef.h>
 
+#include <mongoc/mongoc-error.h>
 #include <mongoc/mongoc-server-description.h>
 
 BSON_BEGIN_DECLS
@@ -47,6 +46,7 @@ typedef enum {
    MONGOC_SERVER_ERR_ELECTIONINPROGRESS = 216,
    MONGOC_SERVER_ERR_RETRYCHANGESTREAM = 234,
    MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT = 262,
+   MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED = 391,
    MONGOC_SERVER_ERR_SOCKETEXCEPTION = 9001,
    MONGOC_SERVER_ERR_NOTPRIMARY = 10107,
    MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN = 11600,
@@ -81,6 +81,9 @@ _mongoc_error_is_recovering (bson_error_t *error);
 
 bool
 _mongoc_error_is_not_primary (bson_error_t *error);
+
+bool
+_mongoc_error_is_reauthentication_required (const bson_error_t *error);
 
 bool
 _mongoc_error_is_state_change (bson_error_t *error);
