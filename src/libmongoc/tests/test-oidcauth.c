@@ -324,7 +324,7 @@ static BSON_THREAD_FUN (multiple_connections_thread_func, data)
       mongoc_collection_destroy (coll);
    }
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 /*
