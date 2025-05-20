@@ -1235,7 +1235,7 @@ test_bson_validate (void)
 
    {
       // Invalid UTF-8 element key
-      error = (bson_error_t) {0};
+      error = (bson_error_t){0};
       bsonBuildDecl (tmp, kv ("foo \xff bar", int32 (42)));
       mlib_check (!bson_validate_with_error_and_offset (&tmp, 0, &offset, &error));
       mlib_check (offset, eq, 4);
@@ -1269,7 +1269,7 @@ test_bson_validate (void)
 
    {
       // Invalid UTF-8 in regex
-      bson_t tmp;
+      bson_t tmp = BSON_INITIALIZER;
       bson_append_regex (&tmp, "foo", -1, "abc \xff 123", "gi");
       mlib_check (!bson_validate_with_error_and_offset (&tmp, 0, NULL, &error));
       ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, BSON_VALIDATE_CORRUPT, "corrupt BSON");
