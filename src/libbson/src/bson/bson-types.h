@@ -199,7 +199,6 @@ typedef enum {
     */
    BSON_VALIDATE_NONE = 0,
    /**
-    * @deprecated
     * @brief This flag has no effect
     *
     * @note Because invalid UTF-8 text is always invalid in BSON, the `bson_validate`
