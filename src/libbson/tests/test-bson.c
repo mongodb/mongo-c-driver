@@ -19,12 +19,15 @@
 #include <bson/bcon.h>
 #include <bson/bson-private.h>
 #include <fcntl.h>
+#include <string.h>
 #include <time.h>
 
 #include <common-bson-dsl-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+
+#include <mlib/test.h>
 #include <mlib/intencode.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
@@ -1164,8 +1167,8 @@ test_bson_validate (void)
    ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, _flag, _msg);                  \
    bson_destroy (b)
 
-   VALIDATE_TEST ("overflow2.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("trailingnull.bson", BSON_VALIDATE_NONE, 14, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("overflow2.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("trailingnull.bson", BSON_VALIDATE_NONE, 14, BSON_VALIDATE_CORRUPT, "corrupt BSON");
    VALIDATE_TEST ("dollarquery.bson",
                   BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS,
                   4,
@@ -1176,28 +1179,28 @@ test_bson_validate (void)
                   4,
                   BSON_VALIDATE_DOT_KEYS,
                   "keys cannot contain \".\": \"abc.def\"");
-   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
    /* same outcome as above, despite different flags */
-   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_UTF8, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("overflow4.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_UTF8, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("overflow4.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
    VALIDATE_TEST ("empty_key.bson", BSON_VALIDATE_EMPTY_KEYS, 4, BSON_VALIDATE_EMPTY_KEYS, "empty key");
-   VALIDATE_TEST ("test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test50.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
-   VALIDATE_TEST ("test51.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
-   VALIDATE_TEST ("test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test54.bson", BSON_VALIDATE_NONE, 12, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test60.bson", BSON_VALIDATE_NONE, 4, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test50.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_CORRUPT, "corrupt code-with-scope");
+   VALIDATE_TEST ("test51.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_CORRUPT, "corrupt code-with-scope");
+   VALIDATE_TEST ("test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test54.bson", BSON_VALIDATE_NONE, 12, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test60.bson", BSON_VALIDATE_NONE, 4, BSON_VALIDATE_CORRUPT, "corrupt BSON");
 
    /* DBRef validation */
    b = BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "}");
@@ -1229,6 +1232,113 @@ test_bson_validate (void)
    ASSERT_ERROR_CONTAINS (
       error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "invalid key within DBRef subdocument: \"extra\"");
    bson_destroy (b);
+
+   {
+      // Invalid UTF-8 element key
+      error = (bson_error_t){0};
+      bsonBuildDecl (tmp, kv ("foo \xff bar", int32 (42)));
+      mlib_check (!bson_validate_with_error_and_offset (&tmp, 0, &offset, &error));
+      mlib_check (offset, eq, 4);
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+      bson_destroy (&tmp);
+   }
+
+   {
+      // Invalid UTF-8 text element
+      bsonBuildDecl (tmp, kv ("foo", cstr ("bar \xff baz")));
+      // Do not check for valid UTF-8
+      mlib_check (!bson_validate_with_error_and_offset (&tmp, 0, &offset, &error));
+      mlib_check (offset, eq, 4);
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+      bson_destroy (&tmp);
+   }
+
+   {
+      // Valid UTF-8 with an embedded nul
+      bsonBuildDecl (tmp, kv ("foo", utf8_w_len ("bar \x00 baz", 9)));
+      // By default, nul chars are rejected:
+      mlib_check (!bson_validate_with_error_and_offset (&tmp, 0, &offset, &error));
+      mlib_check (offset, eq, 4);
+      ASSERT_ERROR_CONTAINS (
+         error, BSON_ERROR_INVALID, BSON_VALIDATE_UTF8_ALLOW_NULL, "\"foo\" contains null characters");
+
+      // allow-null:
+      mlib_check (bson_validate_with_error_and_offset (&tmp, BSON_VALIDATE_UTF8_ALLOW_NULL, NULL, NULL));
+      bson_destroy (&tmp);
+   }
+
+   {
+      // Invalid UTF-8 in regex
+      bsonBuildDecl (tmp);
+      bson_append_regex (&tmp, "foo", -1, "abc \xff 123", "gi");
+      mlib_check (!bson_validate_with_error_and_offset (&tmp, 0, NULL, &error));
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+      bson_destroy (&tmp);
+   }
+
+   {
+      // Invalid regex options
+      bson_t tmp;
+      // clang-format off
+      const uint8_t bytes[] = {
+         // header
+         18, 0, 0, 0,
+         11, // regex tag
+         'f', 'o', 'o', 0, // key
+         'a', 'b', 'c', 0, // regex
+         'g', 'i', 0xff, 0, // Options with illegal byte
+         0, // null
+      };
+      // clang-format on
+      mlib_check (bson_init_static (&tmp, bytes, sizeof bytes));
+      mlib_check (!bson_validate_with_error (&tmp, 0, &error));
+      ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+      bson_destroy (&tmp);
+   }
+
+   {
+      // Null byte in code
+      bsonBuildDecl (tmp);
+      // clang-format off
+      const uint8_t bytes[] = {
+         // header
+         21, 0, 0, 0,
+         13, // JS code tag
+         'j', 's', 0, // key
+         8, 0, 0, 0, // strlen
+         'f', 'o', 'o', 0, 'b', 'a', 'r', 0, // string with embedded nul
+         0, // null
+      };
+      // clang-format on
+      mlib_check (bson_init_static (&tmp, bytes, sizeof bytes));
+      mlib_check (!bson_validate_with_error (&tmp, 0, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, BSON_ERROR_INVALID, BSON_VALIDATE_UTF8_ALLOW_NULL, "\"js\" contains null characters");
+      mlib_check (bson_validate (&tmp, BSON_VALIDATE_UTF8_ALLOW_NULL, NULL));
+      bson_destroy (&tmp);
+   }
+
+   {
+      // Null byte in symbol
+      bsonBuildDecl (tmp);
+      // clang-format off
+      const uint8_t bytes[] = {
+         // header
+         22, 0, 0, 0,
+         14, // Symbol tag
+         's', 'y', 'm', 0, // key
+         8, 0, 0, 0, // strlen
+         'f', 'o', 'o', 0, 'b', 'a', 'r', 0, // string with embedded nul
+         0, // null
+      };
+      // clang-format on
+      mlib_check (bson_init_static (&tmp, bytes, sizeof bytes));
+      mlib_check (!bson_validate_with_error (&tmp, 0, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, BSON_ERROR_INVALID, BSON_VALIDATE_UTF8_ALLOW_NULL, "\"sym\" contains null characters");
+      mlib_check (bson_validate (&tmp, BSON_VALIDATE_UTF8_ALLOW_NULL, NULL));
+      bson_destroy (&tmp);
+   }
 
 #undef VALIDATE_TEST
 }

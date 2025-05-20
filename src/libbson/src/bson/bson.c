@@ -27,6 +27,7 @@
 
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include <mlib/config.h>
 
@@ -2505,19 +2506,19 @@ bson_array_as_canonical_extended_json (const bson_t *bson, size_t *length)
 #define VALIDATION_ERR(_flag, _msg, ...) bson_set_error (&state->error, BSON_ERROR_INVALID, _flag, _msg, __VA_ARGS__)
 
 static bool
-_bson_iter_validate_utf8 (const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data)
+_bson_iter_validate_utf8 (const bson_iter_t *iter, const char *key, size_t u8len, const char *u8data, void *data)
 {
-   bson_validate_state_t *state = data;
-   bool allow_null;
+   bson_validate_state_t *const state = data;
 
-   if ((state->flags & BSON_VALIDATE_UTF8)) {
-      allow_null = !!(state->flags & BSON_VALIDATE_UTF8_ALLOW_NULL);
+   const bool allow_null = !!(state->flags & BSON_VALIDATE_UTF8_ALLOW_NULL);
 
-      if (!bson_utf8_validate (v_utf8, v_utf8_len, allow_null)) {
-         state->err_offset = iter->off;
-         VALIDATION_ERR (BSON_VALIDATE_UTF8, "invalid utf8 string for key \"%s\"", key);
-         return true;
-      }
+   // Assert: The visitor API already checks that all text is valid UTF-8
+   assert (bson_utf8_validate (u8data, u8len, true));
+
+   if (!allow_null && !bson_utf8_validate (u8data, u8len, false /* disallow null */)) {
+      state->err_offset = iter->off;
+      VALIDATION_ERR (BSON_VALIDATE_UTF8_ALLOW_NULL, "UTF-8 string for \"%s\" contains null characters", key);
+      return true;
    }
 
    if ((state->flags & BSON_VALIDATE_DOLLAR_KEYS)) {
@@ -2538,7 +2539,7 @@ _bson_iter_validate_corrupt (const bson_iter_t *iter, void *data)
    bson_validate_state_t *state = data;
 
    state->err_offset = iter->err_off;
-   VALIDATION_ERR (BSON_VALIDATE_NONE, "%s", "corrupt BSON");
+   VALIDATION_ERR (BSON_VALIDATE_CORRUPT, "%s", "corrupt BSON");
 }
 
 
@@ -2601,13 +2602,31 @@ _bson_iter_validate_codewscope (
    BSON_UNUSED (v_code_len);
    BSON_UNUSED (v_code);
 
-   if (!bson_validate (v_scope, state->flags, &offset)) {
-      state->err_offset = iter->off + offset;
-      VALIDATION_ERR (BSON_VALIDATE_NONE, "%s", "corrupt code-with-scope");
-      return false;
+   // Validate the code string
+   if (_bson_iter_validate_utf8 (iter, key, v_code_len, v_code, data)) {
+      return true;
    }
 
-   return true;
+   if (!bson_validate (v_scope, state->flags, &offset)) {
+      state->err_offset = iter->off + offset;
+      VALIDATION_ERR (BSON_VALIDATE_CORRUPT, "%s", "corrupt code-with-scope");
+      return true;
+   }
+
+   return false;
+}
+
+static bool
+_bson_iter_validate_dbpointer (
+   const bson_iter_t *iter, const char *key, size_t coll_len, const char *coll, const bson_oid_t *oid, void *data)
+{
+   BSON_UNUSED (key);
+   BSON_UNUSED (oid);
+   // Validate the collection name string
+   if (_bson_iter_validate_utf8 (iter, key, coll_len, coll, data)) {
+      return true;
+   }
+   return false;
 }
 
 
@@ -2622,17 +2641,17 @@ static const bson_visitor_t bson_validate_funcs = {
    NULL, /* visit_double */
    _bson_iter_validate_utf8,
    _bson_iter_validate_document,
-   _bson_iter_validate_document, /* visit_array */
-   NULL,                         /* visit_binary */
-   NULL,                         /* visit_undefined */
-   NULL,                         /* visit_oid */
-   NULL,                         /* visit_bool */
-   NULL,                         /* visit_date_time */
-   NULL,                         /* visit_null */
-   NULL,                         /* visit_regex */
-   NULL,                         /* visit_dbpoint */
-   NULL,                         /* visit_code */
-   NULL,                         /* visit_symbol */
+   _bson_iter_validate_document,  /* visit_array */
+   NULL,                          /* visit_binary */
+   NULL,                          /* visit_undefined */
+   NULL,                          /* visit_oid */
+   NULL,                          /* visit_bool */
+   NULL,                          /* visit_date_time */
+   NULL,                          /* visit_null */
+   NULL,                          /* visit_regex */
+   _bson_iter_validate_dbpointer, /* visit_dbpointer */
+   _bson_iter_validate_utf8,      /* visit_code */
+   _bson_iter_validate_utf8,      /* visit_symbol */
    _bson_iter_validate_codewscope,
 };
 

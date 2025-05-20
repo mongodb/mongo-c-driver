@@ -2025,7 +2025,8 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
    while (_bson_iter_next_internal (iter, 0, &key, &bson_type, &unsupported)) {
       if (*key && !bson_utf8_validate (key, strlen (key), false)) {
          iter->err_off = iter->off;
-         break;
+         VISIT_CORRUPT (iter, data);
+         return true;
       }
 
       if (VISIT_BEFORE (iter, key, data)) {
@@ -2048,6 +2049,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_utf8_validate (utf8, utf8_len, true)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             return true;
          }
 
@@ -2064,7 +2066,8 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_init_static (&b, docbuf, doclen)) {
             iter->err_off = iter->off;
-            break;
+            VISIT_CORRUPT (iter, data);
+            return true;
          }
          if (VISIT_DOCUMENT (iter, key, &b, data)) {
             return true;
@@ -2079,6 +2082,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_init_static (&b, docbuf, doclen)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             break;
          }
          if (VISIT_ARRAY (iter, key, &b, data)) {
@@ -2136,8 +2140,10 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
          const char *options = NULL;
          regex = bson_iter_regex (iter, &options);
 
-         if (!bson_utf8_validate (regex, strlen (regex), true)) {
+         if (!bson_utf8_validate (regex, strlen (regex), false) ||
+             !bson_utf8_validate (options, strlen (options), false)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             return true;
          }
 
@@ -2154,6 +2160,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_utf8_validate (collection, collection_len, true)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             return true;
          }
 
@@ -2169,6 +2176,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_utf8_validate (code, code_len, true)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             return true;
          }
 
@@ -2184,6 +2192,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_utf8_validate (symbol, symbol_len, true)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             return true;
          }
 
@@ -2207,6 +2216,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_init_static (&b, docbuf, doclen)) {
             iter->err_off = iter->off;
+            VISIT_CORRUPT (iter, data);
             break;
          }
          if (VISIT_CODEWSCOPE (iter, key, length, code, &b, data)) {
