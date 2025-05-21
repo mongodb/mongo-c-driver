@@ -2026,7 +2026,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
       if (*key && !bson_utf8_validate (key, strlen (key), false)) {
          iter->err_off = iter->off;
          VISIT_CORRUPT (iter, data);
-         return true;
+         break;
       }
 
       if (VISIT_BEFORE (iter, key, data)) {
@@ -2050,7 +2050,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
          if (!bson_utf8_validate (utf8, utf8_len, true)) {
             iter->err_off = iter->off;
             VISIT_CORRUPT (iter, data);
-            return true;
+            break;
          }
 
          if (VISIT_UTF8 (iter, key, utf8_len, utf8, data)) {
@@ -2067,7 +2067,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
          if (!bson_init_static (&b, docbuf, doclen)) {
             iter->err_off = iter->off;
             VISIT_CORRUPT (iter, data);
-            return true;
+            break;
          }
          if (VISIT_DOCUMENT (iter, key, &b, data)) {
             return true;
@@ -2177,7 +2177,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
          if (!bson_utf8_validate (code, code_len, true)) {
             iter->err_off = iter->off;
             VISIT_CORRUPT (iter, data);
-            return true;
+            break;
          }
 
          if (VISIT_CODE (iter, key, code_len, code, data)) {
@@ -2193,7 +2193,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
          if (!bson_utf8_validate (symbol, symbol_len, true)) {
             iter->err_off = iter->off;
             VISIT_CORRUPT (iter, data);
-            return true;
+            break;
          }
 
          if (VISIT_SYMBOL (iter, key, symbol_len, symbol, data)) {
@@ -2211,7 +2211,8 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 
          if (!bson_utf8_validate (code, length, true)) {
             iter->err_off = iter->off;
-            return true;
+            VISIT_CORRUPT (iter, data);
+            break;
          }
 
          if (!bson_init_static (&b, docbuf, doclen)) {
