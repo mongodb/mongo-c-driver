@@ -628,7 +628,7 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls, char *hostname
                                             &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
    );
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
-       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
       char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "initial InitializeSecurityContext failed: %s", msg);
