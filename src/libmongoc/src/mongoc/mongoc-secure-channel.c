@@ -614,13 +614,12 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls, char *hostname
                                             &secure_channel->ret_flags,         /* pfContextAttr OUT param */
                                             &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
    );
-
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
-      MONGOC_LOG_AND_SET_ERROR (error,
-                                MONGOC_ERROR_STREAM,
-                                MONGOC_ERROR_STREAM_SOCKET,
-                                "initial InitializeSecurityContext failed: %ld",
-                                sspi_status);
+       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
+      MONGOC_LOG_AND_SET_ERROR (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "initial InitializeSecurityContext failed: %s", msg);
+      bson_free (msg);
       return false;
    }
 
@@ -849,24 +848,14 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
 
          default: {
-            LPTSTR msg = NULL;
-
-            FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                           NULL,
-                           GetLastError (),
-                           LANG_NEUTRAL,
-                           (LPTSTR) &msg,
-                           0,
-                           NULL);
+            // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+            char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
             MONGOC_LOG_AND_SET_ERROR (error,
                                       MONGOC_ERROR_STREAM,
                                       MONGOC_ERROR_STREAM_SOCKET,
-                                      "Failed to initialize security context, error code: "
-                                      "0x%04X%04X: %s",
-                                      (unsigned int) (sspi_status >> 16) & 0xffff,
-                                      (unsigned int) sspi_status & 0xffff,
+                                      "Failed to initialize security context: %s",
                                       msg);
-            LocalFree (msg);
+            bson_free (msg);
          }
          }
          return false;
