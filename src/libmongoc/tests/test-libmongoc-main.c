@@ -11,15 +11,17 @@ int
 main (int argc, char *argv[])
 {
    TestSuite suite;
-   int ret;
 
-   test_libmongoc_init (&suite, "libmongoc", argc, argv);
+   test_libmongoc_init (&suite, argc, argv);
 
    /* libbson */
 
 #define TEST_INSTALL(FuncName)                 \
    if (1) {                                    \
+      mlib_diagnostic_push ();                 \
+      mlib_msvc_warning (disable : 4210);      \
       extern void FuncName (TestSuite *suite); \
+      mlib_diagnostic_pop ();                  \
       FuncName (&suite);                       \
    } else                                      \
       ((void) 0)
@@ -159,7 +161,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bulkwrite_install);
    TEST_INSTALL (test_mongoc_oidc_callback_install);
 
-   ret = TestSuite_Run (&suite);
+   const int ret = TestSuite_Run (&suite);
 
    test_libmongoc_destroy (&suite);
 

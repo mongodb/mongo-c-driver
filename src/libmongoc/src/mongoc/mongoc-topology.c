@@ -1746,7 +1746,6 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
                                 uint32_t generation,
                                 const bson_oid_t *service_id,
                                 const mongoc_server_description_t *sd,
-                                uint32_t max_wire_version,
                                 const bson_t *reply)
 {
    bson_error_t cmd_error;
@@ -1861,7 +1860,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    _mongoc_sdam_app_error_type_t type,
                                    const bson_t *reply,
                                    const bson_error_t *why,
-                                   uint32_t max_wire_version,
                                    uint32_t generation,
                                    const bson_oid_t *service_id)
 {
@@ -1897,8 +1895,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
 
    /* Do something with the error */
    if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
-      cleared_pool = _handle_sdam_app_error_command (
-         topology, td.ptr, server_id, generation, service_id, sd, max_wire_version, reply);
+      cleared_pool = _handle_sdam_app_error_command (topology, td.ptr, server_id, generation, service_id, sd, reply);
    } else {
       /* Invalidate the server that saw the error. */
       mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);

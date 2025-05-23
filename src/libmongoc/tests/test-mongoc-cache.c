@@ -68,6 +68,9 @@ ping (void)
 int
 main (int argc, char *argv[])
 {
+   (void) argc;
+   (void) argv;
+
 #if defined(__linux__)
    if (argc != 2) {
       fprintf (stderr, "usage: %s CA_FILE_PATH\n", argv[0]);

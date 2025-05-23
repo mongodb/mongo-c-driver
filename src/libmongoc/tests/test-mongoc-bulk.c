@@ -4111,9 +4111,9 @@ _test_bulk_collation (bool w, bulkop op)
    request_t *request;
    future_t *future;
    bson_t *opts;
-   const char *expect_msg;
-   const char *expect_doc;
-   bool r;
+   const char *expect_msg = NULL;
+   const char *expect_doc = NULL;
+   bool r = false;
 
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
@@ -4465,9 +4465,9 @@ _test_bulk_let (bulkop op)
    bson_error_t error;
    request_t *request;
    future_t *future;
-   const char *expect_msg;
-   const char *expect_doc;
-   bool r;
+   const char *expect_msg = NULL;
+   const char *expect_doc = NULL;
+   bool r = false;
 
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);

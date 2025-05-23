@@ -1188,7 +1188,7 @@ test_bson_vector_example_float32_const_view (void)
    // setup: construct a sample document
    bson_t doc = BSON_INITIALIZER;
    {
-      static const float values[] = {5.0f, -1e10f, INFINITY, NAN, -1.0f};
+      const float values[] = {5.0f, -1e10f, INFINITY, NAN, -1.0f}; // C2099 "initializer is not a constant"
       bson_vector_float32_view_t view;
       ASSERT (BSON_APPEND_VECTOR_FLOAT32_UNINIT (&doc, "vector", sizeof values / sizeof values[0], &view));
       ASSERT (bson_vector_float32_view_write (view, values, sizeof values / sizeof values[0], 0));

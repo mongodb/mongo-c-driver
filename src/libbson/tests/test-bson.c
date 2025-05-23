@@ -2601,6 +2601,8 @@ test_bson_dsl_visit (void)
    bson_free (path);
 }
 
+mlib_diagnostic_push ();
+mlib_msvc_warning (disable : 4702); // do (abort())
 static void
 test_bson_dsl_predicate (void)
 {
@@ -2662,6 +2664,7 @@ test_bson_dsl_predicate (void)
       visitOthers (if (key ("unhandled"), then (do (saw_other = true)), else (do (abort ())))));
    BSON_ASSERT (saw_other);
 }
+mlib_diagnostic_pop ();
 
 static void
 do_assert_bson_equal (const bson_t *actual, const bson_t *expected, const char *file, int line)
@@ -3084,9 +3087,9 @@ test_bson_array_builder (void)
          bson_t b;
          bson_array_builder_t *bab = bson_array_builder_new ();
          {
-            bson_t *b = TMP_BSON_FROM_JSON ({"A" : 1});
+            bson_t *bb = TMP_BSON_FROM_JSON ({"A" : 1});
             bson_iter_t iter;
-            ASSERT (bson_iter_init_find (&iter, b, "A"));
+            ASSERT (bson_iter_init_find (&iter, bb, "A"));
             ASSERT (bson_array_builder_append_iter (bab, &iter));
          }
          ASSERT (bson_array_builder_build (bab, &b));
