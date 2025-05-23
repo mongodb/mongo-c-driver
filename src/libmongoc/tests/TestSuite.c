@@ -391,20 +391,11 @@ _TestSuite_TestFnCtxDtor (void *ctx)
 static void
 _print_getlasterror_win (const char *msg)
 {
-   LPTSTR err_msg;
-
-   FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL,
-                  GetLastError (),
-                  MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  /* FormatMessage is weird about this param. */
-                  (LPTSTR) &err_msg,
-                  0,
-                  NULL);
+   char *err_msg = mongoc_winerr_to_string (GetLastError ());
 
    test_error ("%s: %s", msg, err_msg);
 
-   LocalFree (err_msg);
+   bson_free (err_msg);
 }
 
 

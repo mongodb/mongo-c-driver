@@ -628,24 +628,9 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream, const char *host,
 
    /* Otherwise, use simple error info. */
    {
-#ifdef _WIN32
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     errno, /* WSAETIMEDOUT */
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-#else
-      const char *msg = strerror (errno); /* ETIMEDOUT */
-#endif
-
+      char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+      char *msg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
       _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: %s", msg);
-
-#ifdef _WIN32
-      LocalFree (msg);
-#endif
    }
 
    RETURN (false);
