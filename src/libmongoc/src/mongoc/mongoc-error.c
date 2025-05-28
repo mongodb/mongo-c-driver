@@ -338,3 +338,40 @@ mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, m
    }
    return true;
 }
+
+#ifdef _WIN32
+
+char *
+mongoc_winerr_to_string (DWORD err_code)
+{
+   LPSTR msg = NULL;
+   if (0 == FormatMessageA (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY |
+                               FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                            NULL,
+                            err_code,
+                            MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+                            (LPSTR) &msg,
+                            0,
+                            NULL)) {
+      LocalFree (msg);
+      return bson_strdup_printf ("(0x%.8lX) (Failed to get error message)", err_code);
+   }
+
+   // Remove trailing newline.
+   size_t msglen = strlen (msg);
+   if (msglen >= 1 && msg[msglen - 1] == '\n') {
+      if (msglen >= 2 && msg[msglen - 2] == '\r') {
+         // Remove trailing \r\n.
+         msg[msglen - 2] = '\0';
+      } else {
+         // Just remove trailing \n.
+         msg[msglen - 1] = '\0';
+      }
+   }
+
+   char *ret = bson_strdup_printf ("(0x%.8lX) %s", err_code, msg);
+   LocalFree (msg);
+   return ret;
+}
+
+#endif // _WIN32

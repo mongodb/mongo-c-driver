@@ -211,13 +211,10 @@ _mongoc_get_rr_dnsapi (
    res = DnsQuery_UTF8 (hostname, nst, options, NULL /* IP Address */, &pdns, 0 /* reserved */);
 
    if (res) {
-      DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-
-      if (FormatMessage (flags, 0, res, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, 0)) {
-         DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, (char *) lpMsgBuf);
-      }
-
-      DNS_ERROR ("Failed to look up %s record \"%s\": Unknown error", rr_type_name, hostname);
+      // Cast signed DNS_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      char *msg = mongoc_winerr_to_string ((DWORD) res);
+      DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, msg);
+      bson_free (msg);
    }
 
    if (!pdns) {

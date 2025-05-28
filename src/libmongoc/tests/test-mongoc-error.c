@@ -217,6 +217,44 @@ test_state_change (void)
    test_state_change_helper (MONGOC_ERROR_QUERY, false);
 }
 
+#ifdef _WIN32
+static void
+test_mongoc_winerr_to_string (void)
+{
+   // Test WIN32 success.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) NO_ERROR);
+      const char *expect = "(0x00000000) The operation completed successfully.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test WIN32 error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) ERROR_FILE_NOT_FOUND);
+      const char *expect = "(0x00000002) The system cannot find the file specified.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test SECURITY_STATUS error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) SEC_E_CERT_EXPIRED);
+      const char *expect = "(0x80090328) The received certificate has expired.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test DNS_STATUS error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) DNS_ERROR_RCODE_SERVER_FAILURE);
+      const char *expect = "(0x0000232A) DNS server failure.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+}
+#endif // _WIN32
+
 void
 test_error_install (TestSuite *suite)
 {
@@ -227,4 +265,7 @@ test_error_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/Error/command/v2", test_command_error_v2);
    TestSuite_Add (suite, "/Error/has_label", test_has_label);
    TestSuite_Add (suite, "/Error/state_change", test_state_change);
+#ifdef _WIN32
+   TestSuite_Add (suite, "/Error/windows_error_to_string", test_mongoc_winerr_to_string);
+#endif
 }

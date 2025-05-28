@@ -105,6 +105,12 @@ typedef enum {
 bool
 mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags);
 
+#ifdef _WIN32
+// Call `mongoc_winerr_to_string` on a Windows error code (e.g. a return from GetLastError()).
+char *
+mongoc_winerr_to_string (DWORD err_code);
+#endif
+
 BSON_END_DECLS
 
 #endif /* MONGOC_ERROR_PRIVATE_H */
