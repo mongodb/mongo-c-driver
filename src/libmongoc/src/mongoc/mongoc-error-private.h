@@ -129,6 +129,12 @@ _mongoc_set_error_category (bson_error_t *error, uint8_t category)
    error->reserved = category;
 }
 
+#ifdef _WIN32
+// Call `mongoc_winerr_to_string` on a Windows error code (e.g. a return from GetLastError()).
+char *
+mongoc_winerr_to_string (DWORD err_code);
+#endif
+
 BSON_END_DECLS
 
 #endif /* MONGOC_ERROR_PRIVATE_H */
