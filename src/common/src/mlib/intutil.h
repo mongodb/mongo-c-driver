@@ -78,16 +78,21 @@ typedef struct mlib_upsized_integer {
  * an i64 losslessly.
  *
  * If the integer to upcast is the same size as `intmax_t`, we need to decide whether to store
- * it as unsigned. The expression `(0 & Value) - 1 < 0` will be `true` iff the operand is signed,
+ * it as unsigned. The expression `(_mlibGetZero(Values)) - 1 < 0` will be `true` iff the operand is signed,
  * otherwise false. If the operand is signed, we can safely cast to `intmax_t` (it probably already
  * is of that type), otherwise, we can to `uintmax_t` and the returned `mlib_upsized_integer` will
  * indicate that the stored value is unsigned.
  */
 #define mlib_upsize_integer(Value) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
-   ((sizeof ((Value)) < sizeof (intmax_t) || ((0 & (Value)) - 1) < 0) \
+   ((sizeof ((Value)) < sizeof (intmax_t) || (_mlibGetZero(Value) - 1) < _mlibGetZero(Value)) \
       ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
       : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}})
+// Yield a zero value of similar-ish type to the given expression. The ternary
+// forces an integer promotion of literal zero match the type of `V`, while leaving
+// `V` unevaluated. Note that this will also promote `V` to be at least `(unsigned) int`,
+// so the zero value is only "similar" to `V`, and may be of a larger type
+#define _mlibGetZero(V) (1 ? 0 : (V))
 // clang-format on
 
 #endif // MLIB_INTUTIL_H_INCLUDED
