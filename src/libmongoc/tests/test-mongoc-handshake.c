@@ -658,10 +658,10 @@ test_aws_and_container (void *test_ctx)
    _handshake_check_required_fields (doc);
 
    bson_iter_t iter;
-   ASSERT (bson_iter_init(&iter, doc));
-   ASSERT (bson_iter_find_descendant(&iter, "container.orchestrator", &iter));
-   ASSERT (BSON_ITER_HOLDS_UTF8(&iter));
-   ASSERT (strcmp("kubernetes", bson_iter_utf8(&iter, NULL)) == 0);
+   ASSERT (bson_iter_init (&iter, doc));
+   ASSERT (bson_iter_find_descendant (&iter, "container.orchestrator", &iter));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+   ASSERT (strcmp ("kubernetes", bson_iter_utf8 (&iter, NULL)) == 0);
    _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
 
    bson_destroy (doc);
