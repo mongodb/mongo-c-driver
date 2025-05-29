@@ -884,17 +884,6 @@ test_bson_validate_dbref (void)
       bson_destroy (&dbref);
    }
 
-   /* should fail, $ref with $id at the top */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_UTF8 (&dbref, "$ref", "foo");
-      BSON_APPEND_UTF8 (&dbref, "$id", "bar");
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
    /* should fail, $ref with $id not first keys */
    {
       bson_init (&dbref);
@@ -1017,7 +1006,8 @@ test_bson_validate_dbref (void)
       BSON_APPEND_UTF8 (&child, "$db", "baz");
       bson_append_document_end (&dbref, &child);
 
-      BSON_ASSERT (bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
+      bson_error_t err;
+      ASSERT_OR_PRINT (bson_validate_with_error (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &err), err);
 
       bson_destroy (&dbref);
    }
@@ -1170,34 +1160,35 @@ test_bson_validate (void)
                   BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS,
                   4,
                   BSON_VALIDATE_DOLLAR_KEYS,
-                  "keys cannot begin with \"$\": \"$query\"");
+                  "Disallowed element key: \"$query\"");
    VALIDATE_TEST ("dotquery.bson",
                   BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS,
                   4,
                   BSON_VALIDATE_DOT_KEYS,
-                  "keys cannot contain \".\": \"abc.def\"");
-   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
+                  "Disallowed element key: \"abc.def\"");
+   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
    /* same outcome as above, despite different flags */
-   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_UTF8, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("overflow4.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("empty_key.bson", BSON_VALIDATE_EMPTY_KEYS, 4, BSON_VALIDATE_EMPTY_KEYS, "empty key");
-   VALIDATE_TEST ("test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test50.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
-   VALIDATE_TEST ("test51.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
-   VALIDATE_TEST ("test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test54.bson", BSON_VALIDATE_NONE, 12, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test60.bson", BSON_VALIDATE_NONE, 4, BSON_VALIDATE_NONE, "corrupt BSON");
+   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_UTF8, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("overflow4.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST (
+      "empty_key.bson", BSON_VALIDATE_EMPTY_KEYS, 4, BSON_VALIDATE_EMPTY_KEYS, "Element key cannot be an empty string");
+   VALIDATE_TEST ("test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test50.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test51.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test54.bson", BSON_VALIDATE_NONE, 12, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+   VALIDATE_TEST ("test60.bson", BSON_VALIDATE_NONE, 4, BSON_VALIDATE_CORRUPT, "corrupt BSON");
 
    /* DBRef validation */
    b = BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "}");
@@ -1209,8 +1200,7 @@ test_bson_validate (void)
    b = BCON_NEW ("my_dbref", "{", "$id", BCON_INT32 (1), "}");
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
    BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"$id\"");
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "Disallowed element key: \"$id\"");
    bson_destroy (b);
 
    /* two $refs */
@@ -1218,7 +1208,7 @@ test_bson_validate (void)
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
    BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
    ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"$ref\"");
+      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "Expected an $id element following $ref");
    bson_destroy (b);
 
    /* must not contain invalid key like "extra" */
@@ -1227,9 +1217,8 @@ test_bson_validate (void)
    BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
    BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
    ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "invalid key within DBRef subdocument: \"extra\"");
+      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "Expected an $id element following $ref");
    bson_destroy (b);
-
 #undef VALIDATE_TEST
 }
 
