@@ -256,7 +256,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 
       blob_private_rsa = decode_object (
          PKCS_RSA_PRIVATE_KEY, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
-      if (NULL == blob_private_rsa) {
+      if (!blob_private_rsa) {
          goto fail;
       }
    } else if (NULL != (pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----"))) {
