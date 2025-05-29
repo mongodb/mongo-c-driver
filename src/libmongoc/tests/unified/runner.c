@@ -640,6 +640,7 @@ check_schema_version (test_file_t *test_file)
    // 1.18 is partially supported (additional properties in kmsProviders)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
+   // 1.23 is partially supported (automatic encryption)
    semver_t schema_version;
    semver_parse ("1.23", &schema_version);
 
@@ -963,7 +964,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          memset (error, 0, sizeof (bson_error_t));
       }
 
-      // Also drop `enxcol_.<coll>.esc` and `enxcol_.<coll>.ecoc` in case the collection will be used for QE.
+      // Drop `enxcol_.<coll>.esc` and `enxcol_.<coll>.ecoc` in case the collection will be used for QE.
+      // https://github.com/mongodb/specifications/blob/f4c0bbdbf8a8560580c947ca2c331794431a0c78/source/unified-test-format/unified-test-format.md#executing-a-test
       {
          char *collection_name_esc = bson_strdup_printf ("enxcol_.%s.esc", collection_name);
          mongoc_collection_t *coll_esc =
