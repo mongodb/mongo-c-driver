@@ -366,13 +366,14 @@ _set_platform_string (mongoc_handshake_t *handshake)
 }
 
 static void
-_get_container_info (mongoc_handshake_t *handshake) {
-   char* kubernetes_env = _mongoc_getenv("KUBERNETES_SERVICE_HOST");
+_get_container_info (mongoc_handshake_t *handshake)
+{
+   char *kubernetes_env = _mongoc_getenv ("KUBERNETES_SERVICE_HOST");
    handshake->kubernetes = kubernetes_env;
 
    handshake->docker = false;
 #ifdef _POSIX_VERSION
-   handshake->docker = (access("/.dockerenv", F_OK) == 0);
+   handshake->docker = (access ("/.dockerenv", F_OK) == 0);
 #endif
 
    bson_free (kubernetes_env);
@@ -508,7 +509,7 @@ _mongoc_handshake_init (void)
    _get_driver_info (_mongoc_handshake_get ());
    _set_platform_string (_mongoc_handshake_get ());
    _get_env_info (_mongoc_handshake_get ());
-   _get_container_info (_mongoc_handshake_get());
+   _get_container_info (_mongoc_handshake_get ());
    _set_compiler_info (_mongoc_handshake_get ());
    _set_flags (_mongoc_handshake_get ());
 
@@ -530,7 +531,7 @@ _mongoc_handshake_cleanup (void)
    bson_free (h->compiler_info);
    bson_free (h->flags);
    bson_free (h->env_region);
-   *h = (mongoc_handshake_t){0};
+   *h = (mongoc_handshake_t) {0};
 
    bson_mutex_destroy (&gHandshakeLock);
 }
