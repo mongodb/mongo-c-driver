@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-thread-private.h>
 
 #include <stdio.h>
@@ -333,7 +334,7 @@ _TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func,
    Test *test;
    va_list ap;
    TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));
-   *ctx = (TestFnCtx){.test_fn = func, .dtor = NULL};
+   *ctx = (TestFnCtx) {.test_fn = func, .dtor = NULL};
 
    va_start (ap, func);
    test = _V_TestSuite_AddFull (suite, name, TestSuite_AddHelper, _TestSuite_TestFnCtxDtor, ctx, ap);
@@ -387,20 +388,11 @@ _TestSuite_TestFnCtxDtor (void *ctx)
 static void
 _print_getlasterror_win (const char *msg)
 {
-   LPTSTR err_msg;
-
-   FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL,
-                  GetLastError (),
-                  MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  /* FormatMessage is weird about this param. */
-                  (LPTSTR) &err_msg,
-                  0,
-                  NULL);
+   char *err_msg = mongoc_winerr_to_string (GetLastError ());
 
    test_error ("%s: %s", msg, err_msg);
 
-   LocalFree (err_msg);
+   bson_free (err_msg);
 }
 
 

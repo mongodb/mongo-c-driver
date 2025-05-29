@@ -24,6 +24,7 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-topology-private.h>
@@ -1377,24 +1378,14 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                         NULL /* current directory */,
                         &startup_info,
                         &process_information)) {
-      long lastError = GetLastError ();
-      LPSTR message = NULL;
-
-      FormatMessageA (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY | FORMAT_MESSAGE_FROM_SYSTEM |
-                         FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL,
-                      lastError,
-                      0,
-                      (LPSTR) &message,
-                      0,
-                      NULL);
+      char *message = mongoc_winerr_to_string (GetLastError ());
 
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                       "failed to spawn mongocryptd: %s",
                       message);
-      LocalFree (message);
+      bson_free (message);
       mcommon_string_from_append_destroy (&command);
       return false;
    }
@@ -3006,7 +2997,7 @@ _mongoc_encryptedFields_fill_auto_datakeys (
    BSON_ASSERT_PARAM (factory);
 
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
    bson_init (out_fields);
 
