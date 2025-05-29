@@ -796,6 +796,11 @@ check_run_on_requirement (test_runner_t *test_runner,
             return false;
          }
 
+         if (0 == test_framework_skip_if_no_client_side_encryption ()) {
+            *fail_reason = bson_strdup ("CSFLE is required but not all environment variables are set");
+            return false;
+         }
+
          if (csfle_required) {
             continue;
          }

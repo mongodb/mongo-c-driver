@@ -1250,7 +1250,7 @@ _parse_kms_provider_local (
 
 static bool
 _get_kms_providers_docs (bson_t *kms_from_file, bson_t *kms_providers, bson_t *tls_opts, bson_error_t *error)
-{   
+{
    BSON_ASSERT_PARAM (kms_from_file);
    BSON_ASSERT_PARAM (kms_providers);
    BSON_ASSERT_PARAM (tls_opts);
