@@ -18,12 +18,12 @@
       "client": {
         "id": "client0",
         "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
             "local": {
               "key": "Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZGJkTXVyZG9uSjFk"
             }
           },
-          "keyVaultNamespace": "keyvault.datakeys",
           "bypassQueryAnalysis": true
         },
         "observeEvents": [
@@ -47,13 +47,16 @@
     },
     {
       "client": {
-        "id": "client1"
+        "id": "unencryptedClient",
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
       }
     },
     {
       "database": {
         "id": "unencryptedDB",
-        "client": "client1",
+        "client": "unencryptedClient",
         "databaseName": "default"
       }
     },
@@ -175,8 +178,8 @@
           ]
         },
         {
-          "object": "unencryptedColl",
           "name": "find",
+          "object": "unencryptedColl",
           "arguments": {
             "filter": {}
           },
