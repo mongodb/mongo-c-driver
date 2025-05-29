@@ -531,7 +531,7 @@ _mongoc_handshake_cleanup (void)
    bson_free (h->compiler_info);
    bson_free (h->flags);
    bson_free (h->env_region);
-   *h = (mongoc_handshake_t) {0};
+   *h = (mongoc_handshake_t){0};
 
    bson_mutex_destroy (&gHandshakeLock);
 }
