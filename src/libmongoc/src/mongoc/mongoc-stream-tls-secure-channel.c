@@ -959,19 +959,10 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *
                                            &secure_channel->cred->time_stamp); /* certificate expiration time */
 
    if (sspi_status != SEC_E_OK) {
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     GetLastError (),
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-      MONGOC_ERROR ("Failed to initialize security context, error code: 0x%04X%04X: '%s'",
-                    (unsigned int) (sspi_status >> 16) & 0xffff,
-                    (unsigned int) sspi_status & 0xffff,
-                    msg);
-      LocalFree (msg);
+      // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
+      MONGOC_ERROR ("Failed to initialize security context: %s", msg);
+      bson_free (msg);
       RETURN (NULL);
    }
 
