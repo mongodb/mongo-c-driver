@@ -20,6 +20,7 @@
  * limitations under the License.
  */
 
+#include <mlib/test.h>
 #include <bson/bson.h>
 
 #include <assert.h>
@@ -138,11 +139,12 @@ _key_is (bson_iter_t const *iter, const char *const key)
  *
  * @param self The validator which will be updated and used to do the validation
  * @param bson The object to be validated
+ * @param depth The validation depth. We indicate an error if this exceeds a limit.
  * @return true If the object is valid
  * @return false Otherwise
  */
 static bool
-_validate_doc (validator *self, const bson_t *bson);
+_validate_doc (validator *self, const bson_t *bson, int depth);
 
 /**
  * @brief Validate a UTF-8 string, if-and-only-if UTF-8 validation is requested
@@ -244,7 +246,7 @@ _validate_regex_elem (validator *self, bson_iter_t const *iter)
 }
 
 static bool
-_validate_codewscope_elem (validator *self, bson_iter_t const *iter)
+_validate_codewscope_elem (validator *self, bson_iter_t const *iter, int depth)
 {
    assert (BSON_ITER_HOLDS_CODEWSCOPE (iter));
    // Extract the code and the scope object
@@ -275,7 +277,7 @@ _validate_codewscope_elem (validator *self, bson_iter_t const *iter)
       .check_special_dollar_keys = false,
    };
    validator scope_validator = {.params = &scope_params};
-   const bool scope_okay = _validate_doc (&scope_validator, &scope);
+   const bool scope_okay = _validate_doc (&scope_validator, &scope, depth);
    if (!scope_okay) {
       // Copy the error message, adding the name of the bad element
       bson_set_error (&self->error,
@@ -320,7 +322,7 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
 
 // Validate the value of an element, without checking its key
 static bool
-_validate_element_value (validator *self, bson_iter_t const *iter)
+_validate_element_value (validator *self, bson_iter_t const *iter, int depth)
 {
    const bson_type_t type = bson_iter_type (iter);
    switch (type) {
@@ -353,7 +355,7 @@ _validate_element_value (validator *self, bson_iter_t const *iter)
                           BSON_VALIDATE_CORRUPT,
                           "Invalid array \"%s\": corrupt BSON",
                           bson_iter_key (iter));
-      return _validate_doc (self, &doc);
+      return _validate_doc (self, &doc, depth);
    }
    case BSON_TYPE_DOCUMENT: {
       const uint8_t *data;
@@ -365,7 +367,7 @@ _validate_element_value (validator *self, bson_iter_t const *iter)
                           BSON_VALIDATE_CORRUPT,
                           "Invalid subdocument \"%s\": corrupt BSON",
                           bson_iter_key (iter));
-      return _validate_doc (self, &doc);
+      return _validate_doc (self, &doc, depth);
    }
    case BSON_TYPE_BINARY:
       // Note: BSON binary validation is handled by bson_iter_next, which checks the
@@ -380,7 +382,7 @@ _validate_element_value (validator *self, bson_iter_t const *iter)
    case BSON_TYPE_REGEX:
       return _validate_regex_elem (self, iter);
    case BSON_TYPE_CODEWSCOPE:
-      return _validate_codewscope_elem (self, iter);
+      return _validate_codewscope_elem (self, iter, depth);
    case BSON_TYPE_SYMBOL:
       return _validate_symbol_elem (self, iter);
    case BSON_TYPE_CODE:
@@ -392,9 +394,9 @@ _validate_element_value (validator *self, bson_iter_t const *iter)
 
 // Validate a single BSON element referred-to by the given iterator
 static bool
-_validate_element (validator *self, bson_iter_t *iter)
+_validate_element (validator *self, bson_iter_t *iter, int depth)
 {
-   return _validate_element_key (self, iter) && _validate_element_value (self, iter);
+   return _validate_element_key (self, iter) && _validate_element_value (self, iter, depth);
 }
 
 /**
@@ -402,11 +404,11 @@ _validate_element (validator *self, bson_iter_t *iter)
  * by the given iterator.
  */
 static bool
-_validate_remaining_elements (validator *self, bson_iter_t *iter)
+_validate_remaining_elements (validator *self, bson_iter_t *iter, int depth)
 {
    bool done = false;
    while (!done) {
-      require (_validate_element (self, iter));
+      require (_validate_element (self, iter, depth));
       require_advance (done, iter);
    }
    return true;
@@ -414,21 +416,21 @@ _validate_remaining_elements (validator *self, bson_iter_t *iter)
 
 // Do validation for a DBRef document, indicated by a leading $ref key
 static bool
-_validate_dbref (validator *self, bson_iter_t *iter)
+_validate_dbref (validator *self, bson_iter_t *iter, int depth)
 {
    // The iterator must be pointing to the initial $ref element
    assert (_key_is (iter, "$ref"));
    // Check that $ref is a UTF-8 element
    require_with_error (
       BSON_ITER_HOLDS_UTF8 (iter), iter->off, BSON_VALIDATE_DOLLAR_KEYS, "$ref element must be a UTF-8 element");
-   require (_validate_element_value (self, iter));
+   require (_validate_element_value (self, iter, depth));
 
    // We require an $id as the next element
    bool done;
    require_advance (done, iter);
    require_with_error (
       !done && _key_is (iter, "$id"), iter->off, BSON_VALIDATE_DOLLAR_KEYS, "Expected an $id element following $ref");
-   require (_validate_element_value (self, iter));
+   require (_validate_element_value (self, iter, depth));
 
    // We should stop, or we should have a $db, or we may have other elements
    require_advance (done, iter);
@@ -442,7 +444,7 @@ _validate_dbref (validator *self, bson_iter_t *iter)
                           iter->off,
                           BSON_VALIDATE_DOLLAR_KEYS,
                           "$db element in DBref must be a UTF-8 element");
-      require (_validate_element_value (self, iter));
+      require (_validate_element_value (self, iter, depth));
       // Advance past the $db
       require_advance (done, iter);
       if (done) {
@@ -452,15 +454,15 @@ _validate_dbref (validator *self, bson_iter_t *iter)
    }
    // All subsequent elements should be validated as normal, and we don't expect
    // any more $-keys
-   return _validate_remaining_elements (self, iter);
+   return _validate_remaining_elements (self, iter, depth);
 }
 
 // If we are validating special $-keys, validate a document whose first element is a $-key
 static bool
-_validate_dollar_doc (validator *self, bson_iter_t *iter)
+_validate_dollar_doc (validator *self, bson_iter_t *iter, int depth)
 {
    if (_key_is (iter, "$ref")) {
-      return _validate_dbref (self, iter);
+      return _validate_dbref (self, iter, depth);
    }
    // Have the element key validator issue an error message about the bad $-key
    bool okay = _validate_element_key (self, iter);
@@ -469,25 +471,31 @@ _validate_dollar_doc (validator *self, bson_iter_t *iter)
 }
 
 static bool
-_validate_doc (validator *self, const bson_t *bson)
+_validate_doc (validator *self, const bson_t *bson, int depth)
 {
+   // We increment the depth here, otherwise we'd have `depth + 1` all over the place.
+   ++depth;
+   require_with_error (depth < 1000, 0, BSON_VALIDATE_CORRUPT, "BSON document nesting depth is too deep");
+
+   // Initialize an iterator into the document to be validated
    bson_iter_t iter;
    require_with_error (bson_iter_init (&iter, bson), 0, BSON_VALIDATE_CORRUPT, "Unable to initialize iterator");
    bool done;
    require_advance (done, &iter);
    if (done) {
-      // Nothing to check
+      // Nothing to check (empty doc/array)
       return true;
    }
+
    // Check if the first key starts with a dollar
    if (self->params->check_special_dollar_keys) {
       const char *const key = bson_iter_key (&iter);
       if (key[0] == '$') {
-         return _validate_dollar_doc (self, &iter);
+         return _validate_dollar_doc (self, &iter, depth);
       }
    }
 
-   return _validate_remaining_elements (self, &iter);
+   return _validate_remaining_elements (self, &iter, depth);
 }
 
 // This private function is called by `bson_validate_with_error_and_offset`
@@ -508,7 +516,7 @@ _bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t 
 
    // Start the validator on the root document
    validator v = {.params = &params};
-   bool okay = _validate_doc (&v, bson);
+   bool okay = _validate_doc (&v, bson, 0);
    *offset = v.error_offset;
    *error = v.error;
    assert (okay == (v.error.code == 0) &&

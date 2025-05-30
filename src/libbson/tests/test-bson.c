@@ -25,6 +25,9 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+
+#include <mlib/ckdint.h>
+#include <mlib/test.h>
 #include <mlib/intencode.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
@@ -1042,6 +1045,49 @@ test_bson_validate_dbref (void)
    }
 }
 
+
+/**
+ * @brief Test case: Check that we stop validating if we go too deep.
+ *
+ * The current validation is implemented as a simple recursive algorithm. This
+ * is fast since it doesn't allocate, but we risk blowing out the stack if the
+ * data is too deep. We don't want to crash user applications because of untrusted
+ * input, so assert that we stop when we hit a reasonably high depth.
+ */
+static void
+test_bson_validate_deep (void)
+{
+   // Build and extremely deep BSON document
+   const size_t validation_depth = 1000;
+   // Needed size: 5 bytes for doc header/trailer, 2 bytes for each tag and empty
+   // key, minus 2 because the outer document has no tag and key
+   const size_t buffer_size = (validation_depth * (5 + 2)) - 2;
+   uint8_t *const buffer = calloc (buffer_size, 1);
+   mlib_check (buffer);
+   uint8_t *out = buffer;
+   mlib_foreach_urange (i, validation_depth) {
+      // Bytes we have already written:
+      const size_t begin_offset = out - buffer;
+      // The number of bytes for this inner doc:
+      size_t inner_size = buffer_size;
+      mlib_check (!mlib_sub (&inner_size, begin_offset));
+      mlib_check (!mlib_sub (&inner_size, i));
+      // Write a header:
+      out = (uint8_t *) mlib_write_i32le (out, mlib_assert_narrow (int32_t, inner_size));
+      // Add a new element header if we're not at the innermost doc
+      if (!loop.last) {
+         *out++ = 0x3; // Document tag
+         ++out;        // Leave a null terminator to make a "" key string
+      }
+   }
+   bson_t big;
+   mlib_check (bson_init_static (&big, buffer, buffer_size));
+   bson_error_t err;
+   mlib_check (!bson_validate_with_error (&big, 0, &err));
+   mlib_check (err.code, eq, BSON_VALIDATE_CORRUPT);
+   mlib_check (err.message, str_eq, "BSON document nesting depth is too deep");
+   free (buffer);
+}
 
 /* BSON spec requires bool value to be exactly 0 or 1 */
 static void
@@ -3302,6 +3348,7 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/append_deep", test_bson_append_deep);
    TestSuite_Add (suite, "/bson/utf8_key", test_bson_utf8_key);
    TestSuite_Add (suite, "/bson/validate", test_bson_validate);
+   TestSuite_Add (suite, "/bson/validate/deep", test_bson_validate_deep);
    TestSuite_Add (suite, "/bson/validate/dbref", test_bson_validate_dbref);
    TestSuite_Add (suite, "/bson/validate/bool", test_bson_validate_bool);
    TestSuite_Add (suite, "/bson/validate/dbpointer", test_bson_validate_dbpointer);
