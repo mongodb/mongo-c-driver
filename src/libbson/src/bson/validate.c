@@ -156,7 +156,7 @@ _validate_doc (validator *self, const bson_t *bson);
  * null characters and the UTf-8 string contains a null character))
  */
 static bool
-_maybe_validate_u8 (validator *self, size_t offset, const char *u8, size_t u8len)
+_maybe_validate_utf8 (validator *self, size_t offset, const char *u8, size_t u8len)
 {
    if (self->params->allow_invalid_utf8) {
       // We are not doing UTF-8 checks, so always succeed
@@ -164,15 +164,27 @@ _maybe_validate_u8 (validator *self, size_t offset, const char *u8, size_t u8len
    }
    // Validate UTF-8
    const bool u8okay = bson_utf8_validate (u8, u8len, self->params->allow_null_in_utf8);
-   require_with_error (u8okay, offset, BSON_VALIDATE_UTF8, "Invalid UTF-8 string");
-   return true;
+   if (u8okay) {
+      return true;
+   }
+   if (!self->params->allow_null_in_utf8) {
+      // We are disallowing null in UTF-8. Check whether it is invalid UTF-8, or is
+      // valid UTF-8 with a null character
+      const bool u8okay_with_null = bson_utf8_validate (u8, u8len, true);
+      if (u8okay_with_null) {
+         // The UTF-8 is valid, but contains a null character.
+         require_with_error (
+            false, offset, BSON_VALIDATE_UTF8_ALLOW_NULL, "UTF-8 string contains a U+0000 (null) character");
+      }
+   }
+   require_with_error (false, offset, BSON_VALIDATE_UTF8, "Text element is not valid UTF-8");
 }
 
 // Same as `_maybe_validate_u8`, but relies on a null-terminated C string to get the string length
 static bool
-_maybe_validate_u8_cstring (validator *self, size_t offset, const char *const u8)
+_maybe_validate_utf8_cstring (validator *self, size_t offset, const char *const u8)
 {
-   return _maybe_validate_u8 (self, offset, u8, strlen (u8));
+   return _maybe_validate_utf8 (self, offset, u8, strlen (u8));
 }
 
 // Validate a UTF-8 element. Asserts that the given element is a UTF-8 element!
@@ -183,7 +195,7 @@ _validate_utf8_elem (validator *self, bson_iter_t const *iter)
    uint32_t u8len;
    const char *const u8 = bson_iter_utf8 (iter, &u8len);
    assert (u8);
-   return _maybe_validate_u8 (self, iter->off, u8, u8len);
+   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
 }
 
 
@@ -194,7 +206,7 @@ _validate_symbol_elem (validator *self, bson_iter_t const *iter)
    uint32_t u8len;
    const char *const u8 = bson_iter_symbol (iter, &u8len);
    assert (u8);
-   return _maybe_validate_u8 (self, iter->off, u8, u8len);
+   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
 }
 
 static bool
@@ -204,7 +216,7 @@ _validate_code_elem (validator *self, bson_iter_t const *iter)
    uint32_t u8len;
    const char *const u8 = bson_iter_code (iter, &u8len);
    assert (u8);
-   return _maybe_validate_u8 (self, iter->off, u8, u8len);
+   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
 }
 
 
@@ -216,7 +228,7 @@ _validate_dbpointer_elem (validator *self, bson_iter_t const *iter)
    const char *u8;
    bson_iter_dbpointer (iter, &u8len, &u8, NULL);
    assert (u8);
-   return _maybe_validate_u8 (self, iter->off, u8, u8len);
+   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
 }
 
 static bool
@@ -227,8 +239,8 @@ _validate_regex_elem (validator *self, bson_iter_t const *iter)
    const char *const rx = bson_iter_regex (iter, &opts);
    assert (rx);
    assert (opts);
-   return _maybe_validate_u8_cstring (self, iter->off, rx) //
-          && _maybe_validate_u8_cstring (self, iter->off, opts);
+   return _maybe_validate_utf8_cstring (self, iter->off, rx) //
+          && _maybe_validate_utf8_cstring (self, iter->off, opts);
 }
 
 static bool
@@ -245,7 +257,7 @@ _validate_codewscope_elem (validator *self, bson_iter_t const *iter)
       bson_init_static (&scope, doc, doc_len), iter->off, BSON_VALIDATE_CORRUPT, "corrupt scope document");
 
    // Validate the code string
-   require (_maybe_validate_u8 (self, iter->off, u8, u8len));
+   require (_maybe_validate_utf8 (self, iter->off, u8, u8len));
 
    // Now we validate the scope object.
    // Don't validate the scope document using the parent parameters, because it should
@@ -286,7 +298,7 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
    assert (key);
 
    // Check the UTF-8 of the key
-   require (_maybe_validate_u8_cstring (self, iter->off, key));
+   require (_maybe_validate_utf8_cstring (self, iter->off, key));
 
    // Check for special keys
    if (self->params->check_special_dollar_keys) {
@@ -495,8 +507,7 @@ _bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t 
    };
 
    // Start the validator on the root document
-   validator v = {0};
-   v.params = &params;
+   validator v = {.params = &params};
    bool okay = _validate_doc (&v, bson);
    *offset = v.error_offset;
    *error = v.error;
