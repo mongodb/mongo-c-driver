@@ -5,6 +5,13 @@
  *
  * This file implements the backend for the `bson_validate` family of functions.
  *
+ * The `_validate_...` functions all accept `validator* self` as their first parameter,
+ * and must `return false` AND set `self->error` if-and-only-if they encounter a validation error.
+ * If a function returns true, it is assumed that validation of that item succeeded.
+ *
+ * For brevity, the `require...` macros are defined, which check conditions, set errors,
+ * and `return false` inline.
+ *
  * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +27,15 @@
  * limitations under the License.
  */
 
+#include <mlib/intencode.h>
 #include <mlib/test.h>
 #include <bson/bson.h>
 
-#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 
 /**
- * @brief User parameter's for validation behavior. These correspond to the various
+ * @brief User parameters for validation behavior. These correspond to the various
  * flags that can be given when the user requests validation
  */
 typedef struct {
@@ -39,11 +46,9 @@ typedef struct {
     * elements that require UTF-8 encoding.
     *
     * Technically invalid UTF-8 is invalid in BSON, but applications may already
-    * rely on this working.
+    * rely on this being accepted.
     */
    bool allow_invalid_utf8;
-   /// Should we allow element key strings to be empty?
-   bool allow_empty_keys;
    /**
     * @brief Should we allow a zero-valued codepoint in text?
     *
@@ -55,6 +60,8 @@ typedef struct {
     * cannot contain U+0000 by construction.
     */
    bool allow_null_in_utf8;
+   /// Should we allow element key strings to be empty strings?
+   bool allow_empty_keys;
    /// Should we allow ASCII dot "." in element key strings?
    bool allow_dot_in_keys;
    /**
@@ -62,7 +69,10 @@ typedef struct {
     *
     * By default, we ignore them and treat them as regular elements. If this is
     * enabled, we reject key strings that start with a dollar, unless it is a
-    * special extended JSON DBref document.
+    * special extended JSON DBRef document.
+    *
+    * This also enables DBRef validation, which checks the structure of a document
+    * whose first key is "$ref".
     */
    bool check_special_dollar_keys;
 } validation_params;
@@ -100,6 +110,8 @@ typedef struct {
 
 /**
  * @brief Check that the given condition is satisfied, or `return false` immediately.
+ *
+ * This macro does not modify the validator state. It only does an early-return.
  */
 #define require(Cond) \
    if (!(Cond)) {     \
@@ -167,8 +179,10 @@ _maybe_validate_utf8 (validator *self, size_t offset, const char *u8, size_t u8l
    // Validate UTF-8
    const bool u8okay = bson_utf8_validate (u8, u8len, self->params->allow_null_in_utf8);
    if (u8okay) {
+      // Valid UTF-8, no more checks
       return true;
    }
+   // Validation error. It may be invalid UTF-8, or it could be valid UTF-8 with a disallowed null
    if (!self->params->allow_null_in_utf8) {
       // We are disallowing null in UTF-8. Check whether it is invalid UTF-8, or is
       // valid UTF-8 with a null character
@@ -179,6 +193,7 @@ _maybe_validate_utf8 (validator *self, size_t offset, const char *u8, size_t u8l
             false, offset, BSON_VALIDATE_UTF8_ALLOW_NULL, "UTF-8 string contains a U+0000 (null) character");
       }
    }
+   // The UTF-8 is invalid, regardless of whether it contains a null character
    require_with_error (false, offset, BSON_VALIDATE_UTF8, "Text element is not valid UTF-8");
 }
 
@@ -189,58 +204,30 @@ _maybe_validate_utf8_cstring (validator *self, size_t offset, const char *const 
    return _maybe_validate_utf8 (self, offset, u8, strlen (u8));
 }
 
-// Validate a UTF-8 element. Asserts that the given element is a UTF-8 element!
+/**
+ * @brief Validate a string-like element (UTF-8, Symbol, or Code)
+ *
+ * This function relies on the representation of the text-like elements within
+ * the iterator struct to reduce code dup around text validation.
+ */
 static bool
-_validate_utf8_elem (validator *self, bson_iter_t const *iter)
+_validate_stringlike_element (validator *self, bson_iter_t const *iter)
 {
-   assert (BSON_ITER_HOLDS_UTF8 (iter));
-   uint32_t u8len;
-   const char *const u8 = bson_iter_utf8 (iter, &u8len);
-   assert (u8);
-   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
-}
-
-
-static bool
-_validate_symbol_elem (validator *self, bson_iter_t const *iter)
-{
-   assert (BSON_ITER_HOLDS_SYMBOL (iter));
-   uint32_t u8len;
-   const char *const u8 = bson_iter_symbol (iter, &u8len);
-   assert (u8);
-   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
-}
-
-static bool
-_validate_code_elem (validator *self, bson_iter_t const *iter)
-{
-   assert (BSON_ITER_HOLDS_CODE (iter));
-   uint32_t u8len;
-   const char *const u8 = bson_iter_code (iter, &u8len);
-   assert (u8);
-   return _maybe_validate_utf8 (self, iter->off, u8, u8len);
-}
-
-
-static bool
-_validate_dbpointer_elem (validator *self, bson_iter_t const *iter)
-{
-   assert (BSON_ITER_HOLDS_DBPOINTER (iter));
-   uint32_t u8len;
-   const char *u8;
-   bson_iter_dbpointer (iter, &u8len, &u8, NULL);
-   assert (u8);
+   // iter->d1 is the offset to the string header. Subtract 1 to exclude the null termintaor
+   const uint32_t u8len = mlib_read_u32le (iter->raw + iter->d1) - 1;
+   // iter->d2 is the offset to the first byte of the string
+   const char *u8 = (const char *) iter->raw + iter->d2;
    return _maybe_validate_utf8 (self, iter->off, u8, u8len);
 }
 
 static bool
 _validate_regex_elem (validator *self, bson_iter_t const *iter)
 {
-   assert (BSON_ITER_HOLDS_REGEX (iter));
+   mlib_check (BSON_ITER_HOLDS_REGEX (iter));
    const char *opts;
    const char *const rx = bson_iter_regex (iter, &opts);
-   assert (rx);
-   assert (opts);
+   mlib_check (rx);
+   mlib_check (opts);
    return _maybe_validate_utf8_cstring (self, iter->off, rx) //
           && _maybe_validate_utf8_cstring (self, iter->off, opts);
 }
@@ -248,7 +235,7 @@ _validate_regex_elem (validator *self, bson_iter_t const *iter)
 static bool
 _validate_codewscope_elem (validator *self, bson_iter_t const *iter, int depth)
 {
-   assert (BSON_ITER_HOLDS_CODEWSCOPE (iter));
+   mlib_check (BSON_ITER_HOLDS_CODEWSCOPE (iter));
    // Extract the code and the scope object
    uint8_t const *doc;
    uint32_t doc_len;
@@ -277,19 +264,20 @@ _validate_codewscope_elem (validator *self, bson_iter_t const *iter, int depth)
       .check_special_dollar_keys = false,
    };
    validator scope_validator = {.params = &scope_params};
-   const bool scope_okay = _validate_doc (&scope_validator, &scope, depth);
-   if (!scope_okay) {
-      // Copy the error message, adding the name of the bad element
-      bson_set_error (&self->error,
-                      scope_validator.error.domain,
-                      scope_validator.error.code,
-                      "Error in scope document for element \"%s\": %s",
-                      bson_iter_key (iter),
-                      scope_validator.error.message);
-      // Adjust the error offset by the offset of the iterator
-      self->error_offset = scope_validator.error_offset + iter->off;
+   if (_validate_doc (&scope_validator, &scope, depth)) {
+      // No error
+      return true;
    }
-   return scope_okay;
+   // Validation error. Copy the error message, adding the name of the bad element
+   bson_set_error (&self->error,
+                   scope_validator.error.domain,
+                   scope_validator.error.code,
+                   "Error in scope document for element \"%s\": %s",
+                   bson_iter_key (iter),
+                   scope_validator.error.message);
+   // Adjust the error offset by the offset of the iterator
+   self->error_offset = scope_validator.error_offset + iter->off;
+   return false;
 }
 
 // Validate an element's key string according to the valiation rules
@@ -297,7 +285,7 @@ static bool
 _validate_element_key (validator *self, bson_iter_t const *iter)
 {
    const char *const key = bson_iter_key (iter);
-   assert (key);
+   mlib_check (key);
 
    // Check the UTF-8 of the key
    require (_maybe_validate_utf8_cstring (self, iter->off, key));
@@ -320,6 +308,16 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
    return true;
 }
 
+// Extract a document referred-to by the given iterator. It must point to a
+// document or array element. Returns `false` if `bson_init_static` returns false
+static bool
+_get_subdocument (bson_t *subdoc, bson_iter_t const *iter)
+{
+   uint32_t len = mlib_read_u32le (iter->raw + iter->d1);
+   uint8_t const *data = (uint8_t const *) iter->raw + iter->d1;
+   return bson_init_static (subdoc, data, len);
+}
+
 // Validate the value of an element, without checking its key
 static bool
 _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
@@ -328,7 +326,7 @@ _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
    switch (type) {
    default:
    case BSON_TYPE_EOD:
-      assert (false && "Unreachable");
+      mlib_check (false && "Unreachable");
    case BSON_TYPE_DOUBLE:
    case BSON_TYPE_NULL:
    case BSON_TYPE_OID:
@@ -340,56 +338,42 @@ _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
    case BSON_TYPE_UNDEFINED:
    case BSON_TYPE_DECIMAL128:
    case BSON_TYPE_DATE_TIME:
-      // No validation on these simple scalar elements
+   case BSON_TYPE_BOOL:
+      // No validation on these simple scalar elements. `bson_iter_next` does validation
+      // on these objects for us.
       return true;
-   case BSON_TYPE_UTF8:
-      return _validate_utf8_elem (self, iter);
-
-   case BSON_TYPE_ARRAY: {
-      const uint8_t *data;
-      uint32_t doclen;
-      bson_iter_array (iter, &doclen, &data);
-      bson_t doc;
-      require_with_error (bson_init_static (&doc, data, doclen),
-                          iter->off,
-                          BSON_VALIDATE_CORRUPT,
-                          "Invalid array \"%s\": corrupt BSON",
-                          bson_iter_key (iter));
-      return _validate_doc (self, &doc, depth);
-   }
-   case BSON_TYPE_DOCUMENT: {
-      const uint8_t *data;
-      uint32_t doclen;
-      bson_iter_document (iter, &doclen, &data);
-      bson_t doc;
-      require_with_error (bson_init_static (&doc, data, doclen),
-                          iter->off,
-                          BSON_VALIDATE_CORRUPT,
-                          "Invalid subdocument \"%s\": corrupt BSON",
-                          bson_iter_key (iter));
-      return _validate_doc (self, &doc, depth);
-   }
    case BSON_TYPE_BINARY:
       // Note: BSON binary validation is handled by bson_iter_next, which checks the
       // internal structure properly. If we get here, then the binary data is okay.
       return true;
-   case BSON_TYPE_BOOL:
-      // Note: Boolean validation is checked by bson_iter_next, and is indicated as
-      // corruption.
-      return true;
    case BSON_TYPE_DBPOINTER:
-      return _validate_dbpointer_elem (self, iter);
+      // DBPointer contains more than just a string, but we only need to validate
+      // the string component, which happens to align with the repr of other stringlike
+      // elements. bson_iter_next will do the validation on the element's size.
+      //! fallthrough
+   case BSON_TYPE_SYMBOL:
+   case BSON_TYPE_CODE:
+   case BSON_TYPE_UTF8:
+      return _validate_stringlike_element (self, iter);
+   case BSON_TYPE_DOCUMENT:
+   case BSON_TYPE_ARRAY: {
+      bson_t doc;
+      require_with_error (_get_subdocument (&doc, iter), iter->off, BSON_VALIDATE_CORRUPT, "corrupt BSON");
+      if (_validate_doc (self, &doc, depth)) {
+         // No error
+         return true;
+      }
+      // Error in subdocument. Adjust the error offset for the current iterator position,
+      // plus the key length, plus 2 for the tag and key's null terminator.
+      self->error_offset += iter->off + strlen (bson_iter_key (iter)) + 2;
+      return false;
+   }
+
    case BSON_TYPE_REGEX:
       return _validate_regex_elem (self, iter);
    case BSON_TYPE_CODEWSCOPE:
       return _validate_codewscope_elem (self, iter, depth);
-   case BSON_TYPE_SYMBOL:
-      return _validate_symbol_elem (self, iter);
-   case BSON_TYPE_CODE:
-      return _validate_code_elem (self, iter);
    }
-
-   return true;
 }
 
 // Validate a single BSON element referred-to by the given iterator
@@ -419,7 +403,7 @@ static bool
 _validate_dbref (validator *self, bson_iter_t *iter, int depth)
 {
    // The iterator must be pointing to the initial $ref element
-   assert (_key_is (iter, "$ref"));
+   mlib_check (_key_is (iter, "$ref"));
    // Check that $ref is a UTF-8 element
    require_with_error (
       BSON_ITER_HOLDS_UTF8 (iter), iter->off, BSON_VALIDATE_DOLLAR_KEYS, "$ref element must be a UTF-8 element");
@@ -443,7 +427,7 @@ _validate_dbref (validator *self, bson_iter_t *iter, int depth)
       require_with_error (BSON_ITER_HOLDS_UTF8 (iter),
                           iter->off,
                           BSON_VALIDATE_DOLLAR_KEYS,
-                          "$db element in DBref must be a UTF-8 element");
+                          "$db element in DBRef must be a UTF-8 element");
       require (_validate_element_value (self, iter, depth));
       // Advance past the $db
       require_advance (done, iter);
@@ -466,14 +450,14 @@ _validate_dollar_doc (validator *self, bson_iter_t *iter, int depth)
    }
    // Have the element key validator issue an error message about the bad $-key
    bool okay = _validate_element_key (self, iter);
-   assert (!okay);
+   mlib_check (!okay);
    return false;
 }
 
 static bool
 _validate_doc (validator *self, const bson_t *bson, int depth)
 {
-   // We increment the depth here, otherwise we'd have `depth + 1` all over the place.
+   // We increment the depth here, otherwise we'd have `depth + 1` in several places
    ++depth;
    require_with_error (depth < 1000, 0, BSON_VALIDATE_CORRUPT, "BSON document nesting depth is too deep");
 
@@ -519,7 +503,7 @@ _bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t 
    bool okay = _validate_doc (&v, bson, 0);
    *offset = v.error_offset;
    *error = v.error;
-   assert (okay == (v.error.code == 0) &&
-           "Validation routine should return `false` if-and-only-if it sets an error code");
+   mlib_check (okay == (v.error.code == 0) &&
+               "Validation routine should return `false` if-and-only-if it sets an error code");
    return okay;
 }
