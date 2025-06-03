@@ -212,9 +212,16 @@ functions:
         set -o errexit
         COVERAGE=ON .evergreen/scripts/compile.sh
   build mongohouse:
+  - command: ec2.assume_role
+    params:
+      role_arn: ${aws_test_secrets_role}
   - command: shell.exec
     type: test
     params:
+      include_expansions_in_env:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
       shell: bash
       script: |-
         set -o errexit
