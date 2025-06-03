@@ -20,6 +20,7 @@
 #include "test-conveniences.h"
 #include "TestSuite.h"
 #include <mongoc/utlist.h>
+#include <mlib/config.h>
 
 typedef enum {
    BSON_PARSER_UTF8,
@@ -200,7 +201,10 @@ bson_to_read_prefs (bson_t *bson, bson_error_t *error)
    }
 
    if (hedge) {
+      mlib_diagnostic_push ();
+      mlib_disable_deprecation_warnings ();
       mongoc_read_prefs_set_hedge (out, hedge);
+      mlib_diagnostic_pop ();
    }
 
 done:

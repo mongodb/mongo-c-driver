@@ -245,6 +245,12 @@
 #define mlib_pragma(...) _Pragma (#__VA_ARGS__) mlib_static_assert (1, "")
 #endif
 
+#define MLIB_PRAGMA_IF_CLANG(...) MLIB_IF_CLANG (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_GCC(...) MLIB_IF_GCC (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_GNU_LIKE(...) MLIB_IF_GNU_LIKE (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_UNIX_LIKE(...) MLIB_IF_UNIX_LIKE (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_MSVC(...) MLIB_IF_MSVC (__pragma (__VA_ARGS__))
+
 #define MLIB_FUNC MLIB_IF_GNU_LIKE (__func__) MLIB_IF_MSVC (__FUNCTION__)
 
 #define mlib_diagnostic_push()                           \
@@ -354,5 +360,12 @@
  * @brief Disable warnings for constant conditional expressions.
  */
 #define mlib_disable_constant_conditional_expression_warnings() mlib_msvc_warning (disable : 4127)
+
+/**
+ * @brief Disable warnings for potentially unused parameters.
+ */
+#define mlib_disable_unused_parameter_warnings()                       \
+   MLIB_IF_GNU_LIKE (mlib_gnu_warning_disable ("-Wunused-parameter");) \
+   MLIB_IF_MSVC (mlib_msvc_warning (disable : 4100);) mlib_static_assert (true, "")
 
 #endif // MLIB_CONFIG_H_INCLUDED
