@@ -454,7 +454,13 @@ void
 test_x509_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_AddFull (suite, "/X509/auth", test_x509_auth, NULL, NULL, test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/X509/auth",
+                      test_x509_auth,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_no_server_ssl);
    TestSuite_AddFull (suite, "/X509/crl", test_crl, NULL, NULL, test_framework_skip_if_no_server_ssl);
 #endif
 
