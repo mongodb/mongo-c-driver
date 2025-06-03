@@ -115,9 +115,9 @@ typedef struct {
 
 #else
 #include <process.h>
-#define BSON_ONCE_FUN(n)                                                                      \
-   BOOL CALLBACK MLIB_IF_MSVC (__pragma (warning (push)) __pragma (warning (disable : 4100))) \
-      n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_IF_MSVC (__pragma (warning (pop)))
+#define BSON_ONCE_FUN(n)                                                                             \
+   BOOL CALLBACK MLIB_PRAGMA_IF_MSVC (warning (push)) MLIB_PRAGMA_IF_MSVC (warning (disable : 4100)) \
+      n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_PRAGMA_IF_MSVC (warning (pop))
 #define BSON_ONCE_INIT INIT_ONCE_STATIC_INIT
 #define BSON_ONCE_RETURN return true
 #define bson_mutex_destroy DeleteCriticalSection
