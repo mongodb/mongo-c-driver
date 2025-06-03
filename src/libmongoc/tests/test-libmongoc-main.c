@@ -33,6 +33,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_bson_install);
    TEST_INSTALL (test_bson_version_install);
    TEST_INSTALL (test_bson_vector_install);
+   TEST_INSTALL (test_install_generated_bson_validation);
    TEST_INSTALL (test_clock_install);
    TEST_INSTALL (test_decimal128_install);
    TEST_INSTALL (test_endian_install);
