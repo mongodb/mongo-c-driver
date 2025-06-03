@@ -211,9 +211,11 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    LPBYTE encoded_cert = NULL;
    const char *pem_public;
    const char *pem_private;
-   LPBYTE blob_private_rsa = NULL, blob_private = NULL;
    PCCERT_CONTEXT cert = NULL;
-   DWORD blob_private_rsa_len = 0, blob_private_len = 0;
+   LPBYTE blob_private = NULL;
+   DWORD blob_private_len = 0;
+   LPBYTE blob_private_rsa = NULL;
+   DWORD blob_private_rsa_len = 0;
    DWORD encoded_private_len = 0;
    LPBYTE encoded_private = NULL;
 
