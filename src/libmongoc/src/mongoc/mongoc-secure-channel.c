@@ -266,7 +266,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       }
 
       blob_private = decode_object (
-         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
+         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_len, "private key", filename);
       if (!blob_private) {
          goto fail;
       }
