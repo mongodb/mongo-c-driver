@@ -159,6 +159,12 @@ decode_object (const char *structType,
                const char *descriptor,
                const char *filename)
 {
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (out_len);
+   BSON_ASSERT_PARAM (descriptor);
+   BSON_ASSERT_PARAM (filename);
    // Get needed output length:
    if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
                              structType,                              /* lpszStructType */
