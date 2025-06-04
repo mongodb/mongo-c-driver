@@ -185,7 +185,7 @@ typedef struct {
 
 
 /**
- * @brief Flags an error code for BSON validation functions.
+ * @brief Flags and error codes for BSON validation functions.
  *
  * Pass these flags bits to control the behavior of the `bson_validate` family
  * of functions.

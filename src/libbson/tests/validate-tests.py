@@ -149,7 +149,7 @@ class TestCase:
     """
 
     name: str
-    """The name of the test case, as displayed in test runners, which will valid a "/bson/validate" prefix"""
+    """The name of the test case, as displayed in test runners, which will have a "/bson/validate" prefix"""
     data: bytes
     """The bytes that will be injested by `bson_init_static` to form the document to be validated"""
     description: str | None
@@ -490,7 +490,7 @@ CASES: list[TestCase] = [
         "utf8-key/invalid/accept",
         doc(utf8elem(b"abc\xffdef", "bar")),
         """
-        The element key is not valid UTf-8, but we acecpt it if we don't do
+        The element key is not valid UTf-8, but we accept it if we don't do
         UTF-8 validation.
         """,
     ),
@@ -773,14 +773,14 @@ CASES: list[TestCase] = [
         "regex/invalid-utf8/accept",
         doc(elem("regex", Tag.Regex, b"foo\xffbar\0gi\0")),
         """
-        A regular expression that contains invalid UTf-8.
+        A regular expression that contains invalid UTF-8.
         """,
     ),
     TestCase(
         "regex/invalid-utf8/reject",
         doc(elem("regex", Tag.Regex, b"foo\xffbar\0gi\0")),
         """
-        A regular expression that contains invalid UTf-8.
+        A regular expression that contains invalid UTF-8.
         """,
         flags=BSON_VALIDATE_UTF8,
         error=ErrorInfo(BSON_VALIDATE_UTF8, "Text element is not valid UTF-8", 4),
@@ -1167,7 +1167,7 @@ CASES: list[TestCase] = [
         "boolean/invalid",
         doc(elem("bool", Tag.Boolean, b"\xc3")),
         """
-        In invalid boolean octet. Must be '0' or '1', but is 0xc3.
+        An invalid boolean octet. Must be '0' or '1', but is 0xc3.
         """,
         error=corruption_at(10),
     ),

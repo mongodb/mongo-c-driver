@@ -2502,6 +2502,10 @@ bson_validate_with_error_and_offset (const bson_t *bson,
                                      size_t *offset,
                                      bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_OPTIONAL_PARAM (offset);
+   BSON_OPTIONAL_PARAM (error);
+
    size_t offset_local = 0;
    if (!offset) {
       offset = &offset_local;

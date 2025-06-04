@@ -1000,7 +1000,6 @@ set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-utf8.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-validate.generated.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-value.c
-   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-validate.generated.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-writer.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-match.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-parser.c

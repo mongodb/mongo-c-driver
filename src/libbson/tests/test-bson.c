@@ -867,7 +867,7 @@ _make_deep_bson (bson_t *const dst, const size_t depth)
    uint8_t *out = buffer;
    mlib_foreach_urange (i, depth) {
       // Bytes we have already written:
-      const size_t begin_offset = out - buffer;
+      const size_t begin_offset = (size_t) (out - buffer);
       // The number of bytes for this inner doc:
       size_t inner_size = buffer_size;
       mlib_check (!mlib_sub (&inner_size, begin_offset));

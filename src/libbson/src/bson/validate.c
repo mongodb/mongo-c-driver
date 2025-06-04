@@ -126,7 +126,7 @@ typedef struct {
  * the document, otherwise `false`
  * @param IteratorPointer An expression of type `bson_iter_t*`, which will be advanced.
  *
- * If advancing the iterator resulting in a decoding error, then this macro sets an error
+ * If advancing the iterator results in a decoding error, then this macro sets an error
  * on the `validator* self` that is in scope and will immediately `return false`.
  */
 #define require_advance(DoneVar, IteratorPointer)                                                       \
@@ -143,6 +143,8 @@ typedef struct {
 static bool
 _key_is (bson_iter_t const *iter, const char *const key)
 {
+   BSON_ASSERT_PARAM (iter);
+   BSON_ASSERT_PARAM (key);
    return !strcmp (bson_iter_key (iter), key);
 }
 
@@ -167,11 +169,13 @@ _validate_doc (validator *self, const bson_t *bson, int depth);
  * @param u8len The length of the array pointed-to by `u8`
  * @return true If the UTF-8 string is valid, or if UTF-8 validation is disabled
  * @return false If UTF-8 validation is requested, AND (the UTF-8 string is invalid OR (UTF-8 strings should not contain
- * null characters and the UTf-8 string contains a null character))
+ * null characters and the UTF-8 string contains a null character))
  */
 static bool
 _maybe_validate_utf8 (validator *self, size_t offset, const char *u8, size_t u8len)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (u8);
    if (self->params->allow_invalid_utf8) {
       // We are not doing UTF-8 checks, so always succeed
       return true;
@@ -213,7 +217,9 @@ _maybe_validate_utf8_cstring (validator *self, size_t offset, const char *const 
 static bool
 _validate_stringlike_element (validator *self, bson_iter_t const *iter)
 {
-   // iter->d1 is the offset to the string header. Subtract 1 to exclude the null termintaor
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
+   // iter->d1 is the offset to the string header. Subtract 1 to exclude the null terminator
    const uint32_t u8len = mlib_read_u32le (iter->raw + iter->d1) - 1;
    // iter->d2 is the offset to the first byte of the string
    const char *u8 = (const char *) iter->raw + iter->d2;
@@ -280,10 +286,13 @@ _validate_codewscope_elem (validator *self, bson_iter_t const *iter, int depth)
    return false;
 }
 
-// Validate an element's key string according to the valiation rules
+// Validate an element's key string according to the validation rules
 static bool
 _validate_element_key (validator *self, bson_iter_t const *iter)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
+
    const char *const key = bson_iter_key (iter);
    mlib_check (key);
 
@@ -322,6 +331,9 @@ _get_subdocument (bson_t *subdoc, bson_iter_t const *iter)
 static bool
 _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
+
    const bson_type_t type = bson_iter_type (iter);
    switch (type) {
    default:
@@ -365,7 +377,7 @@ _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
       }
       // Error in subdocument. Adjust the error offset for the current iterator position,
       // plus the key length, plus 2 for the tag and key's null terminator.
-      self->error_offset += iter->off + strlen (bson_iter_key (iter)) + 2;
+      self->error_offset += iter->off + bson_iter_key_len (iter) + 2;
       return false;
    }
 
@@ -402,6 +414,9 @@ _validate_remaining_elements (validator *self, bson_iter_t *iter, int depth)
 static bool
 _validate_dbref (validator *self, bson_iter_t *iter, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
+
    // The iterator must be pointing to the initial $ref element
    mlib_check (_key_is (iter, "$ref"));
    // Check that $ref is a UTF-8 element
@@ -445,6 +460,8 @@ _validate_dbref (validator *self, bson_iter_t *iter, int depth)
 static bool
 _validate_dollar_doc (validator *self, bson_iter_t *iter, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
    if (_key_is (iter, "$ref")) {
       return _validate_dbref (self, iter, depth);
    }
@@ -457,6 +474,9 @@ _validate_dollar_doc (validator *self, bson_iter_t *iter, int depth)
 static bool
 _validate_doc (validator *self, const bson_t *bson, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (bson);
+
    // We increment the depth here, otherwise we'd have `depth + 1` in several places
    ++depth;
    require_with_error (depth < 1000, 0, BSON_VALIDATE_CORRUPT, "BSON document nesting depth is too deep");
@@ -486,6 +506,10 @@ _validate_doc (validator *self, const bson_t *bson, int depth)
 bool
 _bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t *offset, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (bson);
+   BSON_ASSERT_PARAM (offset);
+   BSON_ASSERT_PARAM (error);
+
    // Clear the error
    *error = (bson_error_t){0};
 
