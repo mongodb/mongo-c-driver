@@ -89,6 +89,17 @@ typedef struct {
    size_t error_offset;
 } validator;
 
+// Undef these macros, if they are defined.
+#ifdef require_with_error
+#undef require_with_error
+#endif
+#ifdef require
+#undef require
+#endif
+#ifdef require_advance
+#undef require_advance
+#endif
+
 /**
  * @brief Check that the given condition is satisfied, or set an error and return `false`
  *
