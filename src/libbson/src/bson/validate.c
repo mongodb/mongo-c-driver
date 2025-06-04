@@ -216,6 +216,8 @@ _maybe_validate_utf8 (validator *self, size_t offset, const char *u8, size_t u8l
 static bool
 _maybe_validate_utf8_cstring (validator *self, size_t offset, const char *const u8)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (u8);
    return _maybe_validate_utf8 (self, offset, u8, strlen (u8));
 }
 
@@ -240,6 +242,8 @@ _validate_stringlike_element (validator *self, bson_iter_t const *iter)
 static bool
 _validate_regex_elem (validator *self, bson_iter_t const *iter)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
    mlib_check (BSON_ITER_HOLDS_REGEX (iter));
    const char *opts;
    const char *const rx = bson_iter_regex (iter, &opts);
@@ -252,6 +256,8 @@ _validate_regex_elem (validator *self, bson_iter_t const *iter)
 static bool
 _validate_codewscope_elem (validator *self, bson_iter_t const *iter, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
    mlib_check (BSON_ITER_HOLDS_CODEWSCOPE (iter));
    // Extract the code and the scope object
    uint8_t const *doc;
@@ -333,6 +339,8 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
 static bool
 _get_subdocument (bson_t *subdoc, bson_iter_t const *iter)
 {
+   BSON_ASSERT_PARAM (subdoc);
+   BSON_ASSERT_PARAM (iter);
    uint32_t len = mlib_read_u32le (iter->raw + iter->d1);
    uint8_t const *data = (uint8_t const *) iter->raw + iter->d1;
    return bson_init_static (subdoc, data, len);
@@ -403,6 +411,8 @@ _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
 static bool
 _validate_element (validator *self, bson_iter_t *iter, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
    return _validate_element_key (self, iter) && _validate_element_value (self, iter, depth);
 }
 
@@ -413,6 +423,8 @@ _validate_element (validator *self, bson_iter_t *iter, int depth)
 static bool
 _validate_remaining_elements (validator *self, bson_iter_t *iter, int depth)
 {
+   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM (iter);
    bool done = false;
    while (!done) {
       require (_validate_element (self, iter, depth));
