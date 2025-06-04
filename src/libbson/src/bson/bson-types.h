@@ -232,7 +232,7 @@ typedef enum {
     *
     * Passing this as a flag has no effect.
     */
-   BSON_VALIDATE_CORRUPT = (1 << 30),
+   BSON_VALIDATE_CORRUPT = (1 << 5),
 } bson_validate_flags_t;
 
 

@@ -19,6 +19,7 @@ Synopsis
     BSON_VALIDATE_DOT_KEYS = (1 << 2),
     BSON_VALIDATE_UTF8_ALLOW_NULL = (1 << 3),
     BSON_VALIDATE_EMPTY_KEYS = (1 << 4),
+    BSON_VALIDATE_CORRUPT = (1 << 5),
   } bson_validate_flags_t;
 
 Description
@@ -40,6 +41,8 @@ Each defined flag aside from ``BSON_VALIDATE_NONE`` describes an optional valida
 * ``BSON_VALIDATE_DOLLAR_KEYS`` Prohibit keys that start with ``$`` outside of a "DBRef" subdocument.
 * ``BSON_VALIDATE_DOT_KEYS`` Prohibit keys that contain ``.`` anywhere in the string.
 * ``BSON_VALIDATE_EMPTY_KEYS`` Prohibit zero-length keys.
+* ``BSON_VALIDATE_CORRUPT`` is not a control flag, but is used as an error code
+  when a validation routine encounters corrupt BSON data.
 
 .. seealso::
 
