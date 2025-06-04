@@ -282,9 +282,10 @@ _get_os_name (void)
       return bson_strndup (system_info.sysname, HANDSHAKE_OS_NAME_MAX);
    }
 
-#endif
-
    return NULL;
+#else
+   return NULL;
+#endif
 }
 
 static char *

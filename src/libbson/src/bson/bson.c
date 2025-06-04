@@ -57,7 +57,7 @@ typedef struct {
 /*
  * Globals.
  */
-static const uint8_t gZero;
+static const uint8_t gZero = 0;
 
 /*
  *--------------------------------------------------------------------------

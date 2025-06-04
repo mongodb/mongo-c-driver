@@ -2419,8 +2419,8 @@ int32_t
 mcd_rpc_op_delete_get_flags (const mcd_rpc_message *rpc)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
-   return rpc->op_delete.flags;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
+   return rpc->op_delete.flags;
 }
 
 const void *

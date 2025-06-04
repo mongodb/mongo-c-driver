@@ -108,6 +108,8 @@ typedef bool (*mongoc_rr_callback_t) (const char *hostname,
 static bool
 srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
+   BSON_UNUSED (hostname);
+
    mongoc_host_list_t new_host;
 
    if (rr_data && rr_data->hosts) {
@@ -126,6 +128,9 @@ srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
 static bool
 txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
+   BSON_UNUSED (hostname);
+   BSON_UNUSED (error);
+
    DWORD i;
 
    mcommon_string_append_t txt;
@@ -559,6 +564,11 @@ _mongoc_client_get_rr (const char *hostname,
    BSON_ASSERT (rr_data);
 
 #if MONGOC_ENABLE_SRV == 0
+   BSON_UNUSED (hostname);
+   BSON_UNUSED (rr_type);
+   BSON_UNUSED (rr_data);
+   BSON_UNUSED (initial_buffer_size);
+   BSON_UNUSED (prefer_tcp);
    // Disabled
    _mongoc_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -566,6 +576,8 @@ _mongoc_client_get_rr (const char *hostname,
                       "libresolv unavailable, cannot use mongodb+srv URI");
    return false;
 #elif defined(MONGOC_HAVE_DNSAPI)
+   BSON_UNUSED (hostname);
+   BSON_UNUSED (initial_buffer_size);
    return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, prefer_tcp, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
    return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, prefer_tcp, error);
@@ -693,6 +705,7 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 {
 #ifdef _WIN32
    ENTRY;
+   BSON_UNUSED (host);
    _mongoc_set_error (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "UNIX domain sockets not supported on win32.");
    RETURN (NULL);
@@ -750,6 +763,8 @@ mongoc_client_connect (bool buffered,
 
    BSON_ASSERT (uri);
    BSON_ASSERT (host);
+
+   BSON_UNUSED (openssl_ctx_void);
 
 #ifndef MONGOC_ENABLE_SSL
    if (ssl_opts_void || mongoc_uri_get_tls (uri)) {
@@ -1031,6 +1046,9 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
    return client;
 }
 
+// Defined in mongoc-init.c.
+extern bool
+mongoc_get_init_called (void);
 
 mongoc_client_t *
 mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *error)
@@ -1043,7 +1061,6 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
 
    BSON_ASSERT (uri);
 
-   extern bool mongoc_get_init_called (void);
    if (!mongoc_get_init_called ()) {
       _mongoc_set_error (error,
                          MONGOC_ERROR_CLIENT,
@@ -2101,7 +2118,6 @@ void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t server_id,
                             int64_t cursor_id,
-                            int64_t operation_id,
                             const char *db,
                             const char *collection,
                             mongoc_client_session_t *cs)

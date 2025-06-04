@@ -122,6 +122,11 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 }
 
 
+// Defined in mongoc-init.c.
+extern bool
+mongoc_get_init_called (void);
+
+
 mongoc_client_pool_t *
 mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 {
@@ -136,7 +141,6 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 
    BSON_ASSERT (uri);
 
-   extern bool mongoc_get_init_called (void);
    if (!mongoc_get_init_called ()) {
       _mongoc_set_error (error,
                          MONGOC_ERROR_CLIENT,

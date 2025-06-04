@@ -417,7 +417,6 @@ typedef enum {
  * @param reply If checking for a command error, the server reply. Otherwise
  * NULL
  * @param why An error that will be attached to the server description
- * @param max_wire_version
  * @param generation The generation of the server description the caller was
  * using.
  * @param service_id A service ID for a load-balanced deployment. If not
@@ -434,7 +433,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    _mongoc_sdam_app_error_type_t type,
                                    const bson_t *reply,
                                    const bson_error_t *why,
-                                   uint32_t max_wire_version,
                                    uint32_t generation,
                                    const bson_oid_t *service_id);
 
