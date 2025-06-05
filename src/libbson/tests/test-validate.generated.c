@@ -544,7 +544,7 @@ static inline void _test_case_utf8_valid_with_null_reject(void) {
 // Case: utf8-key/invalid/accept
 static inline void _test_case_utf8_key_invalid_accept(void) {
   /**
-   * The element key is not valid UTf-8, but we acecpt it if we don't do
+   * The element key is not valid UTf-8, but we accept it if we don't do
    * UTF-8 validation.
    */
   const uint8_t bytes[] = {
@@ -1092,7 +1092,7 @@ static inline void _test_case_regex_double_null(void) {
 // Case: regex/invalid-utf8/accept
 static inline void _test_case_regex_invalid_utf8_accept(void) {
   /**
-   * A regular expression that contains invalid UTf-8.
+   * A regular expression that contains invalid UTF-8.
    */
   const uint8_t bytes[] = {
     0x17, 0, 0, 0, 0x0b, 'r', 'e', 'g', 'e', 'x', 0, 'f', 'o', 'o', 0xff, 'b',
@@ -1112,7 +1112,7 @@ static inline void _test_case_regex_invalid_utf8_accept(void) {
 // Case: regex/invalid-utf8/reject
 static inline void _test_case_regex_invalid_utf8_reject(void) {
   /**
-   * A regular expression that contains invalid UTf-8.
+   * A regular expression that contains invalid UTF-8.
    */
   const uint8_t bytes[] = {
     0x17, 0, 0, 0, 0x0b, 'r', 'e', 'g', 'e', 'x', 0, 'f', 'o', 'o', 0xff, 'b',
@@ -1868,7 +1868,7 @@ static inline void _test_case_boolean_simple_true(void) {
 // Case: boolean/invalid
 static inline void _test_case_boolean_invalid(void) {
   /**
-   * In invalid boolean octet. Must be '0' or '1', but is 0xc3.
+   * An invalid boolean octet. Must be '0' or '1', but is 0xc3.
    */
   const uint8_t bytes[] = {
     0x0c, 0, 0, 0, 8, 'b', 'o', 'o', 'l', 0, 0xc3, 0
