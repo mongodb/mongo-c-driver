@@ -4910,9 +4910,9 @@ tasks:
           CC: gcc-10
           CXX: g++-10
           C_STD_VERSION: 11
-  - name: std-c11-rhel76-gcc-compile
-    run_on: rhel76-large
-    tags: [std-matrix, rhel76, gcc, compile, std-c11]
+  - name: std-c11-rhel7.9-gcc-compile
+    run_on: rhel7.9-large
+    tags: [std-matrix, rhel7.9, gcc, compile, std-c11]
     commands:
       - func: find-cmake-latest
       - func: std-compile
@@ -5510,9 +5510,9 @@ tasks:
           CC: gcc-10
           CXX: g++-10
           C_STD_VERSION: 99
-  - name: std-c99-rhel76-gcc-compile
-    run_on: rhel76-large
-    tags: [std-matrix, rhel76, gcc, compile, std-c99]
+  - name: std-c99-rhel7.9-gcc-compile
+    run_on: rhel7.9-large
+    tags: [std-matrix, rhel7.9, gcc, compile, std-c99]
     commands:
       - func: find-cmake-latest
       - func: std-compile
