@@ -541,6 +541,84 @@ static inline void _test_case_utf8_valid_with_null_reject(void) {
 }
 
 // ! This code is GENERATED! Do not edit it directly!
+// Case: utf8/overlong-null/accept-1
+static inline void _test_case_utf8_overlong_null_accept_1(void) {
+  /**
+   * This is an *invalid* UTF-8 string, and contains an overlong null. We should
+   * accept it because we aren't doing UTF-8 validation.
+   */
+  const uint8_t bytes[] = {
+    0x17, 0, 0, 0, 2, 'f', 'o', 'o', 0, 9, 0, 0, 0, 'a', 'b', 'c', 0xc0, 0x80,
+    '1', '2', '3', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
+  mlib_check(is_valid);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: utf8/overlong-null/accept-2
+static inline void _test_case_utf8_overlong_null_accept_2(void) {
+  /**
+   * ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+   * 
+   * This is an *invalid* UTF-8 string, because it contains an overlong null
+   * "0xc0 0x80". Despite being invalid, we accept it because our current UTF-8
+   * validation considers the overlong null to be a valid encoding for the null
+   * codepoint (it isn't, but changing it would be a breaking change).
+   * 
+   * If/when UTF-8 validation is changed to reject overlong null, then this
+   * test should change to expect rejection the invalid UTF-8.
+   */
+  const uint8_t bytes[] = {
+    0x17, 0, 0, 0, 2, 'f', 'o', 'o', 0, 9, 0, 0, 0, 'a', 'b', 'c', 0xc0, 0x80,
+    '1', '2', '3', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
+  mlib_check(is_valid);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: utf8/overlong-null/reject
+static inline void _test_case_utf8_overlong_null_reject(void) {
+  /**
+   * ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+   * 
+   * This is an *invalid* UTF-8 string, because it contains an overlong null
+   * character. Our UTF-8 validator wrongly accepts overlong null as a valid
+   * UTF-8 sequence. This test fails because we disallow null codepoints, not
+   * because the UTF-8 is invalid, and the error message reflects that.
+   * 
+   * If/when UTF-8 validation is changed to reject overlong null, then the
+   * expected error code and error message for this test should change.
+   */
+  const uint8_t bytes[] = {
+    0x17, 0, 0, 0, 2, 'f', 'o', 'o', 0, 9, 0, 0, 0, 'a', 'b', 'c', 0xc0, 0x80,
+    '1', '2', '3', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_UTF8_ALLOW_NULL);
+  mlib_check(error.message, str_eq, "UTF-8 string contains a U+0000 (null) character");
+  mlib_check(offset, eq, 4);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
 // Case: utf8-key/invalid/accept
 static inline void _test_case_utf8_key_invalid_accept(void) {
   /**
@@ -581,6 +659,61 @@ static inline void _test_case_utf8_key_invalid_reject(void) {
   mlib_check(error.code, eq, BSON_VALIDATE_UTF8);
   mlib_check(error.message, str_eq, "Text element is not valid UTF-8");
   mlib_check(offset, eq, 4);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: utf8-key/overlong-null/reject
+static inline void _test_case_utf8_key_overlong_null_reject(void) {
+  /**
+   * ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+   * 
+   * The element key is invalid UTF-8 because it contains an overlong null. We accept the
+   * overlong null as a valid encoding of U+0000, but we reject the key because
+   * we disallow null in UTF-8 strings.
+   * 
+   * If/when UTF-8 validation is changed to reject overlong null, then the
+   * expected error code and error message for this test should change.
+   */
+  const uint8_t bytes[] = {
+    0x17, 0, 0, 0, 2, 'a', 'b', 'c', 0xc0, 0x80, 'd', 'e', 'f', 0, 4, 0, 0, 0,
+    'b', 'a', 'r', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_UTF8_ALLOW_NULL);
+  mlib_check(error.message, str_eq, "UTF-8 string contains a U+0000 (null) character");
+  mlib_check(offset, eq, 4);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: utf8-key/overlong-null/accept
+static inline void _test_case_utf8_key_overlong_null_accept(void) {
+  /**
+   * ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+   * 
+   * The element key is invalid UTF-8 because it contains an overlong null. We accept the
+   * overlong null as a valid encoding of U+0000, and we allow it in an element key because
+   * we pass ALLOW_NULL
+   * 
+   * If/when UTF-8 validation is changed to reject overlong null, then this
+   * test case should instead reject the key string as invalid UTF-8.
+   */
+  const uint8_t bytes[] = {
+    0x17, 0, 0, 0, 2, 'a', 'b', 'c', 0xc0, 0x80, 'd', 'e', 'f', 0, 4, 0, 0, 0,
+    'b', 'a', 'r', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
+  mlib_check(is_valid);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2267,8 +2400,13 @@ void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "utf8/valid-with-null/accept-1", _test_case_utf8_valid_with_null_accept_1);
   TestSuite_Add(suite, "/bson/validate/" "utf8/valid-with-null/accept-2", _test_case_utf8_valid_with_null_accept_2);
   TestSuite_Add(suite, "/bson/validate/" "utf8/valid-with-null/reject", _test_case_utf8_valid_with_null_reject);
+  TestSuite_Add(suite, "/bson/validate/" "utf8/overlong-null/accept-1", _test_case_utf8_overlong_null_accept_1);
+  TestSuite_Add(suite, "/bson/validate/" "utf8/overlong-null/accept-2", _test_case_utf8_overlong_null_accept_2);
+  TestSuite_Add(suite, "/bson/validate/" "utf8/overlong-null/reject", _test_case_utf8_overlong_null_reject);
   TestSuite_Add(suite, "/bson/validate/" "utf8-key/invalid/accept", _test_case_utf8_key_invalid_accept);
   TestSuite_Add(suite, "/bson/validate/" "utf8-key/invalid/reject", _test_case_utf8_key_invalid_reject);
+  TestSuite_Add(suite, "/bson/validate/" "utf8-key/overlong-null/reject", _test_case_utf8_key_overlong_null_reject);
+  TestSuite_Add(suite, "/bson/validate/" "utf8-key/overlong-null/accept", _test_case_utf8_key_overlong_null_accept);
   TestSuite_Add(suite, "/bson/validate/" "array/empty", _test_case_array_empty);
   TestSuite_Add(suite, "/bson/validate/" "array/simple", _test_case_array_simple);
   TestSuite_Add(suite, "/bson/validate/" "array/invalid-element", _test_case_array_invalid_element);

@@ -492,6 +492,47 @@ CASES: list[TestCase] = [
         error=ErrorInfo("BSON_VALIDATE_UTF8_ALLOW_NULL", "UTF-8 string contains a U+0000 (null) character", 4),
     ),
     TestCase(
+        "utf8/overlong-null/accept-1",
+        doc(utf8elem("foo", b"abc\xc0\x80123")),
+        """
+        This is an *invalid* UTF-8 string, and contains an overlong null. We should
+        accept it because we aren't doing UTF-8 validation.
+        """,
+    ),
+    TestCase(
+        "utf8/overlong-null/accept-2",
+        doc(utf8elem("foo", b"abc\xc0\x80123")),
+        """
+        ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+
+        This is an *invalid* UTF-8 string, because it contains an overlong null
+        "0xc0 0x80". Despite being invalid, we accept it because our current UTF-8
+        validation considers the overlong null to be a valid encoding for the null
+        codepoint (it isn't, but changing it would be a breaking change).
+
+        If/when UTF-8 validation is changed to reject overlong null, then this
+        test should change to expect rejection the invalid UTF-8.
+        """,
+        flags=f"{BSON_VALIDATE_UTF8} | BSON_VALIDATE_UTF8_ALLOW_NULL",
+    ),
+    TestCase(
+        "utf8/overlong-null/reject",
+        doc(utf8elem("foo", b"abc\xc0\x80123")),
+        """
+        ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+
+        This is an *invalid* UTF-8 string, because it contains an overlong null
+        character. Our UTF-8 validator wrongly accepts overlong null as a valid
+        UTF-8 sequence. This test fails because we disallow null codepoints, not
+        because the UTF-8 is invalid, and the error message reflects that.
+
+        If/when UTF-8 validation is changed to reject overlong null, then the
+        expected error code and error message for this test should change.
+        """,
+        flags=BSON_VALIDATE_UTF8,
+        error=ErrorInfo("BSON_VALIDATE_UTF8_ALLOW_NULL", "UTF-8 string contains a U+0000 (null) character", 4),
+    ),
+    TestCase(
         "utf8-key/invalid/accept",
         doc(utf8elem(b"abc\xffdef", "bar")),
         """
@@ -508,6 +549,37 @@ CASES: list[TestCase] = [
         """,
         flags=BSON_VALIDATE_UTF8,
         error=ErrorInfo(BSON_VALIDATE_UTF8, "Text element is not valid UTF-8", 4),
+    ),
+    TestCase(
+        "utf8-key/overlong-null/reject",
+        doc(utf8elem(b"abc\xc0\x80def", "bar")),
+        """
+        ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+
+        The element key is invalid UTF-8 because it contains an overlong null. We accept the
+        overlong null as a valid encoding of U+0000, but we reject the key because
+        we disallow null in UTF-8 strings.
+
+        If/when UTF-8 validation is changed to reject overlong null, then the
+        expected error code and error message for this test should change.
+        """,
+        flags=BSON_VALIDATE_UTF8,
+        error=ErrorInfo("BSON_VALIDATE_UTF8_ALLOW_NULL", "UTF-8 string contains a U+0000 (null) character", 4),
+    ),
+    TestCase(
+        "utf8-key/overlong-null/accept",
+        doc(utf8elem(b"abc\xc0\x80def", "bar")),
+        """
+        ! NOTE: overlong-null: This test relies on our UTF-8 validation accepting the `c0 80` sequence
+
+        The element key is invalid UTF-8 because it contains an overlong null. We accept the
+        overlong null as a valid encoding of U+0000, and we allow it in an element key because
+        we pass ALLOW_NULL
+
+        If/when UTF-8 validation is changed to reject overlong null, then this
+        test case should instead reject the key string as invalid UTF-8.
+        """,
+        flags=f"{BSON_VALIDATE_UTF8} | BSON_VALIDATE_UTF8_ALLOW_NULL",
     ),
     TestCase(
         "array/empty",
