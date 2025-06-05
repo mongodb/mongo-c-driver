@@ -1671,6 +1671,28 @@ static inline void _test_case_binary_bad_length_zero_subtype_2(void) {
 }
 
 // ! This code is GENERATED! Do not edit it directly!
+// Case: binary/bad-inner-length-on-subtype-2
+static inline void _test_case_binary_bad_inner_length_on_subtype_2(void) {
+  /**
+   * Binary data that has an valid outer length header, but the inner length
+   * header for subtype 2 has an incorrect value.
+   */
+  const uint8_t bytes[] = {
+    0x1a, 0, 0, 0, 5, 'b', 'i', 'n', 'a', 'r', 'y', 0, 8, 0, 0, 0, 2, 2, 0, 0,
+    0, '1', '2', '3', '4', 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_CORRUPT);
+  mlib_check(error.message, str_eq, "corrupt BSON");
+  mlib_check(offset, eq, 17);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
 // Case: binary/bad-length-too-small
 static inline void _test_case_binary_bad_length_too_small(void) {
   /**
@@ -2455,6 +2477,7 @@ void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "undefined/simple", _test_case_undefined_simple);
   TestSuite_Add(suite, "/bson/validate/" "binary/simple", _test_case_binary_simple);
   TestSuite_Add(suite, "/bson/validate/" "binary/bad-length-zero-subtype-2", _test_case_binary_bad_length_zero_subtype_2);
+  TestSuite_Add(suite, "/bson/validate/" "binary/bad-inner-length-on-subtype-2", _test_case_binary_bad_inner_length_on_subtype_2);
   TestSuite_Add(suite, "/bson/validate/" "binary/bad-length-too-small", _test_case_binary_bad_length_too_small);
   TestSuite_Add(suite, "/bson/validate/" "binary/bad-length-too-big", _test_case_binary_bad_length_too_big);
   TestSuite_Add(suite, "/bson/validate/" "binary/old-invalid/1", _test_case_binary_old_invalid_1);

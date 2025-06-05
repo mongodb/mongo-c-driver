@@ -1115,6 +1115,24 @@ CASES: list[TestCase] = [
         error=corruption_at(12),
     ),
     TestCase(
+        "binary/bad-inner-length-on-subtype-2",
+        doc(
+            elem(
+                "binary",
+                Tag.Binary,
+                i32le(8),  # Valid length
+                b"\x02",  # subtype two
+                i32le(2),  # Invalid length of (should be 4)
+                b"1234",  # payload
+            ),
+        ),
+        """
+        Binary data that has an valid outer length header, but the inner length
+        header for subtype 2 has an incorrect value.
+        """,
+        error=corruption_at(17),
+    ),
+    TestCase(
         "binary/bad-length-too-small",
         doc(
             elem(
