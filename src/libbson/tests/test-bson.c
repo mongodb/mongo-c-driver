@@ -898,15 +898,15 @@ static void
 test_bson_validate_deep (void)
 {
    bson_t deep;
-   // 1000 is too deep
-   _make_deep_bson (&deep, 1000);
+   // Just barely too deep
+   _make_deep_bson (&deep, BSON_VALIDATION_MAX_NESTING_DEPTH + 1);
    bson_error_t err;
    mlib_check (!bson_validate_with_error (&deep, 0, &err));
    mlib_check (err.code, eq, BSON_VALIDATE_CORRUPT);
    mlib_check (err.message, str_eq, "BSON document nesting depth is too deep");
    bson_destroy (&deep);
-   // 999 is not too deep
-   _make_deep_bson (&deep, 999);
+   // At the limit
+   _make_deep_bson (&deep, BSON_VALIDATION_MAX_NESTING_DEPTH);
    mlib_check (bson_validate (&deep, 0, NULL));
    bson_destroy (&deep);
 }

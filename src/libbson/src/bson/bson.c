@@ -15,6 +15,7 @@
  */
 
 
+#include <bson/validate-private.h>
 #include <mlib/intencode.h>
 #include <bson/bson.h>
 #include <bson/bson-config.h>
@@ -2491,10 +2492,6 @@ bson_validate_with_error (const bson_t *bson, bson_validate_flags_t flags, bson_
 {
    return bson_validate_with_error_and_offset (bson, flags, NULL, error);
 }
-
-// Defined in validate.c
-extern bool
-_bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t *offset, bson_error_t *error);
 
 bool
 bson_validate_with_error_and_offset (const bson_t *bson,
