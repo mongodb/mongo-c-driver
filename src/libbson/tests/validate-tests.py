@@ -7,6 +7,11 @@ Run this script with Python 3.12+, and pipe the output into a file.
 This script takes no command-line arguments.
 """
 
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+
 import argparse
 import enum
 import json
