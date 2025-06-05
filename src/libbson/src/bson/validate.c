@@ -312,9 +312,10 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
 
    const char *const key = bson_iter_key (iter);
    mlib_check (key);
+   const size_t key_len = bson_iter_key_len (iter);
 
    // Check the UTF-8 of the key
-   require (_maybe_validate_utf8_cstring (self, iter->off, key));
+   require (_maybe_validate_utf8 (self, iter->off, key, key_len));
 
    // Check for special keys
    if (self->params->check_special_dollar_keys) {
@@ -323,8 +324,7 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
    }
 
    if (!self->params->allow_empty_keys) {
-      require_with_error (
-         strlen (key) != 0, iter->off, BSON_VALIDATE_EMPTY_KEYS, "Element key cannot be an empty string");
+      require_with_error (key_len != 0, iter->off, BSON_VALIDATE_EMPTY_KEYS, "Element key cannot be an empty string");
    }
 
    if (!self->params->allow_dot_in_keys) {
