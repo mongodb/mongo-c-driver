@@ -833,7 +833,7 @@ test_update_with_opts_validate (void)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "invalid argument for update: Disallowed element key: \"a.a\"");
+                             "invalid argument for update: Disallowed '.' in element key: \"a.a\"");
       mongoc_bulk_operation_destroy (bulk);
 
       /* Test a valid update_one with explicit validation on the server. */
@@ -1172,7 +1172,7 @@ test_replace_one_with_opts_validate (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid argument for replace: Disallowed element key: \"a.a\"");
+                          "invalid argument for replace: Disallowed '.' in element key: \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
 
@@ -1913,7 +1913,7 @@ test_insert_with_opts_validate (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document for insert: Disallowed element key: \"a.a\"");
+                          "invalid document for insert: Disallowed '.' in element key: \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
 

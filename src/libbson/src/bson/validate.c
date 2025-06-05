@@ -321,7 +321,8 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
    // Check for special keys
    if (self->params->check_special_dollar_keys) {
       // dollar-keys are checked during the startup of _validate_doc. If we get here, there's a problem.
-      require_with_error (key[0] != '$', iter->off, BSON_VALIDATE_DOLLAR_KEYS, "Disallowed element key: \"%s\"", key);
+      require_with_error (
+         key[0] != '$', iter->off, BSON_VALIDATE_DOLLAR_KEYS, "Disallowed '$' in element key: \"%s\"", key);
    }
 
    if (!self->params->allow_empty_keys) {
@@ -329,7 +330,8 @@ _validate_element_key (validator *self, bson_iter_t const *iter)
    }
 
    if (!self->params->allow_dot_in_keys) {
-      require_with_error (!strstr (key, "."), iter->off, BSON_VALIDATE_DOT_KEYS, "Disallowed element key: \"%s\"", key);
+      require_with_error (
+         !strstr (key, "."), iter->off, BSON_VALIDATE_DOT_KEYS, "Disallowed '.' in element key: \"%s\"", key);
    }
 
    return true;

@@ -208,7 +208,7 @@ static inline void _test_case_key_dot_reject(void) {
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOT_KEYS, &offset, &error);
   mlib_check(!is_valid);
   mlib_check(error.code, eq, BSON_VALIDATE_DOT_KEYS);
-  mlib_check(error.message, str_eq, "Disallowed element key: \"foo.bar\"");
+  mlib_check(error.message, str_eq, "Disallowed '.' in element key: \"foo.bar\"");
   mlib_check(offset, eq, 13);
 }
 
@@ -268,7 +268,7 @@ static inline void _test_case_key_dollar_reject(void) {
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   mlib_check(!is_valid);
   mlib_check(error.code, eq, BSON_VALIDATE_DOLLAR_KEYS);
-  mlib_check(error.message, str_eq, "Disallowed element key: \"$foo\"");
+  mlib_check(error.message, str_eq, "Disallowed '$' in element key: \"$foo\"");
   mlib_check(offset, eq, 13);
 }
 
@@ -1982,7 +1982,7 @@ static inline void _test_case_dbref_not_first_elements(void) {
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   mlib_check(!is_valid);
   mlib_check(error.code, eq, BSON_VALIDATE_DOLLAR_KEYS);
-  mlib_check(error.message, str_eq, "Disallowed element key: \"$ref\"");
+  mlib_check(error.message, str_eq, "Disallowed '$' in element key: \"$ref\"");
   mlib_check(offset, eq, 17);
 }
 
@@ -2069,7 +2069,7 @@ static inline void _test_case_dbref_invalid_extras_between(void) {
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   mlib_check(!is_valid);
   mlib_check(error.code, eq, BSON_VALIDATE_DOLLAR_KEYS);
-  mlib_check(error.message, str_eq, "Disallowed element key: \"$db\"");
+  mlib_check(error.message, str_eq, "Disallowed '$' in element key: \"$db\"");
   mlib_check(offset, eq, 48);
 }
 
@@ -2111,7 +2111,7 @@ static inline void _test_case_dbref_invalid_missing_ref(void) {
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   mlib_check(!is_valid);
   mlib_check(error.code, eq, BSON_VALIDATE_DOLLAR_KEYS);
-  mlib_check(error.message, str_eq, "Disallowed element key: \"$id\"");
+  mlib_check(error.message, str_eq, "Disallowed '$' in element key: \"$id\"");
   mlib_check(offset, eq, 4);
 }
 

@@ -262,8 +262,8 @@ BSON_VALIDATE_UTF8 = "BSON_VALIDATE_UTF8"
 MSG_EXPECTED_ID_FOLLOWING_REF = "Expected an $id element following $ref"
 
 
-def disallowed_key(k: str) -> str:
-    return f'Disallowed element key: "{k}"'
+def disallowed_key(char: str, k: str) -> str:
+    return f"Disallowed '{char}' in element key: \"{k}\""
 
 
 # d888888b d88888b .d8888. d888888b       .o88b.  .d8b.  .d8888. d88888b .d8888.
@@ -361,7 +361,7 @@ CASES: list[TestCase] = [
         it.
         """,
         flags="BSON_VALIDATE_DOT_KEYS",
-        error=ErrorInfo("BSON_VALIDATE_DOT_KEYS", disallowed_key("foo.bar"), 13),
+        error=ErrorInfo("BSON_VALIDATE_DOT_KEYS", disallowed_key(".", "foo.bar"), 13),
     ),
     TestCase(
         "key/dot/accept-if-absent",
@@ -385,7 +385,7 @@ CASES: list[TestCase] = [
         We can reject an element key that starts with a dollar '$' sign.
         """,
         flags=BSON_VALIDATE_DOLLAR_KEYS,
-        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$foo"), 13),
+        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$", "$foo"), 13),
     ),
     TestCase(
         "key/dollar/accept-in-middle",
@@ -1211,7 +1211,7 @@ CASES: list[TestCase] = [
         This would be a valid DBRef, but the "$ref" key must come first.
         """,
         flags=BSON_VALIDATE_DOLLAR_KEYS,
-        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$ref"), 17),
+        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$", "$ref"), 17),
     ),
     TestCase(
         "dbref/ref-without-id-with-db",
@@ -1257,7 +1257,7 @@ CASES: list[TestCase] = [
         as an invalid key.
         """,
         flags=BSON_VALIDATE_DOLLAR_KEYS,
-        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$db"), 48),
+        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$", "$db"), 48),
     ),
     TestCase(
         "dbref/invalid-double-ref",
@@ -1279,7 +1279,7 @@ CASES: list[TestCase] = [
         DBRef document requires a $ref key to be first.
         """,
         flags=BSON_VALIDATE_DOLLAR_KEYS,
-        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$id"), 4),
+        error=ErrorInfo(BSON_VALIDATE_DOLLAR_KEYS, disallowed_key("$", "$id"), 4),
     ),
     TestCase(
         "dbref/valid/simple",
