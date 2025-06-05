@@ -150,6 +150,62 @@ fail:
 }
 
 
+// `decode_object` decodes a cryptographic object from a blob.
+// Returns NULL on error.
+static LPBYTE
+decode_object (const char *structType,
+               const LPBYTE data,
+               DWORD data_len,
+               DWORD *out_len,
+               const char *descriptor,
+               const char *filename)
+{
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (out_len);
+   BSON_ASSERT_PARAM (descriptor);
+   BSON_ASSERT_PARAM (filename);
+   // Get needed output length:
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             NULL,                                    /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      return NULL;
+   }
+
+   if (*out_len == 0) {
+      return NULL;
+   }
+   LPBYTE out = (LPBYTE) bson_malloc (*out_len);
+
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             out,                                     /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      bson_free (out);
+      return NULL;
+   }
+
+   return out;
+}
+
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
@@ -162,9 +218,11 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    LPBYTE encoded_cert = NULL;
    const char *pem_public;
    const char *pem_private;
-   LPBYTE blob_private = NULL;
    PCCERT_CONTEXT cert = NULL;
+   LPBYTE blob_private = NULL;
    DWORD blob_private_len = 0;
+   LPBYTE blob_private_rsa = NULL;
+   DWORD blob_private_rsa_len = 0;
    DWORD encoded_private_len = 0;
    LPBYTE encoded_private = NULL;
 
@@ -186,16 +244,6 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----");
-   if (!pem_private) {
-      pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----");
-   }
-
-   if (!pem_private) {
-      MONGOC_ERROR ("Can't find private key in '%s'", filename);
-      goto fail;
-   }
-
    encoded_cert = decode_pem_base64 (pem_public, &encoded_cert_len, "public key", filename);
    if (!encoded_cert) {
       goto fail;
@@ -209,43 +257,47 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380285%28v=vs.85%29.aspx
-    */
-   encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
-   if (!encoded_private) {
-      goto fail;
-   }
+   if (NULL != (pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----"))) {
+      encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
+      if (!encoded_private) {
+         goto fail;
+      }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa379912%28v=vs.85%29.aspx
-    */
-   success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
-                                  PKCS_RSA_PRIVATE_KEY,                    /* lpszStructType */
-                                  encoded_private,                         /* pbEncoded */
-                                  encoded_private_len,                     /* cbEncoded */
-                                  0,                                       /* dwFlags */
-                                  NULL,                                    /* pDecodePara */
-                                  NULL,                                    /* pvStructInfo */
-                                  &blob_private_len);                      /* pcbStructInfo */
-   if (!success) {
-      char *msg = mongoc_winerr_to_string (GetLastError ());
-      MONGOC_ERROR ("Failed to parse private key. %s", msg);
-      bson_free (msg);
-      goto fail;
-   }
+      blob_private_rsa = decode_object (
+         PKCS_RSA_PRIVATE_KEY, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
+      if (!blob_private_rsa) {
+         goto fail;
+      }
+   } else if (NULL != (pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----"))) {
+      encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
+      if (!encoded_private) {
+         goto fail;
+      }
 
-   blob_private = (LPBYTE) bson_malloc0 (blob_private_len);
-   success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                  PKCS_RSA_PRIVATE_KEY,
-                                  encoded_private,
-                                  encoded_private_len,
-                                  0,
-                                  NULL,
-                                  blob_private,
-                                  &blob_private_len);
-   if (!success) {
-      char *msg = mongoc_winerr_to_string (GetLastError ());
-      MONGOC_ERROR ("Failed to parse private key: %s", msg);
-      bson_free (msg);
+      blob_private = decode_object (
+         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_len, "private key", filename);
+      if (!blob_private) {
+         goto fail;
+      }
+
+      // Have PrivateKey. Get RSA key from it.
+      CRYPT_PRIVATE_KEY_INFO *privateKeyInfo = (CRYPT_PRIVATE_KEY_INFO *) blob_private;
+      if (strcmp (privateKeyInfo->Algorithm.pszObjId, szOID_RSA_RSA) != 0) {
+         MONGOC_ERROR ("Non-RSA private keys are not supported");
+         goto fail;
+      }
+
+      blob_private_rsa = decode_object (PKCS_RSA_PRIVATE_KEY,
+                                        privateKeyInfo->PrivateKey.pbData,
+                                        privateKeyInfo->PrivateKey.cbData,
+                                        &blob_private_rsa_len,
+                                        "private key",
+                                        filename);
+      if (!blob_private_rsa) {
+         goto fail;
+      }
+   } else {
+      MONGOC_ERROR ("Can't find private key in '%s'", filename);
       goto fail;
    }
 
@@ -266,12 +318,12 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    HCRYPTKEY hKey;
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380207%28v=vs.85%29.aspx
     */
-   success = CryptImportKey (provider,         /* hProv */
-                             blob_private,     /* pbData */
-                             blob_private_len, /* dwDataLen */
-                             0,                /* hPubKey */
-                             0,                /* dwFlags */
-                             &hKey);           /* phKey, OUT */
+   success = CryptImportKey (provider,             /* hProv */
+                             blob_private_rsa,     /* pbData */
+                             blob_private_rsa_len, /* dwDataLen */
+                             0,                    /* hPubKey */
+                             0,                    /* dwFlags */
+                             &hKey);               /* phKey, OUT */
    if (!success) {
       char *msg = mongoc_winerr_to_string (GetLastError ());
       MONGOC_ERROR ("CryptImportKey for private key failed: %s", msg);
@@ -307,6 +359,11 @@ fail:
    if (encoded_private) {
       SecureZeroMemory (encoded_private, encoded_private_len);
       bson_free (encoded_private);
+   }
+
+   if (blob_private_rsa) {
+      SecureZeroMemory (blob_private_rsa, blob_private_rsa_len);
+      bson_free (blob_private_rsa);
    }
 
    if (blob_private) {
