@@ -22,7 +22,7 @@ static inline void _test_case_empty(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -83,7 +83,7 @@ static inline void _test_case_key_invalid_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -124,7 +124,7 @@ static inline void _test_case_key_empty_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -164,7 +164,7 @@ static inline void _test_case_key_empty_accept_if_absent(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -185,7 +185,7 @@ static inline void _test_case_key_dot_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -226,7 +226,7 @@ static inline void _test_case_key_dot_accept_if_absent(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOT_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -246,7 +246,7 @@ static inline void _test_case_key_dollar_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -288,7 +288,7 @@ static inline void _test_case_key_dollar_accept_in_middle(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -308,7 +308,7 @@ static inline void _test_case_key_dollar_accept_if_absent(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -328,7 +328,7 @@ static inline void _test_case_utf8_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -430,7 +430,7 @@ static inline void _test_case_utf8_valid(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -450,7 +450,7 @@ static inline void _test_case_utf8_invalid_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -492,7 +492,7 @@ static inline void _test_case_utf8_valid_with_null_accept_1(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -513,7 +513,7 @@ static inline void _test_case_utf8_valid_with_null_accept_2(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -556,7 +556,7 @@ static inline void _test_case_utf8_overlong_null_accept_1(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -584,7 +584,7 @@ static inline void _test_case_utf8_overlong_null_accept_2(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -634,7 +634,7 @@ static inline void _test_case_utf8_key_invalid_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -711,7 +711,7 @@ static inline void _test_case_utf8_key_overlong_null_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -730,7 +730,7 @@ static inline void _test_case_array_empty(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -751,7 +751,7 @@ static inline void _test_case_array_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -816,7 +816,7 @@ static inline void _test_case_symbol_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -836,7 +836,7 @@ static inline void _test_case_symbol_invalid_utf8_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -918,7 +918,7 @@ static inline void _test_case_code_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -938,7 +938,7 @@ static inline void _test_case_code_invalid_utf8_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1019,7 +1019,7 @@ static inline void _test_case_code_with_scope_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1091,7 +1091,10 @@ static inline void _test_case_code_with_scope_invalid_scope(void) {
 // Case: code-with-scope/invalid-scope-key
 static inline void _test_case_code_with_scope_invalid_scope_key(void) {
   /**
-   * A code-with-scope element, but the socpe contains an empty element key
+   * A code-with-scope element, but the socpe contains an empty element key. Even
+   * though we don't request validation of empty keys, the scope document will
+   * be validated according to a fix set of rules to better match the rules
+   * for JS identifiers (including forbidding empty keys).
    */
   const uint8_t bytes[] = {
     '2', 0, 0, 0, 0x0f, 'c', 'o', 'd', 'e', 0, 0x27, 0, 0, 0, 8, 0, 0, 0, 'v',
@@ -1168,7 +1171,7 @@ static inline void _test_case_regex_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1236,7 +1239,7 @@ static inline void _test_case_regex_invalid_utf8_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1278,7 +1281,7 @@ static inline void _test_case_regex_invalid_utf8_accept_if_absent(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1390,7 +1393,7 @@ static inline void _test_case_dbpointer_invalid_utf8_accept(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1433,7 +1436,7 @@ static inline void _test_case_dbpointer_invalid_utf8_accept_if_absent(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1453,7 +1456,7 @@ static inline void _test_case_subdoc_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1601,7 +1604,7 @@ static inline void _test_case_null_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1620,7 +1623,7 @@ static inline void _test_case_undefined_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1640,7 +1643,7 @@ static inline void _test_case_binary_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1772,7 +1775,7 @@ static inline void _test_case_minkey_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1791,7 +1794,7 @@ static inline void _test_case_maxkey_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1810,7 +1813,7 @@ static inline void _test_case_int32_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1851,7 +1854,7 @@ static inline void _test_case_timestamp_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1892,7 +1895,7 @@ static inline void _test_case_int64_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1933,7 +1936,7 @@ static inline void _test_case_double_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1973,7 +1976,7 @@ static inline void _test_case_boolean_simple_false(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -1992,7 +1995,7 @@ static inline void _test_case_boolean_simple_true(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -2031,7 +2034,7 @@ static inline void _test_case_datetime_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -2263,7 +2266,7 @@ static inline void _test_case_dbref_valid_simple(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -2286,7 +2289,7 @@ static inline void _test_case_dbref_valid_simple_with_db(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -2311,7 +2314,7 @@ static inline void _test_case_dbref_valid_nested_id_doc(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -2340,7 +2343,7 @@ static inline void _test_case_dbref_valid_trailing_content(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }
@@ -2367,7 +2370,7 @@ static inline void _test_case_dbref_valid_trailing_content_no_db(void) {
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  mlib_check(is_valid);
+  ASSERT_OR_PRINT(is_valid, error);
   mlib_check(error.code, eq, 0);
   mlib_check(error.message, str_eq, "");
 }

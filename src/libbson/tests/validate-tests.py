@@ -238,7 +238,7 @@ def generate(case: TestCase) -> Iterable[str]:
     ]
     is_error = case.error.code != "0"
     yield from [
-        f"  mlib_check({'!is_valid' if is_error else 'is_valid'});\n",
+        "  mlib_check(!is_valid);\n" if is_error else "  ASSERT_OR_PRINT(is_valid, error);\n",
         f"  mlib_check(error.code, eq, {case.error.code});\n",
         f"  mlib_check(error.message, str_eq, {json.dumps(case.error.message)});\n",
         f"  mlib_check(offset, eq, {case.error.offset});\n" if is_error else "",
@@ -254,11 +254,15 @@ def corruption_at(off: int) -> ErrorInfo:
     Note that this won't match if the error message is something other
     than "corrupt BSON".
     """
-    return ErrorInfo("BSON_VALIDATE_CORRUPT", "corrupt BSON", off)
+    return ErrorInfo(BSON_VALIDATE_CORRUPT, "corrupt BSON", off)
 
 
+BSON_VALIDATE_CORRUPT = "BSON_VALIDATE_CORRUPT"
 BSON_VALIDATE_DOLLAR_KEYS = "BSON_VALIDATE_DOLLAR_KEYS"
+BSON_VALIDATE_DOT_KEYS = "BSON_VALIDATE_DOT_KEYS"
+BSON_VALIDATE_EMPTY_KEYS = "BSON_VALIDATE_EMPTY_KEYS"
 BSON_VALIDATE_UTF8 = "BSON_VALIDATE_UTF8"
+BSON_VALIDATE_UTF8_ALLOW_NULL = "BSON_VALIDATE_UTF8_ALLOW_NULL"
 MSG_EXPECTED_ID_FOLLOWING_REF = "Expected an $id element following $ref"
 
 
@@ -333,8 +337,8 @@ CASES: list[TestCase] = [
         """
         The element has an empty key, and we can reject it.
         """,
-        flags="BSON_VALIDATE_EMPTY_KEYS",
-        error=ErrorInfo("BSON_VALIDATE_EMPTY_KEYS", "Element key cannot be an empty string", 13),
+        flags=BSON_VALIDATE_EMPTY_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_EMPTY_KEYS, "Element key cannot be an empty string", 13),
     ),
     TestCase(
         "key/empty/accept-if-absent",
@@ -342,7 +346,7 @@ CASES: list[TestCase] = [
         """
         We are checking for empty keys, and accept if they are absent.
         """,
-        flags="BSON_VALIDATE_EMPTY_KEYS",
+        flags=BSON_VALIDATE_EMPTY_KEYS,
     ),
     TestCase(
         "key/dot/accept",
@@ -351,7 +355,7 @@ CASES: list[TestCase] = [
         The element key has an ASCII dot, and we accept this since we don't
         ask to validate it.
         """,
-        flags="BSON_VALIDATE_EMPTY_KEYS",
+        flags=BSON_VALIDATE_EMPTY_KEYS,
     ),
     TestCase(
         "key/dot/reject",
@@ -360,8 +364,8 @@ CASES: list[TestCase] = [
         The element has an ASCII dot, and we reject it when we ask to validate
         it.
         """,
-        flags="BSON_VALIDATE_DOT_KEYS",
-        error=ErrorInfo("BSON_VALIDATE_DOT_KEYS", disallowed_key(".", "foo.bar"), 13),
+        flags=BSON_VALIDATE_DOT_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DOT_KEYS, disallowed_key(".", "foo.bar"), 13),
     ),
     TestCase(
         "key/dot/accept-if-absent",
@@ -369,7 +373,7 @@ CASES: list[TestCase] = [
         """
         We are checking for keys with dot '.', and accept if they are absent.
         """,
-        flags="BSON_VALIDATE_DOT_KEYS",
+        flags=BSON_VALIDATE_DOT_KEYS,
     ),
     TestCase(
         "key/dollar/accept",
@@ -479,7 +483,7 @@ CASES: list[TestCase] = [
         This is a valid UTF-8 string that contains a null character. We allow
         it explicitly when we request UTF-8 validation.
         """,
-        flags=f"{BSON_VALIDATE_UTF8} | BSON_VALIDATE_UTF8_ALLOW_NULL",
+        flags=f"{BSON_VALIDATE_UTF8} | {BSON_VALIDATE_UTF8_ALLOW_NULL}",
     ),
     TestCase(
         "utf8/valid-with-null/reject",
@@ -489,7 +493,7 @@ CASES: list[TestCase] = [
         this because we don't pass BSON_VALIDATE_UTF8_ALLOW_NULL.
         """,
         flags=BSON_VALIDATE_UTF8,
-        error=ErrorInfo("BSON_VALIDATE_UTF8_ALLOW_NULL", "UTF-8 string contains a U+0000 (null) character", 4),
+        error=ErrorInfo(BSON_VALIDATE_UTF8_ALLOW_NULL, "UTF-8 string contains a U+0000 (null) character", 4),
     ),
     TestCase(
         "utf8/overlong-null/accept-1",
@@ -513,7 +517,7 @@ CASES: list[TestCase] = [
         If/when UTF-8 validation is changed to reject overlong null, then this
         test should change to expect rejection the invalid UTF-8.
         """,
-        flags=f"{BSON_VALIDATE_UTF8} | BSON_VALIDATE_UTF8_ALLOW_NULL",
+        flags=f"{BSON_VALIDATE_UTF8} | {BSON_VALIDATE_UTF8_ALLOW_NULL}",
     ),
     TestCase(
         "utf8/overlong-null/reject",
@@ -530,7 +534,7 @@ CASES: list[TestCase] = [
         expected error code and error message for this test should change.
         """,
         flags=BSON_VALIDATE_UTF8,
-        error=ErrorInfo("BSON_VALIDATE_UTF8_ALLOW_NULL", "UTF-8 string contains a U+0000 (null) character", 4),
+        error=ErrorInfo(BSON_VALIDATE_UTF8_ALLOW_NULL, "UTF-8 string contains a U+0000 (null) character", 4),
     ),
     TestCase(
         "utf8-key/invalid/accept",
@@ -564,7 +568,7 @@ CASES: list[TestCase] = [
         expected error code and error message for this test should change.
         """,
         flags=BSON_VALIDATE_UTF8,
-        error=ErrorInfo("BSON_VALIDATE_UTF8_ALLOW_NULL", "UTF-8 string contains a U+0000 (null) character", 4),
+        error=ErrorInfo(BSON_VALIDATE_UTF8_ALLOW_NULL, "UTF-8 string contains a U+0000 (null) character", 4),
     ),
     TestCase(
         "utf8-key/overlong-null/accept",
@@ -579,7 +583,7 @@ CASES: list[TestCase] = [
         If/when UTF-8 validation is changed to reject overlong null, then this
         test case should instead reject the key string as invalid UTF-8.
         """,
-        flags=f"{BSON_VALIDATE_UTF8} | BSON_VALIDATE_UTF8_ALLOW_NULL",
+        flags=f"{BSON_VALIDATE_UTF8} | {BSON_VALIDATE_UTF8_ALLOW_NULL}",
     ),
     TestCase(
         "array/empty",
@@ -766,9 +770,14 @@ CASES: list[TestCase] = [
                 code_with_scope("void 0;", doc(utf8elem("", "some string"))),
             )
         ),
-        "A code-with-scope element, but the socpe contains an empty element key",
+        """
+        A code-with-scope element, but the socpe contains an empty element key. Even
+        though we don't request validation of empty keys, the scope document will
+        be validated according to a fix set of rules to better match the rules
+        for JS identifiers (including forbidding empty keys).
+        """,
         error=ErrorInfo(
-            "BSON_VALIDATE_EMPTY_KEYS",
+            BSON_VALIDATE_EMPTY_KEYS,
             'Error in scope document for element "code": Element key cannot be an empty string',
             8,
         ),
@@ -793,7 +802,7 @@ CASES: list[TestCase] = [
             )
         ),
         "A code-with-scope element, but the scope contains corruption",
-        error=ErrorInfo("BSON_VALIDATE_CORRUPT", 'Error in scope document for element "code": corrupt BSON', offset=13),
+        error=ErrorInfo(BSON_VALIDATE_CORRUPT, 'Error in scope document for element "code": corrupt BSON', offset=13),
     ),
     TestCase(
         "code-with-scope/corrupt-scope-2",
@@ -815,7 +824,7 @@ CASES: list[TestCase] = [
             )
         ),
         "A code-with-scope element, but the scope contains corruption",
-        error=ErrorInfo("BSON_VALIDATE_CORRUPT", 'Error in scope document for element "code": corrupt BSON', offset=13),
+        error=ErrorInfo(BSON_VALIDATE_CORRUPT, 'Error in scope document for element "code": corrupt BSON', offset=13),
     ),
     TestCase(
         "regex/simple",
