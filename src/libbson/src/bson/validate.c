@@ -357,7 +357,8 @@ _validate_element_value (validator *self, bson_iter_t const *iter, int depth)
    switch (type) {
    default:
    case BSON_TYPE_EOD:
-      mlib_check (false && "Unreachable");
+      BSON_UNREACHABLE ("Validation execution encountered an element of type 0x0, but this should not happen as tag "
+                        "validation is handled before we get to this point.");
    case BSON_TYPE_DOUBLE:
    case BSON_TYPE_NULL:
    case BSON_TYPE_OID:
