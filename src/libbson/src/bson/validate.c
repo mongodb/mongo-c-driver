@@ -515,7 +515,8 @@ _validate_doc (validator *self, const bson_t *bson, int depth)
 
    // Initialize an iterator into the document to be validated
    bson_iter_t iter;
-   require_with_error (bson_iter_init (&iter, bson), 0, BSON_VALIDATE_CORRUPT, "Unable to initialize iterator");
+   require_with_error (
+      bson_iter_init (&iter, bson), 0, BSON_VALIDATE_CORRUPT, "Document header corruption, unable to iterate");
    bool done;
    require_advance (done, &iter);
    if (done) {
