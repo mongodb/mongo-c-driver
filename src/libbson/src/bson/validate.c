@@ -454,6 +454,8 @@ _validate_dbref (validator *self, bson_iter_t *iter, int depth)
    require_advance (done, iter);
    require_with_error (
       !done && _key_is (iter, "$id"), iter->off, BSON_VALIDATE_DOLLAR_KEYS, "Expected an $id element following $ref");
+   // While $id is typically a OID value, it is not constraint to any specific type, so
+   // we just validate it as an arbitrary value.
    require (_validate_element_value (self, iter, depth));
 
    // We should stop, or we should have a $db, or we may have other elements
