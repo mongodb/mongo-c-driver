@@ -1088,28 +1088,27 @@ static inline void _test_case_code_with_scope_invalid_scope(void) {
 }
 
 // ! This code is GENERATED! Do not edit it directly!
-// Case: code-with-scope/invalid-scope-key
-static inline void _test_case_code_with_scope_invalid_scope_key(void) {
+// Case: code-with-scope/empty-key-in-scope
+static inline void _test_case_code_with_scope_empty_key_in_scope(void) {
   /**
-   * A code-with-scope element, but the socpe contains an empty element key. Even
-   * though we don't request validation of empty keys, the scope document will
-   * be validated according to a fix set of rules to better match the rules
-   * for JS identifiers (including forbidding empty keys).
+   * A code-with-scope element. The scope itself contains empty keys within
+   * objects, and we ask to reject empty keys. But the scope document should
+   * be treated as an opaque closure, so our outer validation rules do not
+   * apply.
    */
   const uint8_t bytes[] = {
-    '2', 0, 0, 0, 0x0f, 'c', 'o', 'd', 'e', 0, 0x27, 0, 0, 0, 8, 0, 0, 0, 'v',
-    'o', 'i', 'd', 0x20, '0', 0x3b, 0, 0x17, 0, 0, 0, 2, 0, 0x0c, 0, 0, 0, 's',
-    'o', 'm', 'e', 0x20, 's', 't', 'r', 'i', 'n', 'g', 0, 0, 0
+    '7', 0, 0, 0, 0x0f, 'c', 'o', 'd', 'e', 0, 0x2c, 0, 0, 0, 8, 0, 0, 0, 'v',
+    'o', 'i', 'd', 0x20, '0', 0x3b, 0, 0x1c, 0, 0, 0, 3, 'o', 'b', 'j', 0, 0x12,
+    0, 0, 0, 2, 0, 7, 0, 0, 0, 's', 't', 'r', 'i', 'n', 'g', 0, 0, 0, 0
   };
   bson_t doc;
   mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
-  const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  mlib_check(!is_valid);
-  mlib_check(error.code, eq, BSON_VALIDATE_EMPTY_KEYS);
-  mlib_check(error.message, str_eq, "Error in scope document for element \"code\": Element key cannot be an empty string");
-  mlib_check(offset, eq, 8);
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
+  ASSERT_OR_PRINT(is_valid, error);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2450,7 +2449,7 @@ void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "code-with-scope/invalid-code-length-zero", _test_case_code_with_scope_invalid_code_length_zero);
   TestSuite_Add(suite, "/bson/validate/" "code-with-scope/invalid-code-length-too-large", _test_case_code_with_scope_invalid_code_length_too_large);
   TestSuite_Add(suite, "/bson/validate/" "code-with-scope/invalid-scope", _test_case_code_with_scope_invalid_scope);
-  TestSuite_Add(suite, "/bson/validate/" "code-with-scope/invalid-scope-key", _test_case_code_with_scope_invalid_scope_key);
+  TestSuite_Add(suite, "/bson/validate/" "code-with-scope/empty-key-in-scope", _test_case_code_with_scope_empty_key_in_scope);
   TestSuite_Add(suite, "/bson/validate/" "code-with-scope/corrupt-scope", _test_case_code_with_scope_corrupt_scope);
   TestSuite_Add(suite, "/bson/validate/" "code-with-scope/corrupt-scope-2", _test_case_code_with_scope_corrupt_scope_2);
   TestSuite_Add(suite, "/bson/validate/" "regex/simple", _test_case_regex_simple);

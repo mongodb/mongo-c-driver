@@ -762,25 +762,26 @@ CASES: list[TestCase] = [
         error=corruption_at(13),
     ),
     TestCase(
-        "code-with-scope/invalid-scope-key",
+        "code-with-scope/empty-key-in-scope",
         doc(
             elem(
                 "code",
                 Tag.CodeWithScope,
-                code_with_scope("void 0;", doc(utf8elem("", "some string"))),
+                code_with_scope(
+                    "void 0;",
+                    doc(
+                        elem("obj", Tag.Document, doc(utf8elem("", "string"))),
+                    ),
+                ),
             )
         ),
         """
-        A code-with-scope element, but the socpe contains an empty element key. Even
-        though we don't request validation of empty keys, the scope document will
-        be validated according to a fix set of rules to better match the rules
-        for JS identifiers (including forbidding empty keys).
+        A code-with-scope element. The scope itself contains empty keys within
+        objects, and we ask to reject empty keys. But the scope document should
+        be treated as an opaque closure, so our outer validation rules do not
+        apply.
         """,
-        error=ErrorInfo(
-            BSON_VALIDATE_EMPTY_KEYS,
-            'Error in scope document for element "code": Element key cannot be an empty string',
-            8,
-        ),
+        flags=BSON_VALIDATE_EMPTY_KEYS,
     ),
     TestCase(
         "code-with-scope/corrupt-scope",

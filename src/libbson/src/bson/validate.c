@@ -276,18 +276,20 @@ _validate_codewscope_elem (validator *self, bson_iter_t const *iter, int depth)
    // Don't validate the scope document using the parent parameters, because it should
    // be treated as an opaque closure of JS variables.
    validation_params const scope_params = {
-      // JS vars cannot contain dots
-      .allow_dot_in_keys = false,
-      // JS vars cannot be empty
-      .allow_empty_keys = false,
+      // JS object keys can contain dots
+      .allow_dot_in_keys = true,
+      // JS object keys can be empty
+      .allow_empty_keys = true,
       // JS strings can contain null bytes
       .allow_null_in_utf8 = true,
       // JS strings need to encode properly
       .allow_invalid_utf8 = false,
-      // JS allows variables to have dollars
+      // JS allows object keys to have dollars
       .check_special_dollar_keys = false,
    };
    validator scope_validator = {.params = &scope_params};
+   // We could do more validation that the scope keys are valid JS identifiers,
+   // but that would require using a full Unicode database.
    if (_validate_doc (&scope_validator, &scope, depth)) {
       // No error
       return true;
