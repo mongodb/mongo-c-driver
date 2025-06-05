@@ -859,13 +859,14 @@ test_bson_append_deep (void)
 static void
 _make_deep_bson (bson_t *const dst, const size_t depth)
 {
+   const size_t n_docs = depth + 1;
    // Needed size: 5 bytes for doc header/trailer, 2 bytes for each tag and empty
    // key, minus 2 because the outer document has no tag and key
-   const size_t buffer_size = (depth * (5 + 2)) - 2;
+   const size_t buffer_size = (n_docs * (5 + 2)) - 2;
    uint8_t *const buffer = calloc (buffer_size, 1);
    mlib_check (buffer);
    uint8_t *out = buffer;
-   mlib_foreach_urange (i, depth) {
+   mlib_foreach_urange (i, n_docs) {
       // Bytes we have already written:
       const size_t begin_offset = (size_t) (out - buffer);
       // The number of bytes for this inner doc:
