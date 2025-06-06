@@ -143,6 +143,29 @@ test_x509_auth (void *unused)
    drop_x509_user (true /* ignore "not found" error */);
    create_x509_user ();
 
+   // Test auth works with PKCS8 key:
+   {
+      // Create URI:
+      mongoc_uri_t *uri = get_x509_uri ();
+      {
+         ASSERT (mongoc_uri_set_option_as_utf8 (
+            uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, CERT_TEST_DIR "/client-pkcs8-unencrypted.pem"));
+         ASSERT (mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, CERT_CA));
+      }
+
+      // Try auth:
+      bson_error_t error = {0};
+      bool ok;
+      {
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+      }
+
+      ASSERT_OR_PRINT (ok, error);
+      mongoc_uri_destroy (uri);
+   }
+
    // Test auth works:
    {
       // Create URI:
@@ -431,7 +454,13 @@ void
 test_x509_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_AddFull (suite, "/X509/auth", test_x509_auth, NULL, NULL, test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/X509/auth",
+                      test_x509_auth,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_no_server_ssl);
    TestSuite_AddFull (suite, "/X509/crl", test_crl, NULL, NULL, test_framework_skip_if_no_server_ssl);
 #endif
 

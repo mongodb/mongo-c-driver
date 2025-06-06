@@ -28,7 +28,7 @@ MATRIX = [
     ('rhel94',     'clang',    None, [99, 11, 17, 23]), # Clang 17.0 (max: C2x)
     ('rhel95',     'clang',    None, [99, 11, 17, 23]), # Clang 18.0 (max: C23)
 
-    ('rhel76',     'gcc',    None, [99, 11,       ]), # GCC 4.8 (max: C11)
+    ('rhel7.9',    'gcc',    None, [99, 11,       ]), # GCC 4.8 (max: C11)
     ('rhel80',     'gcc',    None, [99, 11, 17,   ]), # GCC 8.2 (max: C17)
     ('debian10',   'gcc-8',  None, [99, 11, 17,   ]), # GCC 8.3 (max: C17)
     ('rhel84',     'gcc',    None, [99, 11, 17,   ]), # GCC 8.4 (max: C17)

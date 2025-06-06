@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <mlib/config.h>
+
 /**
  * @brief Given an integral type, evaluates to `true` if that type is signed,
  * otherwise `false`
@@ -45,9 +47,12 @@
  * minimal value of that type.
  */
 #define mlib_minof(T) \
+   MLIB_PRAGMA_IF_MSVC (warning (push)) \
+   MLIB_PRAGMA_IF_MSVC (warning (disable : 4146)) \
    ((T) (!mlib_is_signed (T) \
         ? (T) 0 \
-        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1)))
+        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1))) \
+   MLIB_PRAGMA_IF_MSVC (warning (pop))
 // clang-format on
 
 /**
@@ -85,9 +90,12 @@ typedef struct mlib_upsized_integer {
  */
 #define mlib_upsize_integer(Value) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   MLIB_PRAGMA_IF_MSVC (warning(push)) \
+   MLIB_PRAGMA_IF_MSVC (warning(disable : 4189)) \
    ((sizeof ((Value)) < sizeof (intmax_t) || ((0 & (Value)) - 1) < 0) \
       ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
-      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}})
+      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}}) \
+   MLIB_PRAGMA_IF_MSVC (warning(pop))
 // clang-format on
 
 #endif // MLIB_INTUTIL_H_INCLUDED
