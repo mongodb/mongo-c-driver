@@ -15,6 +15,7 @@
  */
 
 
+#include <bson/validate-private.h>
 #include <mlib/intencode.h>
 #include <bson/bson.h>
 #include <bson/bson-config.h>
@@ -27,29 +28,6 @@
 
 #include <string.h>
 #include <math.h>
-
-
-typedef enum {
-   BSON_VALIDATE_PHASE_START,
-   BSON_VALIDATE_PHASE_TOP,
-   BSON_VALIDATE_PHASE_LF_REF_KEY,
-   BSON_VALIDATE_PHASE_LF_REF_UTF8,
-   BSON_VALIDATE_PHASE_LF_ID_KEY,
-   BSON_VALIDATE_PHASE_LF_DB_KEY,
-   BSON_VALIDATE_PHASE_LF_DB_UTF8,
-   BSON_VALIDATE_PHASE_NOT_DBREF,
-} bson_validate_phase_t;
-
-
-/*
- * Structures.
- */
-typedef struct {
-   bson_validate_flags_t flags;
-   ssize_t err_offset;
-   bson_validate_phase_t phase;
-   bson_error_t error;
-} bson_validate_state_t;
 
 
 /*
@@ -2497,196 +2475,6 @@ bson_array_as_canonical_extended_json (const bson_t *bson, size_t *length)
 }
 
 
-#define VALIDATION_ERR(_flag, _msg, ...) bson_set_error (&state->error, BSON_ERROR_INVALID, _flag, _msg, __VA_ARGS__)
-
-static bool
-_bson_iter_validate_utf8 (const bson_iter_t *iter, const char *key, size_t v_utf8_len, const char *v_utf8, void *data)
-{
-   bson_validate_state_t *state = data;
-   bool allow_null;
-
-   if ((state->flags & BSON_VALIDATE_UTF8)) {
-      allow_null = !!(state->flags & BSON_VALIDATE_UTF8_ALLOW_NULL);
-
-      if (!bson_utf8_validate (v_utf8, v_utf8_len, allow_null)) {
-         state->err_offset = iter->off;
-         VALIDATION_ERR (BSON_VALIDATE_UTF8, "invalid utf8 string for key \"%s\"", key);
-         return true;
-      }
-   }
-
-   if ((state->flags & BSON_VALIDATE_DOLLAR_KEYS)) {
-      if (state->phase == BSON_VALIDATE_PHASE_LF_REF_UTF8) {
-         state->phase = BSON_VALIDATE_PHASE_LF_ID_KEY;
-      } else if (state->phase == BSON_VALIDATE_PHASE_LF_DB_UTF8) {
-         state->phase = BSON_VALIDATE_PHASE_NOT_DBREF;
-      }
-   }
-
-   return false;
-}
-
-
-static void
-_bson_iter_validate_corrupt (const bson_iter_t *iter, void *data)
-{
-   bson_validate_state_t *state = data;
-
-   state->err_offset = iter->err_off;
-   VALIDATION_ERR (BSON_VALIDATE_NONE, "%s", "corrupt BSON");
-}
-
-
-static bool
-_bson_iter_validate_before (const bson_iter_t *iter, const char *key, void *data)
-{
-   bson_validate_state_t *state = data;
-
-   if ((state->flags & BSON_VALIDATE_EMPTY_KEYS)) {
-      if (key[0] == '\0') {
-         state->err_offset = iter->off;
-         VALIDATION_ERR (BSON_VALIDATE_EMPTY_KEYS, "%s", "empty key");
-         return true;
-      }
-   }
-
-   if ((state->flags & BSON_VALIDATE_DOLLAR_KEYS)) {
-      if (key[0] == '$') {
-         if (state->phase == BSON_VALIDATE_PHASE_LF_REF_KEY && strcmp (key, "$ref") == 0) {
-            state->phase = BSON_VALIDATE_PHASE_LF_REF_UTF8;
-         } else if (state->phase == BSON_VALIDATE_PHASE_LF_ID_KEY && strcmp (key, "$id") == 0) {
-            state->phase = BSON_VALIDATE_PHASE_LF_DB_KEY;
-         } else if (state->phase == BSON_VALIDATE_PHASE_LF_DB_KEY && strcmp (key, "$db") == 0) {
-            state->phase = BSON_VALIDATE_PHASE_LF_DB_UTF8;
-         } else {
-            state->err_offset = iter->off;
-            VALIDATION_ERR (BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"%s\"", key);
-            return true;
-         }
-      } else if (state->phase == BSON_VALIDATE_PHASE_LF_ID_KEY || state->phase == BSON_VALIDATE_PHASE_LF_REF_UTF8 ||
-                 state->phase == BSON_VALIDATE_PHASE_LF_DB_UTF8) {
-         state->err_offset = iter->off;
-         VALIDATION_ERR (BSON_VALIDATE_DOLLAR_KEYS, "invalid key within DBRef subdocument: \"%s\"", key);
-         return true;
-      } else {
-         state->phase = BSON_VALIDATE_PHASE_NOT_DBREF;
-      }
-   }
-
-   if ((state->flags & BSON_VALIDATE_DOT_KEYS)) {
-      if (strstr (key, ".")) {
-         state->err_offset = iter->off;
-         VALIDATION_ERR (BSON_VALIDATE_DOT_KEYS, "keys cannot contain \".\": \"%s\"", key);
-         return true;
-      }
-   }
-
-   return false;
-}
-
-
-static bool
-_bson_iter_validate_codewscope (
-   const bson_iter_t *iter, const char *key, size_t v_code_len, const char *v_code, const bson_t *v_scope, void *data)
-{
-   bson_validate_state_t *state = data;
-   size_t offset = 0;
-
-   BSON_UNUSED (key);
-   BSON_UNUSED (v_code_len);
-   BSON_UNUSED (v_code);
-
-   if (!bson_validate (v_scope, state->flags, &offset)) {
-      state->err_offset = iter->off + offset;
-      VALIDATION_ERR (BSON_VALIDATE_NONE, "%s", "corrupt code-with-scope");
-      return false;
-   }
-
-   return true;
-}
-
-
-static bool
-_bson_iter_validate_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data);
-
-
-static const bson_visitor_t bson_validate_funcs = {
-   _bson_iter_validate_before,
-   NULL, /* visit_after */
-   _bson_iter_validate_corrupt,
-   NULL, /* visit_double */
-   _bson_iter_validate_utf8,
-   _bson_iter_validate_document,
-   _bson_iter_validate_document, /* visit_array */
-   NULL,                         /* visit_binary */
-   NULL,                         /* visit_undefined */
-   NULL,                         /* visit_oid */
-   NULL,                         /* visit_bool */
-   NULL,                         /* visit_date_time */
-   NULL,                         /* visit_null */
-   NULL,                         /* visit_regex */
-   NULL,                         /* visit_dbpoint */
-   NULL,                         /* visit_code */
-   NULL,                         /* visit_symbol */
-   _bson_iter_validate_codewscope,
-};
-
-
-static bool
-_bson_iter_validate_document (const bson_iter_t *iter, const char *key, const bson_t *v_document, void *data)
-{
-   bson_validate_state_t *state = data;
-   bson_iter_t child;
-   bson_validate_phase_t phase = state->phase;
-
-   BSON_UNUSED (key);
-
-   if (!bson_iter_init (&child, v_document)) {
-      state->err_offset = iter->off;
-      return true;
-   }
-
-   if (state->phase == BSON_VALIDATE_PHASE_START) {
-      state->phase = BSON_VALIDATE_PHASE_TOP;
-   } else {
-      state->phase = BSON_VALIDATE_PHASE_LF_REF_KEY;
-   }
-
-   (void) bson_iter_visit_all (&child, &bson_validate_funcs, state);
-
-   if (state->phase == BSON_VALIDATE_PHASE_LF_ID_KEY || state->phase == BSON_VALIDATE_PHASE_LF_REF_UTF8 ||
-       state->phase == BSON_VALIDATE_PHASE_LF_DB_UTF8) {
-      if (state->err_offset <= 0) {
-         state->err_offset = iter->off;
-      }
-
-      return true;
-   }
-
-   state->phase = phase;
-
-   return false;
-}
-
-
-static void
-_bson_validate_internal (const bson_t *bson, bson_validate_state_t *state)
-{
-   bson_iter_t iter;
-
-   state->err_offset = -1;
-   state->phase = BSON_VALIDATE_PHASE_START;
-   memset (&state->error, 0, sizeof state->error);
-
-   if (!bson_iter_init (&iter, bson)) {
-      state->err_offset = 0;
-      VALIDATION_ERR (BSON_VALIDATE_NONE, "%s", "corrupt BSON");
-   } else {
-      _bson_iter_validate_document (&iter, NULL, bson, state);
-   }
-}
-
-
 bool
 bson_validate (const bson_t *bson, bson_validate_flags_t flags, size_t *offset)
 {
@@ -2700,29 +2488,26 @@ bson_validate_with_error (const bson_t *bson, bson_validate_flags_t flags, bson_
    return bson_validate_with_error_and_offset (bson, flags, NULL, error);
 }
 
-
 bool
 bson_validate_with_error_and_offset (const bson_t *bson,
                                      bson_validate_flags_t flags,
                                      size_t *offset,
                                      bson_error_t *error)
 {
-   bson_validate_state_t state;
+   BSON_ASSERT_PARAM (bson);
+   BSON_OPTIONAL_PARAM (offset);
+   BSON_OPTIONAL_PARAM (error);
 
-   state.flags = flags;
-   _bson_validate_internal (bson, &state);
-
-   if (state.err_offset >= 0) {
-      if (offset) {
-         *offset = (size_t) state.err_offset;
-      }
-      if (error) {
-         memcpy (error, &state.error, sizeof *error);
-      }
-      return false;
+   size_t offset_local = 0;
+   if (!offset) {
+      offset = &offset_local;
+   }
+   bson_error_t error_local;
+   if (!error) {
+      error = &error_local;
    }
 
-   return true;
+   return _bson_validate_impl_v2 (bson, flags, offset, error);
 }
 
 
