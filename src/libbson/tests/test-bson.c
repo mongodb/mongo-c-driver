@@ -18,6 +18,7 @@
 #include <bson/bson.h>
 #include <bson/bcon.h>
 #include <bson/bson-private.h>
+#include <bson/validate-private.h>
 #include <fcntl.h>
 #include <time.h>
 

@@ -235,18 +235,6 @@ typedef enum {
    BSON_VALIDATE_CORRUPT = (1 << 5),
 } bson_validate_flags_t;
 
-enum {
-   /**
-    * @brief This compile-time constant represents the maximum document nesting
-    * depth permitted by the `bson_validate` family of functions. If the nesting
-    * depth exceeds this limit, the data will be rejected.
-    *
-    * The depth limit of 100 is chosen to match the limit enforced by MongoDB server.
-    * Refer: https://www.mongodb.com/docs/manual/reference/limits/#mongodb-limit-Nested-Depth-for-BSON-Document
-    */
-   BSON_VALIDATION_MAX_NESTING_DEPTH = 100,
-};
-
 
 /**
  * bson_type_t:

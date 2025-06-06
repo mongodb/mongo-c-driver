@@ -3,6 +3,21 @@
 
 #include <bson/bson-types.h>
 
+enum {
+   /**
+    * @brief This compile-time constant represents the maximum document nesting
+    * depth permitted by the `bson_validate` family of functions. If the nesting
+    * depth exceeds this limit, the data will be rejected.
+    *
+    * This limit is intentionally larger than the default limit of MongoDB
+    * server, since we cannot anticipate what a libbson user might actually want
+    * to do with BSON, and to prevent accidentally rejecting data that the
+    * server might accept. The main purpose of this limit is to prevent stack
+    * overflow, not to reject invalid data.
+    */
+   BSON_VALIDATION_MAX_NESTING_DEPTH = 1000,
+};
+
 /**
  * @brief Private function backing the implementation of validation.
  *
