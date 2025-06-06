@@ -150,7 +150,7 @@ static int32_t
 _int32_from_le (const void *data)
 {
    BSON_ASSERT_PARAM (data);
-   return bson_iter_int32_unsafe (&(bson_iter_t) {.raw = data});
+   return bson_iter_int32_unsafe (&(bson_iter_t){.raw = data});
 }
 
 

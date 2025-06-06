@@ -334,7 +334,7 @@ _TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func,
    Test *test;
    va_list ap;
    TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));
-   *ctx = (TestFnCtx) {.test_fn = func, .dtor = NULL};
+   *ctx = (TestFnCtx){.test_fn = func, .dtor = NULL};
 
    va_start (ap, func);
    test = _V_TestSuite_AddFull (suite, name, TestSuite_AddHelper, _TestSuite_TestFnCtxDtor, ctx, ap);
