@@ -161,3 +161,33 @@ usecs_since_epoch (void)
 
    return secs * factor + usecs;
 }
+
+const char *
+mongoc_strcasestr (const char *haystack, const char *needle)
+{
+   BSON_ASSERT_PARAM (haystack);
+   BSON_ASSERT_PARAM (needle);
+
+   if (!*needle) {
+      return haystack;
+   }
+
+   const char *h = haystack;
+   while (*h) {
+      const char *h_start = h;
+      const char *n = needle;
+
+      while (*n && *h && tolower (*h) == tolower (*n)) {
+         h++;
+         n++;
+      }
+
+      if (!*n) {
+         return h_start; // Match found
+      }
+
+      h = h_start + 1; // Move to the next starting position in haystack
+   }
+
+   return NULL; // No match found
+}

@@ -36,4 +36,6 @@ is_unsupported_event_type (const char *event_type);
 int64_t
 usecs_since_epoch (void);
 
+const char *
+mongoc_strcasestr (const char *haystack, const char *needle);
 #endif /* UNIFIED_UTIL_H */

@@ -100,6 +100,9 @@ mongoc_ends_with (const char *str, const char *suffix);
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */);
 
+void
+mongoc_lowercase_inplace (char *src);
+
 bool
 mongoc_parse_port (uint16_t *port, const char *str);
 
