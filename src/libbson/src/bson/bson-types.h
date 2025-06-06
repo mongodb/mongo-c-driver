@@ -185,25 +185,54 @@ typedef struct {
 
 
 /**
- * bson_validate_flags_t:
+ * @brief Flags and error codes for BSON validation functions.
  *
- * This enumeration is used for validation of BSON documents. It allows
- * selective control on what you wish to validate.
+ * Pass these flags bits to control the behavior of the `bson_validate` family
+ * of functions.
  *
- * %BSON_VALIDATE_NONE: No additional validation occurs.
- * %BSON_VALIDATE_UTF8: Check that strings are valid UTF-8.
- * %BSON_VALIDATE_DOLLAR_KEYS: Check that keys do not start with $.
- * %BSON_VALIDATE_DOT_KEYS: Check that keys do not contain a period.
- * %BSON_VALIDATE_UTF8_ALLOW_NULL: Allow NUL bytes in UTF-8 text.
- * %BSON_VALIDATE_EMPTY_KEYS: Prohibit zero-length field names
+ * Additionally, if validation fails, then the error code set on a `bson_error_t`
+ * will have the value corresponding to the reason that validation failed.
  */
 typedef enum {
+   /**
+    * @brief No special validation behavior specified.
+    */
    BSON_VALIDATE_NONE = 0,
+   /**
+    * @brief Check that all text components of the BSON data are valid UTF-8.
+    *
+    * Note that this will also cause validation to reject valid text that contains
+    * a null character. This can be changed by also passing
+    * `BSON_VALIDATE_UTF8_ALLOW_NULL`
+    */
    BSON_VALIDATE_UTF8 = (1 << 0),
+   /**
+    * @brief Check that element keys do not begin with an ASCII dollar `$`
+    */
    BSON_VALIDATE_DOLLAR_KEYS = (1 << 1),
+   /**
+    * @brief Check that element keys do not contain an ASCII period `.`
+    */
    BSON_VALIDATE_DOT_KEYS = (1 << 2),
+   /**
+    * @brief If set then it is *not* an error for a UTF-8 string to contain
+    * embedded null characters.
+    *
+    * This has no effect unless `BSON_VALIDATE_UTF8` is also passed.
+    */
    BSON_VALIDATE_UTF8_ALLOW_NULL = (1 << 3),
+   /**
+    * @brief Check that no element key is a zero-length empty string.
+    */
    BSON_VALIDATE_EMPTY_KEYS = (1 << 4),
+   /**
+    * @brief This is not a flag that controls behavior, but is instead used to indicate
+    * that a BSON document is corrupted in some way. This is the value that will
+    * appear as an error code.
+    *
+    * Passing this as a flag has no effect.
+    */
+   BSON_VALIDATE_CORRUPT = (1 << 5),
 } bson_validate_flags_t;
 
 

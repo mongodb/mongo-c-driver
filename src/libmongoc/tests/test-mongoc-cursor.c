@@ -1152,7 +1152,10 @@ test_cursor_new_invalid_filter (void)
 
    ASSERT (cursor);
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Invalid filter: empty key");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Invalid filter: Element key cannot be an empty string");
 
    ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
    ASSERT (bson_empty (error_doc));
@@ -1179,7 +1182,10 @@ test_cursor_new_invalid_opts (void)
 
    ASSERT (cursor);
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Invalid opts: empty key");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Invalid opts: Element key cannot be an empty string");
 
    ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
    ASSERT (bson_empty (error_doc));
