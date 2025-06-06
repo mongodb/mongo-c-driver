@@ -1,138 +1,66 @@
 {
-  "description": "keyCache",
-  "schemaVersion": "1.23",
+  "description": "keyCache-explicit",
+  "schemaVersion": "1.22",
   "runOnRequirements": [
     {
-      "minServerVersion": "4.1.10"
+      "csfle": true
     }
   ],
   "createEntities": [
     {
       "client": {
         "id": "client0",
-        "autoEncryptOpts": {
-          "keyVaultNamespace": "keyvault.datakeys",
-          "kmsProviders": {
-            "aws": {
-              "accessKeyId": {
-                "$$placeholder": 1
-              },
-              "secretAccessKey": {
-                "$$placeholder": 1
-              }
-            }
-          },
-          "keyExpirationMS": 1
-        },
         "observeEvents": [
           "commandStartedEvent"
         ]
       }
     },
     {
+      "clientEncryption": {
+        "id": "clientEncryption0",
+        "clientEncryptionOpts": {
+          "keyVaultClient": "client0",
+          "keyVaultNamespace": "keyvault.datakeys",
+          "kmsProviders": {
+            "local": {
+              "key": "OCTP9uKPPmvuqpHlqq83gPk4U6rUPxKVRRyVtrjFmVjdoa4Xzm1SzUbr7aIhNI42czkUBmrCtZKF31eaaJnxEBkqf0RFukA9Mo3NEHQWgAQ2cn9duOcRbaFUQo2z0/rB"
+            }
+          },
+          "keyExpirationMS": 1
+        }
+      }
+    },
+    {
       "database": {
-        "id": "db",
+        "id": "database0",
         "client": "client0",
-        "databaseName": "default"
+        "databaseName": "keyvault"
       }
     },
     {
       "collection": {
-        "id": "coll",
-        "database": "db",
-        "collectionName": "default"
+        "id": "collection0",
+        "database": "database0",
+        "collectionName": "datakeys"
       }
     }
   ],
   "initialData": [
     {
-      "databaseName": "default",
-      "collectionName": "default",
-      "documents": [],
-      "createOptions": {
-        "validator": {
-          "$jsonSchema": {
-            "properties": {
-              "encrypted_w_altname": {
-                "encrypt": {
-                  "keyId": "/altname",
-                  "bsonType": "string",
-                  "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
-                }
-              },
-              "encrypted_string": {
-                "encrypt": {
-                  "keyId": [
-                    {
-                      "$binary": {
-                        "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
-                        "subType": "04"
-                      }
-                    }
-                  ],
-                  "bsonType": "string",
-                  "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-                }
-              },
-              "random": {
-                "encrypt": {
-                  "keyId": [
-                    {
-                      "$binary": {
-                        "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
-                        "subType": "04"
-                      }
-                    }
-                  ],
-                  "bsonType": "string",
-                  "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Random"
-                }
-              },
-              "encrypted_string_equivalent": {
-                "encrypt": {
-                  "keyId": [
-                    {
-                      "$binary": {
-                        "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
-                        "subType": "04"
-                      }
-                    }
-                  ],
-                  "bsonType": "string",
-                  "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
-                }
-              }
-            },
-            "bsonType": "object"
-          }
-        }
-      }
-    },
-    {
       "databaseName": "keyvault",
       "collectionName": "datakeys",
       "documents": [
         {
-          "status": 1,
           "_id": {
             "$binary": {
-              "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+              "base64": "a+YWzdygTAG62/cNUkqZiQ==",
               "subType": "04"
             }
           },
-          "masterKey": {
-            "provider": "aws",
-            "key": "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0",
-            "region": "us-east-1"
-          },
-          "updateDate": {
-            "$date": {
-              "$numberLong": "1552949630483"
-            }
-          },
+          "keyAltNames": [],
           "keyMaterial": {
             "$binary": {
-              "base64": "AQICAHhQNmWG2CzOm1dq3kWLM+iDUZhEqnhJwH9wZVpuZ94A8gEqnsxXlR51T5EbEVezUqqKAAAAwjCBvwYJKoZIhvcNAQcGoIGxMIGuAgEAMIGoBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHa4jo6yp0Z18KgbUgIBEIB74sKxWtV8/YHje5lv5THTl0HIbhSwM6EqRlmBiFFatmEWaeMk4tO4xBX65eq670I5TWPSLMzpp8ncGHMmvHqRajNBnmFtbYxN3E3/WjxmdbOOe+OXpnGJPcGsftc7cB2shRfA4lICPnE26+oVNXT6p0Lo20nY5XC7jyCO",
+              "base64": "iocBkhO3YBokiJ+FtxDTS71/qKXQ7tSWhWbcnFTXBcMjarsepvALeJ5li+SdUd9ePuatjidxAdMo7vh1V2ZESLMkQWdpPJ9PaJjA67gKQKbbbB4Ik5F2uKjULvrMBnFNVRMup4JNUwWFQJpqbfMveXnUVcD06+pUpAkml/f+DSXrV3e5rxciiNVtz03dAG8wJrsKsFXWj6vTjFhsfknyBA==",
               "subType": "00"
             }
           },
@@ -141,66 +69,57 @@
               "$numberLong": "1552949630483"
             }
           },
-          "keyAltNames": [
-            "altname",
-            "another_altname"
-          ]
+          "updateDate": {
+            "$date": {
+              "$numberLong": "1552949630483"
+            }
+          },
+          "status": {
+            "$numberInt": "0"
+          },
+          "masterKey": {
+            "provider": "local"
+          }
         }
       ]
     }
   ],
   "tests": [
     {
-      "description": "Insert with deterministic encryption, then find it",
+      "description": "decrypt, wait, and decrypt again",
       "operations": [
         {
-          "name": "insertOne",
+          "name": "decrypt",
+          "object": "clientEncryption0",
           "arguments": {
-            "document": {
-              "_id": 1,
-              "encrypted_string": "string0"
+            "value": {
+              "$binary": {
+                "base64": "AWvmFs3coEwButv3DVJKmYkCJ6lUzRX9R28WNlw5uyndb+8gurA+p8q14s7GZ04K2ZvghieRlAr5UwZbow3PMq27u5EIhDDczwBFcbdP1amllw==",
+                "subType": "06"
+              }
             }
           },
-          "object": "coll"
+          "expectResult": "foobar"
         },
         {
           "name": "wait",
-          "object": "coll",
+          "object": "testRunner",
           "arguments": {
             "ms": 50
           }
         },
         {
-          "name": "find",
+          "name": "decrypt",
+          "object": "clientEncryption0",
           "arguments": {
-            "filter": {
-              "_id": 1
-            }
-          },
-          "object": "coll",
-          "expectResult": [
-            {
-              "_id": 1,
-              "encrypted_string": "string0"
-            }
-          ]
-        }
-      ],
-      "outcome": [
-        {
-          "documents": [
-            {
-              "_id": 1,
-              "encrypted_string": {
-                "$binary": {
-                  "base64": "AQAAAAAAAAAAAAAAAAAAAAACwj+3zkv2VM+aTfk60RqhXq6a/77WlLwu/BxXFkL7EppGsju/m8f0x5kBDD3EZTtGALGXlym5jnpZAoSIkswHoA==",
-                  "subType": "06"
-                }
+            "value": {
+              "$binary": {
+                "base64": "AWvmFs3coEwButv3DVJKmYkCJ6lUzRX9R28WNlw5uyndb+8gurA+p8q14s7GZ04K2ZvghieRlAr5UwZbow3PMq27u5EIhDDczwBFcbdP1amllw==",
+                "subType": "06"
               }
             }
-          ],
-          "collectionName": "default",
-          "databaseName": "default"
+          },
+          "expectResult": "foobar"
         }
       ],
       "expectEvents": [
@@ -210,17 +129,6 @@
             {
               "commandStartedEvent": {
                 "command": {
-                  "listCollections": 1,
-                  "filter": {
-                    "name": "default"
-                  }
-                },
-                "commandName": "listCollections"
-              }
-            },
-            {
-              "commandStartedEvent": {
-                "command": {
                   "find": "datakeys",
                   "filter": {
                     "$or": [
@@ -229,7 +137,7 @@
                           "$in": [
                             {
                               "$binary": {
-                                "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                                "base64": "a+YWzdygTAG62/cNUkqZiQ==",
                                 "subType": "04"
                               }
                             }
@@ -247,39 +155,7 @@
                   "readConcern": {
                     "level": "majority"
                   }
-                },
-                "commandName": "find"
-              }
-            },
-            {
-              "commandStartedEvent": {
-                "command": {
-                  "insert": "default",
-                  "documents": [
-                    {
-                      "_id": 1,
-                      "encrypted_string": {
-                        "$binary": {
-                          "base64": "AQAAAAAAAAAAAAAAAAAAAAACwj+3zkv2VM+aTfk60RqhXq6a/77WlLwu/BxXFkL7EppGsju/m8f0x5kBDD3EZTtGALGXlym5jnpZAoSIkswHoA==",
-                          "subType": "06"
-                        }
-                      }
-                    }
-                  ],
-                  "ordered": true
-                },
-                "commandName": "insert"
-              }
-            },
-            {
-              "commandStartedEvent": {
-                "command": {
-                  "find": "default",
-                  "filter": {
-                    "_id": 1
-                  }
-                },
-                "commandName": "find"
+                }
               }
             },
             {
@@ -293,7 +169,7 @@
                           "$in": [
                             {
                               "$binary": {
-                                "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                                "base64": "a+YWzdygTAG62/cNUkqZiQ==",
                                 "subType": "04"
                               }
                             }
@@ -311,8 +187,7 @@
                   "readConcern": {
                     "level": "majority"
                   }
-                },
-                "commandName": "find"
+                }
               }
             }
           ]
