@@ -509,7 +509,7 @@ _validate_doc (validator *self, const bson_t *bson, int depth)
    BSON_ASSERT_PARAM (bson);
 
    // The depth limit of 100 is chosen to match the limit enforced by MongoDB server.
-   // Refer: https://www.mongodb.com/docs/manual/reference/limits/#mongodb-limit-Nested-Depth-for-BSON-Documen
+   // Refer: https://www.mongodb.com/docs/manual/reference/limits/#mongodb-limit-Nested-Depth-for-BSON-Documents
    require_with_error (
       depth <= BSON_VALIDATION_MAX_NESTING_DEPTH, 0, BSON_VALIDATE_CORRUPT, "BSON document nesting depth is too deep");
    // We increment the depth here, otherwise we'd have `depth + 1` in several places.
