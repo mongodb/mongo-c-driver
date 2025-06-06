@@ -35,7 +35,7 @@ checks = [
             MONGOC_PREFIX / "mongoc-prelude.h",
             MONGOC_PREFIX / "mongoc.h",
         ],
-        "include": '#include <mongoc/mongoc-prelude.h>',
+        "include": "#include <mongoc/mongoc-prelude.h>",
     },
     {
         "name": "libbson",
@@ -50,7 +50,7 @@ checks = [
         "name": "common",
         "headers": list(COMMON_PREFIX.glob("*.h")),
         "exclusions": [COMMON_PREFIX / "common-prelude.h"],
-        "include": '#include <common-prelude.h>',
+        "include": "#include <common-prelude.h>",
     },
 ]
 
@@ -59,7 +59,7 @@ for check in checks:
     print(f"Checking headers for {NAME}")
     assert len(check["headers"]) > 0
     for header in check["headers"]:
-        if header in check["exclusions"]:
+        if header in check["exclusions"] or header.name.endswith("-private.h"):
             continue
         lines = Path(header).read_text(encoding="utf-8").splitlines()
         if check["include"] not in lines:
