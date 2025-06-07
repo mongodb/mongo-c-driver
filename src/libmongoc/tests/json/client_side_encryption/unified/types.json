@@ -51,15 +51,967 @@
     },
     {
       "database": {
-        "id": "db",
+        "id": "db0",
         "client": "client0",
         "databaseName": "default"
       }
     },
     {
       "collection": {
-        "id": "coll",
-        "database": "db",
+        "id": "coll0",
+        "database": "db0",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client1",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_symbol": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "symbol",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db1",
+        "client": "client1",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll1",
+        "database": "db1",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client2",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_int": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "int",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db2",
+        "client": "client2",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll2",
+        "database": "db2",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client3",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_double": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "double",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db3",
+        "client": "client3",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll3",
+        "database": "db3",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client4",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_decimal": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "decimal",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db4",
+        "client": "client4",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll4",
+        "database": "db4",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client5",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_binData": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "binData",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db5",
+        "client": "client5",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll5",
+        "database": "db5",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client6",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_javascript": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "javascript",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db6",
+        "client": "client6",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll6",
+        "database": "db6",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client7",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_javascriptWithScope": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "javascriptWithScope",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db7",
+        "client": "client7",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll7",
+        "database": "db7",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client8",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_object": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "object",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db8",
+        "client": "client8",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll8",
+        "database": "db8",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client9",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_timestamp": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "timestamp",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db9",
+        "client": "client9",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll9",
+        "database": "db9",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client10",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_regex": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "regex",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db10",
+        "client": "client10",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll10",
+        "database": "db10",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client11",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_date": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "date",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db11",
+        "client": "client11",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll11",
+        "database": "db11",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client12",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_minKey": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "minKey",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db12",
+        "client": "client12",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll12",
+        "database": "db12",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client13",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_maxKey": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "maxKey",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db13",
+        "client": "client13",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll13",
+        "database": "db13",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client14",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_undefined": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "undefined",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db14",
+        "client": "client14",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll14",
+        "database": "db14",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client15",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_array": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "array",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db15",
+        "client": "client15",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll15",
+        "database": "db15",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client16",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_bool": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "bool",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db16",
+        "client": "client16",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll16",
+        "database": "db16",
+        "collectionName": "default"
+      }
+    },
+    {
+      "client": {
+        "id": "client17",
+        "autoEncryptOpts": {
+          "keyVaultNamespace": "keyvault.datakeys",
+          "schemaMap": {
+            "default.default": {
+              "properties": {
+                "encrypted_null": {
+                  "encrypt": {
+                    "keyId": [
+                      {
+                        "$binary": {
+                          "base64": "AAAAAAAAAAAAAAAAAAAAAA==",
+                          "subType": "04"
+                        }
+                      }
+                    ],
+                    "bsonType": "null",
+                    "algorithm": "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic"
+                  }
+                }
+              },
+              "bsonType": "object"
+            }
+          },
+          "kmsProviders": {
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
+          }
+        },
+        "observeEvents": [
+          "commandStartedEvent"
+        ]
+      }
+    },
+    {
+      "database": {
+        "id": "db17",
+        "client": "client17",
+        "databaseName": "default"
+      }
+    },
+    {
+      "collection": {
+        "id": "coll17",
+        "database": "db17",
         "collectionName": "default"
       }
     }
@@ -125,11 +1077,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll0"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll0",
           "arguments": {
             "filter": {
               "_id": 1
@@ -247,11 +1199,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll1"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll1",
           "arguments": {
             "filter": {
               "_id": 1
@@ -286,7 +1238,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client1",
           "events": [
             {
               "commandStartedEvent": {
@@ -369,11 +1321,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll2"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll2",
           "arguments": {
             "filter": {
               "_id": 1
@@ -408,7 +1360,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client2",
           "events": [
             {
               "commandStartedEvent": {
@@ -491,7 +1443,7 @@
               }
             }
           },
-          "object": "coll",
+          "object": "coll3",
           "expectError": {
             "errorContains": "element of type: double"
           }
@@ -511,7 +1463,7 @@
               }
             }
           },
-          "object": "coll",
+          "object": "coll4",
           "expectError": {
             "errorContains": "element of type: decimal"
           }
@@ -534,11 +1486,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll5"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll5",
           "arguments": {
             "filter": {
               "_id": 1
@@ -576,7 +1528,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client5",
           "events": [
             {
               "commandStartedEvent": {
@@ -659,11 +1611,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll6"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll6",
           "arguments": {
             "filter": {
               "_id": 1
@@ -698,7 +1650,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client6",
           "events": [
             {
               "commandStartedEvent": {
@@ -782,7 +1734,7 @@
               }
             }
           },
-          "object": "coll",
+          "object": "coll7",
           "expectError": {
             "errorContains": "element of type: javascriptWithScope"
           }
@@ -800,7 +1752,7 @@
               "encrypted_object": {}
             }
           },
-          "object": "coll",
+          "object": "coll8",
           "expectError": {
             "errorContains": "element of type: object"
           }
@@ -823,11 +1775,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll9"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll9",
           "arguments": {
             "filter": {
               "_id": 1
@@ -865,7 +1817,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client9",
           "events": [
             {
               "commandStartedEvent": {
@@ -951,11 +1903,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll10"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll10",
           "arguments": {
             "filter": {
               "_id": 1
@@ -993,7 +1945,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client10",
           "events": [
             {
               "commandStartedEvent": {
@@ -1078,11 +2030,11 @@
               }
             }
           },
-          "object": "coll"
+          "object": "coll11"
         },
         {
           "name": "find",
-          "object": "coll",
+          "object": "coll11",
           "arguments": {
             "filter": {
               "_id": 1
@@ -1119,7 +2071,7 @@
       ],
       "expectEvents": [
         {
-          "client": "client0",
+          "client": "client11",
           "events": [
             {
               "commandStartedEvent": {
@@ -1202,7 +2154,7 @@
               }
             }
           },
-          "object": "coll",
+          "object": "coll12",
           "expectError": {
             "errorContains": "Cannot encrypt element of type: minKey"
           }
@@ -1222,7 +2174,7 @@
               }
             }
           },
-          "object": "coll",
+          "object": "coll13",
           "expectError": {
             "errorContains": "Cannot encrypt element of type: maxKey"
           }
@@ -1242,7 +2194,7 @@
               }
             }
           },
-          "object": "coll",
+          "object": "coll14",
           "expectError": {
             "errorContains": "Cannot encrypt element of type: undefined"
           }
@@ -1260,7 +2212,7 @@
               "encrypted_array": []
             }
           },
-          "object": "coll",
+          "object": "coll15",
           "expectError": {
             "errorContains": "element of type: array"
           }
@@ -1278,7 +2230,7 @@
               "encrypted_bool": true
             }
           },
-          "object": "coll",
+          "object": "coll16",
           "expectError": {
             "errorContains": "element of type: bool"
           }
@@ -1296,7 +2248,7 @@
               "encrypted_null": true
             }
           },
-          "object": "coll",
+          "object": "coll17",
           "expectError": {
             "errorContains": "Cannot encrypt element of type: null"
           }
