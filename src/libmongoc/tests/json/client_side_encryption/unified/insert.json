@@ -298,11 +298,14 @@
             ]
           },
           "object": "coll"
-        }
-      ],
-      "outcome": [
+        },
         {
-          "documents": [
+          "name": "find",
+          "object": "coll_unencrypted",
+          "arguments": {
+            "filter": {}
+          },
+          "expectResult": [
             {
               "_id": 1,
               "encrypted_string": {
@@ -324,9 +327,7 @@
                 }
               }
             }
-          ],
-          "collectionName": "default",
-          "databaseName": "default"
+          ]
         }
       ],
       "expectEvents": [
