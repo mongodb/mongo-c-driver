@@ -13,7 +13,17 @@
         "autoEncryptOpts": {
           "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
-            "azure": {}
+            "azure": {
+              "tenantId": {
+                "$$placeholder": 1
+              },
+              "clientId": {
+                "$$placeholder": 1
+              },
+              "clientSecret": {
+                "$$placeholder": 1
+              }
+            }
           }
         },
         "observeEvents": [
