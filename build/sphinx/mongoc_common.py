@@ -158,7 +158,7 @@ def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: Dic
         f"redirect-for-{page}",
         {"target": page, "writing-redirect": 1},
         str(Path(__file__).parent.resolve() / "redirect.t.html"),
-        str(redirect_file),
+        outfilename=str(redirect_file),
     )
     # Restore prior state:
     builder.script_files[:] = prev_scripts
