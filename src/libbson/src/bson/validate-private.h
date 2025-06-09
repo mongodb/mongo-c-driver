@@ -15,7 +15,7 @@ enum {
     * server might accept. The main purpose of this limit is to prevent stack
     * overflow, not to reject invalid data.
     */
-   BSON_VALIDATION_MAX_NESTING_DEPTH = 1000,
+   BSON_VALIDATION_MAX_NESTING_DEPTH = 500,
 };
 
 /**
