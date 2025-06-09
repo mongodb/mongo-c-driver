@@ -32,6 +32,7 @@
 #include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-version.h>
 #include <mongoc/mongoc-util-private.h>
@@ -281,9 +282,10 @@ _get_os_name (void)
       return bson_strndup (system_info.sysname, HANDSHAKE_OS_NAME_MAX);
    }
 
-#endif
-
    return NULL;
+#else
+   return NULL;
+#endif
 }
 
 static char *
@@ -312,7 +314,9 @@ _get_os_version (void)
       BSON_ASSERT (req > 0);
       found = true;
    } else {
-      MONGOC_WARNING ("Error with GetVersionEx(): %lu", GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Error with GetVersionEx(): %s", msg);
+      bson_free (msg);
    }
 
 #elif defined(_POSIX_VERSION)

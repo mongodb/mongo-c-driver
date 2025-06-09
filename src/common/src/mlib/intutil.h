@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <mlib/config.h>
+
 /**
  * @brief Given an integral type, evaluates to `true` if that type is signed,
  * otherwise `false`
@@ -45,9 +47,12 @@
  * minimal value of that type.
  */
 #define mlib_minof(T) \
+   MLIB_PRAGMA_IF_MSVC (warning (push)) \
+   MLIB_PRAGMA_IF_MSVC (warning (disable : 4146)) \
    ((T) (!mlib_is_signed (T) \
         ? (T) 0 \
-        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1)))
+        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1))) \
+   MLIB_PRAGMA_IF_MSVC (warning (pop))
 // clang-format on
 
 /**
@@ -84,10 +89,13 @@ typedef struct mlib_upsized_integer {
  * indicate that the stored value is unsigned.
  */
 #define mlib_upsize_integer(Value) \
+   MLIB_PRAGMA_IF_MSVC (warning(push)) \
+   MLIB_PRAGMA_IF_MSVC (warning(disable : 4189)) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
    ((sizeof ((Value)) < sizeof (intmax_t) || (_mlibGetZero(Value) - 1) < _mlibGetZero(Value)) \
       ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
-      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}})
+      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}}) \
+   MLIB_PRAGMA_IF_MSVC (warning(pop))
 // Yield a zero value of similar-ish type to the given expression. The ternary
 // forces an integer promotion of literal zero match the type of `V`, while leaving
 // `V` unevaluated. Note that this will also promote `V` to be at least `(unsigned) int`,

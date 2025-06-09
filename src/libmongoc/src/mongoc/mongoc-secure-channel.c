@@ -41,45 +41,201 @@
 #define SECBUFFER_ALERT 17
 #endif
 
+// `decode_pem_base64` decodes a base-64 PEM blob with headers.
+// Returns NULL on error.
+static LPBYTE
+decode_pem_base64 (const char *base64_in, DWORD *out_len, const char *descriptor, const char *filename)
+{
+   BSON_ASSERT_PARAM (base64_in);
+   BSON_ASSERT_PARAM (out_len);
+   BSON_ASSERT_PARAM (descriptor);
+   BSON_ASSERT_PARAM (filename);
+
+   // Get needed output length:
+   if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, NULL, out_len, NULL, NULL)) {
+      MONGOC_ERROR (
+         "Failed to convert base64 %s from '%s'. Error 0x%.8X", descriptor, filename, (unsigned int) GetLastError ());
+      return NULL;
+   }
+
+   if (*out_len == 0) {
+      return NULL;
+   }
+
+   LPBYTE out = (LPBYTE) bson_malloc (*out_len);
+
+   if (!CryptStringToBinaryA (base64_in, 0, CRYPT_STRING_BASE64HEADER, out, out_len, NULL, NULL)) {
+      MONGOC_ERROR (
+         "Failed to convert base64 %s from '%s'. Error 0x%.8X", descriptor, filename, (unsigned int) GetLastError ());
+      bson_free (out);
+      return NULL;
+   }
+   return out;
+}
+
+// `read_file_and_null_terminate` reads a file into a NUL-terminated string.
+// On success: returns a NUL-terminated string and (optionally) sets `*out_len` excluding NUL.
+// On error: returns NULL.
+static char *
+read_file_and_null_terminate (const char *filename, size_t *out_len)
+{
+   BSON_ASSERT_PARAM (filename);
+   BSON_OPTIONAL_PARAM (out_len);
+
+   bool ok = false;
+   char *contents = NULL;
+   char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+
+   FILE *file = fopen (filename, "rb");
+   if (!file) {
+      MONGOC_ERROR ("Failed to open file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   if (0 != fseek (file, 0, SEEK_END)) {
+      MONGOC_ERROR ("Failed to seek in file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   const long file_len = ftell (file);
+   if (file_len < 0) {
+      MONGOC_ERROR ("Failed to get length of file: '%s' with error: '%s'",
+                    filename,
+                    bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+      goto fail;
+   }
+
+   if (file_len > LONG_MAX - 1) {
+      goto fail;
+   }
+
+   if (0 != fseek (file, 0, SEEK_SET)) {
+      goto fail;
+   }
+
+   // Read the whole file into one NUL-terminated string:
+   contents = (char *) bson_malloc ((size_t) file_len + 1u);
+   contents[file_len] = '\0';
+   if ((size_t) file_len != fread (contents, 1, file_len, file)) {
+      SecureZeroMemory (contents, file_len);
+      if (feof (file)) {
+         MONGOC_ERROR ("Unexpected EOF reading file: '%s'", filename);
+         goto fail;
+      } else {
+         MONGOC_ERROR ("Failed to read file: '%s' with error: '%s'",
+                       filename,
+                       bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf));
+         goto fail;
+      }
+   }
+   if (out_len) {
+      *out_len = (size_t) file_len;
+   }
+
+   ok = true;
+fail:
+   if (file) {
+      (void) fclose (file); // Ignore error.
+   }
+   if (!ok) {
+      bson_free (contents);
+      contents = NULL;
+   }
+   return contents;
+}
+
+
+// `decode_object` decodes a cryptographic object from a blob.
+// Returns NULL on error.
+static LPBYTE
+decode_object (const char *structType,
+               const LPBYTE data,
+               DWORD data_len,
+               DWORD *out_len,
+               const char *descriptor,
+               const char *filename)
+{
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (out_len);
+   BSON_ASSERT_PARAM (descriptor);
+   BSON_ASSERT_PARAM (filename);
+   // Get needed output length:
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             NULL,                                    /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      return NULL;
+   }
+
+   if (*out_len == 0) {
+      return NULL;
+   }
+   LPBYTE out = (LPBYTE) bson_malloc (*out_len);
+
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             out,                                     /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      bson_free (out);
+      return NULL;
+   }
+
+   return out;
+}
 
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
    char *pem;
-   FILE *file;
+   bool ret = false;
    bool success;
-   HCRYPTKEY hKey;
-   long pem_length;
+   size_t pem_length;
    HCRYPTPROV provider;
-   CERT_BLOB public_blob;
+   DWORD encoded_cert_len;
+   LPBYTE encoded_cert = NULL;
    const char *pem_public;
    const char *pem_private;
-   LPBYTE blob_private = NULL;
    PCCERT_CONTEXT cert = NULL;
+   LPBYTE blob_private = NULL;
    DWORD blob_private_len = 0;
-   DWORD encrypted_private_len = 0;
-   LPBYTE encrypted_private = NULL;
+   LPBYTE blob_private_rsa = NULL;
+   DWORD blob_private_rsa_len = 0;
+   DWORD encoded_private_len = 0;
+   LPBYTE encoded_private = NULL;
 
-
-   file = fopen (filename, "rb");
-   if (!file) {
-      MONGOC_ERROR ("Couldn't open file '%s'", filename);
-      return NULL;
+   pem = read_file_and_null_terminate (filename, &pem_length);
+   if (!pem) {
+      goto fail;
    }
-
-   fseek (file, 0, SEEK_END);
-   pem_length = ftell (file);
-   fseek (file, 0, SEEK_SET);
-   if (pem_length < 1) {
-      MONGOC_ERROR ("Couldn't determine file size of '%s'", filename);
-      return NULL;
-   }
-
-   pem = (char *) bson_malloc0 (pem_length);
-   fread ((void *) pem, 1, pem_length, file);
-   fclose (file);
 
    pem_public = strstr (pem, "-----BEGIN CERTIFICATE-----");
+   if (!pem_public) {
+      MONGOC_ERROR ("Can't find public certificate in '%s'", filename);
+      goto fail;
+   }
+
    pem_private = strstr (pem, "-----BEGIN ENCRYPTED PRIVATE KEY-----");
 
    if (pem_private) {
@@ -87,96 +243,60 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----");
-   if (!pem_private) {
-      pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----");
-   }
-
-   if (!pem_private) {
-      MONGOC_ERROR ("Can't find private key in '%s'", filename);
+   encoded_cert = decode_pem_base64 (pem_public, &encoded_cert_len, "public key", filename);
+   if (!encoded_cert) {
       goto fail;
    }
-
-   public_blob.cbData = (DWORD) strlen (pem_public);
-   public_blob.pbData = (BYTE *) pem_public;
-
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380264%28v=vs.85%29.aspx
-    */
-   CryptQueryObject (CERT_QUERY_OBJECT_BLOB,      /* dwObjectType, blob or file */
-                     &public_blob,                /* pvObject, Unicode filename */
-                     CERT_QUERY_CONTENT_FLAG_ALL, /* dwExpectedContentTypeFlags */
-                     CERT_QUERY_FORMAT_FLAG_ALL,  /* dwExpectedFormatTypeFlags */
-                     0,                           /* dwFlags, reserved for "future use" */
-                     NULL,                        /* pdwMsgAndCertEncodingType, OUT, unused */
-                     NULL,                        /* pdwContentType (dwExpectedContentTypeFlags), OUT, unused */
-                     NULL,                        /* pdwFormatType (dwExpectedFormatTypeFlags,), OUT, unused */
-                     NULL,                        /* phCertStore, OUT, HCERTSTORE.., unused, for now */
-                     NULL,                        /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
-                     (const void **) &cert        /* ppvContext, OUT, the Certificate Context */
-   );
+   cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
 
    if (!cert) {
-      MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X", filename, (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to extract public key from '%s': %s", filename, msg);
+      bson_free (msg);
       goto fail;
    }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380285%28v=vs.85%29.aspx
-    */
-   success = CryptStringToBinaryA (pem_private,               /* pszString */
-                                   0,                         /* cchString */
-                                   CRYPT_STRING_BASE64HEADER, /* dwFlags */
-                                   NULL,                      /* pbBinary */
-                                   &encrypted_private_len,    /* pcBinary, IN/OUT */
-                                   NULL,                      /* pdwSkip */
-                                   NULL);                     /* pdwFlags */
-   if (!success) {
-      MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", (unsigned int) GetLastError ());
-      goto fail;
-   }
+   if (NULL != (pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----"))) {
+      encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
+      if (!encoded_private) {
+         goto fail;
+      }
 
-   encrypted_private = (LPBYTE) bson_malloc0 (encrypted_private_len);
-   success = CryptStringToBinaryA (
-      pem_private, 0, CRYPT_STRING_BASE64HEADER, encrypted_private, &encrypted_private_len, NULL, NULL);
-   if (!success) {
-      MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", (unsigned int) GetLastError ());
-      goto fail;
-   }
+      blob_private_rsa = decode_object (
+         PKCS_RSA_PRIVATE_KEY, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
+      if (!blob_private_rsa) {
+         goto fail;
+      }
+   } else if (NULL != (pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----"))) {
+      encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
+      if (!encoded_private) {
+         goto fail;
+      }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa379912%28v=vs.85%29.aspx
-    */
-   success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
-                                  PKCS_RSA_PRIVATE_KEY,                    /* lpszStructType */
-                                  encrypted_private,                       /* pbEncoded */
-                                  encrypted_private_len,                   /* cbEncoded */
-                                  0,                                       /* dwFlags */
-                                  NULL,                                    /* pDecodePara */
-                                  NULL,                                    /* pvStructInfo */
-                                  &blob_private_len);                      /* pcbStructInfo */
-   if (!success) {
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     GetLastError (),
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-      MONGOC_ERROR ("Failed to parse private key. %s (0x%.8X)", msg, (unsigned int) GetLastError ());
-      LocalFree (msg);
-      goto fail;
-   }
+      blob_private = decode_object (
+         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_len, "private key", filename);
+      if (!blob_private) {
+         goto fail;
+      }
 
-   blob_private = (LPBYTE) bson_malloc0 (blob_private_len);
-   success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                  PKCS_RSA_PRIVATE_KEY,
-                                  encrypted_private,
-                                  encrypted_private_len,
-                                  0,
-                                  NULL,
-                                  blob_private,
-                                  &blob_private_len);
-   if (!success) {
-      MONGOC_ERROR ("Failed to parse private key. Error 0x%.8X", (unsigned int) GetLastError ());
+      // Have PrivateKey. Get RSA key from it.
+      CRYPT_PRIVATE_KEY_INFO *privateKeyInfo = (CRYPT_PRIVATE_KEY_INFO *) blob_private;
+      if (strcmp (privateKeyInfo->Algorithm.pszObjId, szOID_RSA_RSA) != 0) {
+         MONGOC_ERROR ("Non-RSA private keys are not supported");
+         goto fail;
+      }
+
+      blob_private_rsa = decode_object (PKCS_RSA_PRIVATE_KEY,
+                                        privateKeyInfo->PrivateKey.pbData,
+                                        privateKeyInfo->PrivateKey.cbData,
+                                        &blob_private_rsa_len,
+                                        "private key",
+                                        filename);
+      if (!blob_private_rsa) {
+         goto fail;
+      }
+   } else {
+      MONGOC_ERROR ("Can't find private key in '%s'", filename);
       goto fail;
    }
 
@@ -188,42 +308,61 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                   PROV_RSA_FULL,        /* dwProvType */
                                   CRYPT_VERIFYCONTEXT); /* dwFlags */
    if (!success) {
-      MONGOC_ERROR ("CryptAcquireContext failed with error 0x%.8X", (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("CryptAcquireContext failed: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
+   HCRYPTKEY hKey;
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380207%28v=vs.85%29.aspx
     */
-   success = CryptImportKey (provider,         /* hProv */
-                             blob_private,     /* pbData */
-                             blob_private_len, /* dwDataLen */
-                             0,                /* hPubKey */
-                             0,                /* dwFlags */
-                             &hKey);           /* phKey, OUT */
+   success = CryptImportKey (provider,             /* hProv */
+                             blob_private_rsa,     /* pbData */
+                             blob_private_rsa_len, /* dwDataLen */
+                             0,                    /* hPubKey */
+                             0,                    /* dwFlags */
+                             &hKey);               /* phKey, OUT */
    if (!success) {
-      MONGOC_ERROR ("CryptImportKey for private key failed with error 0x%.8X", (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("CryptImportKey for private key failed: %s", msg);
+      bson_free (msg);
+      CryptReleaseContext (provider, 0);
       goto fail;
    }
+   CryptDestroyKey (hKey);
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa376573%28v=vs.85%29.aspx
     */
+   // The CERT_KEY_PROV_HANDLE_PROP_ID property takes ownership of `provider`.
    success = CertSetCertificateContextProperty (cert,                         /* pCertContext */
                                                 CERT_KEY_PROV_HANDLE_PROP_ID, /* dwPropId */
                                                 0,                            /* dwFlags */
                                                 (const void *) provider);     /* pvData */
-   if (success) {
-      TRACE ("%s", "Successfully loaded client certificate");
-      return cert;
+   if (!success) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Can't associate private key with public key: %s", msg);
+      bson_free (msg);
+      goto fail;
    }
 
-   MONGOC_ERROR ("Can't associate private key with public key: 0x%.8X", (unsigned int) GetLastError ());
+   TRACE ("%s", "Successfully loaded client certificate");
+   ret = true;
 
 fail:
-   SecureZeroMemory (pem, pem_length);
-   bson_free (pem);
-   if (encrypted_private) {
-      SecureZeroMemory (encrypted_private, encrypted_private_len);
-      bson_free (encrypted_private);
+   if (pem) {
+      SecureZeroMemory (pem, pem_length);
+      bson_free (pem);
+   }
+   bson_free (encoded_cert);
+   if (encoded_private) {
+      SecureZeroMemory (encoded_private, encoded_private_len);
+      bson_free (encoded_private);
+   }
+
+   if (blob_private_rsa) {
+      SecureZeroMemory (blob_private_rsa, blob_private_rsa_len);
+      bson_free (blob_private_rsa);
    }
 
    if (blob_private) {
@@ -231,111 +370,56 @@ fail:
       bson_free (blob_private);
    }
 
-   return NULL;
+   if (!ret) {
+      CertFreeCertificateContext (cert);
+      return NULL;
+   }
+
+   return cert;
 }
 
 PCCERT_CONTEXT
-mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_certificate (mongoc_ssl_opt_t *opt)
 {
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
-static void
-_bson_append_szoid (mcommon_string_append_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
-{
-   DWORD oid_len = CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, NULL, 0);
-
-   if (oid_len > 1) {
-      char *tmp = bson_malloc0 (oid_len);
-
-      CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, tmp, oid_len);
-      mcommon_string_append_printf (retval, "%s%s", label, tmp);
-      bson_free (tmp);
-   }
-}
-
-char *
-_mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase)
-{
-   PCCERT_CONTEXT cert;
-   cert = mongoc_secure_channel_setup_certificate_from_file (filename);
-   if (!cert) {
-      return NULL;
-   }
-
-   mcommon_string_append_t retval;
-   mcommon_string_new_as_append (&retval);
-
-   _bson_append_szoid (&retval, cert, "C=", szOID_COUNTRY_NAME);
-   _bson_append_szoid (&retval, cert, ",ST=", szOID_STATE_OR_PROVINCE_NAME);
-   _bson_append_szoid (&retval, cert, ",L=", szOID_LOCALITY_NAME);
-   _bson_append_szoid (&retval, cert, ",O=", szOID_ORGANIZATION_NAME);
-   _bson_append_szoid (&retval, cert, ",OU=", szOID_ORGANIZATIONAL_UNIT_NAME);
-   _bson_append_szoid (&retval, cert, ",CN=", szOID_COMMON_NAME);
-   _bson_append_szoid (&retval, cert, ",STREET=", szOID_STREET_ADDRESS);
-
-   return mcommon_string_from_append_destroy_with_steal (&retval);
-}
 
 bool
-mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
 {
-   FILE *file;
-   long length;
+   bool ok = false;
+   char *pem = NULL;
    const char *pem_key;
    HCERTSTORE cert_store = NULL;
    PCCERT_CONTEXT cert = NULL;
-   DWORD encrypted_cert_len = 0;
-   LPBYTE encrypted_cert = NULL;
+   DWORD encoded_cert_len = 0;
+   LPBYTE encoded_cert = NULL;
 
-   file = fopen (opt->ca_file, "rb");
-   if (!file) {
-      MONGOC_ERROR ("Couldn't open file '%s'", opt->ca_file);
-      return false;
-   }
-
-   fseek (file, 0, SEEK_END);
-   length = ftell (file);
-   fseek (file, 0, SEEK_SET);
-   if (length < 1 || length > LONG_MAX - 1) {
-      MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
-      fclose (file);
-      return false;
-   }
-
-   // Read the whole file into one nul-terminated string
-   pem_key = (const char *) bson_malloc0 ((size_t) length + 1u);
-   bool read_ok = (size_t) length == fread ((void *) pem_key, 1, length, file);
-   fclose (file);
-   if (!read_ok) {
-      MONGOC_WARNING ("Couldn't read certificate file '%s'", opt->ca_file);
+   pem = read_file_and_null_terminate (opt->ca_file, NULL);
+   if (!pem) {
       return false;
    }
 
    /* If we have private keys or other fuzz, seek to the good stuff */
-   pem_key = strstr (pem_key, "-----BEGIN CERTIFICATE-----");
-   /*printf ("%s\n", pem_key);*/
+   pem_key = strstr (pem, "-----BEGIN CERTIFICATE-----");
 
    if (!pem_key) {
       MONGOC_WARNING ("Couldn't find certificate in '%s'", opt->ca_file);
-      return false;
+      goto fail;
    }
 
-   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, NULL, &encrypted_cert_len, NULL, NULL)) {
-      MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
-      return false;
+   encoded_cert = decode_pem_base64 (pem_key, &encoded_cert_len, "public key", opt->ca_file);
+   if (!encoded_cert) {
+      goto fail;
    }
 
-   encrypted_cert = (LPBYTE) LocalAlloc (0, encrypted_cert_len);
-   if (!CryptStringToBinaryA (pem_key, 0, CRYPT_STRING_BASE64HEADER, encrypted_cert, &encrypted_cert_len, NULL, NULL)) {
-      MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X", (unsigned int) GetLastError ());
-      return false;
-   }
-
-   cert = CertCreateCertificateContext (X509_ASN_ENCODING, encrypted_cert, encrypted_cert_len);
+   cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
    if (!cert) {
-      MONGOC_WARNING ("Could not convert certificate");
-      return false;
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Could not convert certificate: %s", msg);
+      bson_free (msg);
+      goto fail;
    }
 
 
@@ -346,59 +430,81 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
                                L"Root");                                /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      MONGOC_ERROR ("Error opening certificate store");
-      return false;
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Error opening certificate store: %s", msg);
+      bson_free (msg);
+      goto fail;
    }
 
-   if (CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      TRACE ("%s", "Added the certificate !");
-      CertCloseStore (cert_store, 0);
-      return true;
+   if (!CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Failed adding the cert: %s", msg);
+      bson_free (msg);
+      goto fail;
    }
-   MONGOC_WARNING ("Failed adding the cert");
+
+   TRACE ("%s", "Added the certificate !");
+   ok = true;
+fail:
    CertCloseStore (cert_store, 0);
+   bson_free (encoded_cert);
+   CertFreeCertificateContext (cert);
+   bson_free (pem);
+   return ok;
+}
 
-   return false;
+PCCRL_CONTEXT
+mongoc_secure_channel_load_crl (const char *crl_file)
+{
+   PCCRL_CONTEXT crl = NULL;
+   bool ok = false;
+   DWORD encoded_crl_len = 0;
+   LPBYTE encoded_crl = NULL;
+
+   char *pem = read_file_and_null_terminate (crl_file, NULL);
+   if (!pem) {
+      goto fail;
+   }
+
+   const char *pem_begin = strstr (pem, "-----BEGIN X509 CRL-----");
+   if (!pem_begin) {
+      MONGOC_WARNING ("Couldn't find CRL in '%s'", crl_file);
+      goto fail;
+   }
+
+   encoded_crl = decode_pem_base64 (pem_begin, &encoded_crl_len, "CRL", crl_file);
+   if (!encoded_crl) {
+      goto fail;
+   }
+
+   crl = CertCreateCRLContext (X509_ASN_ENCODING, encoded_crl, encoded_crl_len);
+
+   if (!crl) {
+      MONGOC_WARNING ("Can't extract CRL from '%s'", crl_file);
+      goto fail;
+   }
+
+   ok = true;
+fail:
+   bson_free (encoded_crl);
+   bson_free (pem);
+   if (!ok) {
+      CertFreeCRLContext (crl);
+      crl = NULL;
+   }
+   return crl;
 }
 
 bool
-mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_crl (mongoc_ssl_opt_t *opt)
 {
    HCERTSTORE cert_store = NULL;
-   PCCERT_CONTEXT cert = NULL;
-   LPWSTR str;
-   int chars;
+   bool ok = false;
 
-   chars = MultiByteToWideChar (CP_ACP, 0, opt->crl_file, -1, NULL, 0);
-   if (chars < 1) {
-      MONGOC_WARNING ("Can't determine opt->crl_file length");
-      return false;
+   PCCRL_CONTEXT crl = mongoc_secure_channel_load_crl (opt->crl_file);
+   if (!crl) {
+      goto fail;
    }
-   str = (LPWSTR) bson_malloc0 (chars * sizeof (*str));
-   MultiByteToWideChar (CP_ACP, 0, opt->crl_file, -1, str, chars);
-
-
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380264%28v=vs.85%29.aspx
-    */
-   CryptQueryObject (CERT_QUERY_OBJECT_FILE,      /* dwObjectType, blob or file */
-                     str,                         /* pvObject, Unicode filename */
-                     CERT_QUERY_CONTENT_FLAG_CRL, /* dwExpectedContentTypeFlags */
-                     CERT_QUERY_FORMAT_FLAG_ALL,  /* dwExpectedFormatTypeFlags */
-                     0,                           /* dwFlags, reserved for "future use" */
-                     NULL,                        /* pdwMsgAndCertEncodingType, OUT, unused */
-                     NULL,                        /* pdwContentType (dwExpectedContentTypeFlags), OUT, unused */
-                     NULL,                        /* pdwFormatType (dwExpectedFormatTypeFlags,), OUT, unused */
-                     NULL,                        /* phCertStore, OUT, HCERTSTORE.., unused, for now */
-                     NULL,                        /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
-                     (const void **) &cert        /* ppvContext, OUT, the Certificate Context */
-   );
-   bson_free (str);
-
-   if (!cert) {
-      MONGOC_WARNING ("Can't extract CRL from '%s'", opt->crl_file);
-      return false;
-   }
-
 
    cert_store = CertOpenStore (CERT_STORE_PROV_SYSTEM,                  /* provider */
                                X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
@@ -407,23 +513,26 @@ mongoc_secure_channel_setup_crl (mongoc_stream_tls_secure_channel_t *secure_chan
                                L"Root");                                /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      MONGOC_ERROR ("Error opening certificate store");
-      CertFreeCertificateContext (cert);
-      return false;
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Error opening certificate store: %s", msg);
+      bson_free (msg);
+      goto fail;
    }
 
-   if (CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      TRACE ("%s", "Added the certificate !");
-      CertFreeCertificateContext (cert);
-      CertCloseStore (cert_store, 0);
-      return true;
+   if (!CertAddCRLContextToStore (cert_store, crl, CERT_STORE_ADD_USE_EXISTING, NULL)) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Failed adding the CRL: %s", msg);
+      bson_free (msg);
+      goto fail;
    }
 
-   MONGOC_WARNING ("Failed adding the cert");
-   CertFreeCertificateContext (cert);
+   TRACE ("%s", "Added the CRL!");
+   ok = true;
+
+fail:
    CertCloseStore (cert_store, 0);
-
-   return false;
+   CertFreeCRLContext (crl);
+   return ok;
 }
 
 ssize_t
@@ -575,13 +684,12 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls, char *hostname
                                             &secure_channel->ret_flags,         /* pfContextAttr OUT param */
                                             &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
    );
-
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
-      MONGOC_LOG_AND_SET_ERROR (error,
-                                MONGOC_ERROR_STREAM,
-                                MONGOC_ERROR_STREAM_SOCKET,
-                                "initial InitializeSecurityContext failed: %ld",
-                                sspi_status);
+      // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
+      MONGOC_LOG_AND_SET_ERROR (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "initial InitializeSecurityContext failed: %s", msg);
+      bson_free (msg);
       return false;
    }
 
@@ -810,24 +918,14 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
 
          default: {
-            LPTSTR msg = NULL;
-
-            FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                           NULL,
-                           GetLastError (),
-                           LANG_NEUTRAL,
-                           (LPTSTR) &msg,
-                           0,
-                           NULL);
+            // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+            char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
             MONGOC_LOG_AND_SET_ERROR (error,
                                       MONGOC_ERROR_STREAM,
                                       MONGOC_ERROR_STREAM_SOCKET,
-                                      "Failed to initialize security context, error code: "
-                                      "0x%04X%04X: %s",
-                                      (unsigned int) (sspi_status >> 16) & 0xffff,
-                                      (unsigned int) sspi_status & 0xffff,
+                                      "Failed to initialize security context: %s",
                                       msg);
-            LocalFree (msg);
+            bson_free (msg);
          }
          }
          return false;

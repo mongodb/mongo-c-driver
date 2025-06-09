@@ -170,7 +170,6 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism (const mongoc_uri_t *uri
 void
 _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
                                                          const mongoc_uri_t *uri,
-                                                         const mongoc_ssl_opt_t *ssl_opts,
                                                          mongoc_scram_t *scram /* OUT */)
 {
    bson_t auth_cmd;
@@ -186,7 +185,7 @@ _mongoc_topology_scanner_add_speculative_authentication (bson_t *cmd,
       /* Ignore errors while building authentication document: we proceed with
        * the handshake as usual and let the subsequent authenticate command
        * fail. */
-      if (_mongoc_cluster_get_auth_cmd_x509 (uri, ssl_opts, &auth_cmd, &error)) {
+      if (_mongoc_cluster_get_auth_cmd_x509 (uri, &auth_cmd, &error)) {
          has_auth = true;
          BSON_APPEND_UTF8 (&auth_cmd, "db", "$external");
       }
@@ -375,13 +374,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty (&node->speculative_auth_response) &&
        node->scram.step == 0) {
-      mongoc_ssl_opt_t *ssl_opts = NULL;
-
-#ifdef MONGOC_ENABLE_SSL
-      ssl_opts = ts->ssl_opts;
-#endif
-
-      _mongoc_topology_scanner_add_speculative_authentication (&cmd, ts->uri, ssl_opts, &node->scram);
+      _mongoc_topology_scanner_add_speculative_authentication (&cmd, ts->uri, &node->scram);
    }
 
    if (!bson_empty (&ts->cluster_time)) {
@@ -922,6 +915,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 {
 #ifdef _WIN32
    ENTRY;
+   BSON_UNUSED (node);
    _mongoc_set_error (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "UNIX domain sockets not supported on win32.");
    RETURN (false);

@@ -442,7 +442,7 @@ test_insert_check_keys (void)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty key");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty string");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -457,7 +457,7 @@ test_insert_check_keys (void)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty key");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty string");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -833,7 +833,7 @@ test_update_with_opts_validate (void)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "invalid argument for update: keys cannot contain \".\": \"a.a\"");
+                             "invalid argument for update: Disallowed '.' in element key: \"a.a\"");
       mongoc_bulk_operation_destroy (bulk);
 
       /* Test a valid update_one with explicit validation on the server. */
@@ -1172,7 +1172,7 @@ test_replace_one_with_opts_validate (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid argument for replace: keys cannot contain \".\": \"a.a\"");
+                          "invalid argument for replace: Disallowed '.' in element key: \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
 
@@ -1783,7 +1783,7 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
    bson_t reply;
    bson_error_t error;
    bool r;
-   const char *err = "empty key";
+   const char *err = "empty string";
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_insert_validate");
@@ -1899,7 +1899,7 @@ test_insert_with_opts_validate (void)
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (bulk, tmp_bson ("{'': 1}"), NULL, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty key");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "empty string");
 
    ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
                        bulk, tmp_bson ("{'': 1}"), tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE), &error),
@@ -1913,7 +1913,7 @@ test_insert_with_opts_validate (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+                          "invalid document for insert: Disallowed '.' in element key: \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
 
@@ -1967,7 +1967,7 @@ _test_remove_validate (remove_validate_test_t *test)
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Bulk operation is invalid from prior error: "
-                             "invalid document for insert: empty key");
+                             "invalid document for insert: Element key cannot be an empty string");
    } else {
       test->remove (bulk, tmp_bson (NULL));
    }
@@ -1979,8 +1979,10 @@ _test_remove_validate (remove_validate_test_t *test)
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    BSON_ASSERT (!r);
    BSON_ASSERT (bson_empty (&reply));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid document for insert: empty key");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "invalid document for insert: Element key cannot be an empty string");
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -4111,9 +4113,9 @@ _test_bulk_collation (bool w, bulkop op)
    request_t *request;
    future_t *future;
    bson_t *opts;
-   const char *expect_msg;
-   const char *expect_doc;
-   bool r;
+   const char *expect_msg = NULL;
+   const char *expect_doc = NULL;
+   bool r = false;
 
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
@@ -4465,9 +4467,9 @@ _test_bulk_let (bulkop op)
    bson_error_t error;
    request_t *request;
    future_t *future;
-   const char *expect_msg;
-   const char *expect_doc;
-   bool r;
+   const char *expect_msg = NULL;
+   const char *expect_doc = NULL;
+   bool r = false;
 
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
@@ -4976,9 +4978,7 @@ test_bulk_install (TestSuite *suite)
                       test_bulk_write_multiple_errors,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_failpoint,
-                      /* Require server 4.2 for failCommand appName */
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddLive (suite, "/BulkOperation/set_client_after_operation", test_bulk_write_set_client_after_operation);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/set_client_updates_operation_id_when_client_changes",

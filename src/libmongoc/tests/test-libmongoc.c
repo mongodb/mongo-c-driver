@@ -1984,12 +1984,14 @@ int
 test_framework_skip_if_no_txns (void)
 {
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_replset () && test_framework_skip_if_max_wire_version_less_than_7 ()) {
+       test_framework_skip_if_not_replset ()) {
+      // Have crypto, sessions, and replica set. Proceed.
       return 1;
    }
 
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_mongos () && test_framework_skip_if_max_wire_version_less_than_8 ()) {
+       test_framework_skip_if_not_mongos ()) {
+      // Have crypto, sessions, and sharded cluster. Proceed.
       return 1;
    }
 
@@ -2252,8 +2254,9 @@ test_framework_skip_if_not_replset (void)
       return (test_framework_max_wire_version_at_least (wv) && test_framework_is_replset ()) ? 0 : 1; \
    }
 
-WIRE_VERSION_CHECKS (7)
+/* wire version 8 begins with the 4.2 release. */
 WIRE_VERSION_CHECKS (8)
+/* wire version 9 begins with the 4.4 release. */
 WIRE_VERSION_CHECKS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECKS (13)
@@ -2550,7 +2553,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
 
 
 void
-test_libmongoc_init (TestSuite *suite, BSON_MAYBE_UNUSED const char *name, int argc, char **argv)
+test_libmongoc_init (TestSuite *suite, int argc, char **argv)
 {
 #if defined(_MSC_VER) && defined(_WIN64)
    SetUnhandledExceptionFilter (windows_exception_handler);

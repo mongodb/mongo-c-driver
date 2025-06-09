@@ -29,6 +29,7 @@
 
 #include <string.h>
 
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
 #include <mongoc/mongoc-init.h>
 #include <mongoc/mongoc-openssl-private.h>
@@ -140,16 +141,9 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE 
                                store_name);                             /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     GetLastError (),
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-      MONGOC_ERROR ("Can't open CA store: 0x%.8lX: '%s'", GetLastError (), msg);
-      LocalFree (msg);
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Can't open CA store: %s", msg);
+      bson_free (msg);
       return false;
    }
 
@@ -1010,57 +1004,6 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    }
 
    return ctx;
-}
-
-
-char *
-_mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
-{
-   X509_NAME *subject = NULL;
-   X509 *cert = NULL;
-   BIO *certbio = NULL;
-   BIO *strbio = NULL;
-   char *str = NULL;
-   int ret;
-
-   BSON_UNUSED (passphrase);
-
-   if (!filename) {
-      return NULL;
-   }
-
-   certbio = BIO_new (BIO_s_file ());
-   strbio = BIO_new (BIO_s_mem ());
-
-   BSON_ASSERT (certbio);
-   BSON_ASSERT (strbio);
-
-
-   if (BIO_read_filename (certbio, filename) && (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
-      if ((subject = X509_get_subject_name (cert))) {
-         ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
-
-         if ((ret > 0) && (ret < INT_MAX)) {
-            str = (char *) bson_malloc (ret + 2);
-            BIO_gets (strbio, str, ret + 1);
-            str[ret] = '\0';
-         }
-      }
-   }
-
-   if (cert) {
-      X509_free (cert);
-   }
-
-   if (certbio) {
-      BIO_free (certbio);
-   }
-
-   if (strbio) {
-      BIO_free (strbio);
-   }
-
-   return str;
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L

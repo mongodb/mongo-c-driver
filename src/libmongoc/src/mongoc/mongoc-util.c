@@ -35,20 +35,27 @@
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
 
-const bson_validate_flags_t _mongoc_default_insert_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
-
-const bson_validate_flags_t _mongoc_default_replace_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
-
-const bson_validate_flags_t _mongoc_default_update_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
+/**
+ * ! NOTE
+ *
+ * In earlier releases, these flags had `BSON_VALIDATE_UTF8` and `BSON_VALIDATE_UTF8_ALLOW_NULL`.
+ * Due to a bug, the CRUD APIs did not actually do UTF-8 validation. This issue has been fixed, but
+ * we want to maintain backward compatibility, so the UTF-8 validation was removed from these flag
+ * values.
+ *
+ * A future API may add the UTF-8 validation back, but it would be a breaking change.
+ */
+const bson_validate_flags_t _mongoc_default_insert_vflags = BSON_VALIDATE_EMPTY_KEYS;
+const bson_validate_flags_t _mongoc_default_replace_vflags = BSON_VALIDATE_EMPTY_KEYS;
+const bson_validate_flags_t _mongoc_default_update_vflags = BSON_VALIDATE_EMPTY_KEYS;
 
 int
 _mongoc_rand_simple (unsigned int *seed)
 {
 #ifdef _WIN32
    /* ignore the seed */
+   BSON_UNUSED (seed);
+
    unsigned int ret = 0;
    errno_t err;
 
@@ -285,7 +292,7 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "3.4";
    case 6:
       return "3.6";
-   case WIRE_VERSION_4_0:
+   case 7:
       return "4.0";
    case WIRE_VERSION_4_2:
       return "4.2";
@@ -522,6 +529,18 @@ mongoc_lowercase (const char *src, char *buf /* OUT */)
          *buf = (char) tolower (*src);
       } else {
          *buf = *src;
+      }
+   }
+}
+
+void
+mongoc_lowercase_inplace (char *src)
+{
+   for (; *src; ++src) {
+      /* UTF8 non-ascii characters have a 1 at the leftmost bit. If this is the
+       * case, just leave as-is */
+      if ((*src & (0x1 << 7)) == 0) {
+         *src = (char) tolower (*src);
       }
    }
 }

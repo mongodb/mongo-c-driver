@@ -598,6 +598,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-callback.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-env.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opts-helpers.c
@@ -997,6 +998,7 @@ set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-reader.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-string.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-utf8.c
+   ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-validate.generated.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-value.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/test-writer.c
    ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-match.c

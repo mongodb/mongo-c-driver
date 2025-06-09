@@ -264,7 +264,7 @@ _bson_assert_failed_on_param (const char *param, const char *func)
 
 // `BSON_OPTIONAL_PARAM` is a documentation-only macro to document X may be NULL.
 // Useful in combination with `BSON_ASSERT_PARAM` to document and assert pointer parameters.
-#define BSON_OPTIONAL_PARAM(param) (void) 0
+#define BSON_OPTIONAL_PARAM(param) ((void) param)
 
 /* obsolete macros, preserved for compatibility */
 #define BSON_STATIC_ASSERT(s) BSON_STATIC_ASSERT_ (s, __LINE__)

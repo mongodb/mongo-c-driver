@@ -277,9 +277,9 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             // Expanded:
             // Test whether the product sign is unequal to both input signs
             // X ^ Y yields a negative value if the signs are unequal
-            const bool a_signflipped = (intmax_t) (sum ^ a) < 0;
-            const bool b_signflipped = (intmax_t) (sum ^ b) < 0;
-            return a_signflipped && b_signflipped;
+            //     const bool a_signflipped = (intmax_t) (sum ^ a) < 0;
+            //     const bool b_signflipped = (intmax_t) (sum ^ b) < 0;
+            //     return a_signflipped && b_signflipped;
          } else { // S = S + U
             // Flip the sign bit of a, test whether that sum overflows
             a ^= signbit;
@@ -300,49 +300,48 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // U = S + S
             return signbit & (((sum | a) & b) | ((sum & a) & ~b));
             // Expanded:
-            const bool a_is_negative = (intmax_t) a < 0;
-            const bool b_is_negative = (intmax_t) b < 0;
-            const bool sum_is_large = sum > INTMAX_MAX;
-            if (b_is_negative) {
-               if (a_is_negative) {
-                  // The sum must be negative, and therefore cannot be stored in an unsigned
-                  return true;
-               } else if (sum_is_large) {
-                  // We added a negative value B to a positive value A, but the sum
-                  // ended up larger than the max signed value, so we wrapped
-                  return true;
-               }
-            } else if (a_is_negative) {
-               if (sum_is_large) {
-                  // Same as above case with sum_is_large
-                  return true;
-               }
-            }
-            return false;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     const bool sum_is_large = sum > INTMAX_MAX;
+            //     if (b_is_negative) {
+            //        if (a_is_negative) {
+            //           // The sum must be negative, and therefore cannot be stored in an unsigned
+            //           return true;
+            //        } else if (sum_is_large) {
+            //           // We added a negative value B to a positive value A, but the sum
+            //           // ended up larger than the max signed value, so we wrapped
+            //           return true;
+            //        }
+            //     } else if (a_is_negative) {
+            //        if (sum_is_large) {
+            //           // Same as above case with sum_is_large
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          } else { // U = S + U
             return signbit & (sum ^ a ^ signbit) & (sum ^ b);
             // Expanded:
-            const bool sum_is_large = sum > INTMAX_MAX;
-            const bool b_is_large = b > INTMAX_MAX;
-            const bool a_is_negative = (intmax_t) a < 0;
-
-            if (!a_is_negative && b_is_large) {
-               // We are adding a non-negative value to a large number, so the
-               // sum must also be large
-               if (!sum_is_large) {
-                  // We ended up with a smaller value, meaning that we must have wrapped
-                  return true;
-               }
-            }
-            if (a_is_negative && !b_is_large) {
-               // We subtracted a non-negative value from a non-large number, so
-               // the result should not be large
-               if (sum_is_large) {
-                  // We ended up with a large value, so we must have wrapped
-                  return true;
-               }
-            }
-            return false;
+            //     const bool sum_is_large = sum > INTMAX_MAX;
+            //     const bool b_is_large = b > INTMAX_MAX;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     if (!a_is_negative && b_is_large) {
+            //        // We are adding a non-negative value to a large number, so the
+            //        // sum must also be large
+            //        if (!sum_is_large) {
+            //           // We ended up with a smaller value, meaning that we must have wrapped
+            //           return true;
+            //        }
+            //     }
+            //     if (a_is_negative && !b_is_large) {
+            //        // We subtracted a non-negative value from a non-large number, so
+            //        // the result should not be large
+            //        if (sum_is_large) {
+            //           // We ended up with a large value, so we must have wrapped
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          }
       } else {
          if (b_signed) { // U = U + S  --- (See [U = S + U] for an explanation)
@@ -369,18 +368,18 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // S = S - S
             return signbit & (a ^ b) & (diff ^ a);
             // Explain:
-            const bool a_is_negative = (intmax_t) a < 0;
-            const bool b_is_negative = (intmax_t) b < 0;
-            if (a_is_negative != b_is_negative) {
-               // Given: Pos - Neg = Pos
-               //      ∧ Neg - Pos = Neg
-               // We expect that the difference preserves the sign of the minuend
-               if (diff_is_negative != a_is_negative) {
-                  return true;
-               }
-            }
-            // Otherwise, `Pos - Pos` and `Neg - Neg` cannot possibly overflow
-            return false;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     if (a_is_negative != b_is_negative) {
+            //        // Given: Pos - Neg = Pos
+            //        //      ∧ Neg - Pos = Neg
+            //        // We expect that the difference preserves the sign of the minuend
+            //        if (diff_is_negative != a_is_negative) {
+            //           return true;
+            //        }
+            //     }
+            //     // Otherwise, `Pos - Pos` and `Neg - Neg` cannot possibly overflow
+            //     return false;
          } else { // S = S - U
             // The diff overflows if the sign-bit-flipped minuend is smaller than the subtrahend
             return (a ^ signbit) < b;
@@ -399,29 +398,29 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // U = S - S
             return signbit & (((diff & a) & b) | ((diff | a) & ~b));
             // Expanded:
-            const bool a_is_negative = (intmax_t) a < 0;
-            const bool b_is_negative = (intmax_t) b < 0;
-            const bool diff_is_large = diff > INTMAX_MAX;
-            if (!b_is_negative) {
-               if (a_is_negative) {
-                  // We subtracted a non-negative from a negative value, so the difference
-                  // must be negative and cannot be stored as unsigned
-                  return true;
-               }
-               if (diff_is_large) {
-                  // We subtracted a positive value from a signed value, so we must not
-                  // end up with a large value
-                  return true;
-               }
-            }
-            if (a_is_negative) {
-               if (diff_is_large) {
-                  // A is negative, and there is no possible value that we can subtract
-                  // from it to obtain this large integer, so we must have overflowed
-                  return true;
-               }
-            }
-            return false;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     const bool diff_is_large = diff > INTMAX_MAX;
+            //     if (!b_is_negative) {
+            //        if (a_is_negative) {
+            //           // We subtracted a non-negative from a negative value, so the difference
+            //           // must be negative and cannot be stored as unsigned
+            //           return true;
+            //        }
+            //        if (diff_is_large) {
+            //           // We subtracted a positive value from a signed value, so we must not
+            //           // end up with a large value
+            //           return true;
+            //        }
+            //     }
+            //     if (a_is_negative) {
+            //        if (diff_is_large) {
+            //           // A is negative, and there is no possible value that we can subtract
+            //           // from it to obtain this large integer, so we must have overflowed
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          } else { //
             return (b > a) || (signbit & a);
          }
@@ -429,26 +428,26 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // U = U - S
             return signbit & (a ^ b ^ signbit) & (diff ^ a);
             // Explain:
-            const bool a_is_large = a > INTMAX_MAX;
-            const bool b_is_negative = (intmax_t) b < 0;
-            const bool diff_is_large = diff > INTMAX_MAX;
-            if (a_is_large && b_is_negative) {
-               // The difference between a large value and a negative
-               // value must also be a large value
-               if (!diff_is_large) {
-                  // We expected another large value to appear.
-                  return true;
-               }
-            }
-            if (!a_is_large && !b_is_negative) {
-               // The difference between a non-large positive value and a non-negative value
-               // must not be a large value
-               if (diff_is_large) {
-                  // We did not expect a large difference
-                  return true;
-               }
-            }
-            return false;
+            //     const bool a_is_large = a > INTMAX_MAX;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     const bool diff_is_large = diff > INTMAX_MAX;
+            //     if (a_is_large && b_is_negative) {
+            //        // The difference between a large value and a negative
+            //        // value must also be a large value
+            //        if (!diff_is_large) {
+            //           // We expected another large value to appear.
+            //           return true;
+            //        }
+            //     }
+            //     if (!a_is_large && !b_is_negative) {
+            //        // The difference between a non-large positive value and a non-negative value
+            //        // must not be a large value
+            //        if (diff_is_large) {
+            //           // We did not expect a large difference
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          } else {
             return a < b;
          }

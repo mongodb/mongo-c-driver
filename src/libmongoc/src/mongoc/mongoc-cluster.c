@@ -104,7 +104,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster, const mongoc_server_stream
                                           MONGOC_SDAM_APP_ERROR_COMMAND,
                                           reply,
                                           NULL,
-                                          server_stream->sd->max_wire_version,
                                           server_stream->sd->generation,
                                           &server_stream->sd->service_id)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
@@ -136,7 +135,6 @@ _handle_network_error (mongoc_cluster_t *cluster, mongoc_server_stream_t *server
                                       type,
                                       NULL,
                                       why,
-                                      server_stream->sd->max_wire_version,
                                       server_stream->sd->generation,
                                       &server_stream->sd->service_id);
    /* Always disconnect the current connection on network error. */
@@ -804,12 +802,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &handshake_command);
 
    if (cluster->requires_auth && speculative_auth_response) {
-      mongoc_ssl_opt_t *ssl_opts = NULL;
-#ifdef MONGOC_ENABLE_SSL
-      ssl_opts = &cluster->client->ssl_opts;
-#endif
-
-      _mongoc_topology_scanner_add_speculative_authentication (&handshake_command, cluster->uri, ssl_opts, scram);
+      _mongoc_topology_scanner_add_speculative_authentication (&handshake_command, cluster->uri, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -1053,10 +1046,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 }
 
 bool
-_mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
-                                   const mongoc_ssl_opt_t *ssl_opts,
-                                   bson_t *cmd /* OUT */,
-                                   bson_error_t *error /* OUT */)
+_mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri, bson_t *cmd /* OUT */, bson_error_t *error /* OUT */)
 {
 #ifndef MONGOC_ENABLE_SSL
    _mongoc_set_error (error,
@@ -1067,41 +1057,21 @@ _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,
    return false;
 #else
    const char *username_from_uri = NULL;
-   char *username_from_subject = NULL;
 
    BSON_ASSERT (uri);
+   BSON_UNUSED (error);
 
    username_from_uri = mongoc_uri_get_username (uri);
    if (username_from_uri) {
       TRACE ("%s", "X509: got username from URI");
-   } else {
-      if (!ssl_opts || !ssl_opts->pem_file) {
-         _mongoc_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                            "cannot determine username for "
-                            "X-509 authentication.");
-         return false;
-      }
-
-      username_from_subject = mongoc_ssl_extract_subject (ssl_opts->pem_file, ssl_opts->pem_pwd);
-      if (!username_from_subject) {
-         _mongoc_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                            "No username provided for X509 authentication.");
-         return false;
-      }
-
-      TRACE ("%s", "X509: got username from certificate");
    }
 
    bson_init (cmd);
    BSON_APPEND_INT32 (cmd, "authenticate", 1);
    BSON_APPEND_UTF8 (cmd, "mechanism", "MONGODB-X509");
-   BSON_APPEND_UTF8 (cmd, "user", username_from_uri ? username_from_uri : username_from_subject);
-
-   bson_free (username_from_subject);
+   if (username_from_uri) {
+      BSON_APPEND_UTF8 (cmd, "user", username_from_uri);
+   }
 
    return true;
 #endif
@@ -1132,7 +1102,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   if (!_mongoc_cluster_get_auth_cmd_x509 (cluster->uri, &cluster->client->ssl_opts, &cmd, error)) {
+   if (!_mongoc_cluster_get_auth_cmd_x509 (cluster->uri, &cmd, error)) {
       return false;
    }
 
@@ -1667,7 +1637,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
 
    if (!ret) {
       mongoc_counter_auth_failure_inc ();
-      MONGOC_DEBUG ("Authentication failed: %s", error->message);
+      MONGOC_ERROR ("Authentication failed: %s", error->message);
    } else {
       mongoc_counter_auth_success_inc ();
       TRACE ("%s", "Authentication succeeded");
@@ -3384,9 +3354,6 @@ mcd_rpc_message_compress (mcd_rpc_message *rpc,
 
    const int32_t original_message_length = mcd_rpc_header_get_message_length (rpc);
 
-   // msgHeader consists of four int32 fields.
-   const int32_t message_header_length = 4u * sizeof (int32_t);
-
    // compressedMessage does not include msgHeader fields.
    BSON_ASSERT (original_message_length >= message_header_length);
    const size_t uncompressed_size = (size_t) (original_message_length - message_header_length);
@@ -3471,9 +3438,6 @@ mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len)
    BSON_ASSERT_PARAM (data_len);
 
    BSON_ASSERT (mcd_rpc_header_get_op_code (rpc) == MONGOC_OP_CODE_COMPRESSED);
-
-   // msgHeader consists of four int32 fields.
-   const size_t message_header_length = 4u * sizeof (int32_t);
 
    const int32_t uncompressed_size_raw = mcd_rpc_op_compressed_get_uncompressed_size (rpc);
 

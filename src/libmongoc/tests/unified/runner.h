@@ -63,6 +63,7 @@ typedef struct {
    entity_map_t *entity_map;
    failpoint_t *failpoints;
    bool loop_operation_executed;
+   bson_t *cluster_time_after_initial_data;
 } test_t;
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */

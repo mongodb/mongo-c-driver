@@ -25,7 +25,7 @@ struct _server_version_t;
 
 
 void
-test_libmongoc_init (struct _TestSuite *suite, const char *name, int argc, char **argv);
+test_libmongoc_init (struct _TestSuite *suite, int argc, char **argv);
 void
 test_libmongoc_destroy (struct _TestSuite *suite);
 
@@ -195,8 +195,9 @@ test_framework_skip_if_slow_or_live (void);
    int test_framework_skip_if_rs_version_##wv (void);                 \
    int test_framework_skip_if_not_rs_version_##wv (void);
 
-WIRE_VERSION_CHECK_DECLS (7)
+/* wire version 8 begins with the 4.2 release. */
 WIRE_VERSION_CHECK_DECLS (8)
+/* wire version 9 begins with the 4.4 release. */
 WIRE_VERSION_CHECK_DECLS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECK_DECLS (13)

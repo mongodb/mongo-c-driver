@@ -3275,27 +3275,6 @@ tasks:
           CC: clang
           CXX: clang++
       - func: upload-build
-  - name: sasl-cyrus-darwinssl-macos-14-clang-test-4.0-server-auth
-    run_on: macos-14
-    tags: [sasl-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, auth, server, "4.0", darwinssl]
-    depends_on: [{ name: sasl-cyrus-darwinssl-macos-14-clang-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-cyrus-darwinssl-macos-14-clang-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: clang }
-            - { key: CXX, value: clang++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: darwinssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-clang-test-4.2-server-auth
     run_on: macos-14
     tags: [sasl-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, auth, server, "4.2", darwinssl]
@@ -4676,27 +4655,6 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-4.0-server-auth
-    run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "4.0", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
-            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-simple-http-server
-      - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
     tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "4.2", winssl]
@@ -4952,9 +4910,9 @@ tasks:
           CC: gcc-10
           CXX: g++-10
           C_STD_VERSION: 11
-  - name: std-c11-rhel76-gcc-compile
-    run_on: rhel76-large
-    tags: [std-matrix, rhel76, gcc, compile, std-c11]
+  - name: std-c11-rhel7.9-gcc-compile
+    run_on: rhel7.9-large
+    tags: [std-matrix, rhel7.9, gcc, compile, std-c11]
     commands:
       - func: find-cmake-latest
       - func: std-compile
@@ -5552,9 +5510,9 @@ tasks:
           CC: gcc-10
           CXX: g++-10
           C_STD_VERSION: 99
-  - name: std-c99-rhel76-gcc-compile
-    run_on: rhel76-large
-    tags: [std-matrix, rhel76, gcc, compile, std-c99]
+  - name: std-c99-rhel7.9-gcc-compile
+    run_on: rhel7.9-large
+    tags: [std-matrix, rhel7.9, gcc, compile, std-c99]
     commands:
       - func: find-cmake-latest
       - func: std-compile

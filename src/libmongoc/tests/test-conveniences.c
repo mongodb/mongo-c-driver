@@ -867,7 +867,7 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
    bson_type_t bson_type = (bson_type_t) 0;
    bool found;
    bson_iter_t doc_iter;
-   bson_value_t doc_value;
+   bson_value_t doc_value = {0};
    match_ctx_t derived;
 
    if (bson_empty0 (pattern)) {
@@ -910,6 +910,7 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
          ASSERT (action == MATCH_ACTION_CONTINUE);
       }
 
+      // `doc_value` is set by `bson_value_copy` above and guarded by `found`.
       if (value->value_type == BSON_TYPE_NULL && found) {
          /* pattern has "key": null, and "key" is in doc */
          if (doc_value.value_type != BSON_TYPE_NULL) {

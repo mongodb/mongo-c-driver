@@ -37,6 +37,8 @@
 #include <mongoc/mongoc-thread-private.h>
 #include <common-string-private.h>
 
+#include <mlib/config.h>
+
 
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gLogMutex;

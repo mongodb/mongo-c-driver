@@ -41,8 +41,6 @@
 
 BSON_BEGIN_DECLS
 
-/* version corresponding to server 4.0 release */
-#define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */
 #define WIRE_VERSION_UPDATE_HINT 8
 /* version corresponding to server 4.2 release */
@@ -83,7 +81,7 @@ BSON_BEGIN_DECLS
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
-#define WIRE_VERSION_MIN WIRE_VERSION_4_0 /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
 struct _mongoc_collection_t;
@@ -168,7 +166,6 @@ void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t server_id,
                             int64_t cursor_id,
-                            int64_t operation_id,
                             const char *db,
                             const char *collection,
                             mongoc_client_session_t *cs);

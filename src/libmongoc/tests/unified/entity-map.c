@@ -16,6 +16,7 @@
 
 #include "entity-map.h"
 
+#include "bson/bson.h"
 #include "bsonutil/bson-parser.h"
 #include "TestSuite.h"
 #include <mongoc/mongoc.h>
@@ -47,6 +48,9 @@ typedef void (*event_serialize_func_t) (bson_t *bson, const void *event);
 
 static void
 entity_destroy (entity_t *entity);
+
+static bool
+_parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson_error_t *error);
 
 entity_map_t *
 entity_map_new (void)
@@ -724,6 +728,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bool ret = false;
    mongoc_apm_callbacks_t *callbacks = NULL;
    bson_t *uri_options = NULL;
+   bson_t *auto_encryption_opts = NULL;
    mongoc_structured_log_opts_t *log_opts = mongoc_structured_log_opts_new ();
    bool use_multiple_mongoses = false;
    bool use_multiple_mongoses_set = false;
@@ -803,32 +808,37 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                *p = bsonAs (boolean);
             })),
       // Which events should be available as entities:
-      find (
-         key ("storeEventsAsEntities"),
-         if (not(type (array)), then (error ("'storeEventsAsEntities' must be an array"))),
-         visitEach (parse (
-            find (keyWithType ("id", utf8), storeStrRef (store_entity_id), do ({
-                     if (!entity_map_add_bson_array (em, store_entity_id, error)) {
-                        test_error ("failed to create storeEventsAsEntities "
-                                    "entity '%s': %s",
-                                    store_entity_id,
-                                    error->message);
-                     }
-                  })),
-            find (keyWithType ("events", array),
-                  visitEach (case (when (not(type (utf8)),
-                                         error ("Every 'storeEventsAsEntities.events' "
-                                                "element must be a string")),
-                                   when (eval (is_supported_event_type (bson_iter_utf8 (&bsonVisitIter, NULL))), do ({
-                                            const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
-                                            set_event_callback (callbacks, type);
-                                            add_store_event (entity, type, store_entity_id);
-                                         })),
-                                   when (eval (is_unsupported_event_type (bson_iter_utf8 (&bsonVisitIter, NULL))),
-                                         do (MONGOC_DEBUG ("Skipping unsupported event type '%s'", bsonAs (cstr)))),
-                                   else (do (test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
-            visitOthers (
-               errorf (err, "Unexpected field '%s' in storeEventsAsEntities", bson_iter_key (&bsonVisitIter)))))),
+      find (key ("storeEventsAsEntities"),
+            if (not(type (array)), then (error ("'storeEventsAsEntities' must be an array"))),
+            visitEach (parse (
+               find (keyWithType ("id", utf8), storeStrRef (store_entity_id), do ({
+                        if (!entity_map_add_bson_array (em, store_entity_id, error)) {
+                           test_error ("failed to create storeEventsAsEntities "
+                                       "entity '%s': %s",
+                                       store_entity_id,
+                                       error->message);
+                        }
+                     })),
+               find (keyWithType ("events", array),
+                     visitEach (case (when (not(type (utf8)),
+                                            error ("Every 'storeEventsAsEntities.events' "
+                                                   "element must be a string")),
+                                      when (anyOf (iStrEqual ("commandStartedEvent"),
+                                                   iStrEqual ("commandFailedEvent"),
+                                                   iStrEqual ("commandSucceededEvent")),
+                                            do ({
+                                               const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
+                                               set_event_callback (callbacks, type);
+                                               add_store_event (entity, type, store_entity_id);
+                                            })),
+                                      when (eval (is_unsupported_event_type (bson_iter_utf8 (&bsonVisitIter, NULL))),
+                                            do (MONGOC_DEBUG ("Skipping unsupported event type '%s'", bsonAs (cstr)))),
+                                      else (do (test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
+               visitOthers (
+                  errorf (err, "Unexpected field '%s' in storeEventsAsEntities", bson_iter_key (&bsonVisitIter)))))),
+      find (key ("autoEncryptOpts"),
+            if (not(type (doc)), then (error ("'autoEncryptOpts' must be a document value"))),
+            storeDocDupPtr (auto_encryption_opts)),
       // Log messages to observe:
       find (key ("observeLogMessages"),
             if (not(type (doc)), then (error ("'observeLogMessages' must be a document"))),
@@ -914,6 +924,12 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       client->topology->min_heartbeat_frequency_msec = REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
    }
 
+   if (auto_encryption_opts) {
+      if (!_parse_and_set_auto_encryption_opts (client, auto_encryption_opts, error)) {
+         goto done;
+      }
+   }
+
    ret = true;
 done:
    mongoc_uri_destroy (uri);
@@ -921,6 +937,7 @@ done:
    mongoc_server_api_destroy (api);
    mongoc_structured_log_opts_destroy (log_opts);
    bson_destroy (uri_options);
+   bson_destroy (auto_encryption_opts);
    if (!ret) {
       entity_destroy (entity);
       return NULL;
@@ -1232,8 +1249,13 @@ _parse_kms_provider_local (
 }
 
 static bool
-_parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts, bson_t *kms_from_file, bson_error_t *error)
+_get_kms_providers_docs (bson_t *kms_from_file, bson_t *kms_providers, bson_t *tls_opts, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM (kms_from_file);
+   BSON_ASSERT_PARAM (kms_providers);
+   BSON_ASSERT_PARAM (tls_opts);
+   BSON_OPTIONAL_PARAM (error);
+
    /* Map provider to corresponding KMS parser. */
    typedef struct _prov_map_t {
       const char *provider;
@@ -1255,10 +1277,6 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts, bson_t *
                                   {.provider = "local:name2", .parse = _parse_kms_provider_local}};
 
    const size_t prov_map_size = sizeof (prov_map) / sizeof (prov_map[0]);
-
-   bool ret = false;
-   bson_t kms_providers = BSON_INITIALIZER;
-   bson_t tls_opts = BSON_INITIALIZER;
    bson_iter_t iter;
 
    BSON_FOREACH (kms_from_file, iter)
@@ -1270,12 +1288,12 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts, bson_t *
 
       if (!bson_init_from_value (&kms_doc, bson_iter_value (&iter))) {
          test_set_error (error, "kmsProviders field '%s' is not a valid document", provider);
-         goto done;
+         return false;
       }
 
       for (i = 0u; i < prov_map_size; ++i) {
          if (strcmp (provider, prov_map[i].provider) == 0) {
-            found = prov_map[i].parse (&kms_providers, &tls_opts, provider, &kms_doc, error);
+            found = prov_map[i].parse (kms_providers, tls_opts, provider, &kms_doc, error);
             goto parsed;
          }
       }
@@ -1286,13 +1304,119 @@ _parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts, bson_t *
       bson_destroy (&kms_doc);
 
       if (!found) {
-         goto done;
+         return false;
       }
    }
+   return true;
+}
 
+static bool
+_parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_auto_encryption_opts_t *auto_encryption_opts = mongoc_auto_encryption_opts_new ();
+   bson_t kms_providers = BSON_INITIALIZER;
+   bson_t tls_opts = BSON_INITIALIZER;
+   BSON_ASSERT (client);
+
+   bson_parser_t *const parser = bson_parser_new ();
+
+   bson_t *kms_providers_raw;
+   bson_parser_doc (parser, "kmsProviders", &kms_providers_raw);
+
+   char *keyvault_ns;
+   bson_parser_utf8 (parser, "keyVaultNamespace", &keyvault_ns);
+
+   bson_t *schema_map;
+   bson_parser_doc_optional (parser, "schemaMap", &schema_map);
+
+   bool *bypass_auto_encryption;
+   bson_parser_bool_optional (parser, "bypassAutoEncryption", &bypass_auto_encryption);
+
+   bool *bypass_query_analysis;
+   bson_parser_bool_optional (parser, "bypassQueryAnalysis", &bypass_query_analysis);
+
+   bson_t *encrypted_fields_map;
+   bson_parser_doc_optional (parser, "encryptedFieldsMap", &encrypted_fields_map);
+
+   int64_t *key_expiration_ms;
+   bson_parser_int_optional (parser, "keyExpirationMS", &key_expiration_ms);
+
+   bson_t *extra_options;
+   bson_parser_doc_optional (parser, "extraOptions", &extra_options);
+
+   if (!bson_parser_parse (parser, opts, error)) {
+      goto done;
+   }
+
+   {
+      if (!_get_kms_providers_docs (kms_providers_raw, &kms_providers, &tls_opts, error)) {
+         goto done;
+      }
+      mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts, &kms_providers);
+      mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts, &tls_opts);
+   }
+
+   {
+      // keyVaultNamespace
+      char *dot = strstr (keyvault_ns, ".");
+      BSON_ASSERT (dot);
+      char *db_name = bson_strndup (keyvault_ns, dot - keyvault_ns);
+      char *coll_name = bson_strdup (dot + 1);
+      mongoc_auto_encryption_opts_set_keyvault_namespace (auto_encryption_opts, db_name, coll_name);
+
+      bson_free (db_name);
+      bson_free (coll_name);
+   }
+
+   if (schema_map) {
+      mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts, schema_map);
+   }
+
+   if (bypass_auto_encryption) {
+      mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts, *bypass_auto_encryption);
+   }
+
+   if (bypass_query_analysis) {
+      mongoc_auto_encryption_opts_set_bypass_query_analysis (auto_encryption_opts, *bypass_query_analysis);
+   }
+
+   if (encrypted_fields_map) {
+      mongoc_auto_encryption_opts_set_encrypted_fields_map (auto_encryption_opts, encrypted_fields_map);
+   }
+
+   if (key_expiration_ms) {
+      mongoc_auto_encryption_opts_set_key_expiration (auto_encryption_opts, *key_expiration_ms);
+   }
+
+   if (extra_options) {
+      mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra_options);
+   }
+
+   if (!mongoc_client_enable_auto_encryption (client, auto_encryption_opts, error)) {
+      goto done;
+   }
+   ret = true;
+
+done:
+   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
+   bson_destroy (&kms_providers);
+   bson_destroy (&tls_opts);
+   bson_parser_destroy_with_parsed_fields (parser);
+   return ret;
+}
+
+static bool
+_parse_and_set_kms_providers (mongoc_client_encryption_opts_t *ce_opts, bson_t *kms_from_file, bson_error_t *error)
+{
+   bool ret = false;
+   bson_t kms_providers = BSON_INITIALIZER;
+   bson_t tls_opts = BSON_INITIALIZER;
+   if (!_get_kms_providers_docs (kms_from_file, &kms_providers, &tls_opts, error)) {
+      goto done;
+   }
    mongoc_client_encryption_opts_set_kms_providers (ce_opts, &kms_providers);
    mongoc_client_encryption_opts_set_tls_opts (ce_opts, &tls_opts);
-
    ret = true;
 
 done:
@@ -1413,6 +1537,7 @@ typedef struct {
    mongoc_read_concern_t *rc;
    mongoc_write_concern_t *wc;
    mongoc_read_prefs_t *rp;
+   bson_t *encrypted_fields;
 } coll_or_db_opts_t;
 
 static coll_or_db_opts_t *
@@ -1430,6 +1555,7 @@ coll_or_db_opts_destroy (coll_or_db_opts_t *opts)
    mongoc_read_concern_destroy (opts->rc);
    mongoc_read_prefs_destroy (opts->rp);
    mongoc_write_concern_destroy (opts->wc);
+   bson_destroy (opts->encrypted_fields);
    bson_free (opts);
 }
 
@@ -1651,7 +1777,10 @@ done:
 }
 
 entity_t *
-entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
+entity_session_new (entity_map_t *entity_map,
+                    bson_t *bson,
+                    const bson_t *cluster_time_after_initial_data,
+                    bson_error_t *error)
 {
    bson_parser_t *parser = NULL;
    entity_t *entity = NULL;
@@ -1690,6 +1819,9 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    session = mongoc_client_start_session (client, session_opts, error);
    if (!session) {
       goto done;
+   }
+   if (cluster_time_after_initial_data) {
+      mongoc_client_session_advance_cluster_time (session, cluster_time_after_initial_data);
    }
    entity->value = session;
    /* Ending a session destroys the session object.
@@ -1785,7 +1917,10 @@ done:
  * object immediately.
  */
 bool
-entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
+entity_map_create (entity_map_t *entity_map,
+                   bson_t *bson,
+                   const bson_t *cluster_time_after_initial_data,
+                   bson_error_t *error)
 {
    bson_iter_t iter;
    const char *entity_type;
@@ -1816,7 +1951,7 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    } else if (0 == strcmp (entity_type, "collection")) {
       entity = entity_collection_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "session")) {
-      entity = entity_session_new (entity_map, &entity_bson, error);
+      entity = entity_session_new (entity_map, &entity_bson, cluster_time_after_initial_data, error);
    } else if (0 == strcmp (entity_type, "bucket")) {
       entity = entity_bucket_new (entity_map, &entity_bson, error);
    } else {
