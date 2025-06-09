@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-
-#include <bson/bson.h>
 #include <bson/bcon.h>
 #include <bson/bson-private.h>
+#include <bson/bson.h>
+#include <bson/validate-private.h>
 #include <fcntl.h>
 #include <time.h>
 
@@ -28,7 +28,6 @@
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);
-
 
 static bson_t *
 get_bson (const char *filename)
@@ -55,7 +54,6 @@ get_bson (const char *filename)
    return b;
 }
 
-
 static void
 test_bson_new (void)
 {
@@ -69,7 +67,6 @@ test_bson_new (void)
    ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    bson_destroy (b);
 }
-
 
 static void
 test_bson_alloc (void)
@@ -116,7 +113,6 @@ test_bson_alloc (void)
    bson_destroy (b);
 }
 
-
 static void
 BSON_ASSERT_BSON_EQUAL (const bson_t *a, const bson_t *b)
 {
@@ -141,7 +137,6 @@ BSON_ASSERT_BSON_EQUAL (const bson_t *a, const bson_t *b)
    }
 }
 
-
 static void
 BSON_ASSERT_BSON_EQUAL_FILE (const bson_t *b, const char *filename)
 {
@@ -149,7 +144,6 @@ BSON_ASSERT_BSON_EQUAL_FILE (const bson_t *b, const char *filename)
    BSON_ASSERT_BSON_EQUAL (b, b2);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_utf8 (void)
@@ -165,7 +159,6 @@ test_bson_append_utf8 (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_symbol (void)
 {
@@ -179,7 +172,6 @@ test_bson_append_symbol (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_null (void)
@@ -195,7 +187,6 @@ test_bson_append_null (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_bool (void)
 {
@@ -210,7 +201,6 @@ test_bson_append_bool (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_double (void)
 {
@@ -224,7 +214,6 @@ test_bson_append_double (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_document (void)
@@ -242,7 +231,6 @@ test_bson_append_document (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_oid (void)
 {
@@ -259,7 +247,6 @@ test_bson_append_oid (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_array (void)
@@ -279,7 +266,6 @@ test_bson_append_array (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_binary (void)
 {
@@ -295,7 +281,6 @@ test_bson_append_binary (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_binary_deprecated (void)
 {
@@ -310,7 +295,6 @@ test_bson_append_binary_deprecated (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_time_t (void)
@@ -328,7 +312,6 @@ test_bson_append_time_t (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_timeval (void)
@@ -348,7 +331,6 @@ test_bson_append_timeval (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_undefined (void)
 {
@@ -363,7 +345,6 @@ test_bson_append_undefined (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_regex (void)
 {
@@ -377,7 +358,6 @@ test_bson_append_regex (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_regex_w_len (void)
@@ -407,7 +387,6 @@ test_bson_append_regex_w_len (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_code (void)
 {
@@ -421,7 +400,6 @@ test_bson_append_code (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_code_with_scope (void)
@@ -527,7 +505,6 @@ test_bson_append_code_with_scope (void)
    bson_reader_destroy (reader);
 }
 
-
 static void
 test_bson_append_dbpointer (void)
 {
@@ -565,7 +542,6 @@ test_bson_append_dbpointer (void)
    bson_destroy (b);
 }
 
-
 static void
 test_bson_append_int32 (void)
 {
@@ -582,7 +558,6 @@ test_bson_append_int32 (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_int64 (void)
 {
@@ -596,7 +571,6 @@ test_bson_append_int64 (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_decimal128 (void)
@@ -614,7 +588,6 @@ test_bson_append_decimal128 (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_iter (void)
@@ -668,7 +641,6 @@ test_bson_append_iter (void)
    bson_destroy (&c);
 }
 
-
 static void
 test_bson_append_timestamp (void)
 {
@@ -682,7 +654,6 @@ test_bson_append_timestamp (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_maxkey (void)
@@ -698,7 +669,6 @@ test_bson_append_maxkey (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_append_minkey (void)
 {
@@ -712,7 +682,6 @@ test_bson_append_minkey (void)
    bson_destroy (b);
    bson_destroy (b2);
 }
-
 
 static void
 test_bson_append_general (void)
@@ -829,7 +798,6 @@ test_bson_append_general (void)
    bson_destroy (bson);
 }
 
-
 static void
 test_bson_append_deep (void)
 {
@@ -851,273 +819,64 @@ test_bson_append_deep (void)
    bson_destroy (a);
 }
 
-
 static void
-test_bson_validate_dbref (void)
+_make_deep_bson (bson_t *const dst, const size_t depth)
 {
-   size_t offset;
-   bson_t dbref, child, child2;
-
-   /* should fail, $ref without an $id */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
+   const size_t n_docs = depth + 1;
+   // Needed size: 5 bytes for doc header/trailer, 2 bytes for each tag and empty
+   // key, minus 2 because the outer document has no tag and key
+   const size_t buffer_size = (n_docs * (5 + 2)) - 2;
+   uint8_t *const buffer = calloc (buffer_size, 1);
+   BSON_ASSERT (buffer);
+   uint8_t *out = buffer;
+   for (unsigned i = 0; i < n_docs; ++i) {
+      // Bytes we have already written:
+      const size_t begin_offset = (size_t) (out - buffer);
+      // The number of bytes for this inner doc:
+      size_t inner_size = buffer_size;
+      inner_size -= begin_offset;
+      inner_size -= i;
+      // Write a header:
+      uint32_t inner_size_32 = (uint32_t) inner_size;
+      inner_size_32 = BSON_UINT32_TO_LE (inner_size_32);
+      memcpy (out, &inner_size_32, sizeof inner_size_32);
+      out += sizeof inner_size_32;
+      // Add a new element header if we're not at the innermost doc
+      if (i + 1 != n_docs) {
+         *out++ = 0x3; // Document tag
+         ++out;        // Leave a null terminator to make a "" key string
+      }
    }
-
-   /* should fail, $ref with non id field */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "extra", "field");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, $ref with $id at the top */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_UTF8 (&dbref, "$ref", "foo");
-      BSON_APPEND_UTF8 (&dbref, "$id", "bar");
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, $ref with $id not first keys */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "extra", "field");
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, $ref with $db */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$db", "bar");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, non-string $ref with $id */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_INT32 (&child, "$ref", 1);
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, non-string $ref with nothing */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_INT32 (&child, "$ref", 1);
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, $ref with $id with non-string $db */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      BSON_APPEND_INT32 (&child, "$db", 1);
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, $ref with $id with non-string $db with stuff after */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      BSON_APPEND_INT32 (&child, "$db", 1);
-      BSON_APPEND_UTF8 (&child, "extra", "field");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should fail, $ref with $id with stuff, then $db */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      BSON_APPEND_UTF8 (&child, "extra", "field");
-      BSON_APPEND_UTF8 (&child, "$db", "baz");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (!bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should succeed, $ref with $id */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should succeed, $ref with nested dbref $id */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_DOCUMENT_BEGIN (&child, "$id", &child2);
-      BSON_APPEND_UTF8 (&child2, "$ref", "foo2");
-      BSON_APPEND_UTF8 (&child2, "$id", "bar2");
-      BSON_APPEND_UTF8 (&child2, "$db", "baz2");
-      bson_append_document_end (&child, &child2);
-      BSON_APPEND_UTF8 (&child, "$db", "baz");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should succeed, $ref with $id and $db */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      BSON_APPEND_UTF8 (&child, "$db", "baz");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
-
-   /* should succeed, $ref with $id and $db and trailing */
-   {
-      bson_init (&dbref);
-      BSON_APPEND_DOCUMENT_BEGIN (&dbref, "dbref", &child);
-      BSON_APPEND_UTF8 (&child, "$ref", "foo");
-      BSON_APPEND_UTF8 (&child, "$id", "bar");
-      BSON_APPEND_UTF8 (&child, "$db", "baz");
-      BSON_APPEND_UTF8 (&child, "extra", "field");
-      bson_append_document_end (&dbref, &child);
-
-      BSON_ASSERT (bson_validate (&dbref, BSON_VALIDATE_DOLLAR_KEYS, &offset));
-
-      bson_destroy (&dbref);
-   }
+   bson_t big;
+   BSON_ASSERT (bson_init_static (&big, buffer, buffer_size));
+   bson_copy_to (&big, dst);
+   free (buffer);
 }
 
-
-/* BSON spec requires bool value to be exactly 0 or 1 */
+/**
+ * @brief Test case: Check that we stop validating if we go too deep.
+ *
+ * The current validation is implemented as a simple recursive algorithm. This
+ * is fast since it doesn't allocate, but we risk blowing out the stack if the
+ * data is too deep. We don't want to crash user applications because of
+ * untrusted input, so assert that we stop when we hit a reasonably high depth.
+ */
 static void
-test_bson_validate_bool (void)
+test_bson_validate_deep (void)
 {
-   /* {"b": true}, with implicit NULL at end */
-   uint8_t data[] = "\x09\x00\x00\x00\x08\x62\x00\x01";
-   bson_t bson;
-   bson_iter_t iter;
-   size_t err_offset = 0;
-
-   ASSERT (bson_init_static (&bson, data, sizeof data));
-   ASSERT (bson_validate (&bson, BSON_VALIDATE_NONE, &err_offset));
-   ASSERT (bson_iter_init (&iter, &bson));
-   ASSERT (bson_iter_next (&iter));
-   ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
-   ASSERT (bson_iter_bool (&iter));
-
-   /* replace boolean value 1 with 255 */
-   ASSERT (data[7] == '\x01');
-   data[7] = (uint8_t) '\xff';
-
-   ASSERT (bson_init_static (&bson, data, 9));
-   ASSERT (!bson_validate (&bson, BSON_VALIDATE_NONE, &err_offset));
-   ASSERT_CMPSIZE_T (err_offset, ==, (size_t) 7);
-
-   ASSERT (bson_iter_init (&iter, &bson));
-   ASSERT (!bson_iter_next (&iter));
+   bson_t deep;
+   // Just barely too deep
+   _make_deep_bson (&deep, BSON_VALIDATION_MAX_NESTING_DEPTH + 1);
+   bson_error_t err;
+   BSON_ASSERT (!bson_validate_with_error (&deep, 0, &err));
+   BSON_ASSERT (err.code == BSON_VALIDATE_CORRUPT);
+   ASSERT_CMPSTR (err.message, "BSON document nesting depth is too deep");
+   bson_destroy (&deep);
+   // At the limit
+   _make_deep_bson (&deep, BSON_VALIDATION_MAX_NESTING_DEPTH);
+   BSON_ASSERT (bson_validate (&deep, 0, NULL));
+   bson_destroy (&deep);
 }
-
-
-/* BSON spec requires the deprecated DBPointer's value to be NULL-termed */
-static void
-test_bson_validate_dbpointer (void)
-{
-   /* { "a": DBPointer(ObjectId(...), Collection="b") }, implicit NULL at end */
-   uint8_t data[] = "\x1A\x00\x00\x00\x0C\x61\x00\x02\x00\x00\x00\x62\x00"
-                    "\x56\xE1\xFC\x72\xE0\xC9\x17\xE9\xC4\x71\x41\x61";
-
-   bson_t bson;
-   bson_iter_t iter;
-   size_t err_offset = 0;
-   uint32_t collection_len;
-   const char *collection;
-   const bson_oid_t *oid;
-
-   ASSERT (bson_init_static (&bson, data, sizeof data));
-   ASSERT (bson_validate (&bson, BSON_VALIDATE_NONE, &err_offset));
-   ASSERT (bson_iter_init (&iter, &bson));
-   ASSERT (bson_iter_next (&iter));
-   ASSERT (BSON_ITER_HOLDS_DBPOINTER (&iter));
-   bson_iter_dbpointer (&iter, &collection_len, &collection, &oid);
-   ASSERT_CMPSTR (collection, "b");
-   ASSERT_CMPINT (collection_len, ==, 1);
-
-   /* replace the NULL terminator of "b" with 255 */
-   ASSERT (data[12] == '\0');
-   data[12] = (uint8_t) '\xff';
-
-   ASSERT (bson_init_static (&bson, data, sizeof data));
-   ASSERT (!bson_validate (&bson, BSON_VALIDATE_NONE, &err_offset));
-   ASSERT_CMPSIZE_T (err_offset, ==, (size_t) 12);
-
-   ASSERT (bson_iter_init (&iter, &bson));
-   ASSERT (!bson_iter_next (&iter));
-}
-
 
 static void
 test_bson_validate_with_error_and_offset (void)
@@ -1129,109 +888,6 @@ test_bson_validate_with_error_and_offset (void)
    ASSERT_CMPSIZE_T (err_offset, ==, 0);
    ASSERT_CMPUINT32 (err.domain, !=, 67890); // domain is overwritten.
 }
-
-
-static void
-test_bson_validate (void)
-{
-   char filename[64];
-   size_t offset;
-   bson_t *b;
-   int i;
-   bson_error_t error;
-
-   for (i = 1; i <= 38; i++) {
-      bson_snprintf (filename, sizeof filename, "test%d.bson", i);
-      b = get_bson (filename);
-      BSON_ASSERT (bson_validate (b, BSON_VALIDATE_NONE, &offset));
-      bson_destroy (b);
-   }
-
-   b = get_bson ("codewscope.bson");
-   BSON_ASSERT (bson_validate (b, BSON_VALIDATE_NONE, &offset));
-   bson_destroy (b);
-
-   b = get_bson ("empty_key.bson");
-   BSON_ASSERT (bson_validate (
-      b, BSON_VALIDATE_NONE | BSON_VALIDATE_UTF8 | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS, &offset));
-   bson_destroy (b);
-
-#define VALIDATE_TEST(_filename, _flags, _offset, _flag, _msg)                      \
-   b = get_bson (_filename);                                                        \
-   BSON_ASSERT (!bson_validate_with_error_and_offset (b, _flags, &offset, &error)); \
-   ASSERT_CMPSIZE_T (offset, ==, (size_t) _offset);                                 \
-   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_INVALID, _flag, _msg);                  \
-   bson_destroy (b)
-
-   VALIDATE_TEST ("overflow2.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("trailingnull.bson", BSON_VALIDATE_NONE, 14, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("dollarquery.bson",
-                  BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS,
-                  4,
-                  BSON_VALIDATE_DOLLAR_KEYS,
-                  "keys cannot begin with \"$\": \"$query\"");
-   VALIDATE_TEST ("dotquery.bson",
-                  BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS,
-                  4,
-                  BSON_VALIDATE_DOT_KEYS,
-                  "keys cannot contain \".\": \"abc.def\"");
-   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   /* same outcome as above, despite different flags */
-   VALIDATE_TEST ("overflow3.bson", BSON_VALIDATE_UTF8, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("overflow4.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("empty_key.bson", BSON_VALIDATE_EMPTY_KEYS, 4, BSON_VALIDATE_EMPTY_KEYS, "empty key");
-   VALIDATE_TEST ("test40.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test41.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test46.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test47.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test48.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test49.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test50.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
-   VALIDATE_TEST ("test51.bson", BSON_VALIDATE_NONE, 10, BSON_VALIDATE_NONE, "corrupt code-with-scope");
-   VALIDATE_TEST ("test52.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test53.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test54.bson", BSON_VALIDATE_NONE, 12, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test60.bson", BSON_VALIDATE_NONE, 4, BSON_VALIDATE_NONE, "corrupt BSON");
-
-   /* DBRef validation */
-   b = BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "$id", BCON_INT32 (1), "}");
-   BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   bson_destroy (b);
-
-   /* needs "$ref" before "$id" */
-   b = BCON_NEW ("my_dbref", "{", "$id", BCON_INT32 (1), "}");
-   BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"$id\"");
-   bson_destroy (b);
-
-   /* two $refs */
-   b = BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "$ref", BCON_UTF8 ("collection"), "}");
-   BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "keys cannot begin with \"$\": \"$ref\"");
-   bson_destroy (b);
-
-   /* must not contain invalid key like "extra" */
-   b =
-      BCON_NEW ("my_dbref", "{", "$ref", BCON_UTF8 ("collection"), "extra", BCON_INT32 (2), "$id", BCON_INT32 (1), "}");
-   BSON_ASSERT (bson_validate_with_error (b, BSON_VALIDATE_NONE, &error));
-   BSON_ASSERT (!bson_validate_with_error (b, BSON_VALIDATE_DOLLAR_KEYS, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, BSON_ERROR_INVALID, BSON_VALIDATE_DOLLAR_KEYS, "invalid key within DBRef subdocument: \"extra\"");
-   bson_destroy (b);
-
-#undef VALIDATE_TEST
-}
-
 
 static void
 test_bson_init (void)
@@ -1251,7 +907,6 @@ test_bson_init (void)
    BSON_ASSERT (!(b.flags & BSON_FLAG_INLINE));
    bson_destroy (&b);
 }
-
 
 static void
 test_bson_init_static (void)
@@ -1317,7 +972,8 @@ test_bson_new_from_buffer (void)
       bson_free (buf);
    }
 
-   // Buffer is larger than the document. Expect it to be growable without reallocating.
+   // Buffer is larger than the document. Expect it to be growable without
+   // reallocating.
    {
       size_t buf_len = 0x10000;
       uint8_t *buf = bson_malloc0 (buf_len);
@@ -1342,7 +998,8 @@ test_bson_new_from_buffer (void)
       bson_free (buf);
    }
 
-   // Otherwise valid, but buffer is smaller than the document size. bson_new_from_buffer() must fail.
+   // Otherwise valid, but buffer is smaller than the document size.
+   // bson_new_from_buffer() must fail.
    {
       uint8_t *buf = NULL;
       size_t buf_len = SIZE_MAX; // Must be ignored when buf == NULL
@@ -1392,7 +1049,6 @@ test_bson_utf8_key (void)
    bson_destroy (b);
 }
 
-
 static void
 test_bson_new_1mm (void)
 {
@@ -1405,7 +1061,6 @@ test_bson_new_1mm (void)
    }
 }
 
-
 static void
 test_bson_init_1mm (void)
 {
@@ -1417,7 +1072,6 @@ test_bson_init_1mm (void)
       bson_destroy (&b);
    }
 }
-
 
 static void
 test_bson_build_child (void)
@@ -1445,7 +1099,6 @@ test_bson_build_child (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_build_child_array (void)
 {
@@ -1472,7 +1125,6 @@ test_bson_build_child_array (void)
    bson_destroy (b2);
 }
 
-
 static void
 test_bson_build_child_deep_1 (bson_t *b, int *count)
 {
@@ -1497,7 +1149,6 @@ test_bson_build_child_deep_1 (bson_t *b, int *count)
    BSON_ASSERT (!(b->flags & BSON_FLAG_IN_CHILD));
 }
 
-
 static void
 test_bson_build_child_deep (void)
 {
@@ -1520,7 +1171,6 @@ test_bson_build_child_deep (void)
    bson_destroy (&u.b);
 }
 
-
 static void
 test_bson_build_child_deep_no_begin_end_1 (bson_t *b, int *count)
 {
@@ -1537,7 +1187,6 @@ test_bson_build_child_deep_no_begin_end_1 (bson_t *b, int *count)
    BSON_ASSERT (bson_append_document (b, "b", -1, &child));
    bson_destroy (&child);
 }
-
 
 static void
 test_bson_build_child_deep_no_begin_end (void)
@@ -1557,7 +1206,6 @@ test_bson_build_child_deep_no_begin_end (void)
    bson_destroy (&u.b);
 }
 
-
 static void
 test_bson_count_keys (void)
 {
@@ -1570,7 +1218,6 @@ test_bson_count_keys (void)
    ASSERT_CMPINT (bson_count_keys (&b), ==, 3);
    bson_destroy (&b);
 }
-
 
 static void
 test_bson_copy (void)
@@ -1585,7 +1232,6 @@ test_bson_copy (void)
    bson_destroy (c);
    bson_destroy (&b);
 }
-
 
 static void
 test_bson_copy_to (void)
@@ -1617,7 +1263,6 @@ test_bson_copy_to (void)
    bson_destroy (&b);
 }
 
-
 static void
 test_bson_copy_to_excluding_noinit (void)
 {
@@ -1648,7 +1293,6 @@ test_bson_copy_to_excluding_noinit (void)
    bson_destroy (&c);
 }
 
-
 static void
 test_bson_append_overflow (void)
 {
@@ -1667,7 +1311,6 @@ test_bson_append_overflow (void)
    bson_destroy (&b);
 }
 
-
 static void
 test_bson_initializer (void)
 {
@@ -1678,7 +1321,6 @@ test_bson_initializer (void)
    BSON_ASSERT (!bson_empty (&b));
    bson_destroy (&b);
 }
-
 
 static void
 test_bson_concat (void)
@@ -1701,7 +1343,6 @@ test_bson_concat (void)
    bson_destroy (&c);
 }
 
-
 static void
 test_bson_reinit (void)
 {
@@ -1720,7 +1361,6 @@ test_bson_reinit (void)
 
    bson_destroy (&b);
 }
-
 
 static void
 test_bson_macros (void)
@@ -1773,7 +1413,6 @@ test_bson_macros (void)
    bson_destroy (&ar);
 }
 
-
 static void
 test_bson_clear (void)
 {
@@ -1787,7 +1426,6 @@ test_bson_clear (void)
    bson_clear (&doc);
    BSON_ASSERT (doc == NULL);
 }
-
 
 static void
 bloat (bson_t *b)
@@ -1804,7 +1442,6 @@ bloat (bson_t *b)
    /* spilled over */
    ASSERT (!(b->flags & BSON_FLAG_INLINE));
 }
-
 
 static void
 test_bson_steal (void)
@@ -1883,7 +1520,6 @@ BSON_ASSERT_KEY_AND_VALUE (const bson_t *bson)
    ASSERT_CMPSTR ("value", bson_iter_utf8 (&iter, NULL));
 }
 
-
 static void
 test_bson_reserve_buffer (void)
 {
@@ -1940,7 +1576,6 @@ test_bson_reserve_buffer (void)
    bson_destroy (heap_alloced);
 }
 
-
 static void
 test_bson_reserve_buffer_errors (void)
 {
@@ -1975,7 +1610,6 @@ test_bson_reserve_buffer_errors (void)
 
    bson_destroy (&bson);
 }
-
 
 static void
 test_bson_destroy_with_steal (void)
@@ -2016,7 +1650,6 @@ test_bson_destroy_with_steal (void)
    data = NULL;
 }
 
-
 static void
 test_bson_has_field (void)
 {
@@ -2045,7 +1678,6 @@ test_bson_has_field (void)
 
    bson_destroy (b);
 }
-
 
 static void
 test_next_power_of_two (void)
@@ -2099,7 +1731,6 @@ test_next_power_of_two (void)
 #endif
 }
 
-
 void
 visit_corrupt (const bson_iter_t *iter, void *data)
 {
@@ -2107,7 +1738,6 @@ visit_corrupt (const bson_iter_t *iter, void *data)
 
    *((bool *) data) = true;
 }
-
 
 static void
 test_bson_visit_invalid_field (void)
@@ -2126,13 +1756,11 @@ test_bson_visit_invalid_field (void)
    BSON_ASSERT (visited);
 }
 
-
 typedef struct {
    bool visited;
    const char *key;
    uint32_t type_code;
 } unsupported_type_test_data_t;
-
 
 void
 visit_unsupported_type (const bson_iter_t *iter, const char *key, uint32_t type_code, void *data)
@@ -2146,7 +1774,6 @@ visit_unsupported_type (const bson_iter_t *iter, const char *key, uint32_t type_
    context->key = key;
    context->type_code = type_code;
 }
-
 
 static void
 test_bson_visit_unsupported_type (void)
@@ -2169,7 +1796,6 @@ test_bson_visit_unsupported_type (void)
    BSON_ASSERT (context.type_code == '\x33');
 }
 
-
 static void
 test_bson_visit_unsupported_type_bad_key (void)
 {
@@ -2191,7 +1817,6 @@ test_bson_visit_unsupported_type_bad_key (void)
    BSON_ASSERT (!context.visited);
 }
 
-
 static void
 test_bson_visit_unsupported_type_empty_key (void)
 {
@@ -2212,7 +1837,6 @@ test_bson_visit_unsupported_type_empty_key (void)
    BSON_ASSERT (!strcmp (context.key, ""));
    BSON_ASSERT (context.type_code == '\x33');
 }
-
 
 static void
 test_bson_subtype_2 (void)
@@ -2305,7 +1929,6 @@ test_bson_iter_key_len (void)
                        bson_iter_key (&iter));
    }
 }
-
 
 void
 test_bson_iter_init_from_data_at_offset (void)
@@ -3314,10 +2937,7 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/append_general", test_bson_append_general);
    TestSuite_Add (suite, "/bson/append_deep", test_bson_append_deep);
    TestSuite_Add (suite, "/bson/utf8_key", test_bson_utf8_key);
-   TestSuite_Add (suite, "/bson/validate", test_bson_validate);
-   TestSuite_Add (suite, "/bson/validate/dbref", test_bson_validate_dbref);
-   TestSuite_Add (suite, "/bson/validate/bool", test_bson_validate_bool);
-   TestSuite_Add (suite, "/bson/validate/dbpointer", test_bson_validate_dbpointer);
+   TestSuite_Add (suite, "/bson/validate/deep", test_bson_validate_deep);
    TestSuite_Add (suite, "/bson/validate/with_error_and_offset", test_bson_validate_with_error_and_offset);
    TestSuite_Add (suite, "/bson/new_1mm", test_bson_new_1mm);
    TestSuite_Add (suite, "/bson/init_1mm", test_bson_init_1mm);
