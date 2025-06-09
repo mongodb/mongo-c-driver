@@ -5,6 +5,21 @@ libmongoc 2.1.0 (Unreleased)
 
 * The minimum supported MongoDB Server version is raised from 4.0 to 4.2. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
 
+libmongoc 2.0.2
+===============
+
+Fixes:
+
+  * Fix message of `bson_strerror_r` on Windows.
+  * Fix memory leaks with Windows Secure Channel.
+  * Fix loading PKCS#8 RSA keys with Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+
+
 libmongoc 1.30.5
 ================
 
