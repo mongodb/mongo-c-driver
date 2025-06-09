@@ -1,3 +1,19 @@
+libmongoc 1.30.5
+================
+
+Fixes:
+
+  * Fix message of `bson_strerror_r` on Windows.
+  * Fix memory leaks with Windows Secure Channel.
+  * Fix loading PKCS#8 RSA keys with Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+
+
+
 libmongoc 1.30.4
 ================
 

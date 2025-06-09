@@ -1,5 +1,5 @@
-Unreleased
-==========
+libbson 1.30.5
+==============
 
 Fixes:
 
@@ -11,6 +11,11 @@ Fixes:
     validated with a fixed set of rules and is treated as an opaque JavaScript
     object.
   * A document nesting limit is now enforced during validation.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
 
 
 libbson 1.30.4
