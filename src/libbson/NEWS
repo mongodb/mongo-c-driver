@@ -12,6 +12,25 @@ Fixes:
     object.
   * A document nesting limit is now enforced during validation.
 
+libbson 1.30.5
+==============
+
+Fixes:
+
+* Various fixes have been applied to the `bson_validate` family of functions,
+  with some minor behavioral changes.
+  * Previously accepted invalid UTF-8 will be rejected when `BSON_VALIDATE_UTF8`
+    is specified.
+  * The scope document in a deprecated "code with scope" element is now
+    validated with a fixed set of rules and is treated as an opaque JavaScript
+    object.
+  * A document nesting limit is now enforced during validation.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+
 libbson 2.0.1
 =============
 
