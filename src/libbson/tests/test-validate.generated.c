@@ -16,13 +16,13 @@ static inline void _test_case_empty(void) {
     5, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -35,14 +35,14 @@ static inline void _test_case_bad_element(void) {
     6, 0, 0, 0, 'f', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 6);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 6);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -55,14 +55,14 @@ static inline void _test_case_invalid_type(void) {
     0x0d, 0, 0, 0, 0x0e, 'f', 'o', 'o', 0, 'f', 'o', 'o', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -77,13 +77,13 @@ static inline void _test_case_key_invalid_accept(void) {
     'a', 'r', 0, 4, 0, 0, 0, 'b', 'a', 'z', 0, 2, 'c', 0, 2, 0, 0, 0, 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -98,14 +98,14 @@ static inline void _test_case_key_invalid_reject(void) {
     'a', 'r', 0, 4, 0, 0, 0, 'b', 'a', 'z', 0, 2, 'c', 0, 2, 0, 0, 0, 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -118,13 +118,13 @@ static inline void _test_case_key_empty_accept(void) {
     0x12, 0, 0, 0, 2, 0, 7, 0, 0, 0, 's', 't', 'r', 'i', 'n', 'g', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -138,14 +138,14 @@ static inline void _test_case_key_empty_reject(void) {
     'r', 'i', 'n', 'g', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_EMPTY_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Element key cannot be an empty string"));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_EMPTY_KEYS);
+  ASSERT_CMPSTR(error.message, "Element key cannot be an empty string");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -158,13 +158,13 @@ static inline void _test_case_key_empty_accept_if_absent(void) {
     0x12, 0, 0, 0, 2, 'f', 'o', 'o', 0, 4, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -179,13 +179,13 @@ static inline void _test_case_key_dot_accept(void) {
     'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -200,14 +200,14 @@ static inline void _test_case_key_dot_reject(void) {
     'a', 'r', 0, 4, 0, 0, 0, 'b', 'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOT_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOT_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Disallowed '.' in element key: \"foo.bar\""));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOT_KEYS);
+  ASSERT_CMPSTR(error.message, "Disallowed '.' in element key: \"foo.bar\"");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -220,13 +220,13 @@ static inline void _test_case_key_dot_accept_if_absent(void) {
     0x12, 0, 0, 0, 2, 'f', 'o', 'o', 0, 4, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOT_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -240,13 +240,13 @@ static inline void _test_case_key_dollar_accept(void) {
     0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -260,14 +260,14 @@ static inline void _test_case_key_dollar_reject(void) {
     0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Disallowed '$' in element key: \"$foo\""));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Disallowed '$' in element key: \"$foo\"");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -282,13 +282,13 @@ static inline void _test_case_key_dollar_accept_in_middle(void) {
     'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -302,13 +302,13 @@ static inline void _test_case_key_dollar_accept_if_absent(void) {
     0x12, 0, 0, 0, 2, 'f', 'o', 'o', 0, 4, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -322,13 +322,13 @@ static inline void _test_case_utf8_simple(void) {
     'm', 'e', 0x20, 's', 't', 'r', 'i', 'n', 'g', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -343,14 +343,14 @@ static inline void _test_case_utf8_missing_null(void) {
     0x10, 0, 0, 0, 2, 'a', 0, 4, 0, 0, 0, 'a', 'b', 'c', 'd', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 14);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 14);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -363,14 +363,14 @@ static inline void _test_case_utf8_length_zero(void) {
     0x0c, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 6);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 6);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -383,14 +383,14 @@ static inline void _test_case_utf8_length_too_short(void) {
     0x0f, 0, 0, 0, 2, 0, 3, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 12);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 12);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -404,14 +404,14 @@ static inline void _test_case_utf8_header_too_large(void) {
     0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -424,13 +424,13 @@ static inline void _test_case_utf8_valid(void) {
     0x13, 0, 0, 0, 2, 'f', 'o', 'o', 0, 5, 0, 0, 0, 'a', 'b', 'c', 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -444,13 +444,13 @@ static inline void _test_case_utf8_invalid_accept(void) {
     0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -464,14 +464,14 @@ static inline void _test_case_utf8_invalid_reject(void) {
     0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -486,13 +486,13 @@ static inline void _test_case_utf8_valid_with_null_accept_1(void) {
     '3', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -507,13 +507,13 @@ static inline void _test_case_utf8_valid_with_null_accept_2(void) {
     '3', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -528,14 +528,14 @@ static inline void _test_case_utf8_valid_with_null_reject(void) {
     '3', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8_ALLOW_NULL);
-  BSON_ASSERT(!strcmp(error.message, "UTF-8 string contains a U+0000 (null) character"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8_ALLOW_NULL);
+  ASSERT_CMPSTR(error.message, "UTF-8 string contains a U+0000 (null) character");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -550,13 +550,13 @@ static inline void _test_case_utf8_overlong_null_accept_1(void) {
     '1', '2', '3', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -578,13 +578,13 @@ static inline void _test_case_utf8_overlong_null_accept_2(void) {
     '1', '2', '3', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -606,14 +606,14 @@ static inline void _test_case_utf8_overlong_null_reject(void) {
     '1', '2', '3', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8_ALLOW_NULL);
-  BSON_ASSERT(!strcmp(error.message, "UTF-8 string contains a U+0000 (null) character"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8_ALLOW_NULL);
+  ASSERT_CMPSTR(error.message, "UTF-8 string contains a U+0000 (null) character");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -628,13 +628,13 @@ static inline void _test_case_utf8_key_invalid_accept(void) {
     'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -649,14 +649,14 @@ static inline void _test_case_utf8_key_invalid_reject(void) {
     'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -677,14 +677,14 @@ static inline void _test_case_utf8_key_overlong_null_reject(void) {
     'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8_ALLOW_NULL);
-  BSON_ASSERT(!strcmp(error.message, "UTF-8 string contains a U+0000 (null) character"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8_ALLOW_NULL);
+  ASSERT_CMPSTR(error.message, "UTF-8 string contains a U+0000 (null) character");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -705,13 +705,13 @@ static inline void _test_case_utf8_key_overlong_null_accept(void) {
     'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -724,13 +724,13 @@ static inline void _test_case_array_empty(void) {
     0x11, 0, 0, 0, 4, 'a', 'r', 'r', 'a', 'y', 0, 5, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -745,13 +745,13 @@ static inline void _test_case_array_simple(void) {
     0xff, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -765,14 +765,14 @@ static inline void _test_case_array_invalid_element(void) {
     0x2a, 0, 0, 0, 0x10, '1', 0, 0, 0x10, '2', 0, 0xf8, 0xff, 0xff, 0xff, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 34);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 34);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -789,14 +789,14 @@ static inline void _test_case_array_invalid_element_check_offset(void) {
     0x10, '2', 0, 0xf8, 0xff, 0xff, 0xff, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 42);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 42);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -810,13 +810,13 @@ static inline void _test_case_symbol_simple(void) {
     'i', 'd', 0x20, '0', 0x3b, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -830,13 +830,13 @@ static inline void _test_case_symbol_invalid_utf8_accept(void) {
     'i', 'd', 0xff, 0x20, '0', 0x3b, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -850,14 +850,14 @@ static inline void _test_case_symbol_invalid_utf8_reject(void) {
     'i', 'd', 0xff, 0x20, '0', 0x3b, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -870,14 +870,14 @@ static inline void _test_case_symbol_length_zero(void) {
     0x0c, 0, 0, 0, 0x0e, 0, 0, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 6);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 6);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -891,14 +891,14 @@ static inline void _test_case_symbol_length_too_short(void) {
     0x0f, 0, 0, 0, 0x0e, 0, 3, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 12);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 12);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -912,13 +912,13 @@ static inline void _test_case_code_simple(void) {
     0x20, '0', 0x3b, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -932,13 +932,13 @@ static inline void _test_case_code_invalid_utf8_accept(void) {
     0xff, 0x20, '0', 0x3b, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -952,14 +952,14 @@ static inline void _test_case_code_invalid_utf8_reject(void) {
     0xff, 0x20, '0', 0x3b, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -972,14 +972,14 @@ static inline void _test_case_code_length_zero(void) {
     0x10, 0, 0, 0, 0x0d, 'c', 'o', 'd', 'e', 0, 0, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 10);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 10);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -992,14 +992,14 @@ static inline void _test_case_code_length_too_short(void) {
     0x13, 0, 0, 0, 0x0d, 'c', 'o', 'd', 'e', 0, 3, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 16);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 16);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1013,13 +1013,13 @@ static inline void _test_case_code_with_scope_simple(void) {
     'i', 'd', 0x20, '0', 0x3b, 0, 5, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1033,14 +1033,14 @@ static inline void _test_case_code_with_scope_invalid_code_length_zero(void) {
     0x15, 0, 0, 0, 0x0f, 0, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 6);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 6);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1054,14 +1054,14 @@ static inline void _test_case_code_with_scope_invalid_code_length_too_large(void
     0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 6);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 6);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1075,14 +1075,14 @@ static inline void _test_case_code_with_scope_invalid_scope(void) {
     'i', 'd', 0x20, '0', 0x3b, 0, 5, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1100,13 +1100,13 @@ static inline void _test_case_code_with_scope_empty_key_in_scope(void) {
     0, 0, 0, 2, 0, 7, 0, 0, 0, 's', 't', 'r', 'i', 'n', 'g', 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1121,14 +1121,14 @@ static inline void _test_case_code_with_scope_corrupt_scope(void) {
     0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "Error in scope document for element \"code\": corrupt BSON"));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "Error in scope document for element \"code\": corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1143,14 +1143,14 @@ static inline void _test_case_code_with_scope_corrupt_scope_2(void) {
     0xff, 0xff, 0xff, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "Error in scope document for element \"code\": corrupt BSON"));
-  BSON_ASSERT(offset == 13);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "Error in scope document for element \"code\": corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 13);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1164,13 +1164,13 @@ static inline void _test_case_regex_simple(void) {
     'i', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1188,14 +1188,14 @@ static inline void _test_case_regex_invalid_opts(void) {
     'r', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1211,14 +1211,14 @@ static inline void _test_case_regex_double_null(void) {
     'r', 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 21);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 21);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1232,13 +1232,13 @@ static inline void _test_case_regex_invalid_utf8_accept(void) {
     'a', 'r', 0, 'g', 'i', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1252,14 +1252,14 @@ static inline void _test_case_regex_invalid_utf8_reject(void) {
     'a', 'r', 0, 'g', 'i', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1274,13 +1274,13 @@ static inline void _test_case_regex_invalid_utf8_accept_if_absent(void) {
     0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1295,14 +1295,14 @@ static inline void _test_case_dbpointer_string_length_zero(void) {
     0xfa, 0x5b, 0xd8, 'A', 0xd6, 'X', 0x5d, 0x99, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1318,14 +1318,14 @@ static inline void _test_case_dbpointer_string_length_too_big(void) {
     'X', 0x5d, 0x99, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1342,14 +1342,14 @@ static inline void _test_case_dbpointer_truncated(void) {
     'A', 0xd6, 'X', 0x5d, 0x99, 2, 'a', 0, 2, 0, 0, 0, 'b', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 43);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 43);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1364,14 +1364,14 @@ static inline void _test_case_dbpointer_missing_null(void) {
     'Y', 0xb5, 'j', 0xfa, 0x5b, 0xd8, 'A', 0xd6, 'X', 0x5d, 0x99, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 16);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 16);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1386,13 +1386,13 @@ static inline void _test_case_dbpointer_invalid_utf8_accept(void) {
     0x99, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1407,14 +1407,14 @@ static inline void _test_case_dbpointer_invalid_utf8_reject(void) {
     0x99, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_UTF8);
-  BSON_ASSERT(!strcmp(error.message, "Text element is not valid UTF-8"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_UTF8);
+  ASSERT_CMPSTR(error.message, "Text element is not valid UTF-8");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1429,13 +1429,13 @@ static inline void _test_case_dbpointer_invalid_utf8_accept_if_absent(void) {
     'f', 0, 'R', 'Y', 0xb5, 'j', 0xfa, 0x5b, 0xd8, 'A', 0xd6, 'X', 0x5d, 0x99, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_UTF8, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1449,13 +1449,13 @@ static inline void _test_case_subdoc_simple(void) {
     0, 0, 0, 'b', 'a', 'r', 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1469,14 +1469,14 @@ static inline void _test_case_subdoc_invalid_shared_null(void) {
     0x0e, 0, 0, 0, 3, 'd', 'o', 'c', 0, 5, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1495,14 +1495,14 @@ static inline void _test_case_subdoc_overlapping_utf8_null(void) {
     0, 0, 0, 'b', 'a', 'z', 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1516,14 +1516,14 @@ static inline void _test_case_subdoc_invalid_element(void) {
     'b', 'c', 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1536,14 +1536,14 @@ static inline void _test_case_subdoc_header_too_large(void) {
     0x0f, 0, 0, 0, 3, 'f', 'o', 'o', 0, 0xf7, 0xff, 0xff, 0xff, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1556,14 +1556,14 @@ static inline void _test_case_subdoc_header_too_small(void) {
     0x0f, 0, 0, 0, 3, 't', 'e', 's', 't', 0, 4, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1577,14 +1577,14 @@ static inline void _test_case_subdoc_impossible_size(void) {
     0x0f, 0, 0, 0, 3, 'f', 'o', 'o', 0, 0xff, 0xff, 0xff, 0xff, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1597,13 +1597,13 @@ static inline void _test_case_null_simple(void) {
     0x0b, 0, 0, 0, 0x0a, 'n', 'u', 'l', 'l', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1616,13 +1616,13 @@ static inline void _test_case_undefined_simple(void) {
     0x10, 0, 0, 0, 6, 'u', 'n', 'd', 'e', 'f', 'i', 'n', 'e', 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1636,13 +1636,13 @@ static inline void _test_case_binary_simple(void) {
     '2', '3', '4', '5', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1657,14 +1657,14 @@ static inline void _test_case_binary_bad_length_zero_subtype_2(void) {
     0, '1', '2', '3', '4', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 12);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 12);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1679,14 +1679,14 @@ static inline void _test_case_binary_bad_inner_length_on_subtype_2(void) {
     0, '1', '2', '3', '4', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 17);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 17);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1705,14 +1705,14 @@ static inline void _test_case_binary_bad_length_too_small(void) {
     '2', '3', '4', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 22);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 22);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1727,14 +1727,14 @@ static inline void _test_case_binary_bad_length_too_big(void) {
     0x80, '1', '2', '3', '4', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 12);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 12);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1749,14 +1749,14 @@ static inline void _test_case_binary_old_invalid_1(void) {
     0, 'a', 'b', 'c', 'd', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 17);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 17);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1770,14 +1770,14 @@ static inline void _test_case_binary_old_invalid_2(void) {
     0x12, 0, 0, 0, 5, 'b', 'i', 'n', 0, 3, 0, 0, 0, 2, 'a', 'b', 'c', 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1790,13 +1790,13 @@ static inline void _test_case_minkey_simple(void) {
     0x0a, 0, 0, 0, 0xff, 'm', 'i', 'n', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1809,13 +1809,13 @@ static inline void _test_case_maxkey_simple(void) {
     0x0a, 0, 0, 0, 0x7f, 'm', 'a', 'x', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1828,13 +1828,13 @@ static inline void _test_case_int32_simple(void) {
     0x10, 0, 0, 0, 0x10, 'i', 'n', 't', '3', '2', 0, 0x2a, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1848,14 +1848,14 @@ static inline void _test_case_int32_truncated(void) {
     'a', 't', 'e', 'd', 0, 0x2a, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 21);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 21);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1869,13 +1869,13 @@ static inline void _test_case_timestamp_simple(void) {
     6, 0, 0, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1889,14 +1889,14 @@ static inline void _test_case_timestamp_truncated(void) {
     6, 0, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 15);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 15);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1910,13 +1910,13 @@ static inline void _test_case_int64_simple(void) {
     0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1930,14 +1930,14 @@ static inline void _test_case_int64_truncated(void) {
     'a', 't', 'e', 'd', 0, 0xc1, 6, 0, 0, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 21);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 21);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1951,13 +1951,13 @@ static inline void _test_case_double_simple(void) {
     0xb8, 0x1e, 9, 0x40, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1971,14 +1971,14 @@ static inline void _test_case_double_truncated(void) {
     'c', 'a', 't', 'e', 'd', 0, 0x0a, 0xd7, 0xa3, 'p', 0x3d, 0x0a, 9, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 22);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 22);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -1991,13 +1991,13 @@ static inline void _test_case_boolean_simple_false(void) {
     0x0c, 0, 0, 0, 8, 'b', 'o', 'o', 'l', 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2010,13 +2010,13 @@ static inline void _test_case_boolean_simple_true(void) {
     0x0c, 0, 0, 0, 8, 'b', 'o', 'o', 'l', 0, 1, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2029,14 +2029,14 @@ static inline void _test_case_boolean_invalid(void) {
     0x0c, 0, 0, 0, 8, 'b', 'o', 'o', 'l', 0, 0xc3, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 10);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 10);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2049,13 +2049,13 @@ static inline void _test_case_datetime_simple(void) {
     0x12, 0, 0, 0, 9, 'u', 't', 'c', 0, 0x0b, 0x98, 0x8c, 0x2b, '3', 1, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2068,14 +2068,14 @@ static inline void _test_case_datetime_truncated(void) {
     0x11, 0, 0, 0, 9, 'u', 't', 'c', 0, 0x0b, 0x98, 0x8c, 0x2b, '3', 1, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_CORRUPT);
-  BSON_ASSERT(!strcmp(error.message, "corrupt BSON"));
-  BSON_ASSERT(offset == 9);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_CORRUPT);
+  ASSERT_CMPSTR(error.message, "corrupt BSON");
+  ASSERT_CMPSIZE_T(offset, ==, 9);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2088,14 +2088,14 @@ static inline void _test_case_dbref_missing_id(void) {
     0x13, 0, 0, 0, 2, '$', 'r', 'e', 'f', 0, 4, 0, 0, 0, 'f', 'o', 'o', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Expected an $id element following $ref"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Expected an $id element following $ref");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2109,14 +2109,14 @@ static inline void _test_case_dbref_non_id(void) {
     'b', 'a', 'r', 0, 4, 0, 0, 0, 'b', 'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Expected an $id element following $ref"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Expected an $id element following $ref");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2131,14 +2131,14 @@ static inline void _test_case_dbref_not_first_elements(void) {
     0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Disallowed '$' in element key: \"$ref\""));
-  BSON_ASSERT(offset == 17);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Disallowed '$' in element key: \"$ref\"");
+  ASSERT_CMPSIZE_T(offset, ==, 17);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2152,14 +2152,14 @@ static inline void _test_case_dbref_ref_without_id_with_db(void) {
     '$', 'd', 'b', 0, 4, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Expected an $id element following $ref"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Expected an $id element following $ref");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2172,14 +2172,14 @@ static inline void _test_case_dbref_non_string_ref(void) {
     0x0f, 0, 0, 0, 0x10, '$', 'r', 'e', 'f', 0, 0x2a, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "$ref element must be a UTF-8 element"));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "$ref element must be a UTF-8 element");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2194,14 +2194,14 @@ static inline void _test_case_dbref_non_string_db(void) {
     0x2a, 0, 0, 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "$db element in DBRef must be a UTF-8 element"));
-  BSON_ASSERT(offset == 31);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "$db element in DBRef must be a UTF-8 element");
+  ASSERT_CMPSIZE_T(offset, ==, 31);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2218,14 +2218,14 @@ static inline void _test_case_dbref_invalid_extras_between(void) {
     'b', 'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Disallowed '$' in element key: \"$db\""));
-  BSON_ASSERT(offset == 48);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Disallowed '$' in element key: \"$db\"");
+  ASSERT_CMPSIZE_T(offset, ==, 48);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2240,14 +2240,14 @@ static inline void _test_case_dbref_invalid_double_ref(void) {
     0, 0, 0, 'b', 'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Expected an $id element following $ref"));
-  BSON_ASSERT(offset == 18);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Expected an $id element following $ref");
+  ASSERT_CMPSIZE_T(offset, ==, 18);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2260,14 +2260,14 @@ static inline void _test_case_dbref_invalid_missing_ref(void) {
     0x12, 0, 0, 0, 2, '$', 'i', 'd', 0, 4, 0, 0, 0, 'f', 'o', 'o', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
-  BSON_ASSERT(!is_valid);
-  BSON_ASSERT(error.code == BSON_VALIDATE_DOLLAR_KEYS);
-  BSON_ASSERT(!strcmp(error.message, "Disallowed '$' in element key: \"$id\""));
-  BSON_ASSERT(offset == 4);
+  ASSERT(!is_valid);
+  ASSERT_CMPINT32(error.code, ==, BSON_VALIDATE_DOLLAR_KEYS);
+  ASSERT_CMPSTR(error.message, "Disallowed '$' in element key: \"$id\"");
+  ASSERT_CMPSIZE_T(offset, ==, 4);
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2281,13 +2281,13 @@ static inline void _test_case_dbref_valid_simple(void) {
     '$', 'i', 'd', 0, 4, 0, 0, 0, 'b', 'a', 'r', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2304,13 +2304,13 @@ static inline void _test_case_dbref_valid_simple_with_db(void) {
     0, 0, 'b', 'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2329,13 +2329,13 @@ static inline void _test_case_dbref_valid_nested_id_doc(void) {
     4, 0, 0, 0, 'b', 'a', 'z', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2358,13 +2358,13 @@ static inline void _test_case_dbref_valid_trailing_content(void) {
     'e', 'l', 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!
@@ -2385,13 +2385,13 @@ static inline void _test_case_dbref_valid_trailing_content_no_db(void) {
     0, 6, 0, 0, 0, 'f', 'i', 'e', 'l', 'd', 0, 0
   };
   bson_t doc;
-  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
+  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));
   bson_error_t error = {0};
   size_t offset = 999999;
   const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
   ASSERT_OR_PRINT(is_valid, error);
-  BSON_ASSERT(error.code == 0);
-  BSON_ASSERT(!strcmp(error.message, ""));
+  ASSERT_CMPINT32(error.code, ==, 0);
+  ASSERT_CMPSTR(error.message, "");
 }
 
 // ! This code is GENERATED! Do not edit it directly!

@@ -226,7 +226,7 @@ def generate(case: TestCase) -> Iterable[str]:
     yield from [
         # Initialize a BSON doc that points to the byte array
         "  bson_t doc;\n",
-        "  BSON_ASSERT(bson_init_static(&doc, bytes, sizeof bytes));\n",
+        "  ASSERT(bson_init_static(&doc, bytes, sizeof bytes));\n",
         # The error object to be filled
         "  bson_error_t error = {0};\n",
         # The error offset. Expected to be reset to zero on success.
@@ -236,10 +236,10 @@ def generate(case: TestCase) -> Iterable[str]:
     ]
     is_error = case.error.code != "0"
     yield from [
-        "  BSON_ASSERT(!is_valid);\n" if is_error else "  ASSERT_OR_PRINT(is_valid, error);\n",
-        f"  BSON_ASSERT(error.code == {case.error.code});\n",
-        f"  BSON_ASSERT(!strcmp(error.message, {json.dumps(case.error.message)}));\n",
-        f"  BSON_ASSERT(offset == {case.error.offset});\n" if is_error else "",
+        "  ASSERT(!is_valid);\n" if is_error else "  ASSERT_OR_PRINT(is_valid, error);\n",
+        f"  ASSERT_CMPINT32(error.code, ==, {case.error.code});\n",
+        f"  ASSERT_CMPSTR(error.message, {json.dumps(case.error.message)});\n",
+        f"  ASSERT_CMPSIZE_T(offset, ==, {case.error.offset});\n" if is_error else "",
     ]
     yield "}\n"
 
