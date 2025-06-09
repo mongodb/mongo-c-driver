@@ -1030,6 +1030,7 @@ _parse_kms_provider_aws (
    BSON_UNUSED (tls_opts);
 
    BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (kms_providers, provider, &child));
+   const bool using_temp = bson_has_field(kms_doc, "sessionToken");
 
    BSON_FOREACH (kms_doc, iter)
    {
@@ -1041,7 +1042,7 @@ _parse_kms_provider_aws (
       }
 
       if (strcmp (key, "accessKeyId") == 0) {
-         const char *envvar = "MONGOC_TEST_AWS_ACCESS_KEY_ID";
+         const char *envvar = using_temp ? "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID" : "MONGOC_TEST_AWS_ACCESS_KEY_ID";
          if (0 == strcmp (provider, "aws:name2")) {
             envvar = "MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID";
          }
@@ -1049,7 +1050,7 @@ _parse_kms_provider_aws (
             return false;
          }
       } else if (strcmp (key, "secretAccessKey") == 0) {
-         const char *envvar = "MONGOC_TEST_AWS_SECRET_ACCESS_KEY";
+         const char *envvar = using_temp ? "MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY" : "MONGOC_TEST_AWS_SECRET_ACCESS_KEY";
          if (0 == strcmp (provider, "aws:name2")) {
             envvar = "MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY";
          }
