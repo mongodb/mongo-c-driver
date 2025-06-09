@@ -158,7 +158,10 @@ def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: Dic
         f"redirect-for-{page}",
         {"target": page, "writing-redirect": 1},
         str(Path(__file__).parent.resolve() / "redirect.t.html"),
-        outfilename=str(redirect_file),
+        # Note: In Sphinx 8.2, this argument changed from `str` to `Path`, but
+        # continues to work with `str`. A future version might need this changed
+        # to pass a `Path`, but we can keep `str` for now.
+        outfilename=str(redirect_file),  # type: ignore
     )
     # Restore prior state:
     builder.script_files[:] = prev_scripts
