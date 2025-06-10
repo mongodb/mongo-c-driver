@@ -565,6 +565,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
        * MD5( UTF8( username + ':mongo:' + plain_text_password )))" */
       tmp = bson_strdup_printf ("%s:mongo:%s", scram->user, scram->pass);
       hashed_password = _mongoc_hex_md5 (tmp);
+      BSON_ASSERT (hashed_password);
       bson_zero_free (tmp, strlen (tmp));
    } else if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
       /* Auth spec for SCRAM-SHA-256: "Passwords MUST be prepared with SASLprep,
@@ -743,9 +744,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    /* Save the presecrets for caching */
-   if (hashed_password) {
-      bson_strncpy (scram->hashed_password, hashed_password, sizeof (scram->hashed_password));
-   }
+   bson_strncpy (scram->hashed_password, hashed_password, sizeof (scram->hashed_password));
 
    scram->iterations = iterations;
    memcpy (scram->decoded_salt, decoded_salt, sizeof (scram->decoded_salt));

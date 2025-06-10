@@ -314,6 +314,14 @@ _test_cmp (void)
    mlib_diagnostic_pop ();
    // mlib_cmp produces the correct answer:
    ASSERT (mlib_cmp (-27, <, 20u));
+
+   {
+      // Check that we do not double-evaluate the operand expression.
+      intmax_t a = 4;
+      mlib_check (mlib_cmp (++a, ==, 5));
+      // We only increment once:
+      mlib_check (a, eq, 5);
+   }
 }
 
 static void

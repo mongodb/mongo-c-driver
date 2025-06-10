@@ -83,19 +83,25 @@ typedef struct mlib_upsized_integer {
  * an i64 losslessly.
  *
  * If the integer to upcast is the same size as `intmax_t`, we need to decide whether to store
- * it as unsigned. The expression `(0 & Value) - 1 < 0` will be `true` iff the operand is signed,
+ * it as unsigned. The expression `(_mlibGetOne(Value)) - 2 < 1` will be `true` iff the operand is signed,
  * otherwise false. If the operand is signed, we can safely cast to `intmax_t` (it probably already
  * is of that type), otherwise, we can to `uintmax_t` and the returned `mlib_upsized_integer` will
- * indicate that the stored value is unsigned.
+ * indicate that the stored value is unsigned. The expression `1 - 2 < 1` is chosen
+ * to avoid `-Wtype-limits` warnings from some compilers about unsigned comparison.
  */
 #define mlib_upsize_integer(Value) \
-   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
    MLIB_PRAGMA_IF_MSVC (warning(push)) \
    MLIB_PRAGMA_IF_MSVC (warning(disable : 4189)) \
-   ((sizeof ((Value)) < sizeof (intmax_t) || ((0 & (Value)) - 1) < 0) \
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   ((sizeof ((Value)) < sizeof (intmax_t) || (_mlibGetOne(Value) - 2) < _mlibGetOne(Value)) \
       ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
       : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}}) \
    MLIB_PRAGMA_IF_MSVC (warning(pop))
+// Yield a 1 value of similar-ish type to the given expression. The ternary
+// forces an integer promotion of literal 1 match the type of `V`, while leaving
+// `V` unevaluated. Note that this will also promote `V` to be at least `(unsigned) int`,
+// so the 1 value is only "similar" to `V`, and may be of a larger type
+#define _mlibGetOne(V) (1 ? 1 : (V))
 // clang-format on
 
 #endif // MLIB_INTUTIL_H_INCLUDED
