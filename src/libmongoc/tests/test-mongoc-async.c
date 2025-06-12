@@ -214,6 +214,8 @@ test_large_hello_helper (mongoc_async_cmd_t *acmd,
                          const bson_t *bson,
                          int64_t duration_usec)
 {
+   BSON_UNUSED (duration_usec);
+
    bson_iter_t iter;
    bson_error_t *error = &acmd->error;
 
@@ -235,6 +237,8 @@ test_large_hello_helper (mongoc_async_cmd_t *acmd,
 static void
 test_large_hello (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    mongoc_async_t *async;
    mongoc_stream_t *sock_stream;
    bson_t q = BSON_INITIALIZER;

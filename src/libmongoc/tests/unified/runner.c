@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+#include "bson/bson.h"
+#include "bsonutil/bson-match.h"
 #include "bsonutil/bson-parser.h"
+#include "bsonutil/bson-val.h"
 #include "entity-map.h"
 #include "json-test.h"
 #include "operation.h"
@@ -23,6 +26,7 @@
 #include "test-libmongoc.h"
 #include "test-diagnostics.h"
 #include <mongoc/utlist.h>
+#include <mongoc/mongoc-database-private.h>
 #include "util.h"
 #include <common-string-private.h>
 #include <mlib/cmp.h>
@@ -532,6 +536,7 @@ test_destroy (test_t *test)
    bson_destroy (test->run_on_requirements);
    bson_free (test->description);
    bson_free (test->skip_reason);
+   bson_destroy (test->cluster_time_after_initial_data);
    bson_free (test);
 }
 
@@ -635,8 +640,9 @@ check_schema_version (test_file_t *test_file)
    // 1.18 is partially supported (additional properties in kmsProviders)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
+   // 1.23 is partially supported (automatic encryption)
    semver_t schema_version;
-   semver_parse ("1.22", &schema_version);
+   semver_parse ("1.23", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -790,6 +796,11 @@ check_run_on_requirement (test_runner_t *test_runner,
             return false;
          }
 
+         if (0 == test_framework_skip_if_no_client_side_encryption ()) {
+            *fail_reason = bson_strdup ("CSFLE is required but not all environment variables are set");
+            return false;
+         }
+
          if (csfle_required) {
             continue;
          }
@@ -866,8 +877,27 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
    test_file = test->test_file;
    test_runner = test_file->test_runner;
 
+   mongoc_client_session_t *sess = mongoc_client_start_session (test_runner->internal_client, NULL, error);
+   if (sess == NULL) {
+      return false;
+   }
+
    if (!test_file->initial_data) {
-      return true;
+      // Send a "ping" command with the session to get a cluster time.
+      bson_t opts = BSON_INITIALIZER;
+      bool ok = mongoc_client_session_append (sess, &opts, error);
+      ok = ok && mongoc_client_command_with_opts (
+                    test_runner->internal_client, "db", tmp_bson ("{'ping': 1}"), NULL, &opts, NULL, error);
+      if (ok) {
+         // Check for cluster time (not available on standalone).
+         const bson_t *ct = mongoc_client_session_get_cluster_time (sess);
+         if (ct) {
+            test->cluster_time_after_initial_data = bson_copy (ct);
+         }
+      }
+      mongoc_client_session_destroy (sess);
+      bson_destroy (&opts);
+      return ok;
    }
 
    BSON_FOREACH (test_file->initial_data, initial_data_iter)
@@ -883,7 +913,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       mongoc_write_concern_t *wc = NULL;
       bson_t *bulk_opts = NULL;
       bson_t *drop_opts = bson_new ();
-      bson_t *create_opts = bson_new ();
+      bson_t *create_opts = NULL;
       bool ret = false;
 
       bson_iter_bson (&initial_data_iter, &collection_data);
@@ -891,14 +921,22 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       bson_parser_utf8 (parser, "databaseName", &database_name);
       bson_parser_utf8 (parser, "collectionName", &collection_name);
       bson_parser_array (parser, "documents", &documents);
+      bson_parser_doc_optional (parser, "createOptions", &create_opts);
       if (!bson_parser_parse (parser, &collection_data, error)) {
          goto loopexit;
+      }
+
+      if (create_opts == NULL) {
+         create_opts = bson_new ();
       }
 
       wc = mongoc_write_concern_new ();
       mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
       bulk_opts = bson_new ();
       mongoc_write_concern_append (wc, bulk_opts);
+      if (!mongoc_client_session_append (sess, bulk_opts, error)) {
+         goto loopexit;
+      }
 
       /* Drop the collection. */
       /* Check if the server supports majority write concern on 'drop' and
@@ -913,8 +951,15 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          BSON_APPEND_INT32 (drop_opts, "serverId", 1);
          BSON_APPEND_INT32 (create_opts, "serverId", 1);
       }
+      if (!mongoc_client_session_append (sess, create_opts, error)) {
+         goto loopexit;
+      }
+      if (!mongoc_client_session_append (sess, drop_opts, error)) {
+         goto loopexit;
+      }
 
       coll = mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name);
+
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
          if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
             /* This is not a "ns not found" error. Fail the test. */
@@ -923,6 +968,52 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          /* Clear an "ns not found" error. */
          memset (error, 0, sizeof (bson_error_t));
       }
+
+      // Drop `enxcol_.<coll>.esc` and `enxcol_.<coll>.ecoc` in case the collection will be used for QE.
+      // https://github.com/mongodb/specifications/blob/f4c0bbdbf8a8560580c947ca2c331794431a0c78/source/unified-test-format/unified-test-format.md#executing-a-test
+      {
+         char *collection_name_esc = bson_strdup_printf ("enxcol_.%s.esc", collection_name);
+         mongoc_collection_t *coll_esc =
+            mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name_esc);
+         if (!mongoc_collection_drop_with_opts (coll_esc, drop_opts, error)) {
+            if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
+               /* This is not a "ns not found" error. Fail the test. */
+               mongoc_collection_destroy (coll_esc);
+               bson_free (collection_name_esc);
+               goto loopexit;
+            }
+            /* Clear an "ns not found" error. */
+            memset (error, 0, sizeof (bson_error_t));
+         }
+         mongoc_collection_destroy (coll_esc);
+         bson_free (collection_name_esc);
+      }
+
+      {
+         char *collection_name_ecoc = bson_strdup_printf ("enxcol_.%s.ecoc", collection_name);
+         mongoc_collection_t *coll_ecoc =
+            mongoc_client_get_collection (test_runner->internal_client, database_name, collection_name_ecoc);
+         if (!mongoc_collection_drop_with_opts (coll_ecoc, drop_opts, error)) {
+            if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
+               /* This is not a "ns not found" error. Fail the test. */
+               mongoc_collection_destroy (coll_ecoc);
+               bson_free (collection_name_ecoc);
+               goto loopexit;
+            }
+            /* Clear an "ns not found" error. */
+            memset (error, 0, sizeof (bson_error_t));
+         }
+         mongoc_collection_destroy (coll_ecoc);
+         bson_free (collection_name_ecoc);
+      }
+
+      mongoc_collection_t *new_coll = NULL;
+      db = mongoc_client_get_database (test_runner->internal_client, database_name);
+      new_coll = mongoc_database_create_collection (db, collection_name, create_opts, error);
+      if (!new_coll) {
+         goto loopexit;
+      }
+      mongoc_collection_destroy (new_coll);
 
       /* Insert documents if specified. */
       if (bson_count_keys (documents) > 0) {
@@ -946,15 +1037,6 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          if (!mongoc_bulk_operation_execute (bulk_insert, NULL, error)) {
             goto loopexit;
          }
-      } else {
-         mongoc_collection_t *new_coll = NULL;
-         /* Test does not need data inserted, just create the collection. */
-         db = mongoc_client_get_database (test_runner->internal_client, database_name);
-         new_coll = mongoc_database_create_collection (db, collection_name, create_opts, error);
-         if (!new_coll) {
-            goto loopexit;
-         }
-         mongoc_collection_destroy (new_coll);
       }
 
       ret = true;
@@ -972,9 +1054,18 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       bson_parser_destroy (parser);
       mongoc_database_destroy (db);
       if (!ret) {
+         mongoc_client_session_destroy (sess);
          return false;
       }
    }
+
+   // Obtain cluster time to advance client sessions. See DRIVERS-2816.
+   // Check for cluster time (not available on standalone).
+   const bson_t *ct = mongoc_client_session_get_cluster_time (sess);
+   if (ct) {
+      test->cluster_time_after_initial_data = bson_copy (ct);
+   }
+   mongoc_client_session_destroy (sess);
    return true;
 }
 
@@ -1001,7 +1092,7 @@ test_create_entities (test_t *test, bson_error_t *error)
       bson_t entity_bson;
 
       bson_iter_bson (&iter, &entity_bson);
-      if (!entity_map_create (test->entity_map, &entity_bson, error)) {
+      if (!entity_map_create (test->entity_map, &entity_bson, test->cluster_time_after_initial_data, error)) {
          return false;
       }
    }
@@ -1291,6 +1382,24 @@ test_count_matching_events_for_client (
    return true;
 }
 
+// `is_keyvault_listcollections` returns true if a `listCollections` event produced by libmongoc should be ignored.
+// The extra events are caused by operations on the key vault collection. Unlike other drivers, libmongoc does not
+// create a separate client for key vault operations.
+static bool
+is_keyvault_listcollections (const bson_t *event)
+{
+   if (!bson_has_field (event, "commandName") || !bson_has_field (event, "databaseName")) {
+      return false;
+   }
+
+   const char *cmdname = bson_lookup_utf8 (event, "commandName");
+   const char *dbname = bson_lookup_utf8 (event, "databaseName");
+   if (cmdname && 0 == strcmp (cmdname, "listCollections") && dbname && 0 == strcmp (dbname, "keyvault")) {
+      return true;
+   }
+   return false;
+}
+
 static bool
 test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for_client, bson_error_t *error)
 {
@@ -1335,6 +1444,10 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    event_t *eiter;
    LL_FOREACH (entity->events, eiter)
    {
+      if (is_keyvault_listcollections (eiter->serialized)) {
+         // Ignore.
+         continue;
+      }
       if (event_matches_eventtype (eiter, event_type)) {
          actual_num_events++;
       }
@@ -1358,8 +1471,11 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
    bson_iter_t iter;
    BSON_FOREACH (expected_events, iter)
    {
-      while (eiter && !event_matches_eventtype (eiter, event_type)) {
+      while (eiter &&
+             (is_keyvault_listcollections (eiter->serialized) || !event_matches_eventtype (eiter, event_type))) {
+         // Skip.
          eiter = eiter->next;
+         continue;
       }
       bson_t expected_event;
       bson_iter_bson (&iter, &expected_event);
@@ -1368,7 +1484,11 @@ test_check_expected_events_for_client (test_t *test, bson_t *expected_events_for
          goto done;
       }
       if (!test_check_event (test, &expected_event, eiter, error)) {
-         test_diagnostics_error_info ("checking for expected event: %s", tmp_json (&expected_event));
+         test_diagnostics_error_info ("could not match event\n"
+                                      "\texpected: %s\n"
+                                      "\tactual: %s",
+                                      tmp_json (&expected_event),
+                                      tmp_json (eiter->serialized));
          goto done;
       }
       eiter = eiter->next;

@@ -413,7 +413,7 @@ result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bso
       }
 
       if (error_contains) {
-         if (strstr (result->error.message, error_contains) == NULL) {
+         if (mongoc_strcasestr (result->error.message, error_contains) == NULL) {
             test_set_error (
                error, "expected error to contain \"%s\", but got: \"%s\"", error_contains, result->error.message);
             goto done;
