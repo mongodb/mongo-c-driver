@@ -42,6 +42,7 @@
 
 #include <bson/bson.h>
 #include <common-b64-private.h>
+#include <common-thread-private.h>
 #include <mlib/config.h>
 #include <mlib/loop.h>
 
@@ -260,27 +261,7 @@ static const uint8_t mongoc_b64rmap_space = 0xfe;
 static const uint8_t mongoc_b64rmap_invalid = 0xff;
 
 /* initializing the reverse map isn't thread safe, do it in pthread_once */
-#if defined(BSON_OS_UNIX)
-#include <pthread.h>
-#define mongoc_common_once_t pthread_once_t
-#define mongoc_common_once(o, c)             \
-   do {                                      \
-      Assert (pthread_once ((o), (c)) == 0); \
-   } while (0)
-#define MONGOC_COMMON_ONCE_FUN(n) void n (void)
-#define MONGOC_COMMON_ONCE_RETURN return
-#define MONGOC_COMMON_ONCE_INIT PTHREAD_ONCE_INIT
-#else
-#define mongoc_common_once_t INIT_ONCE
-#define MONGOC_COMMON_ONCE_INIT INIT_ONCE_STATIC_INIT
-#define mongoc_common_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
-#define MONGOC_COMMON_ONCE_FUN(n)                                                                    \
-   BOOL CALLBACK MLIB_PRAGMA_IF_MSVC (warning (push)) MLIB_PRAGMA_IF_MSVC (warning (disable : 4100)) \
-      n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_PRAGMA_IF_MSVC (warning (pop))
-#define MONGOC_COMMON_ONCE_RETURN return true
-#endif
-
-static MONGOC_COMMON_ONCE_FUN (bson_b64_initialize_rmap)
+static BSON_ONCE_FUN (bson_b64_initialize_rmap)
 {
    /* Null: end of string, stop parsing */
    mongoc_b64rmap[0] = mongoc_b64rmap_end;
@@ -302,7 +283,7 @@ static MONGOC_COMMON_ONCE_FUN (bson_b64_initialize_rmap)
    for (uint8_t i = 0; Base64[i] != '\0'; ++i)
       mongoc_b64rmap[(uint8_t) Base64[i]] = i;
 
-   MONGOC_COMMON_ONCE_RETURN;
+   BSON_ONCE_RETURN;
 }
 
 static int
@@ -517,9 +498,9 @@ mongoc_b64_pton_len (char const *src)
 int
 mcommon_b64_pton (char const *src, uint8_t *target, size_t targsize)
 {
-   static mongoc_common_once_t once = MONGOC_COMMON_ONCE_INIT;
+   static bson_once_t once = BSON_ONCE_INIT;
 
-   mongoc_common_once (&once, bson_b64_initialize_rmap);
+   bson_once (&once, bson_b64_initialize_rmap);
 
    if (!src) {
       return -1;
