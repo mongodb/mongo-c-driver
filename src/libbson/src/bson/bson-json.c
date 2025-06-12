@@ -347,13 +347,17 @@ _noop (void)
       bson->code_data.in_scope = false; \
    } while (0)
 #define STACK_POP_DBPOINTER STACK_POP_DOC (_noop ())
-#define BASIC_CB_PREAMBLE                         \
-   const char *key;                               \
-   size_t len;                                    \
-   bson_json_reader_bson_t *bson = &reader->bson; \
-   _bson_json_read_fixup_key (bson);              \
-   key = bson->key;                               \
-   len = bson->key_buf.len;                       \
+#define BASIC_CB_PREAMBLE                                                                                            \
+   const char *key;                                                                                                  \
+   size_t len;                                                                                                       \
+   bson_json_reader_bson_t *bson = &reader->bson;                                                                    \
+   _bson_json_read_fixup_key (bson);                                                                                 \
+   key = bson->key;                                                                                                  \
+   len = bson->key_buf.len;                                                                                          \
+   if (len > INT_MAX) {                                                                                              \
+      _bson_json_read_set_error (reader, "Failed to read JSON. key size %zu is too large. Max is %d", len, INT_MAX); \
+      return;                                                                                                        \
+   }                                                                                                                 \
    (void) 0
 #define BASIC_CB_BAIL_IF_NOT_NORMAL(_type)                                                                   \
    if (bson->read_state != BSON_JSON_REGULAR) {                                                              \
@@ -622,7 +626,6 @@ _bson_json_read_integer (bson_json_reader_t *reader, uint64_t val, int64_t sign)
 
    if (rs == BSON_JSON_REGULAR) {
       BASIC_CB_BAIL_IF_NOT_NORMAL ("integer");
-      BSON_ASSERT (mlib_in_range (int, len));
 
       if (val <= INT32_MAX || (sign == -1 && val <= (uint64_t) INT32_MAX + 1)) {
          bson_append_int32 (STACK_BSON_CHILD, key, (int) len, (int32_t) ((int64_t) val * sign));
