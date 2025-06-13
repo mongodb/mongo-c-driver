@@ -794,7 +794,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
          const uint8_t *data = bson_get_data (&copy->last_hello_response) + offset;                                  \
          uint32_t len = description->FIELD.len;                                                                      \
          MONGOC_DEBUG_ASSERT (offset + len <= copy->last_hello_response.len);                                        \
-         bson_init_static (&copy->FIELD, data, len);                                                                 \
+         BSON_ASSERT (bson_init_static (&copy->FIELD, data, len));                                                   \
       } else {                                                                                                       \
          bson_init (&copy->FIELD);                                                                                   \
       }                                                                                                              \
