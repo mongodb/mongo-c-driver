@@ -372,7 +372,9 @@ _get_container_info (mongoc_handshake_t *handshake)
    handshake->kubernetes = kubernetes_env;
 
    handshake->docker = false;
-#ifdef _POSIX_VERSION
+#ifdef _WIN32
+   handshake->docker = (_access_s ("C:\\.dockerenv", 0) == 0);
+#else
    handshake->docker = (access ("/.dockerenv", F_OK) == 0);
 #endif
 
