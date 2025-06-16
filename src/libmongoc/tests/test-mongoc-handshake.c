@@ -657,11 +657,8 @@ test_aws_and_container (void *test_ctx)
    bson_t *doc = _get_handshake_document (true);
    _handshake_check_required_fields (doc);
 
-   bson_iter_t iter;
-   ASSERT (bson_iter_init (&iter, doc));
-   ASSERT (bson_iter_find_descendant (&iter, "container.orchestrator", &iter));
-   ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-   ASSERT (strcmp ("kubernetes", bson_iter_utf8 (&iter, NULL)) == 0);
+   ASSERT_CMPSTR (bson_lookup_utf8 (doc, "container.orchestrator"), "kubernetes");
+   ASSERT_CMPSTR (bson_lookup_utf8 (doc, "env.name"), "aws.lambda");
    _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
 
    bson_destroy (doc);
