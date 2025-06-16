@@ -46,9 +46,6 @@ enum mlib_cmp_result {
 /**
  * @brief Compare two integral values safely.
  *
- * NOTE: This macro may evaluate the operand expressions more than once! Do not
- * use expressions that are expensive or have side effects!
- *
  * This function can be called with two arguments or with three:
  *
  * - `mlib_cmp(a, b)` Returns a value of type `mlib_cmp_result`
