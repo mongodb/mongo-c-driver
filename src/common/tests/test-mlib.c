@@ -762,6 +762,29 @@ _test_str_view (void)
       mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo bar baz")));
       mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
    }
+
+   // Splitting around an infix
+   {
+      sv = mlib_cstring ("foo bar baz");
+      mlib_str_view a, b;
+      // Split around the first space
+      const mlib_str_view space = mlib_cstring (" ");
+      mlib_check (mlib_str_split_around (sv, space, &a, &b));
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("bar baz")));
+      // Split again
+      mlib_check (mlib_str_split_around (b, space, &a, &b));
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("bar")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("baz")));
+      // Split again. This won't find a space, but will still do something
+      mlib_check (!mlib_str_split_around (b, space, &a, &b));
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("baz")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      // Splitting on the final empty string does nothign
+      mlib_check (!mlib_str_split_around (b, space, &a, &b));
+      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("")));
+      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+   }
 }
 
 void

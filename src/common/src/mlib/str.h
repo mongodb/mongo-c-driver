@@ -101,9 +101,10 @@ mlib_str_cmp (mlib_str_view a, mlib_str_view b)
    // Use `memcmp`, not `strncmp`: We want to respect nul characters
    int r = memcmp (a.data, b.data, l);
    if (r) {
+      // Not equal: Compare with zero to normalize to the cmp_result value
       return mlib_cmp (r, 0);
    }
-   // Same prefixes, the ordering is now on their length (longer string > shorter string)
+   // Same prefixes, the ordering is now based on their length (longer string > shorter string)
    return mlib_cmp (a.len, b.len);
 }
 
@@ -116,7 +117,7 @@ mlib_str_cmp (mlib_str_view a, mlib_str_view b)
  *
  * @param s The original string view to be inspected
  * @param start The number of `char` to skip in `s`
- * @param len The length of the new string view (optional)
+ * @param len The length of the new string view (optional, default SIZE_MAX)
  *
  * The length of the string view is clamped to the characters available in `s`,
  * so passing a too-large value for `len` is well-defined.
@@ -169,15 +170,12 @@ mlib_str_find (mlib_str_view hay, mlib_str_view const needle, size_t const pos, 
       return SIZE_MAX;
    }
 
-   // Opt: Set the index at which we can stop searching early. This will never
+   // Set the index at which we can stop searching early. This will never
    // overflow, because we guard against hay.len > needle.len
    size_t stop_idx = hay.len - needle.len;
    // Use "<=", because we do want to include the final search position
    for (size_t offset = 0; offset <= stop_idx; ++offset) {
-      // Take a substring the same length as the needle string
-      mlib_str_view part = mlib_substr (hay, offset, needle.len);
-      // If the prefix is good, then we have found the needle:
-      if (mlib_str_cmp (part, ==, needle)) {
+      if (memcmp (hay.data + offset, needle.data, needle.len) == 0) {
          // Return the found position. Adjust by the start pos since we may
          // have trimmed the search window
          return offset + pos;
@@ -241,5 +239,51 @@ mlib_str_split_at (mlib_str_view s, size_t pos, size_t drop, mlib_str_view *pref
 #define _mlib_str_split_at_argc_4(Str, Pos, Prefix, Suffix) _mlib_str_split_at_argc_5 (Str, Pos, 0, Prefix, Suffix)
 #define _mlib_str_split_at_argc_5(Str, Pos, Drop, Prefix, Suffix) \
    mlib_str_split_at (mlib_str_view_from (Str), Pos, Drop, Prefix, Suffix)
+
+/**
+ * @brief Split a string in two around the first occurrence of some infix string.
+ *
+ * @param s The string to be split in twain
+ * @param infix The infix string to be searched for
+ * @param prefix The part of the string that precedes the infix (nullable)
+ * @param suffix The part of the string that follows the infix (nullable)
+ * @return true If the infix was found
+ * @return false Otherwise
+ *
+ * @note If `infix` does not occur in `s`, then `*prefix` will be set equal to `s`,
+ * and `*suffix` will be made an empty string, as if the infix occurred at the end
+ * of the string.
+ */
+static bool
+mlib_str_split_around (mlib_str_view s, mlib_str_view infix, mlib_str_view *prefix, mlib_str_view *suffix)
+{
+   // Find the position of the infix. If it is not found, returns SIZE_MAX
+   const size_t pos = mlib_str_find (s, infix);
+   // Split at the infix, dropping as many characters as are in the infix. If
+   // the `pos` is SIZE_MAX, then this call will clamp to the end of the string.
+   mlib_str_split_at (s, pos, infix.len, prefix, suffix);
+   // Return `true` if we found the infix, indicated by a not-SIZE_MAX `pos`
+   return pos != SIZE_MAX;
+}
+
+#define mlib_str_split_around(Str, Infix, PrefixPtr, SuffixPtr) \
+   mlib_str_split_around (mlib_str_view_from ((Str)), mlib_str_view_from ((Infix)), (PrefixPtr), (SuffixPtr))
+
+/**
+ * @brief Test whether the given string starts with the given prefix
+ *
+ * @param str The string to be tested
+ * @param prefix The prefix to be searched for
+ * @return true if-and-only-if `str` starts with `prefix`
+ * @return false Otherwise
+ */
+static inline bool
+mlib_str_starts_with (mlib_str_view str, mlib_str_view prefix)
+{
+   return mlib_str_find (str, prefix) == 0;
+}
+
+#define mlib_str_starts_with(Str, Prefix) \
+   mlib_str_starts_with (mlib_str_view_from ((Str)), mlib_str_view_from ((Prefix)))
 
 #endif // MLIB_STR_H_INCLUDED
