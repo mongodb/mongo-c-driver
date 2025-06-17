@@ -24,6 +24,7 @@
 #ifndef MLIB_STR_H_INCLUDED
 #define MLIB_STR_H_INCLUDED
 
+#include <mlib/loop.h>
 #include <mlib/cmp.h>
 #include <mlib/test.h>
 #include <mlib/config.h>
@@ -149,7 +150,7 @@ mlib_substr (mlib_str_view s, size_t start, size_t len)
  * @param hay The string which is being scanned
  * @param needle The substring that we are searching to find
  * @param pos The start position of the search (optional, default zero)
- * @param count The number of characters to search in `hay` (optional, default SIZE_MAX)
+ * @param len The number of characters to search in `hay` (optional, default SIZE_MAX)
  * @return size_t If found, the zero-based index of the first occurrence within
  *    the string. If not found, returns `SIZE_MAX`.
  *
@@ -157,7 +158,7 @@ mlib_substr (mlib_str_view s, size_t start, size_t len)
  *
  * - `mlib_str_find(hay, needle)`
  * - `mlib_str_find(hay, needle, pos)`
- * - `mlib_str_find(hay, needle, pos, count)`
+ * - `mlib_str_find(hay, needle, pos, len)`
  */
 static inline size_t
 mlib_str_find (mlib_str_view hay, mlib_str_view const needle, size_t const pos, size_t const len)
@@ -191,6 +192,49 @@ mlib_str_find (mlib_str_view hay, mlib_str_view const needle, size_t const pos, 
 #define _mlib_str_find_argc_3(Hay, Needle, Start) _mlib_str_find_argc_4 (Hay, Needle, Start, SIZE_MAX)
 #define _mlib_str_find_argc_4(Hay, Needle, Start, Stop) \
    mlib_str_find (mlib_str_view_from (Hay), mlib_str_view_from (Needle), Start, Stop)
+
+/**
+ * @brief Find the zero-based index of the first `char` in `hay` that also occurrs in `needles`
+ *
+ * This is different from `find()` because it considers each char in `needles` as an individual
+ * one-character string to be search for in `hay`.
+ *
+ * @param hay The string to be search
+ * @param needles A string containing a set of characters which are searched for in `hay`
+ * @param pos The index at which to begin searching (optional, default is zero)
+ * @param len The number of characters in `hay` to consider before stopping (optional, default is SIZE_MAX)
+ * @return size_t If a needle is found, returns the zero-based index of that first needle.
+ * Otherwise, returns SIZE_MAX
+ *
+ * Callable as:
+ *
+ * - `mlib_str_find_first_of(hay, needles)`
+ * - `mlib_str_find_first_of(hay, needles, pos)`
+ * - `mlib_str_find_first_of(hay, needles, pos, len)`
+ */
+static inline size_t
+mlib_str_find_first_of (mlib_str_view hay, mlib_str_view const needles, size_t const pos, size_t const len)
+{
+   // Trim to fit the search window
+   hay = mlib_substr (hay, pos, len);
+   // We search by incrementing an index
+   mlib_foreach_urange (idx, hay.len) {
+      // Grab a substring of the single char at the current search index
+      mlib_str_view one = mlib_substr (hay, idx, 1);
+      // Test if the single char occurs anywhere in the needle set
+      if (mlib_str_find (needles, one) != SIZE_MAX) {
+         // We found the first index in `hay` where one of the needles occurs. Adjust
+         // by `pos` since we may have trimmed
+         return idx + pos;
+      }
+   }
+   return SIZE_MAX;
+}
+
+#define mlib_str_find_first_of(...) MLIB_ARGC_PICK (_mlib_str_find_first_of, __VA_ARGS__)
+#define _mlib_str_find_first_of_argc_2(Hay, Needle) _mlib_str_find_first_of_argc_3 (Hay, Needle, 0)
+#define _mlib_str_find_first_of_argc_3(Hay, Needle, Pos) _mlib_str_find_first_of_argc_4 (Hay, Needle, Pos, SIZE_MAX)
+#define _mlib_str_find_first_of_argc_4(Hay, Needle, Pos, Len) mlib_str_find_first_of (Hay, Needle, Pos, Len)
 
 /**
  * @brief Split a single string view into two strings at the given position

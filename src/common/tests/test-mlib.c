@@ -737,6 +737,21 @@ _test_str_view (void)
       mlib_check (mlib_str_find (sv, mlib_cstring ("")), eq, 0);
    }
 
+   {
+      // Searching for certain chars
+      mlib_str_view digits = mlib_cstring ("1234567890");
+      // The needle chars never occur, so returns SIZE_MAX
+      mlib_check (mlib_str_find_first_of (mlib_cstring ("foobar"), digits), eq, SIZE_MAX);
+      // `1` at the fourth pos
+      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo1barbaz4"), digits), eq, 3);
+      // `1` at the fourth pos, with a trimmed window:
+      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 3), eq, 3);
+      // `4` is found, since we drop the `1` from the window:
+      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 4), eq, 10);
+      // Empty needles string is never found in any string
+      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo bar baz"), mlib_cstring ("")), eq, SIZE_MAX);
+   }
+
    // Splitting
    {
       sv = mlib_cstring ("foo bar baz");
