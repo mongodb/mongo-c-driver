@@ -1,4 +1,0 @@
-# Chosen not to maintain a symbols file, we'll check ABI stability with other
-# tools.
-libmongoc-1.0-0t64: no-symbols-control-file
-libmongoc-1.0-0t64: package-name-doesnt-match-sonames libmongoc-1.0-0

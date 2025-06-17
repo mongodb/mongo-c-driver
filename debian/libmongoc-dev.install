@@ -1,7 +1,4 @@
-usr/include/libmongoc*
-usr/lib/*/libmongoc-static-[0-9]*.a
-usr/lib/*/libmongoc-[0-9]*.so
-usr/lib/*/pkgconfig/libmongoc-[0-9]*
-usr/lib/*/pkgconfig/libmongoc-ssl-[0-9]*
-usr/lib/*/cmake/libmongoc*
+usr/include/mongoc*
+usr/lib/*/libmongoc*.so
+usr/lib/*/pkgconfig/mongoc*
 usr/lib/*/cmake/mongoc*

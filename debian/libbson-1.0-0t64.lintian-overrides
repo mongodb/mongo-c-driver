@@ -1,4 +1,0 @@
-# Chosen not to maintain a symbols file, we'll check ABI stability with other
-# tools.
-libbson-1.0-0t64: no-symbols-control-file
-libbson-1.0-0t64: package-name-doesnt-match-sonames libbson-1.0-0
