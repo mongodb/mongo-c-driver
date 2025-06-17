@@ -327,10 +327,7 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner, bson_error_
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
-   if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
-      // Not applicable when running as test-atlas-executor.
-      return true;
-   } else if (0 == test_framework_skip_if_no_txns ()) {
+   if (0 == test_framework_skip_if_no_txns ()) {
       ret = true;
       goto done;
    }
@@ -387,9 +384,6 @@ test_runner_new (void)
 {
    bson_error_t error;
 
-   // Avoid executing unnecessary commands when running as test-atlas-executor.
-   const bool is_atlas = test_framework_getenv_bool ("MONGOC_TEST_ATLAS");
-
    test_runner_t *const test_runner = bson_malloc0 (sizeof (test_runner_t));
 
    _mongoc_array_init (&test_runner->server_ids, sizeof (uint32_t));
@@ -400,7 +394,7 @@ test_runner_new (void)
 
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
-      if (!is_atlas && !test_framework_is_loadbalanced ()) {
+      if (!test_framework_is_loadbalanced ()) {
          /* Always use multiple mongoses if speaking to a mongos.
           * Some test operations require communicating with all known mongos */
          if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
@@ -1934,111 +1928,6 @@ done:
    return ret;
 }
 
-static void
-append_size_t (bson_t *doc, const char *key, size_t value)
-{
-   BSON_ASSERT (mlib_in_range (int64_t, value));
-   BSON_ASSERT (BSON_APPEND_INT64 (doc, key, (int64_t) value));
-}
-
-static void
-append_bson_array (bson_t *doc, const char *key, const mongoc_array_t *array)
-{
-   BSON_ASSERT_PARAM (key);
-   BSON_OPTIONAL_PARAM (array);
-
-   if (!array) {
-      bson_t empty = BSON_INITIALIZER;
-      BSON_ASSERT (BSON_APPEND_ARRAY (doc, key, &empty));
-      bson_destroy (&empty);
-   } else {
-      bson_t **const begin = array->data;
-      bson_t **const end = begin + array->len;
-
-      bson_array_builder_t *elements;
-
-      BSON_ASSERT (BSON_APPEND_ARRAY_BUILDER_BEGIN (doc, key, &elements));
-      for (bson_t **iter = begin; iter != end; ++iter) {
-         BSON_ASSERT (bson_array_builder_append_document (elements, *iter));
-      }
-      BSON_ASSERT (bson_append_array_builder_end (doc, elements));
-   }
-}
-
-static bool
-test_generate_atlas_results (test_t *test, bson_error_t *error)
-{
-   BSON_ASSERT_PARAM (test);
-   BSON_ASSERT_PARAM (error);
-
-   // This is only applicable when the unified test runner is being run by
-   // test-atlas-executor. Must be implemented within unified test runner in
-   // order to capture entities before destruction of parent test object.
-   if (!test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
-      return true;
-   }
-
-   MONGOC_DEBUG ("generating events.json and results.json files...");
-
-   size_t *const iterations = entity_map_get_size_t (test->entity_map, "iterations", NULL);
-   size_t *const successes = entity_map_get_size_t (test->entity_map, "successes", NULL);
-   mongoc_array_t *const errors = entity_map_get_bson_array (test->entity_map, "errors", NULL);
-   mongoc_array_t *const failures = entity_map_get_bson_array (test->entity_map, "failures", NULL);
-   mongoc_array_t *const events = entity_map_get_bson_array (test->entity_map, "events", NULL);
-
-   bson_t events_doc = BSON_INITIALIZER;
-   bson_t results_doc = BSON_INITIALIZER;
-
-   append_bson_array (&events_doc, "events", events);
-   append_bson_array (&events_doc, "failures", failures);
-   append_bson_array (&events_doc, "errors", errors);
-
-   append_size_t (&results_doc, "numErrors", errors ? errors->len : 0u);
-   append_size_t (&results_doc, "numFailures", failures ? failures->len : 0u);
-   append_size_t (&results_doc, "numIterations", iterations ? *iterations : 0u);
-   append_size_t (&results_doc, "numSuccesses", successes ? *successes : 0u);
-
-#ifdef WIN32
-   const int perms = _S_IWRITE;
-#else
-   const int perms = S_IRWXU;
-#endif
-
-   mongoc_stream_t *const events_file =
-      mongoc_stream_file_new_for_path ("events.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
-   ASSERT_WITH_MSG (events_file, "could not open events.json");
-
-   mongoc_stream_t *const results_file =
-      mongoc_stream_file_new_for_path ("results.json", O_CREAT | O_WRONLY | O_TRUNC, perms);
-   ASSERT_WITH_MSG (results_file, "could not open results.json");
-
-   size_t events_json_len = 0u;
-   size_t results_json_len = 0u;
-   char *const events_json = bson_as_relaxed_extended_json (&events_doc, &events_json_len);
-   char *const results_json = bson_as_relaxed_extended_json (&results_doc, &results_json_len);
-
-   ASSERT_WITH_MSG (events_json, "failed to convert events BSON document to JSON");
-   ASSERT_WITH_MSG (results_json, "failed to convert results BSON document to JSON");
-
-   ASSERT_WITH_MSG (mongoc_stream_write (events_file, events_json, events_json_len, 500) > 0,
-                    "failed to write events to events.json");
-   ASSERT_WITH_MSG (mongoc_stream_write (results_file, results_json, results_json_len, 500) > 0,
-                    "failed to write results to results.json");
-
-   bson_free (events_json);
-   bson_free (results_json);
-
-   mongoc_stream_destroy (events_file);
-   mongoc_stream_destroy (results_file);
-
-   bson_destroy (&events_doc);
-   bson_destroy (&results_doc);
-
-   MONGOC_DEBUG ("generating events.json and results.json files... done.");
-
-   return true;
-}
-
 static bool
 run_distinct_on_each_mongos (test_t *test, char *db_name, char *coll_name, bson_error_t *error)
 {
@@ -2223,11 +2112,6 @@ test_run (test_t *test, bson_error_t *error)
 
    if (!test_check_outcome (test, error)) {
       test_diagnostics_error_info ("%s", "checking outcome");
-      goto done;
-   }
-
-   if (!test_generate_atlas_results (test, error)) {
-      test_diagnostics_error_info ("%s", "generating Atlas test results");
       goto done;
    }
 
