@@ -35,7 +35,6 @@ override_dh_auto_configure:
 	[ "$(DOCS)" = "ON" ] || echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
 	echo $(DEB_VERSION_UPSTREAM) > VERSION_CURRENT
 	dh_auto_configure -- \
-	-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
 	-DENABLE_MONGOC=ON \
 	-DENABLE_MAN_PAGES=$(DOCS) \
 	-DENABLE_HTML_DOCS=$(DOCS) \
