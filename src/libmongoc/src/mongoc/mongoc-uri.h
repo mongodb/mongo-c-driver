@@ -46,10 +46,8 @@
 #define MONGOC_URI_JOURNAL "journal"
 #define MONGOC_URI_LOADBALANCED "loadbalanced"
 #define MONGOC_URI_LOCALTHRESHOLDMS "localthresholdms"
-#define MONGOC_URI_MAXIDLETIMEMS "maxidletimems"
 #define MONGOC_URI_MAXPOOLSIZE "maxpoolsize"
 #define MONGOC_URI_MAXSTALENESSSECONDS "maxstalenessseconds"
-#define MONGOC_URI_MINPOOLSIZE "minpoolsize"
 #define MONGOC_URI_READCONCERNLEVEL "readconcernlevel"
 #define MONGOC_URI_READPREFERENCE "readpreference"
 #define MONGOC_URI_READPREFERENCETAGS "readpreferencetags"
@@ -60,7 +58,6 @@
 #define MONGOC_URI_SERVERMONITORINGMODE "servermonitoringmode"
 #define MONGOC_URI_SERVERSELECTIONTIMEOUTMS "serverselectiontimeoutms"
 #define MONGOC_URI_SERVERSELECTIONTRYONCE "serverselectiontryonce"
-#define MONGOC_URI_SLAVEOK "slaveok"
 #define MONGOC_URI_SOCKETCHECKINTERVALMS "socketcheckintervalms"
 #define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
 #define MONGOC_URI_SRVSERVICENAME "srvservicename"
@@ -75,7 +72,6 @@
 #define MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK "tlsdisablecertificaterevocationcheck"
 #define MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK "tlsdisableocspendpointcheck"
 #define MONGOC_URI_W "w"
-#define MONGOC_URI_WAITQUEUEMULTIPLE "waitqueuemultiple"
 #define MONGOC_URI_WAITQUEUETIMEOUTMS "waitqueuetimeoutms"
 #define MONGOC_URI_WTIMEOUTMS "wtimeoutms"
 #define MONGOC_URI_ZLIBCOMPRESSIONLEVEL "zlibcompressionlevel"
@@ -96,110 +92,154 @@ typedef struct _mongoc_uri_t mongoc_uri_t;
 
 MONGOC_EXPORT (mongoc_uri_t *)
 mongoc_uri_copy (const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
+
 MONGOC_EXPORT (void)
 mongoc_uri_destroy (mongoc_uri_t *uri);
+
 MONGOC_EXPORT (mongoc_uri_t *)
 mongoc_uri_new (const char *uri_string) BSON_GNUC_WARN_UNUSED_RESULT;
+
 MONGOC_EXPORT (mongoc_uri_t *)
 mongoc_uri_new_with_error (const char *uri_string, bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+
 MONGOC_EXPORT (mongoc_uri_t *)
 mongoc_uri_new_for_host_port (const char *hostname, uint16_t port) BSON_GNUC_WARN_UNUSED_RESULT;
+
 MONGOC_EXPORT (const mongoc_host_list_t *)
 mongoc_uri_get_hosts (const mongoc_uri_t *uri);
-MONGOC_EXPORT (const char *)
-mongoc_uri_get_service (const mongoc_uri_t *uri) BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_srv_hostname);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_srv_service_name (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_database (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_database (mongoc_uri_t *uri, const char *database);
+
 MONGOC_EXPORT (const bson_t *)
 mongoc_uri_get_compressors (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const bson_t *)
 mongoc_uri_get_options (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_password (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_password (mongoc_uri_t *uri, const char *password);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_has_option (const mongoc_uri_t *uri, const char *key);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_int32 (const char *key);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_int64 (const char *key);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_bool (const char *key);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_utf8 (const char *key);
+
 MONGOC_EXPORT (int32_t)
 mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri, const char *option, int32_t fallback);
+
 MONGOC_EXPORT (int64_t)
 mongoc_uri_get_option_as_int64 (const mongoc_uri_t *uri, const char *option, int64_t fallback);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option, bool fallback);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option, const char *fallback);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri, const char *option, int32_t value);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_int64 (mongoc_uri_t *uri, const char *option, int64_t value);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_bool (mongoc_uri_t *uri, const char *option, bool value);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option, const char *value);
-MONGOC_EXPORT (const bson_t *)
-mongoc_uri_get_read_prefs (const mongoc_uri_t *uri) BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_replica_set (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_string (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_username (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_username (mongoc_uri_t *uri, const char *username);
+
 MONGOC_EXPORT (const bson_t *)
 mongoc_uri_get_credentials (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_auth_source (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_appname (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_auth_mechanism (mongoc_uri_t *uri, const char *value);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties);
-MONGOC_EXPORT (bool)
-mongoc_uri_get_ssl (const mongoc_uri_t *uri) BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_tls);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_get_tls (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (char *)
 mongoc_uri_unescape (const char *escaped_string) BSON_GNUC_WARN_UNUSED_RESULT;
+
 MONGOC_EXPORT (const mongoc_read_prefs_t *)
 mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (void)
 mongoc_uri_set_read_prefs_t (mongoc_uri_t *uri, const mongoc_read_prefs_t *prefs);
+
 MONGOC_EXPORT (const mongoc_write_concern_t *)
 mongoc_uri_get_write_concern (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (void)
 mongoc_uri_set_write_concern (mongoc_uri_t *uri, const mongoc_write_concern_t *wc);
+
 MONGOC_EXPORT (const mongoc_read_concern_t *)
 mongoc_uri_get_read_concern (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (void)
 mongoc_uri_set_read_concern (mongoc_uri_t *uri, const mongoc_read_concern_t *rc);
+
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_server_monitoring_mode (const mongoc_uri_t *uri);
+
 MONGOC_EXPORT (bool)
 mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value);
 

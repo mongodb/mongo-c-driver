@@ -16,8 +16,6 @@
 
 #define NUM_IOVECS 2000
 
-#define LOCALHOST "127.0.0.1"
-
 /** this function is meant to be run from ssl_test as a child thread
  *
  * It:
@@ -234,7 +232,7 @@ static BSON_THREAD_FUN (ssl_test_client, ptr)
    wiov.iov_len = 4;
    r = mongoc_stream_writev (ssl_stream, &wiov, 1, TIMEOUT);
 
-   BSON_ASSERT (r == wiov.iov_len);
+   BSON_ASSERT (mlib_cmp (r, ==, wiov.iov_len));
 
    for (i = 0; i < NUM_IOVECS; i++) {
       wiov_many[i].iov_base = (void *) "foo";
@@ -242,7 +240,7 @@ static BSON_THREAD_FUN (ssl_test_client, ptr)
    }
 
    r = mongoc_stream_writev (ssl_stream, wiov_many, NUM_IOVECS, TIMEOUT);
-   BSON_ASSERT (r == wiov_many[0].iov_len * NUM_IOVECS);
+   BSON_ASSERT (mlib_cmp (r, ==, wiov_many[0].iov_len * NUM_IOVECS));
 
    riov.iov_len = 1;
 

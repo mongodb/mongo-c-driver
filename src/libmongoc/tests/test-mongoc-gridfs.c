@@ -13,7 +13,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 
 static mongoc_gridfs_t *
@@ -53,8 +53,7 @@ _check_index (mongoc_collection_t *collection, const char *index_json)
    bson_t index_key;
    int n;
 
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT_OR_PRINT (0 == error.code, error);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
    n = 0;
 
@@ -276,7 +275,7 @@ test_list (void)
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_gridfs_file_list_t *list;
-   bson_t query, child;
+   bson_t query, opts, child;
    char buf[100];
    int i = 0;
 
@@ -288,14 +287,14 @@ test_list (void)
    prep_files (gridfs);
 
    bson_init (&query);
-   bson_append_document_begin (&query, "$orderby", -1, &child);
+   bson_init (&opts);
+   bson_append_document_begin (&opts, "sort", -1, &child);
    bson_append_int32 (&child, "filename", -1, 1);
-   bson_append_document_end (&query, &child);
-   bson_append_document_begin (&query, "$query", -1, &child);
-   bson_append_document_end (&query, &child);
+   bson_append_document_end (&opts, &child);
 
-   list = mongoc_gridfs_find (gridfs, &query);
+   list = mongoc_gridfs_find_with_opts (gridfs, &query, NULL);
 
+   bson_destroy (&opts);
    bson_destroy (&query);
 
    i = 0;
@@ -311,7 +310,7 @@ test_list (void)
 
    bson_init (&query);
    bson_append_utf8 (&query, "filename", -1, "file.1", -1);
-   ASSERT_OR_PRINT (file = mongoc_gridfs_find_one (gridfs, &query, &error), error);
+   ASSERT_OR_PRINT (file = mongoc_gridfs_find_one_with_opts (gridfs, &query, NULL, &error), error);
    bson_destroy (&query);
 
    ASSERT_CMPINT (strcmp (mongoc_gridfs_file_get_filename (file), "file.1"), ==, 0);
@@ -495,7 +494,7 @@ test_properties (void)
 
    ASSERT (mongoc_collection_insert_one (mongoc_gridfs_get_files (gridfs), doc_in, NULL, NULL, NULL));
 
-   list = mongoc_gridfs_find (gridfs, &query);
+   list = mongoc_gridfs_find_with_opts (gridfs, &query, NULL);
    file = mongoc_gridfs_file_list_next (list);
    file_id = mongoc_gridfs_file_get_id (file);
    ASSERT (file_id);
@@ -665,7 +664,7 @@ test_read (void)
 
    BSON_ASSERT (errno == previous_errno);
    BSON_ASSERT (r == 0);
-   BSON_ASSERT (mongoc_gridfs_file_tell (file) == file->length + 20);
+   BSON_ASSERT (mlib_cmp (mongoc_gridfs_file_tell (file), ==, file->length + 20));
 
    mongoc_gridfs_file_destroy (file);
 
@@ -757,11 +756,11 @@ _test_write (bool at_boundary)
 
    /* Test writing beyond the end of the file */
    BSON_ASSERT (mongoc_gridfs_file_seek (file, seek_len, SEEK_END) == 0);
-   BSON_ASSERT (mongoc_gridfs_file_tell (file) == file->length + seek_len);
+   BSON_ASSERT (mlib_cmp (mongoc_gridfs_file_tell (file), ==, file->length + seek_len));
 
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
    BSON_ASSERT (r == len);
-   BSON_ASSERT (mongoc_gridfs_file_tell (file) == 2 * len + seek_len);
+   BSON_ASSERT (mlib_cmp (mongoc_gridfs_file_tell (file), ==, 2 * len + seek_len));
    BSON_ASSERT (file->length == 2 * len + seek_len);
    BSON_ASSERT (mongoc_gridfs_file_save (file));
    _check_chunk_count (gridfs, 2 * len + seek_len, file->chunk_size);
@@ -842,14 +841,14 @@ test_write_past_end (void)
    ASSERT (file);
 
    r = mongoc_gridfs_file_writev (file, iov, 1, 0);
-   ASSERT (mcommon_in_range_signed (size_t, r));
+   ASSERT (mlib_in_range (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, len);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, (int64_t) delta, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, delta);
 
    r = mongoc_gridfs_file_writev (file, iov, 1, 0);
-   ASSERT (mcommon_in_range_signed (size_t, r));
+   ASSERT (mlib_in_range (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, len);
    mongoc_gridfs_file_save (file);
 
@@ -857,17 +856,17 @@ test_write_past_end (void)
       mongoc_collection_count_documents (mongoc_gridfs_get_chunks (gridfs), tmp_bson (NULL), NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (cnt != -1, error);
-   ASSERT (mcommon_cmp_equal_us (expected_chunks, cnt));
+   ASSERT (mlib_cmp (expected_chunks, ==, cnt));
 
    mongoc_gridfs_file_destroy (file);
-   file = mongoc_gridfs_find_one (gridfs, tmp_bson (NULL), &error);
+   file = mongoc_gridfs_find_one_with_opts (gridfs, tmp_bson (NULL), NULL, &error);
    ASSERT_OR_PRINT (file, error);
 
-   BSON_ASSERT (mcommon_in_range_unsigned (size_t, delta + len));
+   BSON_ASSERT (mlib_in_range (size_t, delta + len));
    const size_t total_bytes = (size_t) (delta + len);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, total_bytes, 0);
-   ASSERT (mcommon_in_range_signed (size_t, r));
+   ASSERT (mlib_in_range (size_t, r));
    ASSERT_CMPSIZE_T ((size_t) r, ==, total_bytes);
 
    mongoc_gridfs_file_destroy (file);
@@ -963,7 +962,7 @@ test_stream (void)
 
    stream = mongoc_stream_gridfs_new (file);
 
-   ASSERT (mcommon_in_range_signed (size_t, file->length));
+   ASSERT (mlib_in_range (size_t, file->length));
    const ssize_t r = mongoc_stream_readv (stream, &iov, 1, (size_t) file->length, 0);
    ASSERT_CMPINT64 ((int64_t) r, ==, file->length);
 
@@ -1022,7 +1021,7 @@ test_long_seek (void *ctx)
    /* new file handle */
    mongoc_gridfs_file_save (file);
    mongoc_gridfs_file_destroy (file);
-   file = mongoc_gridfs_find_one (gridfs, tmp_bson ("{'filename': 'filename'}"), &error);
+   file = mongoc_gridfs_find_one_with_opts (gridfs, tmp_bson ("{'filename': 'filename'}"), NULL, &error);
 
    ASSERT_OR_PRINT (file, error);
 
@@ -1307,7 +1306,7 @@ test_set_id (void)
    /* if we find a file with new id, then file_set_id worked */
    ASSERT_OR_PRINT (mongoc_gridfs_file_set_id (file, &id, &error), error);
    ASSERT (mongoc_gridfs_file_save (file));
-   result = mongoc_gridfs_find_one (gridfs, query, &error);
+   result = mongoc_gridfs_find_one_with_opts (gridfs, query, NULL, &error);
    ASSERT_OR_PRINT (result, error);
 
    mongoc_gridfs_file_destroy (result);
@@ -1353,7 +1352,7 @@ test_inherit_client_config (void)
    gridfs = _get_gridfs (server, client, MONGOC_QUERY_NONE);
 
    /* test read prefs and read concern */
-   future = future_gridfs_find_one (gridfs, tmp_bson ("{}"), &error);
+   future = future_gridfs_find_one_with_opts (gridfs, tmp_bson ("{}"), NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"
@@ -1402,17 +1401,18 @@ test_find_one_empty (void)
 {
    mongoc_gridfs_t *gridfs;
    mongoc_client_t *client;
-   bson_error_t error = {1, 2, "hello"};
+   bson_error_t error = {1, 2, "hello", 0};
 
    client = test_framework_new_default_client ();
    gridfs = get_test_gridfs (client, "list", &error);
    ASSERT_OR_PRINT (gridfs, error);
-   ASSERT (!mongoc_gridfs_find_one (gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
+   ASSERT (!mongoc_gridfs_find_one_with_opts (gridfs, tmp_bson ("{'x': 'doesntexist'}"), NULL, &error));
 
    /* ensure "error" is cleared if we successfully find no file */
-   ASSERT_CMPINT (error.domain, ==, 0);
-   ASSERT_CMPINT (error.code, ==, 0);
+   ASSERT_CMPUINT32 (error.domain, ==, 0);
+   ASSERT_CMPUINT32 (error.code, ==, 0);
    ASSERT_CMPSTR (error.message, "");
+   ASSERT_CMPUINT (error.reserved, ==, 0);
 
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
@@ -1518,7 +1518,7 @@ test_reading_multiple_chunks (void)
             ssize_t got =
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
-            ASSERT (mcommon_in_range_int_signed (got));
+            ASSERT (mlib_in_range (int, got));
             mcommon_string_append_printf (&str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 4);
          }
@@ -1528,7 +1528,7 @@ test_reading_multiple_chunks (void)
             ssize_t got =
                mongoc_gridfs_file_readv (file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
             ASSERT_CMPSSIZE_T (got, >=, 0);
-            ASSERT (mcommon_in_range_int_signed (got));
+            ASSERT (mlib_in_range (int, got));
             mcommon_string_append_printf (&str, "%.*s", (int) got, (char *) buf);
             ASSERT_CMPSSIZE_T (got, ==, 3);
          }

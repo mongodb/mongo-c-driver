@@ -26,10 +26,15 @@
 #include <mongoc/mongoc-trace-private.h>
 #include <common-b64-private.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "CYRUS-SASL"
+
+// CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
+#if defined(__APPLE__)
+BEGIN_IGNORE_DEPRECATIONS
+#endif // defined(__APPLE__)
 
 bool
 _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_error_t *error)
@@ -57,13 +62,14 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl, const char *mechanism, bson_e
       bson_free (sasl->credentials.mechanism);
       sasl->credentials.mechanism = mechanism ? bson_strdup (mechanism) : NULL;
    } else {
-      bson_set_error (error,
-                      MONGOC_ERROR_SASL,
-                      SASL_NOMECH,
-                      "SASL Failure: Unsupported mechanism by client: %s. "
-                      "Available mechanisms: %s",
-                      mechanism,
-                      mcommon_str_from_append (&available_mechs_str));
+      _mongoc_set_error_with_category (error,
+                                       MONGOC_ERROR_CATEGORY_SASL,
+                                       MONGOC_ERROR_SASL,
+                                       (uint32_t) SASL_NOMECH,
+                                       "SASL Failure: Unsupported mechanism by client: %s. "
+                                       "Available mechanisms: %s",
+                                       mechanism,
+                                       mcommon_str_from_append (&available_mechs_str));
    }
 
    mcommon_string_from_append_destroy (&available_mechs_str);
@@ -129,52 +135,6 @@ _mongoc_cyrus_get_user (mongoc_cyrus_t *sasl, int param_id, const char **result,
    return (sasl->credentials.user != NULL) ? SASL_OK : SASL_FAIL;
 }
 
-static const char *
-sasl_verify_type_to_str (sasl_verify_type_t type)
-{
-   switch (type) {
-   case SASL_VRFY_PLUGIN:
-      return "SASL_VRFY_PLUGIN";
-   case SASL_VRFY_CONF:
-      return "SASL_VRFY_CONF";
-   case SASL_VRFY_PASSWD:
-      return "SASL_VRFY_PASSWD";
-   case SASL_VRFY_OTHER:
-      return "SASL_VRFY_OTHER";
-   default:
-      return "Unknown";
-   }
-}
-
-int
-_mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t type)
-{
-   BSON_UNUSED (context);
-
-   TRACE ("Attempting to load file: `%s`. Type is %s\n", file, sasl_verify_type_to_str (type));
-
-#ifdef _WIN32
-   // On Windows, Cyrus SASL hard-codes the plugin path.
-   // Only permit loading plugin from user configured path to prevent unintentional library loading.
-   if (type == SASL_VRFY_PLUGIN) {
-      const char *path_prefix = MONGOC_CYRUS_PLUGIN_PATH_PREFIX;
-      bool has_valid_prefix = (path_prefix && file == strstr (file, path_prefix));
-      // Check if `file` has necessary prefix.
-      if (has_valid_prefix) {
-         return SASL_OK;
-      }
-      MONGOC_WARNING ("Refusing to load Cyrus SASL plugin at: '%s'. If needed, set CYRUS_PLUGIN_PATH_PREFIX (currently "
-                      "'%s') to the absolute path prefix of the plugin during build configuration of the C Driver.",
-                      file,
-                      path_prefix ? path_prefix : "(unset)");
-      return SASL_CONTINUE;
-   }
-#endif
-
-   return SASL_OK;
-}
-
-
 void
 _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
 {
@@ -183,7 +143,6 @@ _mongoc_cyrus_init (mongoc_cyrus_t *sasl)
                                   {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_cyrus_get_user), sasl},
                                   {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_cyrus_get_pass), sasl},
                                   {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_cyrus_canon_user), sasl},
-                                  {SASL_CB_VERIFYFILE, SASL_CALLBACK_FN (_mongoc_cyrus_verifyfile_cb), NULL},
                                   {SASL_CB_LIST_END}};
    MC_DISABLE_CAST_FUNCTION_TYPE_STRICT_WARNING_END
 
@@ -274,7 +233,11 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
    if (ret) {
       switch (status) {
       case SASL_NOMEM:
-         bson_set_error (error, MONGOC_ERROR_SASL, status, "SASL Failure: insufficient memory.");
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY_SASL,
+                                          MONGOC_ERROR_SASL,
+                                          (uint32_t) status,
+                                          "SASL Failure: insufficient memory.");
          break;
       case SASL_NOMECH: {
          mcommon_string_append_t available_mechs_str;
@@ -288,23 +251,30 @@ _mongoc_cyrus_is_failure (int status, bson_error_t *error)
                mcommon_string_append (&available_mechs_str, ",");
             }
          }
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         status,
-                         "SASL Failure: failure to negotiate mechanism (available mechanisms: %s)",
-                         mcommon_str_from_append (&available_mechs_str));
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY_SASL,
+                                          MONGOC_ERROR_SASL,
+                                          (uint32_t) status,
+                                          "SASL Failure: failure to negotiate mechanism (available mechanisms: %s)",
+                                          mcommon_str_from_append (&available_mechs_str));
          mcommon_string_from_append_destroy (&available_mechs_str);
       } break;
       case SASL_BADPARAM:
-         bson_set_error (error,
-                         MONGOC_ERROR_SASL,
-                         status,
-                         "Bad parameter supplied. Please file a bug "
-                         "with mongo-c-driver.");
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY_SASL,
+                                          MONGOC_ERROR_SASL,
+                                          (uint32_t) status,
+                                          "Bad parameter supplied. Please file a bug "
+                                          "with mongo-c-driver.");
          break;
       default:
-         bson_set_error (
-            error, MONGOC_ERROR_SASL, status, "SASL Failure: (%d): %s", status, sasl_errstring (status, NULL, NULL));
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY_SASL,
+                                          MONGOC_ERROR_SASL,
+                                          (uint32_t) status,
+                                          "SASL Failure: (%d): %s",
+                                          status,
+                                          sasl_errstring (status, NULL, NULL));
          break;
       }
    }
@@ -348,7 +318,12 @@ _mongoc_cyrus_start (mongoc_cyrus_t *sasl, uint8_t **outbuf, uint32_t *outbuflen
    }
 
    if ((0 != strcasecmp (mechanism, "GSSAPI")) && (0 != strcasecmp (mechanism, "PLAIN"))) {
-      bson_set_error (error, MONGOC_ERROR_SASL, SASL_NOMECH, "SASL Failure: invalid mechanism \"%s\"", mechanism);
+      _mongoc_set_error_with_category (error,
+                                       MONGOC_ERROR_CATEGORY_SASL,
+                                       MONGOC_ERROR_SASL,
+                                       (uint32_t) SASL_NOMECH,
+                                       "SASL Failure: invalid mechanism \"%s\"",
+                                       mechanism);
       return false;
    }
 
@@ -358,11 +333,11 @@ _mongoc_cyrus_start (mongoc_cyrus_t *sasl, uint8_t **outbuf, uint32_t *outbuflen
 
    const int b64_ret = mcommon_b64_ntop ((uint8_t *) raw, raw_len, (char *) *outbuf, outbuf_capacity);
    if (b64_ret < 0) {
-      bson_set_error (
+      _mongoc_set_error (
          error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 encode client SASL message");
       return false;
    } else {
-      BSON_ASSERT (mcommon_in_range_signed (uint32_t, b64_ret));
+      BSON_ASSERT (mlib_in_range (uint32_t, b64_ret));
       *outbuflen = (uint32_t) b64_ret;
    }
 
@@ -395,17 +370,21 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    if (sasl->step == 1) {
       return _mongoc_cyrus_start (sasl, outbuf, outbuflen, error);
    } else if (sasl->step >= 10) {
-      bson_set_error (error, MONGOC_ERROR_SASL, SASL_NOTDONE, "SASL Failure: maximum steps detected");
+      _mongoc_set_error_with_category (error,
+                                       MONGOC_ERROR_CATEGORY_SASL,
+                                       MONGOC_ERROR_SASL,
+                                       (uint32_t) SASL_NOTDONE,
+                                       "SASL Failure: maximum steps detected");
       return false;
    }
 
    TRACE ("Running %d, inbuflen: %" PRIu32, sasl->step, inbuflen);
    if (!inbuflen) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SASL,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "SASL Failure: no payload provided from server: %s",
-                      sasl_errdetail (sasl->conn));
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_SASL,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "SASL Failure: no payload provided from server: %s",
+                         sasl_errdetail (sasl->conn));
       return false;
    }
 
@@ -416,7 +395,7 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    {
       const int b64_ret = mcommon_b64_pton ((char *) inbuf, (uint8_t *) decoded, decoded_capacity);
       if (b64_ret < 0) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 decode client SASL message");
          bson_free (decoded);
          bson_free (*outbuf);
@@ -443,8 +422,11 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    {
       const int b64_ret = mcommon_b64_ntop ((const uint8_t *) raw, rawlen, (char *) *outbuf, outbuf_capacity);
       if (b64_ret < 0) {
-         bson_set_error (
-            error, MONGOC_ERROR_SASL, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Unable to base64 encode client SASL message");
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY,
+                                          MONGOC_ERROR_SASL,
+                                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                                          "Unable to base64 encode client SASL message");
          bson_free (decoded);
          bson_free (*outbuf);
          *outbuf = NULL;
@@ -452,7 +434,7 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
       } else {
          /* Set the output length to the number of characters written excluding
           * the NULL. */
-         BSON_ASSERT (mcommon_in_range_signed (uint32_t, b64_ret));
+         BSON_ASSERT (mlib_in_range (uint32_t, b64_ret));
          *outbuflen = (uint32_t) b64_ret;
       }
    }
@@ -460,5 +442,10 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    bson_free (decoded);
    return true;
 }
+
+// CDRIVER-2722: Cyrus SASL is deprecated on MacOS.
+#if defined(__APPLE__)
+END_IGNORE_DEPRECATIONS
+#endif // defined(__APPLE__)
 
 #endif

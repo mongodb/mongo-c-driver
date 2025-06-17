@@ -32,13 +32,14 @@
 #include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-version.h>
 #include <mongoc/mongoc-util-private.h>
 
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
@@ -117,16 +118,8 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE);
 #endif
 
-#ifdef MONGOC_NO_AUTOMATIC_GLOBALS
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS);
-#endif
-
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES);
-#endif
-
-#ifdef MONGOC_ENABLE_SSL_LIBRESSL
-   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL);
 #endif
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
@@ -313,7 +306,9 @@ _get_os_version (void)
       BSON_ASSERT (req > 0);
       found = true;
    } else {
-      MONGOC_WARNING ("Error with GetVersionEx(): %lu", GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Error with GetVersionEx(): %s", msg);
+      bson_free (msg);
    }
 
 #elif defined(_POSIX_VERSION)
@@ -434,7 +429,7 @@ _get_env_info (mongoc_handshake_t *handshake)
       char *endptr;
       int64_t env_memory_mb = bson_ascii_strtoll (memory_str, &endptr, 10);
       bool parse_ok = endptr == memory_str + (strlen (memory_str));
-      bool in_range = mcommon_in_range_int32_t_signed (env_memory_mb);
+      bool in_range = mlib_in_range (int32_t, env_memory_mb);
 
       if (parse_ok && in_range) {
          handshake->env_memory_mb.set = true;
@@ -445,7 +440,7 @@ _get_env_info (mongoc_handshake_t *handshake)
       char *endptr;
       int64_t env_timeout_sec = bson_ascii_strtoll (timeout_str, &endptr, 10);
       bool parse_ok = endptr == timeout_str + (strlen (timeout_str));
-      bool in_range = mcommon_in_range_int32_t_signed (env_timeout_sec);
+      bool in_range = mlib_in_range (int32_t, env_timeout_sec);
 
       if (parse_ok && in_range) {
          handshake->env_timeout_sec.set = true;
@@ -748,7 +743,7 @@ _append_and_truncate (char **s, const char *suffix, size_t max_len)
    }
 
    const size_t space_for_suffix = max_len - required_space;
-   BSON_ASSERT (mcommon_in_range_unsigned (int, space_for_suffix));
+   BSON_ASSERT (mlib_in_range (int, space_for_suffix));
 
    *s = bson_strdup_printf ("%s / %.*s", prefix, (int) space_for_suffix, suffix);
    BSON_ASSERT (strlen (*s) <= max_len);

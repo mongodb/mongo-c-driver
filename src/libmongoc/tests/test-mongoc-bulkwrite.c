@@ -659,7 +659,7 @@ test_bulkwrite_two_large_inserts (void *unused)
    char *large_string = bson_malloc (large_len + 1);
    memset (large_string, 'a', large_len);
    large_string[large_len] = '\0';
-   ASSERT (mcommon_in_range_unsigned (int, large_len));
+   ASSERT (mlib_in_range (int, large_len));
 
    // Create two large documents:
    bson_t *docs[2];

@@ -15,14 +15,14 @@ Parameters
 ----------
 
 * ``write_concern``: A :symbol:`mongoc_write_concern_t`.
-* ``w``: A positive ``int32_t`` or zero.
+* ``w``: Use ``MONGOC_WRITE_CONCERN_W_DEFAULT``, ``MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED``, ``MONGOC_WRITE_CONCERN_W_MAJORITY``, or a positive integer.
 
 Description
 -----------
 
 Sets the ``w`` value for the write concern. See :symbol:`mongoc_write_concern_t` for more information on this setting.
 
-Unacknowledged writes are not causally consistent. If you execute a write operation with a :symbol:`mongoc_write_concern_t` on which you have called :symbol:`mongoc_write_concern_set_w` with a value of 0, the write does not participate in causal consistency, even when executed with a :symbol:`mongoc_client_session_t`.
+Unacknowledged writes are not causally consistent. If you execute a write operation with a :symbol:`mongoc_write_concern_t` on which you have called :symbol:`mongoc_write_concern_set_w` with a value of ``MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED``, the write does not participate in causal consistency, even when executed with a :symbol:`mongoc_client_session_t`.
 
 Beginning in version 1.9.0, this function can now alter the write concern after
 it has been used in an operation. Previously, using the struct with an operation

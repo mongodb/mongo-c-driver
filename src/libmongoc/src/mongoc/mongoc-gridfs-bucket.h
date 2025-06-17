@@ -79,9 +79,8 @@ MONGOC_EXPORT (bool)
 mongoc_gridfs_bucket_delete_by_id (mongoc_gridfs_bucket_t *bucket, const bson_value_t *file_id, bson_error_t *error);
 
 MONGOC_EXPORT (mongoc_cursor_t *)
-mongoc_gridfs_bucket_find (mongoc_gridfs_bucket_t *bucket,
-                           const bson_t *filter,
-                           const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
+mongoc_gridfs_bucket_find (mongoc_gridfs_bucket_t *bucket, const bson_t *filter, const bson_t *opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (bool)
 mongoc_gridfs_bucket_stream_error (mongoc_stream_t *stream, bson_error_t *error);

@@ -31,7 +31,7 @@ def func(func_name: str, **kwargs: Value) -> MutableValueMapping:
 
 def s3_put(remote_file: str, project_path: bool = True, **kwargs: Value) -> ValueMapping:
     if project_path:
-        remote_file = "mongo-c-driver/" + remote_file
+        remote_file = "${project}/" + remote_file
 
     return ValueOrderedDict(
         [

@@ -24,7 +24,7 @@
 #include <mongoc/mongoc-stream-file.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-counters-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 /*
  * TODO: This does not respect timeouts or set O_NONBLOCK.
@@ -132,7 +132,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
       ENTRY;
 
       for (size_t i = 0u; i < iovcnt; i++) {
-         BSON_ASSERT (mcommon_in_range_unsigned (unsigned_int, iov[i].iov_len));
+         BSON_ASSERT (mlib_in_range (unsigned int, iov[i].iov_len));
          const int nread = _read (file->fd, iov[i].iov_base, (unsigned int) iov[i].iov_len);
          if (nread < 0) {
             ret = ret ? ret : -1;
@@ -142,7 +142,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
             GOTO (done);
          } else {
             ret += nread;
-            if (nread != iov[i].iov_len) {
+            if ((size_t) nread != iov[i].iov_len) {
                ret = ret ? ret : -1;
                GOTO (done);
             }
@@ -154,7 +154,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
 #else
    {
       ENTRY;
-      BSON_ASSERT (mcommon_in_range_unsigned (int, iovcnt));
+      BSON_ASSERT (mlib_in_range (int, iovcnt));
       ret = readv (file->fd, iov, (int) iovcnt);
       GOTO (done);
    }
@@ -181,9 +181,9 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
 #ifdef _WIN32
    {
       for (size_t i = 0; i < iovcnt; i++) {
-         BSON_ASSERT (mcommon_in_range_unsigned (unsigned_int, iov[i].iov_len));
+         BSON_ASSERT (mlib_in_range (unsigned int, iov[i].iov_len));
          const int nwrite = _write (file->fd, iov[i].iov_base, (unsigned int) iov[i].iov_len);
-         if (mcommon_cmp_not_equal_su (nwrite, iov[i].iov_len)) {
+         if (mlib_cmp (nwrite, !=, iov[i].iov_len)) {
             ret = ret ? ret : -1;
             goto done;
          }
@@ -193,7 +193,7 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
    }
 #else
    {
-      BSON_ASSERT (mcommon_in_range_unsigned (int, iovcnt));
+      BSON_ASSERT (mlib_in_range (int, iovcnt));
       ret = writev (file->fd, iov, (int) iovcnt);
       goto done;
    }

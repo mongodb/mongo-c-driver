@@ -122,20 +122,67 @@ Authentication Options
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_AUTHMECHANISM                   authmechanism                     Specifies the mechanism to use when authenticating as the provided user. See `Authentication <authentication_>`_ for supported values.
-MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Certain authentication mechanisms have additional options that can be configured. These options should be provided as comma separated option_key:option_value pair and provided as authMechanismProperties. Specifying the same option_key multiple times has undefined behavior.
-MONGOC_URI_AUTHSOURCE                      authsource                        The authSource defines the database that should be used to authenticate to. It is unnecessary to provide this option the database name is the same as the database used in the URI.
+MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Additional properties for the specified mechanism using key-value pair format, e.g. ``key1:value1,key2:value2``.
+MONGOC_URI_AUTHSOURCE                      authsource                        The name of the database to which authentication commands are sent or ``$external`` depending on the specified mechanism. Overrides the auth database in the URI when applicable.
 ========================================== ================================= =========================================================================================================================================================================================================================
+
+.. _authentication_mechanism_properties:
 
 Mechanism Properties
 ~~~~~~~~~~~~~~~~~~~~
 
-========================================== ================================= =========================================================================================================================================================================================================================
-Constant                                   Key                               Description
-========================================== ================================= =========================================================================================================================================================================================================================
-MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              Use the canonical hostname of the service, rather than its configured alias, when authenticating with Cyrus-SASL Kerberos.
-MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 Use alternative service name. The default is ``mongodb``.
-========================================== ================================= =========================================================================================================================================================================================================================
+The following properties may be specified as key-value pairs for the ``MONGOC_URI_AUTHMECHANISMPROPERTIES`` option.
 
+Invalid or unsupported properties may be reported as a client error when a corresponding authentication mechanism is also specified.
+
+MONGODB-OIDC
+^^^^^^^^^^^^
+
+============== =========================================================================================
+Key            Value
+============== =========================================================================================
+ENVIRONMENT    The name of a built-in OIDC provider integration. Must be one of ["azure", "gcp", "k8s"].
+TOKEN_RESOURCE The URI of the target resource. ``ENVIRONMENT`` must be one of ["azure", "gcp"].
+============== =========================================================================================
+
+.. warning::
+
+  A ``TOKEN_RESOURCE`` property value MUST NOT contain the comma character "," when specified as a connection string query option, even when percent-encoded.
+  A value containing a comma character may be set using :symbol:`mongoc_uri_set_mechanism_properties()` instead.
+  However, the value MAY contain the colon character ":", as only the first colon is interpreted as a key-value delimiter.
+
+GSSAPI
+^^^^^^
+
+====================== ===================================================================================================================================================================================================================================
+Key                    Value
+====================== ===================================================================================================================================================================================================================================
+SERVICE_NAME           Optional. Defaults to "mongodb".
+CANONICALIZE_HOST_NAME Optional. Must be one of ["false", "true"]. "false" performs no canonicalization (aka "none"). "true" performs a forward DNS lookup and then a reverse lookup on that value to canonicalize the hostname (aka "forwardAndReverse").
+SERVICE_REALM          Optional. May be needed for cross-realm authentication where the user and service exist in different realms.
+SERVICE_HOST           Optional. May be needed to use a service host that differs from the initial role.
+====================== ===================================================================================================================================================================================================================================
+
+MONGODB-AWS
+^^^^^^^^^^^
+
+================= ====================================================================================
+Key               Value
+================= ====================================================================================
+AWS_SESSION_TOKEN Optional. An AWS session token to use for authentication with temporary credentials.
+================= ====================================================================================
+
+Deprecated Mechanism Property Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following options have been deprecated and may be removed from future releases of libmongoc.
+
+========================================== ================================= ==================================================================== =======================
+Constant                                   Key                               Deprecated For                                                       Key
+========================================== ================================= ==================================================================== =======================
+MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              MONGOC_URI_AUTHMECHANISMPROPERTIES (CANONICALIZE_HOST_NAME)          authmechanismproperties
+MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 MONGOC_URI_AUTHMECHANISMPROPERTIES (SERVICE_NAME)                    authmechanismproperties
+========================================== ================================= ==================================================================== =======================
 
 .. _tls_options:
 
@@ -201,9 +248,6 @@ These options govern the behavior of a :symbol:`mongoc_client_pool_t`. They are 
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_MAXPOOLSIZE                     maxpoolsize                       The maximum number of clients created by a :symbol:`mongoc_client_pool_t` total (both in the pool and checked out). The default value is 100. Once it is reached, :symbol:`mongoc_client_pool_pop` blocks until another thread pushes a client.
-MONGOC_URI_MINPOOLSIZE                     minpoolsize                       Deprecated. This option's behavior does not match its name, and its actual behavior will likely hurt performance.
-MONGOC_URI_MAXIDLETIMEMS                   maxidletimems                     Not implemented.
-MONGOC_URI_WAITQUEUEMULTIPLE               waitqueuemultiple                 Not implemented.
 MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                The maximum time to wait for a client to become available from the pool.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
@@ -305,12 +349,9 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_get_options
     mongoc_uri_get_password
     mongoc_uri_get_read_concern
-    mongoc_uri_get_read_prefs
     mongoc_uri_get_read_prefs_t
     mongoc_uri_get_replica_set
     mongoc_uri_get_server_monitoring_mode
-    mongoc_uri_get_service
-    mongoc_uri_get_ssl
     mongoc_uri_get_string
     mongoc_uri_get_srv_hostname
     mongoc_uri_get_srv_service_name

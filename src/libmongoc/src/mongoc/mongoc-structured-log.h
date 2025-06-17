@@ -48,7 +48,7 @@ typedef struct mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 
 typedef struct mongoc_structured_log_opts_t mongoc_structured_log_opts_t;
 
-typedef void (*mongoc_structured_log_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
+typedef void (BSON_CALL *mongoc_structured_log_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
 
 MONGOC_EXPORT (mongoc_structured_log_opts_t *)
 mongoc_structured_log_opts_new (void);

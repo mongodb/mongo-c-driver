@@ -996,7 +996,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, &next_doc), err);
 
    raw_cursor = stream->cursor;
-   ASSERT (first_cursor_id != mongoc_cursor_get_id (raw_cursor));
+   ASSERT (mlib_cmp (first_cursor_id, !=, mongoc_cursor_get_id (raw_cursor)));
    ASSERT (test_framework_server_is_secondary (client, raw_cursor->server_id));
 
    mongoc_read_prefs_destroy (prefs);
@@ -2120,6 +2120,132 @@ prose_test_18 (void)
    mock_server_destroy (server);
 }
 
+typedef struct {
+   bson_t *commands[6];
+   size_t commands_len;
+   bson_t *replies[6];
+   size_t replies_len;
+} test_events_t;
+
+static void
+test_events_started_cb (const mongoc_apm_command_started_t *e)
+{
+   test_events_t *te = mongoc_apm_command_started_get_context (e);
+   ASSERT_CMPSIZE_T (te->commands_len, <, sizeof (te->commands) / sizeof (te->commands[0]));
+   te->commands[te->commands_len++] = bson_copy (mongoc_apm_command_started_get_command (e));
+}
+
+static void
+test_events_succeeded_cb (const mongoc_apm_command_succeeded_t *e)
+{
+   test_events_t *te = mongoc_apm_command_succeeded_get_context (e);
+   ASSERT_CMPSIZE_T (te->replies_len, <, sizeof (te->replies) / sizeof (te->replies[0]));
+   te->replies[te->replies_len++] = bson_copy (mongoc_apm_command_succeeded_get_reply (e));
+}
+
+// Test that batchSize:0 is applied to the `aggregate` command.
+static void
+test_change_stream_batchSize0 (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+
+   bson_error_t error;
+
+   // Create a change stream. Capture a resume token. Insert documents to create future events.
+   bson_t *resumeToken;
+   {
+      mongoc_client_t *client = test_framework_new_default_client ();
+      mongoc_collection_t *coll = drop_and_get_coll (client, "db", "coll");
+      // Insert with majority write concern to ensure documents are visible to change stream.
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+         mongoc_collection_set_write_concern (coll, wc);
+         mongoc_write_concern_destroy (wc);
+      }
+      mongoc_change_stream_t *cs = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
+      resumeToken = bson_copy (mongoc_change_stream_get_resume_token (cs));
+      // Insert documents to create future events.
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 1}"), NULL, NULL, &error), error);
+      ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 2}"), NULL, NULL, &error), error);
+      mongoc_change_stream_destroy (cs);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+   }
+
+
+   // Create another change stream with the resumeToken and batchSize:0.
+   test_events_t te = {.commands_len = 0, .replies_len = 0};
+   {
+      mongoc_client_t *client = test_framework_new_default_client ();
+      // Capture events.
+      {
+         mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new ();
+         mongoc_apm_set_command_started_cb (cbs, test_events_started_cb);
+         mongoc_apm_set_command_succeeded_cb (cbs, test_events_succeeded_cb);
+         ASSERT (mongoc_client_set_apm_callbacks (client, cbs, &te));
+         mongoc_apm_callbacks_destroy (cbs);
+      }
+      mongoc_collection_t *coll = mongoc_client_get_collection (client, "db", "coll");
+      // Iterate change stream.
+      {
+         bson_t *opts = BCON_NEW ("resumeAfter", BCON_DOCUMENT (resumeToken), "batchSize", BCON_INT32 (0));
+         mongoc_change_stream_t *cs = mongoc_collection_watch (coll, tmp_bson ("{}"), opts);
+         const bson_t *ignored;
+         while (mongoc_change_stream_next (cs, &ignored))
+            ;
+         ASSERT_OR_PRINT (!mongoc_change_stream_error_document (cs, &error, NULL), error);
+         bson_destroy (opts);
+         mongoc_change_stream_destroy (cs);
+      }
+      mongoc_collection_destroy (coll);
+
+      // Check captured events.
+      {
+         // Expect aggregate is sent with `batchSize:0`
+         ASSERT (te.commands[0]);
+         ASSERT_MATCH (te.commands[0], BSON_STR ({"aggregate" : "coll", "cursor" : {"batchSize" : 0}}));
+         // Expect reply has no documents.
+         ASSERT (te.replies[0]);
+         ASSERT_MATCH (te.replies[0], BSON_STR ({"cursor" : {"firstBatch" : []}}));
+
+         // Expect getMore is sent without `batchSize`
+         ASSERT (te.commands[1]);
+         ASSERT_MATCH (te.commands[1], BSON_STR ({"getMore" : {"$$type" : "long"}, "batchSize" : {"$exists" : false}}));
+         // Expect reply has both documents.
+         ASSERT (te.replies[1]);
+         ASSERT_MATCH (
+            te.replies[1],
+            BSON_STR ({"cursor" : {"nextBatch" : [ {"operationType" : "insert"}, {"operationType" : "insert"} ]}}));
+
+         // Expect another getMore is sent without `batchSize`
+         ASSERT (te.commands[2]);
+         ASSERT_MATCH (te.commands[2], BSON_STR ({"getMore" : {"$$type" : "long"}, "batchSize" : {"$exists" : false}}));
+         // Expect reply has no more documents
+         ASSERT (te.replies[2]);
+         ASSERT_MATCH (te.replies[2], BSON_STR ({"cursor" : {"nextBatch" : []}}));
+
+         // Expect killCursors is sent to kill server-side cursor.
+         ASSERT (te.commands[3]);
+         ASSERT_MATCH (te.commands[3], BSON_STR ({"killCursors" : "coll"}));
+         ASSERT (te.replies[3]);
+         ASSERT_MATCH (te.replies[3], BSON_STR ({"ok" : 1}));
+
+         ASSERT (!te.commands[4]);
+         ASSERT (!te.replies[4]);
+      }
+      mongoc_client_destroy (client);
+   }
+
+   bson_destroy (resumeToken);
+   for (size_t i = 0; i < te.commands_len; i++) {
+      bson_destroy (te.commands[i]);
+   }
+   for (size_t i = 0; i < te.replies_len; i++) {
+      bson_destroy (te.replies[i]);
+   }
+}
+
 
 void
 test_change_stream_install (TestSuite *suite)
@@ -2263,4 +2389,10 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_not_rs_version_7);
    TestSuite_AddMockServerTest (suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest (suite, "/change_streams/prose_test_18", prose_test_18);
+   TestSuite_AddFull (suite,
+                      "/change_stream/batchSize0",
+                      test_change_stream_batchSize0,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset);
 }

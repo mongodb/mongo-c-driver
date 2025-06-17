@@ -39,7 +39,7 @@ class UploadDocs(Function):
                 "AWS_ACCESS_KEY_ID": "${aws_key}",
                 "AWS_SECRET_ACCESS_KEY": "${aws_secret}",
             },
-            script="aws s3 cp doc/html s3://mciuploads/mongo-c-driver/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1",
+            script="aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1",
         ),
         s3_put(
             aws_key="${aws_key}",
@@ -49,7 +49,7 @@ class UploadDocs(Function):
             display_name="libbson docs",
             local_file="mongoc/_build/for-docs/src/libbson/doc/html/index.html",
             permissions="public-read",
-            remote_file="mongo-c-driver/docs/libbson/${CURRENT_VERSION}/index.html",
+            remote_file="${project}/docs/libbson/${CURRENT_VERSION}/index.html",
         ),
         bash_exec(
             working_dir="mongoc/_build/for-docs/src/libmongoc",
@@ -57,7 +57,7 @@ class UploadDocs(Function):
                 "AWS_ACCESS_KEY_ID": "${aws_key}",
                 "AWS_SECRET_ACCESS_KEY": "${aws_secret}",
             },
-            script="aws s3 cp doc/html s3://mciuploads/mongo-c-driver/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1",
+            script="aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1",
         ),
         s3_put(
             aws_key="${aws_key}",
@@ -67,7 +67,7 @@ class UploadDocs(Function):
             display_name="libmongoc docs",
             local_file="mongoc/_build/for-docs/src/libmongoc/doc/html/index.html",
             permissions="public-read",
-            remote_file="mongo-c-driver/docs/libmongoc/${CURRENT_VERSION}/index.html",
+            remote_file="${project}/docs/libmongoc/${CURRENT_VERSION}/index.html",
         ),
     ]
 
@@ -102,7 +102,7 @@ class UploadManPages(Function):
             display_name="libbson man pages",
             local_file="mongoc/bson-man-pages.html",
             permissions="public-read",
-            remote_file="mongo-c-driver/man-pages/libbson/${CURRENT_VERSION}/index.html",
+            remote_file="${project}/man-pages/libbson/${CURRENT_VERSION}/index.html",
         ),
         s3_put(
             aws_key="${aws_key}",
@@ -112,7 +112,7 @@ class UploadManPages(Function):
             display_name="libmongoc man pages",
             local_file="mongoc/mongoc-man-pages.html",
             permissions="public-read",
-            remote_file="mongo-c-driver/man-pages/libmongoc/${CURRENT_VERSION}/index.html",
+            remote_file="${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html",
         ),
     ]
 

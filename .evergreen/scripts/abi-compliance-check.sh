@@ -19,8 +19,11 @@ declare current base
 current="$(cat VERSION_CURRENT)-${today:?}+git${head_commit:?}" # e.g. 2.3.4-dev
 base=$(cat etc/prior_version.txt)                               # e.g. 1.2.3
 
+current_verdir="$(echo "${current:?}" | perl -lne 'm|^(\d+\.\d+\.\d+).*$|; print $1')" # Strip any suffixes.
+base_verdir="${base:?}"
+
 # Double-check we are testing against the same API major version.
-if [[ "${base:?}" != 1.* ]]; then
+if [[ "${base_verdir:?}" != 2.* ]]; then
   echo "API major version mismatch: base version is ${base:?} but current version is ${current:?}" >&2
   exit 1
 fi
@@ -68,13 +71,13 @@ cat >|old.xml <<DOC
 </libs>
 
 <add_include_paths>
-  $(pwd)/base-install/include/libbson-1.0/
-  $(pwd)/base-install/include/libmongoc-1.0/
+  $(pwd)/base-install/include/bson-${base_verdir:?}/
+  $(pwd)/base-install/include/mongoc-${base_verdir:?}/
 </add_include_paths>
 
 <headers>
-  $(pwd)/base-install/include/libbson-1.0/bson/bson.h
-  $(pwd)/base-install/include/libmongoc-1.0/mongoc/mongoc.h
+  $(pwd)/base-install/include/bson-${base_verdir:?}/bson/bson.h
+  $(pwd)/base-install/include/mongoc-${base_verdir:?}/mongoc/mongoc.h
 </headers>
 DOC
 
@@ -88,16 +91,17 @@ cat >|new.xml <<DOC
 </libs>
 
 <add_include_paths>
-  $(pwd)/current-install/include/libbson-1.0/
-  $(pwd)/current-install/include/libmongoc-1.0/
+  $(pwd)/current-install/include/bson-${current_verdir:?}/
+  $(pwd)/current-install/include/mongoc-${current_verdir:?}/
 </add_include_paths>
 
 <headers>
-  $(pwd)/current-install/include/libbson-1.0/bson/bson.h
-  $(pwd)/current-install/include/libmongoc-1.0/mongoc/mongoc.h
+  $(pwd)/current-install/include/bson-${current_verdir:?}/bson/bson.h
+  $(pwd)/current-install/include/mongoc-${current_verdir:?}/mongoc/mongoc.h
 </headers>
 DOC
 
+# Allow task to upload the HTML report despite failed status.
 if ! abi-compliance-checker -lib mongo-c-driver -old old.xml -new new.xml; then
   find . -name log.txt -exec cat {} + >&2 || true
   declare status

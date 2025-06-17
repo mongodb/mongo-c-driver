@@ -16,8 +16,9 @@
 
 #include <mongoc/mcd-azure.h>
 
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #define AZURE_API_VERSION "2018-02-01"
 
@@ -103,12 +104,12 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    const char *const expires_in_str = !found ? NULL : bson_iter_utf8 (&iter, &expires_in_len);
 
    if (!(access_token && resource && token_type && expires_in_str)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_AZURE,
-                      MONGOC_ERROR_KMS_SERVER_BAD_JSON,
-                      "One or more required JSON properties are missing/invalid: data: %.*s",
-                      len,
-                      json);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_AZURE,
+                         MONGOC_ERROR_KMS_SERVER_BAD_JSON,
+                         "One or more required JSON properties are missing/invalid: data: %.*s",
+                         len,
+                         json);
    } else {
       // Set the output, duplicate each string
       *out = (mcd_azure_access_token){
@@ -123,12 +124,12 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
       long long s = strtoll (expires_in_str, &parse_end, 0);
       if (parse_end != expires_in_str + expires_in_len) {
          // Did not parse the entire string. Bad
-         bson_set_error (error,
-                         MONGOC_ERROR_AZURE,
-                         MONGOC_ERROR_KMS_SERVER_BAD_JSON,
-                         "Invalid 'expires_in' string \"%.*s\" from IMDS server",
-                         mcommon_in_range_unsigned (int, expires_in_len) ? (int) expires_in_len : INT_MAX,
-                         expires_in_str);
+         _mongoc_set_error (error,
+                            MONGOC_ERROR_AZURE,
+                            MONGOC_ERROR_KMS_SERVER_BAD_JSON,
+                            "Invalid 'expires_in' string \"%.*s\" from IMDS server",
+                            mlib_in_range (int, expires_in_len) ? (int) expires_in_len : INT_MAX,
+                            expires_in_str);
       } else {
          out->expires_in = mcd_seconds (s);
          okay = true;
@@ -178,13 +179,13 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
 
    // We only accept an HTTP 200 as a success
    if (resp.status != 200) {
-      bson_set_error (error,
-                      MONGOC_ERROR_AZURE,
-                      MONGOC_ERROR_KMS_SERVER_HTTP,
-                      "Error from Azure IMDS server while looking for "
-                      "Managed Identity access token: %.*s",
-                      resp.body_len,
-                      resp.body);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_AZURE,
+                         MONGOC_ERROR_KMS_SERVER_HTTP,
+                         "Error from Azure IMDS server while looking for "
+                         "Managed Identity access token: %.*s",
+                         resp.body_len,
+                         resp.body);
       goto fail;
    }
 

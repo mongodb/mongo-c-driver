@@ -1,11 +1,11 @@
 --- mongo-c-driver.spec.orig	2025-02-28 17:04:19.401176260 -0500
-+++ mongo-c-driver.spec	2025-02-28 17:11:06.028378742 -0500
++++ mongo-c-driver.spec	2025-02-28 17:05:52.190076172 -0500
 @@ -10,7 +10,7 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
  %global libver       1.0
 -%global up_version   1.30.2
-+%global up_version   1.30.3
++%global up_version   1.31.0
  #global up_prever    rc0
  # disabled as require a MongoDB server
  %bcond_with          tests

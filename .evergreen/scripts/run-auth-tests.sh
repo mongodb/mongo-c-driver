@@ -27,11 +27,9 @@ chmod 700 "${secrets_dir}"
 # Create certificate to test X509 auth with Atlas:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
 echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
-# On Windows, convert certificate to PKCS#1 to work around CDRIVER-4269:
+# Fix path on Windows:
 if $IS_WINDOWS; then
-    openssl pkey -in "${secrets_dir:?}/atlas_x509.pem" -traditional > "${secrets_dir:?}/atlas_x509_pkcs1.pem"
-    openssl x509 -in "${secrets_dir:?}/atlas_x509.pem" >> "${secrets_dir:?}/atlas_x509_pkcs1.pem"
-    atlas_x509_path="$(cygpath -m "${secrets_dir:?}/atlas_x509_pkcs1.pem")"
+    atlas_x509_path="$(cygpath -m "${secrets_dir:?}/atlas_x509.pem")"
 fi
 
 # Create Kerberos config and keytab files.
@@ -98,7 +96,7 @@ esac
 
 # Archlinux (which we use for testing various self-installed OpenSSL versions)
 # stores their trust list under /etc/ca-certificates/extracted/.
-# We need to copy it to our custom installed OpenSSL/LibreSSL trust store.
+# We need to copy it to our custom installed OpenSSL trust store.
 declare pem_file="/etc/ca-certificates/extracted/tls-ca-bundle.pem"
 if [[ -f "${pem_file}" ]]; then
   [[ ! -d "${install_dir}" ]] || cp -v "${pem_file}" "${install_dir}/cert.pem"

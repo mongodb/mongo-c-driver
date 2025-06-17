@@ -20,13 +20,11 @@
 #define MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
 
 #include <bson/bson.h>
+#include <mlib/cmp.h>
 #include <string.h>
-#include <common-cmp-private.h>
 
 
-/* Until the deprecated bson_string_t is removed, this must have the same members in the same order, so we can safely
- * cast between the two types. Afterward, we are free to modify the memory layout as needed.
- *
+/*
  * In mcommon_string_t, 'str' is guaranteed to be NUL terminated and SHOULD be valid UTF-8. mcommon_string_t operations
  * MUST maintain the validity of valid UTF-8 strings.
  *
@@ -111,7 +109,7 @@ mcommon_string_new (const char *str)
 {
    BSON_ASSERT_PARAM (str);
    size_t length = strlen (str);
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, length) && (uint32_t) length < UINT32_MAX);
+   BSON_ASSERT (mlib_in_range (uint32_t, length) && (uint32_t) length < UINT32_MAX);
    return mcommon_string_new_with_capacity (str, (uint32_t) length, 0);
 }
 
@@ -181,7 +179,7 @@ mcommon_string_starts_with_str (const mcommon_string_t *string, const char *subs
    size_t substring_len = strlen (substring);
    uint32_t string_len = string->len;
 
-   if (mcommon_in_range_unsigned (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
+   if (mlib_in_range (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
       return 0 == memcmp (string->str, substring, substring_len);
    } else {
       return false;
@@ -202,7 +200,7 @@ mcommon_string_ends_with_str (const mcommon_string_t *string, const char *substr
    size_t substring_len = strlen (substring);
    uint32_t string_len = string->len;
 
-   if (mcommon_in_range_unsigned (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
+   if (mlib_in_range (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
       uint32_t offset = string_len - (uint32_t) substring_len;
       return 0 == memcmp (string->str + offset, substring, substring_len);
    } else {

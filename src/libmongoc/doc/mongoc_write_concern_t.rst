@@ -14,11 +14,8 @@ You can specify a write concern on connection objects, database objects, collect
 
 Exceptions to this principle are the generic command functions:
 
-* :symbol:`mongoc_client_command`
 * :symbol:`mongoc_client_command_simple`
-* :symbol:`mongoc_database_command`
 * :symbol:`mongoc_database_command_simple`
-* :symbol:`mongoc_collection_command`
 * :symbol:`mongoc_collection_command_simple`
 
 These generic command functions do not automatically apply a write concern, and they do not check the server response for a write concern error or write concern timeout.
@@ -37,13 +34,6 @@ MONGOC_WRITE_CONCERN_W_MAJORITY (majority)  Block until a write has been propaga
 n                                           Block until a write has been propagated to at least ``n`` nodes in the replica set.
 ==========================================  ===============================================================================================================================================================================================================
 
-Deprecations
-------------
-
-The write concern ``MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED`` (value -1) is a deprecated synonym for ``MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED`` (value 0), and will be removed in the next major release.
-
-:symbol:`mongoc_write_concern_set_fsync` is deprecated.
-
 .. only:: html
 
   Functions
@@ -56,7 +46,6 @@ The write concern ``MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED`` (value -1) is a depr
     mongoc_write_concern_append
     mongoc_write_concern_copy
     mongoc_write_concern_destroy
-    mongoc_write_concern_get_fsync
     mongoc_write_concern_get_journal
     mongoc_write_concern_get_w
     mongoc_write_concern_get_wmajority
@@ -68,7 +57,6 @@ The write concern ``MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED`` (value -1) is a depr
     mongoc_write_concern_is_valid
     mongoc_write_concern_journal_is_set
     mongoc_write_concern_new
-    mongoc_write_concern_set_fsync
     mongoc_write_concern_set_journal
     mongoc_write_concern_set_w
     mongoc_write_concern_set_wmajority

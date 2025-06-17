@@ -21,11 +21,9 @@
 #include <mongoc/mongoc-async-cmd-private.h>
 #include <mongoc/utlist.h>
 #include <mongoc/mongoc.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-util-private.h>
-
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "async"
 
 
 mongoc_async_t *
@@ -134,15 +132,15 @@ mongoc_async_run (mongoc_async_t *async)
             if (poller[i].revents & (POLLERR | POLLHUP)) {
                int hup = poller[i].revents & POLLHUP;
                if (iter->state == MONGOC_ASYNC_CMD_SEND) {
-                  bson_set_error (&iter->error,
-                                  MONGOC_ERROR_STREAM,
-                                  MONGOC_ERROR_STREAM_CONNECT,
-                                  hup ? "connection refused" : "unknown connection error");
+                  _mongoc_set_error (&iter->error,
+                                     MONGOC_ERROR_STREAM,
+                                     MONGOC_ERROR_STREAM_CONNECT,
+                                     hup ? "connection refused" : "unknown connection error");
                } else {
-                  bson_set_error (&iter->error,
-                                  MONGOC_ERROR_STREAM,
-                                  MONGOC_ERROR_STREAM_SOCKET,
-                                  hup ? "connection closed" : "unknown socket error");
+                  _mongoc_set_error (&iter->error,
+                                     MONGOC_ERROR_STREAM,
+                                     MONGOC_ERROR_STREAM_SOCKET,
+                                     hup ? "connection closed" : "unknown socket error");
                }
 
                iter->state = MONGOC_ASYNC_CMD_ERROR_STATE;
@@ -163,10 +161,10 @@ mongoc_async_run (mongoc_async_t *async)
       {
          /* check if an initiated cmd has passed the connection timeout.  */
          if (acmd->state != MONGOC_ASYNC_CMD_INITIATE && now > acmd->connect_started + acmd->timeout_msec * 1000) {
-            bson_set_error (&acmd->error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_CONNECT,
-                            acmd->state == MONGOC_ASYNC_CMD_SEND ? "connection timeout" : "socket timeout");
+            _mongoc_set_error (&acmd->error,
+                               MONGOC_ERROR_STREAM,
+                               MONGOC_ERROR_STREAM_CONNECT,
+                               acmd->state == MONGOC_ASYNC_CMD_SEND ? "connection timeout" : "socket timeout");
 
             acmd->cb (acmd, MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->connect_started) / 1000);
 

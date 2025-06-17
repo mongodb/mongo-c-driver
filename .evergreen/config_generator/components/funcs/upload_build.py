@@ -14,7 +14,7 @@ class UploadBuild(Function):
         s3_put(
             aws_key='${aws_key}',
             aws_secret='${aws_secret}',
-            remote_file='mongo-c-driver/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
+            remote_file='${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
             bucket='mciuploads',
             permissions='public-read',
             local_file='${build_id}.tar.gz',

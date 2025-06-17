@@ -16,22 +16,23 @@
 
 #include <mongoc/mongoc-opts-helpers-private.h>
 #include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
-#define BSON_ERR(...)                                                                    \
-   do {                                                                                  \
-      bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, __VA_ARGS__); \
-      return false;                                                                      \
+#define BSON_ERR(...)                                                                       \
+   do {                                                                                     \
+      _mongoc_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, __VA_ARGS__); \
+      return false;                                                                         \
    } while (0)
 
 
-#define CONVERSION_ERR(...)                                                                        \
-   do {                                                                                            \
-      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, __VA_ARGS__); \
-      return false;                                                                                \
+#define CONVERSION_ERR(...)                                                                           \
+   do {                                                                                               \
+      _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, __VA_ARGS__); \
+      return false;                                                                                   \
    } while (0)
 
 
@@ -58,7 +59,7 @@ void
 _mongoc_timestamp_append (mongoc_timestamp_t *timestamp, bson_t *bson, char *key)
 {
    const size_t len = strlen (key);
-   BSON_ASSERT (mcommon_in_range_unsigned (int, len));
+   BSON_ASSERT (mlib_in_range (int, len));
    bson_append_timestamp (bson, key, (int) len, timestamp->timestamp, timestamp->increment);
 }
 

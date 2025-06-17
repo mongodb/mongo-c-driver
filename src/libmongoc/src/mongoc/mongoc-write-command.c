@@ -19,7 +19,6 @@
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
-#include <mongoc/mongoc-error.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-write-command-private.h>
@@ -27,7 +26,8 @@
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-opts-private.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/intencode.h>
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 
@@ -164,14 +164,11 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
 {
    ENTRY;
 
-   BSON_ASSERT (command);
+   BSON_ASSERT_PARAM (command);
+   BSON_ASSERT_PARAM (document);
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
-
-   /* must handle NULL document from mongoc_collection_insert_bulk */
-   if (document) {
-      _mongoc_write_command_insert_append (command, document);
-   }
+   _mongoc_write_command_insert_append (command, document);
 
    EXIT;
 }
@@ -198,7 +195,6 @@ _mongoc_write_command_init_insert_one_idl (mongoc_write_command_t *command,
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
    /* near identical to _mongoc_write_command_insert_append but additionally records the inserted id */
-   /* no need to handle NULL document from mongoc_collection_insert_bulk since only called by insert_one */
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
    BSON_ASSERT (document->len >= 5);
 
@@ -243,7 +239,7 @@ _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
 
    _mongoc_write_command_init_bulk (command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
-   /* must handle NULL document from mongoc_collection_insert_bulk */
+   /* must handle NULL document from mongoc_collection_insert_many */
    if (document) {
       _mongoc_write_command_insert_append (command, document);
    }
@@ -390,14 +386,14 @@ _mongoc_write_command_init (bson_t *doc, mongoc_write_command_t *command, const 
 static void
 _mongoc_write_command_too_large_error (bson_error_t *error, int32_t idx, int32_t len, int32_t max_bson_size)
 {
-   bson_set_error (error,
-                   MONGOC_ERROR_BSON,
-                   MONGOC_ERROR_BSON_INVALID,
-                   "Document %" PRId32 " is too large for the cluster. "
-                   "Document is %" PRId32 " bytes, max is %" PRId32 ".",
-                   idx,
-                   len,
-                   max_bson_size);
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Document %" PRId32 " is too large for the cluster. "
+                      "Document is %" PRId32 " bytes, max is %" PRId32 ".",
+                      idx,
+                      len,
+                      max_bson_size);
 }
 
 
@@ -408,11 +404,11 @@ _empty_error (mongoc_write_command_t *command, bson_error_t *error)
                                     MONGOC_ERROR_COLLECTION_INSERT_FAILED,
                                     MONGOC_ERROR_COLLECTION_UPDATE_FAILED};
 
-   bson_set_error (error,
-                   MONGOC_ERROR_COLLECTION,
-                   codes[command->type],
-                   "Cannot do an empty %s",
-                   _mongoc_write_command_get_name (command));
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_COLLECTION,
+                      codes[command->type],
+                      "Cannot do an empty %s",
+                      _mongoc_write_command_get_name (command));
 }
 
 
@@ -698,24 +694,20 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    }
 
    do {
-      uint32_t ulen;
-      memcpy (&ulen, command->payload.data + payload_batch_size + payload_total_offset, 4);
-      ulen = BSON_UINT32_FROM_LE (ulen);
+      const int32_t len = mlib_read_i32le (command->payload.data + payload_batch_size + payload_total_offset);
 
       // Although messageLength is an int32, it should never be negative.
-      BSON_ASSERT (mcommon_in_range_unsigned (int32_t, ulen));
-      const int32_t slen = (int32_t) ulen;
+      BSON_ASSERT (len >= 0);
 
-      if (slen > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
+      if (len > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
          /* Quit if the document is too large */
-         _mongoc_write_command_too_large_error (error, index_offset, slen, max_bson_obj_size);
+         _mongoc_write_command_too_large_error (error, index_offset, len, max_bson_obj_size);
          result->failed = true;
          break;
 
-      } else if (mcommon_cmp_less_equal_us (payload_batch_size + opmsg_overhead + ulen, max_msg_size) ||
-                 document_count == 0) {
+      } else if (mlib_cmp (payload_batch_size + opmsg_overhead + len, <=, max_msg_size) || document_count == 0) {
          /* The current batch is still under max batch size in bytes */
-         payload_batch_size += ulen;
+         payload_batch_size += len;
 
          /* If this document filled the maximum document count */
          if (++document_count == max_document_count) {
@@ -820,7 +812,7 @@ _mongoc_write_command_execute (mongoc_write_command_t *command,             /* I
    }
 
    if (!mongoc_write_concern_is_valid (write_concern)) {
-      bson_set_error (
+      _mongoc_set_error (
          &result->error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "The write concern is invalid.");
       result->failed = true;
       EXIT;
@@ -855,10 +847,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_collation) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set collation for unacknowledged writes");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set collation for unacknowledged writes");
          EXIT;
       }
    }
@@ -866,10 +858,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_array_filters) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot use array filters with unacknowledged writes");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot use array filters with unacknowledged writes");
          EXIT;
       }
    }
@@ -877,10 +869,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_update_hint) {
       if (server_stream->sd->max_wire_version < WIRE_VERSION_UPDATE_HINT &&
           !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support hint for update");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support hint for update");
          result->failed = true;
          EXIT;
       }
@@ -889,10 +881,10 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.has_delete_hint) {
       if (server_stream->sd->max_wire_version < WIRE_VERSION_DELETE_HINT &&
           !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support hint for delete");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support hint for delete");
          result->failed = true;
          EXIT;
       }
@@ -901,20 +893,20 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    if (command->flags.bypass_document_validation) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set bypassDocumentValidation for unacknowledged writes");
+         _mongoc_set_error (&result->error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set bypassDocumentValidation for unacknowledged writes");
          EXIT;
       }
    }
 
    if (crud->client_session && !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
       result->failed = true;
-      bson_set_error (&result->error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot use client session with unacknowledged writes");
+      _mongoc_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot use client session with unacknowledged writes");
       EXIT;
    }
 
@@ -1045,7 +1037,12 @@ _set_error_from_response (bson_t *bson_array,
       }
 
       if (code && !mcommon_string_from_append_is_empty (&compound_err)) {
-         bson_set_error (error, domain, (uint32_t) code, "%s", mcommon_str_from_append (&compound_err));
+         _mongoc_set_error_with_category (error,
+                                          MONGOC_ERROR_CATEGORY_SERVER,
+                                          domain,
+                                          (uint32_t) code,
+                                          "%s",
+                                          mcommon_str_from_append (&compound_err));
       }
    }
 

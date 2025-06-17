@@ -10,9 +10,6 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "client-test-max-staleness"
-
 
 static int64_t
 get_max_staleness (const mongoc_client_t *client)
@@ -120,7 +117,7 @@ test_mongos_max_staleness_read_pref (void)
    /* count command with mode "secondary", no MONGOC_URI_MAXSTALENESSSECONDS. */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_estimated_document_count (collection, NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"
@@ -140,7 +137,7 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_collection_set_read_prefs (collection, prefs);
 
    mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_estimated_document_count (collection, NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"
@@ -160,7 +157,7 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_read_prefs_set_max_staleness_seconds (prefs, MONGOC_NO_MAX_STALENESS);
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_estimated_document_count (collection, NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db', '$readPreference': {'mode': 'secondaryPreferred'}}"));
 
@@ -175,7 +172,7 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
 
-   future = future_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   future = future_collection_estimated_document_count (collection, NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db',"

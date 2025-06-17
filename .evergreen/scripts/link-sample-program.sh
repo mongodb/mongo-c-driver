@@ -4,30 +4,32 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 #   LINK_STATIC                Whether to statically link to libmongoc
 #   BUILD_SAMPLE_WITH_CMAKE    Link program w/ CMake. Default: use pkg-config.
-#   BUILD_SAMPLE_WITH_CMAKE_DEPRECATED  If BUILD_SAMPLE_WITH_CMAKE is set, then use deprecated CMake scripts instead.
 #   ENABLE_SSL                 Set -DENABLE_SSL
 #   ENABLE_SNAPPY              Set -DENABLE_SNAPPY
 #   CMAKE                      Path to cmake executable.
 
 
-echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED"
+echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 DIR=$(dirname $0)
 . $DIR/find-cmake-latest.sh
 CMAKE=$(find_cmake_latest)
 . $DIR/check-symlink.sh
 
+# The major version of the project. Appears in certain install filenames.
+_full_version=$(cat "$DIR/../../VERSION_CURRENT")
+version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
+major="${version%%.*}"         # 1.2.3     → 1
+echo "major version: $major"
+echo " full version: $version"
+
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
 
 if [ "$OS" = "darwin" ]; then
-  SO=dylib
-  LIB_SO=libmongoc-1.0.0.dylib
   LDD="otool -L"
 else
-  SO=so
-  LIB_SO=libmongoc-1.0.so.0
   LDD=ldd
 fi
 
@@ -76,9 +78,13 @@ ZSTD="AUTO"
 if [[ -f $DIR/find-ccache.sh ]]; then
   . $DIR/find-ccache.sh
   find_ccache_and_export_vars "$SCRATCH_DIR" || true
+  if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+    configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+    configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+  fi
 fi
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
+$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake -DBUILD_TESTING=OFF $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
 $CMAKE --build . --parallel
 $CMAKE --build . --parallel --target install
 
@@ -87,100 +93,17 @@ unset CCACHE_BASEDIR CCACHE_NOHASHDIR
 
 ls -l $INSTALL_DIR/lib
 
-set +o xtrace
-
-# Check on Linux that libmongoc is installed into lib/ like:
-# libmongoc-1.0.so -> libmongoc-1.0.so.0
-# libmongoc-1.0.so.0 -> libmongoc-1.0.so.0.0.0
-# libmongoc-1.0.so.0.0.0
-if [ "$OS" != "darwin" ]; then
-  # From check-symlink.sh
-  check_symlink libmongoc-1.0.so libmongoc-1.0.so.0
-  check_symlink libmongoc-1.0.so.0 libmongoc-1.0.so.0.0.0
-  SONAME=$(objdump -p $INSTALL_DIR/lib/$LIB_SO|grep SONAME|awk '{print $2}')
-  EXPECTED_SONAME="libmongoc-1.0.so.0"
-  if [ "$SONAME" != "$EXPECTED_SONAME" ]; then
-    echo "SONAME should be $EXPECTED_SONAME, not $SONAME"
+if [ "$OS" = "darwin" ] && [ "${HOSTTYPE:?}" != "arm64" ]; then
+  if test -f $INSTALL_DIR/bin/mongoc$major-stat; then
+    echo "mongoc$major-stat shouldn't have been installed"
+    exit 1
+  fi
+else
+  if test ! -f $INSTALL_DIR/bin/mongoc$major-stat; then
+    echo "mongoc$major-stat missing!"
     exit 1
   else
-    echo "library name check ok, SONAME=$SONAME"
-  fi
-else
-  # Just test that the shared lib was installed.
-  if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
-    echo "$LIB_SO missing!"
-    exit 1
-  else
-    echo "$LIB_SO check ok"
-  fi
-fi
-
-
-if test ! -f $INSTALL_DIR/lib/pkgconfig/libmongoc-1.0.pc; then
-  echo "libmongoc-1.0.pc missing!"
-  exit 1
-else
-  echo "libmongoc-1.0.pc check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config.cmake; then
-  echo "mongoc-1.0-config.cmake missing!"
-  exit 1
-else
-  echo "mongoc-1.0-config.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config-version.cmake; then
-  echo "mongoc-1.0-config-version.cmake missing!"
-  exit 1
-else
-  echo "mongoc-1.0-config-version.cmake check ok"
-fi
-if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-targets.cmake; then
-  echo "mongoc-targets.cmake missing!"
-  exit 1
-else
-  echo "mongoc-targets.cmake check ok"
-fi
-
-
-if [ "$LINK_STATIC" ]; then
-  if test ! -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
-    echo "libmongoc-static-1.0.a missing!"
-    exit 1
-  else
-    echo "libmongoc-static-1.0.a check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/pkgconfig/libmongoc-static-1.0.pc; then
-    echo "libmongoc-static-1.0.pc missing!"
-    exit 1
-  else
-    echo "libmongoc-static-1.0.pc check ok"
-  fi
-else
-  if test -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
-    echo "libmongoc-static-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/libmongoc-1.0.a; then
-    echo "libmongoc-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/pkgconfig/libmongoc-static-1.0.pc; then
-    echo "libmongoc-static-1.0.pc shouldn't have been installed"
-    exit 1
-  fi
-fi
-
-if [ "$OS" = "darwin" && "${HOSTTYPE:?}" != "arm64" ]; then
-  if test -f $INSTALL_DIR/bin/mongoc-stat; then
-    echo "mongoc-stat shouldn't have been installed"
-    exit 1
-  fi
-else
-  if test ! -f $INSTALL_DIR/bin/mongoc-stat; then
-    echo "mongoc-stat missing!"
-    exit 1
-  else
-    echo "mongoc-stat check ok"
+    echo "mongoc$major-stat check ok"
   fi
 fi
 
@@ -206,12 +129,12 @@ else
 
   if [ "$LINK_STATIC" ]; then
     echo "pkg-config output:"
-    echo $(pkg-config --libs --cflags libmongoc-static-1.0)
-    ./compile-with-pkg-config-static.sh
+    echo $(pkg-config --libs --cflags mongoc$major-static)
+    env major=$major ./compile-with-pkg-config-static.sh
   else
     echo "pkg-config output:"
-    echo $(pkg-config --libs --cflags libmongoc-1.0)
-    ./compile-with-pkg-config.sh
+    echo $(pkg-config --libs --cflags mongoc$major)
+    env major=$major ./compile-with-pkg-config.sh
   fi
 fi
 

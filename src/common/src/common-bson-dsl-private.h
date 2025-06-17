@@ -14,7 +14,7 @@
  */
 
 #include <bson/bson.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL
@@ -119,7 +119,7 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("\"%s\" => [%s]", String, _bsonDSL_strElide (30, Element)); \
    const char *_bbString = (String);                                           \
    const uint64_t length = (Len);                                              \
-   if (mcommon_in_range_unsigned (int, length)) {                              \
+   if (mlib_in_range (int, length)) {                                          \
       _bbCtx.key = _bbString;                                                  \
       _bbCtx.key_len = (int) length;                                           \
       _bsonValueOperation (Element);                                           \
@@ -741,8 +741,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 
 #define _bsonPredicate_Condition_1 1
 #define _bsonPredicate_Condition_0 0
-#define _bsonPredicate_Condition_true true
-#define _bsonPredicate_Condition_false false
+#define _bsonPredicate_Condition_always true
+#define _bsonPredicate_Condition_never false
 
 #define _bsonPredicate_Condition_isTrue (bson_iter_as_bool (&bsonVisitIter))
 #define _bsonPredicate_Condition_isFalse (!bson_iter_as_bool (&bsonVisitIter))

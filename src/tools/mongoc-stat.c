@@ -17,6 +17,7 @@
 
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
+#include <mlib/cmp.h>
 
 
 #if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
@@ -119,7 +120,7 @@ mongoc_counters_new_from_pid (unsigned pid)
    close (fd);
 
    counters = (mongoc_counters_t *) mem;
-   if (counters->size != len) {
+   if (mlib_cmp (counters->size, !=, len)) {
       perror ("Corrupted shared memory segment.");
       mongoc_counters_destroy (counters);
       return NULL;
@@ -219,7 +220,7 @@ main (int argc, char *argv[])
 #include <stdio.h>
 
 int
-main (int argc, char *argv[])
+main (void)
 {
    fprintf (stderr, "mongoc-stat is not supported on your platform.\n");
    return EXIT_FAILURE;

@@ -20,7 +20,6 @@
 #include <common-string-private.h>
 #include <common-utf8-private.h>
 #include <common-json-private.h>
-#include <common-cmp-private.h>
 
 
 typedef struct {
@@ -40,7 +39,7 @@ mcommon_json_append_visit_utf8 (
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_utf8_len)) {
+   if (!mlib_in_range (uint32_t, v_utf8_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }
@@ -124,7 +123,7 @@ mcommon_json_append_visit_binary (const bson_iter_t *iter,
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_binary_len)) {
+   if (!mlib_in_range (uint32_t, v_binary_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }
@@ -158,7 +157,7 @@ mcommon_json_append_visit_regex (
    size_t v_options_len = strlen (v_options);
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_regex_len)) {
+   if (!mlib_in_range (uint32_t, v_regex_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }
@@ -187,7 +186,7 @@ mcommon_json_append_visit_dbpointer (const bson_iter_t *iter,
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_collection_len)) {
+   if (!mlib_in_range (uint32_t, v_collection_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }
@@ -233,7 +232,7 @@ mcommon_json_append_visit_before (const bson_iter_t *iter, const char *key, void
 
    if (state->has_keys) {
       size_t key_len = strlen (key);
-      if (!mcommon_in_range_unsigned (uint32_t, key_len)) {
+      if (!mlib_in_range (uint32_t, key_len)) {
          mcommon_string_append_overflow (state->append);
          return true;
       }
@@ -269,7 +268,7 @@ mcommon_json_append_visit_code (
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_code_len)) {
+   if (!mlib_in_range (uint32_t, v_code_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }
@@ -283,7 +282,7 @@ mcommon_json_append_visit_symbol (
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_symbol_len)) {
+   if (!mlib_in_range (uint32_t, v_symbol_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }
@@ -297,7 +296,7 @@ mcommon_json_append_visit_codewscope (
    mcommon_json_append_visit_t *state = data;
    BSON_UNUSED (iter);
    BSON_UNUSED (key);
-   if (!mcommon_in_range_unsigned (uint32_t, v_code_len)) {
+   if (!mlib_in_range (uint32_t, v_code_len)) {
       mcommon_string_append_overflow (state->append);
       return true;
    }

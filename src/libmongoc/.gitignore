@@ -1,12 +1,3 @@
-# CMake artifacts
-libmongoc-1.0-config-version.cmake
-libmongoc-1.0-config.cmake
-libmongoc-static-1.0-config-version.cmake
-libmongoc-static-1.0-config.cmake
-mongoc/mongoc-1.0-config.cmake
-mongoc/mongoc-1.0-config-version.cmake
-mongoc/mongoc-targets.cmake
-
 # Test program for mongoc_get_accept_args in CMakeLists.txt
 accept_test1.c
 
@@ -42,7 +33,7 @@ find-and-modify
 hello_mongoc
 mongoc-dump
 mongoc-ping
-mongoc-stat
+mongoc2-stat
 mongoc-tail
 
 # Test binaries

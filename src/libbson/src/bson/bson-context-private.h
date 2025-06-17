@@ -65,19 +65,6 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid);
 void
 _bson_context_set_oid_seq32 (bson_context_t *context, bson_oid_t *oid);
 
-/**
- * @brief Write a 64-bit counter from the given context into the OID. Increments
- * the context's sequence counter.
- *
- * @param context The context with the counter to get+update
- * @param oid The OID to modify
- *
- * @note Only used by the deprecated @ref bson_oid_init_sequence
- */
-void
-_bson_context_set_oid_seq64 (bson_context_t *context, bson_oid_t *oid);
-
-
 BSON_END_DECLS
 
 

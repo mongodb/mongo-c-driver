@@ -22,11 +22,10 @@
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
-#include <mongoc/mongoc-error.h>
 #include <mongoc/mongoc-error-private.h>
 
 #define CHANGE_STREAM_ERR(_str) \
-   bson_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)
+   _mongoc_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)
 
 /* the caller knows either a client or server error has occurred.
  * `reply` contains the server reply or an empty document. */
@@ -193,7 +192,10 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
 
    /* Add batch size if needed */
    bson_append_document_begin (command, "cursor", 6, &cursor_doc);
-   if (stream->batch_size > 0) {
+   if (stream->batch_size >= 0) {
+      // `batchSize:0` is supported and applied to `aggregate`. `batchSize:0` requests an immediate cursor. This is
+      // useful to avoid a long-running server-side aggregate. Once created, `mongoc_change_stream_destroy` can use
+      // `killCursors` to kill the server-side cursor.
       bson_append_int32 (&cursor_doc, "batchSize", 9, stream->batch_size);
    }
    bson_append_document_end (command, &cursor_doc);
@@ -378,7 +380,7 @@ _change_stream_init (mongoc_change_stream_t *stream, const bson_t *pipeline, con
 
    _mongoc_timestamp_set (&stream->operation_time, &stream->opts.startAtOperationTime);
 
-   stream->batch_size = stream->opts.batchSize;
+   stream->batch_size = stream->opts.batchSize; // `stream->opts.batchSize` is -1 if not present in `opts`.
    stream->max_await_time_ms = stream->opts.maxAwaitTimeMS;
    stream->show_expanded_events = stream->opts.showExpandedEvents;
 
@@ -531,11 +533,11 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
    stream->has_returned_results = true;
 
    if (!bson_iter_init_find (&iter, *bson, "_id") || !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      bson_set_error (&stream->err,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
-                      "Cannot provide resume functionality when the resume "
-                      "token is missing");
+      _mongoc_set_error (&stream->err,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
+                         "Cannot provide resume functionality when the resume "
+                         "token is missing");
       goto end;
    }
 

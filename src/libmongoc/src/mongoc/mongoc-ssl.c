@@ -28,8 +28,6 @@
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include <mongoc/mongoc-openssl-private.h>
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include <mongoc/mongoc-libressl-private.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #include <mongoc/mongoc-secure-transport-private.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)

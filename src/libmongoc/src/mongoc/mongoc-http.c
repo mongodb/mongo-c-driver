@@ -18,12 +18,13 @@
 
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-stream-tls.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mcd-time.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 void
 _mongoc_http_request_init (mongoc_http_request_t *request)
@@ -90,7 +91,7 @@ static int32_t
 _mongoc_http_msec_remaining (mcd_timer timer)
 {
    const int64_t msec = mcd_get_milliseconds (mcd_timer_remaining (timer));
-   BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
+   BSON_ASSERT (mlib_in_range (int32_t, msec));
    return (int32_t) msec;
 }
 
@@ -130,17 +131,17 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       &host_list,
       error);
    if (!stream) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to connect to: %s", req->host);
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to connect to: %s", req->host);
       goto fail;
    }
 
 #ifndef MONGOC_ENABLE_SSL
    if (use_tls) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to connect to %s: libmongoc not built with TLS support",
-                      req->host);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failed to connect to %s: libmongoc not built with TLS support",
+                         req->host);
       goto fail;
    }
 #else
@@ -150,7 +151,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
       BSON_ASSERT (ssl_opts);
       tls_stream = mongoc_stream_tls_new_with_hostname (stream, req->host, ssl_opts, true);
       if (!tls_stream) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed create TLS stream to: %s", req->host);
          goto fail;
       }
@@ -198,18 +199,19 @@ _mongoc_http_send (const mongoc_http_request_t *req,
          break;
       }
       if (http_response_buf.len > 1024 * 1024 * 8) {
-         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "HTTP response message is too large");
+         _mongoc_set_error (
+            error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "HTTP response message is too large");
          goto fail;
       }
    }
 
    if (mongoc_stream_timed_out (stream)) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout reading from stream");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Timeout reading from stream");
       goto fail;
    }
 
    if (http_response_buf.len == 0) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "No response received");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "No response received");
       goto fail;
    }
 
@@ -225,12 +227,12 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    }
 
    if (!ptr) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "No HTTP version leader in HTTP response. Expected '%s' or '%s'",
-                      proto_leader_10,
-                      proto_leader_11);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "No HTTP version leader in HTTP response. Expected '%s' or '%s'",
+                         proto_leader_10,
+                         proto_leader_11);
       goto fail;
    }
 
@@ -238,7 +240,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    ptr += strlen (proto_leader_10);
    ssize_t remain = resp_end_ptr - ptr;
    if (remain < 4) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Short read in HTTP response");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Short read in HTTP response");
       goto fail;
    }
 
@@ -247,30 +249,30 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    char *status_endptr;
    res->status = strtol (status_buf, &status_endptr, 10);
    if (status_endptr != status_buf + 3) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Invalid HTTP response status string %*.s",
-                      4,
-                      status_buf);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Invalid HTTP response status string %*.s",
+                         4,
+                         status_buf);
       goto fail;
    }
 
    /* Find the end of the headers. */
    ptr = strstr (http_response_str, header_delimiter);
    if (NULL == ptr) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Error occurred reading response: end of headers not found");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Error occurred reading response: end of headers not found");
       goto fail;
    }
 
    const size_t headers_len = (size_t) (ptr - http_response_str);
-   BSON_ASSERT (mcommon_in_range_unsigned (int, headers_len));
+   BSON_ASSERT (mlib_in_range (int, headers_len));
 
    const size_t body_len = http_response_buf.len - headers_len - strlen (header_delimiter);
-   BSON_ASSERT (mcommon_in_range_unsigned (int, body_len));
+   BSON_ASSERT (mlib_in_range (int, body_len));
 
    res->headers_len = (int) headers_len;
    res->headers = bson_strndup (http_response_str, (size_t) headers_len);

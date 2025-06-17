@@ -4,7 +4,8 @@
 #include "json-test-operations.h"
 #include "test-libmongoc.h"
 #include <mongoc/mongoc-bulkwrite.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
+#include <mlib/loop.h>
 
 static bool
 crud_test_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
@@ -301,7 +302,7 @@ prose_test_3 (void *ctx)
 static char *
 repeat_char (char c, int32_t count)
 {
-   ASSERT (mcommon_in_range_size_t_signed (count));
+   ASSERT (mlib_in_range (size_t, count));
    char *str = bson_malloc (count + 1);
    memset (str, c, count);
    str[count] = '\0';
@@ -546,7 +547,7 @@ prose_test_6 (void *ctx)
       // Count write errors.
       {
          const bson_t *writeErrors = mongoc_bulkwriteexception_writeerrors (ret.exc);
-         ASSERT (mcommon_in_range_uint32_t_signed (maxWriteBatchSize + 1));
+         ASSERT (mlib_in_range (uint32_t, maxWriteBatchSize + 1));
          ASSERT_CMPUINT32 (bson_count_keys (writeErrors), ==, (uint32_t) maxWriteBatchSize + 1);
       }
 
@@ -1009,14 +1010,14 @@ prose_test_11_fixture_new (void)
          bson_free (large_str);
       }
 
-      for (size_t i = 0; i < tf->numModels; i++) {
+      mlib_foreach_irange (i, tf->numModels) {
+         (void) i;
          ok = mongoc_bulkwrite_append_insertone (tf->bw, "db.coll", doc, NULL, &error);
          ASSERT_OR_PRINT (ok, error);
       }
 
       bson_destroy (doc);
    }
-
 
    if (remainderBytes >= 217) {
       // Create a document { 'a': 'b'.repeat(remainderBytes - 57) }
@@ -1080,7 +1081,7 @@ prose_test_11 (void *ctx)
          mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (tf->bw, NULL /* opts */);
          ASSERT (bwr.res);
          ASSERT_NO_BULKWRITEEXCEPTION (bwr);
-         ASSERT (mcommon_in_range_int64_t_unsigned (tf->numModels));
+         ASSERT (mlib_in_range (int64_t, tf->numModels));
          ASSERT_CMPINT64 (mongoc_bulkwriteresult_insertedcount (bwr.res), ==, (int64_t) tf->numModels + 1);
          mongoc_bulkwriteresult_destroy (bwr.res);
          mongoc_bulkwriteexception_destroy (bwr.exc);
@@ -1092,7 +1093,7 @@ prose_test_11 (void *ctx)
       bson_t *first = _mongoc_array_index (&tf->captured, bson_t *, 0);
       {
          bson_t *ops = bson_lookup_bson (first, "ops");
-         ASSERT (mcommon_in_range_uint32_t_unsigned (tf->numModels));
+         ASSERT (mlib_in_range (uint32_t, tf->numModels));
          ASSERT_CMPUINT32 (bson_count_keys (ops), ==, (uint32_t) tf->numModels + 1);
          bson_destroy (ops);
 
@@ -1131,7 +1132,7 @@ prose_test_11 (void *ctx)
          mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (tf->bw, NULL /* opts */);
          ASSERT (bwr.res);
          ASSERT_NO_BULKWRITEEXCEPTION (bwr);
-         ASSERT (mcommon_in_range_int64_t_unsigned (tf->numModels));
+         ASSERT (mlib_in_range (int64_t, tf->numModels));
          ASSERT_CMPINT64 (mongoc_bulkwriteresult_insertedcount (bwr.res), ==, (int64_t) tf->numModels + 1);
          mongoc_bulkwriteresult_destroy (bwr.res);
          mongoc_bulkwriteexception_destroy (bwr.exc);
@@ -1143,7 +1144,7 @@ prose_test_11 (void *ctx)
       bson_t *first = _mongoc_array_index (&tf->captured, bson_t *, 0);
       {
          bson_t *ops = bson_lookup_bson (first, "ops");
-         ASSERT (mcommon_in_range_uint32_t_unsigned (tf->numModels));
+         ASSERT (mlib_in_range (uint32_t, tf->numModels));
          ASSERT_CMPUINT32 (bson_count_keys (ops), ==, (uint32_t) tf->numModels);
          bson_destroy (ops);
 

@@ -18,10 +18,7 @@
 #include <bson/bson.h>
 
 #include <mongoc/mongoc-set-private.h>
-#include <common-cmp-private.h>
-
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "set"
+#include <mlib/cmp.h>
 
 mongoc_set_t *
 mongoc_set_new (size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx)
@@ -202,7 +199,7 @@ mongoc_set_for_each_with_id (mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t
    BSON_ASSERT_PARAM (cb);
    BSON_ASSERT (ctx || true);
 
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, set->items_len));
+   BSON_ASSERT (mlib_in_range (uint32_t, set->items_len));
    const uint32_t items_len = (uint32_t) set->items_len;
 
    /* prevent undefined behavior of memcpy(NULL) */
@@ -231,7 +228,7 @@ mongoc_set_for_each_with_id_const (const mongoc_set_t *set, mongoc_set_for_each_
    BSON_ASSERT_PARAM (cb);
    BSON_ASSERT (ctx || true);
 
-   BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, set->items_len));
+   BSON_ASSERT (mlib_in_range (uint32_t, set->items_len));
    const uint32_t items_len = (uint32_t) set->items_len;
 
    /* prevent undefined behavior of memcpy(NULL) */

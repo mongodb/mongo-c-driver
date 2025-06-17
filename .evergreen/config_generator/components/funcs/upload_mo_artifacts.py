@@ -30,7 +30,7 @@ class UploadMOArtifacts(Function):
             local_file='mongoc/mongodb-logs.tar.gz',
             optional=True,
             permissions='public-read',
-            remote_file='mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz',
+            remote_file='${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz',
         ),
         s3_put(
             aws_key='${aws_key}',
@@ -41,7 +41,7 @@ class UploadMOArtifacts(Function):
             local_file='mongoc/MO/server.log',
             optional=True,
             permissions='public-read',
-            remote_file='mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log',
+            remote_file='${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log',
         ),
         bash_exec(
             working_dir='mongoc',
@@ -83,7 +83,7 @@ class UploadMOArtifacts(Function):
             local_file='mongo-coredumps.tgz',
             optional=True,
             permissions='public-read',
-            remote_file='mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log',
+            remote_file='${project}/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log',
         ),
     ]
 

@@ -9,7 +9,7 @@ def variants():
     expansions = {
         'CFLAGS': '-fno-omit-frame-pointer',
         'CHECK_LOG': 'ON',
-        'EXTRA_CONFIGURE_FLAGS': '-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF',
+        'EXTRA_CONFIGURE_FLAGS': '-DENABLE_SHM_COUNTERS=OFF',
         'SANITIZE': 'thread',
     }
 

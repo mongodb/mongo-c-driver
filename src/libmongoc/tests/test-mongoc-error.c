@@ -7,6 +7,7 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include <mongoc/mongoc-error-private.h>
+#include <mlib/loop.h>
 
 #include <inttypes.h>
 
@@ -18,15 +19,12 @@
 static void
 test_set_error_api_single (void)
 {
-   mongoc_client_t *client;
-   int32_t unsupported_versions[] = {-1, 0, 3};
-   int i;
-
    capture_logs (true);
-   client = test_framework_new_default_client ();
+   mongoc_client_t *const client = test_framework_new_default_client ();
 
-   for (i = 0; i < sizeof (unsupported_versions) / sizeof (int32_t); i++) {
-      ASSERT (!mongoc_client_set_error_api (client, unsupported_versions[i]));
+   int32_t unsupported_versions[] = {-1, 0, 3};
+   mlib_foreach_arr (int32_t, ver, unsupported_versions) {
+      ASSERT (!mongoc_client_set_error_api (client, *ver));
       ASSERT_CAPTURED_LOG ("mongoc_client_set_error_api", MONGOC_LOG_LEVEL_ERROR, "Unsupported Error API Version");
    }
 
@@ -37,20 +35,16 @@ test_set_error_api_single (void)
 static void
 test_set_error_api_pooled (void)
 {
-   mongoc_client_pool_t *pool;
-   mongoc_client_t *client;
-   int32_t unsupported_versions[] = {-1, 0, 3};
-   int i;
-
    capture_logs (true);
-   pool = test_framework_new_default_client_pool ();
+   mongoc_client_pool_t *const pool = test_framework_new_default_client_pool ();
 
-   for (i = 0; i < sizeof (unsupported_versions) / sizeof (int32_t); i++) {
-      ASSERT (!mongoc_client_pool_set_error_api (pool, unsupported_versions[i]));
+   int32_t unsupported_versions[] = {-1, 0, 3};
+   mlib_foreach_arr (int32_t, ver, unsupported_versions) {
+      ASSERT (!mongoc_client_pool_set_error_api (pool, *ver));
       ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_error_api", MONGOC_LOG_LEVEL_ERROR, "Unsupported Error API Version");
    }
 
-   client = mongoc_client_pool_pop (pool);
+   mongoc_client_t *const client = mongoc_client_pool_pop (pool);
    ASSERT (!mongoc_client_set_error_api (client, 1));
    ASSERT_CAPTURED_LOG (
       "mongoc_client_set_error_api", MONGOC_LOG_LEVEL_ERROR, "Cannot set Error API Version on a pooled client");
@@ -140,28 +134,26 @@ test_state_change_helper (uint32_t domain, bool expect_error)
                                                      MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS};
    mongoc_server_err_t shutdown_codes[] = {MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN,
                                            MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS};
-   int i;
-
    MONGOC_DEBUG ("Checking domain = %" PRIu32, domain);
 
    memset (&error, 0, sizeof (bson_error_t));
    error.domain = domain;
 
-   for (i = 0; i < sizeof (not_primary_codes) / sizeof (mongoc_server_err_t); i++) {
-      error.code = not_primary_codes[i];
+   mlib_foreach_arr (mongoc_server_err_t, err, not_primary_codes) {
+      error.code = *err;
       BSON_ASSERT (expect_error == _mongoc_error_is_not_primary (&error));
       BSON_ASSERT (!_mongoc_error_is_recovering (&error));
       BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
    }
-   for (i = 0; i < sizeof (node_is_recovering_codes) / sizeof (mongoc_server_err_t); i++) {
-      error.code = node_is_recovering_codes[i];
+   mlib_foreach_arr (mongoc_server_err_t, err, node_is_recovering_codes) {
+      error.code = *err;
       BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
    }
-   for (i = 0; i < sizeof (shutdown_codes) / sizeof (mongoc_server_err_t); i++) {
-      error.code = shutdown_codes[i];
+   mlib_foreach_arr (mongoc_server_err_t, err, shutdown_codes) {
+      error.code = *err;
       BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
       /* Shutdown errors are a subset of recovering errors. */
       BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
@@ -217,6 +209,68 @@ test_state_change (void)
    test_state_change_helper (MONGOC_ERROR_QUERY, false);
 }
 
+static void
+test_mongoc_error_basic (void)
+{
+   bson_error_t error;
+
+   _mongoc_set_error (&error, 123, 456, "%s:%d", "localhost", 27017);
+   ASSERT_CMPSTR (error.message, "localhost:27017");
+   ASSERT_CMPUINT32 (error.domain, ==, 123u);
+   ASSERT_CMPUINT32 (error.code, ==, 456u);
+   ASSERT_CMPUINT (error.reserved, ==, 2u); // MONGOC_ERROR_CATEGORY
+}
+
+static void
+test_mongoc_error_with_category (void)
+{
+   bson_error_t error;
+
+   _mongoc_set_error_with_category (&error, 99u, 123, 456, "%s:%d", "localhost", 27017);
+   ASSERT_CMPSTR (error.message, "localhost:27017");
+   ASSERT_CMPUINT32 (error.domain, ==, 123u);
+   ASSERT_CMPUINT32 (error.code, ==, 456u);
+   ASSERT_CMPUINT (error.reserved, ==, 99u);
+}
+
+#ifdef _WIN32
+static void
+test_mongoc_winerr_to_string (void)
+{
+   // Test WIN32 success.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) NO_ERROR);
+      const char *expect = "(0x00000000) The operation completed successfully.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test WIN32 error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) ERROR_FILE_NOT_FOUND);
+      const char *expect = "(0x00000002) The system cannot find the file specified.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test SECURITY_STATUS error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) SEC_E_CERT_EXPIRED);
+      const char *expect = "(0x80090328) The received certificate has expired.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test DNS_STATUS error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) DNS_ERROR_RCODE_SERVER_FAILURE);
+      const char *expect = "(0x0000232A) DNS server failure.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+}
+#endif // _WIN32
+
 void
 test_error_install (TestSuite *suite)
 {
@@ -227,4 +281,9 @@ test_error_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite, "/Error/command/v2", test_command_error_v2);
    TestSuite_Add (suite, "/Error/has_label", test_has_label);
    TestSuite_Add (suite, "/Error/state_change", test_state_change);
+   TestSuite_Add (suite, "/Error/basic", test_mongoc_error_basic);
+   TestSuite_Add (suite, "/Error/category", test_mongoc_error_with_category);
+#ifdef _WIN32
+   TestSuite_Add (suite, "/Error/windows_error_to_string", test_mongoc_winerr_to_string);
+#endif
 }

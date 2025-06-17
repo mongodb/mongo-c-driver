@@ -15,6 +15,9 @@ set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bi
 rem Ensure Cygwin executables like sh.exe are not in PATH
 set PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc
 
+set version=1.31.0
+set major=1
+
 if "%BSON_ONLY%"=="1" (
    set BUILD_DIR=%CD%\build-dir-bson
    set INSTALL_DIR=%CD%\install-dir-bson
@@ -120,29 +123,11 @@ echo.%CC%| findstr /I "gcc">Nul && (
   )
 )
 
-if exist %INSTALL_DIR%\lib\pkgconfig\libbson-1.0.pc (
-   echo libbson-1.0.pc found!
+if exist %INSTALL_DIR%\lib\pkgconfig\bson%major%.pc (
+   echo bson%major%.pc found!
    exit /B 1
 ) else (
-   echo libbson-1.0.pc check ok
-)
-if exist %INSTALL_DIR%\lib\cmake\bson-1.0\bson-1.0-config.cmake (
-   echo bson-1.0-config.cmake found!
-   exit /B 1
-) else (
-   echo bson-1.0-config.cmake check ok
-)
-if exist %INSTALL_DIR%\lib\cmake\bson-1.0\bson-1.0-config-version.cmake (
-   echo bson-1.0-config-version.cmake found!
-   exit /B 1
-) else (
-   echo bson-1.0-config-version.cmake check ok
-)
-if exist %INSTALL_DIR%\lib\cmake\bson-1.0\bson-targets.cmake (
-   echo bson-targets.cmake found!
-   exit /B 1
-) else (
-   echo bson-targets.cmake check ok
+   echo bson%major%.pc check ok
 )
 if not exist %INSTALL_DIR%\lib\canary.txt (
    echo canary.txt not found!
@@ -157,11 +142,11 @@ if not exist %INSTALL_DIR%\lib (
    echo %INSTALL_DIR%\lib check ok
 )
 if "%BSON_ONLY%" NEQ "1" (
-   if exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-1.0.pc (
-     echo libmongoc-1.0.pc found!
+   if exist %INSTALL_DIR%\lib\pkgconfig\mongoc%major%.pc (
+     echo mongoc%major%.pc found!
      exit /B 1
    ) else (
-     echo libmongoc-1.0.pc check ok
+     echo mongoc%major%.pc check ok
    )
    if exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-1.0-config.cmake (
      echo mongoc-1.0-config.cmake found!
@@ -182,23 +167,17 @@ if "%BSON_ONLY%" NEQ "1" (
      echo mongoc-targets.cmake check ok
    )
 )
-if exist %INSTALL_DIR%\include\libbson-1.0\bson\bson.h (
+if exist %INSTALL_DIR%\include\bson-%version%\bson\bson.h (
    echo bson\bson.h found!
    exit /B 1
 ) else (
    echo bson\bson.h check ok
 )
-if exist %INSTALL_DIR%\include\libbson-1.0\bson.h (
-   echo bson.h found!
+if exist %INSTALL_DIR%\include\bson-%version% (
+   echo $INSTALL_DIR\include\bson-%version% found!
    exit /B 1
 ) else (
-   echo bson.h check ok
-)
-if exist %INSTALL_DIR%\include\libbson-1.0 (
-   echo $INSTALL_DIR\include\libbson-1.0 found!
-   exit /B 1
-) else (
-   echo $INSTALL_DIR\include\libbson-1.0 check ok
+   echo $INSTALL_DIR\include\bson-%version% check ok
 )
 if "%BSON_ONLY%" NEQ "1" (
    if exist %INSTALL_DIR%\include\libmongoc-1.0\mongoc\mongoc.h (

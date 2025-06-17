@@ -22,13 +22,14 @@
 
 #include <bson/bson.h>
 #include <bson/bson-config.h>
+#include <bson/bson-error-private.h>
 #include <bson/bson-json.h>
 #include <bson/bson-json-private.h>
 #include <bson/bson-iso8601-private.h>
 
+#include <mlib/cmp.h>
 #include <common-b64-private.h>
 #include <jsonsl/jsonsl.h>
-#include <common-cmp-private.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -264,9 +265,7 @@ _noop (void)
 #define STACK_BSON_CHILD STACK_BSON (0)
 #define STACK_I STACK_ELE (0, i)
 #define STACK_FRAME_TYPE STACK_ELE (0, type)
-#define STACK_IS_INITIAL (STACK_FRAME_TYPE == BSON_JSON_FRAME_INITIAL)
 #define STACK_IS_ARRAY (STACK_FRAME_TYPE == BSON_JSON_FRAME_ARRAY)
-#define STACK_IS_DOC (STACK_FRAME_TYPE == BSON_JSON_FRAME_DOC)
 #define STACK_IS_SCOPE (STACK_FRAME_TYPE == BSON_JSON_FRAME_SCOPE)
 #define STACK_IS_DBPOINTER (STACK_FRAME_TYPE == BSON_JSON_FRAME_DBPOINTER)
 #define FRAME_TYPE_HAS_BSON(_type) ((_type) == BSON_JSON_FRAME_SCOPE || (_type) == BSON_JSON_FRAME_DBPOINTER)
@@ -422,10 +421,11 @@ _bson_json_read_set_error (bson_json_reader_t *reader, /* IN */
    if (reader->error) {
       reader->error->domain = BSON_ERROR_JSON;
       reader->error->code = BSON_JSON_ERROR_READ_INVALID_PARAM;
+      bson_set_error_category (reader->error, BSON_ERROR_CATEGORY);
+
       va_start (ap, fmt);
       bson_vsnprintf (reader->error->message, sizeof reader->error->message, fmt, ap);
       va_end (ap);
-      reader->error->message[sizeof reader->error->message - 1] = '\0';
    }
 
    reader->bson.read_state = BSON_JSON_ERROR;
@@ -447,10 +447,11 @@ _bson_json_read_corrupt (bson_json_reader_t *reader, /* IN */
    if (reader->error) {
       reader->error->domain = BSON_ERROR_JSON;
       reader->error->code = BSON_JSON_ERROR_READ_CORRUPT_JS;
+      bson_set_error_category (reader->error, BSON_ERROR_CATEGORY);
+
       va_start (ap, fmt);
       bson_vsnprintf (reader->error->message, sizeof reader->error->message, fmt, ap);
       va_end (ap);
-      reader->error->message[sizeof reader->error->message - 1] = '\0';
    }
 
    reader->bson.read_state = BSON_JSON_ERROR;
@@ -1110,7 +1111,7 @@ _bson_json_read_start_map (bson_json_reader_t *reader) /* IN */
           * expected a legacy Binary format. now we see the second "{", so
           * backtrack and parse $type query operator. */
          bson->read_state = BSON_JSON_IN_START_MAP;
-         BSON_ASSERT (mcommon_in_range_unsigned (int, len));
+         BSON_ASSERT (mlib_in_range (int, len));
          STACK_PUSH_DOC (bson_append_document_begin (STACK_BSON_PARENT, key, (int) len, STACK_BSON_CHILD));
          _bson_json_save_map_key (bson, (const uint8_t *) "$type", 5);
          break;
@@ -2071,8 +2072,8 @@ bson_json_reader_read (bson_json_reader_t *reader, /* IN */
 
          /* accumulate a key or string value */
          if (reader->json_text_pos != -1) {
-            if (mcommon_cmp_less_su (reader->json_text_pos, reader->json->pos)) {
-               BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, reader->json->pos));
+            if (mlib_cmp (reader->json_text_pos, <, reader->json->pos)) {
+               BSON_ASSERT (mlib_in_range (ssize_t, reader->json->pos));
                accum = BSON_MIN ((ssize_t) reader->json->pos - reader->json_text_pos, r);
                /* if this chunk stopped mid-token, buf_offset is how far into
                 * our current chunk the token begins. */

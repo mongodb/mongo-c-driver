@@ -111,15 +111,13 @@ mongo_bool_setting(USE_BUNDLED_UTF8PROC "Enable building with utf8proc. Needed f
                    ADVANCED)
 mongo_setting(
    ENABLE_SSL [[Enable TLS connection and SCRAM authentication.]]
-   OPTIONS WINDOWS DARWIN OPENSSL LIBRESSL OFF AUTO
+   OPTIONS WINDOWS DARWIN OPENSSL OFF AUTO
    DEFAULT VALUE AUTO
    VALIDATE CODE [[
       if(ENABLE_SSL STREQUAL "DARWIN" AND NOT APPLE)
          message(WARNING "ENABLE_SSL=DARWIN is only supported on Apple platforms")
       elseif(ENABLE_SSL STREQUAL "WINDOWS" AND NOT WIN32)
          message(WARNING "ENABLE_SSL=WINDOWS is only supported on Windows platforms")
-      elseif (ENABLE_SSL STREQUAL "LIBRESSL")
-         message(DEPRECATION "ENABLE_SSL=LIBRESSL is deprecated and may be removed in a future major release")
       endif()
    ]]
 )
@@ -149,18 +147,8 @@ mongo_setting(
          message(WARNING "ENABLE_SASL=SSPI is only supported on Windows platforms")
       endif()
       if(ENABLE_SASL STREQUAL "CYRUS" AND WIN32)
-         message(DEPRECATION "ENABLE_SASL=CYRUS on Windows platforms is deprecated and may be removed in a future major release")
+         message(WARNING "ENABLE_SASL=CYRUS on Windows platforms is unsupported. Use ENABLE_SASL=SSPI or ENABLE_SASL=OFF instead")
       endif()
-   ]]
-)
-
-mongo_setting(CYRUS_PLUGIN_PATH_PREFIX "An absolute path prefix to enable loading Cyrus SASL plugins on Windows"
-   TYPE STRING
-   VISIBLE_IF [[ENABLE_SASL STREQUAL "CYRUS" AND WIN32]]
-   VALIDATE CODE [[
-      if (CYRUS_PLUGIN_PATH_PREFIX)
-         message(DEPRECATION "CYRUS_PLUGIN_PATH_PREFIX is deprecated and may be removed in a future major release")
-      endif ()
    ]]
 )
 
@@ -184,8 +172,6 @@ mongo_setting(ENABLE_MONGODB_AWS_AUTH "Enable support for the MONGODB-AWS authen
 # Optional features that are DISABLED by default:
 mongo_bool_setting(ENABLE_RDTSCP "Enable fast performance counters using the Intel RDTSCP instruction"
                    DEFAULT VALUE OFF)
-mongo_bool_setting(ENABLE_APPLE_FRAMEWORK "Build libraries as Apple Frameworks on Darwin platforms"
-                   DEFAULT VALUE OFF)
 mongo_bool_setting(
    ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile"
    DEFAULT VALUE OFF
@@ -196,41 +182,8 @@ mongo_bool_setting(
    ]]
 )
 
-# Deprecated options:
-mongo_bool_setting(
-   ENABLE_AUTOMATIC_INIT_AND_CLEANUP
-      "[Deprecated] Enable automatic initialization of the C driver library"
-   DEFAULT EVAL [[
-         set(DEFAULT OFF)
-         if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            message(VERBOSE "For backwards compatibility, when using GCC the default of "
-                            "ENABLE_AUTOMATIC_INIT_AND_CLEANUP is ON")
-            set(DEFAULT ON)
-         endif()
-      ]]
-      DEVEL VALUE OFF
-   VALIDATE CODE [[
-      if(ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
-         if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            message(WARNING "ENABLE_AUTOMATIC_INIT_AND_CLEANUP is only supported on GCC.")
-         endif()
-         message(DEPRECATION
-                  "Enabling ENABLE_AUTOMATIC_INIT_AND_CLEANUP is deprecated and "
-                  "may be removed in a future release")
-      endif()
-   ]]
-)
-mongo_bool_setting(
-   ENABLE_EXTRA_ALIGNMENT
-      "[Deprecated] Enable extra alignment on libbson types"
-   DEFAULT VALUE ON
-      DEVEL VALUE OFF
-   VALIDATE CODE [[
-      if(ENABLE_EXTRA_ALIGNMENT AND MONGO_SANITIZE MATCHES "undefined")
-         message(WARNING "ENABLE_EXTRA_ALIGNMENT=“${ENABLE_EXTRA_ALIGNMENT}” will create conflicts with UndefinedBehaviorSanitizer")
-      endif()
-   ]]
-)
+# Announce the build configuration. Used by `mlib_build_config_is()` in `mlib/config.h`
+add_compile_definitions(_MLIB_BUILD_CONFIG=$<CONFIG>)
 
 if(ENABLE_COVERAGE)
    mongo_platform_link_options(--coverage)
@@ -331,6 +284,9 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wuninitialized
       # Disabled, for now:
       gnu-like:-Wno-strict-aliasing
+      # Sign-comparison-mismatch:
+      gnu-like:-Wsign-compare
+      msvc:/we4018
    )
 endif()
 
@@ -343,8 +299,6 @@ if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR S
    set (ENABLE_BUILD_DEPENDECIES ON)
 endif ()
 
-mongo_pick(BSON_EXTRA_ALIGN 1 0 ENABLE_EXTRA_ALIGNMENT)
-
 mongo_pick(MONGOC_ENABLE_RDTSCP 1 0 ENABLE_RDTSCP)
 
 mongo_pick(MONGOC_ENABLE_STATIC_BUILD 1 0 ENABLE_STATIC)
@@ -352,31 +306,17 @@ mongo_pick(MONGOC_ENABLE_STATIC_INSTALL 1 0
            [[ENABLE_STATIC AND NOT ENABLE_STATIC STREQUAL "BUILD_ONLY"]])
 
 if (USE_SYSTEM_LIBBSON)
-   # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
-   # but you should use the standard CMAKE_PREFIX_PATH instead.
-   message (STATUS "Searching for libbson CMake packages")
-   find_package (bson-1.0
-      "${PROJECT_VERSION}"
-      HINTS
-      ${BSON_ROOT_DIR})
-
-   if (NOT bson-1.0_FOUND)
-      message (FATAL_ERROR "System libbson not found")
-   endif ()
-
-   message (STATUS "libbson found version \"${bson-1.0_VERSION}\"")
-   message (STATUS "disabling test-libmongoc since using system libbson")
-   SET (ENABLE_TESTS OFF)
+   find_package (bson "${PROJECT_VERSION}" REQUIRED)
+   # Disable test-libmongoc since we are using a system libbson
+   set (ENABLE_TESTS OFF)
 
    set (USING_SYSTEM_BSON TRUE)
-   if (NOT TARGET mongo::bson_shared)
-           message (FATAL_ERROR "System libbson built without shared library target")
+   if (NOT TARGET bson::shared)
+      message (FATAL_ERROR "System libbson built without shared library target")
    endif ()
-   set (BSON_LIBRARIES mongo::bson_shared)
-   if (NOT TARGET mongo::bson_static)
-           message (FATAL_ERROR "System libbson built without static library target")
+   if (NOT TARGET bson::static)
+      message (FATAL_ERROR "System libbson built without static library target")
    endif ()
-   set (BSON_STATIC_LIBRARIES mongo::bson_static)
 endif ()
 
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
@@ -399,8 +339,14 @@ set (CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 # Include any custom library paths in the final RPATH.
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
-# Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
+# Install libs with names like @rpath/libfoo.dylib, not bare names.
 set (CMAKE_MACOSX_RPATH ON)
+
+# Distinguish DLL import libs with a .dll.lib suffix. Also prevents filename collisions
+# between static libraries and the import libraries
+if(WIN32)
+   set (CMAKE_IMPORT_LIBRARY_SUFFIX .dll.lib)
+endif()
 
 # https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
 # Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
@@ -449,14 +395,7 @@ add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
    message (STATUS "Using bundled libbson")
-
    add_subdirectory (src/libbson)
-   # Defined in src/libbson/CMakeLists.txt
-   set (BSON_STATIC_LIBRARIES bson_static)
-   set (BSON_LIBRARIES bson_shared)
-   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_STATIC_PUBLIC_DEFINITIONS "BSON_STATIC")
 endif ()
 
 if (MSVC)
@@ -475,11 +414,6 @@ if (ENABLE_MONGOC)
 
    # Ensure the default behavior: don't ignore RPATH settings.
    set (CMAKE_SKIP_BUILD_RPATH OFF)
-
-   if (APPLE)
-      # Until CDRIVER-520.
-      add_definitions (-Wno-deprecated-declarations)
-   endif ()
 
    if (NOT ENABLE_MONGODB_AWS_AUTH MATCHES "ON|OFF|AUTO")
       message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH option must be ON, AUTO, or OFF")
@@ -531,7 +465,7 @@ if (ENABLE_MONGOC)
 endif ()
 
 install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES
-   DESTINATION ${CMAKE_INSTALL_DATADIR}/mongo-c-driver
+   DESTINATION ${CMAKE_INSTALL_DATADIR}/mongo-c-driver/${PROJECT_VERSION}
 )
 
 if (ENABLE_UNINSTALL)
@@ -543,7 +477,7 @@ if (ENABLE_UNINSTALL)
       # Generate a different script name for uninstalling libbson only:
       set (UNINSTALL_SCRIPT_NAME "uninstall-bson")
    endif ()
-   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
+   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver/${PROJECT_VERSION}")
    include (GenerateUninstaller)
 endif ()
 

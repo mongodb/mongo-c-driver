@@ -26,18 +26,13 @@ cd %BUILD_DIR%
 robocopy "%SRCROOT%" "%BUILD_DIR%" /E /XD ".git" "%BUILD_DIR%" "_build" "cmake-build" /NP /NFL /NDL
 
 if "%LINK_STATIC%"=="1" (
-  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .
+  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .
 ) else (
-  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .
+  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .
 )
 
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 %CMAKE% --build . --target INSTALL --config "Debug" -- /m
-
-call ..\.evergreen\scripts\check-installed-files-bson.bat
-if errorlevel 1 (
-   exit /B %errorlevel%
-)
 
 rem Test our CMake package config file with CMake's find_package command.
 set EXAMPLE_DIR=%SRCROOT%\src\libbson\examples\cmake\find_package
@@ -47,7 +42,7 @@ if "%LINK_STATIC%"=="1" (
 )
 
 cd %EXAMPLE_DIR%
-%CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
+%CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 
 rem Yes, they should've named it "dependencies".

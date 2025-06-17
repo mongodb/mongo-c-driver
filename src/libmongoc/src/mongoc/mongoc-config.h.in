@@ -97,17 +97,6 @@
 
 
 /*
- * MONGOC_ENABLE_SSL_LIBRESSL is set from configure to determine if we are
- * compiled with LibreSSL support.
- */
-#define MONGOC_ENABLE_SSL_LIBRESSL @MONGOC_ENABLE_SSL_LIBRESSL@
-
-#if MONGOC_ENABLE_SSL_LIBRESSL != 1
-#  undef MONGOC_ENABLE_SSL_LIBRESSL
-#endif
-
-
-/*
  * MONGOC_ENABLE_SSL_OPENSSL is set from configure to determine if we are
  * compiled with OpenSSL support.
  */
@@ -212,17 +201,6 @@
 
 #if MONGOC_HAVE_SASL_CLIENT_DONE != 1
 #  undef MONGOC_HAVE_SASL_CLIENT_DONE
-#endif
-
-
-/*
- * Disable automatic calls to mongoc_init() and mongoc_cleanup()
- * before main() is called, and after exit() (respectively).
- */
-#define MONGOC_NO_AUTOMATIC_GLOBALS @MONGOC_NO_AUTOMATIC_GLOBALS@
-
-#if MONGOC_NO_AUTOMATIC_GLOBALS != 1
-#  undef MONGOC_NO_AUTOMATIC_GLOBALS
 #endif
 
 /*

@@ -80,7 +80,7 @@ class SBOM(Function):
             display_name='Augmented SBOM',
             local_file='mongoc/augmented-sbom.json',
             permissions='public-read',
-            remote_file='mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/sbom/augmented-sbom.json',
+            remote_file='${project}/${build_variant}/${revision}/${version_id}/${build_id}/sbom/augmented-sbom.json',
         ),
     ]
 

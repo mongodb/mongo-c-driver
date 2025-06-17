@@ -17,7 +17,7 @@
 #include <bson/bson.h>
 
 #include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-topology-scanner-private.h>
 #include <mongoc/mongoc-stream-private.h>
@@ -45,7 +45,7 @@
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-atomic-private.h>
 
 #include <inttypes.h>
@@ -726,12 +726,12 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd, int64_t duration_usec, const 
          node->successful_dns_result = NULL;
       }
 
-      bson_set_error (&node->last_error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_STREAM_CONNECT,
-                      "%s calling hello on \'%s\'",
-                      message,
-                      node->host.host_and_port);
+      _mongoc_set_error (&node->last_error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_STREAM_CONNECT,
+                         "%s calling hello on \'%s\'",
+                         message,
+                         node->host.host_and_port);
 
       _mongoc_topology_scanner_monitor_heartbeat_failed (ts, &node->host, &node->last_error, duration_usec);
 
@@ -870,7 +870,7 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
    if (!node->dns_results) {
       // Expect no truncation.
       int req = bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
-      BSON_ASSERT (mcommon_cmp_less_su (req, sizeof portstr));
+      BSON_ASSERT (mlib_cmp (req, <, sizeof portstr));
 
       memset (&hints, 0, sizeof hints);
       hints.ai_family = host->family;
@@ -882,7 +882,7 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node, bs
 
       if (s != 0) {
          mongoc_counter_dns_failure_inc ();
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Failed to resolve '%s'", host->host);
          RETURN (false);
       }
@@ -915,7 +915,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 {
 #ifdef _WIN32
    ENTRY;
-   bson_set_error (
+   _mongoc_set_error (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "UNIX domain sockets not supported on win32.");
    RETURN (false);
 #else
@@ -933,15 +933,16 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    // Expect no truncation.
    int req = bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
-   if (mcommon_cmp_greater_equal_su (req, sizeof saddr.sun_path - 1)) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
+   if (mlib_cmp (req, >=, sizeof saddr.sun_path - 1)) {
+      _mongoc_set_error (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to define socket address path.");
       RETURN (false);
    }
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 
    if (sock == NULL) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to create socket.");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to create socket.");
       RETURN (false);
    }
 
@@ -951,11 +952,11 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 
       errstr = bson_strerror_r (mongoc_socket_errno (sock), buf, sizeof (buf));
 
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to UNIX domain socket: %s",
-                      errstr);
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_CONNECT,
+                         "Failed to connect to UNIX domain socket: %s",
+                         errstr);
       mongoc_socket_destroy (sock);
       RETURN (false);
    }
@@ -966,7 +967,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
          node, stream, false /* is_setup_done */, NULL /* dns result */, 0 /* delay */, true /* use_handshake */);
       RETURN (true);
    }
-   bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to create TLS stream");
+   _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to create TLS stream");
    RETURN (false);
 #endif
 }
@@ -1188,6 +1189,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
          /* last error domain and code win */
          error->domain = node->last_error.domain;
          error->code = node->last_error.code;
+         error->reserved = node->last_error.reserved;
       }
    }
 
@@ -1232,7 +1234,7 @@ mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts, bson_error_t *
    BSON_ASSERT (ts);
    BSON_ASSERT (error);
 
-   memcpy (error, &ts->error, sizeof (bson_error_t));
+   *error = ts->error;
 }
 
 /*

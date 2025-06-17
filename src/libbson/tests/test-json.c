@@ -1,5 +1,7 @@
 /* required on old Windows for rand_s to be defined */
+#ifdef _WIN32
 #define _CRT_RAND_S
+#endif
 
 #include <bson/bson.h>
 #include <math.h>
@@ -7,7 +9,7 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include <common-string-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-json-private.h>
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
@@ -1191,7 +1193,7 @@ test_bson_json_error (const char *json, int domain, bson_json_error_code_t code)
    bson = bson_new_from_json ((const uint8_t *) json, strlen (json), &error);
 
    BSON_ASSERT (!bson);
-   BSON_ASSERT (error.domain == domain);
+   BSON_ASSERT (mlib_cmp (error.domain, ==, domain));
    BSON_ASSERT (error.code == code);
 }
 
@@ -2718,7 +2720,7 @@ test_bson_as_json_with_opts (bson_t *bson, bson_json_mode_t mode, int max_len, c
    ASSERT_CMPSIZE_T (json_len, ==, strlen (expected));
 
    if (max_len != BSON_MAX_LEN_UNLIMITED) {
-      ASSERT (mcommon_in_range_signed (size_t, max_len));
+      ASSERT (mlib_in_range (size_t, max_len));
       ASSERT_CMPSIZE_T (json_len, <=, (size_t) max_len);
    }
 
@@ -2747,7 +2749,7 @@ run_bson_as_json_with_opts_tests (bson_t *bson, bson_json_mode_t mode, const cha
    const size_t ulen = strlen (expected);
    char *truncated;
 
-   BSON_ASSERT (mcommon_in_range_unsigned (int, ulen));
+   BSON_ASSERT (mlib_in_range (int, ulen));
    const int len = (int) ulen;
 
    /* Test with 0 length (empty string). */
@@ -3213,7 +3215,7 @@ _test_bson_json_utf8_truncation (bson_t *test_doc, bson_json_mode_t mode, const 
          if (arg < 0) {
             BSON_ASSERT (arg == -1);
             break;
-         } else if (arg == checking_len) {
+         } else if (mlib_cmp (arg, ==, checking_len)) {
             expect_truncation_here = false;
          }
       }

@@ -10,15 +10,25 @@ compile_libmongocrypt() {
   # `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no
   # divergence in the copied files.
 
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.12.0 || return
+  # Clone libmongocrypt and check-out 1.13.0.
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.13.0 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
     "-DBUILD_TESTING=OFF"
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
-    "-DBUILD_VERSION=1.12.0"
+    "-DBUILD_VERSION=1.13.0"
   )
+
+  . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
+  find_ccache_and_export_vars "$(pwd)/libmongocrypt" || true
+  if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+    crypt_cmake_flags+=(
+      "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+      "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded"
+    )
+  fi
 
   env \
     DEBUG="0" \

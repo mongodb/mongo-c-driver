@@ -39,10 +39,10 @@
 #include <mongoc/mongoc-openssl-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 
 #include <common-macros-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 
@@ -212,7 +212,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls, char *buf, size_t bu
       expire = bson_get_monotonic_time () + (tls->timeout_msec * 1000);
    }
 
-   BSON_ASSERT (mcommon_in_range_unsigned (int, buf_len));
+   BSON_ASSERT (mlib_in_range (int, buf_len));
    ret = BIO_write (openssl->bio, buf, (int) buf_len);
 
    if (ret <= 0) {
@@ -223,7 +223,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls, char *buf, size_t bu
       now = bson_get_monotonic_time ();
 
       if ((expire - now) < 0) {
-         if (mcommon_cmp_less_su (ret, buf_len)) {
+         if (mlib_cmp (ret, <, buf_len)) {
             mongoc_counter_streams_timeout_inc ();
          }
 
@@ -334,7 +334,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov,
              * if we didn't buffer and have to send out of the iovec */
 
             child_ret = _mongoc_stream_tls_openssl_write (tls, to_write, to_write_len);
-            if (mcommon_cmp_not_equal_su (child_ret, to_write_len)) {
+            if (mlib_cmp (child_ret, !=, to_write_len)) {
                TRACE ("Got child_ret: %zd while to_write_len is: %zu", child_ret, to_write_len);
             }
 
@@ -349,7 +349,7 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov,
 
             ret += child_ret;
 
-            if (mcommon_cmp_less_su (child_ret, to_write_len)) {
+            if (mlib_cmp (child_ret, <, to_write_len)) {
                /* we timed out, so send back what we could send */
 
                RETURN (ret);
@@ -540,12 +540,12 @@ _mongoc_stream_tls_openssl_set_verify_cert_error (SSL *ssl, bson_error_t *error)
       return false;
    }
 
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "TLS handshake failed: certificate verify failed (%ld): %s",
-                   verify_result,
-                   X509_verify_cert_error_string (verify_result));
+   _mongoc_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: certificate verify failed (%ld): %s",
+                      verify_result,
+                      X509_verify_cert_error_string (verify_result));
 
    return true;
 }
@@ -572,7 +572,7 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream, const char *host,
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
       /* Validate OCSP */
       if (openssl->ocsp_opts && 1 != _mongoc_ocsp_tlsext_status (ssl, openssl->ocsp_opts)) {
-         bson_set_error (
+         _mongoc_set_error (
             error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: Failed OCSP verification");
          RETURN (false);
       }
@@ -588,10 +588,10 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream, const char *host,
       }
 
       /* Otherwise, use simple error message. */
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed: Failed certificate verification");
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "TLS handshake failed: Failed certificate verification");
 
       RETURN (false);
    }
@@ -618,34 +618,19 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream, const char *host,
 
    /* Otherwise, try to relay error info from OpenSSL. */
    if (ERR_peek_error () != 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed: %s",
-                      ERR_error_string (ERR_get_error (), NULL));
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "TLS handshake failed: %s",
+                         ERR_error_string (ERR_get_error (), NULL));
       RETURN (false);
    }
 
    /* Otherwise, use simple error info. */
    {
-#ifdef _WIN32
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     errno, /* WSAETIMEDOUT */
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-#else
-      const char *msg = strerror (errno); /* ETIMEDOUT */
-#endif
-
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: %s", msg);
-
-#ifdef _WIN32
-      LocalFree (msg);
-#endif
+      char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+      char *msg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: %s", msg);
    }
 
    RETURN (false);

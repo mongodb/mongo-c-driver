@@ -24,16 +24,13 @@
 
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error-private.h>
 
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include <mongoc/mongoc-stream-tls-openssl.h>
 #include <mongoc/mongoc-openssl-private.h>
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#include <mongoc/mongoc-libressl-private.h>
-#include <mongoc/mongoc-stream-tls-libressl.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #include <mongoc/mongoc-secure-transport-private.h>
 #include <mongoc/mongoc-stream-tls-secure-transport.h>
@@ -43,7 +40,7 @@
 #endif
 #include <mongoc/mongoc-stream-tls.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
@@ -106,11 +103,11 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
             const int64_t now = bson_get_monotonic_time ();
             const int64_t remaining = expire - now;
             if (remaining < 0) {
-               bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake timed out.");
+               _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake timed out.");
                return false;
             } else {
                const int64_t msec = remaining / 1000;
-               BSON_ASSERT (mcommon_in_range_signed (int32_t, msec));
+               BSON_ASSERT (mlib_in_range (int32_t, msec));
                timeout_msec = (int32_t) msec;
             }
          }
@@ -119,44 +116,8 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
    } while (events && ret > 0);
 
    if (error && !error->code) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed.");
+      _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed.");
    }
-   return false;
-}
-/**
- * Deprecated. Was never supposed to be part of the public API.
- * See mongoc_stream_tls_handshake.
- */
-bool
-mongoc_stream_tls_do_handshake (mongoc_stream_t *stream, int32_t timeout_msec)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
-
-   BSON_UNUSED (timeout_msec);
-
-   BSON_ASSERT (stream_tls);
-
-   MONGOC_ERROR ("This function doesn't do anything. Please call "
-                 "mongoc_stream_tls_handshake()");
-   return false;
-}
-
-
-/**
- * Deprecated. Was never supposed to be part of the public API.
- * See mongoc_stream_tls_handshake.
- */
-bool
-mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *) mongoc_stream_get_tls_stream (stream);
-
-   BSON_UNUSED (host);
-
-   BSON_ASSERT (stream_tls);
-
-   MONGOC_ERROR ("This function doesn't do anything. Please call "
-                 "mongoc_stream_tls_handshake()");
    return false;
 }
 
@@ -207,10 +168,6 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
-#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   BEGIN_IGNORE_DEPRECATIONS
-   return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
-   END_IGNORE_DEPRECATIONS
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
@@ -269,11 +226,5 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
    return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
 }
 #endif
-
-mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t *base_stream, mongoc_ssl_opt_t *opt, int client)
-{
-   return mongoc_stream_tls_new_with_hostname (base_stream, NULL, opt, client);
-}
 
 #endif

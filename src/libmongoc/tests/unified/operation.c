@@ -25,7 +25,7 @@
 #include "util.h"
 #include <mongoc/utlist.h>
 #include <common-bson-dsl-private.h>
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 
 typedef struct {
    char *name;
@@ -568,7 +568,7 @@ operation_create_datakey (test_t *test, operation_t *op, result_t *result, bson_
             _mongoc_array_append_val (&arr, key_alt_name);
          }
 
-         BSON_ASSERT (mcommon_in_range_unsigned (uint32_t, arr.len));
+         BSON_ASSERT (mlib_in_range (uint32_t, arr.len));
 
          mongoc_client_encryption_datakey_opts_set_keyaltnames (datakey_opts, arr.data, (uint32_t) arr.len);
 
@@ -2652,13 +2652,13 @@ operation_download (test_t *test, operation_t *op, result_t *result, bson_error_
 
    if (stream) {
       while ((bytes_read = mongoc_stream_read (stream, buf, sizeof (buf), 1, 0)) > 0) {
-         ASSERT (mcommon_in_range_signed (uint32_t, bytes_read));
+         ASSERT (mlib_in_range (uint32_t, bytes_read));
          _mongoc_array_append_vals (&all_bytes, buf, (uint32_t) bytes_read);
       }
       mongoc_gridfs_bucket_stream_error (stream, &op_error);
    }
 
-   ASSERT (mcommon_in_range_unsigned (uint32_t, all_bytes.len));
+   ASSERT (mlib_in_range (uint32_t, all_bytes.len));
    val = bson_val_from_bytes (all_bytes.data, (uint32_t) all_bytes.len);
    result_from_val_and_reply (result, val, NULL, &op_error);
 
@@ -4325,7 +4325,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    /* Check for a "session" argument in all operations, it can be
     * an argument for any operation. */
    if (op->arguments && bson_has_field (op->arguments, "session")) {
-      bson_t copied;
+      bson_t copied = BSON_INITIALIZER;
       mongoc_client_session_t *session = NULL;
 
       op->session_id = bson_strdup (bson_lookup_utf8 (op->arguments, "session"));
@@ -4335,7 +4335,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
          goto done;
       }
 
-      bson_copy_to_excluding (op->arguments, &copied, "session", NULL);
+      bson_copy_to_excluding_noinit (op->arguments, &copied, "session", NULL);
       bson_destroy (op->arguments);
       op->arguments = bson_copy (&copied);
       bson_destroy (&copied);

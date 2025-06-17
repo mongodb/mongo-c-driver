@@ -21,7 +21,7 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 #include "mock_server/future-functions.h"
-#include <common-cmp-private.h>
+#include <mlib/cmp.h>
 #include <common-atomic-private.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
@@ -778,30 +778,6 @@ test_counters_rpc_op_egress_cluster_legacy (void)
       future_destroy (ping);
    }
 
-   // Trigger: mongoc_cluster_legacy_rpc_sendv_to_server
-   mongoc_client_kill_cursor (client, 123);
-
-   {
-      request_t *const request = mock_server_receives_kill_cursors (server, 123);
-
-      ASSERT_WITH_MSG (request->opcode == MONGOC_OPCODE_KILL_CURSORS,
-                       "expected OP_KILL_CURSORS request, but received: %s",
-                       request->as_str);
-
-      // OP_KILL_CURSORS 1:
-      //  - by _mongoc_rpc_op_egress_inc
-      //  - by mongoc_cluster_legacy_rpc_sendv_to_server
-      //  - by _mongoc_client_op_killcursors
-      //  - by _mongoc_client_kill_cursor
-      //  - by mongoc_client_kill_cursor
-      expected.op_egress_killcursors += 1;
-      expected.op_egress_total += 1;
-      ASSERT_RPC_OP_EGRESS_COUNTERS_CURRENT (expected);
-
-      // OP_KILL_CURSORS does not require a response.
-      request_destroy (request);
-   }
-
    // Ensure no extra requests.
    {
       int responses = 0;
@@ -1264,7 +1240,7 @@ _test_counters_auth (bool with_op_msg, bool pooled)
    // Number of messages sent by background threads depend on the number of
    // members in the replica set.
    const size_t member_count_zu = test_framework_replset_member_count ();
-   ASSERT (mcommon_in_range_unsigned (int32_t, member_count_zu));
+   ASSERT (mlib_in_range (int32_t, member_count_zu));
    const int32_t member_count = (int32_t) member_count_zu;
 
    // MongoDB Handshake Spec: Since MongoDB server 4.4, the initial handshake
@@ -1474,6 +1450,7 @@ test_counters_auth_pooled_op_msg (void *context)
 void
 test_counters_install (TestSuite *suite)
 {
+   BSON_UNUSED (suite);
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    TestSuite_AddFull (suite,
                       "/counters/op_msg",

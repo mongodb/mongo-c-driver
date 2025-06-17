@@ -17,7 +17,7 @@ class FetchBuild(Function):
             aws_secret='${aws_secret}',
             bucket='mciuploads',
             local_file='build.tar.gz',
-            remote_file='mongo-c-driver/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz',
+            remote_file='${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz',
         ),
         archive_targz_extract(path='build.tar.gz', destination='mongoc'),
         # Scripts may not be executable on Windows.
