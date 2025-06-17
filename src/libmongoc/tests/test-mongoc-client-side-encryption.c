@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+#include "TestSuite.h"
+#include "bson/bson.h"
 #include "json-test.h"
+#include <mongoc/mongoc.h>
+
 #include "test-libmongoc.h"
 
 #include <common-bson-dsl-private.h>
@@ -347,7 +351,7 @@ _command_started (const mongoc_apm_command_started_t *event)
 
 /* Prose Test 4: BSON Size Limits and Batch Splitting */
 static void
-test_bson_size_limits_and_batch_splitting (void *unused)
+test_bson_size_limits_and_batch_splitting (bool with_qe)
 {
    /* Expect an insert of two documents over 2MiB to split into two inserts but
     * still succeed. */
@@ -369,8 +373,6 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    const int size_2mib = 2097152;
    const int exceeds_2mib_after_encryption = size_2mib - 2000;
    const int exceeds_16mib_after_encryption = size_16mib - 2000;
-
-   BSON_UNUSED (unused);
 
    /* Do the test setup. */
 
@@ -423,6 +425,7 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    coll = mongoc_client_get_collection (client, "db", "coll");
    /* End of setup */
 
+   /* Case 1 */
    /* Insert { "_id": "over_2mib_under_16mib", "unencrypted": <the string "a"
     * repeated 2097152 times> } */
    docs[0] = BCON_NEW ("_id", "over_2mib_under_16mib");
@@ -440,6 +443,23 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_2mib_after_encryption);
    ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
    bson_destroy (docs[0]);
+
+   /* Check that inserting close to, but not exceeding, 16MiB, passes */
+   docs[0] = bson_new ();
+   bson_append_utf8 (docs[0], "_id", -1, "under_16mib", -1);
+   bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
+   bson_destroy (docs[0]);
+
+   /* but.. exceeding 16 MiB fails */
+   docs[0] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-doc.json");
+   bson_append_utf8 (docs[0], "_id", -1, "under_16mib", -1);
+   bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
+   BSON_ASSERT (!mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 2, "too large");
+   bson_destroy (docs[0]);
+
+   /* Case 2: collection bulkWrite */
 
    /* Insert two documents that each exceed 2MiB but no encryption occurs.
     * Expect the bulk write to succeed and run as two separate inserts.
@@ -474,20 +494,73 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    bson_destroy (docs[0]);
    bson_destroy (docs[1]);
 
-   /* Check that inserting close to, but not exceeding, 16MiB, passes */
-   docs[0] = bson_new ();
-   bson_append_utf8 (docs[0], "_id", -1, "under_16mib", -1);
-   bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
-   bson_destroy (docs[0]);
+   if (with_qe) {
+      /* Case 3: client bulkWrite */
+      mongoc_bulkwriteopts_t *bw_opts = mongoc_bulkwriteopts_new ();
+      mongoc_bulkwriteopts_set_verboseresults (bw_opts, true);
 
-   /* but.. exceeding 16 MiB fails */
-   docs[0] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-doc.json");
-   bson_append_utf8 (docs[0], "_id", -1, "under_16mib", -1);
-   bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
-   BSON_ASSERT (!mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 2, "too large");
-   bson_destroy (docs[0]);
+      bson_t *corpus_encryptedFields =
+         get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-encryptedFields.json");
+      bson_t *coll_opts = BCON_NEW ("encryptedFields", BCON_DOCUMENT (corpus_encryptedFields));
+      mongoc_database_t *db = mongoc_client_get_database (client, "db");
+      (void) mongoc_collection_drop (coll, NULL);
+      // Create a newly named collection to avoid cached previous JSON Schema.
+      mongoc_collection_t *coll2 = mongoc_database_create_collection (db, "coll2", coll_opts, &error);
+      ASSERT_OR_PRINT (coll2, error);
+      mongoc_collection_destroy(coll2);
+
+      /* Insert two documents that each exceed 2MiB but no encryption occurs.
+       * Expect two separate bulkWrite commands.
+       */
+      docs[0] = BCON_NEW ("_id", "over_2mib_3");
+      bson_append_utf8 (docs[0], "unencrypted", -1, as, size_2mib - 1500);
+      docs[1] = BCON_NEW ("_id", "over_2mib_4");
+      bson_append_utf8 (docs[1], "unencrypted", -1, as, size_2mib - 1500);
+
+      ctx.num_inserts = 0;
+      mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
+      ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
+      ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
+
+      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts);
+      ASSERT_NO_BULKWRITEEXCEPTION (bwr);
+      ASSERT_CMPINT (ctx.num_inserts, ==, 2);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+      mongoc_bulkwrite_destroy (bw);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+
+      /* Insert two documents that each exceed 2MiB after encryption occurs. Expect
+       * the bulk write to succeed and run as two separate inserts.
+       */
+
+
+      docs[0] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-qe-doc.json");
+      bson_append_utf8 (docs[0], "_id", -1, "encryption_exceeds_2mib_3", -1);
+      bson_append_utf8 (docs[0], "foo", -1, as, exceeds_2mib_after_encryption - 1500);
+      docs[1] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-qe-doc.json");
+      bson_append_utf8 (docs[1], "_id", -1, "encryption_exceeds_2mib_4", -1);
+      bson_append_utf8 (docs[1], "foo", -1, as, exceeds_2mib_after_encryption - 1500);
+
+      ctx.num_inserts = 0;
+      bw = mongoc_client_bulkwrite_new (client);
+      ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
+      ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
+
+      bwr = mongoc_bulkwrite_execute (bw, bw_opts);
+      ASSERT_NO_BULKWRITEEXCEPTION (bwr);
+      ASSERT_CMPINT (ctx.num_inserts, ==, 2);
+      bson_destroy (docs[0]);
+      bson_destroy (docs[1]);
+      mongoc_bulkwrite_destroy (bw);
+      mongoc_bulkwriteresult_destroy (bwr.res);
+      mongoc_bulkwriteexception_destroy (bwr.exc);
+      mongoc_bulkwriteopts_destroy (bw_opts);
+      bson_destroy (corpus_encryptedFields);
+      bson_destroy (coll_opts);
+      mongoc_database_destroy (db);
+   }
 
    bson_free (as);
    bson_destroy (kms_providers);
@@ -499,6 +572,20 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    mongoc_uri_destroy (uri);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_auto_encryption_opts_destroy (opts);
+}
+
+static void
+test_bson_size_limits_and_batch_splitting_no_qe (void *unused)
+{
+   BSON_UNUSED (unused);
+   test_bson_size_limits_and_batch_splitting (false);
+}
+
+static void
+test_bson_size_limits_and_batch_splitting_qe (void *unused)
+{
+   BSON_UNUSED (unused);
+   test_bson_size_limits_and_batch_splitting (true);
 }
 
 typedef struct {
@@ -6902,11 +6989,19 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_auth /* requires auth for error check */);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bson_size_limits_and_batch_splitting",
-                      test_bson_size_limits_and_batch_splitting,
+                      test_bson_size_limits_and_batch_splitting_no_qe,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       TestSuite_CheckLive);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/bson_size_limits_and_batch_splitting_qe",
+                      test_bson_size_limits_and_batch_splitting_qe,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_25,
+                      test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/views_are_prohibited",
                       test_views_are_prohibited,
