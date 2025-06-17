@@ -315,6 +315,9 @@ _test_cmp (void)
    // mlib_cmp produces the correct answer:
    ASSERT (mlib_cmp (-27, <, 20u));
 
+   // MSVC versions prior to 19.20(?) do not correctly short-circuit the (sub)expressions of a ternary operator
+   // containing compound initializers.
+#if !defined(_MSC_VER) || _MSC_VER >= 1920
    {
       // Check that we do not double-evaluate the operand expression.
       intmax_t a = 4;
@@ -322,6 +325,7 @@ _test_cmp (void)
       // We only increment once:
       mlib_check (a, eq, 5);
    }
+#endif
 }
 
 static void
