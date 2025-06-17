@@ -31,15 +31,15 @@ To publish a new release Debian package, perform the following:
 
 .. code-block:: console
 
-   $ git merge --no-commit --no-ff 1.xx.y       # may result in conflicts
+   $ git merge --no-commit --no-ff 2.x.y        # may result in conflicts
    $ git checkout HEAD -- debian                # ensures debian/ dir is preserved
    $ git add .                                  # prepare to resolve conflicts
-   $ git checkout --no-overlay 1.xx.y -- . ':!debian'   # resolve conflicts
+   $ git checkout --no-overlay 2.x.y -- . ':!debian'   # resolve conflicts
    $ git add .
    $ git commit
 
 3. Verify that there are no extraneous differences from the release tag,
-   ``git diff 1.xx.y..HEAD --stat -- . ':!debian'``; the command should produce
+   ``git diff 2.x.y..HEAD --stat -- . ':!debian'``; the command should produce
    no output, and if any output is shown then that indicates differences in
    files outside the ``debian/`` directory.
 4. If there were any files outside the ``debian/`` directory listed in the last
