@@ -16,7 +16,7 @@ SPHINX_ARGS := -W -n -j "$(SPHINX_JOBS)" -a -b dirhtml
 DOCS_SRC := $(THIS_DIR)
 DOCS_OUT := $(BUILD_DIR)/docs/dev/html
 html:
-	uv run sphinx-build $(SPHINX_ARGS) $(DOCS_SRC) $(DOCS_OUT)
+	uv run --frozen sphinx-build $(SPHINX_ARGS) $(DOCS_SRC) $(DOCS_OUT)
 
 serve:
-	uv run --with sphinx-autobuild sphinx-autobuild $(SPHINX_ARGS) $(DOCS_SRC) $(DOCS_OUT)
+	uv run --frozen --with sphinx-autobuild sphinx-autobuild $(SPHINX_ARGS) $(DOCS_SRC) $(DOCS_OUT)
