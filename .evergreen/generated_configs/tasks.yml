@@ -2560,9 +2560,9 @@ tasks:
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
-  - name: loadbalanced-rhel8.9-gcc-compile
-    run_on: rhel8.9-large
-    tags: [loadbalanced, rhel8.9, gcc]
+  - name: loadbalanced-rhel8-latest-gcc-compile
+    run_on: rhel8-latest-large
+    tags: [loadbalanced, rhel8-latest, gcc]
     commands:
       - func: find-cmake-latest
       - command: subprocess.exec
@@ -2578,14 +2578,14 @@ tasks:
             - -c
             - .evergreen/scripts/compile.sh
       - func: upload-build
-  - name: loadbalanced-rhel8.9-gcc-test-5.0-auth-openssl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, auth, openssl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-5.0-auth-openssl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2604,14 +2604,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: openssl
-  - name: loadbalanced-rhel8.9-gcc-test-5.0-noauth-nossl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, noauth, nossl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-5.0-noauth-nossl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2630,14 +2630,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: nossl
-  - name: loadbalanced-rhel8.9-gcc-test-6.0-auth-openssl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, auth, openssl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-6.0-auth-openssl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2656,14 +2656,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: openssl
-  - name: loadbalanced-rhel8.9-gcc-test-6.0-noauth-nossl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, noauth, nossl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-6.0-noauth-nossl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2682,14 +2682,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: nossl
-  - name: loadbalanced-rhel8.9-gcc-test-7.0-auth-openssl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, auth, openssl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-7.0-auth-openssl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2708,14 +2708,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: openssl
-  - name: loadbalanced-rhel8.9-gcc-test-7.0-noauth-nossl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, noauth, nossl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-7.0-noauth-nossl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2734,14 +2734,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: nossl
-  - name: loadbalanced-rhel8.9-gcc-test-8.0-auth-openssl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, auth, openssl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-8.0-auth-openssl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2760,14 +2760,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: openssl
-  - name: loadbalanced-rhel8.9-gcc-test-8.0-noauth-nossl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, noauth, nossl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-8.0-noauth-nossl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2786,14 +2786,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: nossl
-  - name: loadbalanced-rhel8.9-gcc-test-latest-auth-openssl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, auth, openssl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-latest-auth-openssl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -2812,14 +2812,14 @@ tasks:
           CC: gcc
           LOADBALANCED: loadbalanced
           SSL: openssl
-  - name: loadbalanced-rhel8.9-gcc-test-latest-noauth-nossl
-    run_on: rhel8.9-small
-    tags: [loadbalanced, rhel8.9, gcc, noauth, nossl]
-    depends_on: [{ name: loadbalanced-rhel8.9-gcc-compile }]
+  - name: loadbalanced-rhel8-latest-gcc-test-latest-noauth-nossl
+    run_on: rhel8-latest-small
+    tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
+    depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: loadbalanced-rhel8.9-gcc-compile
+          BUILD_NAME: loadbalanced-rhel8-latest-gcc-compile
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
         vars:
@@ -4521,9 +4521,9 @@ tasks:
           CC: gcc-10
           CXX: g++-10
           C_STD_VERSION: 11
-  - name: std-c11-rhel7.9-gcc-compile
-    run_on: rhel7.9-large
-    tags: [std-matrix, rhel7.9, gcc, compile, std-c11]
+  - name: std-c11-rhel7-latest-gcc-compile
+    run_on: rhel7-latest-large
+    tags: [std-matrix, rhel7-latest, gcc, compile, std-c11]
     commands:
       - func: find-cmake-latest
       - func: std-compile
@@ -5101,9 +5101,9 @@ tasks:
           CC: gcc-10
           CXX: g++-10
           C_STD_VERSION: 99
-  - name: std-c99-rhel7.9-gcc-compile
-    run_on: rhel7.9-large
-    tags: [std-matrix, rhel7.9, gcc, compile, std-c99]
+  - name: std-c99-rhel7-latest-gcc-compile
+    run_on: rhel7-latest-large
+    tags: [std-matrix, rhel7-latest, gcc, compile, std-c99]
     commands:
       - func: find-cmake-latest
       - func: std-compile
