@@ -326,8 +326,40 @@ mlib_str_starts_with (mlib_str_view str, mlib_str_view prefix)
 {
    return mlib_str_find (str, prefix) == 0;
 }
+#define mlib_str_starts_with(Str, Prefix) mlib_str_starts_with (mlib_str_view_from (Str), mlib_str_view_from (Needle))
 
-#define mlib_str_starts_with(Str, Prefix) \
-   mlib_str_starts_with (mlib_str_view_from ((Str)), mlib_str_view_from ((Prefix)))
+/**
+ * @brief Test whether a substring occurs at any point within the given string
+ *
+ * @param str The string to be inspected
+ * @param needle The substring to be searched for
+ * @return true If-and-only-if `str` contains `needle` at any position
+ * @return false Otherise
+ */
+static inline bool
+mlib_str_contains (mlib_str_view str, mlib_str_view needle)
+{
+   return mlib_str_find (str, needle) != SIZE_MAX;
+}
+#define mlib_str_contains(Str, Needle) mlib_str_contains (mlib_str_view_from (Str), mlib_str_view_from (Needle))
+
+/**
+ * @brief Test whether a given string contains any of the characters in some other string
+ *
+ * @param str The string to be inspected
+ * @param needle A string to be treated as a set of one-byte characters to search for
+ * @return true If-and-only-if `str` contains `needle` at any position
+ * @return false Otherise
+ *
+ * @note This function does not currently support multi-byte codepoints
+ */
+static inline bool
+mlib_str_contains_any_of (mlib_str_view str, mlib_str_view needle)
+{
+   return mlib_str_find_first_of (str, needle) != SIZE_MAX;
+}
+#define mlib_str_contains_any_of(Str, Needle) \
+   mlib_str_contains_any_of (mlib_str_view_from (Str), mlib_str_view_from (Needle))
+
 
 #endif // MLIB_STR_H_INCLUDED
