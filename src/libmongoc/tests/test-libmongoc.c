@@ -1072,8 +1072,8 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       bson_free (compressors);
    }
 
-   // Required by test-atlas-executor. Not required by normal unified test
-   // runner, but make tests a little more resilient to transient errors.
+   // Setting this by default makes tests a little more resilient to transient errors and more consistent with other
+   // non-single-threaded Drivers which implicitly set this by default.
    add_option_to_uri_str (&uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
    return mcommon_string_from_append_destroy_with_steal (&uri_string);
@@ -1099,17 +1099,9 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 char *
 test_framework_get_uri_str (void)
 {
-   char *uri_str_no_auth;
-   char *uri_str;
-
-   if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
-      // User and password is already embedded in URI.
-      return test_framework_get_uri_str_no_auth (NULL);
-   } else {
-      /* no_auth also contains compressors. */
-      uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
-      uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
-   }
+   /* no_auth also contains compressors. */
+   char *const uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
+   char *const uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
 
    bson_free (uri_str_no_auth);
 

@@ -25,7 +25,4 @@
 bool
 operation_run (test_t *test, bson_t *bson, bson_error_t *error);
 
-// Should only be used by test-atlas-executor.
-extern volatile sig_atomic_t operation_loop_terminated;
-
 #endif /* UNIFIED_OPERATION_H */
