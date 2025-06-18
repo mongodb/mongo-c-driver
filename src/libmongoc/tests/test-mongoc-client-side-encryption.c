@@ -344,7 +344,8 @@ _command_started (const mongoc_apm_command_started_t *event)
    limits_apm_ctx_t *ctx;
 
    ctx = (limits_apm_ctx_t *) mongoc_apm_command_started_get_context (event);
-   if (0 == strcmp ("insert", mongoc_apm_command_started_get_command_name (event))) {
+   const char *cmd_name = mongoc_apm_command_started_get_command_name(event);
+   if (0 == strcmp ("insert", cmd_name) || 0 == strcmp("bulkWrite", cmd_name)) {
       ctx->num_inserts++;
    }
 }
