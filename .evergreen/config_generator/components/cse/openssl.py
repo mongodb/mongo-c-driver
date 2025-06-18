@@ -15,8 +15,6 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian92', 'clang', None, ['cyrus']),
-    ('debian92', 'gcc',   None, ['cyrus']),
     ('debian10', 'clang', None, ['cyrus']),
     ('debian10', 'gcc',   None, ['cyrus']),
     ('debian11', 'clang', None, ['cyrus']),

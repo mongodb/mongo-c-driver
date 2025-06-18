@@ -1604,26 +1604,6 @@ tasks:
           CC: gcc
           CXX: g++
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-debian92-clang-compile
-    run_on: debian92-large
-    tags: [cse-matrix-openssl, compile, debian92, clang, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-          CXX: clang++
-      - func: upload-build
-  - name: cse-sasl-cyrus-openssl-debian92-gcc-compile
-    run_on: debian92-large
-    tags: [cse-matrix-openssl, compile, debian92, gcc, cse, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: cse-sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-          CXX: g++
-      - func: upload-build
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
     run_on: rhel8-zseries-large
     tags: [cse-matrix-openssl, compile, rhel8-zseries, gcc, cse, sasl-cyrus]
@@ -3101,15 +3081,6 @@ tasks:
         vars:
           CC: gcc
           CXX: g++
-  - name: openssl-static-compile-debian92-gcc
-    run_on: debian92-large
-    tags: [openssl-static-matrix, debian92, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
   - name: openssl-static-compile-ubuntu2004-gcc
     run_on: ubuntu2004-large
     tags: [openssl-static-matrix, ubuntu2004, gcc]
@@ -3466,26 +3437,6 @@ tasks:
   - name: sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [sasl-matrix-openssl, compile, debian11, gcc, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: gcc
-          CXX: g++
-      - func: upload-build
-  - name: sasl-cyrus-openssl-debian92-clang-compile
-    run_on: debian92-large
-    tags: [sasl-matrix-openssl, compile, debian92, clang, sasl-cyrus]
-    commands:
-      - func: find-cmake-latest
-      - func: sasl-cyrus-openssl-compile
-        vars:
-          CC: clang
-          CXX: clang++
-      - func: upload-build
-  - name: sasl-cyrus-openssl-debian92-gcc-compile
-    run_on: debian92-large
-    tags: [sasl-matrix-openssl, compile, debian92, gcc, sasl-cyrus]
     commands:
       - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
