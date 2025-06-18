@@ -30,7 +30,6 @@ MATRIX = [
 
     ('rhel7.9',    'gcc',    None, [99, 11,       ]), # GCC 4.8 (max: C11)
     ('rhel80',     'gcc',    None, [99, 11, 17,   ]), # GCC 8.2 (max: C17)
-    ('debian10',   'gcc-8',  None, [99, 11, 17,   ]), # GCC 8.3 (max: C17)
     ('rhel84',     'gcc',    None, [99, 11, 17,   ]), # GCC 8.4 (max: C17)
     ('ubuntu2004', 'gcc-9',  None, [99, 11, 17, 23]), # GCC 9.4 (max: C2x)
     ('debian11',   'gcc-10', None, [99, 11, 17, 23]), # GCC 10.2 (max: C2x)

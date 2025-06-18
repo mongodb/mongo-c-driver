@@ -17,14 +17,10 @@ TAG = f'sasl-matrix-{SSL}'
 COMPILE_MATRIX = [
     ('ubuntu2004',        'gcc',         None,   ['off']),
     ('windows-vsCurrent', 'vs2017x64',   None,   ['off']),
-    ('debian10',          'gcc',         None,   ['off']),
 ]
 
 TEST_MATRIX = [
     ('ubuntu2004', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-
-    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
-    ('debian10',   'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.2']), 
 ]
 # fmt: on
 # pylint: enable=line-too-long

@@ -15,8 +15,6 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian10', 'clang', None, ['cyrus']),
-    ('debian10', 'gcc',   None, ['cyrus']),
     ('debian11', 'clang', None, ['cyrus']),
     ('debian11', 'gcc',   None, ['cyrus']),
     ('rhel80',            'gcc',       None, ['cyrus']),
@@ -39,9 +37,6 @@ TEST_MATRIX = [
     ('rhel8-zseries',     'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
     ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
-
-    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
-    ('debian10',          'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

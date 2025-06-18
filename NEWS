@@ -9,7 +9,7 @@ libmongoc 2.1.0 (Unreleased)
 
 Removed:
 
-* Support for Debian 9.
+* Support for Debian 9 and Debian 10.
 
 
 libmongoc 2.0.2

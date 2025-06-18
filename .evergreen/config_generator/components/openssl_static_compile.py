@@ -17,7 +17,6 @@ TAG = f'{SSL}-matrix'
 # pylint: disable=line-too-long
 # fmt: off
 MATRIX = [
-  ('debian10',   'gcc', None),
   ('debian11',   'gcc', None),
   ('ubuntu2004', 'gcc', None),
 ]

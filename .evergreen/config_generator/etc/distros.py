@@ -46,7 +46,6 @@ def ls_distro(name, **kwargs):
 
 
 DEBIAN_DISTROS = [
-    *ls_distro(name='debian10', os='debian', os_type='linux', os_ver='10'),  # CDRIVER-5874
     *ls_distro(name='debian11', os='debian', os_type='linux', os_ver='11'),
 ]
 
