@@ -35,7 +35,7 @@ class Distro(BaseModel):
     @validator('os_ver')
     @classmethod
     def validate_os_ver(cls, value):
-        return Version(value)
+        return value == 'latest' or Version(value)
 
 
 def ls_distro(name, **kwargs):
@@ -60,6 +60,8 @@ MACOS_ARM64_DISTROS = [
 
 RHEL_DISTROS = [
     *ls_distro(name='rhel7.9', os='rhel', os_type='linux', os_ver='7.9'),
+    *ls_distro(name='rhel8.9', os='rhel', os_type='linux', os_ver='8.9'),
+
     *ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0'),
     *ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4'),
     *ls_distro(name='rhel90', os='rhel', os_type='linux', os_ver='9.0'),
@@ -68,8 +70,6 @@ RHEL_DISTROS = [
     *ls_distro(name='rhel93', os='rhel', os_type='linux', os_ver='9.3'),
     *ls_distro(name='rhel94', os='rhel', os_type='linux', os_ver='9.4'),
     *ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5'),
-    *ls_distro(name='rhel8.9', os='rhel', os_type='linux', os_ver='8.7'),
-    *ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.0'),
 ]
 
 RHEL_POWER_DISTROS = [
@@ -90,9 +90,6 @@ UBUNTU_ARM64_DISTROS = [
 ]
 
 WINDOWS_DISTROS = [
-    *ls_distro(name='windows-64-vs2017', os='windows', os_type='windows', vs_ver='2017'),
-    *ls_distro(name='windows-64-vs2019', os='windows', os_type='windows', vs_ver='2019'),
-
     *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'),  # Windows Server 2019
 ]
 
@@ -105,6 +102,7 @@ GRAVITON_DISTROS = [
 # Ensure no-arch distros are ordered before arch-specific distros.
 ALL_DISTROS = [
     *DEBIAN_DISTROS,
+    *GRAVITON_DISTROS,
     *MACOS_DISTROS,
     *MACOS_ARM64_DISTROS,
     *RHEL_DISTROS,
@@ -113,7 +111,6 @@ ALL_DISTROS = [
     *UBUNTU_DISTROS,
     *UBUNTU_ARM64_DISTROS,
     *WINDOWS_DISTROS,
-    *GRAVITON_DISTROS
 ]
 
 
@@ -200,6 +197,9 @@ def to_platform(compiler):
 
 
 def compiler_to_vars(compiler):
+    if compiler is None:
+        return {}
+
     match compiler, compiler.split('-'):
         case _, ['gcc', *rest]:
             return {
