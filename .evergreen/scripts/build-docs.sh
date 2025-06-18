@@ -10,7 +10,7 @@ CMAKE=$(find_cmake_latest)
 grep "á" NEWS > /dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
 
 build_dir=$MONGOC_DIR/_build/for-docs
-"$CMAKE" -S "$MONGOC_DIR" -B "$build_dir" \
+"$CMAKE" --fresh -S "$MONGOC_DIR" -B "$build_dir" \
   -D ENABLE_MAN_PAGES=ON \
   -D ENABLE_HTML_DOCS=ON \
   -D ENABLE_ZLIB=BUNDLED
