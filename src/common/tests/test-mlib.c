@@ -700,105 +700,105 @@ _test_ckdint_partial (void)
 static void
 _test_str_view (void)
 {
-   mlib_str_view sv = mlib_cstring ("Hello, world!");
+   mstr_view sv = mlib_cstring ("Hello, world!");
    mlib_check (sv.data, str_eq, "Hello, world!");
 
-   mlib_check (mlib_str_cmp (sv, ==, mlib_cstring ("Hello, world!")));
-   mlib_check (mlib_str_cmp (sv, >, mlib_cstring ("Hello")));
+   mlib_check (mstr_cmp (sv, ==, mlib_cstring ("Hello, world!")));
+   mlib_check (mstr_cmp (sv, >, mlib_cstring ("Hello")));
    // Longer strings are greater than shorter strings
-   mlib_check (mlib_str_cmp (sv, <, mlib_cstring ("ZZZZZ")));
+   mlib_check (mstr_cmp (sv, <, mlib_cstring ("ZZZZZ")));
    // str_view_from duplicates a string view:
-   mlib_check (mlib_str_cmp (sv, ==, mlib_str_view_from (sv)));
+   mlib_check (mstr_cmp (sv, ==, mstr_view_from (sv)));
 
    // Substring
    {
       sv = mlib_cstring ("foobar");
       // Implicit length includes everything:
-      mlib_check (mlib_str_cmp (mlib_substr (sv, 2), ==, mlib_cstring ("obar")));
+      mlib_check (mstr_cmp (mlib_substr (sv, 2), ==, mlib_cstring ("obar")));
       // Explicit length trims:
-      mlib_check (mlib_str_cmp (mlib_substr (sv, 2, 1), ==, mlib_cstring ("o")));
+      mlib_check (mstr_cmp (mlib_substr (sv, 2, 1), ==, mlib_cstring ("o")));
       // Substring over the whole length:
-      mlib_check (mlib_str_cmp (mlib_substr (sv, sv.len), ==, mlib_cstring ("")));
+      mlib_check (mstr_cmp (mlib_substr (sv, sv.len), ==, mlib_cstring ("")));
    }
 
    // Searching forward:
    {
       sv = mlib_cstring ("foobar");
-      mlib_check (mlib_str_find (sv, mlib_cstring ("foo")), eq, 0);
-      mlib_check (mlib_str_find (sv, mlib_cstring ("o")), eq, 1);
-      mlib_check (mlib_str_find (sv, mlib_cstring ("foof")), eq, SIZE_MAX);
-      mlib_check (mlib_str_find (sv, mlib_cstring ("bar")), eq, 3);
-      mlib_check (mlib_str_find (sv, mlib_cstring ("barf")), eq, SIZE_MAX);
+      mlib_check (mstr_find (sv, mlib_cstring ("foo")), eq, 0);
+      mlib_check (mstr_find (sv, mlib_cstring ("o")), eq, 1);
+      mlib_check (mstr_find (sv, mlib_cstring ("foof")), eq, SIZE_MAX);
+      mlib_check (mstr_find (sv, mlib_cstring ("bar")), eq, 3);
+      mlib_check (mstr_find (sv, mlib_cstring ("barf")), eq, SIZE_MAX);
       // Start at index 3
-      mlib_check (mlib_str_find (sv, mlib_cstring ("bar"), 3), eq, 3);
+      mlib_check (mstr_find (sv, mlib_cstring ("bar"), 3), eq, 3);
       // Starting beyond the ocurrence will fail:
-      mlib_check (mlib_str_find (sv, mlib_cstring ("b"), 4), eq, SIZE_MAX);
+      mlib_check (mstr_find (sv, mlib_cstring ("b"), 4), eq, SIZE_MAX);
       // Empty string is found immediately:
-      mlib_check (mlib_str_find (sv, mlib_cstring ("")), eq, 0);
+      mlib_check (mstr_find (sv, mlib_cstring ("")), eq, 0);
    }
 
    {
       // Searching for certain chars
-      mlib_str_view digits = mlib_cstring ("1234567890");
+      mstr_view digits = mlib_cstring ("1234567890");
       // The needle chars never occur, so returns SIZE_MAX
-      mlib_check (mlib_str_find_first_of (mlib_cstring ("foobar"), digits), eq, SIZE_MAX);
+      mlib_check (mstr_find_first_of (mlib_cstring ("foobar"), digits), eq, SIZE_MAX);
       // `1` at the fourth pos
-      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo1barbaz4"), digits), eq, 3);
+      mlib_check (mstr_find_first_of (mlib_cstring ("foo1barbaz4"), digits), eq, 3);
       // `1` at the fourth pos, with a trimmed window:
-      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 3), eq, 3);
+      mlib_check (mstr_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 3), eq, 3);
       // `4` is found, since we drop the `1` from the window:
-      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 4), eq, 10);
+      mlib_check (mstr_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 4), eq, 10);
       // Empty needles string is never found in any string
-      mlib_check (mlib_str_find_first_of (mlib_cstring ("foo bar baz"), mlib_cstring ("")), eq, SIZE_MAX);
+      mlib_check (mstr_find_first_of (mlib_cstring ("foo bar baz"), mlib_cstring ("")), eq, SIZE_MAX);
    }
 
    // Splitting
    {
       sv = mlib_cstring ("foo bar baz");
-      mlib_str_view a, b;
+      mstr_view a, b;
       // Trim at index 3, drop one char:
-      mlib_str_split_at (sv, 3, 1, &a, &b);
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("bar baz")));
+      mstr_split_at (sv, 3, 1, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("bar baz")));
       // Trim at index 3, default drop=0:
-      mlib_str_split_at (sv, 3, &a, &b);
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring (" bar baz")));
+      mstr_split_at (sv, 3, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring (" bar baz")));
       // Trim past-the-end
-      mlib_str_split_at (sv, 5000, &a, &b);
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo bar baz")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      mstr_split_at (sv, 5000, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo bar baz")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
       // Drop too many:
-      mlib_str_split_at (sv, 0, 5000, &a, &b);
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      mstr_split_at (sv, 0, 5000, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
       // Past-the-end and also drop
-      mlib_str_split_at (sv, 4000, 42, &a, &b);
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo bar baz")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      mstr_split_at (sv, 4000, 42, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo bar baz")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
    }
 
    // Splitting around an infix
    {
       sv = mlib_cstring ("foo bar baz");
-      mlib_str_view a, b;
+      mstr_view a, b;
       // Split around the first space
-      const mlib_str_view space = mlib_cstring (" ");
-      mlib_check (mlib_str_split_around (sv, space, &a, &b));
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("foo")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("bar baz")));
+      const mstr_view space = mlib_cstring (" ");
+      mlib_check (mstr_split_around (sv, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("bar baz")));
       // Split again
-      mlib_check (mlib_str_split_around (b, space, &a, &b));
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("bar")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("baz")));
+      mlib_check (mstr_split_around (b, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("bar")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("baz")));
       // Split again. This won't find a space, but will still do something
-      mlib_check (!mlib_str_split_around (b, space, &a, &b));
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("baz")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      mlib_check (!mstr_split_around (b, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("baz")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
       // Splitting on the final empty string does nothign
-      mlib_check (!mlib_str_split_around (b, space, &a, &b));
-      mlib_check (mlib_str_cmp (a, ==, mlib_cstring ("")));
-      mlib_check (mlib_str_cmp (b, ==, mlib_cstring ("")));
+      mlib_check (!mstr_split_around (b, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
    }
 }
 
