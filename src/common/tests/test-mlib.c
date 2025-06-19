@@ -721,6 +721,13 @@ _test_str_view (void)
       mlib_check (mstr_cmp (mlib_substr (sv, sv.len), ==, mlib_cstring ("")));
    }
 
+   // Substring from end
+   {
+      sv = mlib_cstring ("foobar");
+      mlib_check (mstr_cmp (mlib_substr (sv, -3), ==, mlib_cstring ("bar")));
+      mlib_check (mstr_cmp (mlib_substr (sv, -6), ==, mlib_cstring ("foobar")));
+   }
+
    // Searching forward:
    {
       sv = mlib_cstring ("foobar");
@@ -750,6 +757,8 @@ _test_str_view (void)
       mlib_check (mstr_find_first_of (mlib_cstring ("foo1barbaz4"), digits, 4), eq, 10);
       // Empty needles string is never found in any string
       mlib_check (mstr_find_first_of (mlib_cstring ("foo bar baz"), mlib_cstring ("")), eq, SIZE_MAX);
+      // Find at the end of the string
+      mlib_check (mstr_find_first_of (mlib_cstring ("foo bar baz"), mlib_cstring ("z")), eq, 10);
    }
 
    // Splitting
@@ -776,6 +785,11 @@ _test_str_view (void)
       mstr_split_at (sv, 4000, 42, &a, &b);
       mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo bar baz")));
       mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
+
+      // Split using a negative index
+      mstr_split_at (sv, -4, 1, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mlib_cstring ("foo bar")));
+      mlib_check (mstr_cmp (b, ==, mlib_cstring ("baz")));
    }
 
    // Splitting around an infix
