@@ -47,6 +47,7 @@ def ls_distro(name, **kwargs):
 
 DEBIAN_DISTROS = [
     *ls_distro(name='debian11', os='debian', os_type='linux', os_ver='11'),
+    *ls_distro(name='debian12', os='debian', os_type='linux', os_ver='12'),
 ]
 
 MACOS_DISTROS = [
@@ -83,6 +84,7 @@ RHEL_ZSERIES_DISTROS = [
 UBUNTU_DISTROS = [
     *ls_distro(name='ubuntu2004', os='ubuntu', os_type='linux', os_ver='20.04'),
     *ls_distro(name='ubuntu2204', os='ubuntu', os_type='linux', os_ver='22.04'),
+    *ls_distro(name='ubuntu2404', os='ubuntu', os_type='linux', os_ver='24.04'),
 ]
 
 UBUNTU_ARM64_DISTROS = [

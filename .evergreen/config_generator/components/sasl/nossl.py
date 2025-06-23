@@ -19,6 +19,8 @@ COMPILE_MATRIX = [
     ('ubuntu2004', 'gcc', None, ['off']),
 
     # For compile only.
+    ('ubuntu2204', 'gcc', None, ['off']),
+    ('ubuntu2404', 'gcc', None, ['off']),
     ('windows-vsCurrent', 'vs2017x64', None, ['off']),
 ]
 

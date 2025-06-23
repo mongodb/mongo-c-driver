@@ -22,10 +22,16 @@ COMPILE_MATRIX = [
     ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
 
     # For compile only.
-    ('debian11',   'clang', None, ['cyrus']),
-    ('debian11',   'gcc',   None, ['cyrus']),
-    ('rhel80',     'gcc',   None, ['cyrus']),
-    ('ubuntu2004', 'clang', None, ['cyrus']),
+    ('debian11',   'clang',    None, ['cyrus']),
+    ('debian11',   'gcc',      None, ['cyrus']),
+    ('debian12',   'clang',    None, ['cyrus']),
+    ('debian12',   'gcc',      None, ['cyrus']),
+    ('rhel80',     'gcc',      None, ['cyrus']),
+    ('ubuntu2004', 'clang',    None, ['cyrus']),
+    ('ubuntu2204', 'gcc',      None, ['cyrus']),
+    ('ubuntu2204', 'clang-12', None, ['cyrus']),
+    ('ubuntu2404', 'gcc',      None, ['cyrus']),
+    ('ubuntu2404', 'clang-14', None, ['cyrus']),
 ]
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.

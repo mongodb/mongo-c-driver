@@ -969,9 +969,11 @@ tasks:
       - func: check-headers
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
     run_on:
-      - ubuntu2204-large
-      - debian11-large
       - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
@@ -1008,9 +1010,11 @@ tasks:
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
     run_on:
-      - ubuntu2204-large
-      - debian11-large
       - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
@@ -1047,9 +1051,11 @@ tasks:
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
     run_on:
-      - ubuntu2204-large
-      - debian11-large
       - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
@@ -1086,9 +1092,11 @@ tasks:
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
     run_on:
-      - ubuntu2204-large
-      - debian11-large
       - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - command: subprocess.exec
@@ -1401,6 +1409,26 @@ tasks:
   - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [cse-matrix-openssl, compile, debian11, gcc, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-debian12-clang-compile
+    run_on: debian12-large
+    tags: [cse-matrix-openssl, compile, debian12, clang, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+          CXX: clang++
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-debian12-gcc-compile
+    run_on: debian12-large
+    tags: [cse-matrix-openssl, compile, debian12, gcc, cse, sasl-cyrus]
     commands:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
@@ -2117,6 +2145,46 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2204-clang-12-compile
+    run_on: ubuntu2204-large
+    tags: [cse-matrix-openssl, compile, ubuntu2204, clang-12, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-ubuntu2204-gcc-compile
+    run_on: ubuntu2204-large
+    tags: [cse-matrix-openssl, compile, ubuntu2204, gcc, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-ubuntu2404-clang-14-compile
+    run_on: ubuntu2404-large
+    tags: [cse-matrix-openssl, compile, ubuntu2404, clang-14, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang-14
+          CXX: clang++-14
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [cse-matrix-openssl, compile, ubuntu2404, gcc, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-openssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
@@ -2876,9 +2944,36 @@ tasks:
         vars:
           CC: gcc
           CXX: g++
+  - name: openssl-static-compile-debian12-gcc
+    run_on: debian12-large
+    tags: [openssl-static-matrix, debian12, gcc]
+    commands:
+      - func: find-cmake-latest
+      - func: openssl-static-compile
+        vars:
+          CC: gcc
+          CXX: g++
   - name: openssl-static-compile-ubuntu2004-gcc
     run_on: ubuntu2004-large
     tags: [openssl-static-matrix, ubuntu2004, gcc]
+    commands:
+      - func: find-cmake-latest
+      - func: openssl-static-compile
+        vars:
+          CC: gcc
+          CXX: g++
+  - name: openssl-static-compile-ubuntu2204-gcc
+    run_on: ubuntu2204-large
+    tags: [openssl-static-matrix, ubuntu2204, gcc]
+    commands:
+      - func: find-cmake-latest
+      - func: openssl-static-compile
+        vars:
+          CC: gcc
+          CXX: g++
+  - name: openssl-static-compile-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-static-matrix, ubuntu2404, gcc]
     commands:
       - func: find-cmake-latest
       - func: openssl-static-compile
@@ -3180,6 +3275,16 @@ tasks:
   - name: sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [sasl-matrix-openssl, compile, debian11, gcc, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: sasl-cyrus-openssl-debian12-gcc-compile
+    run_on: debian12-large
+    tags: [sasl-matrix-openssl, compile, debian12, gcc, sasl-cyrus]
     commands:
       - func: find-cmake-latest
       - func: sasl-cyrus-openssl-compile
@@ -3765,6 +3870,46 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sasl-cyrus-openssl-ubuntu2204-clang-12-compile
+    run_on: ubuntu2204-large
+    tags: [sasl-matrix-openssl, compile, ubuntu2204, clang-12, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang-12
+          CXX: clang++-12
+      - func: upload-build
+  - name: sasl-cyrus-openssl-ubuntu2204-gcc-compile
+    run_on: ubuntu2204-large
+    tags: [sasl-matrix-openssl, compile, ubuntu2204, gcc, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: sasl-cyrus-openssl-ubuntu2404-clang-14-compile
+    run_on: ubuntu2404-large
+    tags: [sasl-matrix-openssl, compile, ubuntu2404, clang-14, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: clang-14
+          CXX: clang++-14
+      - func: upload-build
+  - name: sasl-cyrus-openssl-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [sasl-matrix-openssl, compile, ubuntu2404, gcc, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
   - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-openssl, compile, windows-vsCurrent, vs2017x64, sasl-cyrus]
@@ -4184,6 +4329,26 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sasl-off-nossl-ubuntu2204-gcc-compile
+    run_on: ubuntu2204-large
+    tags: [sasl-matrix-nossl, compile, ubuntu2204, gcc, sasl-off]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-off-nossl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: sasl-off-nossl-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [sasl-matrix-nossl, compile, ubuntu2404, gcc, sasl-off]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-off-nossl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
   - name: sasl-off-nossl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-nossl, compile, windows-vsCurrent, vs2017x64, sasl-off]
@@ -4701,6 +4866,16 @@ tasks:
           CC: clang-12
           CXX: clang++-12
           C_STD_VERSION: 11
+  - name: std-c11-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [std-matrix, ubuntu2404, gcc, compile, std-c11]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-13
+          CXX: g++-13
+          C_STD_VERSION: 11
   - name: std-c11-windows-2019-vs2015-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c11]
@@ -4921,6 +5096,16 @@ tasks:
           CC: clang-12
           CXX: clang++-12
           C_STD_VERSION: 17
+  - name: std-c17-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [std-matrix, ubuntu2404, gcc, compile, std-c17]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-13
+          CXX: g++-13
+          C_STD_VERSION: 17
   - name: std-c17-windows-2019-vs2019-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c17]
@@ -5090,6 +5275,16 @@ tasks:
         vars:
           CC: clang-12
           CXX: clang++-12
+          C_STD_VERSION: 23
+  - name: std-c23-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [std-matrix, ubuntu2404, gcc, compile, std-c23]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-13
+          CXX: g++-13
           C_STD_VERSION: 23
   - name: std-c99-debian11-gcc-compile
     run_on: debian11-large
@@ -5280,6 +5475,16 @@ tasks:
         vars:
           CC: clang-12
           CXX: clang++-12
+          C_STD_VERSION: 99
+  - name: std-c99-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [std-matrix, ubuntu2404, gcc, compile, std-c99]
+    commands:
+      - func: find-cmake-latest
+      - func: std-compile
+        vars:
+          CC: gcc-13
+          CXX: g++-13
           C_STD_VERSION: 99
   - name: std-c99-windows-2019-vs2015-x64-compile
     run_on: windows-vsCurrent-large

@@ -37,6 +37,7 @@ MATRIX = [
     ('rhel92',       'gcc',    None, [99, 11, 17, 23]), # GCC 11.3 (max: C2x)
     ('rhel94',       'gcc',    None, [99, 11, 17, 23]), # GCC 11.4 (max: C2x)
     ('rhel95',       'gcc',    None, [99, 11, 17, 23]), # GCC 11.5 (max: C2x)
+    ('ubuntu2404',   'gcc-13', None, [99, 11, 17, 23]), # GCC 13.3 (max: C2x)
 
     ('windows-vsCurrent', 'vs2015x64', None, [99, 11,   ]), # Max: C11
     ('windows-vsCurrent', 'vs2017x64', None, [99, 11,   ]), # Max: C11
