@@ -50,7 +50,7 @@ TEST_MATRIX = [
     # ubuntu2004-arm64 provides 4.4+.
     # Queryable Encryption (6.0+) does not support the single server topology after 7.0+.
     ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0',                       ]),
-    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], [                     '7.0', '8.0', 'latest']),
+    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], [          'replica'], [                     '7.0', '8.0', 'latest']),
 
     # rhel8-zseries provides 5.0+.
     # Queryable Encryption (6.0+) does not support the single server topology after 7.0+.
