@@ -15,14 +15,17 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian11', 'clang', None, ['cyrus']),
-    ('debian11', 'gcc',   None, ['cyrus']),
-    ('rhel80',            'gcc',       None, ['cyrus']),
+    # For test matrix.
     ('rhel8-zseries',     'gcc',       None, ['cyrus']),
-    ('ubuntu2004',        'clang',     None, ['cyrus']),
     ('ubuntu2004',        'gcc',       None, ['cyrus']),
     ('ubuntu2004-arm64',  'gcc',       None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
+
+    # For compile only.
+    ('debian11',   'clang', None, ['cyrus']),
+    ('debian11',   'gcc',   None, ['cyrus']),
+    ('rhel80',     'gcc',   None, ['cyrus']),
+    ('ubuntu2004', 'clang', None, ['cyrus']),
 ]
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.

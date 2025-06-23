@@ -15,15 +15,18 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian11',          'gcc',        None, ['cyrus']),
-    ('rhel80',            'gcc',        None, ['cyrus']),
+    # For test matrix.
+    ('amazon2023-arm64-latest-large-m8g', 'gcc', None, ['cyrus']),
     ('rhel8-power',       'gcc',        None, ['cyrus']),
     ('rhel8-zseries',     'gcc',        None, ['cyrus']),
-    ('ubuntu2004',        'clang',      None, ['cyrus']),
     ('ubuntu2004-arm64',  'gcc',        None, ['cyrus']),
     ('ubuntu2004',        'gcc',        None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64',  None, ['cyrus']),
-    ('amazon2023-arm64-latest-large-m8g', 'gcc', None, ['cyrus']),
+
+    # For compile only.
+    ('debian11',   'gcc',        None, ['cyrus']),
+    ('rhel80',     'gcc',        None, ['cyrus']),
+    ('ubuntu2004', 'clang',      None, ['cyrus']),
 ]
 
 TEST_MATRIX = [

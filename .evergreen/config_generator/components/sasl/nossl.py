@@ -15,8 +15,11 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu2004',        'gcc',         None,   ['off']),
-    ('windows-vsCurrent', 'vs2017x64',   None,   ['off']),
+    # For test matrix.
+    ('ubuntu2004', 'gcc', None, ['off']),
+
+    # For compile only.
+    ('windows-vsCurrent', 'vs2017x64', None, ['off']),
 ]
 
 TEST_MATRIX = [

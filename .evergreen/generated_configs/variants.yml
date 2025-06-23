@@ -100,15 +100,15 @@ buildvariants:
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
-      - name: cse-sasl-cyrus-openssl-debian11-clang-compile
-      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
-      - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+      - name: cse-sasl-cyrus-openssl-debian11-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-server-auth
@@ -212,17 +212,17 @@ buildvariants:
     display_name: sasl-matrix-openssl
     expansions: {}
     tasks:
-      - name: sasl-cyrus-openssl-debian11-gcc-compile
-      - name: sasl-cyrus-openssl-rhel80-gcc-compile
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
-      - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
-      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
+      - name: sasl-cyrus-openssl-debian11-gcc-compile
+      - name: sasl-cyrus-openssl-rhel80-gcc-compile
+      - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.2-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.4-server-auth
