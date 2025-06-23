@@ -102,6 +102,8 @@ def variants():
         else:
             tasks.append(task.get_task_ref())
 
+    tasks.sort(key=lambda t: t.name)
+
     return [
         BuildVariant(
             name=TAG,
