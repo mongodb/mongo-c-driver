@@ -10,11 +10,12 @@ from config_generator.components.sanitizers.tsan import TAG
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu2004', 'clang', None, ['cyrus']),
+    ('rhel8-latest', 'clang', None, ['cyrus']),
 ]
 
 TEST_OPENSSL_MATRIX = [
-    ('ubuntu2004', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    # rhel8-latest provides 4.2 through latest.
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

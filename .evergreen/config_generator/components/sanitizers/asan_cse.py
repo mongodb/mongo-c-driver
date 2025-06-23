@@ -10,12 +10,14 @@ from config_generator.components.sanitizers.asan import TAG
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu2004', 'clang', None, ['cyrus']),
+    ('rhel8-latest',     'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
-    ('ubuntu2004', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    # rhel8-latest provides 4.2 through latest.
+    # Queryable Encryption (6.0+) does not support the single server topology after 7.0+.
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0',                       ]),
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], [          'replica'], [                            '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

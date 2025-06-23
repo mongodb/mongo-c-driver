@@ -16,7 +16,7 @@ TAG = f'sasl-matrix-{SSL}'
 # fmt: off
 COMPILE_MATRIX = [
     # For test matrix.
-    ('ubuntu2004', 'gcc', None, ['off']),
+    ('rhel8-latest', 'gcc', None, ['off']),
 
     # For compile only.
     ('ubuntu2204', 'gcc', None, ['off']),
@@ -25,7 +25,7 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('ubuntu2004', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-latest', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

@@ -70,7 +70,7 @@ RHEL_DISTROS = [
     *ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.2'),
     *ls_distro(name='rhel93', os='rhel', os_type='linux', os_ver='9.3'),
     *ls_distro(name='rhel94', os='rhel', os_type='linux', os_ver='9.4'),
-    *ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5'),
+    *ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5'), # rhel9-latest
 ]
 
 RHEL_POWER_DISTROS = [
