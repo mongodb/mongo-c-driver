@@ -13,11 +13,11 @@ COMPILE_MATRIX = [
     ('rhel8-latest',     'clang', None, ['cyrus']),
 ]
 
+# Tests for Queryable Encryption (6.0+), which does not support the single server topology, are skipped with 7.0+.
 TEST_MATRIX = [
     # rhel8-latest provides 4.2 through latest.
-    # Queryable Encryption (6.0+) does not support the single server topology after 7.0+.
     ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0',                       ]),
-    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], [          'replica'], [                            '7.0', '8.0', 'latest']),
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], [                            '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

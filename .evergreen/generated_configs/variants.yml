@@ -114,8 +114,11 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-replica-auth
@@ -128,9 +131,15 @@ buildvariants:
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-replica-auth
         batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-server-auth
+        batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-replica-auth
         batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
+        batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-replica-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
@@ -141,8 +150,11 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-replica-auth
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
       - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
       - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2204-clang-12-compile
@@ -159,8 +171,11 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-replica-auth
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-server-auth
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-server-auth
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-server-auth
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:
