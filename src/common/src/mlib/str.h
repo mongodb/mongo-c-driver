@@ -67,12 +67,60 @@ mstr_view_data (const char *data, size_t len)
    return ret;
 }
 
+#if 1 // See "!! NOTE" below
+
+/**
+ * @brief Coerce a string-like object to an `mstr_view` of that string
+ *
+ * This macro requires that the object have `.data` and `.len` members
+ */
+#define mstr_view_from(X) mstr_view_data ((X).data, (X).len)
+
+/**
+ * ! NOTE: The disabled snippet below is kept for posterity as a drop-in replacment
+ * ! for mstr_view_from with support for _Generic.
+ *
+ * When we can increase the compiler requirements to support _Generic, the following
+ * macro definition alone makes almost every function in this file significantly
+ * more concise to use, as it allows us to pass a C string to any API that
+ * expects an `mstr_view`, enabling code like this:
+ *
+ * ```
+ * mstr s = get_string();
+ * if (mstr_cmp(s, ==, "magicKeyword")) {
+ *    Do something...
+ * }
+ * ```
+ *
+ * Without _Generic, we require all C strings to be wrapped with `mlib_cstring`,
+ * which isn't especially onerous, but it is annoying. Additionally, the below
+ * `_Generic` macro can be extended to support more complex string-like types.
+ *
+ * For reference, support for _Generic requires the following compilers:
+ *
+ * - MSVC 19.28.0+ (VS 2019, 16.8.1)
+ * - GCC 4.9+
+ * - Clang 3.0+
+ */
+
+#else
+
 /**
  * @brief Coerce an object to an `mstr_view`
  *
  * The object requires a `data` and `len` member
  */
-#define mstr_view_from(X) mstr_view_data ((X).data, (X).len)
+#define mstr_view_from(X) \
+   _Generic ((X), mstr_view: _mstr_view_trivial_copy, char *: mlib_cstring, const char *: mlib_cstring) ((X))
+// Just copy an mstr_view by-value
+static inline mstr_view
+_mstr_view_trivial_copy (mstr_view s)
+{
+   return s;
+}
+
+#endif
+
 
 /**
  * @brief Create an `mstr_view` referring to the given null-terminated C string
@@ -96,7 +144,6 @@ mlib_cstring (const char *s)
 static inline enum mlib_cmp_result
 mstr_cmp (mstr_view a, mstr_view b)
 {
-   // Use `strncmp` on the common prefix for the strings
    size_t l = a.len;
    if (b.len < l) {
       l = b.len;
@@ -114,6 +161,66 @@ mstr_cmp (mstr_view a, mstr_view b)
 #define mstr_cmp(...) MLIB_ARGC_PICK (_mstr_cmp, __VA_ARGS__)
 #define _mstr_cmp_argc_2(A, B) mstr_cmp (mstr_view_from (A), mstr_view_from (B))
 #define _mstr_cmp_argc_3(A, Op, B) (_mstr_cmp_argc_2 (A, B) Op 0)
+
+/**
+ * @brief If the given codepoint is a Basic Latin (ASCII) uppercase character,
+ * return the lowercase character. Other codepoint values are returned unchanged.
+ *
+ * This is safer than `tolower`, because it doesn't respect locale and has no
+ * undefined behavior.
+ */
+static inline int32_t
+mlib_latin_tolower (int32_t a)
+{
+   if (a >= 0x41 /* "A" */ && a <= 0x5a /* "Z" */) {
+      a += 0x20; // Adjust from "A" -> "a"
+   }
+   return a;
+}
+
+/**
+ * @brief Compare two individual codepoint values, with case-insensitivity in
+ * the Basic Latin range.
+ */
+static inline enum mlib_cmp_result
+mlib_latin_charcasecmp (int32_t a, int32_t b)
+{
+   return mlib_cmp (mlib_latin_tolower (a), mlib_latin_tolower (b));
+}
+
+/**
+ * @brief Compare two strings lexicographically, case-insensitive in the Basic
+ * Latin range.
+ *
+ * If called with two arguments, behaves the same as `strcasecmp`. If called with
+ * three arguments, the center argument should be an infix operator to perform
+ * the semantic comparison.
+ */
+static inline enum mlib_cmp_result
+mstr_latin_casecmp (mstr_view a, mstr_view b)
+{
+   size_t l = a.len;
+   if (b.len < l) {
+      l = b.len;
+   }
+   mlib_foreach_urange (i, l) {
+      // We don't need to do any UTF-8 decoding, because our case insensitivity
+      // only activates for 1-byte encoded codepoints, and all other valid UTF-8
+      // sequences will collate equivalently with byte-wise comparison to a UTF-32
+      // encoding.
+      enum mlib_cmp_result r = mlib_latin_charcasecmp (a.data[i], b.data[i]);
+      if (r) {
+         // Not equivalent at this code unit. Return this as the overall string ordering.
+         return r;
+      }
+   }
+   // Same prefixes, the ordering is now based on their length (longer string > shorter string)
+   return mlib_cmp (a.len, b.len);
+}
+
+#define mstr_latin_casecmp(...) MLIB_ARGC_PICK (_mstr_latin_casecmp, __VA_ARGS__)
+#define _mstr_latin_casecmp_argc_2(A, B) mstr_latin_casecmp (mstr_view_from (A), mstr_view_from (B))
+#define _mstr_latin_casecmp_argc_3(A, Op, B) (_mstr_latin_casecmp_argc_2 (A, B) Op 0)
 
 /**
  * @brief Adjust a possibly negative index position to wrap around for a string
@@ -155,7 +262,6 @@ _mstr_adjust_index (mstr_view s, mlib_upsized_integer pos, bool clamp_to_length)
    mlib_check (pos.i.u <= s.len, because, "the string position index must not be larger than the string length");
    return pos.i.u;
 }
-#define mstr_adjust_index(S, I) _mstr_adjust_index (S, mlib_upsize_integer (I))
 
 /**
  * @brief Create a new `mstr_view` that views a substring within another string

@@ -814,6 +814,29 @@ _test_str_view (void)
       mlib_check (mstr_cmp (a, ==, mlib_cstring ("")));
       mlib_check (mstr_cmp (b, ==, mlib_cstring ("")));
    }
+
+   // Case folding
+   {
+      mlib_check (mlib_latin_tolower ('a'), eq, 'a');
+      mlib_check (mlib_latin_tolower ('z'), eq, 'z');
+      mlib_check (mlib_latin_tolower ('A'), eq, 'a');
+      mlib_check (mlib_latin_tolower ('Z'), eq, 'z');
+      // Other chars are unchanged:
+      mlib_check (mlib_latin_tolower ('7'), eq, '7');
+      mlib_check (mlib_latin_tolower ('?'), eq, '?');
+   }
+
+   // Case-insensitive compare
+   {
+      mlib_check (mstr_latin_casecmp (mlib_cstring ("foo"), ==, mlib_cstring ("foo")));
+      mlib_check (mstr_latin_casecmp (mlib_cstring ("foo"), !=, mlib_cstring ("bar")));
+      mlib_check (mstr_latin_casecmp (mlib_cstring ("Foo"), ==, mlib_cstring ("foo")));
+      mlib_check (mstr_latin_casecmp (mlib_cstring ("Foo"), >, mlib_cstring ("bar")));
+      // "Food" < "foo" when case-sensitive ('F' < 'f'):
+      mlib_check (mstr_cmp (mlib_cstring ("Food"), <, mlib_cstring ("foo")));
+      // But "Food" > "foo" when case-insensitive:
+      mlib_check (mstr_latin_casecmp (mlib_cstring ("Food"), >, mlib_cstring ("foo")));
+   }
 }
 
 void
