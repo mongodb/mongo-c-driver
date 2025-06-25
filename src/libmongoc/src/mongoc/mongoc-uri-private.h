@@ -19,6 +19,7 @@
 #ifndef MONGOC_URI_PRIVATE_H
 #define MONGOC_URI_PRIVATE_H
 
+#include <mlib/str.h>
 #include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-crypto-private.h>
@@ -36,8 +37,20 @@ mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port);
 
 bool
 mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str);
+
+/**
+ * @brief Update the settings on a URI based on a URI query string
+ *
+ * @param uri The URI to be updated
+ * @param options A string of key-value pairs, separated by "&", URI %-encoded.
+ * This should not include the leading "?"
+ * @param from_dns Whether this string comes from a DNS query
+ * @return true Upon success. The internal settings of the URI object have been updated
+ * @return false Otherwise. The internal settings of the URI object are unspecified.
+ */
 bool
-mongoc_uri_parse_options (mongoc_uri_t *uri, const char *str, bool from_dns, bson_error_t *error);
+_mongoc_uri_apply_query_string (mongoc_uri_t *uri, mstr_view options, bool from_dns, bson_error_t *error);
+
 int32_t
 mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri);
 

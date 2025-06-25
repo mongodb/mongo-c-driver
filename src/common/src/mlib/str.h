@@ -485,7 +485,7 @@ mstr_starts_with (mstr_view str, mstr_view prefix)
    // Check if the trimmed string is the same as the prefix
    return mstr_cmp (str, ==, prefix);
 }
-#define mstr_starts_with(Str, Prefix) mstr_starts_with (mstr_view_from (Str), mstr_view_from (Needle))
+#define mstr_starts_with(Str, Prefix) mstr_starts_with (mstr_view_from (Str), mstr_view_from (Prefix))
 
 /**
  * @brief Test whether a substring occurs at any point within the given string

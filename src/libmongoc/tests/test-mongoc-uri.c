@@ -46,6 +46,12 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://localhost::27017"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost,localhost::"));
    ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/d?k"));
+   // %-encoded chars that are invalid in the database name
+   ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/db%2fname")); // "/"
+   ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/db%20ame"));  // " "
+   ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/db%5came"));  // "\"
+   ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/db%24ame"));  // "$"
+   ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/db%22ame"));  // '"'
    ASSERT (!mongoc_uri_new (""));
    ASSERT (!mongoc_uri_new ("mongodb://,localhost:27017"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost:27017,,b"));
@@ -1400,7 +1406,7 @@ test_mongoc_uri_functions (void)
    mongoc_uri_destroy (uri);
 }
 
-#define BSON_ERROR_INIT ((bson_error_t){.code = 0u, .domain = 0u, .message = {0}, .reserved = 0u})
+#define BSON_ERROR_INIT ((bson_error_t) {.code = 0u, .domain = 0u, .message = {0}, .reserved = 0u})
 
 static void
 test_mongoc_uri_new_with_error (void)
@@ -1415,12 +1421,15 @@ test_mongoc_uri_new_with_error (void)
    mongoc_uri_destroy (uri);
 
    ASSERT (!mongoc_uri_new_with_error ("mongodb://", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host string in URI");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Host list of URI string cannot be empty");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongo://localhost", &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid URI Schema, expecting 'mongodb://'");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid URI scheme \"mongo://\". Expected one of \"mongodb://\" or \"mongodb+srv://\"");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/?readPreference=unknown", &error));
@@ -1457,11 +1466,13 @@ test_mongoc_uri_new_with_error (void)
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host string in URI");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier \"l%oc\"");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb:///tmp/mongodb.sock", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host string in URI");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Host list of URI string cannot be empty");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
@@ -1707,7 +1718,7 @@ test_mongoc_uri_compressors (void)
    capture_logs (true);
    mongoc_uri_set_compressors (uri, "");
    ASSERT_EQUAL_BSON (tmp_bson ("{}"), mongoc_uri_get_compressors (uri));
-   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: ''");
+   ASSERT_NO_CAPTURED_LOGS ("Disable compression with empty string");
 
 
    /* Disable compression */
@@ -2697,7 +2708,7 @@ test_mongoc_uri_srv (void)
       const char *option = _key "=" #_value;                                                         \
       char *lkey = bson_strdup (_key);                                                               \
       mongoc_lowercase (lkey, lkey);                                                                 \
-      mongoc_uri_parse_options (uri, option, true /* from dns */, &error);                           \
+      _mongoc_uri_apply_query_string (uri, mlib_cstring (option), true /* from dns */, &error);      \
       ASSERT_ERROR_CONTAINS (                                                                        \
          error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "prohibited in TXT record"); \
       ASSERT (!bson_has_field (mongoc_uri_get_##_where (uri), lkey));                                \
@@ -2714,7 +2725,7 @@ test_mongoc_uri_dns_options (void)
    uri = mongoc_uri_new ("mongodb+srv://a.b.c");
    ASSERT (uri);
 
-   ASSERT (!mongoc_uri_parse_options (uri, "tls=false", true /* from dsn */, &error));
+   ASSERT (!_mongoc_uri_apply_query_string (uri, mlib_cstring ("tls=false"), true /* from dsn */, &error));
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "prohibited in TXT record");
 
@@ -2726,8 +2737,8 @@ test_mongoc_uri_dns_options (void)
    PROHIBITED (MONGOC_URI_GSSAPISERVICENAME, malicious, utf8, credentials);
 
    /* the two options allowed in TXT records, case-insensitive */
-   ASSERT (mongoc_uri_parse_options (uri, "authsource=db", true, NULL));
-   ASSERT (mongoc_uri_parse_options (uri, "RepLIcaSET=rs", true, NULL));
+   ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("authsource=db"), true, NULL));
+   ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("RepLIcaSET=rs"), true, NULL));
 
    /* test that URI string overrides TXT record options */
    mongoc_uri_destroy (uri);
@@ -2736,7 +2747,7 @@ test_mongoc_uri_dns_options (void)
    // test that parsing warns if replicaSet is ignored from TXT records.
    {
       capture_logs (true);
-      ASSERT (mongoc_uri_parse_options (uri, "replicaSet=db2", true, NULL));
+      ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("replicaSet=db2"), true, NULL));
       ASSERT_CAPTURED_LOG (
          "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
       capture_logs (false);
@@ -2746,7 +2757,7 @@ test_mongoc_uri_dns_options (void)
    // test that parsing does not warn if authSource is ignored from TXT records.
    {
       capture_logs (true);
-      ASSERT (mongoc_uri_parse_options (uri, "authSource=db2", true, NULL));
+      ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("authSource=db2"), true, NULL));
       ASSERT_NO_CAPTURED_LOGS ("parsing authSource from TXT");
       capture_logs (false);
       ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
@@ -3122,7 +3133,7 @@ test_casing_options (void)
 
    uri = mongoc_uri_new ("mongodb://localhost:27017/");
    mongoc_uri_set_option_as_bool (uri, "TLS", true);
-   mongoc_uri_parse_options (uri, "ssl=false", false, &error);
+   _mongoc_uri_apply_query_string (uri, mlib_cstring ("ssl=false"), false, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "conflicts");
 
    mongoc_uri_destroy (uri);
@@ -3183,7 +3194,7 @@ test_parses_long_ipv6 (void)
       // Expect a generic parsing error is also returned.
       ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host string in URI");
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier \"[");
 
       mongoc_uri_destroy (uri);
       bson_free (uri_string);
