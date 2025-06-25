@@ -17,29 +17,31 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian92',          'clang',      None, ['cyrus']),
-    ('debian92',          'gcc',        None, ['cyrus']),
-    ('debian10',          'gcc',        None, ['cyrus']),
-    ('debian11',          'gcc',        None, ['cyrus']),
-    ('rhel80',            'gcc',        None, ['cyrus']),
+    # For test matrix.
+    ('rhel8-latest',      'gcc',        None, ['cyrus']),
     ('rhel8-power',       'gcc',        None, ['cyrus']),
     ('rhel8-zseries',     'gcc',        None, ['cyrus']),
-    ('ubuntu2004',        'clang',      None, ['cyrus']),
     ('ubuntu2004-arm64',  'gcc',        None, ['cyrus']),
-    ('ubuntu2004',        'gcc',        None, ['cyrus']),
     ('windows-vsCurrent', 'vs2017x64',  None, ['cyrus']),
+
+    # For compile only.
+    ('debian11',   'gcc',      None, ['cyrus']),
+    ('debian12',   'gcc',      None, ['cyrus']),
+    ('rhel80',     'gcc',      None, ['cyrus']),
+    ('ubuntu2004', 'clang',    None, ['cyrus']),
+    ('ubuntu2204', 'gcc',      None, ['cyrus']),
+    ('ubuntu2204', 'clang-12', None, ['cyrus']),
+    ('ubuntu2404', 'gcc',      None, ['cyrus']),
+    ('ubuntu2404', 'clang-14', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('rhel8-power',  'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-latest',  'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-power',   'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], [              '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], [       'latest']),
-
-    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
-    ('debian10',          'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2']), 
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -97,6 +99,8 @@ def variants():
             )
         else:
             tasks.append(task.get_task_ref())
+
+    tasks.sort(key=lambda t: t.name)
 
     return [
         BuildVariant(
