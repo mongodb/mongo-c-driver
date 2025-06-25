@@ -36,23 +36,19 @@ COMPILE_MATRIX = [
 ]
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.
-# Tests for Queryable Encryption (6.0+), which does not support the single server topology, are skipped with 7.0+.
+# CSFLE requires 4.2+. QE requires 7.0+ and are skipped on "server" tasks.
 TEST_MATRIX = [
     # rhel8-latest provides 4.2+.
-    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0',                       ]),
-    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], [                            '7.0', '8.0', 'latest']),
+    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     # windows-vsCurrent provides 4.2+.
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0',                       ]),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [                            '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     # ubuntu2004-arm64 provides 4.4+.
-    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0',                       ]),
-    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], [                     '7.0', '8.0', 'latest']),
+    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
     # rhel8-zseries provides 5.0+.
-    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['5.0', '6.0',                       ]),
-    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], [              '7.0', '8.0', 'latest']),
+    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

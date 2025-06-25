@@ -13,11 +13,10 @@ COMPILE_MATRIX = [
     ('rhel8-latest',     'clang', None, ['cyrus']),
 ]
 
-# Tests for Queryable Encryption (6.0+), which does not support the single server topology, are skipped with 7.0+.
+# CSFLE requires 4.2+. QE requires 7.0+ and are skipped on "server" tasks.
 TEST_MATRIX = [
     # rhel8-latest provides 4.2 through latest.
-    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0',                       ]),
-    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], [                            '7.0', '8.0', 'latest']),
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
