@@ -342,35 +342,17 @@ _testcase_run (he_testcase_t *testcase)
    _check_stream (node->stream, expected->conn_succeeds_to, "checking client's final connection");
 }
 
-#define CLIENT(client) \
-   {                   \
-      #client          \
-   }
+#define CLIENT(client) {#client}
 
-#define CLIENT_WITH_DNS_CACHE_TIMEOUT(type, timeout) \
-   {                                                 \
-      #type, timeout                                 \
-   }
+#define CLIENT_WITH_DNS_CACHE_TIMEOUT(type, timeout) {#type, timeout}
 #define HANGUP true
 #define LISTEN false
-#define SERVER(type, hangup) \
-   {                         \
-      #type, hangup          \
-   }
-#define DELAYED_SERVER(type, hangup, delay) \
-   {                                        \
-      #type, hangup, delay                  \
-   }
-#define SERVERS(...) \
-   {                 \
-      __VA_ARGS__    \
-   }
+#define SERVER(type, hangup) {#type, hangup}
+#define DELAYED_SERVER(type, hangup, delay) {#type, hangup, delay}
+#define SERVERS(...) {__VA_ARGS__}
 #define DELAY_MS(val) val
 #define DURATION_MS(min, max) (min), (max)
-#define EXPECT(type, num_acmds, duration) \
-   {                                      \
-      #type, num_acmds, duration          \
-   }
+#define EXPECT(type, num_acmds, duration) {#type, num_acmds, duration}
 #define NCMDS(n) (n)
 
 static void

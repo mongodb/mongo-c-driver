@@ -83,7 +83,7 @@ bson_vector_int8_view_init (bson_vector_int8_view_t *view_out, uint8_t *binary_d
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
        bson_vector_int8_validate (header)) {
       if (view_out) {
-         *view_out = (bson_vector_int8_view_t){
+         *view_out = (bson_vector_int8_view_t) {
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -103,7 +103,7 @@ bson_vector_int8_const_view_init (bson_vector_int8_const_view_t *view_out,
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
        bson_vector_int8_validate (header)) {
       if (view_out) {
-         *view_out = (bson_vector_int8_const_view_t){
+         *view_out = (bson_vector_int8_const_view_t) {
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -121,7 +121,7 @@ bson_vector_float32_view_init (bson_vector_float32_view_t *view_out, uint8_t *bi
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
        bson_vector_float32_validate (header, binary_data_len)) {
       if (view_out) {
-         *view_out = (bson_vector_float32_view_t){
+         *view_out = (bson_vector_float32_view_t) {
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -141,7 +141,7 @@ bson_vector_float32_const_view_init (bson_vector_float32_const_view_t *view_out,
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
        bson_vector_float32_validate (header, binary_data_len)) {
       if (view_out) {
-         *view_out = (bson_vector_float32_const_view_t){
+         *view_out = (bson_vector_float32_const_view_t) {
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -161,7 +161,7 @@ bson_vector_packed_bit_view_init (bson_vector_packed_bit_view_t *view_out,
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
        bson_vector_packed_bit_validate (header, binary_data, binary_data_len)) {
       if (view_out) {
-         *view_out = (bson_vector_packed_bit_view_t){
+         *view_out = (bson_vector_packed_bit_view_t) {
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -181,7 +181,7 @@ bson_vector_packed_bit_const_view_init (bson_vector_packed_bit_const_view_t *vie
    if (bson_vector_binary_header_impl_init (&header, binary_data, binary_data_len) &&
        bson_vector_packed_bit_validate (header, binary_data, binary_data_len)) {
       if (view_out) {
-         *view_out = (bson_vector_packed_bit_const_view_t){
+         *view_out = (bson_vector_packed_bit_const_view_t) {
             .binary.data = binary_data, .binary.data_len = binary_data_len, .binary.header_copy = header};
       }
       return true;
@@ -306,7 +306,7 @@ bson_append_vector_int8_uninit (
          .bytes[1] = bson_vector_header_byte_1 (0)};
       memcpy (binary, header.bytes, BSON_VECTOR_HEADER_LEN);
       *view_out =
-         (bson_vector_int8_view_t){.binary.data = binary, .binary.data_len = length, .binary.header_copy = header};
+         (bson_vector_int8_view_t) {.binary.data = binary, .binary.data_len = length, .binary.header_copy = header};
       return true;
    } else {
       return false;
@@ -331,7 +331,7 @@ bson_append_vector_float32_uninit (
          .bytes[1] = bson_vector_header_byte_1 (0)};
       memcpy (binary, header.bytes, BSON_VECTOR_HEADER_LEN);
       *view_out =
-         (bson_vector_float32_view_t){.binary.data = binary, .binary.data_len = length, .binary.header_copy = header};
+         (bson_vector_float32_view_t) {.binary.data = binary, .binary.data_len = length, .binary.header_copy = header};
       return true;
    } else {
       return false;
@@ -365,7 +365,7 @@ bson_append_vector_packed_bit_uninit (
          // No reason to read-modify-write here, it's better to write the whole byte.
          binary[length - 1u] = 0u;
       }
-      *view_out = (bson_vector_packed_bit_view_t){
+      *view_out = (bson_vector_packed_bit_view_t) {
          .binary.data = binary, .binary.data_len = length, .binary.header_copy = header};
       return true;
    } else {

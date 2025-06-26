@@ -3000,7 +3000,7 @@ _mongoc_encryptedFields_fill_auto_datakeys (
    BSON_ASSERT_PARAM (factory);
 
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
    bson_init (out_fields);
 

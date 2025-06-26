@@ -1170,10 +1170,7 @@ typedef struct {
    bson_t agg_reply;
 } resume_ctx_t;
 
-#define RESUME_INITIALIZER           \
-   {                                 \
-      false, false, BSON_INITIALIZER \
-   }
+#define RESUME_INITIALIZER {false, false, BSON_INITIALIZER}
 
 static void
 _resume_with_post_batch_resume_token_started (const mongoc_apm_command_started_t *event)

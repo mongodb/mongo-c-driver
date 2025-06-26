@@ -64,7 +64,7 @@ bson_iter_init (bson_iter_t *iter,  /* OUT */
    iter->d4 = 0;
    iter->next_off = 4;
    iter->err_off = 0;
-   iter->value = (bson_value_t){0};
+   iter->value = (bson_value_t) {0};
 
    return true;
 }

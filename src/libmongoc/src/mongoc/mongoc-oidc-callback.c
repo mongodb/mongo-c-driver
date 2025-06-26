@@ -48,7 +48,7 @@ mongoc_oidc_callback_new (mongoc_oidc_callback_fn_t fn)
    }
 
    mongoc_oidc_callback_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_callback_t){.fn = fn};
+   *ret = (mongoc_oidc_callback_t) {.fn = fn};
    return ret;
 }
 
@@ -60,7 +60,7 @@ mongoc_oidc_callback_new_with_user_data (mongoc_oidc_callback_fn_t fn, void *use
    }
 
    mongoc_oidc_callback_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_callback_t){.fn = fn, .user_data = user_data};
+   *ret = (mongoc_oidc_callback_t) {.fn = fn, .user_data = user_data};
    return ret;
 }
 
@@ -97,7 +97,7 @@ mongoc_oidc_callback_params_t *
 mongoc_oidc_callback_params_new (void)
 {
    mongoc_oidc_callback_params_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_callback_params_t){
+   *ret = (mongoc_oidc_callback_params_t) {
       .version = MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION,
    };
    return ret;
@@ -207,7 +207,7 @@ mongoc_oidc_credential_new (const char *access_token)
    }
 
    mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_credential_t){
+   *ret = (mongoc_oidc_credential_t) {
       .access_token = bson_strdup (access_token),
       .expires_in_set = false, // Infinite.
    };
@@ -226,7 +226,7 @@ mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t ex
    }
 
    mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
-   *ret = (mongoc_oidc_credential_t){
+   *ret = (mongoc_oidc_credential_t) {
       .access_token = bson_strdup (access_token),
       .expires_in_set = true,
       .expires_in = expires_in,

@@ -107,7 +107,7 @@ typedef union mc_shared_tpld {
 } mc_shared_tpld;
 
 /** A null-pointer initializer for an `mc_shared_tpld` */
-#define MC_SHARED_TPLD_NULL ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
+#define MC_SHARED_TPLD_NULL ((mc_shared_tpld) {._sptr_ = MONGOC_SHARED_PTR_NULL})
 
 typedef struct _mongoc_topology_t {
    /**
@@ -498,7 +498,7 @@ _mongoc_topology_get_connection_pool_generation (const mongoc_topology_descripti
 static BSON_INLINE mc_shared_tpld
 mc_tpld_take_ref (const mongoc_topology_t *tpl)
 {
-   return (mc_shared_tpld){._sptr_ = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_._sptr_)};
+   return (mc_shared_tpld) {._sptr_ = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_._sptr_)};
 }
 
 /**

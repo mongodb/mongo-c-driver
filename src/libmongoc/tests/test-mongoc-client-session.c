@@ -2390,7 +2390,7 @@ test_unacknowledged_explicit_cs_explicit_wc (void *ctx)
 #define add_session_test(_suite, _name, _test_fn, _allow_read_concern)                      \
    if (1) {                                                                                 \
       session_test_helper_t *const helper = bson_malloc (sizeof (*helper));                 \
-      *helper = (session_test_helper_t){.test_fn = (_test_fn)};                             \
+      *helper = (session_test_helper_t) {.test_fn = (_test_fn)};                            \
       TestSuite_AddFull (_suite,                                                            \
                          _name,                                                             \
                          (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
@@ -2404,7 +2404,7 @@ test_unacknowledged_explicit_cs_explicit_wc (void *ctx)
 #define add_session_test_wc(_suite, _name, _test_fn, _allow_read_concern, ...)              \
    if (1) {                                                                                 \
       session_test_helper_t *const helper = bson_malloc (sizeof (*helper));                 \
-      *helper = (session_test_helper_t){.test_fn = (_test_fn)};                             \
+      *helper = (session_test_helper_t) {.test_fn = (_test_fn)};                            \
       TestSuite_AddFull (_suite,                                                            \
                          _name,                                                             \
                          (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
@@ -2419,7 +2419,7 @@ test_unacknowledged_explicit_cs_explicit_wc (void *ctx)
 #define add_unacknowledged_test(_suite, _name, _test_fn, _explicit_cs, _inherit_wc)                    \
    if (1) {                                                                                            \
       session_test_helper_t *const helper = bson_malloc (sizeof (*helper));                            \
-      *helper = (session_test_helper_t){.test_fn = (_test_fn)};                                        \
+      *helper = (session_test_helper_t) {.test_fn = (_test_fn)};                                       \
       TestSuite_AddFull (_suite,                                                                       \
                          _name,                                                                        \
                          (_explicit_cs) ? (_inherit_wc ? test_unacknowledged_explicit_cs_inherit_wc    \
@@ -2757,7 +2757,7 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/find_indexes", test_find_indexes, true);
    {
       session_test_helper_t *const helper = bson_malloc (sizeof (*helper));
-      *helper = (session_test_helper_t){.test_fn = test_bulk_set_session};
+      *helper = (session_test_helper_t) {.test_fn = test_bulk_set_session};
       TestSuite_AddFull (suite,
                          "/Session/bulk_set_session",
                          run_session_test_bulk_operation,
@@ -2768,7 +2768,7 @@ test_session_install (TestSuite *suite)
    }
    {
       session_test_helper_t *const helper = bson_malloc (sizeof (*helper));
-      *helper = (session_test_helper_t){.test_fn = test_bulk_set_client};
+      *helper = (session_test_helper_t) {.test_fn = test_bulk_set_client};
       TestSuite_AddFull (suite,
                          "/Session/bulk_set_client",
                          run_session_test_bulk_operation,

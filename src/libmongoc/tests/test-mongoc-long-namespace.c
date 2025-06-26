@@ -446,7 +446,7 @@ unsupported_long_db (void)
 #define add_long_namespace_test(_name, _test_fn, ...)                              \
    if (1) {                                                                        \
       run_test_helper_t *const helper = bson_malloc (sizeof (*helper));            \
-      *helper = (run_test_helper_t){.test_fn = (_test_fn)};                        \
+      *helper = (run_test_helper_t) {.test_fn = (_test_fn)};                       \
       TestSuite_AddFull (suite, _name, run_test, &bson_free, helper, __VA_ARGS__); \
    } else                                                                          \
       ((void) 0)

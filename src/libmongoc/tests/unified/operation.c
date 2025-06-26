@@ -482,7 +482,7 @@ operation_client_bulkwrite (test_t *test, operation_t *op, result_t *result, bso
                // Return with a success (to not abort test runner) and propagate
                // the error as a result.
                ret = true;
-               *error = (bson_error_t){0};
+               *error = (bson_error_t) {0};
                bson_parser_destroy_with_parsed_fields (parser);
                goto done;
             }
