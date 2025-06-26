@@ -1406,7 +1406,7 @@ test_mongoc_uri_functions (void)
    mongoc_uri_destroy (uri);
 }
 
-#define BSON_ERROR_INIT ((bson_error_t) {.code = 0u, .domain = 0u, .message = {0}, .reserved = 0u})
+#define BSON_ERROR_INIT ((bson_error_t){.code = 0u, .domain = 0u, .message = {0}, .reserved = 0u})
 
 static void
 test_mongoc_uri_new_with_error (void)

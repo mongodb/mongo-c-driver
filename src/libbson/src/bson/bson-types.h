@@ -504,7 +504,7 @@ bson_error_clear (bson_error_t *error)
       return;
    }
    // Statically initialized to a zero struct:
-   static const bson_error_t zero_error = {0};
+   static bson_error_t zero_error;
    // Replace the caller's value:
    *error = zero_error;
 }
