@@ -21,6 +21,7 @@
 
 #include <mlib/config.h>
 #include <mlib/loop.h>
+#include <mlib/str.h>
 
 #include <errno.h>
 #include <stdlib.h>
@@ -169,101 +170,187 @@ mlib_write_f64le (void *out, double d)
 }
 
 /**
- * @brief Test if the given codepoint is an ASCII-range decimal digit
+ * @brief Decode a 64-bit natural number
  *
- * @param i A 32-bit character codepoint, or converted code unit
- * @return true If-and-only-if the codepoint 'i' is a digit
- * @return false Otherwise
+ * @param in The input string to be decoded. Does not support a sign or base prefix!
+ * @param base The base to be decoded. Must not be zero!
+ * @param out Pointer that receives the decoded value
+ * @return int A result code for the operation.
+ *
+ * See `mlib_i64_parse` for more details.
  */
-static inline bool
-mlib_isdigit (int32_t i)
+static inline int
+mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
 {
-   // U+0030 '0'
-   // U+0039 '9'
-   return i >= 0x30 && i <= 0x39;
+   if (in.len == 0) {
+      // Empty string is not valid
+      return EINVAL;
+   }
+
+
+   // Accummulate into this value:
+   uint64_t value = 0;
+   // Whether any operation in the parse overflowed the integer value
+   bool did_overflow = false;
+   // Loop until we have consumed the full string, or encounter an invalid digit
+   while (in.len) {
+      // Shift place value for another digit
+      did_overflow = mlib_mul (&value, base) || did_overflow;
+      // Case-fold for alpha digits
+      int32_t digit = mlib_latin_tolower (in.data[0]);
+      int digit_value = 0;
+      // Only standard digits
+      if (digit >= '0' && digit <= '9') {
+         // Normal digit
+         digit_value = digit - '0';
+      } else if (digit >= 'a' && digit <= 'z') {
+         // Letter digits
+         digit_value = (digit - 'a') + 10;
+      } else {
+         // Not a valid alnum digit
+         return EINVAL;
+      }
+      if (digit_value >= base) {
+         // The digit value is out-of-range for our chosen base
+         return EINVAL;
+      }
+      // Accumulate the new digit value
+      did_overflow = mlib_add (&value, digit_value) || did_overflow;
+      // Jump to the next digit in the string
+      in = mlib_substr (in, 1);
+   }
+
+   if (did_overflow) {
+      return ERANGE;
+   }
+
+   out && (*out = value);
+   return 0;
 }
 
 /**
- * @brief Result of parsing an int64_t from a string
- */
-typedef struct mlib_i64_parse_result {
-   /**
-    * @brief Upon success, this is the value that was parsed from the input string.
-    *
-    * If the parsing failed for any reason, then this is set to an unspecified
-    * sentinel value that stands out when read in a debugger.
-    */
-   int64_t value;
-   /**
-    * @brief The error code for the parse. Comes from an `errno` value.
-    *
-    * - A vlaue of `0` indicates that the parse was successful
-    * - A value of `EINVAL` indicates that the input string is not a valid
-    *   representation of an integer.
-    * - A value of `ERANGE` indicates thath the input string is a valid integer,
-    *   but the actual encoded value cannot be represented in an `int64_t`
-    */
-   int ec;
-} mlib_i64_parse_result;
-
-/**
- * @brief Parse a C string as a 64-bit signed integer
+ * @brief Parse a string as a 64-bit signed integer
  *
- * @param in Pointer to the beginning of the null-terminated string
+ * @param in The string of digits to be parsed.
  * @param base Optional: The base to use for parsing. Use "0" to infer the base.
- * @return mlib_i64_parse_result The result of parsing, including the value and
- * error information.
+ * @param out Optional storage for an int64 value to be updated with the result
+ * @return int Returns an errno value for the parse
+ *
+ * - A vlaue of `0` indicates that the parse was successful
+ * - A value of `EINVAL` indicates that the input string is not a valid
+ *   representation of an integer.
+ * - A value of `ERANGE` indicates thath the input string is a valid integer,
+ *   but the actual encoded value cannot be represented in an `int64_t`
  *
  * This differs from `strtoll` in that it requires that the entire string be
  * parsed as a valid integer. If parsing stops early, then the result will indicate
  * an error of EINVAL.
  */
-static inline mlib_i64_parse_result
-mlib_i64_parse (const char *const in, int base)
+static inline int
+mlib_i64_parse (mstr_view in, int base, int64_t *out)
 {
-   const size_t len = strlen (in);
-   // THe 2424242... is a sentinel value for debugging and troubleshooting
-   mlib_i64_parse_result ret = {2424242424242424242, 0};
-   if (len == 0) {
+   if (in.len == 0) {
       // Empty string is not a valid integer
-      ret.ec = EINVAL;
-      return ret;
+      return EINVAL;
    }
-   // Check that the first char is a valid integer start. We don't want to use
-   // strtoll's whitespace-skipping behavior
-   if (!mlib_isdigit (in[0]) && in[0] != '+' && in[0] != '-') {
-      ret.ec = EINVAL;
-      return ret;
+   // Parse the possible sign prefix
+   bool negate = false;
+   // Check for a "+"
+   if (in.data[0] == '+') {
+      // Just a plus. Drop it and do nothing with it.
+      in = mlib_substr (in, 1);
    }
-   // Rely on stroll for our underlying parsing
-   errno = 0;
-   char *eptr;
-   const int64_t val = strtoll (in, &eptr, base);
-   ret.ec = errno;
+   // Check for a negative prefix
+   else if (in.data[0] == '-') {
+      // Negative sign. We'll negate the value later.
+      in = mlib_substr (in, 1);
+      negate = true;
+   }
 
-   // Check that we parsed the full string.
-   const char *end = in + strlen (in);
-   if (end != eptr) {
-      // Did not parse the full string as an integer. Why not?
-      const char *scan = eptr;
-      for (; scan != end; ++scan) {
-         if (!mlib_isdigit (*scan)) {
-            // Found a non-digit character. Replace the error with EINVAL, to indicate
-            // that the input string is not a valid integer spelling
-            ret.ec = EINVAL;
-            // Note: strtoll might have set ERANGE if the prefix was also
-            // too large, but we prioritize EINVAL to indicate that the string
-            // is not a valid integer, even if we had infinite precision
+   // Infer the base value, if we have one
+   if (base == 0) {
+      if (in.data[0] == '0') {
+         if (in.len > 1) {
+            if (mlib_latin_tolower (in.data[1]) == 'x') {
+               // Hexadecimal
+               base = 16;
+               in = mlib_substr (in, 2);
+            } else if (mlib_latin_tolower (in.data[1]) == 'o') {
+               // Octal
+               base = 8;
+               in = mlib_substr (in, 2);
+            } else if (mlib_latin_tolower (in.data[1]) == 'b') {
+               // Binary
+               base = 2;
+               in = mlib_substr (in, 2);
+            }
          }
+         if (base == 0) {
+            // Other: Octal with a single "0" prefix. Don't trim this, because
+            // it may be a literal "0"
+            base = 8;
+         }
+      } else {
+         // No '0' prefix. Treat it as decimal
+         base = 10;
       }
    }
-   // Only return a non-zero value if we didn't get an error
-   if (!ret.ec) {
-      ret.value = val;
+
+   // Try to parse the natural number now that we have removed all prefixes and
+   // have a non-zero base.
+   uint64_t nat;
+   int rc = mlib_nat64_parse (in, base, &nat);
+   if (rc) {
+      return rc;
    }
-   return ret;
+
+   // Try to narrow from the u64 to i64
+   int64_t i64;
+   if (mlib_narrow (&i64, nat)) {
+      return ERANGE;
+   }
+
+   // Negate if there was a leading "-" symbol
+   if (negate) {
+      if (mlib_mul (&i64, -1)) {
+         // Flipping the sign violates the range
+         return ERANGE;
+      }
+   }
+
+   out && (*out = i64);
+   return 0;
 }
 
 #define mlib_i64_parse(...) MLIB_ARGC_PICK (_mlib_i64_parse, __VA_ARGS__)
-#define _mlib_i64_parse_argc_2(S, Base) mlib_i64_parse (S, Base)
-#define _mlib_i64_parse_argc_1(S) _mlib_i64_parse_argc_2 (S, 0)
+#define _mlib_i64_parse_argc_2(S, Ptr) _mlib_i64_parse_argc_3 ((S), 0, (Ptr))
+#define _mlib_i64_parse_argc_3(S, Base, Ptr) mlib_i64_parse (mstr_view_from ((S)), Base, Ptr)
+
+/**
+ * @brief Parse a 32-bit integer from a string.
+ *
+ * See `mlib_i64_parse` for more details.
+ */
+static inline int
+mlib_i32_parse (mstr_view in, int base, int32_t *out)
+{
+   int64_t tmp;
+   int ec = mlib_i64_parse (in, base, &tmp);
+   if (ec) {
+      // Failed to parse the int64 value.
+      return ec;
+   }
+   // Attempt to narrow to a 32-bit value
+   int32_t i32;
+   if (mlib_narrow (&i32, tmp)) {
+      // Value is out-of-range
+      return ERANGE;
+   }
+   // Success
+   out && (*out = i32);
+   return 0;
+}
+
+#define mlib_i32_parse(...) MLIB_ARGC_PICK (_mlib_i32_parse, __VA_ARGS__)
+#define _mlib_i32_parse_argc_2(S, Ptr) _mlib_i32_parse_argc_3 ((S), 0, (Ptr))
+#define _mlib_i32_parse_argc_3(S, Base, Ptr) mlib_i32_parse (mstr_view_from ((S)), Base, Ptr)

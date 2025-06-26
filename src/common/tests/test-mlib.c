@@ -479,11 +479,17 @@ _test_int_parse (void)
       {"123456789123456789123", bogus_value, ERANGE},
       // Difference: We generate EINVAL if its not an integer, even if strtoll says ERANGE
       {"123456789123456789123abc", bogus_value, EINVAL},
+      // Truncated prefix
+      {"+", bogus_value, EINVAL},
+      {"+0x", bogus_value, EINVAL},
+      {"0x", bogus_value, EINVAL},
+      {"-0b", bogus_value, EINVAL},
    };
    mlib_foreach_arr (struct case_, test, cases) {
-      mlib_i64_parse_result res = mlib_i64_parse (test->in);
-      mlib_check (res.value, eq, test->value);
-      mlib_check (res.ec, eq, test->ec);
+      int64_t value = bogus_value;
+      int ec = mlib_i64_parse (mlib_cstring (test->in), &value);
+      mlib_check (value, eq, test->value);
+      mlib_check (ec, eq, test->ec);
    }
 }
 
