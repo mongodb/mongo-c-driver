@@ -81,7 +81,7 @@ mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instan
                                                    void *context)
 {
    BSON_ASSERT_PARAM (instance);
-   instance->apm_callbacks = callbacks ? *callbacks : (mongoc_apm_callbacks_t){0};
+   instance->apm_callbacks = callbacks ? *callbacks : (mongoc_apm_callbacks_t) {0};
    instance->apm_context = context;
 }
 

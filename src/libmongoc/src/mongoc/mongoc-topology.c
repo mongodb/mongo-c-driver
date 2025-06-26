@@ -1992,7 +1992,7 @@ mc_tpld_modify_begin (mongoc_topology_t *tpl)
    prev_td = mc_tpld_take_ref (tpl);
    new_td = mongoc_topology_description_new_copy (prev_td.ptr);
    mc_tpld_drop_ref (&prev_td);
-   return (mc_tpld_modification){
+   return (mc_tpld_modification) {
       .new_td = new_td,
       .topology = tpl,
    };

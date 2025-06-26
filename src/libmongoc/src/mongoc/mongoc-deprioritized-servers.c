@@ -16,7 +16,7 @@ mongoc_deprioritized_servers_new (void)
 {
    mongoc_deprioritized_servers_t *const ret = bson_malloc (sizeof (*ret));
 
-   *ret = (mongoc_deprioritized_servers_t){
+   *ret = (mongoc_deprioritized_servers_t) {
       .ids = mongoc_set_new (1u, NULL, NULL),
    };
 

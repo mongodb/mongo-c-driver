@@ -16,12 +16,12 @@
 
 #include <inttypes.h> // PRIu16
 
-#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 /* strcasecmp on windows */
+#include <mlib/cmp.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/utlist.h>
-#include <mlib/cmp.h>
 
 static mongoc_host_list_t *
 _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts, const char *host_and_port)
@@ -76,7 +76,6 @@ _mongoc_host_list_upsert (mongoc_host_list_t **list, const mongoc_host_list_t *n
    memcpy (link, new_host, sizeof (mongoc_host_list_t));
    link->next = next_link;
 }
-
 
 /* Duplicates a host list.
  */
@@ -137,7 +136,6 @@ _mongoc_host_list_contains_one (mongoc_host_list_t *host_list, mongoc_host_list_
 {
    return NULL != _mongoc_host_list_find_host_and_port (host_list, host->host_and_port);
 }
-
 
 /*
  *--------------------------------------------------------------------------
@@ -211,8 +209,8 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
    const size_t port_delim_pos = mstr_find (addr, mlib_cstring (":"), close_square_pos + 1, 1);
 
    if (port_delim_pos == SIZE_MAX) {
-      // There is no port specifier, or it is misplaced, so the closing bracket should be the
-      // final character:
+      // There is no port specifier, or it is misplaced, so the closing bracket
+      // should be the final character:
       if (close_square_pos != addr.len - 1) {
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,
@@ -247,7 +245,8 @@ static inline bool
 _parse_host (mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
 {
    if (mstr_contains (spec, mlib_cstring ("]"))) {
-      // There is a "]" bracket, so this is probably an IPv6 literal, which is more strict
+      // There is a "]" bracket, so this is probably an IPv6 literal, which is
+      // more strict
       return _parse_host_ipv6 (link, spec, error);
    }
    // Parsing anything else is simpler.

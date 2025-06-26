@@ -71,7 +71,7 @@ typedef struct {
 } func_ctx_t;
 
 
-typedef future_t *(func_with_opts_t) (func_ctx_t *ctx, bson_t *cmd);
+typedef future_t *(func_with_opts_t) (func_ctx_t * ctx, bson_t *cmd);
 
 
 typedef struct _opt_inheritance_test_t {
@@ -786,24 +786,15 @@ test_func_inherits_opts (void *ctx)
 
 
 /* commands that send one OP_MSG section */
-#define OPT_TEST(_opt_source, _func, _opt_type)                   \
-   {                                                              \
-      OPT_SOURCE_##_opt_source, _func, #_func, OPT_##_opt_type, 1 \
-   }
+#define OPT_TEST(_opt_source, _func, _opt_type) {OPT_SOURCE_##_opt_source, _func, #_func, OPT_##_opt_type, 1}
 
 
 /* write commands commands that send two OP_MSG sections */
-#define OPT_WRITE_TEST(_func)                              \
-   {                                                       \
-      OPT_SOURCE_COLL, _func, #_func, OPT_WRITE_CONCERN, 2 \
-   }
+#define OPT_WRITE_TEST(_func) {OPT_SOURCE_COLL, _func, #_func, OPT_WRITE_CONCERN, 2}
 
 
 /* mongoc_bulk_operation_t functions */
-#define OPT_BULK_TEST(_bulk_op)                                             \
-   {                                                                        \
-      OPT_SOURCE_COLL, bulk_exec, #_bulk_op, OPT_WRITE_CONCERN, 2, _bulk_op \
-   }
+#define OPT_BULK_TEST(_bulk_op) {OPT_SOURCE_COLL, bulk_exec, #_bulk_op, OPT_WRITE_CONCERN, 2, _bulk_op}
 
 
 static opt_inheritance_test_t gInheritanceTests[] = {
