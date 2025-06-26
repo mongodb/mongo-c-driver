@@ -257,19 +257,19 @@ test_mongoc_uri_new (void)
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
    ASSERT (!uri);
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence \"%se\"");
    capture_logs (false);
 
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:p%wd@localhost:27017");
    ASSERT (!uri);
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence \"%wd\"");
    capture_logs (false);
 
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:pwd@local% host:27017");
    ASSERT (!uri);
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence \"% h\"");
    capture_logs (false);
 
    uri = mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/?replicaset=%20");
@@ -1458,11 +1458,7 @@ test_mongoc_uri_new_with_error (void)
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://user%p:pass@localhost/", &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Incorrect URI escapes in username. Percent-encode "
-                          "username and password according to RFC 3986");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Truncated %-sequence \"%p\"");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
@@ -1476,8 +1472,7 @@ test_mongoc_uri_new_with_error (void)
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid %-sequence \"%me\"");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db?journal=true&w=0", &error));
@@ -1509,15 +1504,18 @@ test_mongoc_uri_new_with_error (void)
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://%", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid service name in URI");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name \"%\" in URI");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://x", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid service name in URI");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name \"x\" in URI");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://x.y", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid service name in URI");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name \"x.y\" in URI");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb+srv://a.b.c,d.e.f", &error));

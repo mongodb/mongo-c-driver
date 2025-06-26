@@ -35,9 +35,6 @@ mongoc_uri_upsert_host (mongoc_uri_t *uri, const char *host, uint16_t port, bson
 void
 mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port);
 
-bool
-mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str);
-
 /**
  * @brief Update the settings on a URI based on a URI query string
  *

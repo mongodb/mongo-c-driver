@@ -25,6 +25,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/str.h>
+#include <mlib/intencode.h>
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list.h>
@@ -93,21 +94,6 @@ mongoc_uri_do_unescape (char **str)
       *str = mongoc_uri_unescape (tmp);
       bson_free (tmp);
    }
-}
-
-/**
- * @brief Convert URI %-encoded codepoints to a regular text.
- *
- * @param sv The string to be decoded
- * @return char* A pointer to a newly allocated string. Must be freed with `bson_free`.
- * Returns NULL if the %-encoding is invalid.
- */
-static char *
-_strdup_pct_decode (mstr_view sv)
-{
-   char *s = bson_strndup (sv.data, sv.len);
-   mongoc_uri_do_unescape (&s);
-   return s;
 }
 
 
@@ -231,10 +217,95 @@ mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port)
 }
 
 
+/**
+ * @brief %-decode a %-encoded string
+ *
+ * @param sv The string to be decoded
+ * @return char* A pointer to a new C string, which must be freed with `bson_free`,
+ * or a null pointer in case of error
+ */
+static char *
+_strdup_pct_decode (mstr_view const sv, bson_error_t *error)
+{
+   // Compute how many bytes we want to store
+   size_t bufsize;
+   // Must use safe arithmetic because a pathological sv with `len == SIZE_MAX` is possible
+   bool add_okay = !mlib_add (&bufsize, sv.len, 1);
+   // Prepare the output region. We can allocate the whole thing up-front, because
+   // we know the decode result will be *at most* as long as `sv`, since %-encoding
+   // can only ever grow the plaintext string
+   char *const buf = add_okay ? bson_malloc0 (bufsize) : NULL;
+   // alloc or arithmetic failure
+   if (!buf) {
+      MONGOC_URI_ERROR (error, "%s", "Failed to allocate memory for the %%-decoding");
+      return NULL;
+   }
+
+   // char-wise output
+   char *out = buf;
+   // Consume the input as we go
+   mstr_view remain = sv;
+   while (remain.len) {
+      if (remain.data[0] != '%') {
+         // Not a % char, just append it
+         *out++ = remain.data[0];
+         remain = mlib_substr (remain, 1);
+         continue;
+      }
+      // %-sequence
+      if (remain.len < 3) {
+         MONGOC_URI_ERROR (error,
+                           "At offset %llu: Truncated %%-sequence \"%.*s\"",
+                           (long long unsigned) (sv.len - remain.len),
+                           (int) remain.len,
+                           remain.data);
+         bson_free (buf);
+         return NULL;
+      }
+      // Grab the next two chars
+      mstr_view pair = mlib_substr (remain, 1, 2);
+      uint64_t v;
+      if (mlib_nat64_parse (pair, 16, &v)) {
+         MONGOC_URI_ERROR (error,
+                           "At offset %llu: Invalid %%-sequence \"%.3s\"",
+                           (long long unsigned) (sv.len - remain.len),
+                           remain.data);
+         bson_free (buf);
+         return NULL;
+      }
+
+      // Append the decoded byte value
+      *out++ = (char) v;
+      // Drop the "%xy" sequence
+      remain = mlib_substr (remain, 3);
+   }
+
+   // Check whether the decoded result is valid UTF-8
+   size_t len = (size_t) (out - buf);
+   if (!bson_utf8_validate (buf, len, false)) {
+      MONGOC_URI_ERROR (
+         error, "%s", "Invalid %%-encoded string: The decoded result is not valid UTF-8 or contains null characters");
+      bson_free (buf);
+      return NULL;
+   }
+
+   return buf;
+}
+
+
 /* "str" is non-NULL, the part of URI between "mongodb://" and first "@" */
+/**
+ * @brief Parse the userinfo segment from a URI string
+ *
+ * @param uri The URI to be updated
+ * @param userpass The userinfo segment from the original URI string
+ * @return true If the operatin succeeds
+ * @return false Otherwise
+ */
 static bool
 _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
 {
+   bson_error_reset (error);
    BSON_ASSERT (uri);
 
    // Split the user/pass around the colon:
@@ -261,17 +332,19 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    }
 
    // Store the username and password on the URI
-   uri->username = _strdup_pct_decode (username);
+   uri->username = _strdup_pct_decode (username, error);
    if (!uri->username) {
-      MONGOC_URI_ERROR (error, "Incorrect URI escapes in username. %s", escape_instructions);
+      MONGOC_URI_ERROR (
+         error, "Invalid username \"%.*s\" in URI string: %s", (int) username.len, username.data, error->message);
       return false;
    }
 
    /* Providing password at all is optional */
    if (has_password) {
-      uri->password = _strdup_pct_decode (password);
+      uri->password = _strdup_pct_decode (password, error);
       if (!uri->password) {
-         MONGOC_URI_ERROR (error, "%s", "Incorrect URI escapes in password");
+         MONGOC_URI_ERROR (
+            error, "Invalid password \"%.*s\" in URI string: %s", (int) password.len, password.data, error->message);
          return false;
       }
    }
@@ -279,9 +352,19 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    return true;
 }
 
+/**
+ * @brief Parse a single host specifier for a URI
+ *
+ * @param uri The URI object to be updated
+ * @param hostport A host specifier, with an optional port
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ */
 static bool
-_parse_one_host (mongoc_uri_t *uri, mstr_view hostport)
+_parse_one_host (mongoc_uri_t *uri, mstr_view hostport, bson_error_t *error)
 {
+   bson_error_reset (error);
+   // Don't allow an unescaped "/" in the host string.
    if (mstr_find (hostport, SLASH) != SIZE_MAX) {
       // They were probably trying to do a unix socket. Those slashes must be escaped
       MONGOC_WARNING ("Unix Domain Sockets must be escaped (e.g. / = %%2F)");
@@ -289,41 +372,46 @@ _parse_one_host (mongoc_uri_t *uri, mstr_view hostport)
    }
 
    /* unescape host. It doesn't hurt including port. */
-   char *host_and_port = _strdup_pct_decode (hostport);
+   char *host_and_port = _strdup_pct_decode (hostport, error);
    if (!host_and_port) {
       /* invalid */
+      MONGOC_URI_ERROR (
+         error, "Invalid host specifier \"%.*s\": %s", (int) hostport.len, hostport.data, error->message);
       return false;
    }
 
-   bson_error_t err = {0};
-   const bool okay = mongoc_uri_upsert_host_and_port (uri, host_and_port, &err);
+   const bool okay = mongoc_uri_upsert_host_and_port (uri, host_and_port, error);
    if (!okay) {
-      MONGOC_ERROR ("%s", err.message);
+      MONGOC_ERROR ("Failed to update host in URI: %s", error->message);
    }
 
    bson_free (host_and_port);
    return okay;
 }
 
-bool
-mongoc_uri_parse_host (mongoc_uri_t *uri, const char *hostport)
-{
-   return _parse_one_host (uri, mlib_cstring (hostport));
-}
 
-
+/**
+ * @brief Parse the single SRV host specifier for a URI
+ *
+ * @param uri The URI to be updated
+ * @param str The host string for the URI. Should specify a single SRV name
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ */
 static bool
 _parse_srv_hostname (mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
 {
+   bson_error_reset (error);
    if (str.len == 0) {
       MONGOC_URI_ERROR (error, "%s", "Missing service name in SRV URI");
       return false;
    }
 
    {
-      char *service = _strdup_pct_decode (str);
+      char *service = _strdup_pct_decode (str, error);
       if (!service || !valid_hostname (service) || count_dots (service) < 2) {
-         MONGOC_URI_ERROR (error, "%s", "Invalid service name in URI");
+         MONGOC_URI_ERROR (
+            error, "Invalid SRV service name \"%.*s\" in URI: %s", (int) str.len, str.data, error->message);
          bson_free (service);
          return false;
       }
@@ -359,16 +447,7 @@ _parse_srv_hostname (mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
 static bool
 _parse_hosts_csv (mongoc_uri_t *uri, mstr_view const hosts, bson_error_t *error)
 {
-   /*
-    * Parsing the series of hosts is a lot more complicated than you might
-    * imagine. This is due to some characters being both separators as well as
-    * valid characters within the "hostname". In particularly, we can have file
-    * paths to specify paths to UNIX domain sockets. We impose the restriction
-    * that they must be suffixed with ".sock" to simplify the parsing.
-    *
-    * You can separate hosts and file system paths to UNIX domain sockets with
-    * ",".
-    */
+   bson_error_reset (error);
    // Check if there is a question mark in the given hostinfo string. This indicates that
    // the user omitted a required "/" before the query component
    if (mstr_find (hosts, QUESTION) != SIZE_MAX) {
@@ -380,12 +459,13 @@ _parse_hosts_csv (mongoc_uri_t *uri, mstr_view const hosts, bson_error_t *error)
       MONGOC_URI_ERROR (error, "%s", "Host list of URI string cannot be empty");
       return false;
    }
-   mstr_view remain = hosts;
-   while (remain.len) {
+
+   // Split around commas
+   for (mstr_view remain = hosts; remain.len;) {
       mstr_view host;
       mstr_split_around (remain, COMMA, &host, &remain);
-      if (!_parse_one_host (uri, host)) {
-         MONGOC_URI_ERROR (error, "Invalid host specifier \"%.*s\"", (int) host.len, host.data);
+      if (!_parse_one_host (uri, host, error)) {
+         MONGOC_URI_ERROR (error, "Invalid host specifier \"%.*s\": %s", (int) host.len, host.data, error->message);
          return false;
       }
    }
@@ -408,28 +488,48 @@ _parse_hosts_csv (mongoc_uri_t *uri, mstr_view const hosts, bson_error_t *error)
  *        valid.
  * -----------------------------------------------------------------------------
  */
-static bool
-_handle_database (mongoc_uri_t *uri, mstr_view pqf, mstr_view *const remainder)
-{
-   // Find the next character that indicates the end of the path component, or SIZE_MAX
-   const size_t path_stop_pos = mstr_find_first_of (pqf, mlib_cstring ("?#/"));
-   mstr_view dbname;
-   mstr_split_at (pqf, path_stop_pos, &dbname, remainder);
+;
 
-   if (dbname.len == 0) {
-      // No path element, as in "mongodb://fo/?bar"
+/**
+ * @brief Handle the URI path component
+ *
+ * @param uri The URI object to be updated
+ * @param path The path component of the original URI string. May be empty if
+ * there was no path in the input string, but should start with the leading
+ * slash if it is non-empty.
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ *
+ * We use the URI path to specify the database to be associated with the URI.
+ * We only expect a single path element. If the path is just a slash "/", then
+ * that is the same as omitting the path entirely.
+ */
+static bool
+_parse_path (mongoc_uri_t *uri, mstr_view path, bson_error_t *error)
+{
+   bson_error_reset (error);
+   // Drop the leading slash, if present. If the URI has no path, then `path`
+   // will already be an empty string.
+   const mstr_view relative = path.len ? mlib_substr (path, 1) : path;
+
+   if (!relative.len) {
+      // Empty/absent path is no database
       uri->database = NULL;
       return true;
    }
 
-   uri->database = _strdup_pct_decode (dbname);
+   // %-decode the path as the database name
+   uri->database = _strdup_pct_decode (relative, error);
    if (!uri->database) {
       // %-decode failure
+      MONGOC_URI_ERROR (
+         error, "Invalid database specifier \"%.*s\": %s", (int) relative.len, relative.data, error->message);
       return false;
    }
 
    // Check if the database name contains and invalid characters after the %-decode
    if (mstr_contains_any_of (mlib_cstring (uri->database), mlib_cstring ("/\\. \"$"))) {
+      MONGOC_URI_ERROR (error, "Invalid database specifier \"%s\": Contains disallowed characters", uri->database);
       return false;
    }
 
@@ -705,45 +805,6 @@ mongoc_uri_canonicalize_option (const char *key)
    }
 }
 
-static bool
-_mongoc_uri_parse_int64 (const char *key, const char *value, int64_t *result)
-{
-   char *endptr;
-   int64_t i;
-
-   errno = 0;
-   i = bson_ascii_strtoll (value, &endptr, 10);
-   if (errno || endptr < value + strlen (value)) {
-      MONGOC_WARNING ("Invalid %s: cannot parse integer\n", key);
-      return false;
-   }
-
-   *result = i;
-   return true;
-}
-
-
-static bool
-mongoc_uri_parse_int32 (const char *key, const char *value, int32_t *result)
-{
-   int64_t i;
-
-   if (!_mongoc_uri_parse_int64 (key, value, &i)) {
-      /* _mongoc_uri_parse_int64 emits a warning if it could not parse the
-       * given value, so we don't have to add one here.
-       */
-      return false;
-   }
-
-   if (i > INT32_MAX || i < INT32_MIN) {
-      MONGOC_WARNING ("Invalid %s: cannot fit in int32\n", key);
-      return false;
-   }
-
-   *result = (int32_t) i;
-   return true;
-}
-
 /**
  * @brief Test whether the given URI parameter is allowed to be specified in
  * a DNS record.
@@ -777,8 +838,10 @@ dns_option_allowed (mstr_view key)
 static bool
 _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, bool from_dns, bson_error_t *error)
 {
+   bson_error_reset (error);
    // The argument value, with percent-encoding removed
    char *value = NULL;
+   // Whether the operation succeeded
    bool ret = false;
 
    mstr_view key, val_pct;
@@ -795,13 +858,11 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
       goto done;
    }
 
-   value = _strdup_pct_decode (val_pct);
+   value = _strdup_pct_decode (val_pct, error);
    if (!value) {
       /* do_unescape detected invalid UTF-8 and freed value */
-      MONGOC_URI_ERROR (error,
-                        "Value for URI option \"%.*s\" contains invalid UTF-8 or an invalid %%-encoding",
-                        (int) key.len,
-                        key.data);
+      MONGOC_URI_ERROR (
+         error, "Value for URI option \"%.*s\" contains is invalid: %s", (int) key.len, key.data, error->message);
       goto done;
    }
 
@@ -826,16 +887,13 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
       /* Special case, MONGOC_URI_W == "any non-int" is not overridden
        * by later values.
        */
-      char *opt_end;
-      const char *opt;
       size_t opt_len;
       if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_W)) &&
-          (opt = bson_iter_utf8_unsafe (&iter, &opt_len))) {
-         strtol (opt, &opt_end, 10);
-         if (*opt_end != '\0') {
-            ret = true;
-            goto done;
-         }
+          mlib_i64_parse (mlib_cstring (bson_iter_utf8_unsafe (&iter, &opt_len)), NULL)) {
+         // Value is a "w", and is not a valid integer, but we already have a valid "w"
+         // value, so don't overwrite it
+         ret = true;
+         goto done;
       }
 
       /* Initial DNS Seedlist Discovery Spec: "Client MUST use options
@@ -955,8 +1013,6 @@ static bool
 mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dns, bson_error_t *error)
 {
    bson_iter_t iter;
-   int32_t v_int;
-   int64_t v_int64;
    const char *key = NULL;
    const char *canon = NULL;
    const char *value = NULL;
@@ -977,11 +1033,12 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
        */
       if (mongoc_uri_option_is_int64 (key)) {
          if (0 < strlen (value)) {
-            if (!_mongoc_uri_parse_int64 (key, value, &v_int64)) {
+            int64_t i64;
+            if (mlib_i64_parse (mlib_cstring (value), &i64)) {
                goto UNSUPPORTED_VALUE;
             }
 
-            if (!_mongoc_uri_set_option_as_int64_with_error (uri, canon, v_int64, error)) {
+            if (!_mongoc_uri_set_option_as_int64_with_error (uri, canon, i64, error)) {
                return false;
             }
          } else {
@@ -989,26 +1046,27 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
          }
       } else if (mongoc_uri_option_is_int32 (key)) {
          if (0 < strlen (value)) {
-            if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
+            int32_t i32;
+            if (mlib_i32_parse (mlib_cstring (value), &i32)) {
                goto UNSUPPORTED_VALUE;
             }
 
-            if (!_mongoc_uri_set_option_as_int32_with_error (uri, canon, v_int, error)) {
+            if (!_mongoc_uri_set_option_as_int32_with_error (uri, canon, i32, error)) {
                return false;
             }
          } else {
             MONGOC_WARNING ("Empty value provided for \"%s\"", key);
          }
       } else if (!strcmp (key, MONGOC_URI_W)) {
-         if (*value == '-' || isdigit (*value)) {
-            v_int = (int) strtol (value, NULL, 10);
-            _mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_W, v_int);
+         int32_t i32;
+         if (!mlib_i32_parse (mlib_cstring (value), 10, &i32)) {
+            // A valid integer 'w' value.
+            _mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_W, i32);
          } else if (0 == strcasecmp (value, "majority")) {
             _bson_upsert_utf8_icase (&uri->options, mlib_cstring (MONGOC_URI_W), "majority");
          } else if (*value) {
             _bson_upsert_utf8_icase (&uri->options, mlib_cstring (MONGOC_URI_W), value);
          }
-
       } else if (mongoc_uri_option_is_bool (key)) {
          if (0 < strlen (value)) {
             if (0 == strcasecmp (value, "true")) {
@@ -2003,8 +2061,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    }
 
    // If we have a path, parse that as the auth database
-   if (parts.path.len && !_handle_database (uri, mlib_substr (parts.path, 1), &remain)) {
-      MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
+   if (!_parse_path (uri, parts.path, error)) {
       return false;
    }
 
@@ -2713,68 +2770,12 @@ mongoc_uri_get_string (const mongoc_uri_t *uri)
 char *
 mongoc_uri_unescape (const char *escaped_string)
 {
-   bson_unichar_t c;
-   unsigned int hex = 0;
-   const char *ptr;
-   const char *end;
-   size_t len;
-   bool unescape_occurred = false;
-
-   BSON_ASSERT (escaped_string);
-
-   len = strlen (escaped_string);
-
-   /*
-    * Double check that this is a UTF-8 valid string. Bail out if necessary.
-    */
-   if (!bson_utf8_validate (escaped_string, len, false)) {
-      MONGOC_WARNING ("%s(): escaped_string contains invalid UTF-8", BSON_FUNC);
-      return NULL;
+   bson_error_t error;
+   char *r = _strdup_pct_decode (mlib_cstring (escaped_string), &error);
+   if (!r) {
+      MONGOC_WARNING ("%s(): Invalid %% escape sequence: %s", BSON_FUNC, error.message);
    }
-
-   ptr = escaped_string;
-   end = ptr + len;
-
-   mcommon_string_append_t append;
-   mcommon_string_new_with_capacity_as_append (&append, len);
-
-   for (; *ptr; ptr = bson_utf8_next_char (ptr)) {
-      c = bson_utf8_get_char (ptr);
-      switch (c) {
-      case '%':
-         if (((end - ptr) < 2) || !isxdigit (ptr[1]) || !isxdigit (ptr[2]) ||
-#ifdef _MSC_VER
-             (1 != sscanf_s (&ptr[1], "%02x", &hex))
-#else
-             (1 != sscanf (&ptr[1], "%02x", &hex))
-#endif
-             || 0 == hex) {
-            mcommon_string_from_append_destroy (&append);
-            MONGOC_WARNING ("Invalid %% escape sequence");
-            return NULL;
-         }
-
-         // This isn't guaranteed to be valid UTF-8, we check again below
-         char byte = (char) hex;
-         mcommon_string_append_bytes (&append, &byte, 1);
-         ptr += 2;
-         unescape_occurred = true;
-         break;
-      default:
-         mcommon_string_append_unichar (&append, c);
-         break;
-      }
-   }
-
-   /* Check that after unescaping, it is still valid UTF-8 */
-   if (unescape_occurred &&
-       !bson_utf8_validate (mcommon_str_from_append (&append), mcommon_strlen_from_append (&append), false)) {
-      MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
-      mcommon_string_from_append_destroy (&append);
-      return NULL;
-   }
-
-   return mcommon_string_from_append_destroy_with_steal (&append);
+   return r;
 }
 
 
