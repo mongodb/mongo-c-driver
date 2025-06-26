@@ -85,17 +85,6 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri, const char *optio
 static bool
 _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri, const char *option, int64_t value, bson_error_t *error);
 
-static void
-mongoc_uri_do_unescape (char **str)
-{
-   char *tmp;
-
-   if ((tmp = *str)) {
-      *str = mongoc_uri_unescape (tmp);
-      bson_free (tmp);
-   }
-}
-
 
 #define VALIDATE_SRV_ERR()                                                   \
    do {                                                                      \
@@ -472,23 +461,6 @@ _parse_hosts_csv (mongoc_uri_t *uri, mstr_view const hosts, bson_error_t *error)
 
    return true;
 }
-
-/* -----------------------------------------------------------------------------
- *
- * mongoc_uri_parse_database --
- *
- *        Parse the database after @str. @str is expected to point after the
- *        host list to the character immediately after the / in the uri string.
- *        If no database is specified in the uri, e.g. the uri has a form like:
- *        mongodb://localhost/?option=X then uri->database remains NULL after
- *        parsing.
- *
- * Return:
- *        True if the parsed database is valid. An empty database is considered
- *        valid.
- * -----------------------------------------------------------------------------
- */
-;
 
 /**
  * @brief Handle the URI path component
@@ -1951,7 +1923,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
    BSON_ASSERT_PARAM (parts);
 
    // Clear out
-   *parts = (uri_parts) {0};
+   *parts = (uri_parts) {{0}};
 
    // Check that the URI string is valid UTF-8, otherwise we'll refuse to parse it
    if (!bson_utf8_validate (uri.data, uri.len, false /* allow_null */)) {
