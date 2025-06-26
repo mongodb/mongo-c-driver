@@ -321,6 +321,9 @@ _test_cmp (void)
    // mlib_cmp produces the correct answer:
    ASSERT (mlib_cmp (-27, <, 20u));
 
+   // CDRIVER-6043: until VS 2019 (MSVC 19.20), compound literals seem to "escape" the expression or scope they are
+   // meant to be in. This includes the compound literals used by the conditional operator in mlib_upsize_integer.
+#if !defined(_MSC_VER) || _MSC_VER >= 1920
    {
       // Check that we do not double-evaluate the operand expression.
       intmax_t a = 4;
@@ -328,6 +331,7 @@ _test_cmp (void)
       // We only increment once:
       mlib_check (a, eq, 5);
    }
+#endif
 }
 
 static void

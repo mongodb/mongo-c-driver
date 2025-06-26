@@ -36,12 +36,8 @@ ValueOrderedDict = OD[Scalar, Value]
 "An OrderedDict of YAML values"
 
 
-try:
-    import yaml
-    import yamlordereddictloader  # type: ignore
-except ImportError:
-    sys.stderr.write("try 'poetry install --with=dev'\n")
-    raise
+import yaml
+import yamlloader
 
 
 class ConfigObject(object):
@@ -68,7 +64,7 @@ class ConfigObject(object):
 # tag sets as lists.
 
 
-class _Dumper(yamlordereddictloader.Dumper):
+class _Dumper(yamlloader.ordereddict.Dumper):
     def __init__(self, *args: Value, **kwargs: Value):
         super().__init__(*args, **kwargs)  # type: ignore
         self.add_representer(set, type(self).represent_set)
