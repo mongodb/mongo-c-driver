@@ -2241,11 +2241,11 @@ test_mongoc_uri_long_hostname (void)
 
    capture_logs (true);
    ASSERT (!mongoc_uri_new (uri_str));
-   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "too long");
 
    clear_captured_logs ();
    ASSERT (!mongoc_uri_new_for_host_port (host, 12345));
-   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "too long");
 
    bson_free (uri_str);
    bson_free (host_and_port);
@@ -3185,11 +3185,9 @@ test_parses_long_ipv6 (void)
       char *uri_string = bson_strdup_printf ("mongodb://%s", host_and_port);
       capture_logs (true);
       mongoc_uri_t *uri = mongoc_uri_new_with_error (uri_string, &error);
-      // Expect error parsing IPv6 literal is logged.
-      ASSERT_CAPTURED_LOG ("parsing IPv6", MONGOC_LOG_LEVEL_ERROR, "IPv6 literal provided in URI is too long");
+      ASSERT_NO_CAPTURED_LOGS ("Invalid IPv6 address");
       capture_logs (false);
 
-      // Expect a generic parsing error is also returned.
       ASSERT (!uri);
       ASSERT_ERROR_CONTAINS (
          error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier \"[");

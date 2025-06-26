@@ -371,7 +371,7 @@ _parse_one_host (mongoc_uri_t *uri, mstr_view hostport, bson_error_t *error)
 
    const bool okay = mongoc_uri_upsert_host_and_port (uri, host_and_port, error);
    if (!okay) {
-      MONGOC_ERROR ("Failed to update host in URI: %s", error->message);
+      MONGOC_URI_ERROR (error, "Invalid host specifier \"%s\": %s", host_and_port, error->message);
    }
 
    bson_free (host_and_port);
@@ -454,7 +454,6 @@ _parse_hosts_csv (mongoc_uri_t *uri, mstr_view const hosts, bson_error_t *error)
       mstr_view host;
       mstr_split_around (remain, COMMA, &host, &remain);
       if (!_parse_one_host (uri, host, error)) {
-         MONGOC_URI_ERROR (error, "Invalid host specifier \"%.*s\": %s", (int) host.len, host.data, error->message);
          return false;
       }
    }
@@ -1923,7 +1922,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
    BSON_ASSERT_PARAM (parts);
 
    // Clear out
-   *parts = (uri_parts) {{0}};
+   *parts = (uri_parts){{0}};
 
    // Check that the URI string is valid UTF-8, otherwise we'll refuse to parse it
    if (!bson_utf8_validate (uri.data, uri.len, false /* allow_null */)) {
