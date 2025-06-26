@@ -224,7 +224,7 @@ mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
       return ERANGE;
    }
 
-   out && (*out = value);
+   (void) (out && (*out = value));
    return 0;
 }
 
@@ -318,7 +318,7 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
       }
    }
 
-   out && (*out = i64);
+   (void) (out && (*out = i64));
    return 0;
 }
 
@@ -347,7 +347,7 @@ mlib_i32_parse (mstr_view in, int base, int32_t *out)
       return ERANGE;
    }
    // Success
-   out && (*out = i32);
+   (void) (out && (*out = i32));
    return 0;
 }
 
