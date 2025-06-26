@@ -246,8 +246,7 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
          MONGOC_URI_ERROR (error,
                            "At offset %llu: Truncated %%-sequence \"%.*s\"",
                            (long long unsigned) (sv.len - remain.len),
-                           (int) remain.len,
-                           remain.data);
+                           MSTR_FMT (remain));
          bson_free (buf);
          return NULL;
       }
@@ -323,8 +322,7 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    // Store the username and password on the URI
    uri->username = _strdup_pct_decode (username, error);
    if (!uri->username) {
-      MONGOC_URI_ERROR (
-         error, "Invalid username \"%.*s\" in URI string: %s", (int) username.len, username.data, error->message);
+      MONGOC_URI_ERROR (error, "Invalid username \"%.*s\" in URI string: %s", MSTR_FMT (username), error->message);
       return false;
    }
 
@@ -332,8 +330,7 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    if (has_password) {
       uri->password = _strdup_pct_decode (password, error);
       if (!uri->password) {
-         MONGOC_URI_ERROR (
-            error, "Invalid password \"%.*s\" in URI string: %s", (int) password.len, password.data, error->message);
+         MONGOC_URI_ERROR (error, "Invalid password \"%.*s\" in URI string: %s", MSTR_FMT (password), error->message);
          return false;
       }
    }
@@ -364,8 +361,7 @@ _parse_one_host (mongoc_uri_t *uri, mstr_view hostport, bson_error_t *error)
    char *host_and_port = _strdup_pct_decode (hostport, error);
    if (!host_and_port) {
       /* invalid */
-      MONGOC_URI_ERROR (
-         error, "Invalid host specifier \"%.*s\": %s", (int) hostport.len, hostport.data, error->message);
+      MONGOC_URI_ERROR (error, "Invalid host specifier \"%.*s\": %s", MSTR_FMT (hostport), error->message);
       return false;
    }
 
@@ -399,8 +395,7 @@ _parse_srv_hostname (mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
    {
       char *service = _strdup_pct_decode (str, error);
       if (!service || !valid_hostname (service) || count_dots (service) < 2) {
-         MONGOC_URI_ERROR (
-            error, "Invalid SRV service name \"%.*s\" in URI: %s", (int) str.len, str.data, error->message);
+         MONGOC_URI_ERROR (error, "Invalid SRV service name \"%.*s\" in URI: %s", MSTR_FMT (str), error->message);
          bson_free (service);
          return false;
       }
@@ -493,8 +488,7 @@ _parse_path (mongoc_uri_t *uri, mstr_view path, bson_error_t *error)
    uri->database = _strdup_pct_decode (relative, error);
    if (!uri->database) {
       // %-decode failure
-      MONGOC_URI_ERROR (
-         error, "Invalid database specifier \"%.*s\": %s", (int) relative.len, relative.data, error->message);
+      MONGOC_URI_ERROR (error, "Invalid database specifier \"%.*s\": %s", MSTR_FMT (relative), error->message);
       return false;
    }
 
@@ -817,7 +811,7 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
 
    mstr_view key, val_pct;
    if (!mstr_split_around (str, mlib_cstring ("="), &key, &val_pct)) {
-      MONGOC_URI_ERROR (error, "URI option \"%.*s\" contains no \"=\" sign", (int) str.len, str.data);
+      MONGOC_URI_ERROR (error, "URI option \"%.*s\" contains no \"=\" sign", MSTR_FMT (str));
       goto done;
    }
 
@@ -825,15 +819,14 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
     * authSource, replicaSet, and loadBalanced options through a TXT record, and
     * MUST raise an error if any other option is encountered."*/
    if (from_dns && !dns_option_allowed (key)) {
-      MONGOC_URI_ERROR (error, "URI option \"%.*s\" prohibited in TXT records", (int) key.len, key.data);
+      MONGOC_URI_ERROR (error, "URI option \"%.*s\" prohibited in TXT records", MSTR_FMT (key));
       goto done;
    }
 
    value = _strdup_pct_decode (val_pct, error);
    if (!value) {
       /* do_unescape detected invalid UTF-8 and freed value */
-      MONGOC_URI_ERROR (
-         error, "Value for URI option \"%.*s\" contains is invalid: %s", (int) key.len, key.data, error->message);
+      MONGOC_URI_ERROR (error, "Value for URI option \"%.*s\" contains is invalid: %s", MSTR_FMT (key), error->message);
       goto done;
    }
 
@@ -844,7 +837,7 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
     */
    if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_READPREFERENCETAGS))) {
       if (!_apply_read_prefs_tags (uri, value)) {
-         MONGOC_URI_ERROR (error, "Unsupported value for \"%.*s\": \"%s\"", (int) key.len, key.data, value);
+         MONGOC_URI_ERROR (error, "Unsupported value for \"%.*s\": \"%s\"", MSTR_FMT (key), value);
          goto done;
       } else {
          ret = true;
@@ -877,26 +870,22 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
             // MONGODB-X509 requires authSource=$external. SCRAM-SHA-256 requires authSource=admin.
             // Only log a trace message since this may be expected.
             TRACE ("Ignoring URI option \"%.*s\" from TXT record \"%.*s\". Option is already present in URI",
-                   (int) key.len,
-                   key.data,
-                   (int) str.len,
-                   str.data);
+                   MSTR_FMT (key),
+                   MSTR_FMT (str));
          } else {
             MONGOC_WARNING ("Ignoring URI option \"%.*s\" from TXT record \"%.*s\". Option is already present in URI",
-                            (int) key.len,
-                            key.data,
-                            (int) str.len,
-                            str.data);
+                            MSTR_FMT (key),
+                            MSTR_FMT (str));
          }
          ret = true;
          goto done;
       }
-      MONGOC_WARNING ("Overwriting previously provided value for '%.*s'", (int) key.len, key.data);
+      MONGOC_WARNING ("Overwriting previously provided value for '%.*s'", MSTR_FMT (key));
    }
 
    // Reject replicaSet=""
    if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_REPLICASET)) && strlen (value) == 0) {
-      MONGOC_URI_ERROR (error, "Value for URI option \"%.*s\" cannot be empty string", (int) key.len, key.data);
+      MONGOC_URI_ERROR (error, "Value for URI option \"%.*s\" cannot be empty string", MSTR_FMT (key));
       goto done;
    }
 
@@ -1922,7 +1911,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
    BSON_ASSERT_PARAM (parts);
 
    // Clear out
-   *parts = (uri_parts){{0}};
+   *parts = (uri_parts) {{0}};
 
    // Check that the URI string is valid UTF-8, otherwise we'll refuse to parse it
    if (!bson_utf8_validate (uri.data, uri.len, false /* allow_null */)) {
@@ -2008,8 +1997,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       MONGOC_URI_ERROR (error,
                         "Invalid URI string \"%s\": URIs cannot have a fragment element (got '%.*s')",
                         str,
-                        (int) parts.fragment.len,
-                        parts.fragment.data);
+                        MSTR_FMT (parts.fragment));
       return false;
    }
 
@@ -2021,8 +2009,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    } else {
       MONGOC_URI_ERROR (error,
                         "Invalid URI scheme \"%.*s://\". Expected one of \"mongodb://\" or \"mongodb+srv://\"",
-                        (int) parts.scheme.len,
-                        parts.scheme.data);
+                        MSTR_FMT (parts.scheme));
       return false;
    }
 
@@ -2588,7 +2575,7 @@ mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value)
       if (mongoc_compressor_supported (entry)) {
          _bson_upsert_utf8_icase (&uri->compressors, entry, "yes");
       } else {
-         MONGOC_WARNING ("Unsupported compressor: '%.*s'", (int) entry.len, entry.data);
+         MONGOC_WARNING ("Unsupported compressor: '%.*s'", MSTR_FMT (entry));
       }
    }
 
