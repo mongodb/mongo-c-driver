@@ -31,6 +31,7 @@
 #include <mlib/test.h>
 #include <mlib/config.h>
 
+#include <stdbool.h>
 #include <stddef.h>
 
 /**
@@ -51,6 +52,15 @@ typedef struct mstr_view {
    // Length of the array pointed-to by `data`
    size_t len;
 } mstr_view;
+
+/**
+ * @brief Expand to the two printf format arguments required to format an mstr object
+ *
+ * You should use the format specifier `%.*s' for all mstr strings.
+ *
+ * This is just a convenience shorthand.
+ */
+#define MSTR_FMT(S) (int) mstr_view_from (S).len, mstr_view_from (S).data
 
 /**
  * @brief Create an `mstr_view` that views the given array of `char`
@@ -296,6 +306,28 @@ mlib_substr (mstr_view s, mlib_upsized_integer pos_, size_t len)
 #define mlib_substr(...) MLIB_ARGC_PICK (_mlib_substr, __VA_ARGS__)
 #define _mlib_substr_argc_2(Str, Start) _mlib_substr_argc_3 (Str, Start, SIZE_MAX)
 #define _mlib_substr_argc_3(Str, Start, Stop) mlib_substr (mstr_view_from (Str), mlib_upsize_integer (Start), Stop)
+
+/**
+ * @brief Obtain a slice of the given string view, where the two arguments are zero-based indices into the string
+ *
+ * @param s The string to be sliced
+ * @param start The zero-based index of the new string start
+ * @param end The zero-based index of the first character to exclude from the new string
+ *
+ * @note Unlike `substr`, the second argument is required, and must specify the index at which the
+ * string will end, rather than the length of the string.
+ */
+static inline mstr_view
+mstr_slice (const mstr_view s, const mlib_upsized_integer start_, const mlib_upsized_integer end_)
+{
+   const size_t start_pos = _mstr_adjust_index (s, start_, false);
+   const size_t end_pos = _mstr_adjust_index (s, end_, true);
+   mlib_check (end_pos >= start_pos, because, "Slice positions must end after the start position");
+   const size_t sz = (size_t) (end_pos - start_pos);
+   return mlib_substr (s, start_pos, sz);
+}
+#define mstr_slice(S, StartPos, EndPos) \
+   mstr_slice (mstr_view_from (S), mlib_upsize_integer ((StartPos)), mlib_upsize_integer ((EndPos)))
 
 /**
  * @brief Find the first occurrence of `needle` within `hay`, returning the zero-based index

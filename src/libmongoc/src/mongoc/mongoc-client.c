@@ -57,6 +57,7 @@
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
+#include <mlib/str.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-stream-tls.h>
@@ -116,7 +117,8 @@ srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
       _mongoc_host_list_remove_host (&(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (&new_host, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (
+          &new_host, mlib_cstring (pdns->Data.SRV.pNameTarget), pdns->Data.SRV.wPort, error)) {
       return false;
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
@@ -311,7 +313,7 @@ srv_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"", hostname, _mongoc_hstrerror (h_errno));
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (&new_host, name, port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&new_host, mlib_cstring (name), port, error)) {
       GOTO (done);
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);

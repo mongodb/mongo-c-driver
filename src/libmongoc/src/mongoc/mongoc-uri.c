@@ -192,7 +192,7 @@ mongoc_uri_upsert_host (mongoc_uri_t *uri, const char *host, uint16_t port, bson
    mongoc_host_list_t temp;
 
    memset (&temp, 0, sizeof (mongoc_host_list_t));
-   if (!_mongoc_host_list_from_hostport_with_err (&temp, host, port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&temp, mlib_cstring (host), port, error)) {
       return false;
    }
 
