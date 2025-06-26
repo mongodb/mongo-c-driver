@@ -56,7 +56,7 @@ gcp_request_destroy (gcp_request *req)
    bson_free (req->_owned_headers);
    bson_free (req->_owned_host);
    bson_free (req->_owned_path);
-   *req = (gcp_request){
+   *req = (gcp_request) {
       .req = {0},
       ._owned_path = NULL,
       ._owned_host = NULL,
@@ -81,7 +81,7 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out, const char
    bool okay = false;
 
    // Zero the output
-   *out = (gcp_service_account_token){0};
+   *out = (gcp_service_account_token) {0};
 
    // Parse the JSON data
    bson_t bson;
@@ -108,7 +108,7 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out, const char
       goto done;
    }
 
-   *out = (gcp_service_account_token){
+   *out = (gcp_service_account_token) {
       .access_token = bson_strdup (access_token),
       .token_type = bson_strdup (token_type),
    };
@@ -130,7 +130,7 @@ gcp_access_token_from_gcp_server (gcp_service_account_token *out,
    bool okay = false;
 
    // Clear the output
-   *out = (gcp_service_account_token){0};
+   *out = (gcp_service_account_token) {0};
 
    mongoc_http_response_t resp;
    _mongoc_http_response_init (&resp);

@@ -480,7 +480,7 @@ typedef struct _rpc_op_egress_counters {
 static rpc_op_egress_counters
 rpc_op_egress_counters_current (void)
 {
-   return (rpc_op_egress_counters){
+   return (rpc_op_egress_counters) {
       .op_egress_compressed = mongoc_counter_op_egress_compressed_count (),
       .op_egress_delete = mongoc_counter_op_egress_delete_count (),
       .op_egress_getmore = mongoc_counter_op_egress_getmore_count (),

@@ -182,7 +182,7 @@ _writev_timeout_stream_new (void)
 {
    writev_timeout_stream_t *const stream = bson_malloc (sizeof (writev_timeout_stream_t));
 
-   *stream = (writev_timeout_stream_t){
+   *stream = (writev_timeout_stream_t) {
       .vtable =
          {
             .type = 999, // For testing purposes.

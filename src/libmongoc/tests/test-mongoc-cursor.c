@@ -416,7 +416,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_FIND(prefix, fn)                                                          \
    if (1) {                                                                                   \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                    \
-      *helper = (make_cursor_helper_t){.ctor = _make_find_cursor};                            \
+      *helper = (make_cursor_helper_t) {.ctor = _make_find_cursor};                           \
       TestSuite_AddFull (suite, prefix "/find", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                     \
       ((void) 0)
@@ -424,7 +424,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_CMD(prefix, fn)                                                          \
    if (1) {                                                                                  \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                   \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor};                            \
+      *helper = (make_cursor_helper_t) {.ctor = _make_cmd_cursor};                           \
       TestSuite_AddFull (suite, prefix "/cmd", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                    \
       ((void) 0)
@@ -433,7 +433,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_ARRAY(prefix, fn)                                                          \
    if (1) {                                                                                    \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                     \
-      *helper = (make_cursor_helper_t){.ctor = _make_array_cursor};                            \
+      *helper = (make_cursor_helper_t) {.ctor = _make_array_cursor};                           \
       TestSuite_AddFull (suite, prefix "/array", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                      \
       ((void) 0)
@@ -441,7 +441,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_AGG(prefix, fn)                                                          \
    if (1) {                                                                                  \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                   \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor_from_agg};                   \
+      *helper = (make_cursor_helper_t) {.ctor = _make_cmd_cursor_from_agg};                  \
       TestSuite_AddFull (suite, prefix "/agg", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                    \
       ((void) 0)

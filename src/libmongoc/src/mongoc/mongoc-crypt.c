@@ -739,7 +739,7 @@ static bool
 _check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 {
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
 
    bson_iter_t iter;
@@ -877,7 +877,7 @@ static bool
 _check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 {
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
 
    bson_iter_t iter;
