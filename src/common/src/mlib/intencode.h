@@ -236,11 +236,13 @@ mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
  * @param out Optional storage for an int64 value to be updated with the result
  * @return int Returns an errno value for the parse
  *
- * - A vlaue of `0` indicates that the parse was successful
+ * - A value of `0` indicates that the parse was successful.
  * - A value of `EINVAL` indicates that the input string is not a valid
  *   representation of an integer.
  * - A value of `ERANGE` indicates thath the input string is a valid integer,
  *   but the actual encoded value cannot be represented in an `int64_t`
+ * - If the parse fails (returns non-zero), then the value at `*out` will remain
+ *   unmodified.
  *
  * This differs from `strtoll` in that it requires that the entire string be
  * parsed as a valid integer. If parsing stops early, then the result will indicate
@@ -254,7 +256,7 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
       return EINVAL;
    }
    // Parse the possible sign prefix
-   bool negate = false;
+   int sign = 1;
    // Check for a "+"
    if (in.data[0] == '+') {
       // Just a plus. Drop it and do nothing with it.
@@ -264,7 +266,7 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
    else if (in.data[0] == '-') {
       // Negative sign. We'll negate the value later.
       in = mlib_substr (in, 1);
-      negate = true;
+      sign = -1;
    }
 
    // Infer the base value, if we have one
@@ -304,18 +306,11 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
       return rc;
    }
 
-   // Try to narrow from the u64 to i64
+   // Try to narrow from the u64 to i64 and apply the sign. This must be done as
+   // one operation because of the pathological case of parsing INT64_MIN
    int64_t i64 = 0;
-   if (mlib_narrow (&i64, nat)) {
+   if (mlib_mul (&i64, nat, sign)) {
       return ERANGE;
-   }
-
-   // Negate if there was a leading "-" symbol
-   if (negate) {
-      if (mlib_mul (&i64, -1)) {
-         // Flipping the sign violates the range
-         return ERANGE;
-      }
    }
 
    (void) (out && (*out = i64));

@@ -458,8 +458,6 @@ static void
 _test_int_parse (void)
 {
    const int64_t bogus_value = 2424242424242424242;
-   // We aren't interested in testing `strtoll`, so we focus on special cases
-   // in i64_parse that differ from `strtoll`
    struct case_ {
       const char *in;
       int64_t value;
@@ -488,6 +486,14 @@ _test_int_parse (void)
       {"+0x", bogus_value, EINVAL},
       {"0x", bogus_value, EINVAL},
       {"-0b", bogus_value, EINVAL},
+      {"0xff", 0xff},
+      {"0xfr", bogus_value, EINVAL},
+      {"0x0", 0},
+      {"0o755", 0755},
+      {"0755", 0755},
+      // Boundary cases:
+      {"9223372036854775807", INT64_MAX},
+      {"-9223372036854775808", INT64_MIN},
    };
    mlib_foreach_arr (struct case_, test, cases) {
       int64_t value = bogus_value;
