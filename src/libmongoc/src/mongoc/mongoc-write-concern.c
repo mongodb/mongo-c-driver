@@ -269,6 +269,7 @@ mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern, const char
       return;
    }
 
+   bson_free (write_concern->wtag);
    write_concern->wtag = bson_strdup (wtag);
    write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
    write_concern->frozen = false;
