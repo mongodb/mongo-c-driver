@@ -413,7 +413,7 @@ mstr_find_first_of (mstr_view hay, mstr_view const needles, mlib_upsized_integer
  *
  * If either `prefix` or `suffix` is a null pointer, then they will be ignored
  */
-static void
+static inline void
 mstr_split_at (mstr_view s, mlib_upsized_integer pos_, size_t drop, mstr_view *prefix, mstr_view *suffix)
 {
    const size_t pos = _mstr_adjust_index (s, pos_, true /* clamp to the string size */);
@@ -454,7 +454,7 @@ mstr_split_at (mstr_view s, mlib_upsized_integer pos_, size_t drop, mstr_view *p
  * and `*suffix` will be made an empty string, as if the infix occurred at the end
  * of the string.
  */
-static bool
+static inline bool
 mstr_split_around (mstr_view s, mstr_view infix, mstr_view *prefix, mstr_view *suffix)
 {
    // Find the position of the infix. If it is not found, returns SIZE_MAX
