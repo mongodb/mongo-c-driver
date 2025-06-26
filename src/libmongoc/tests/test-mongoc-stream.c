@@ -1,4 +1,3 @@
-
 #include <fcntl.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-stream-private.h>
