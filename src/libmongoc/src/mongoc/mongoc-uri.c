@@ -1005,7 +1005,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
        */
       if (mongoc_uri_option_is_int64 (key)) {
          if (0 < strlen (value)) {
-            int64_t i64;
+            int64_t i64 = 42424242;
             if (mlib_i64_parse (mlib_cstring (value), &i64)) {
                goto UNSUPPORTED_VALUE;
             }
@@ -1018,7 +1018,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
          }
       } else if (mongoc_uri_option_is_int32 (key)) {
          if (0 < strlen (value)) {
-            int32_t i32;
+            int32_t i32 = 42424242;
             if (mlib_i32_parse (mlib_cstring (value), &i32)) {
                goto UNSUPPORTED_VALUE;
             }
@@ -1030,7 +1030,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
             MONGOC_WARNING ("Empty value provided for \"%s\"", key);
          }
       } else if (!strcmp (key, MONGOC_URI_W)) {
-         int32_t i32;
+         int32_t i32 = 42424242;
          if (!mlib_i32_parse (mlib_cstring (value), 10, &i32)) {
             // A valid integer 'w' value.
             _mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_W, i32);
