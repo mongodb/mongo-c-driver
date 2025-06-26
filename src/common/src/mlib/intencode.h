@@ -305,7 +305,7 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
    }
 
    // Try to narrow from the u64 to i64
-   int64_t i64;
+   int64_t i64 = 0;
    if (mlib_narrow (&i64, nat)) {
       return ERANGE;
    }
@@ -341,7 +341,7 @@ mlib_i32_parse (mstr_view in, int base, int32_t *out)
       return ec;
    }
    // Attempt to narrow to a 32-bit value
-   int32_t i32;
+   int32_t i32 = 0;
    if (mlib_narrow (&i32, tmp)) {
       // Value is out-of-range
       return ERANGE;

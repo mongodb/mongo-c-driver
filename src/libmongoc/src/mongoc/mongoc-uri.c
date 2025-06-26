@@ -217,7 +217,7 @@ static char *
 _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
 {
    // Compute how many bytes we want to store
-   size_t bufsize;
+   size_t bufsize = 0;
    // Must use safe arithmetic because a pathological sv with `len == SIZE_MAX` is possible
    bool add_okay = !mlib_add (&bufsize, sv.len, 1);
    // Prepare the output region. We can allocate the whole thing up-front, because
