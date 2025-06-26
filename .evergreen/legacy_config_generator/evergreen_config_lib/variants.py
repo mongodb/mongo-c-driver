@@ -51,7 +51,6 @@ all_variants = [
             "link-with-cmake-ssl",
             "link-with-cmake-snappy",
             OD([("name", "link-with-cmake-mac"), ("distros", ["macos-14-arm64"])]),
-            OD([("name", "link-with-cmake-mac-deprecated"), ("distros", ["macos-14-arm64"])]),
             OD([("name", "link-with-cmake-windows"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "link-with-cmake-windows-ssl"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "link-with-cmake-windows-snappy"), ("distros", ["windows-vsCurrent-large"])]),

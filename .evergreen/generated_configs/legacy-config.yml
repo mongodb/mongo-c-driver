@@ -16246,9 +16246,6 @@ buildvariants:
   - name: link-with-cmake-mac
     distros:
     - macos-14-arm64
-  - name: link-with-cmake-mac-deprecated
-    distros:
-    - macos-14-arm64
   - name: link-with-cmake-windows
     distros:
     - windows-vsCurrent-large
