@@ -1606,10 +1606,7 @@ test_mongoc_host_list_from_string (void)
 
    capture_logs (true);
    ASSERT (!_mongoc_host_list_from_string (&host_list, "[::1]extra_chars:27017"));
-   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "If present, port should immediately follow the \"]\""
-                        "in an IPv6 address");
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string", MONGOC_LOG_LEVEL_ERROR, "Invalid trailing content");
 
    /* normal parsing, host and port are split, host is downcased */
    ASSERT (_mongoc_host_list_from_string (&host_list, "localHOST:27019"));
