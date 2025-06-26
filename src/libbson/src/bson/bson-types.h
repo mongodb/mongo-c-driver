@@ -514,7 +514,7 @@ bson_error_clear (bson_error_t *error)
  *
  * @note This macro is not valid in C++ because it relies on C99 compound literal semantics
  */
-#define bson_error_reset(ErrorPointer) bson_error_reset (&(ErrorPointer), &(bson_error_t){0})
+#define bson_error_reset(ErrorPointer) bson_error_reset (&(ErrorPointer), &(bson_error_t) {0})
 static inline void (bson_error_reset) (bson_error_t **error, bson_error_t *localptr)
 {
    if (*error == NULL) {
