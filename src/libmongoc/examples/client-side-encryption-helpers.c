@@ -1,4 +1,4 @@
-#include <client-side-encryption-helpers.h>
+#include "./client-side-encryption-helpers.h"
 
 uint8_t *
 hex_to_bin (const char *hex, uint32_t *len)

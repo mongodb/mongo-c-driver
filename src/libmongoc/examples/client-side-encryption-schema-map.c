@@ -1,9 +1,9 @@
+#include "./client-side-encryption-helpers.h"
+
 #include <mongoc/mongoc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <client-side-encryption-helpers.h>
 
 /* Helper method to create a new data key in the key vault, a schema to use that
  * key, and writes the schema to a file for later use. */

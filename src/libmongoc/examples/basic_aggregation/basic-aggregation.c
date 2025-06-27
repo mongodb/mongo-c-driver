@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-
 #include "../doc-common-insert.c"
+#include "./constants.c"
+#include "./distinct.c"
+#include "./map-reduce-advanced.c"
+#include "./map-reduce-basic.c"
 
 #include <mongoc/mongoc.h>
 
 #include <stdio.h>
-
-#include <constants.c>
-#include <distinct.c>
-#include <map-reduce-advanced.c>
-#include <map-reduce-basic.c>
-
 
 int
 main (int argc, char *argv[])

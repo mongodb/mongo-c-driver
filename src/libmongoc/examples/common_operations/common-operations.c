@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-
 #include <mongoc/mongoc.h>
 
 #include <stdio.h>
 
-
 const char *COLLECTION_NAME = "things";
 
 #include "../doc-common-insert.c"
-
-#include <explain.c>
-
+#include "./explain.c"
 
 int
 main (int argc, char *argv[])
