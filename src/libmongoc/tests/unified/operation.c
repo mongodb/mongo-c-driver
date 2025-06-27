@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "./operation.h"
+#include "./result.h"
 #include "./test-diagnostics.h"
 #include "./util.h"
 
@@ -25,9 +27,6 @@
 #include <mongoc/utlist.h>
 
 #include <mlib/cmp.h>
-
-#include "operation.h"
-#include "result.h"
 
 #include <test-libmongoc.h>
 

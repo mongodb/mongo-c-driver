@@ -15,6 +15,8 @@
  */
 
 
+#include <json-test-operations.h>
+
 #include <common-oid-private.h>
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-collection-private.h>
@@ -32,10 +34,8 @@
 
 #include <inttypes.h>
 
-#include "json-test-operations.h"
-#include "json-test.h"
-
 #include <TestSuite.h>
+#include <json-test.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 

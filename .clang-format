@@ -157,7 +157,7 @@ IncludeCategories:
   - Regex: '-prelude.h>'
     Priority: 1
   # Relative "in this directory" headers next
-  - Regex: '"./'
+  - Regex: '"./|"../'
     Priority: 2
   # Private API headers
   - Regex: '-private.h>'

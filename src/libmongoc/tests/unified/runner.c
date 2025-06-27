@@ -15,6 +15,8 @@
  */
 
 #include "./entity-map.h"
+#include "./operation.h"
+#include "./runner.h"
 #include "./test-diagnostics.h"
 #include "./util.h"
 
@@ -31,10 +33,7 @@
 
 #include <mlib/cmp.h>
 
-#include "json-test.h"
-#include "operation.h"
-#include "runner.h"
-
+#include <json-test.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 

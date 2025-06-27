@@ -2,8 +2,7 @@
 
 #include <mongoc/mongoc.h>
 
-#include "json-test.h"
-
+#include <json-test.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 

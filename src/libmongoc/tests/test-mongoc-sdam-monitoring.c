@@ -5,9 +5,8 @@
 
 #include <mlib/cmp.h>
 
-#include "json-test-monitoring.h"
-#include "json-test.h"
-
+#include <json-test-monitoring.h>
+#include <json-test.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
 #include <mock_server/mock-server.h>

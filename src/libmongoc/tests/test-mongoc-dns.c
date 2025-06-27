@@ -15,8 +15,7 @@
 
 #include <mlib/cmp.h>
 
-#include "json-test.h"
-
+#include <json-test.h>
 #include <test-libmongoc.h>
 
 static void

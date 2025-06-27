@@ -1,3 +1,4 @@
+#include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-socket-private.h>
@@ -6,8 +7,6 @@
 
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
-
-#include "common-oid-private.h"
 
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>

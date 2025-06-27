@@ -108,6 +108,10 @@ RunMode = Literal["apply", "check"]
 #: The regex is written to preserve whitespace and surrounding context. re.VERBOSE
 #: allows us to use verbose syntax with regex comments.
 INCLUDE_RE = r"""
+    # Start of line
+    ^
+
+    # The #include directive
     (?P<directive>
         \s*  # Any whitespace at start of line
         [#] \s* include  # The "#" and "include", with any whitespace between
@@ -115,29 +119,15 @@ INCLUDE_RE = r"""
     )
 
     " # Open quote
-    (?P<path>
-        # Header prefix dirs we want to fixup:
-        (?: common
-        |   mlib
-        |   bson
-        |   mongoc
-        |   bsonutil
-        |   mock_server
-        |   unified
-        )
-        /       # A forward slash
-        .*      # More content
-
-        # Other headers:
-        |   TestSuite.h
-        |   test-libmongoc.h
-        |   test-conveniences.h
-    )
+    # Match any path that does not start with a dot
+    (?P<path> [^.] .*?)
     " # Close quote
 
-    (?P<tail>.*)  # Everything else on the line
+    # Everything else on the line
+    (?P<tail>.*)
 
-    $   # End of line
+    # End of line
+    $
     """
 
 REPO_DIR = Path(__file__).parent.parent.resolve()
@@ -196,9 +186,17 @@ def all_our_sources() -> set[Path]:
 def _include_subst_fn(fpath: Path):
     "Create a regex substitution function that prints a message for the file when a substitution is made"
 
+    parent_dir = fpath.parent
+
     def f(mat: re.Match[str]) -> str:
         # See groups in INCLUDE_RE
-        newl = f"{mat['directive']}<{mat['path']}>{mat['tail']}"
+        target = mat["path"]
+        abs_target = parent_dir / target
+        if abs_target.is_file():
+            # This should be a relative include:
+            newl = f'{mat["directive"]}"./{target}"{mat["tail"]}'
+        else:
+            newl = f"{mat['directive']}<{target}>{mat['tail']}"
         print(f" - {fpath}: update #include directive: {mat[0]!r} → {newl!r}", file=sys.stderr)
         return newl
 

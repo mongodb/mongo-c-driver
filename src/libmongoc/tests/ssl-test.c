@@ -10,9 +10,8 @@
 
 #include <mongoc/mongoc-stream-tls.h>
 
-#include "ssl-test.h"
-
 #include <TestSuite.h>
+#include <ssl-test.h>
 
 #define TIMEOUT 10 * 1000
 

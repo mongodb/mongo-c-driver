@@ -8,8 +8,7 @@
 
 #include <bson/bson.h>
 
-#include "json-test.h"
-
+#include <json-test.h>
 #include <test-libmongoc.h>
 
 

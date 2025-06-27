@@ -15,6 +15,12 @@
  */
 
 
+#include "../TestSuite.h"
+#include "../test-conveniences.h"
+#include "../test-libmongoc.h"
+#include "./mock-server.h"
+#include "./sync-queue.h"
+
 #include <common-json-private.h>
 #include <common-string-private.h>
 #include <mongoc/mongoc-buffer-private.h>
@@ -28,12 +34,6 @@
 
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
-
-#include "../TestSuite.h"
-#include "../test-conveniences.h"
-#include "../test-libmongoc.h"
-#include "mock-server.h"
-#include "sync-queue.h"
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "./result.h"
 #include "./util.h"
 
 #include <common-string-private.h>
@@ -22,8 +23,6 @@
 #include <bson/bson.h>
 #include <bsonutil/bson-match.h>
 #include <bsonutil/bson-parser.h>
-
-#include "result.h"
 
 #include <TestSuite.h>
 #include <test-conveniences.h>

@@ -21,10 +21,9 @@
 
 #include <bson/bson.h>
 
-#include "json-test-monitoring.h"
-#include "json-test-operations.h"
-
 #include <TestSuite.h>
+#include <json-test-monitoring.h>
+#include <json-test-operations.h>
 #include <test-conveniences.h>
 
 #define MAX_NUM_TESTS 150

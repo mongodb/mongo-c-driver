@@ -36,7 +36,7 @@ typedef enum {
 #include <mongoc/mongoc-ssl.h>
 #endif
 
-#include "request.h"
+#include "./request.h"
 
 typedef struct _mock_server_t mock_server_t;
 typedef struct _autoresponder_handle_t autoresponder_handle_t;

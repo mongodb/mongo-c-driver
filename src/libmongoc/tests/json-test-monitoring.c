@@ -25,10 +25,9 @@
 
 #include <mongoc/mongoc-config.h>
 
-#include "json-test-operations.h"
-#include "json-test.h"
-
 #include <TestSuite.h>
+#include <json-test-operations.h>
+#include <json-test.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 

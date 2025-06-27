@@ -18,9 +18,8 @@
 #include <bson/bson.h>
 #include <bsonutil/bson-parser.h>
 
-#include "json-test.h"
-
 #include <TestSuite.h>
+#include <json-test.h>
 #include <test-conveniences.h>
 
 #ifdef _MSC_VER

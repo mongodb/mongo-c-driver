@@ -7,8 +7,7 @@
 
 #include <mongoc/mongoc.h>
 
-#include "json-test.h"
-
+#include <json-test.h>
 #include <test-libmongoc.h>
 
 #ifdef BSON_HAVE_STRINGS_H

@@ -7,8 +7,7 @@
 
 #include <bson/bson-types.h>
 
-#include "json-test.h"
-
+#include <json-test.h>
 #include <test-libmongoc.h>
 
 

@@ -1,4 +1,4 @@
-#include "validate.hpp"
+#include "./validate.hpp"
 
 #include <cstdio>
 #include <cstring>

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#include "../TestSuite.h"
+#include "../test-conveniences.h"
+#include "./mock-server.h"
 
 #include <common-json-private.h>
 #include <common-string-private.h>
@@ -23,10 +26,6 @@
 
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
-
-#include "../TestSuite.h"
-#include "../test-conveniences.h"
-#include "mock-server.h"
 
 static bool
 is_command_ns (const char *ns);

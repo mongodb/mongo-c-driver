@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "client-side-encryption-helpers.h"
+#include <client-side-encryption-helpers.h>
 
 /* This example demonstrates how to set up automatic decryption without
  * automatic encryption using the community version of MongoDB */

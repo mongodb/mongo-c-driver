@@ -17,8 +17,7 @@
 #include <common-b64-private.h>
 #include <common-bson-dsl-private.h>
 
-#include "json-test.h"
-
+#include <json-test.h>
 #include <test-libmongoc.h>
 
 /* _mongoc_host_list_from_string_with_err */

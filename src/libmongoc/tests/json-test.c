@@ -15,6 +15,8 @@
  */
 
 
+#include <json-test.h>
+
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-collection-private.h>
@@ -26,11 +28,9 @@
 
 #include <mlib/loop.h>
 
-#include "json-test-monitoring.h"
-#include "json-test-operations.h"
-#include "json-test.h"
-
 #include <TestSuite.h>
+#include <json-test-monitoring.h>
+#include <json-test-operations.h>
 #include <test-libmongoc.h>
 
 #ifdef _MSC_VER

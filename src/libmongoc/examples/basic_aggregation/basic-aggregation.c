@@ -15,15 +15,16 @@
  */
 
 
+#include "../doc-common-insert.c"
+
 #include <mongoc/mongoc.h>
 
 #include <stdio.h>
 
-#include "../doc-common-insert.c"
-#include "constants.c"
-#include "distinct.c"
-#include "map-reduce-advanced.c"
-#include "map-reduce-basic.c"
+#include <constants.c>
+#include <distinct.c>
+#include <map-reduce-advanced.c>
+#include <map-reduce-basic.c>
 
 
 int

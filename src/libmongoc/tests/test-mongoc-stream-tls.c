@@ -5,9 +5,8 @@
 #include <openssl/err.h>
 #endif
 
-#include "ssl-test.h"
-
 #include <TestSuite.h>
+#include <ssl-test.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 

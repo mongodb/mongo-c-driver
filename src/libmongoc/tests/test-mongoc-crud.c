@@ -4,9 +4,8 @@
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
 
-#include "json-test-operations.h"
-#include "json-test.h"
-
+#include <json-test-operations.h>
+#include <json-test.h>
 #include <test-libmongoc.h>
 
 static bool

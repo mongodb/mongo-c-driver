@@ -17,6 +17,8 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
+#include "./sync-queue.h"
+
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-rpc-private.h>
@@ -25,8 +27,6 @@
 #include <mongoc/mongoc.h>
 
 #include <bson/bson.h>
-
-#include "sync-queue.h"
 
 struct _mock_server_t; /* forward declaration */
 
@@ -44,7 +44,6 @@ typedef struct _request_t {
    mongoc_array_t docs; /* array of bson_t pointers */
    sync_queue_t *replies;
 } request_t;
-
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,

@@ -3,9 +3,8 @@
 
 #include <mongoc/mongoc.h>
 
-#include "json-test-operations.h"
-#include "json-test.h"
-
+#include <json-test-operations.h>
+#include <json-test.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
 #include <mock_server/mock-server.h>
