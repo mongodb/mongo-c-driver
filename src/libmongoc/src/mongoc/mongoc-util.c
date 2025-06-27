@@ -547,13 +547,7 @@ mongoc_lowercase_inplace (char *src)
 }
 
 bool
-mongoc_parse_port (uint16_t *port, const char *str)
-{
-   return _mongoc_parse_port_v2 (mlib_cstring (str), port, NULL);
-}
-
-bool
-_mongoc_parse_port_v2 (mstr_view spelling, uint16_t *out, bson_error_t *error)
+_mongoc_parse_port (mstr_view spelling, uint16_t *out, bson_error_t *error)
 {
    bson_error_reset (error);
    // Parse a strict natural number

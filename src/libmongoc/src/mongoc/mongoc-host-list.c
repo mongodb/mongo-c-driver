@@ -225,7 +225,7 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
    if (port_delim_pos != SIZE_MAX) {
       bson_error_t err2;
       const mstr_view port_str = mlib_substr (addr, port_delim_pos + 1);
-      if (!_mongoc_parse_port_v2 (port_str, &port, &err2)) {
+      if (!_mongoc_parse_port (port_str, &port, &err2)) {
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -256,7 +256,7 @@ _parse_host (mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
    if (mstr_split_around (spec, mlib_cstring (":"), &hostname, &port_str)) {
       // We have a ":" delimiter. Try to parse it as a port number:
       bson_error_t e2;
-      if (!_mongoc_parse_port_v2 (port_str, &port, &e2)) {
+      if (!_mongoc_parse_port (port_str, &port, &e2)) {
          // Invalid port number
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,

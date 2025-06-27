@@ -281,13 +281,12 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
 }
 
 
-/* "str" is non-NULL, the part of URI between "mongodb://" and first "@" */
 /**
  * @brief Parse the userinfo segment from a URI string
  *
  * @param uri The URI to be updated
  * @param userpass The userinfo segment from the original URI string
- * @return true If the operatin succeeds
+ * @return true If the operation succeeds
  * @return false Otherwise
  */
 static bool
@@ -303,19 +302,13 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    // Check if the username has invalid unescaped characters
    const mstr_view PROHIBITED_CHARS = mlib_cstring ("@:/");
    if (mstr_find_first_of (username, PROHIBITED_CHARS) != SIZE_MAX) {
-      MONGOC_URI_ERROR (error,
-                        "Username \"%*s\" must not have unescaped chars. %s",
-                        (int) username.len,
-                        username.data,
-                        escape_instructions);
+      MONGOC_URI_ERROR (
+         error, "Username \"%.*s\" must not have unescaped chars. %s", MSTR_FMT (username), escape_instructions);
       return false;
    }
    if (mstr_find_first_of (password, PROHIBITED_CHARS) != SIZE_MAX) {
-      MONGOC_URI_ERROR (error,
-                        "Password \"%*s\" must not have unescaped chars. %s",
-                        (int) password.len,
-                        password.data,
-                        escape_instructions);
+      MONGOC_URI_ERROR (
+         error, "Password \"%.*s\" must not have unescaped chars. %s", MSTR_FMT (password), escape_instructions);
       return false;
    }
 
@@ -493,7 +486,7 @@ _parse_path (mongoc_uri_t *uri, mstr_view path, bson_error_t *error)
    }
 
    // Check if the database name contains and invalid characters after the %-decode
-   if (mstr_contains_any_of (mlib_cstring (uri->database), mlib_cstring ("/\\. \"$"))) {
+   if (mstr_contains_any_of (mlib_cstring (uri->database), mlib_cstring ("/\\. \n\r\f\t\"$"))) {
       MONGOC_URI_ERROR (error, "Invalid database specifier \"%s\": Contains disallowed characters", uri->database);
       return false;
    }

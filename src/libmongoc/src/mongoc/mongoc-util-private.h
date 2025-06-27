@@ -104,9 +104,6 @@ mongoc_lowercase (const char *src, char *buf /* OUT */);
 void
 mongoc_lowercase_inplace (char *src);
 
-bool
-mongoc_parse_port (uint16_t *port, const char *str);
-
 /**
  * @brief Parse a network port number
  *
@@ -116,7 +113,7 @@ mongoc_parse_port (uint16_t *port, const char *str);
  * @return false Otherwise
  */
 bool
-_mongoc_parse_port_v2 (mstr_view spelling, uint16_t *out, bson_error_t *error);
+_mongoc_parse_port (mstr_view spelling, uint16_t *out, bson_error_t *error);
 
 void
 _mongoc_bson_array_add_label (bson_t *bson, const char *label);
