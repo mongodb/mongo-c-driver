@@ -118,7 +118,7 @@ srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
    }
 
    if (!_mongoc_host_list_from_hostport_with_err (
-          &new_host, mlib_cstring (pdns->Data.SRV.pNameTarget), pdns->Data.SRV.wPort, error)) {
+          &new_host, mstr_cstring (pdns->Data.SRV.pNameTarget), pdns->Data.SRV.wPort, error)) {
       return false;
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
@@ -313,7 +313,7 @@ srv_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"", hostname, _mongoc_hstrerror (h_errno));
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (&new_host, mlib_cstring (name), port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&new_host, mstr_cstring (name), port, error)) {
       GOTO (done);
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);

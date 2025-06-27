@@ -192,7 +192,7 @@ mongoc_uri_upsert_host (mongoc_uri_t *uri, const char *host, uint16_t port, bson
    mongoc_host_list_t temp;
 
    memset (&temp, 0, sizeof (mongoc_host_list_t));
-   if (!_mongoc_host_list_from_hostport_with_err (&temp, mlib_cstring (host), port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&temp, mstr_cstring (host), port, error)) {
       return false;
    }
 
@@ -238,7 +238,7 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
       if (remain.data[0] != '%') {
          // Not a % char, just append it
          *out++ = remain.data[0];
-         remain = mlib_substr (remain, 1);
+         remain = mstr_substr (remain, 1);
          continue;
       }
       // %-sequence
@@ -251,7 +251,7 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
          return NULL;
       }
       // Grab the next two chars
-      mstr_view pair = mlib_substr (remain, 1, 2);
+      mstr_view pair = mstr_substr (remain, 1, 2);
       uint64_t v;
       if (mlib_nat64_parse (pair, 16, &v)) {
          MONGOC_URI_ERROR (error,
@@ -265,7 +265,7 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
       // Append the decoded byte value
       *out++ = (char) v;
       // Drop the "%xy" sequence
-      remain = mlib_substr (remain, 3);
+      remain = mstr_substr (remain, 3);
    }
 
    // Check whether the decoded result is valid UTF-8
@@ -300,7 +300,7 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    const bool has_password = mstr_split_around (userpass, COLON, &username, &password);
 
    // Check if the username has invalid unescaped characters
-   const mstr_view PROHIBITED_CHARS = mlib_cstring ("@:/");
+   const mstr_view PROHIBITED_CHARS = mstr_cstring ("@:/");
    if (mstr_find_first_of (username, PROHIBITED_CHARS) != SIZE_MAX) {
       MONGOC_URI_ERROR (
          error, "Username \"%.*s\" must not have unescaped chars. %s", MSTR_FMT (username), escape_instructions);
@@ -469,7 +469,7 @@ _parse_path (mongoc_uri_t *uri, mstr_view path, bson_error_t *error)
    bson_error_reset (error);
    // Drop the leading slash, if present. If the URI has no path, then `path`
    // will already be an empty string.
-   const mstr_view relative = path.len ? mlib_substr (path, 1) : path;
+   const mstr_view relative = path.len ? mstr_substr (path, 1) : path;
 
    if (!relative.len) {
       // Empty/absent path is no database
@@ -486,7 +486,7 @@ _parse_path (mongoc_uri_t *uri, mstr_view path, bson_error_t *error)
    }
 
    // Check if the database name contains and invalid characters after the %-decode
-   if (mstr_contains_any_of (mlib_cstring (uri->database), mlib_cstring ("/\\. \n\r\f\t\"$"))) {
+   if (mstr_contains_any_of (mstr_cstring (uri->database), mstr_cstring ("/\\. \n\r\f\t\"$"))) {
       MONGOC_URI_ERROR (error, "Invalid database specifier \"%s\": Contains disallowed characters", uri->database);
       return false;
    }
@@ -500,7 +500,7 @@ _parse_and_set_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
 {
    bson_t properties = BSON_INITIALIZER;
 
-   mstr_view remain = mlib_cstring (str);
+   mstr_view remain = mstr_cstring (str);
    while (remain.len) {
       // Get the entry until the next comma
       mstr_view entry;
@@ -589,7 +589,7 @@ _apply_read_prefs_tags (mongoc_uri_t *uri, /* IN */
    bson_t b = BSON_INITIALIZER;
    bool okay = false;
 
-   for (mstr_view remain = mlib_cstring (str); remain.len;) {
+   for (mstr_view remain = mstr_cstring (str); remain.len;) {
       mstr_view entry;
       mstr_split_around (remain, COMMA, &entry, &remain);
       mstr_view key, value;
@@ -625,7 +625,7 @@ _bson_erase_icase (bson_t *doc, mstr_view key)
 
    bson_t tmp = BSON_INITIALIZER;
    while (bson_iter_next (&iter)) {
-      if (mstr_latin_casecmp (mlib_cstring (bson_iter_key (&iter)), !=, key)) {
+      if (mstr_latin_casecmp (mstr_cstring (bson_iter_key (&iter)), !=, key)) {
          const bson_value_t *const bvalue = bson_iter_value (&iter);
          BSON_APPEND_VALUE (&tmp, bson_iter_key (&iter), bvalue);
       }
@@ -675,7 +675,7 @@ _bson_init_iter_find_icase (bson_iter_t *iter, bson_t const *doc, mstr_view key)
       return false;
    }
    while (bson_iter_next (iter)) {
-      if (mstr_latin_casecmp (mlib_cstring (bson_iter_key (iter)), ==, key)) {
+      if (mstr_latin_casecmp (mstr_cstring (bson_iter_key (iter)), ==, key)) {
          return true;
       }
    }
@@ -686,7 +686,7 @@ bool
 mongoc_uri_has_option (const mongoc_uri_t *uri, const char *key)
 {
    bson_iter_t iter;
-   return _bson_init_iter_find_icase (&iter, &uri->options, mlib_cstring (key));
+   return _bson_init_iter_find_icase (&iter, &uri->options, mstr_cstring (key));
 }
 
 bool
@@ -778,9 +778,9 @@ dns_option_allowed (mstr_view key)
     * authSource, replicaSet, and loadBalanced options through a TXT record, and
     * MUST raise an error if any other option is encountered."
     */
-   return mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_AUTHSOURCE)) ||
-          mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_LOADBALANCED)) ||
-          mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_REPLICASET));
+   return mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_AUTHSOURCE)) ||
+          mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_LOADBALANCED)) ||
+          mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_REPLICASET));
 }
 
 /**
@@ -803,7 +803,7 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
    bool ret = false;
 
    mstr_view key, val_pct;
-   if (!mstr_split_around (str, mlib_cstring ("="), &key, &val_pct)) {
+   if (!mstr_split_around (str, mstr_cstring ("="), &key, &val_pct)) {
       MONGOC_URI_ERROR (error, "URI option \"%.*s\" contains no \"=\" sign", MSTR_FMT (str));
       goto done;
    }
@@ -828,7 +828,7 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
     * Encode them directly to the options field,
     * bypassing canonicalization and duplicate checks.
     */
-   if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_READPREFERENCETAGS))) {
+   if (mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_READPREFERENCETAGS))) {
       if (!_apply_read_prefs_tags (uri, value)) {
          MONGOC_URI_ERROR (error, "Unsupported value for \"%.*s\": \"%s\"", MSTR_FMT (key), value);
          goto done;
@@ -845,8 +845,8 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
        * by later values.
        */
       size_t opt_len;
-      if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_W)) &&
-          mlib_i64_parse (mlib_cstring (bson_iter_utf8_unsafe (&iter, &opt_len)), NULL)) {
+      if (mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_W)) &&
+          mlib_i64_parse (mstr_cstring (bson_iter_utf8_unsafe (&iter, &opt_len)), NULL)) {
          // Value is a "w", and is not a valid integer, but we already have a valid "w"
          // value, so don't overwrite it
          ret = true;
@@ -858,7 +858,7 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
        * through TXT records." So, do NOT override existing options with TXT
        * options. */
       if (from_dns) {
-         if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_AUTHSOURCE))) {
+         if (mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_AUTHSOURCE))) {
             // Treat `authSource` as a special case. A server may support authentication with multiple mechanisms.
             // MONGODB-X509 requires authSource=$external. SCRAM-SHA-256 requires authSource=admin.
             // Only log a trace message since this may be expected.
@@ -877,7 +877,7 @@ _handle_pct_uri_query_param (mongoc_uri_t *uri, bson_t *options, mstr_view str, 
    }
 
    // Reject replicaSet=""
-   if (mstr_latin_casecmp (key, ==, mlib_cstring (MONGOC_URI_REPLICASET)) && strlen (value) == 0) {
+   if (mstr_latin_casecmp (key, ==, mstr_cstring (MONGOC_URI_REPLICASET)) && strlen (value) == 0) {
       MONGOC_URI_ERROR (error, "Value for URI option \"%.*s\" cannot be empty string", MSTR_FMT (key));
       goto done;
    }
@@ -916,7 +916,7 @@ mongoc_uri_options_validate_names (const bson_t *a, const bson_t *b, bson_error_
       value = bson_iter_utf8_unsafe (&key_iter, &value_len);
       canon = mongoc_uri_canonicalize_option (key);
 
-      if (mstr_latin_casecmp (mlib_cstring (key), ==, mlib_cstring (canon))) {
+      if (mstr_latin_casecmp (mstr_cstring (key), ==, mstr_cstring (canon))) {
          /* Canonical form, no point checking `b`. */
          continue;
       }
@@ -924,7 +924,7 @@ mongoc_uri_options_validate_names (const bson_t *a, const bson_t *b, bson_error_
       /* Check for a conflict in `a`. */
       if (bson_iter_init_find (&canon_iter, a, canon)) {
          cval = bson_iter_utf8_unsafe (&canon_iter, &cval_len);
-         if (mstr_cmp (mlib_cstring (cval), !=, mlib_cstring (value))) {
+         if (mstr_cmp (mstr_cstring (cval), !=, mstr_cstring (value))) {
             goto HANDLE_CONFLICT;
          }
       }
@@ -932,7 +932,7 @@ mongoc_uri_options_validate_names (const bson_t *a, const bson_t *b, bson_error_
       /* Check for a conflict in `b`. */
       if (bson_iter_init_find (&canon_iter, b, canon)) {
          cval = bson_iter_utf8_unsafe (&canon_iter, &cval_len);
-         if (mstr_cmp (mlib_cstring (cval), !=, mlib_cstring (value))) {
+         if (mstr_cmp (mstr_cstring (cval), !=, mstr_cstring (value))) {
             goto HANDLE_CONFLICT;
          }
       }
@@ -979,7 +979,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
       value = bson_iter_utf8_unsafe (&iter, &value_len);
 
       /* Keep a record of how the option was originally presented. */
-      _bson_upsert_utf8_icase (&uri->raw, mlib_cstring (key), value);
+      _bson_upsert_utf8_icase (&uri->raw, mstr_cstring (key), value);
 
       /* This check precedes mongoc_uri_option_is_int32 as all 64-bit values are
        * also recognised as 32-bit ints.
@@ -987,7 +987,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
       if (mongoc_uri_option_is_int64 (key)) {
          if (0 < strlen (value)) {
             int64_t i64 = 42424242;
-            if (mlib_i64_parse (mlib_cstring (value), &i64)) {
+            if (mlib_i64_parse (mstr_cstring (value), &i64)) {
                goto UNSUPPORTED_VALUE;
             }
 
@@ -1000,7 +1000,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
       } else if (mongoc_uri_option_is_int32 (key)) {
          if (0 < strlen (value)) {
             int32_t i32 = 42424242;
-            if (mlib_i32_parse (mlib_cstring (value), &i32)) {
+            if (mlib_i32_parse (mstr_cstring (value), &i32)) {
                goto UNSUPPORTED_VALUE;
             }
 
@@ -1012,13 +1012,13 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
          }
       } else if (!strcmp (key, MONGOC_URI_W)) {
          int32_t i32 = 42424242;
-         if (!mlib_i32_parse (mlib_cstring (value), 10, &i32)) {
+         if (!mlib_i32_parse (mstr_cstring (value), 10, &i32)) {
             // A valid integer 'w' value.
             _mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_W, i32);
          } else if (0 == strcasecmp (value, "majority")) {
-            _bson_upsert_utf8_icase (&uri->options, mlib_cstring (MONGOC_URI_W), "majority");
+            _bson_upsert_utf8_icase (&uri->options, mstr_cstring (MONGOC_URI_W), "majority");
          } else if (*value) {
-            _bson_upsert_utf8_icase (&uri->options, mlib_cstring (MONGOC_URI_W), value);
+            _bson_upsert_utf8_icase (&uri->options, mstr_cstring (MONGOC_URI_W), value);
          }
       } else if (mongoc_uri_option_is_bool (key)) {
          if (0 < strlen (value)) {
@@ -1065,7 +1065,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
          if (bson_has_field (&uri->credentials, key)) {
             HANDLE_DUPE ();
          }
-         _bson_upsert_utf8_icase (&uri->credentials, mlib_cstring (canon), value);
+         _bson_upsert_utf8_icase (&uri->credentials, mstr_cstring (canon), value);
 
       } else if (!strcmp (key, MONGOC_URI_READCONCERNLEVEL)) {
          if (!mongoc_read_concern_is_default (uri->read_concern)) {
@@ -1095,7 +1095,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
          if (!mongoc_uri_check_srv_service_name (uri, value)) {
             goto UNSUPPORTED_VALUE;
          }
-         _bson_upsert_utf8_icase (&uri->options, mlib_cstring (canon), value);
+         _bson_upsert_utf8_icase (&uri->options, mstr_cstring (canon), value);
 
       } else if (!strcmp (key, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
          if (bson_has_field (&uri->credentials, key)) {
@@ -1125,7 +1125,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
          }
 
       } else if (mongoc_uri_option_is_utf8 (key)) {
-         _bson_upsert_utf8_icase (&uri->options, mlib_cstring (canon), value);
+         _bson_upsert_utf8_icase (&uri->options, mstr_cstring (canon), value);
 
       } else {
          /*
@@ -1159,7 +1159,7 @@ _mongoc_uri_apply_query_string (mongoc_uri_t *uri, mstr_view remain, bool from_d
    bson_t options = BSON_INITIALIZER;
    for (; remain.len;) {
       mstr_view entry;
-      mstr_split_around (remain, mlib_cstring ("&"), &entry, &remain);
+      mstr_split_around (remain, mstr_cstring ("&"), &entry, &remain);
       if (!_handle_pct_uri_query_param (uri, &options, entry, from_dns, error)) {
          bson_destroy (&options);
          return false;
@@ -1917,7 +1917,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
 
    // * remain = "foo://bar@baz:1234/path?query#fragment"
    // Grab the scheme, which is the part preceding "://"
-   if (!mstr_split_around (remain, mlib_cstring ("://"), &parts->scheme, &remain)) {
+   if (!mstr_split_around (remain, mstr_cstring ("://"), &parts->scheme, &remain)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid URI, no scheme part specified");
       return false;
    }
@@ -1937,7 +1937,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
          userinfo_end_pos = 0;
       }
       // Find the position of the first character that terminates the authority element
-      const size_t term_pos = mstr_find_first_of (remain, mlib_cstring ("/?#"), userinfo_end_pos);
+      const size_t term_pos = mstr_find_first_of (remain, mstr_cstring ("/?#"), userinfo_end_pos);
       mstr_split_at (remain, term_pos, &parts->authority, &remain);
 
       // Now we should split the authority between the userinfo and the hosts
@@ -1954,10 +1954,10 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
    }
 
    // * remain = "/path?query#fragment" (Each following component is optional, but this is the proper order)
-   const size_t path_end_pos = mstr_find_first_of (remain, mlib_cstring ("?#"));
+   const size_t path_end_pos = mstr_find_first_of (remain, mstr_cstring ("?#"));
    mstr_split_at (remain, path_end_pos, &parts->path, &remain);
    // * remain = "query#fragment" (Each following component is optional, but this is the proper order)
-   const size_t hash_pos = mstr_find_first_of (remain, mlib_cstring ("#"));
+   const size_t hash_pos = mstr_find_first_of (remain, mstr_cstring ("#"));
    mstr_split_at (remain, hash_pos, &parts->query, &remain);
    // * remain = "#fragment"
    parts->fragment = remain;
@@ -1979,7 +1979,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    BSON_ASSERT_PARAM (str);
 
    // Split the URI into its parts
-   mstr_view remain = mlib_cstring (str);
+   mstr_view remain = mstr_cstring (str);
    uri_parts parts;
    if (!_decompose_uri_string (&parts, remain, error)) {
       return false;
@@ -1995,9 +1995,9 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    }
 
    // Detect whether we are a "mongodb" or "mongodb+srv" URI
-   if (mstr_cmp (parts.scheme, ==, mlib_cstring ("mongodb"))) {
+   if (mstr_cmp (parts.scheme, ==, mstr_cstring ("mongodb"))) {
       uri->is_srv = false;
-   } else if (mstr_cmp (parts.scheme, ==, mlib_cstring ("mongodb+srv"))) {
+   } else if (mstr_cmp (parts.scheme, ==, mstr_cstring ("mongodb+srv"))) {
       uri->is_srv = true;
    } else {
       MONGOC_URI_ERROR (error,
@@ -2018,7 +2018,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    // If we have a query, parse that as the URI settings
    if (parts.query.len &&
-       !_mongoc_uri_apply_query_string (uri, mlib_substr (parts.query, 1), false /* from DNS */, error)) {
+       !_mongoc_uri_apply_query_string (uri, mstr_substr (parts.query, 1), false /* from DNS */, error)) {
       return false;
    }
 
@@ -2085,7 +2085,7 @@ mongoc_uri_set_auth_mechanism (mongoc_uri_t *uri, const char *value)
       return false;
    }
 
-   _bson_upsert_utf8_icase (&uri->credentials, mlib_cstring (MONGOC_URI_AUTHMECHANISM), value);
+   _bson_upsert_utf8_icase (&uri->credentials, mstr_cstring (MONGOC_URI_AUTHMECHANISM), value);
 
    return true;
 }
@@ -2514,7 +2514,7 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
       return false;
    }
 
-   _bson_upsert_utf8_icase (&uri->credentials, mlib_cstring (MONGOC_URI_AUTHSOURCE), value);
+   _bson_upsert_utf8_icase (&uri->credentials, mstr_cstring (MONGOC_URI_AUTHSOURCE), value);
 
    return true;
 }
@@ -2542,7 +2542,7 @@ mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value)
       return false;
    }
 
-   _bson_upsert_utf8_icase (&uri->options, mlib_cstring (MONGOC_URI_APPNAME), value);
+   _bson_upsert_utf8_icase (&uri->options, mstr_cstring (MONGOC_URI_APPNAME), value);
 
    return true;
 }
@@ -2562,7 +2562,7 @@ mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value)
       return false;
    }
 
-   for (mstr_view remain = mlib_cstring (value); remain.len;) {
+   for (mstr_view remain = mstr_cstring (value); remain.len;) {
       mstr_view entry;
       mstr_split_around (remain, COMMA, &entry, &remain);
       if (mongoc_compressor_supported (entry)) {
@@ -2722,7 +2722,7 @@ char *
 mongoc_uri_unescape (const char *escaped_string)
 {
    bson_error_t error;
-   char *r = _strdup_pct_decode (mlib_cstring (escaped_string), &error);
+   char *r = _strdup_pct_decode (mstr_cstring (escaped_string), &error);
    if (!r) {
       MONGOC_WARNING ("%s(): Invalid %% escape sequence: %s", BSON_FUNC, error.message);
    }
@@ -2836,7 +2836,7 @@ mongoc_uri_set_server_monitoring_mode (mongoc_uri_t *uri, const char *value)
       return false;
    }
 
-   _bson_upsert_utf8_icase (&uri->options, mlib_cstring (MONGOC_URI_SERVERMONITORINGMODE), value);
+   _bson_upsert_utf8_icase (&uri->options, mstr_cstring (MONGOC_URI_SERVERMONITORINGMODE), value);
    return true;
 }
 
@@ -3378,7 +3378,7 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri, const char *option_orig, const
    } else if (!bson_strcasecmp (option, MONGOC_URI_SERVERMONITORINGMODE)) {
       return mongoc_uri_set_server_monitoring_mode (uri, value);
    } else {
-      _bson_upsert_utf8_icase (&uri->options, mlib_cstring (option), value);
+      _bson_upsert_utf8_icase (&uri->options, mstr_cstring (option), value);
    }
 
    return true;

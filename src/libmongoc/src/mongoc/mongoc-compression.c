@@ -75,16 +75,16 @@ mongoc_compressor_supported (mstr_view compressor)
    have_zstd = true;
 #endif
 
-   if (mstr_latin_casecmp (compressor, ==, mlib_cstring ("snappy"))) {
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("snappy"))) {
       return have_snappy;
    }
-   if (mstr_latin_casecmp (compressor, ==, mlib_cstring ("zlib"))) {
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("zlib"))) {
       return have_zlib;
    }
-   if (mstr_latin_casecmp (compressor, ==, mlib_cstring ("zstd"))) {
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("zstd"))) {
       return have_zstd;
    }
-   if (mstr_latin_casecmp (compressor, ==, mlib_cstring ("noop"))) {
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("noop"))) {
       return true; // We always have "noop"
    }
 

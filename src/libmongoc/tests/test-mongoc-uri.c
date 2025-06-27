@@ -2703,7 +2703,7 @@ test_mongoc_uri_srv (void)
       const char *option = _key "=" #_value;                                                         \
       char *lkey = bson_strdup (_key);                                                               \
       mongoc_lowercase (lkey, lkey);                                                                 \
-      _mongoc_uri_apply_query_string (uri, mlib_cstring (option), true /* from dns */, &error);      \
+      _mongoc_uri_apply_query_string (uri, mstr_cstring (option), true /* from dns */, &error);      \
       ASSERT_ERROR_CONTAINS (                                                                        \
          error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "prohibited in TXT record"); \
       ASSERT (!bson_has_field (mongoc_uri_get_##_where (uri), lkey));                                \
@@ -2720,7 +2720,7 @@ test_mongoc_uri_dns_options (void)
    uri = mongoc_uri_new ("mongodb+srv://a.b.c");
    ASSERT (uri);
 
-   ASSERT (!_mongoc_uri_apply_query_string (uri, mlib_cstring ("tls=false"), true /* from dsn */, &error));
+   ASSERT (!_mongoc_uri_apply_query_string (uri, mstr_cstring ("tls=false"), true /* from dsn */, &error));
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "prohibited in TXT record");
 
@@ -2732,8 +2732,8 @@ test_mongoc_uri_dns_options (void)
    PROHIBITED (MONGOC_URI_GSSAPISERVICENAME, malicious, utf8, credentials);
 
    /* the two options allowed in TXT records, case-insensitive */
-   ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("authsource=db"), true, NULL));
-   ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("RepLIcaSET=rs"), true, NULL));
+   ASSERT (_mongoc_uri_apply_query_string (uri, mstr_cstring ("authsource=db"), true, NULL));
+   ASSERT (_mongoc_uri_apply_query_string (uri, mstr_cstring ("RepLIcaSET=rs"), true, NULL));
 
    /* test that URI string overrides TXT record options */
    mongoc_uri_destroy (uri);
@@ -2742,7 +2742,7 @@ test_mongoc_uri_dns_options (void)
    // test that parsing warns if replicaSet is ignored from TXT records.
    {
       capture_logs (true);
-      ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("replicaSet=db2"), true, NULL));
+      ASSERT (_mongoc_uri_apply_query_string (uri, mstr_cstring ("replicaSet=db2"), true, NULL));
       ASSERT_CAPTURED_LOG (
          "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
       capture_logs (false);
@@ -2752,7 +2752,7 @@ test_mongoc_uri_dns_options (void)
    // test that parsing does not warn if authSource is ignored from TXT records.
    {
       capture_logs (true);
-      ASSERT (_mongoc_uri_apply_query_string (uri, mlib_cstring ("authSource=db2"), true, NULL));
+      ASSERT (_mongoc_uri_apply_query_string (uri, mstr_cstring ("authSource=db2"), true, NULL));
       ASSERT_NO_CAPTURED_LOGS ("parsing authSource from TXT");
       capture_logs (false);
       ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
@@ -3128,7 +3128,7 @@ test_casing_options (void)
 
    uri = mongoc_uri_new ("mongodb://localhost:27017/");
    mongoc_uri_set_option_as_bool (uri, "TLS", true);
-   _mongoc_uri_apply_query_string (uri, mlib_cstring ("ssl=false"), false, &error);
+   _mongoc_uri_apply_query_string (uri, mstr_cstring ("ssl=false"), false, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "conflicts");
 
    mongoc_uri_destroy (uri);

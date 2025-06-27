@@ -102,7 +102,7 @@ mstr_view_data (const char *data, size_t len)
  * }
  * ```
  *
- * Without _Generic, we require all C strings to be wrapped with `mlib_cstring`,
+ * Without _Generic, we require all C strings to be wrapped with `mstr_cstring`,
  * which isn't especially onerous, but it is annoying. Additionally, the below
  * `_Generic` macro can be extended to support more complex string-like types.
  *
@@ -121,7 +121,7 @@ mstr_view_data (const char *data, size_t len)
  * The object requires a `data` and `len` member
  */
 #define mstr_view_from(X) \
-   _Generic ((X), mstr_view: _mstr_view_trivial_copy, char *: mlib_cstring, const char *: mlib_cstring) ((X))
+   _Generic ((X), mstr_view: _mstr_view_trivial_copy, char *: mstr_cstring, const char *: mstr_cstring) ((X))
 // Just copy an mstr_view by-value
 static inline mstr_view
 _mstr_view_trivial_copy (mstr_view s)
@@ -138,7 +138,7 @@ _mstr_view_trivial_copy (mstr_view s)
  * @param s Pointer to a C string. The length of the returned string is infered using `strlen`
  */
 static inline mstr_view
-mlib_cstring (const char *s)
+mstr_cstring (const char *s)
 {
    const size_t l = strlen (s);
    return mstr_view_data (s, l);
@@ -287,11 +287,11 @@ _mstr_adjust_index (mstr_view s, mlib_upsized_integer pos, bool clamp_to_length)
  *
  * Callable as:
  *
- * - `mlib_substr(s, pos)`
- * - `mlib_substr(s, pos, len)`
+ * - `mstr_substr(s, pos)`
+ * - `mstr_substr(s, pos, len)`
  */
 static inline mstr_view
-mlib_substr (mstr_view s, mlib_upsized_integer pos_, size_t len)
+mstr_substr (mstr_view s, mlib_upsized_integer pos_, size_t len)
 {
    const size_t pos = _mstr_adjust_index (s, pos_, false);
    // Number of characters in the string after we remove the prefix
@@ -303,9 +303,9 @@ mlib_substr (mstr_view s, mlib_upsized_integer pos_, size_t len)
    return mstr_view_data (s.data + pos, len);
 }
 
-#define mlib_substr(...) MLIB_ARGC_PICK (_mlib_substr, __VA_ARGS__)
-#define _mlib_substr_argc_2(Str, Start) _mlib_substr_argc_3 (Str, Start, SIZE_MAX)
-#define _mlib_substr_argc_3(Str, Start, Stop) mlib_substr (mstr_view_from (Str), mlib_upsize_integer (Start), Stop)
+#define mstr_substr(...) MLIB_ARGC_PICK (_mstr_substr, __VA_ARGS__)
+#define _mstr_substr_argc_2(Str, Start) _mstr_substr_argc_3 (Str, Start, SIZE_MAX)
+#define _mstr_substr_argc_3(Str, Start, Stop) mstr_substr (mstr_view_from (Str), mlib_upsize_integer (Start), Stop)
 
 /**
  * @brief Obtain a slice of the given string view, where the two arguments are zero-based indices into the string
@@ -324,7 +324,7 @@ mstr_slice (const mstr_view s, const mlib_upsized_integer start_, const mlib_ups
    const size_t end_pos = _mstr_adjust_index (s, end_, true);
    mlib_check (end_pos >= start_pos, because, "Slice positions must end after the start position");
    const size_t sz = (size_t) (end_pos - start_pos);
-   return mlib_substr (s, start_pos, sz);
+   return mstr_substr (s, start_pos, sz);
 }
 #define mstr_slice(S, StartPos, EndPos) \
    mstr_slice (mstr_view_from (S), mlib_upsize_integer ((StartPos)), mlib_upsize_integer ((EndPos)))
@@ -353,7 +353,7 @@ mstr_find (mstr_view hay, mstr_view const needle, mlib_upsized_integer const pos
 {
    const size_t pos = _mstr_adjust_index (hay, pos_, false);
    // Trim the hay according to our search window:
-   hay = mlib_substr (hay, pos, len);
+   hay = mstr_substr (hay, pos, len);
 
    // Larger needle can never exist within the smaller string:
    if (hay.len < needle.len) {
@@ -406,11 +406,11 @@ mstr_find_first_of (mstr_view hay, mstr_view const needles, mlib_upsized_integer
 {
    const size_t pos = _mstr_adjust_index (hay, pos_, false);
    // Trim to fit the search window
-   hay = mlib_substr (hay, pos, len);
+   hay = mstr_substr (hay, pos, len);
    // We search by incrementing an index
    mlib_foreach_urange (idx, hay.len) {
       // Grab a substring of the single char at the current search index
-      mstr_view one = mlib_substr (hay, idx, 1);
+      mstr_view one = mstr_substr (hay, idx, 1);
       // Test if the single char occurs anywhere in the needle set
       if (mstr_find (needles, one) != SIZE_MAX) {
          // We found the first index in `hay` where one of the needles occurs. Adjust
@@ -451,7 +451,7 @@ mstr_split_at (mstr_view s, mlib_upsized_integer pos_, size_t drop, mstr_view *p
    const size_t pos = _mstr_adjust_index (s, pos_, true /* clamp to the string size */);
    // Save the prefix string
    if (prefix) {
-      *prefix = mlib_substr (s, 0, pos);
+      *prefix = mstr_substr (s, 0, pos);
    }
    // Save the suffix string
    if (suffix) {
@@ -463,7 +463,7 @@ mstr_split_at (mstr_view s, mlib_upsized_integer pos_, size_t drop, mstr_view *p
       }
       // The start position of the new string
       const size_t next_start = pos + drop;
-      *suffix = mlib_substr (s, next_start, SIZE_MAX);
+      *suffix = mstr_substr (s, next_start, SIZE_MAX);
    }
 }
 
@@ -513,7 +513,7 @@ static inline bool
 mstr_starts_with (mstr_view str, mstr_view prefix)
 {
    // Trim to match the length of the prefix we want
-   str = mlib_substr (str, 0, prefix.len);
+   str = mstr_substr (str, 0, prefix.len);
    // Check if the trimmed string is the same as the prefix
    return mstr_cmp (str, ==, prefix);
 }
@@ -550,6 +550,5 @@ mstr_contains_any_of (mstr_view str, mstr_view needle)
    return mstr_find_first_of (str, needle) != SIZE_MAX;
 }
 #define mstr_contains_any_of(Str, Needle) mstr_contains_any_of (mstr_view_from (Str), mstr_view_from (Needle))
-
 
 #endif // MLIB_STR_H_INCLUDED

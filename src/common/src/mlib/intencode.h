@@ -217,7 +217,7 @@ mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
       // Accumulate the new digit value
       did_overflow = mlib_add (&value, digit_value) || did_overflow;
       // Jump to the next digit in the string
-      in = mlib_substr (in, 1);
+      in = mstr_substr (in, 1);
    }
 
    if (did_overflow) {
@@ -260,12 +260,12 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
    // Check for a "+"
    if (in.data[0] == '+') {
       // Just a plus. Drop it and do nothing with it.
-      in = mlib_substr (in, 1);
+      in = mstr_substr (in, 1);
    }
    // Check for a negative prefix
    else if (in.data[0] == '-') {
       // Negative sign. We'll negate the value later.
-      in = mlib_substr (in, 1);
+      in = mstr_substr (in, 1);
       sign = -1;
    }
 
@@ -276,15 +276,15 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
             if (mlib_latin_tolower (in.data[1]) == 'x') {
                // Hexadecimal
                base = 16;
-               in = mlib_substr (in, 2);
+               in = mstr_substr (in, 2);
             } else if (mlib_latin_tolower (in.data[1]) == 'o') {
                // Octal
                base = 8;
-               in = mlib_substr (in, 2);
+               in = mstr_substr (in, 2);
             } else if (mlib_latin_tolower (in.data[1]) == 'b') {
                // Binary
                base = 2;
-               in = mlib_substr (in, 2);
+               in = mstr_substr (in, 2);
             }
          }
          if (base == 0) {

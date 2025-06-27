@@ -185,7 +185,7 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
    bson_error_reset (error);
    _mongoc_set_error (error, 0, 0, "Invalid IPv6 literal address '%.*s'", MSTR_FMT (addr));
    // Find the opening bracket (must be the first char)
-   const size_t open_square_pos = mstr_find (addr, mlib_cstring ("["), 0, 1);
+   const size_t open_square_pos = mstr_find (addr, mstr_cstring ("["), 0, 1);
    if (open_square_pos != 0) {
       _mongoc_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -195,7 +195,7 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
       return false;
    }
    // Find the closing bracket
-   const size_t close_square_pos = mstr_find (addr, mlib_cstring ("]"));
+   const size_t close_square_pos = mstr_find (addr, mstr_cstring ("]"));
    if (close_square_pos == SIZE_MAX) {
       // Closing bracket is missing
       _mongoc_set_error (error,
@@ -206,7 +206,7 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
       return false;
    }
    // Find the port delimiter, if present. It must be the next character
-   const size_t port_delim_pos = mstr_find (addr, mlib_cstring (":"), close_square_pos + 1, 1);
+   const size_t port_delim_pos = mstr_find (addr, mstr_cstring (":"), close_square_pos + 1, 1);
 
    if (port_delim_pos == SIZE_MAX) {
       // There is no port specifier, or it is misplaced, so the closing bracket
@@ -224,7 +224,7 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
    uint16_t port = MONGOC_DEFAULT_PORT;
    if (port_delim_pos != SIZE_MAX) {
       bson_error_t err2;
-      const mstr_view port_str = mlib_substr (addr, port_delim_pos + 1);
+      const mstr_view port_str = mstr_substr (addr, port_delim_pos + 1);
       if (!_mongoc_parse_port (port_str, &port, &err2)) {
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,
@@ -244,7 +244,7 @@ _parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
 static inline bool
 _parse_host (mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
 {
-   if (mstr_contains (spec, mlib_cstring ("]"))) {
+   if (mstr_contains (spec, mstr_cstring ("]"))) {
       // There is a "]" bracket, so this is probably an IPv6 literal, which is
       // more strict
       return _parse_host_ipv6 (link, spec, error);
@@ -253,7 +253,7 @@ _parse_host (mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
    uint16_t port = MONGOC_DEFAULT_PORT;
    // Try to split around the port delimiter:
    mstr_view hostname, port_str;
-   if (mstr_split_around (spec, mlib_cstring (":"), &hostname, &port_str)) {
+   if (mstr_split_around (spec, mstr_cstring (":"), &hostname, &port_str)) {
       // We have a ":" delimiter. Try to parse it as a port number:
       bson_error_t e2;
       if (!_mongoc_parse_port (port_str, &port, &e2)) {
@@ -275,7 +275,7 @@ _parse_host (mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
 bool
 _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_, const char *address, bson_error_t *error)
 {
-   return _parse_host (link_, mlib_cstring (address), error);
+   return _parse_host (link_, mstr_cstring (address), error);
 }
 
 bool
@@ -304,7 +304,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_, mstr_view h
    bson_strncpy (link_->host, host.data, host.len + 1);
 
    /* like "fe80::1" or "::1" */
-   if (mstr_contains (host, mlib_cstring (":"))) {
+   if (mstr_contains (host, mstr_cstring (":"))) {
       link_->family = AF_INET6;
 
       // Check that IPv6 literal is two less than the max to account for `[` and
@@ -324,7 +324,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_, mstr_view h
       BSON_ASSERT (mlib_in_range (size_t, req));
       // Use `<`, not `<=` to account for NULL byte.
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
-   } else if (mstr_contains (host, mlib_cstring ("/")) && mstr_contains (host, mlib_cstring (".sock"))) {
+   } else if (mstr_contains (host, mstr_cstring ("/")) && mstr_contains (host, mstr_cstring (".sock"))) {
       link_->family = AF_UNIX;
       bson_strncpy (link_->host_and_port, link_->host, host.len + 1);
    } else {
