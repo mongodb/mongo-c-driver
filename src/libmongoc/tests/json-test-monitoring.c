@@ -16,21 +16,21 @@
 
 
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc-config.h>
 
-#include "json-test.h"
 #include "json-test-operations.h"
-#include "test-libmongoc.h"
+#include "json-test.h"
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #ifdef _MSC_VER
 #include <io.h>

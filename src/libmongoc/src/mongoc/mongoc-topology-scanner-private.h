@@ -25,16 +25,17 @@
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
-#include <mongoc/mongoc-async-private.h>
-#include <mongoc/mongoc-async-cmd-private.h>
-#include <mongoc/mongoc-handshake-private.h>
-#include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-apm-private.h>
-#include <mongoc/mongoc-scram-private.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-crypto-private.h>
-#include <mongoc/mongoc-server-description-private.h>
 #include <common-thread-private.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-ssl.h>
 
 BSON_BEGIN_DECLS
 

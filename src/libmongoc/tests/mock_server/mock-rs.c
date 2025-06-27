@@ -15,16 +15,17 @@
  */
 
 
-#include <bson/bson.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mongoc/mongoc-client-private.h>
+#include <bson/bson.h>
 
 #include "mock-rs.h"
 #include "sync-queue.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include <common-string-private.h>
+
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 
 struct _mock_rs_t {

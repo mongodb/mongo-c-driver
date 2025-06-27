@@ -17,8 +17,8 @@
 
 #include <bson/bson.h>
 #define BSON_INSIDE
-#include <bson/bson-iso8601-private.h>
 #include <bson/bson-context-private.h>
+#include <bson/bson-iso8601-private.h>
 #include <common-thread-private.h>
 #undef BSON_INSIDE
 
@@ -26,13 +26,14 @@
 #include <strings.h>
 #endif
 
-#include <limits.h>
+#include <common-json-private.h>
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
 #include <mlib/config.h>
 
-#include "TestSuite.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-json-private.h>
+#include <limits.h>
+
+#include <TestSuite.h>
 
 #define N_THREADS 4
 

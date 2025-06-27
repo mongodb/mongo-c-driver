@@ -3,16 +3,19 @@
 #define _CRT_RAND_S
 #endif
 
-#include <bson/bson.h>
-#include <math.h>
-
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include <common-string-private.h>
-#include <mlib/cmp.h>
-#include <common-json-private.h>
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
+#include <common-json-private.h>
+#include <common-string-private.h>
+
+#include <bson/bson.h>
+
+#include <mlib/cmp.h>
+
+#include <math.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)

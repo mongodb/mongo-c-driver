@@ -15,20 +15,23 @@
  */
 
 
-#include <mongoc/mongoc.h>
+#include <common-oid-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/mongoc-client-side-encryption.h>
-#include <common-oid-private.h>
+#include <mongoc/mongoc.h>
+
 #include <mlib/loop.h>
 
-#include "json-test.h"
-#include "json-test-operations.h"
 #include "json-test-monitoring.h"
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include "json-test-operations.h"
+#include "json-test.h"
+
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 #ifdef _MSC_VER
 #include <io.h>

@@ -17,8 +17,9 @@
 
 #include <bson/bson.h>
 
-#include "TestSuite.h"
 #include <mlib/intencode.h>
+
+#include <TestSuite.h>
 
 #define FUZZ_N_PASSES 100000
 

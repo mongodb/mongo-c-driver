@@ -1,11 +1,13 @@
+#include <mongoc/mongoc-bulkwrite.h>
 #include <mongoc/mongoc.h>
 
-#include "json-test.h"
-#include "json-test-operations.h"
-#include "test-libmongoc.h"
-#include <mongoc/mongoc-bulkwrite.h>
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
+
+#include "json-test-operations.h"
+#include "json-test.h"
+
+#include <test-libmongoc.h>
 
 static bool
 crud_test_operation_cb (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)

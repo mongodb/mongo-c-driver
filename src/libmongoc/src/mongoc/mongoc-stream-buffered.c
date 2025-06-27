@@ -15,14 +15,16 @@
  */
 
 
-#include <errno.h>
+#include <mongoc/mongoc-stream-buffered.h>
 
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-stream-buffered.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-log.h>
+
+#include <errno.h>
 
 
 #undef MONGOC_LOG_DOMAIN

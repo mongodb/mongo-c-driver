@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-#include "mock_server/mock-server.h"
-#include <mongoc/mongoc.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-handshake-private.h>
@@ -23,12 +22,15 @@
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include <common-string-private.h>
+
+#include <mongoc/mongoc.h>
 
 #include <inttypes.h>
+
+#include <TestSuite.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 typedef struct {
    uint32_t n_heartbeat_started;

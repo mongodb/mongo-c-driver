@@ -19,10 +19,13 @@
 #ifndef MONGOC_CYRUS_PRIVATE_H
 #define MONGOC_CYRUS_PRIVATE_H
 
-#include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-sasl-private.h>
+
+#include <mongoc/mongoc-uri.h>
+
 #include <bson/bson.h>
+
 #include <sasl/sasl.h>
 
 

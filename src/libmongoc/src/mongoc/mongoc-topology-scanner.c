@@ -14,39 +14,42 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-topology-scanner-private.h>
-#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-stream-socket.h>
 
-#include <mongoc/mongoc-handshake.h>
-#include <mongoc/mongoc-handshake-private.h>
+#include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-stream-tls.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-#include <openssl/ssl.h>
 #include <mongoc/mongoc-stream-tls-private.h>
+
+#include <openssl/ssl.h>
 #endif
 
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-cluster-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
-#include <common-string-private.h>
-#include <mlib/cmp.h>
 #include <common-atomic-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/utlist.h>
+
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 

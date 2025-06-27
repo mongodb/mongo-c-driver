@@ -20,9 +20,9 @@
 #define MONGOC_STREAM_TLS_OPENSSL_H
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

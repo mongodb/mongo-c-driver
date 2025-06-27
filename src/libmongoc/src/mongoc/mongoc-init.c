@@ -15,26 +15,26 @@
  */
 
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-init.h>
 
+#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 
-#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-config.h>
+
+#include <bson/bson.h>
 
 #include <mlib/config.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>
 #endif
-#include <mongoc/mongoc-thread-private.h>
 #include <common-b64-private.h>
+#include <mongoc/mongoc-thread-private.h>
 #if defined(MONGOC_ENABLE_CRYPTO_CNG)
-#include <mongoc/mongoc-crypto-private.h>
 #include <mongoc/mongoc-crypto-cng-private.h>
+#include <mongoc/mongoc-crypto-private.h>
 #endif
 
 #ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH

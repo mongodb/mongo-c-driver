@@ -1,4 +1,5 @@
 #include <mongoc/mongoc.h>
+
 #include <stdio.h>
 
 #ifndef EXPECT_MONGOC_VERSION

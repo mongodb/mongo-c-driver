@@ -59,25 +59,24 @@
 
 
 #ifdef BSON_OS_UNIX
-#include <unistd.h>
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 
 #include <bson/bson-macros.h>
 
-
-#include <errno.h>
 #include <ctype.h>
-#include <limits.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <sys/stat.h>
+#include <limits.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
-#include <stdint.h>
 
 
 BSON_BEGIN_DECLS

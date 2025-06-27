@@ -18,16 +18,17 @@
 
 #ifdef MONGOC_OS_IS_LINUX
 
-#include <stdio.h>
-#include <sys/utsname.h>
-
-#include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-version.h>
+
+#include <stdio.h>
+#include <sys/utsname.h>
 
 #define LINE_BUFFER_SIZE 1024
 

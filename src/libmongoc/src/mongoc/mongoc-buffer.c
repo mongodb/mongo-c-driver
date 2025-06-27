@@ -15,11 +15,12 @@
  */
 
 
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-trace-private.h>
+
 #include <bson/bson.h>
 
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mlib/cmp.h>
 
 #include <stdarg.h>

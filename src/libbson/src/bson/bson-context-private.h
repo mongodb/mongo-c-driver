@@ -21,8 +21,9 @@
 #define BSON_CONTEXT_PRIVATE_H
 
 
-#include <bson/bson-context.h>
 #include <common-thread-private.h>
+
+#include <bson/bson-context.h>
 
 
 BSON_BEGIN_DECLS

@@ -1,12 +1,15 @@
-#include <mongoc/mongoc.h>
-#include <bson/bson-types.h>
-
+#include <mongoc/mongoc-opts-helpers-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-read-concern-private.h>
-#include <mongoc/mongoc-opts-helpers-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <bson/bson-types.h>
+
 #include "json-test.h"
-#include "test-libmongoc.h"
+
+#include <test-libmongoc.h>
 
 
 static void

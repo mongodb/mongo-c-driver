@@ -19,8 +19,9 @@
 #ifndef MONGOC_SSPI_PRIVATE_H
 #define MONGOC_SSPI_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-sasl-private.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
@@ -28,10 +29,11 @@ BSON_BEGIN_DECLS
 
 #define SECURITY_WIN32 1 /* Required for SSPI */
 
-#include <Windows.h>
 #include <limits.h>
-#include <sspi.h>
 #include <string.h>
+
+#include <Windows.h>
+#include <sspi.h>
 
 #define MONGOC_SSPI_AUTH_GSS_ERROR -1
 #define MONGOC_SSPI_AUTH_GSS_COMPLETE 1

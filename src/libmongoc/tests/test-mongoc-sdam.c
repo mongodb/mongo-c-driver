@@ -1,15 +1,15 @@
-#include <mongoc/mongoc.h>
-
-#include <mongoc/mongoc-set-private.h>
 #include <common-oid-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc.h>
 
 #include "json-test.h"
 
-#include <mongoc/mongoc-socket-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-topology-description-apm-private.h>
-#include "test-libmongoc.h"
+#include <test-libmongoc.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

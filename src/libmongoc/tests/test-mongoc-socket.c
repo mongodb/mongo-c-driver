@@ -1,14 +1,16 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-util-private.h>
-
+#include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-errno-private.h>
-#include "TestSuite.h"
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
+
 #include <mlib/cmp.h>
 
-#include "test-libmongoc.h"
+#include <fcntl.h>
+
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 #define TIMEOUT 10000
 #define WAIT 1000

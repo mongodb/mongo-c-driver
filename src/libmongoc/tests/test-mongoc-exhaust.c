@@ -1,19 +1,20 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
-
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-oid-private.h>
+#include <mongoc/mongoc.h>
+
+#include <fcntl.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 /* Server support for exhaust cursors depends on server topology and version:

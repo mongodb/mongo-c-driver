@@ -17,22 +17,22 @@
 
 #ifdef MONGOC_ENABLE_CRYPTO
 
-#include <string.h>
-
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-scram-private.h>
-#include <mongoc/mongoc-rand-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-trace-private.h>
-
-#include <mongoc/mongoc-crypto-private.h>
 #include <common-b64-private.h>
-
-#include <mongoc/mongoc-memcmp-private.h>
 #include <common-thread-private.h>
-#include <utf8proc.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-memcmp-private.h>
+#include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
+
+#include <string.h>
+
+#include <utf8proc.h>
 
 typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */

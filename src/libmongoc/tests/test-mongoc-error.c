@@ -1,15 +1,17 @@
+#include <mongoc/mongoc-error-private.h>
+
 #include <mongoc/mongoc.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include <mongoc/mongoc-error-private.h>
 #include <mlib/loop.h>
 
 #include <inttypes.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 #undef MONGOC_LOG_DOMAIN

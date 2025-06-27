@@ -15,21 +15,24 @@
  */
 
 
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <math.h>
-
-#include <bson/bson.h>
-#include <bson/bson-config.h>
-#include <bson/bson-error-private.h>
 #include <bson/bson-json.h>
-#include <bson/bson-json-private.h>
+
+#include <bson/bson-error-private.h>
 #include <bson/bson-iso8601-private.h>
+#include <bson/bson-json-private.h>
+#include <common-b64-private.h>
+
+#include <bson/bson-config.h>
+#include <bson/bson.h>
 
 #include <mlib/cmp.h>
 #include <mlib/config.h>
-#include <common-b64-private.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <math.h>
+#include <sys/types.h>
+
 #include <jsonsl/jsonsl.h>
 
 #ifdef _WIN32

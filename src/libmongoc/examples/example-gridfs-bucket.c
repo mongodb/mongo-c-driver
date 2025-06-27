@@ -1,7 +1,7 @@
+#include <mongoc/mongoc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <mongoc/mongoc.h>
 
 int
 main (int argc, char *argv[])

@@ -15,17 +15,20 @@
  */
 
 #include <mongoc/mongoc-config.h>
+
 #include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
 #include <mongoc/mongoc-crypto-openssl-private.h>
 #include <mongoc/mongoc-crypto-private.h>
+
 #include <mongoc/mongoc-log.h>
+
 #include <mlib/cmp.h>
 
-#include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/sha.h>
 
 bool
 mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,

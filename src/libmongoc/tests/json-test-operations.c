@@ -15,11 +15,9 @@
  */
 
 
-#include <bson/bson.h>
-
+#include <common-oid-private.h>
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-server-description-private.h>
@@ -27,15 +25,19 @@
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <common-oid-private.h>
+
+#include <mongoc/mongoc-config.h>
+
+#include <bson/bson.h>
+
+#include <inttypes.h>
 
 #include "json-test-operations.h"
 #include "json-test.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
 
-#include <inttypes.h>
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 mongoc_client_session_t *

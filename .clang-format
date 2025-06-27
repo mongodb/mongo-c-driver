@@ -151,20 +151,32 @@ ForEachMacros:
 IfMacros:
   - mlib_assert_aborts
   - KJ_IF_MAYBE
-IncludeBlocks:   Preserve
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
-    Priority:        2
-    SortPriority:    0
-    CaseSensitive:   false
-  - Regex:           '^(<|"(gtest|gmock|isl|json)/)'
-    Priority:        3
-    SortPriority:    0
-    CaseSensitive:   false
-  - Regex:           '.*'
-    Priority:        1
-    SortPriority:    0
-    CaseSensitive:   false
+  # The prelude header must always come first
+  - Regex: '-prelude.h>'
+    Priority: 1
+  # Relative "in this directory" headers next
+  - Regex: '"./'
+    Priority: 2
+  # Private API headers
+  - Regex: '-private.h>'
+    Priority: 5
+  # All other `mongoc/` headers
+  - Regex: '<mongoc/'
+    Priority: 10
+  # all `bson/` headers come after `mongoc` headers
+  - Regex: '<bson/|<bsonutil/'
+    Priority: 20
+  # Private API components
+  - Regex: '<mlib/|<common'
+    Priority: 30
+  # Standard library headers are near last
+  - Regex: '<(assert|string|ctype|limits|time|math|errno|fcntl|inttypes|unistd|netdb|netinet/.*|sys/.*).h>|<std'
+    Priority: 100
+  # Other relative headers
+  - Regex: '^"'
+    Priority: 200
 IncludeIsMainRegex: '(Test)?$'
 IncludeIsMainSourceRegex: ''
 IndentAccessModifiers: false
@@ -233,7 +245,7 @@ RequiresExpressionIndentation: OuterScope
 SeparateDefinitionBlocks: Leave
 ShortNamespaceLines: 1
 SkipMacroDefinitionBody: false
-SortIncludes:    Never
+SortIncludes: CaseSensitive
 SortJavaStaticImport: Before
 SortUsingDeclarations: LexicographicNumeric
 SpaceAfterCStyleCast: true

@@ -2,6 +2,7 @@
 // the `test.test` collection.
 
 #include <mongoc/mongoc.h>
+
 #include <stdlib.h> // abort
 
 #define HANDLE_ERROR(...)                                                 \

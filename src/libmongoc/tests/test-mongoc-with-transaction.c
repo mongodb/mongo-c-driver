@@ -1,9 +1,11 @@
+#include <mongoc/mongoc-client-session-private.h>
+
 #include <mongoc/mongoc.h>
 
 #include "json-test.h"
-#include <mongoc/mongoc-client-session-private.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 /* Note, the with_transaction spec tests are in test-mongoc-transactions.c,
  * since it shares the same test runner with the transactions test runner. */

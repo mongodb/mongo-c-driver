@@ -1,14 +1,14 @@
-#include "test-mongoc-retryability-helpers.h"
+#include <mongoc/mongoc-array-private.h>
 
 #include <bson/bson-error.h>
 
-#include <mongoc/mongoc-array-private.h>
-
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-
 #include <stddef.h>
+
+#include "test-mongoc-retryability-helpers.h"
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 mongoc_array_t
 _test_get_mongos_clients (const char **ports, size_t num_ports)

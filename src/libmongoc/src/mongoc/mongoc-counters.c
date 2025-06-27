@@ -15,8 +15,9 @@
  */
 
 
-#include <mlib/cmp.h>
 #include <bson/bson.h>
+
+#include <mlib/cmp.h>
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -32,9 +33,10 @@
 #include <windows.h>
 #endif
 
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-log.h>
 #include <common-atomic-private.h>
+#include <mongoc/mongoc-counters-private.h>
+
+#include <mongoc/mongoc-log.h>
 
 
 #pragma pack(1)

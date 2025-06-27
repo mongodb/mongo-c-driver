@@ -17,13 +17,14 @@
 #ifndef JSON_TEST_MONITORING_H
 #define JSON_TEST_MONITORING_H
 
-#include "TestSuite.h"
-
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
-#include "test-conveniences.h"
+#include <bson/bson.h>
+
 #include "json-test-operations.h"
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 typedef void (*json_test_events_check_cb_t) (const bson_t *events);
 

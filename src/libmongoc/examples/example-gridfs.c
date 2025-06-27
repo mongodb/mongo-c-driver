@@ -1,8 +1,9 @@
-#include <assert.h>
 #include <mongoc/mongoc.h>
+
+#include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 
 int
 main (int argc, char *argv[])

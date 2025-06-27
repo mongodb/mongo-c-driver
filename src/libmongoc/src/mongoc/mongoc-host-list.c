@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-#include <inttypes.h> // PRIu16
-
-#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+
+#include <inttypes.h> // PRIu16
 /* strcasecmp on windows */
 #include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/utlist.h>
+
 #include <mlib/cmp.h>
 
 static mongoc_host_list_t *

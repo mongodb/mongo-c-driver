@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-#include <mlib/intencode.h>
+#include <bson/bson-context.h>
+
+#include <bson/bson-context-private.h>
+#include <common-atomic-private.h>
+#include <common-thread-private.h>
+
+#include <bson/bson-clock.h>
 #include <bson/bson-compat.h>
+#include <bson/bson-memory.h>
+
+#include <mlib/intencode.h>
 
 #include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#include <common-atomic-private.h>
-#include <bson/bson-clock.h>
-#include <bson/bson-context.h>
-#include <bson/bson-context-private.h>
-#include <bson/bson-memory.h>
-#include <common-thread-private.h>
 
 
 #ifndef HOST_NAME_MAX

@@ -18,28 +18,31 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
-#include <bson/bson.h>
-#include <limits.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/ocsp.h>
-#include <openssl/x509v3.h>
-#include <openssl/crypto.h>
-
-#include <string.h>
-
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
-#include <mongoc/mongoc-init.h>
 #include <mongoc/mongoc-openssl-private.h>
-#include <mongoc/mongoc-socket.h>
-#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream-tls-openssl-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-init.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-ssl.h>
+
+#include <bson/bson.h>
+
 #include <mlib/cmp.h>
+
+#include <limits.h>
+#include <string.h>
+
+#include <openssl/bio.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/ocsp.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 #include <mongoc/mongoc-ocsp-cache-private.h>

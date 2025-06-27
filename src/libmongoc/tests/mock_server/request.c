@@ -15,16 +15,18 @@
  */
 
 
+#include <common-json-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-rpc-private.h>
+
 #include <mongoc/mongoc.h>
 
-#include <mlib/intencode.h>
-#include "mock-server.h"
-#include "../test-conveniences.h"
-#include "../TestSuite.h"
-#include <common-string-private.h>
-#include <common-json-private.h>
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
+
+#include "../TestSuite.h"
+#include "../test-conveniences.h"
+#include "mock-server.h"
 
 static bool
 is_command_ns (const char *ns);

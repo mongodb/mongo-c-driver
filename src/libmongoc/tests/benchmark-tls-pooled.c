@@ -8,10 +8,12 @@
  */
 
 #include <mongoc/mongoc.h>
+
 #include <mlib/loop.h>
 
-#include <pthread.h>
 #include <stdio.h>
+
+#include <pthread.h>
 
 
 static void *

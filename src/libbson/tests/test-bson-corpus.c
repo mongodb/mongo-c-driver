@@ -1,10 +1,13 @@
-#include <bson/bson.h>
-#include "TestSuite.h"
-#include "json-test.h"
-#include "corpus-test.h"
 #include <common-string-private.h>
 
+#include <bson/bson.h>
+
 #include <inttypes.h>
+
+#include "corpus-test.h"
+#include "json-test.h"
+
+#include <TestSuite.h>
 
 
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull

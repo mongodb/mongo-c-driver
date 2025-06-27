@@ -1,19 +1,23 @@
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc-ssl.h>
 #endif
 
-#include "json-test.h"
-#include "test-libmongoc.h"
 #include <mlib/cmp.h>
+
+#include "json-test.h"
+
+#include <test-libmongoc.h>
 
 static void
 _assert_options_match (const bson_t *test, mongoc_uri_t *uri)

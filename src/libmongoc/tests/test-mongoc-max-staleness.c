@@ -1,14 +1,15 @@
-#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc.h>
 
-#include "TestSuite.h"
 #include "json-test.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static int64_t

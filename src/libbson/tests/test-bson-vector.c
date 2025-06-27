@@ -16,11 +16,12 @@
 
 
 #include <bson/bson.h>
+#include <bsonutil/bson-parser.h>
 
-#include "bsonutil/bson-parser.h"
-#include "TestSuite.h"
-#include "test-conveniences.h"
 #include "json-test.h"
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #ifdef _MSC_VER
 #define SSCANF sscanf_s

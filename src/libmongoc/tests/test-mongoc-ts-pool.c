@@ -1,7 +1,7 @@
 #include <mongoc/mongoc-ts-pool-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 static void
 test_ts_pool_empty (void)

@@ -16,8 +16,9 @@
 
 
 #include <mongoc/mongoc-log-and-monitor-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
+
 #include <common-atomic-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 
 
 /**

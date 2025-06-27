@@ -1,14 +1,14 @@
-#include "TestSuite.h"
-
-#include <mlib/intutil.h>
+#include <mlib/ckdint.h>
+#include <mlib/cmp.h>
 #include <mlib/config.h>
 #include <mlib/intencode.h>
+#include <mlib/intutil.h>
 #include <mlib/loop.h>
-#include <mlib/cmp.h>
 #include <mlib/test.h>
-#include <mlib/ckdint.h>
 
 #include <stddef.h>
+
+#include <TestSuite.h>
 
 mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make sure it compiles
 

@@ -17,14 +17,15 @@
 #ifndef JSON_TEST_H
 #define JSON_TEST_H
 
-#include "TestSuite.h"
-
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
-#include "test-conveniences.h"
+#include <bson/bson.h>
+
 #include "json-test-monitoring.h"
 #include "json-test-operations.h"
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #define MAX_NUM_TESTS 150
 

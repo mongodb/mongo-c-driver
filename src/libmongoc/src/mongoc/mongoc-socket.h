@@ -19,23 +19,25 @@
 #ifndef MONGOC_SOCKET_H
 #define MONGOC_SOCKET_H
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
-#include <arpa/inet.h>
-#include <poll.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/un.h>
+
+#include <arpa/inet.h>
+#include <poll.h>
 #endif
 
 #if defined(_AIX) && !defined(MONGOC_HAVE_SS_FAMILY)
