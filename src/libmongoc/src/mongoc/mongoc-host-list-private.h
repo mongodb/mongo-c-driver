@@ -20,6 +20,7 @@
 #define MONGOC_HOST_LIST_PRIVATE_H
 
 #include <mongoc/mongoc-host-list.h>
+#include <mlib/str.h>
 
 
 BSON_BEGIN_DECLS
@@ -38,7 +39,7 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *host_list, const cha
 
 bool
 _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *host_list,
-                                          const char *host,
+                                          mstr_view host,
                                           uint16_t port,
                                           bson_error_t *error);
 

@@ -15,6 +15,7 @@
  */
 
 #include <bson/bson.h>
+#include <mlib/test.h>
 
 #include "TestSuite.h"
 
@@ -29,6 +30,36 @@ test_bson_error_basic (void)
    ASSERT_CMPUINT32 (error.domain, ==, 123u);
    ASSERT_CMPUINT32 (error.code, ==, 456u);
    ASSERT_CMPUINT (error.reserved, ==, 1u); // BSON_ERROR_CATEGORY
+}
+
+static void
+test_bson_error_clear (void)
+{
+   bson_error_t err;
+   err.code = 42;
+   err.domain = 1729;
+   bson_error_clear (&err);
+   mlib_check (err.code, eq, 0);
+   mlib_check (err.domain, eq, 0);
+
+   // Valid no-op:
+   bson_error_clear (NULL);
+}
+
+static void
+test_bson_error_reset (void)
+{
+   bson_error_t err;
+   bson_error_t *eptr = &err;
+   err.code = 42;
+   bson_error_reset (eptr);
+   mlib_check (eptr, ptr_eq, &err);
+   mlib_check (err.code, eq, 0);
+
+   eptr = NULL;
+   bson_error_reset (eptr);
+   mlib_check (eptr != NULL, because, "bson_error_reset sets null pointers to non-null");
+   mlib_check (eptr->code, eq, 0);
 }
 
 static void
@@ -50,5 +81,7 @@ void
 test_bson_error_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/error/basic", test_bson_error_basic);
+   TestSuite_Add (suite, "/bson/error/clear", test_bson_error_clear);
+   TestSuite_Add (suite, "/bson/error/reset", test_bson_error_reset);
    TestSuite_Add (suite, "/bson/strerror_r", test_bson_strerror_r);
 }
