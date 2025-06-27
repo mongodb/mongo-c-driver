@@ -29,29 +29,20 @@ BSON_BEGIN_DECLS
 
 
 struct _mongoc_write_concern_t {
-   /**
-    * @brief Tri-bool for the `journal` attribute. If set `MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT`, then the attribute
-    * is unset. Otherwise, set to `1` for `true`, `0` for `false`
-    */
    int8_t journal;
    int32_t w;
-   /**
-    * @brief wtimeout attribute, in milliseconds. A value of `-1` represents
-    * an unset wtimeout.
-    *
-    * @private Do not modify/inspect this value directly.
-    */
-   int64_t _wtimeout;
+   int64_t wtimeout;
    char *wtag;
    bool frozen;
    bson_t compiled;
    bool is_default;
 };
 
-struct _mongoc_write_concern_t *
+
+mongoc_write_concern_t *
 _mongoc_write_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *error);
 const bson_t *
-_mongoc_write_concern_get_bson (struct _mongoc_write_concern_t *write_concern);
+_mongoc_write_concern_get_bson (mongoc_write_concern_t *write_concern);
 bool
 _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error);
 

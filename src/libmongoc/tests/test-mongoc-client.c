@@ -160,14 +160,26 @@ test_client_cmd_w_write_concern (void *ctx)
    mongoc_client_set_error_api (client, 2);
 
    good_wc = mongoc_write_concern_new ();
-   bad_wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (good_wc, 1);
+
+   bad_wc = mongoc_write_concern_new ();
+   /* writeConcern that will not pass mongoc_write_concern_is_valid */
+   bad_wc->wtimeout = -10;
 
    mongoc_write_concern_append (good_wc, opts);
    ASSERT_OR_PRINT (mongoc_client_write_command_with_opts (client, "test", command, opts, &reply, &error), error);
 
    bson_reinit (opts);
    bson_destroy (&reply);
+
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_client_write_command_with_opts (client, "test", command, opts, &reply, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid writeConcern");
+   bad_wc->wtimeout = 0;
+   bson_destroy (&reply);
+   error.code = 0;
+   error.domain = 0;
 
    if (!test_framework_is_mongos ()) {
       mongoc_write_concern_set_w (bad_wc, 99);

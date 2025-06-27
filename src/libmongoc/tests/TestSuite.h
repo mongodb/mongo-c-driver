@@ -134,25 +134,25 @@ bson_open (const char *filename, int flags, ...)
    } else                                                         \
       ((void) 0)
 
-#define ASSERT(Cond)                                                                                                  \
-   do {                                                                                                               \
-      if (!(Cond)) {                                                                                                  \
-         MONGOC_STDERR_PRINTF (                                                                                       \
-            "FAIL: %s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (Cond)); \
-         abort ();                                                                                                    \
-      }                                                                                                               \
+#define ASSERT(Cond)                                                                                                 \
+   do {                                                                                                              \
+      if (!(Cond)) {                                                                                                 \
+         MONGOC_STDERR_PRINTF (                                                                                      \
+            "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (Cond)); \
+         abort ();                                                                                                   \
+      }                                                                                                              \
    } while (0)
 
 
 void
 _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
-#define test_error(...)                                                                             \
-   if (1) {                                                                                         \
-      MONGOC_STDERR_PRINTF ("test error in: %s:%d: %s()\n", __FILE__, (int) (__LINE__), BSON_FUNC); \
-      _test_error (__VA_ARGS__);                                                                    \
-      abort (); /* suppress missing return errors in non-void functions */                          \
-   } else                                                                                           \
+#define test_error(...)                                                                            \
+   if (1) {                                                                                        \
+      MONGOC_STDERR_PRINTF ("test error in: %s %d:%s()\n", __FILE__, (int) (__LINE__), BSON_FUNC); \
+      _test_error (__VA_ARGS__);                                                                   \
+      abort (); /* suppress missing return errors in non-void functions */                         \
+   } else                                                                                          \
       ((void) 0)
 
 #define bson_eq_bson(bson, expected)                                                                            \
@@ -197,47 +197,47 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #undef ASSERT_OR_PRINT
 #endif
 
-#define ASSERT_OR_PRINT(_statement, _err)                           \
-   do {                                                             \
-      if (!(_statement)) {                                          \
-         MONGOC_STDERR_PRINTF ("FAIL: %s:%d  %s()\n  %s\n  %s\n\n", \
-                               __FILE__,                            \
-                               (int) (__LINE__),                    \
-                               BSON_FUNC,                           \
-                               BSON_STR (_statement),               \
-                               _err.message);                       \
-         abort ();                                                  \
-      }                                                             \
+#define ASSERT_OR_PRINT(_statement, _err)                          \
+   do {                                                            \
+      if (!(_statement)) {                                         \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
+                               __FILE__,                           \
+                               (int) (__LINE__),                   \
+                               BSON_FUNC,                          \
+                               BSON_STR (_statement),              \
+                               _err.message);                      \
+         abort ();                                                 \
+      }                                                            \
    } while (0)
 
-#define ASSERT_CURSOR_NEXT(_cursor, _doc)                                                                              \
-   do {                                                                                                                \
-      bson_error_t _err;                                                                                               \
-      if (!mongoc_cursor_next ((_cursor), (_doc))) {                                                                   \
-         if (mongoc_cursor_error ((_cursor), &_err)) {                                                                 \
-            MONGOC_STDERR_PRINTF ("FAIL: %s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, _err.message); \
-         } else {                                                                                                      \
-            MONGOC_STDERR_PRINTF (                                                                                     \
-               "FAIL: %s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, "empty cursor");                  \
-         }                                                                                                             \
-         abort ();                                                                                                     \
-      }                                                                                                                \
+#define ASSERT_CURSOR_NEXT(_cursor, _doc)                                                                             \
+   do {                                                                                                               \
+      bson_error_t _err;                                                                                              \
+      if (!mongoc_cursor_next ((_cursor), (_doc))) {                                                                  \
+         if (mongoc_cursor_error ((_cursor), &_err)) {                                                                \
+            MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, _err.message); \
+         } else {                                                                                                     \
+            MONGOC_STDERR_PRINTF (                                                                                    \
+               "FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, "empty cursor");                  \
+         }                                                                                                            \
+         abort ();                                                                                                    \
+      }                                                                                                               \
    } while (0)
 
 
-#define ASSERT_CURSOR_DONE(_cursor)                                                                                 \
-   do {                                                                                                             \
-      bson_error_t _err;                                                                                            \
-      const bson_t *_doc;                                                                                           \
-      if (mongoc_cursor_next ((_cursor), &_doc)) {                                                                  \
-         MONGOC_STDERR_PRINTF (                                                                                     \
-            "FAIL: %s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, "non-empty cursor");              \
-         abort ();                                                                                                  \
-      }                                                                                                             \
-      if (mongoc_cursor_error ((_cursor), &_err)) {                                                                 \
-         MONGOC_STDERR_PRINTF ("FAIL: %s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, _err.message); \
-         abort ();                                                                                                  \
-      }                                                                                                             \
+#define ASSERT_CURSOR_DONE(_cursor)                                                                                \
+   do {                                                                                                            \
+      bson_error_t _err;                                                                                           \
+      const bson_t *_doc;                                                                                          \
+      if (mongoc_cursor_next ((_cursor), &_doc)) {                                                                 \
+         MONGOC_STDERR_PRINTF (                                                                                    \
+            "FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, "non-empty cursor");              \
+         abort ();                                                                                                 \
+      }                                                                                                            \
+      if (mongoc_cursor_error ((_cursor), &_err)) {                                                                \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, _err.message); \
+         abort ();                                                                                                 \
+      }                                                                                                            \
    } while (0)
 
 
@@ -514,18 +514,18 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #define gettestpid getpid
 #endif
 
-#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode)                                              \
-   do {                                                                                          \
-      if (!(_statement)) {                                                                       \
-         MONGOC_STDERR_PRINTF ("FAIL: %s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
-                               __FILE__,                                                         \
-                               (int) (__LINE__),                                                 \
-                               BSON_FUNC,                                                        \
-                               BSON_STR (_statement),                                            \
-                               _errcode,                                                         \
-                               strerror (_errcode));                                             \
-         abort ();                                                                               \
-      }                                                                                          \
+#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode)                                             \
+   do {                                                                                         \
+      if (!(_statement)) {                                                                      \
+         MONGOC_STDERR_PRINTF ("FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
+                               __FILE__,                                                        \
+                               (int) (__LINE__),                                                \
+                               BSON_FUNC,                                                       \
+                               BSON_STR (_statement),                                           \
+                               _errcode,                                                        \
+                               strerror (_errcode));                                            \
+         abort ();                                                                              \
+      }                                                                                         \
    } while (0)
 
 #define ASSERT_COUNT(n, collection)                                                                              \
@@ -580,16 +580,16 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                \
    } while (0)
 
-#define ASSERT_WITH_MSG(_statement, ...)                                                                  \
-   do {                                                                                                   \
-      if (!(_statement)) {                                                                                \
-         MONGOC_STDERR_PRINTF (                                                                           \
-            "FAIL: %s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (_statement)); \
-         fprintf (stderr, __VA_ARGS__);                                                                   \
-         fprintf (stderr, "\n");                                                                          \
-         fflush (stderr);                                                                                 \
-         abort ();                                                                                        \
-      }                                                                                                   \
+#define ASSERT_WITH_MSG(_statement, ...)                                                                 \
+   do {                                                                                                  \
+      if (!(_statement)) {                                                                               \
+         MONGOC_STDERR_PRINTF (                                                                          \
+            "FAIL:%s:%d  %s()\n  %s\n\n", __FILE__, (int) (__LINE__), BSON_FUNC, BSON_STR (_statement)); \
+         fprintf (stderr, __VA_ARGS__);                                                                  \
+         fprintf (stderr, "\n");                                                                         \
+         fflush (stderr);                                                                                \
+         abort ();                                                                                       \
+      }                                                                                                  \
    } while (0)
 
 // bson_value_to_str returns a string representation of a BSON value.
