@@ -117,6 +117,13 @@ def _create_task_group():
     task_group.setup_group_timeout_secs = 1800  # 30 minutes
     task_group.setup_group = [
         func("fetch-det"),
+        # Assume role to get AWS secrets.
+        {
+            "command": "ec2.assume_role",
+            "params": {
+                "role_arn": "${aws_test_secrets_role}"
+            }
+        },
         shell_exec(
             r"""
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
@@ -136,6 +143,7 @@ def _create_task_group():
             $DRIVERS_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
             """,
             test=False,
+            include_expansions_in_env=[ "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN" ]
         ),
         # Load the AZUREKMS_VMNAME expansion.
         OD(
