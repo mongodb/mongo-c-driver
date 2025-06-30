@@ -10,12 +10,6 @@ It also fixes up `#include` directives to use angle bracket syntax if they have
 a certain spelling. (See `INCLUDE_RE` in the script)
 """
 
-# /// script
-# dependencies = [
-#   "clang-format~=20.1.0"
-# ]
-# ///
-
 import argparse
 import functools
 import itertools

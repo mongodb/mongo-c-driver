@@ -123,7 +123,7 @@ functions:
           DRYRUN: "1"
         args:
           - -c
-          - uv run --frozen --only-group format .evergreen/scripts/clang-format-all.sh
+          - uv run --frozen --only-group format tools/format.py --mode=check
   cse-sasl-cyrus-darwinssl-compile:
     - command: expansions.update
       params:
