@@ -27,8 +27,9 @@
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-version.h>
 
-#include <stdio.h>
 #include <sys/utsname.h>
+
+#include <stdio.h>
 
 #define LINE_BUFFER_SIZE 1024
 

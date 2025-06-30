@@ -28,10 +28,11 @@
 #include <mlib/cmp.h>
 #include <mlib/config.h>
 
-#include <errno.h>
 #include <fcntl.h>
-#include <math.h>
 #include <sys/types.h>
+
+#include <errno.h>
+#include <math.h>
 
 #include <jsonsl/jsonsl.h>
 

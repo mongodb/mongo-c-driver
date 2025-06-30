@@ -15,11 +15,12 @@
  */
 
 
+#include <sys/types.h>
+
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 
 /* strcasecmp on windows */
 #include <common-bson-dsl-private.h>

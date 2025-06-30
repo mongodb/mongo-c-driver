@@ -171,8 +171,11 @@ IncludeCategories:
   # Private API components
   - Regex: '<mlib/|<common'
     Priority: 30
+  # Platform headers 
+  - Regex: '<(unistd|netdb|[Ww]in|[W]s2|netinet/.*|sys/.*|netdb|fcntl).h>'
+    Priority: 90
   # Standard library headers are near last
-  - Regex: '<(assert|string|ctype|limits|time|math|errno|fcntl|inttypes|unistd|netdb|netinet/.*|sys/.*).h>|<std'
+  - Regex: '<(assert|string|ctype|limits|time|math|errno|inttypes).h>|<std'
     Priority: 100
   # Other relative headers
   - Regex: '^"'

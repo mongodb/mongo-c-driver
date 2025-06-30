@@ -20,6 +20,7 @@
 
 #if defined(BSON_HAVE_CLOCK_GETTIME)
 #include <sys/time.h>
+
 #include <time.h>
 #endif
 

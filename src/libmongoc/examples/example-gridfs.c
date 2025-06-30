@@ -1,7 +1,8 @@
 #include <mongoc/mongoc.h>
 
-#include <assert.h>
 #include <fcntl.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 

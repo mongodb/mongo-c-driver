@@ -3,6 +3,7 @@
 #include <mongoc/mongoc.h>
 
 #include <fcntl.h>
+
 #include <stdlib.h>
 
 #include <TestSuite.h>

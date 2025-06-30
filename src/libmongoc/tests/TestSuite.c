@@ -22,6 +22,7 @@
 #include <bson/bson.h>
 
 #include <fcntl.h>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,12 +30,13 @@
 
 #include <signal.h>
 #if !defined(_WIN32)
-#include <inttypes.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include <inttypes.h>
 
 #else
 #include <windows.h>
