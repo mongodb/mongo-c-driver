@@ -379,14 +379,14 @@ fail:
 }
 
 PCCERT_CONTEXT
-mongoc_secure_channel_setup_certificate (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_certificate (const mongoc_ssl_opt_t *opt)
 {
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
 
 bool
-mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_ca (const mongoc_ssl_opt_t *opt)
 {
    bool ok = false;
    char *pem = NULL;
@@ -496,7 +496,7 @@ fail:
 }
 
 bool
-mongoc_secure_channel_setup_crl (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_crl (const mongoc_ssl_opt_t *opt)
 {
    HCERTSTORE cert_store = NULL;
    bool ok = false;
