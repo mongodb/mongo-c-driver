@@ -143,7 +143,7 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
  *       NULL on failure, otherwise a mongoc_stream_t.
  *
  * Side effects:
- *       None.
+ *       May set opt->allow_invalid_hostname to true.
  *
  *--------------------------------------------------------------------------
  */
@@ -226,5 +226,19 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
    return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
 }
 #endif
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+mongoc_stream_t *
+mongoc_stream_tls_new_with_secure_channel_cred (mongoc_stream_t *base_stream,
+                                                mongoc_ssl_opt_t *opt,
+                                                mongoc_shared_ptr secure_channel_cred_ptr)
+{
+   if (opt->weak_cert_validation) {
+      // For compatibility with `mongoc_stream_tls_new_with_hostname`, modify `opt` directly:
+      opt->allow_invalid_hostname = true;
+   }
+   return mongoc_stream_tls_secure_channel_new_with_creds (base_stream, opt, secure_channel_cred_ptr);
+}
+#endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 #endif

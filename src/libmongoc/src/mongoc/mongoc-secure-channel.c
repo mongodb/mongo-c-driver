@@ -671,18 +671,18 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls, char *hostname
    secure_channel->ctxt = (mongoc_secure_channel_ctxt *) bson_malloc0 (sizeof (mongoc_secure_channel_ctxt));
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx */
-   sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle, /* phCredential */
-                                            NULL,                               /* phContext */
-                                            hostname,                           /* pszTargetName */
-                                            secure_channel->req_flags,          /* fContextReq */
-                                            0,                                  /* Reserved1, must be 0 */
-                                            0,                                  /* TargetDataRep, unused */
-                                            NULL,                               /* pInput */
-                                            0,                                  /* Reserved2, must be 0 */
-                                            &secure_channel->ctxt->ctxt_handle, /* phNewContext OUT param */
-                                            &outbuf_desc,                       /* pOutput OUT param */
-                                            &secure_channel->ret_flags,         /* pfContextAttr OUT param */
-                                            &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
+   sspi_status = InitializeSecurityContext (&secure_channel->cred_handle->cred_handle, /* phCredential */
+                                            NULL,                                      /* phContext */
+                                            hostname,                                  /* pszTargetName */
+                                            secure_channel->req_flags,                 /* fContextReq */
+                                            0,                                         /* Reserved1, must be 0 */
+                                            0,                                         /* TargetDataRep, unused */
+                                            NULL,                                      /* pInput */
+                                            0,                                         /* Reserved2, must be 0 */
+                                            &secure_channel->ctxt->ctxt_handle,        /* phNewContext OUT param */
+                                            &outbuf_desc,                              /* pOutput OUT param */
+                                            &secure_channel->ret_flags,                /* pfContextAttr OUT param */
+                                            &secure_channel->ctxt->time_stamp          /* ptsExpiry OUT param */
    );
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
@@ -739,7 +739,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
    TRACE ("%s", "SSL/TLS connection with endpoint (step 2/3)");
 
-   if (!secure_channel->cred || !secure_channel->ctxt) {
+   if (!secure_channel->cred_handle || !secure_channel->ctxt) {
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "required TLS credentials or context not provided");
 
@@ -809,7 +809,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
       /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx
        */
-      sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle,
+      sspi_status = InitializeSecurityContext (&secure_channel->cred_handle->cred_handle,
                                                &secure_channel->ctxt->ctxt_handle,
                                                hostname,
                                                secure_channel->req_flags,
@@ -989,7 +989,7 @@ mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls, char *hostname
 
    TRACE ("SSL/TLS connection with %s (step 3/3)", hostname);
 
-   if (!secure_channel->cred) {
+   if (!secure_channel->cred_handle) {
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "required TLS credentials not provided");
       return false;
