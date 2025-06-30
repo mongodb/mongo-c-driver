@@ -45,7 +45,7 @@ typedef struct {
    CredHandle cred_handle;
    TimeStamp time_stamp;
    PCCERT_CONTEXT cert; /* Owning. Optional client cert. */
-} mongoc_secure_channel_cred;
+} mongoc_secure_channel_cred_handle;
 
 typedef struct {
    CtxtHandle ctxt_handle;
@@ -59,7 +59,7 @@ typedef struct {
  */
 typedef struct {
    ssl_connect_state connecting_state;
-   mongoc_secure_channel_cred *cred;
+   mongoc_secure_channel_cred_handle *cred;
    mongoc_secure_channel_ctxt *ctxt;
    SecPkgContext_StreamSizes stream_sizes;
    size_t encdata_length, decdata_length;

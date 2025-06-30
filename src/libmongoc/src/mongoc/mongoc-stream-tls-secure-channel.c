@@ -937,7 +937,8 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *
 
    schannel_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
-   secure_channel->cred = (mongoc_secure_channel_cred *) bson_malloc0 (sizeof (mongoc_secure_channel_cred));
+   secure_channel->cred =
+      (mongoc_secure_channel_cred_handle *) bson_malloc0 (sizeof (mongoc_secure_channel_cred_handle));
    if (cert) {
       // Store client cert to free later.
       secure_channel->cred->cert = cert;
