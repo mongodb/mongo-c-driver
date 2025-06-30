@@ -18,8 +18,6 @@
 from collections import OrderedDict as OD
 from typing import MutableSequence
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
-
 from evergreen_config_generator.functions import shell_exec, func
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
