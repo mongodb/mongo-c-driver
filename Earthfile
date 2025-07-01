@@ -508,7 +508,7 @@ CENTOS_ENV:
     # Update repositories to use vault.centos.org
     RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
         sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-    RUN yum -y install epel-release && yum -y update
+    RUN yum -y --enablerepo=extras install epel-release && yum -y update
     RUN yum -y install curl gcc gcc-c++ make
     ARG --required purpose
 
