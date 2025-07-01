@@ -175,6 +175,35 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+  docker-pull-earthly-buildkitd:
+    - command: expansions.update
+      params:
+        updates:
+          - { key: DOCKER_CONFIG, value: "${workdir}/.docker-ecs" }
+    - command: ec2.assume_role
+      params:
+        role_arn: arn:aws:iam::901841024863:role/ecr-role-evergreen-ro
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+          - DOCKER_CONFIG
+        args:
+          - -c
+          - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - DOCKER_CONFIG
+        args:
+          - -c
+          - docker pull 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
   fetch-build:
     - command: subprocess.exec
       type: setup

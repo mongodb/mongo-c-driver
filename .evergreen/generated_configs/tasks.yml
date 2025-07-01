@@ -1133,10 +1133,13 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
+      - func: docker-pull-earthly-buildkitd
       - command: subprocess.exec
         type: setup
         params:
           binary: bash
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - -c
             - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
@@ -1145,6 +1148,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +env-warmup
             - --sasl=Cyrus
@@ -1157,6 +1162,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +run
             - --targets=test-example
@@ -1174,10 +1181,13 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
+      - func: docker-pull-earthly-buildkitd
       - command: subprocess.exec
         type: setup
         params:
           binary: bash
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - -c
             - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
@@ -1186,6 +1196,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +env-warmup
             - --sasl=Cyrus
@@ -1198,6 +1210,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +run
             - --targets=test-example
@@ -1215,10 +1229,13 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
+      - func: docker-pull-earthly-buildkitd
       - command: subprocess.exec
         type: setup
         params:
           binary: bash
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - -c
             - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
@@ -1227,6 +1244,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +env-warmup
             - --sasl=off
@@ -1239,6 +1258,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +run
             - --targets=test-example
@@ -1256,10 +1277,13 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
+      - func: docker-pull-earthly-buildkitd
       - command: subprocess.exec
         type: setup
         params:
           binary: bash
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - -c
             - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
@@ -1268,6 +1292,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +env-warmup
             - --sasl=off
@@ -1280,6 +1306,8 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
             - +run
             - --targets=test-example
