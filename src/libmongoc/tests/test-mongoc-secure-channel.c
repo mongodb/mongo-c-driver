@@ -155,6 +155,7 @@ test_secure_channel_shared_creds_client (void *unused)
 
       // Expect exactly one attempt to load the client cert:
       ASSERT_CMPSIZE_T (1, ==, cf.failures);
+      mongoc_client_destroy (client);
    }
 
    cf = (cert_failures) {0};
