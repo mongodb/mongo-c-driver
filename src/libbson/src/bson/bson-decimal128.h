@@ -23,8 +23,8 @@
 
 #include <string.h>
 
-#include <bson/bson-macros.h>
-#include <bson/bson-config.h>
+#include <bson/macros.h>
+#include <bson/config.h>
 #include <bson/bson-types.h>
 
 

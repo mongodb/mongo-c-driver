@@ -1,6 +1,6 @@
 #include "test-mongoc-retryability-helpers.h"
 
-#include <bson/bson-error.h>
+#include <bson/error.h>
 
 #include <mongoc/mongoc-array-private.h>
 

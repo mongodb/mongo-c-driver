@@ -21,8 +21,8 @@
 #define BSON_CLOCK_H
 
 
-#include <bson/bson-compat.h>
-#include <bson/bson-macros.h>
+#include <bson/compat.h>
+#include <bson/macros.h>
 #include <bson/bson-types.h>
 
 

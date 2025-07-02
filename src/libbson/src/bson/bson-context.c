@@ -15,7 +15,7 @@
  */
 
 #include <mlib/intencode.h>
-#include <bson/bson-compat.h>
+#include <bson/compat.h>
 
 #include <limits.h>
 #include <stdarg.h>
@@ -27,7 +27,7 @@
 #include <bson/bson-clock.h>
 #include <bson/bson-context.h>
 #include <bson/bson-context-private.h>
-#include <bson/bson-memory.h>
+#include <bson/memory.h>
 #include <common-thread-private.h>
 
 

@@ -20,7 +20,7 @@
 
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
-#include <bson/bson-macros.h>
+#include <bson/macros.h>
 #include <common-string-private.h>
 #include <mlib/cmp.h>
 #include <mlib/loop.h>

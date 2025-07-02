@@ -116,13 +116,13 @@ else ()
 endif ()
 
 configure_file (
-   "${PROJECT_SOURCE_DIR}/src/bson/bson-config.h.in"
-   "${PROJECT_BINARY_DIR}/src/bson/bson-config.h"
+   "${PROJECT_SOURCE_DIR}/src/bson/config.h.in"
+   "${PROJECT_BINARY_DIR}/src/bson/config.h"
 )
 
 configure_file (
-   "${PROJECT_SOURCE_DIR}/src/bson/bson-version.h.in"
-   "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
+   "${PROJECT_SOURCE_DIR}/src/bson/version.h.in"
+   "${PROJECT_BINARY_DIR}/src/bson/version.h"
 )
 
 # 8888888b.            .d888 d8b          d8b 888    d8b

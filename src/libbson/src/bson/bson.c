@@ -18,7 +18,7 @@
 #include <bson/validate-private.h>
 #include <mlib/intencode.h>
 #include <bson/bson.h>
-#include <bson/bson-config.h>
+#include <bson/config.h>
 #include <bson/bson-private.h>
 #include <bson/bson-json-private.h>
 #include <common-string-private.h>

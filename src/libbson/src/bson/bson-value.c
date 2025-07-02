@@ -15,7 +15,7 @@
  */
 
 
-#include <bson/bson-memory.h>
+#include <bson/memory.h>
 #include <common-string-private.h>
 #include <bson/bson-value.h>
 #include <bson/bson-oid.h>

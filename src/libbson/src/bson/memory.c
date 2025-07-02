@@ -20,8 +20,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <bson/bson-config.h>
-#include <bson/bson-memory.h>
+#include <bson/config.h>
+#include <bson/memory.h>
 
 #include <common-macros-private.h>
 #include <mlib/config.h>
