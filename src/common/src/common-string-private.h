@@ -483,7 +483,7 @@ mcommon_string_append_overflow (mcommon_string_append_t *append)
  */
 bool
 mcommon_string_append_selected_chars (mcommon_string_append_t *append,
-                                      const char *template,
+                                      const char *template_,
                                       const char *selector,
                                       size_t selector_len);
 
