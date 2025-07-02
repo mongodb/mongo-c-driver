@@ -9,7 +9,7 @@
 #include <mongoc/mongoc-client-private.h>    // mongoc_client_connect_tcp
 #include <mongoc/mongoc-log-private.h>       // _mongoc_log_get_handler
 #include <test-conveniences.h>
-
+#include <mlib/test.h>
 
 static bool
 connect_with_secure_channel_cred (mongoc_ssl_opt_t *ssl_opt, mongoc_shared_ptr cred_ptr, bson_error_t *error)
@@ -154,7 +154,7 @@ test_secure_channel_shared_creds_client (void *unused)
       }
 
       // Expect exactly one attempt to load the client cert:
-      ASSERT_CMPSIZE_T (1, ==, cf.failures);
+      mlib_check (1, eq, cf.failures);
       mongoc_client_destroy (client);
    }
 
@@ -182,7 +182,7 @@ test_secure_channel_shared_creds_client (void *unused)
       mongoc_client_pool_push (pool, client);
 
       // Expect exactly one attempt to load the client cert:
-      ASSERT_CMPSIZE_T (1, ==, cf.failures);
+      mlib_check (1, eq, cf.failures);
 
       mongoc_client_pool_destroy (pool);
    }
@@ -209,8 +209,8 @@ test_secure_channel_shared_creds_client (void *unused)
       }
 
       // Expect exactly one attempt to load the client cert:
-      ASSERT_CMPSIZE_T (1, ==, cf.failures);
-      ASSERT_CMPSIZE_T (0, ==, cf.failures2);
+      mlib_check (1, eq, cf.failures);
+      mlib_check (0, eq, cf.failures2);
 
       // Change the client cert:
       {
@@ -226,8 +226,8 @@ test_secure_channel_shared_creds_client (void *unused)
       }
 
       // Expect an attempt to load the new cert:
-      ASSERT_CMPSIZE_T (1, ==, cf.failures); // Unchanged.
-      ASSERT_CMPSIZE_T (1, ==, cf.failures2);
+      mlib_check (1, eq, cf.failures); // Unchanged.
+      mlib_check (1, eq, cf.failures2);
 
       mongoc_client_destroy (client);
    }
