@@ -173,6 +173,25 @@ if(ENABLE_STATIC)
       # User wants static libs to use PIC code.
       set_property(TARGET bson_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    endif()
+
+   if(MONGO_CAN_VERIFY_HEADERS)
+      mongo_verify_headers(
+         bson
+         USE_LIBRARIES bson::static
+         HEADERS
+            # Grab all headers
+            "src/*.h"
+         EXCLUDE_REGEX
+            # No -private headers
+            "-private\\.h"
+            # Ignore all headers that start with "bson-", as they have not
+            # been sanitized for direct inclusion.
+            "bson/bson-.*\\.h"
+            # Don't check jsonsl.h or bcon.h either
+            "jsonsl\\.h"
+            "bcon\\.h"
+         )
+   endif()
 endif()
 
 if(ENABLE_SHARED)

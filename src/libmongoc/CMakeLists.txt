@@ -971,6 +971,23 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(MONGOC_ENABLE_STATIC_INSTALL)
       mongo_generate_pkg_config (mongoc_static FILENAME mongoc${PROJECT_VERSION_MAJOR}-static.pc INSTALL)
    endif()
+
+   if(MONGO_CAN_VERIFY_HEADERS)
+      mongo_verify_headers(
+         mongoc
+         USE_LIBRARIES mongoc::static
+         HEADERS "src/*.h"
+         EXCLUDE_REGEX
+            # Ignore all headers that start with "mongoc-", as they have not
+            # been sanitized for direct inclusion.
+            "mongoc/mongoc-.*\\.h"
+            # Other private headers that aren't for public consumption:
+            "/mcd-"
+            "service-gcp\\.h"
+            "uthash\\.h"
+            "utlist\\.h"
+         )
+   endif()
 endif ()
 
 
