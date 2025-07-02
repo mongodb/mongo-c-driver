@@ -1,3 +1,5 @@
+include_guard(DIRECTORY)
+
 #[==[
 Add header verification targets for given headers:
 
@@ -21,7 +23,6 @@ absolute path to the file file.
 
 The header verification targets are compiled according to the usage requirements
 from all `<library>` arguments.
-
 ]==]
 function(mongo_verify_headers tag)
     list(APPEND CMAKE_MESSAGE_CONTEXT "${CMAKE_CURRENT_FUNCTION}(${tag})")
@@ -68,24 +69,33 @@ function(mongo_verify_headers tag)
     endforeach()
 
     # We create two targets: One for C and one for C++
+    set(targets)
+    # C target
     set(c_target ${tag}-verify-headers-c)
-    set(cxx_target ${tag}-verify-headers-cxx)
-    message(DEBUG "Defining header verification targets “${c_target}” and “${cxx_target}”")
+    message(DEBUG "Defining header verification target “${c_target}” (C)")
     # Create object libraries. They will only have one empty compiled source file.
     # The source file language will tell CMake how to verify the associated header files.
     add_library(${c_target} OBJECT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/empty.c")
-    add_library(${cxx_target} OBJECT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/empty.cpp")
     # Define the file set
     target_sources(${c_target} PUBLIC FILE_SET HEADERS)
-    target_sources(${cxx_target} PUBLIC FILE_SET HEADERS)
-    # Populate the properies and file sets
+    # Conditionally do the same thing for C++
+    if(CMAKE_CXX_COMPILER)
+        # C++ is available. define it
+        set(cxx_target ${tag}-verify-headers-cxx)
+        message(DEBUG "Defining header verification targets “${cxx_target}” (C++)")
+        add_library(${cxx_target} OBJECT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/empty.cpp")
+        target_sources(${cxx_target} PUBLIC FILE_SET HEADERS)
+    else()
+        message(AUTHOR_WARNING "No C++ compiler is available, so the header-check C++ targets won't be defined")
+        unset(cxx_target)
+    endif()
+    # Populate the properies and file sets.
     set_target_properties(${c_target} ${cxx_target} PROPERTIES
         # The main header file set:
         HEADER_SET "${headers_to_verify}"
         # Enable header verification:
         VERIFY_INTERFACE_HEADER_SETS TRUE
-        # Add the usage requirements that propagate to the generated compilation
-        # rules:
+        # Add the usage requirements that propagate to the generated compilation rules:
         INTERFACE_LINK_LIBRARIES "${arg_USE_LIBRARIES}"
         )
 endfunction()
@@ -96,4 +106,12 @@ Variable set to TRUE if-and-only-if CMake supports header verification.
 set(MONGO_CAN_VERIFY_HEADERS FALSE)
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
     set(MONGO_CAN_VERIFY_HEADERS TRUE)
+endif()
+
+# Try to enable C++, but don't require it. This will be used to conditionally
+# define the C++ header-check tests
+include(CheckLanguage)
+check_language(CXX)
+if(CMAKE_CXX_COMPILER)
+    enable_language(CXX)
 endif()
