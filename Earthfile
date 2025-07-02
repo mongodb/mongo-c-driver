@@ -63,7 +63,7 @@ build:
     LET build_dir=/opt/mongoc/build
     DO +COPY_SOURCE --into=$source_dir
     ENV CCACHE_HOME=/root/.cache/ccache
-    DO +CONFIGURE --source_dir=$source_dir --build_dir=$build_dir
+    DO --pass-args +CONFIGURE --source_dir=$source_dir --build_dir=$build_dir
     RUN --mount=type=cache,target=$CCACHE_HOME \
         env CCACHE_BASE="$source_dir" \
             cmake --build $build_dir --config $config
