@@ -75,7 +75,7 @@ typedef struct {
    size_t failures2;
 } cert_failures;
 
-void
+static void
 count_cert_failures (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data)
 {
    cert_failures *cf = user_data;
