@@ -70,6 +70,11 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #endif
 
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#endif
+
 #include <common-string-private.h>
 #include <mlib/cmp.h>
 
@@ -756,6 +761,7 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        void *openssl_ctx_void,
+                       mongoc_shared_ptr secure_channel_cred_ptr,
                        bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
@@ -765,6 +771,7 @@ mongoc_client_connect (bool buffered,
    BSON_ASSERT (host);
 
    BSON_UNUSED (openssl_ctx_void);
+   BSON_UNUSED (secure_channel_cred_ptr);
 
 #ifndef MONGOC_ENABLE_SSL
    if (ssl_opts_void || mongoc_uri_get_tls (uri)) {
@@ -814,6 +821,9 @@ mongoc_client_connect (bool buffered,
          // Use shared OpenSSL context.
          base_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
             base_stream, host->host, ssl_opts, true, (SSL_CTX *) openssl_ctx_void);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+         // Use shared Secure Channel credentials.
+         base_stream = mongoc_stream_tls_new_with_secure_channel_cred (base_stream, ssl_opts, secure_channel_cred_ptr);
 #else
          base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
 #endif
@@ -881,9 +891,13 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, error);
+   return mongoc_client_connect (
+      true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, MONGOC_SHARED_PTR_NULL, error);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   return mongoc_client_connect (
+      true, use_ssl, ssl_opts_void, uri, host, NULL, client->topology->scanner->secure_channel_cred_ptr, error);
 #else
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, error);
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, MONGOC_SHARED_PTR_NULL, error);
 #endif
 }
 
@@ -1027,6 +1041,12 @@ _mongoc_client_set_ssl_opts_for_single_or_pooled (mongoc_client_t *client, const
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       SSL_CTX_free (client->topology->scanner->openssl_ctx);
       client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&client->ssl_opts);
+#endif
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+      mongoc_shared_ptr_reset (&client->topology->scanner->secure_channel_cred_ptr,
+                               mongoc_secure_channel_cred_new (&client->ssl_opts),
+                               mongoc_secure_channel_cred_deleter);
 #endif
    }
 }

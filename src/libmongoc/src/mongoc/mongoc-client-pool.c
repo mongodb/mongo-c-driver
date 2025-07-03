@@ -39,6 +39,10 @@
 #include <mongoc/mongoc-openssl-private.h>
 #endif
 
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#endif
+
 struct _mongoc_client_pool_t {
    bson_mutex_t mutex;
    mongoc_cond_t cond;
@@ -83,6 +87,13 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool, const mongoc_ssl_op
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       SSL_CTX_free (pool->topology->scanner->openssl_ctx);
       pool->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&pool->ssl_opts);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+      // Access to secure_channel_cred_ptr does not need the thread-safe `mongoc_atomic_*` functions.
+      // secure_channel_cred_ptr is not expected to be modified by multiple threads.
+      // mongoc_client_pool_set_ssl_opts documentation prohibits calling after threads start.
+      mongoc_shared_ptr_reset (&pool->topology->scanner->secure_channel_cred_ptr,
+                               mongoc_secure_channel_cred_new (&pool->ssl_opts),
+                               mongoc_secure_channel_cred_deleter);
 #endif
    }
 
