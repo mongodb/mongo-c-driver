@@ -93,7 +93,7 @@ mongoc_secure_channel_cred_deleter (void *cred_void);
 
 struct _mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new_with_creds (struct _mongoc_stream_t *base_stream,
-                                                 struct _mongoc_ssl_opt_t *opt,
+                                                 const struct _mongoc_ssl_opt_t *opt,
                                                  mongoc_shared_ptr cred_ptr /* optional */);
 
 BSON_END_DECLS

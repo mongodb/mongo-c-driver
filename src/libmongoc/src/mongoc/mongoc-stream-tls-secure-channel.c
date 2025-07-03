@@ -919,7 +919,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream, const char *
 
 mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new_with_creds (mongoc_stream_t *base_stream,
-                                                 mongoc_ssl_opt_t *opt,
+                                                 const mongoc_ssl_opt_t *opt,
                                                  mongoc_shared_ptr cred_ptr)
 {
    SECURITY_STATUS sspi_status = SEC_E_OK;

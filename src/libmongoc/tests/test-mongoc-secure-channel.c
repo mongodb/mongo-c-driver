@@ -13,7 +13,7 @@
 #include <mlib/test.h>
 
 static mongoc_stream_t *
-connect_with_secure_channel_cred (mongoc_ssl_opt_t *ssl_opt, mongoc_shared_ptr cred_ptr, bson_error_t *error)
+connect_with_secure_channel_cred (const mongoc_ssl_opt_t *ssl_opt, mongoc_shared_ptr cred_ptr, bson_error_t *error)
 {
    mongoc_host_list_t host;
    const int32_t connect_timout_ms = 10000;
@@ -50,7 +50,7 @@ test_secure_channel_shared_creds_stream (void *unused)
 
    mongoc_stream_t *stream;
    bson_error_t error;
-   mongoc_ssl_opt_t ssl_opt = {.ca_file = CERT_TEST_DIR "/ca.pem", .pem_file = CERT_TEST_DIR "/client.pem"};
+   const mongoc_ssl_opt_t ssl_opt = {.ca_file = CERT_TEST_DIR "/ca.pem", .pem_file = CERT_TEST_DIR "/client.pem"};
    // Test with no sharing:
    {
       mongoc_stream_t *stream = connect_with_secure_channel_cred (&ssl_opt, MONGOC_SHARED_PTR_NULL, &error);
