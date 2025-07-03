@@ -7,14 +7,14 @@
 
 #include <mongoc/mongoc.h>
 
-#include <fcntl.h>
-
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
 #include <mock_server/mock-server.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#include <fcntl.h>
 
 
 /* Server support for exhaust cursors depends on server topology and version:

@@ -26,12 +26,12 @@
 #include <mlib/intencode.h>
 #include <mlib/test.h>
 
+#include <TestSuite.h>
+#include <test-conveniences.h>
+
 #include <fcntl.h>
 
 #include <time.h>
-
-#include <TestSuite.h>
-#include <test-conveniences.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);

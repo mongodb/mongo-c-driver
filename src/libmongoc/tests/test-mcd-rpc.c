@@ -4,10 +4,10 @@
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
 
-#include <inttypes.h>
-
 #include <TestSuite.h>
 #include <test-conveniences.h>
+
+#include <inttypes.h>
 
 
 // clang-format off

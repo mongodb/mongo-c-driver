@@ -29,11 +29,11 @@ BSON_BEGIN_DECLS
 
 #define SECURITY_WIN32 1 /* Required for SSPI */
 
-#include <limits.h>
-#include <string.h>
-
 #include <Windows.h>
 #include <sspi.h>
+
+#include <limits.h>
+#include <string.h>
 
 #define MONGOC_SSPI_AUTH_GSS_ERROR -1
 #define MONGOC_SSPI_AUTH_GSS_COMPLETE 1

@@ -30,9 +30,9 @@
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
 
-#include <string.h>
-
 #include <utf8proc.h>
+
+#include <string.h>
 
 typedef struct _mongoc_scram_cache_entry_t {
    /* book keeping */

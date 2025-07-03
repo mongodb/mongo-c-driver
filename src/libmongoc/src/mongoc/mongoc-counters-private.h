@@ -26,15 +26,13 @@
 #include <bson/bson.h>
 
 #ifdef __linux__
-#include <sys/sysinfo.h>
-
 #include <sched.h>
+#include <sys/sysinfo.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+#include <sched.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
-
-#include <sched.h>
 #elif defined(__hpux__)
 #include <sys/pstat.h>
 #endif

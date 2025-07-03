@@ -22,6 +22,7 @@
 #include <mongoc/utlist.h>
 
 #include <TestSuite.h>
+
 #include <signal.h>
 
 typedef struct _msg_t {

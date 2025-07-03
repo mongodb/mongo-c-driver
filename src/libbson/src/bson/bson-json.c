@@ -28,13 +28,13 @@
 #include <mlib/cmp.h>
 #include <mlib/config.h>
 
+#include <jsonsl/jsonsl.h>
+
 #include <fcntl.h>
 #include <sys/types.h>
 
 #include <errno.h>
 #include <math.h>
-
-#include <jsonsl/jsonsl.h>
 
 #ifdef _WIN32
 #include <io.h>

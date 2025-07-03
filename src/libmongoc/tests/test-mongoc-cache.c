@@ -20,10 +20,10 @@
 
 #include <mongoc/mongoc.h>
 
-#include <stdio.h>
-
 #include <TestSuite.h>
+
 #include <signal.h>
+#include <stdio.h>
 
 #ifndef SIGSTOP
 #define SIGSTOP 19

@@ -62,9 +62,9 @@ extern "C" {
 
 
 #ifdef BSON_OS_WIN32
-#include <stdarg.h>
-
 #include <share.h>
+
+#include <stdarg.h>
 static __inline int
 bson_open (const char *filename, int flags, ...)
 {

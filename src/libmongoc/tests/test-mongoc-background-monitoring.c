@@ -25,12 +25,12 @@
 
 #include <mongoc/mongoc.h>
 
-#include <inttypes.h>
-
 #include <TestSuite.h>
 #include <mock_server/mock-server.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#include <inttypes.h>
 
 typedef struct {
    uint32_t n_heartbeat_started;

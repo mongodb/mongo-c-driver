@@ -31,9 +31,9 @@
 
 #include <mlib/config.h>
 
-#include <limits.h>
-
 #include <TestSuite.h>
+
+#include <limits.h>
 
 #define N_THREADS 4
 

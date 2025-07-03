@@ -5,9 +5,9 @@
 
 #include <mongoc/mongoc.h>
 
-#include <stdio.h>
-
 #include <pthread.h>
+
+#include <stdio.h>
 
 static pthread_mutex_t mutex;
 static bool in_shutdown = false;

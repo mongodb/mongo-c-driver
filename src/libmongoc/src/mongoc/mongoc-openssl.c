@@ -34,15 +34,15 @@
 
 #include <mlib/cmp.h>
 
-#include <limits.h>
-#include <string.h>
-
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/ocsp.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+
+#include <limits.h>
+#include <string.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 #include <mongoc/mongoc-ocsp-cache-private.h>

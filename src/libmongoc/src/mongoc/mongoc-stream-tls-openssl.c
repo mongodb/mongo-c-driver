@@ -38,14 +38,14 @@
 
 #include <mlib/cmp.h>
 
-#include <errno.h>
-#include <inttypes.h>
-#include <string.h>
-
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
+
+#include <errno.h>
+#include <inttypes.h>
+#include <string.h>
 
 
 #undef MONGOC_LOG_DOMAIN

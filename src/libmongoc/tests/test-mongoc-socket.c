@@ -7,10 +7,10 @@
 
 #include <mlib/cmp.h>
 
-#include <fcntl.h>
-
 #include <TestSuite.h>
 #include <test-libmongoc.h>
+
+#include <fcntl.h>
 
 #define TIMEOUT 10000
 #define WAIT 1000

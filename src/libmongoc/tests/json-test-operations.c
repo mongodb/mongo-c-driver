@@ -32,12 +32,12 @@
 
 #include <bson/bson.h>
 
-#include <inttypes.h>
-
 #include <TestSuite.h>
 #include <json-test.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#include <inttypes.h>
 
 
 mongoc_client_session_t *

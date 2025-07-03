@@ -22,15 +22,15 @@
 
 #include <mongoc/mongoc-host-list.h>
 
-#include <errno.h>
-#include <string.h>
 #ifdef _WIN32
 #include <Mstcpip.h>
 #include <process.h>
 #endif
 #include <mlib/cmp.h>
 
+#include <errno.h>
 #include <inttypes.h>
+#include <string.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"

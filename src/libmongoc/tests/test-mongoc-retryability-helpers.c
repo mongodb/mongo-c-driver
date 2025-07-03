@@ -4,11 +4,11 @@
 
 #include <bson/bson-error.h>
 
-#include <stddef.h>
-
 #include <TestSuite.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#include <stddef.h>
 
 mongoc_array_t
 _test_get_mongos_clients (const char **ports, size_t num_ports)

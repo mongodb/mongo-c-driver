@@ -11,9 +11,9 @@
 
 #include <mlib/loop.h>
 
-#include <stdio.h>
-
 #include <pthread.h>
+
+#include <stdio.h>
 
 
 static void *

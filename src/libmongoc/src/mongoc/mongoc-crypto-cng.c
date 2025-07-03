@@ -25,11 +25,12 @@
 
 #include <mlib/cmp.h>
 
+#include <bcrypt.h>
+
+#include <windows.h>
+
 #include <stdio.h>
 #include <string.h>
-
-#include <bcrypt.h>
-#include <windows.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
 #define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)

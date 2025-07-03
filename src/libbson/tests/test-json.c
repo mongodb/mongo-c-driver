@@ -12,10 +12,10 @@
 
 #include <mlib/cmp.h>
 
-#include <math.h>
-
 #include <TestSuite.h>
 #include <test-conveniences.h>
+
+#include <math.h>
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)

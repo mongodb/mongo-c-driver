@@ -6,9 +6,9 @@
 #include <mlib/loop.h>
 #include <mlib/test.h>
 
-#include <stddef.h>
-
 #include <TestSuite.h>
+
+#include <stddef.h>
 
 mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make sure it compiles
 

@@ -24,11 +24,10 @@
 #include <ws2tcpip.h>
 #else
 #if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
+#include <arpa/nameser.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-
-#include <arpa/nameser.h>
 #include <resolv.h>
 #endif
 #endif

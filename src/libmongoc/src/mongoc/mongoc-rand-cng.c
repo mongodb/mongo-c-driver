@@ -23,10 +23,11 @@
 #include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc.h>
 
-#include <stdio.h>
-
 #include <bcrypt.h>
+
 #include <windows.h>
+
+#include <stdio.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
 #define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)

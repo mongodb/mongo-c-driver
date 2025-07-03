@@ -2,9 +2,9 @@
 
 #include <mongoc/mongoc.h>
 
-#include <fcntl.h>
-
 #include <TestSuite.h>
+
+#include <fcntl.h>
 
 
 static void

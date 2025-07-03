@@ -23,12 +23,7 @@
 
 #include <fcntl.h>
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <signal.h>
 #if !defined(_WIN32)
 #include <sys/time.h>
 #include <sys/types.h>
@@ -50,6 +45,12 @@
 #include <TestSuite.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#include <signal.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SKIP_LINE_BUFFER_SIZE 1024
 

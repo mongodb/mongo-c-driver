@@ -4,10 +4,10 @@
 
 #include <bson/bson.h>
 
-#include <inttypes.h>
-
 #include <TestSuite.h>
 #include <json-test.h>
+
+#include <inttypes.h>
 
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull
 
