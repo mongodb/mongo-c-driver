@@ -55,9 +55,7 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (mongoc_stream_t *base_s
                                                          mongoc_ssl_opt_t *opt,
                                                          int client,
                                                          SSL_CTX *ssl_ctx) BSON_GNUC_WARN_UNUSED_RESULT;
-#endif
-
-#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 mongoc_stream_t *
 mongoc_stream_tls_new_with_secure_channel_cred (mongoc_stream_t *base_stream,
                                                 mongoc_ssl_opt_t *opt,
