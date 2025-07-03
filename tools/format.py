@@ -2,9 +2,9 @@
 Run clang-format and header-fixup on the source code for the repository.
 
 By default this script runs `clang-format` over most source files in the
-repository (excluding some vendored code that we don't want to format). The file
-selection can be overridden with the `--files` argument. Pass `--help` for more
-details.
+repository (excluding some vendored code that we don't want to format).
+Alteratively, a list of files can be given as positional arguments to
+selectively format files. `--help` for more details.
 
 It also fixes up `#include` directives to use angle bracket syntax if they have
 a certain spelling. (See `INCLUDE_RE` in the script)
@@ -46,32 +46,29 @@ def main(argv: Sequence[str]) -> int:
         default="apply",
     )
     parser.add_argument(
-        "--files",
-        help="""
-        A globbing pattern to select the files to be formatted (Use "**" for recursive search).
-        If omitted, then all first-party source files will be selected
-        """,
-        metavar="<pattern>",
-        action="append",
+        "--clang-format-bin",
+        help="The clang-format executable to be used (default: “clang-format”)",
+        default="clang-format",
+        metavar="<executable>",
     )
     parser.add_argument(
-        "--clang-format-bin",
-        help="The clang-format executable to be executed (default: “clang-format”)",
-        default="clang-format",
-        metavar="<exe-path>",
+        "files",
+        metavar="<filepath>",
+        nargs="*",
+        help="List of files to be selected for formatting. If omitted, the default set of files are selected",
     )
     args = parser.parse_args(argv)
     mode: RunMode = args.mode
-    file_patterns: list[str] | None = args.files
+    file_patterns: list[str] = args.files
     cf: str = args.clang_format_bin
     # Convert filepath patterns to a list of paths
     files: list[Path]
     try:
         match file_patterns:
-            case None:
+            case []:
                 files = list(all_our_sources())
             case patterns:
-                files = list(itertools.chain.from_iterable(map(_get_files_matching, patterns)))
+                files = [Path(p).resolve() for p in patterns]
     except Exception as e:
         raise RuntimeError("Failed to collect files for formatting (See above)") from e
     # Fail if no files matched
