@@ -5,13 +5,14 @@
 
 #if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
-#include <mongoc/mongoc-host-list-private.h> // _mongoc_host_list_from_string_with_err
-#include <mongoc/mongoc-client-private.h>    // mongoc_client_connect_tcp
-#include <mongoc/mongoc-log-private.h>       // _mongoc_log_get_handler
+#include <mongoc/mongoc-host-list-private.h>  // _mongoc_host_list_from_string_with_err
+#include <mongoc/mongoc-client-private.h>     // mongoc_client_connect_tcp
+#include <mongoc/mongoc-log-private.h>        // _mongoc_log_get_handler
+#include <mongoc/mongoc-stream-tls-private.h> // _mongoc_stream_tls_t
 #include <test-conveniences.h>
 #include <mlib/test.h>
 
-static bool
+static mongoc_stream_t *
 connect_with_secure_channel_cred (mongoc_ssl_opt_t *ssl_opt, mongoc_shared_ptr cred_ptr, bson_error_t *error)
 {
    mongoc_host_list_t host;
@@ -38,8 +39,7 @@ connect_with_secure_channel_cred (mongoc_ssl_opt_t *ssl_opt, mongoc_shared_ptr c
       return false;
    }
 
-   mongoc_stream_destroy (tls_stream);
-   return true;
+   return tls_stream;
 }
 
 // Test a TLS stream can be create with shared Secure Channel credentials.
@@ -48,24 +48,51 @@ test_secure_channel_shared_creds_stream (void *unused)
 {
    BSON_UNUSED (unused);
 
-   bool ok;
+   mongoc_stream_t *stream;
+   mongoc_stream_tls_secure_channel_t *schannel_stream_view;
    bson_error_t error;
    mongoc_ssl_opt_t ssl_opt = {.ca_file = CERT_TEST_DIR "/ca.pem", .pem_file = CERT_TEST_DIR "/client.pem"};
    // Test with no sharing:
    {
-      ok = connect_with_secure_channel_cred (&ssl_opt, MONGOC_SHARED_PTR_NULL, &error);
-      ASSERT_OR_PRINT (ok, error);
+      mongoc_stream_t *stream = connect_with_secure_channel_cred (&ssl_opt, MONGOC_SHARED_PTR_NULL, &error);
+      ASSERT_OR_PRINT (stream, error);
+      mongoc_stream_destroy (stream);
    }
 
    // Test with sharing:
    {
       mongoc_shared_ptr cred_ptr =
          mongoc_shared_ptr_create (mongoc_secure_channel_cred_new (&ssl_opt), mongoc_secure_channel_cred_deleter);
-      ok = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
-      ASSERT_OR_PRINT (ok, error);
-      // Use again.
-      ok = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
-      ASSERT_OR_PRINT (ok, error);
+      {
+         mongoc_stream_t *stream = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
+         ASSERT_OR_PRINT (stream, error);
+         // Check same credentials are stored on stream:
+         {
+            mongoc_stream_tls_t *tls_stream = (mongoc_stream_tls_t *) stream;
+            mongoc_stream_tls_secure_channel_t *schannel = tls_stream->ctx;
+            ASSERT_CMPVOID (schannel->cred_ptr.ptr, ==, cred_ptr.ptr);
+         }
+
+         ASSERT_CMPINT (mongoc_shared_ptr_use_count (cred_ptr), ==, 2);
+         mongoc_stream_destroy (stream);
+         ASSERT_CMPINT (mongoc_shared_ptr_use_count (cred_ptr), ==, 1);
+      }
+
+      // Use again:
+      {
+         mongoc_stream_t *stream = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
+         ASSERT_OR_PRINT (stream, error);
+         // Check same credentials are stored on stream:
+         {
+            mongoc_stream_tls_t *tls_stream = (mongoc_stream_tls_t *) stream;
+            mongoc_stream_tls_secure_channel_t *schannel = tls_stream->ctx;
+            ASSERT_CMPVOID (schannel->cred_ptr.ptr, ==, cred_ptr.ptr);
+         }
+
+         ASSERT_CMPINT (mongoc_shared_ptr_use_count (cred_ptr), ==, 2);
+         mongoc_stream_destroy (stream);
+         ASSERT_CMPINT (mongoc_shared_ptr_use_count (cred_ptr), ==, 1);
+      }
       mongoc_shared_ptr_reset_null (&cred_ptr);
    }
 
@@ -75,8 +102,8 @@ test_secure_channel_shared_creds_stream (void *unused)
       mongoc_shared_ptr cred_ptr = mongoc_shared_ptr_create (cred, mongoc_secure_channel_cred_deleter);
       cred->cred.dwVersion = 0; // Invalid version.
       capture_logs (true);
-      ok = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
-      ASSERT (!ok);
+      mongoc_stream_t *stream = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
+      ASSERT (!stream);
       ASSERT_CAPTURED_LOG ("schannel", MONGOC_LOG_LEVEL_ERROR, "Failed to initialize security context");
       mongoc_shared_ptr_reset_null (&cred_ptr);
    }
