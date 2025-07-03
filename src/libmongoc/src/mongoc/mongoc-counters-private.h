@@ -19,19 +19,20 @@
 #ifndef MONGOC_COUNTERS_PRIVATE_H
 #define MONGOC_COUNTERS_PRIVATE_H
 
-#include <bson/bson.h>
 #include <common-atomic-private.h>
 
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
 
 #ifdef __linux__
 #include <sched.h>
 #include <sys/sysinfo.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #include <sched.h>
-#include <sys/types.h>
-#include <sys/sysctl.h>
 #include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
 #elif defined(__hpux__)
 #include <sys/pstat.h>
 #endif

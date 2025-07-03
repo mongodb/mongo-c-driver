@@ -18,13 +18,15 @@
 
 #ifdef MONGOC_ENABLE_SSL
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-uri.h>
-#include <mongoc/mongoc-util-private.h>
 #include <common-string-private.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-uri.h>
+
+#include <bson/bson.h>
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include <mongoc/mongoc-openssl-private.h>

@@ -1,18 +1,19 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-bulk-operation-private.h>
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
 
-#include "test-libmongoc.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-rs.h"
 #include <mlib/cmp.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 typedef void (*update_fn) (mongoc_bulk_operation_t *bulk, const bson_t *selector, const bson_t *document, bool upsert);

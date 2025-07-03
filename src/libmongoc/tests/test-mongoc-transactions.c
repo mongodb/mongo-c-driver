@@ -1,18 +1,18 @@
-#include <mongoc/mongoc.h>
-
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-collection-private.h>
-
-#include "json-test.h"
-#include "test-libmongoc.h"
-#include "mock_server/mock-rs.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "json-test-operations.h"
-#include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+
+#include <mongoc/mongoc.h>
+
+#include <json-test-operations.h>
+#include <json-test.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <test-libmongoc.h>
 
 /* Reset server state by disabling failpoints, killing sessions, and... running
  * a distinct command. */

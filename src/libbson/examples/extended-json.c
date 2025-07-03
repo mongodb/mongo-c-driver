@@ -17,6 +17,7 @@
 // extended-json.c shows examples of producing Extended JSON.
 
 #include <bson/bson.h>
+
 #include <stdio.h>
 
 int

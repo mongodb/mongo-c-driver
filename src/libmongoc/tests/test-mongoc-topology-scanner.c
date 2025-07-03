@@ -1,20 +1,20 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-socket-private.h>
+#include <common-oid-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include "common-oid-private.h"
-
-#include "TestSuite.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #define TIMEOUT 20000 /* milliseconds */
 #define NSERVERS 10

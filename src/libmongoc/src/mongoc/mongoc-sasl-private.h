@@ -19,11 +19,13 @@
 #ifndef MONGOC_SASL_PRIVATE_H
 #define MONGOC_SASL_PRIVATE_H
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream.h>
+
 #include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-uri.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

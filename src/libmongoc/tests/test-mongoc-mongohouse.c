@@ -1,8 +1,8 @@
 #include <mongoc/mongoc.h>
 
-#include "json-test.h"
-#include "json-test-operations.h"
-#include "test-libmongoc.h"
+#include <json-test-operations.h>
+#include <json-test.h>
+#include <test-libmongoc.h>
 
 static const char *uri_str = "mongodb://mhuser:pencil@localhost/?serverSelectionTryOnce=false";
 

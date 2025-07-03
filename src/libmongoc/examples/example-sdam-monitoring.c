@@ -4,6 +4,7 @@
 /* ./example-sdam-monitoring [CONNECTION_STRING] */
 
 #include <mongoc/mongoc.h>
+
 #include <stdio.h>
 
 

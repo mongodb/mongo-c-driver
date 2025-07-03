@@ -1,8 +1,8 @@
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-set-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
 
 static void
 test_set_dtor (void *item_, void *ctx_)

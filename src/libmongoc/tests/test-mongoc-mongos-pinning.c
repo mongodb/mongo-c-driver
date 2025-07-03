@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-uri-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static void
 add_multiple_mongoses (mongoc_uri_t *uri)

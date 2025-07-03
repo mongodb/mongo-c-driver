@@ -19,9 +19,9 @@
 #ifndef MONGOC_ERRORS_H
 #define MONGOC_ERRORS_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 #define MONGOC_ERROR_API_VERSION_LEGACY 1
 #define MONGOC_ERROR_API_VERSION_2 2

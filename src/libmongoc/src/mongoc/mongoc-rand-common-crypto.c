@@ -18,10 +18,11 @@
 
 #ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
 
-#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc-rand-private.h>
 
+#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc.h>
+
 #include <Security/Security.h>
 /* rumour has it this wasn't in standard Security.h in ~10.8 */
 #include <Security/SecRandom.h>

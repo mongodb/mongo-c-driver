@@ -18,14 +18,16 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
-#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc-rand-private.h>
 
+#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc.h>
 
-#include <windows.h>
-#include <stdio.h>
 #include <bcrypt.h>
+
+#include <windows.h>
+
+#include <stdio.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
 #define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)

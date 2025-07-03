@@ -19,8 +19,9 @@
 #ifndef MONGOC_ASYNC_PRIVATE_H
 #define MONGOC_ASYNC_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

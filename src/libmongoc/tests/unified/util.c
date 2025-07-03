@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include "util.h"
+#include "./util.h"
 
-#include "test-conveniences.h"
-#include "TestSuite.h"
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 static int
 cmp_key (const void *a, const void *b)

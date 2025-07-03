@@ -1,10 +1,12 @@
+#include <bson/bson-iso8601-private.h>
+#include <common-json-private.h>
+#include <common-string-private.h>
+
 #include <bson/bson.h>
 
-#include <bson/bson-iso8601-private.h>
-#include "TestSuite.h"
 #include <mlib/cmp.h>
-#include <common-string-private.h>
-#include <common-json-private.h>
+
+#include <TestSuite.h>
 
 static const bool is_time_t_small = (sizeof (time_t) == sizeof (int32_t));
 

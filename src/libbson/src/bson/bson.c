@@ -15,21 +15,23 @@
  */
 
 
-#include <bson/validate-private.h>
-#include <mlib/intencode.h>
 #include <bson/bson.h>
-#include <bson/bson-config.h>
-#include <bson/bson-private.h>
+
+#include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
-#include <common-string-private.h>
+#include <bson/bson-private.h>
+#include <bson/validate-private.h>
 #include <common-json-private.h>
 #include <common-macros-private.h>
-#include <bson/bson-iso8601-private.h>
+#include <common-string-private.h>
 
-#include <string.h>
-#include <math.h>
+#include <bson/bson-config.h>
 
 #include <mlib/config.h>
+#include <mlib/intencode.h>
+
+#include <math.h>
+#include <string.h>
 
 
 /*

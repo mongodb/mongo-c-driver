@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+
 #include <mongoc/mongoc.h>
 
-#include <mongoc/mongoc-client-private.h>
-
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
-#include "test-libmongoc.h"
-#include <mongoc/mongoc-cluster-private.h>
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 /* CDRIVER-3303 - mongoc_cmd_parts_assemble sometimes fails to set options;

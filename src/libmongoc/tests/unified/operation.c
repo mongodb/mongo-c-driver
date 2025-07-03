@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-#include "operation.h"
+#include "./operation.h"
+#include "./result.h"
+#include "./test-diagnostics.h"
+#include "./util.h"
 
-#include <mongoc/mongoc-array-private.h>
-#include <mongoc/mongoc-bulkwrite.h>
-#include <mongoc/mongoc-util-private.h> // hex_to_bin
-#include "result.h"
-#include "test-diagnostics.h"
-#include "test-libmongoc.h"
-#include "util.h"
-#include <mongoc/utlist.h>
 #include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-util-private.h> // hex_to_bin
+
+#include <mongoc/mongoc-bulkwrite.h>
+#include <mongoc/utlist.h>
+
 #include <mlib/cmp.h>
+
+#include <test-libmongoc.h>
 
 typedef struct {
    char *name;
@@ -1553,7 +1556,6 @@ operation_bulk_write (test_t *test, operation_t *op, result_t *result, bson_erro
    mongoc_bulk_operation_execute (bulk_op, &op_reply, &op_error);
    result_from_bulk_write (result, &op_reply, &op_error);
 
-
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (parser);
@@ -2236,7 +2238,6 @@ operation_insert_one (test_t *test, operation_t *op, result_t *result, bson_erro
    bson_destroy (&op_reply);
    mongoc_collection_insert_one (coll, document, opts, &op_reply, &op_error);
    result_from_insert_one (result, &op_reply, &op_error);
-
 
    ret = true;
 done:

@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-client-private.h>
+
+#include <mongoc/mongoc.h>
 
 #include <mlib/config.h>
 
-#include "TestSuite.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static void

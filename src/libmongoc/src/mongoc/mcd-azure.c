@@ -18,6 +18,7 @@
 
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-util-private.h>
+
 #include <mlib/cmp.h>
 
 #define AZURE_API_VERSION "2018-02-01"

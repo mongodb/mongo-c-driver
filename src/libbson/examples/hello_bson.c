@@ -14,8 +14,9 @@
  */
 
 /* -- sphinx-include-start -- */
-#include <stdio.h>
 #include <bson/bson.h>
+
+#include <stdio.h>
 
 int
 main (int argc, const char **argv)

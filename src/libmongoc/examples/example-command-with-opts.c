@@ -25,6 +25,7 @@ distinct: { "values" : [ 1, 2 ], "ok" : 1 }
 */
 
 #include <mongoc/mongoc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 

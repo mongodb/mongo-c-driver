@@ -1,7 +1,7 @@
 #include <mongoc/mongoc.h>
 
-#include "json-test.h"
-#include "test-libmongoc.h"
+#include <json-test.h>
+#include <test-libmongoc.h>
 
 
 /*

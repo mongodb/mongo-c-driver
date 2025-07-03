@@ -1,5 +1,6 @@
-#include <assert.h>
 #include <mongoc/mongoc.h>
+
+#include <assert.h>
 #include <stdio.h>
 
 static void

@@ -1,14 +1,14 @@
-#include <mongoc/mongoc.h>
-#include <mock_server/mock-server.h>
-#include <mock_server/future.h>
-#include <mock_server/future-functions.h>
-
 #include <mongoc/mongoc-crypto-private.h>
 #include <mongoc/mongoc-scram-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #ifdef MONGOC_ENABLE_SSL
 static void

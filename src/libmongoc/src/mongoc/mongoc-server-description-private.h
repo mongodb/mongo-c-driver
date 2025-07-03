@@ -19,9 +19,10 @@
 #ifndef MONGOC_SERVER_DESCRIPTION_PRIVATE_H
 #define MONGOC_SERVER_DESCRIPTION_PRIVATE_H
 
-#include <mongoc/mongoc-server-description.h>
 #include <mongoc/mongoc-generation-map-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
+
+#include <mongoc/mongoc-server-description.h>
 
 
 #define MONGOC_DEFAULT_WIRE_VERSION 0

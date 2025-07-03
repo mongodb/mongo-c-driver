@@ -20,13 +20,13 @@
 #pragma once
 
 #include <mlib/cmp.h>
-#include <mlib/intutil.h>
 #include <mlib/config.h>
+#include <mlib/intutil.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 /**
  * @brief Place this macro at the head of a (compound) statement to assert that

@@ -17,11 +17,12 @@
 #ifndef TEST_CONVENIENCES_H
 #define TEST_CONVENIENCES_H
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
 
 #include <mongoc/mongoc.h>
-#include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-client-private.h>
+
+#include <bson/bson.h>
 
 /* TODO: split this header up.
  * Move bson_lookup_* functions under bsonutil.

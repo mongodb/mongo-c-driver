@@ -16,10 +16,11 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-write-command-private.h>
+
+#include <bson/bson.h>
 
 #ifndef LIBMONGOC_MONGOC_OPTS_HELPERS_H
 #define LIBMONGOC_MONGOC_OPTS_HELPERS_H

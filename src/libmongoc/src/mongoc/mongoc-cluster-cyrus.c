@@ -18,8 +18,8 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cyrus-private.h>
 #include <mongoc/mongoc-cluster-cyrus-private.h>
+#include <mongoc/mongoc-cyrus-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-trace-private.h>
 

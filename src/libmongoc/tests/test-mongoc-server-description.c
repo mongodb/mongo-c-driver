@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-server-description-private.h>
-#include "TestSuite.h"
-#include "test-conveniences.h"
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 void
 reset_basic_sd (mongoc_server_description_t *sd)

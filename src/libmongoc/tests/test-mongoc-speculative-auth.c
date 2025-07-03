@@ -20,15 +20,16 @@
 #endif
 
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-handshake-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
+#include <mongoc/mongoc-handshake.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 typedef void (*setup_uri_options_t) (mongoc_uri_t *uri);
 typedef void (*compare_auth_command_t) (bson_t *auth_command);

@@ -15,9 +15,10 @@
  */
 
 
+#include <mongoc/mongoc-set-private.h>
+
 #include <bson/bson.h>
 
-#include <mongoc/mongoc-set-private.h>
 #include <mlib/cmp.h>
 
 mongoc_set_t *

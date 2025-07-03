@@ -1,15 +1,15 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-find-and-modify-private.h>
-#include <mock_server/future.h>
-#include <mock_server/future-value.h>
 
-#include "TestSuite.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future-value.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 /*

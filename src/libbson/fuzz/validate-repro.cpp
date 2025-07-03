@@ -1,9 +1,9 @@
+#include "./validate.hpp"
+
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <sstream>
-
-#include "validate.hpp"
 
 int
 main (int argc, char **argv)

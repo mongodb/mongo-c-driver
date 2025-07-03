@@ -15,10 +15,11 @@
  */
 
 
-#include <bson/bson.h>
 #include <common-atomic-private.h>
 
-#include "TestSuite.h"
+#include <bson/bson.h>
+
+#include <TestSuite.h>
 
 #define ATOMIC(Kind, Operation) BSON_CONCAT4 (mcommon_atomic_, Kind, _, Operation)
 

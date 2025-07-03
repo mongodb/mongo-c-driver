@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-topology-description-apm-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
 
 /* Application Performance Monitoring for topology events, complies with the
  * SDAM Monitoring Spec:

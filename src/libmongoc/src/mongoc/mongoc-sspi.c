@@ -26,8 +26,8 @@
 #endif
 
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-sspi-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 void
 _mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state)

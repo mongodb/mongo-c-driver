@@ -16,21 +16,23 @@
 
 
 #include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-cursor-private.h>
+
+#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-aggregate-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-aggregate-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-log.h>
+
 #include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN

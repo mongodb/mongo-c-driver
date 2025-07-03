@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-log-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include "TestSuite.h"
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
 
 
 struct log_state {

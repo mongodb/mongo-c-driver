@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
+#include "./corpus-test.h"
 
 #include <bson/bson.h>
-
-#include "corpus-test.h"
-
 
 #ifdef _MSC_VER
 #define SSCANF sscanf_s
@@ -56,7 +54,6 @@ corpus_test_unhexlify (bson_iter_t *iter, uint32_t *bson_str_len)
 
    return data;
 }
-
 
 void
 corpus_test (bson_t *scenario,

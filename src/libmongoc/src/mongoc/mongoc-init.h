@@ -19,9 +19,9 @@
 #ifndef MONGOC_INIT_H
 #define MONGOC_INIT_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

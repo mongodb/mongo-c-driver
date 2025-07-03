@@ -1,17 +1,20 @@
-#include <mongoc/mongoc-cursor-private.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-util-private.h>
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
+
 #include <mlib/loop.h>
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
-#include "json-test.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+
+#include <TestSuite.h>
+#include <json-test.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #include <inttypes.h>
 

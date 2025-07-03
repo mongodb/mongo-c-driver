@@ -21,14 +21,16 @@
 #define MONGOC_TRACE_PRIVATE_H
 
 
-#include <bson/bson.h>
-#include <ctype.h>
-
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-log-private.h>
+
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-log.h>
+
+#include <bson/bson.h>
 
 #include <mlib/config.h>
+
+#include <ctype.h>
 
 
 BSON_BEGIN_DECLS

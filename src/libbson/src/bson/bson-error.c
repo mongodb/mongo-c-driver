@@ -15,15 +15,16 @@
  */
 
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <bson/bson-error-private.h>
+#include <common-string-private.h>
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <bson/bson-error-private.h>
 #include <bson/bson-memory.h>
-#include <common-string-private.h>
 #include <bson/bson-types.h>
+
+#include <stdarg.h>
+#include <stdio.h>
 
 // See `bson_strerror_r()` definition below.
 #if !defined(_WIN32) && !defined(__APPLE__)

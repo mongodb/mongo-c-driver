@@ -20,11 +20,11 @@
 #define MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+#include <common-macros-private.h>
+
 #include <bson/bson.h>
 
 #include <Security/Security.h>
-
-#include <common-macros-private.h>
 
 BSON_BEGIN_DECLS
 

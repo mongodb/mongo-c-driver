@@ -17,7 +17,7 @@ dev = [
 ]
 
 format = [
-    # .evergreen/scripts/clang-format-all.sh
+    # tools/format.py
     "clang-format~=20.1.0",
 ]
 

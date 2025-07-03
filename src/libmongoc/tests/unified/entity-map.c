@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-#include "entity-map.h"
-
-#include "bson/bson.h"
-#include "bsonutil/bson-parser.h"
-#include "TestSuite.h"
-#include <mongoc/mongoc.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include <mongoc/utlist.h>
-#include "util.h"
-
-#include <common-bson-dsl-private.h>
+#include "./entity-map.h"
+#include "./util.h"
 
 #include <common-b64-private.h>
+#include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+
+#include <mongoc/mongoc.h>
+#include <mongoc/utlist.h>
+
+#include <bson/bson.h>
+#include <bsonutil/bson-parser.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 /* TODO: use public API to reduce min heartbeat once CDRIVER-3130 is resolved.
  */
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-topology-private.h>
-#include <common-string-private.h>
 
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
@@ -139,9 +140,10 @@ done:
    return ret;
 }
 
-/* Consider refactoring the names, this is confusing. "type" has been the name of the specific event
- * type. "eventType" is more like what's called the "component" in structured logging, but here it's
- * named after the field in expectedEventsForClient. */
+/* Consider refactoring the names, this is confusing. "type" has been the name
+ * of the specific event type. "eventType" is more like what's called the
+ * "component" in structured logging, but here it's named after the field in
+ * expectedEventsForClient. */
 static event_t *
 event_new (const char *type, const char *eventType, bson_t *serialized, bool is_sensitive_command)
 {
@@ -183,7 +185,8 @@ event_destroy (event_t *event)
 
 /**
  * @brief Test whether a structured log entry is accepted by all active filters
- * @returns true if all filters have returned true in response to this entry, or if no filters were active
+ * @returns true if all filters have returned true in response to this entry, or
+ * if no filters were active
  * @param entity Client entity with the filter stack to query
  * @param entry Borrowed constant reference to the log entry
  *
@@ -205,7 +208,8 @@ _entity_log_filter_accepts (const entity_t *entity, const mongoc_structured_log_
 /**
  * @brief Push a new structured log filter function onto the stack
  * @param entity Client entity to modify the filter stack for
- * @param func Filter function, returns true to accept a log or false to reject. May be NULL to reject all logs.
+ * @param func Filter function, returns true to accept a log or false to reject.
+ * May be NULL to reject all logs.
  * @param user_data Optional user_data pointer, passed to 'func'.
  *
  * Must be paired with entity_log_filter_pop.
@@ -229,10 +233,13 @@ entity_log_filter_push (entity_t *entity, log_filter_func_t *func, void *user_da
 }
 
 /**
- * @brief Pop the most recent structured log filter from the stack, which must match
+ * @brief Pop the most recent structured log filter from the stack, which must
+ * match
  * @param entity Client entity to modify the filter stack for
- * @param func Filter function, must match the value given to entity_log_filter_push
- * @param user_data Must match the corresponding user_data value from entity_log_filter_push
+ * @param func Filter function, must match the value given to
+ * entity_log_filter_push
+ * @param user_data Must match the corresponding user_data value from
+ * entity_log_filter_push
  *
  * Briefly acquires log_mutex.
  */

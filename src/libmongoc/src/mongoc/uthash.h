@@ -18,6 +18,7 @@
 #define MONGOC_UTHASH_H
 
 #include <mongoc/mongoc-prelude.h>
+
 #include <bson/bson.h>
 
 #define uthash_malloc(sz) bson_malloc (sz)

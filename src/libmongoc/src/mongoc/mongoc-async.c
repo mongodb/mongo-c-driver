@@ -15,15 +15,16 @@
  */
 
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-async-private.h>
 #include <mongoc/mongoc-async-cmd-private.h>
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-async-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
+#include <mongoc/utlist.h>
+
+#include <bson/bson.h>
 
 
 mongoc_async_t *

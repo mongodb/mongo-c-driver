@@ -19,11 +19,11 @@
 #ifndef MONGOC_STREAM_GRIDFS_H
 #define MONGOC_STREAM_GRIDFS_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-gridfs.h>
+#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

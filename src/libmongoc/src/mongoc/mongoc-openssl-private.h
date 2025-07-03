@@ -19,13 +19,15 @@
 #ifndef MONGOC_OPENSSL_PRIVATE_H
 #define MONGOC_OPENSSL_PRIVATE_H
 
-#include <bson/bson.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+#include <mongoc/mongoc-stream-tls-openssl-private.h>
 
 #include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-stream-tls-openssl-private.h>
+
+#include <bson/bson.h>
+
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_OCSP) && !defined(LIBRESSL_VERSION_NUMBER)
 #define MONGOC_ENABLE_OCSP_OPENSSL

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "TestSuite.h"
-
 #include <mongoc/mongoc-ocsp-cache-private.h>
+
+#include <TestSuite.h>
 
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
 #include <openssl/pem.h>

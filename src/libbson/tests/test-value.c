@@ -18,8 +18,8 @@
 #include <bson/bcon.h>
 #include <bson/bson.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h" // skip_if_no_large_allocations
+#include <TestSuite.h>
+#include <test-libmongoc.h> // skip_if_no_large_allocations
 
 
 static void

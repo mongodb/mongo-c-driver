@@ -19,10 +19,10 @@
 #ifndef MONGOC_GRIDFS_FILE_LIST_H
 #define MONGOC_GRIDFS_FILE_LIST_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-gridfs-file.h>
+#include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

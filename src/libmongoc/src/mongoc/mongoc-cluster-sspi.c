@@ -18,11 +18,11 @@
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cluster-sspi-private.h>
 #include <mongoc/mongoc-cluster-sasl-private.h>
+#include <mongoc/mongoc-cluster-sspi-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-sasl-private.h>
 #include <mongoc/mongoc-sspi-private.h>
-#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 

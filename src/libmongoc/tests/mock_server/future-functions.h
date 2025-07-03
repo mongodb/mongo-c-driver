@@ -1,9 +1,10 @@
 #ifndef FUTURE_FUNCTIONS_H
 #define FUTURE_FUNCTIONS_H
 
-#include "mock_server/future-value.h"
-#include "mock_server/future.h"
 #include <mongoc/mongoc-bulk-operation.h>
+
+#include <mock_server/future-value.h>
+#include <mock_server/future.h>
 
 /**************************************************
  *

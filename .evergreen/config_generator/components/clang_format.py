@@ -20,7 +20,7 @@ class ClangFormat(Function):
             env={
                 "DRYRUN": "1",
             },
-            script="uv run --frozen --only-group format .evergreen/scripts/clang-format-all.sh",
+            script="uv run --frozen --only-group=format tools/format.py --mode=check",
         ),
     ]
 
@@ -47,6 +47,6 @@ def variants():
             name=TAG,
             display_name=TAG,
             run_on=[find_small_distro("ubuntu2204").name],
-            tasks=[EvgTaskRef(name=f'.{TAG}')],
+            tasks=[EvgTaskRef(name=f".{TAG}")],
         ),
     ]

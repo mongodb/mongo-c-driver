@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #ifndef SYNC_QUEUE_H

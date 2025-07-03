@@ -19,9 +19,10 @@
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_APM_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_APM_PRIVATE_H
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+
+#include <bson/bson.h>
 
 /* Application Performance Monitoring for topology events, complies with the
  * SDAM Monitoring Spec:

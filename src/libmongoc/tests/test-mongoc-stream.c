@@ -1,9 +1,12 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-stream-private.h>
-#include <stdlib.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+
+#include <fcntl.h>
+
+#include <stdlib.h>
 
 
 static void

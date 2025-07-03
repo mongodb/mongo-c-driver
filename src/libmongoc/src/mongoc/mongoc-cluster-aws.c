@@ -17,20 +17,20 @@
 /* All interaction with kms_message is limited to this file. */
 
 #include <common-b64-private.h>
-#include <mongoc/mcd-time.h>
-#include <mongoc/mongoc-cluster-aws-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-http-private.h>
 #include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-ssl-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-http-private.h>
-#include <mongoc/mongoc-rand-private.h>
-#include <mongoc/mongoc-ssl-private.h>
-#include <common-string-private.h>
+
+#include <mongoc/mcd-time.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"

@@ -19,13 +19,12 @@
 #ifndef MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H
 #define MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H
 
-#include <bson/bson.h>
-
+#include <mongoc/mongoc-gridfs-file-page.h>
 #include <mongoc/mongoc-gridfs-file.h>
 
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
-
 
 struct _mongoc_gridfs_file_page_t {
    const uint8_t *read_buf;
@@ -34,7 +33,6 @@ struct _mongoc_gridfs_file_page_t {
    uint32_t chunk_size;
    uint32_t offset;
 };
-
 
 mongoc_gridfs_file_page_t *
 _mongoc_gridfs_file_page_new (const uint8_t *data, uint32_t len, uint32_t chunk_size);
@@ -57,8 +55,6 @@ _mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page);
 bool
 _mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page);
 
-
 BSON_END_DECLS
-
 
 #endif /* MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H */

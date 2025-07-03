@@ -1,6 +1,6 @@
-#include "TestSuite.h"
-
 #include <mongoc/mongoc-shared-private.h>
+
+#include <TestSuite.h>
 
 typedef struct {
    int value;

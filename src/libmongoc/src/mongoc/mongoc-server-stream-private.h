@@ -19,13 +19,13 @@
 #ifndef MONGOC_SERVER_STREAM_H
 #define MONGOC_SERVER_STREAM_H
 
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
-
-#include <mongoc/mongoc-topology-description-private.h>
-#include <mongoc/mongoc-server-description-private.h>
-#include <mongoc/mongoc-stream.h>
 
 BSON_BEGIN_DECLS
 

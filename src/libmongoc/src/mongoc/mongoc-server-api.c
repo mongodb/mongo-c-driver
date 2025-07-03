@@ -15,8 +15,9 @@
  */
 
 
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-server-api-private.h>
+
+#include <mongoc/mongoc-config.h>
 
 const char *
 mongoc_server_api_version_to_string (mongoc_server_api_version_t version)

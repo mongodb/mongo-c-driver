@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "TestSuite.h"
-
 #include <common-oid-private.h>
+
+#include <TestSuite.h>
 
 static void
 test_mcommon_oid_zero (void)

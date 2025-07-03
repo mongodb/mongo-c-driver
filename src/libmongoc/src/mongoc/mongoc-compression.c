@@ -15,11 +15,12 @@
  */
 
 
-#include <mongoc/mongoc-config.h>
-
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-config.h>
+
 #include <mlib/cmp.h>
 
 #ifdef MONGOC_ENABLE_COMPRESSION

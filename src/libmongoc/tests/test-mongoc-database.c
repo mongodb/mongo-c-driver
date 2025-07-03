@@ -1,18 +1,19 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-read-concern-private.h>
-#include <mongoc/mongoc-util-private.h>
-
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "test-conveniences.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static void

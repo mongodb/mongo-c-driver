@@ -1,10 +1,12 @@
+#include <mongoc/mongoc-array-private.h>
+
 #include <mongoc/mongoc.h>
 
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include <mongoc/mongoc-array-private.h>
-#include "TestSuite.h"
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static void
 stored_log_handler (const mongoc_structured_log_entry_t *entry, void *user_data)

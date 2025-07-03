@@ -19,12 +19,12 @@
 #ifndef MONGOC_ERROR_PRIVATE_H
 #define MONGOC_ERROR_PRIVATE_H
 
-#include "mongoc-error.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-server-description.h>
 
 #include <bson/bson.h>
-#include <stddef.h>
 
-#include <mongoc/mongoc-server-description.h>
+#include <stddef.h>
 
 BSON_BEGIN_DECLS
 

@@ -19,11 +19,11 @@
 #ifndef MONGOC_SERVER_DESCRIPTION_H
 #define MONGOC_SERVER_DESCRIPTION_H
 
-#include <bson/bson.h>
-
+#include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-read-prefs.h>
-#include <mongoc/mongoc-host-list.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

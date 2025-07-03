@@ -19,11 +19,12 @@
 #ifndef MONGOC_OPTS_H
 #define MONGOC_OPTS_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-client-session.h>
 #include <mongoc/mongoc-bulk-operation-private.h>
 #include <mongoc/mongoc-opts-helpers-private.h>
+
+#include <mongoc/mongoc-client-session.h>
+
+#include <bson/bson.h>
 
 /**************************************************
  *

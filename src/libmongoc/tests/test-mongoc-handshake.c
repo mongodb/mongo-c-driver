@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <stdint.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
 #endif
 
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-handshake-private.h>
+
+#include <mongoc/mongoc-handshake.h>
 
 #include <mlib/config.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 /*
  * Call this before any test which uses mongoc_handshake_data_append, to

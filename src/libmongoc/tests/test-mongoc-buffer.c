@@ -1,8 +1,10 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-buffer-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+
+#include <fcntl.h>
 
 
 static void

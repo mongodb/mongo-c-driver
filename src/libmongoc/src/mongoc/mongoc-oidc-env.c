@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-oidc-env-private.h>
+
 #include <mongoc/mongoc-oidc-callback.h>
 
 struct _mongoc_oidc_env_t {

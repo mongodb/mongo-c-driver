@@ -1,7 +1,7 @@
 #include <mongoc/mongoc-thread-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 
 static void

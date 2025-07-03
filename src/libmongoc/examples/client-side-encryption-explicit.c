@@ -1,8 +1,9 @@
+#include "./client-side-encryption-helpers.h"
+
 #include <mongoc/mongoc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "client-side-encryption-helpers.h"
 
 /* This example demonstrates how to use explicit encryption and decryption using
  * the community version of MongoDB */

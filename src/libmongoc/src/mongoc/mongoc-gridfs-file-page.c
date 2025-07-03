@@ -19,8 +19,8 @@
 #define MONGOC_LOG_DOMAIN "gridfs_file_page"
 
 #include <mongoc/mongoc-gridfs-file-page.h>
-#include <mongoc/mongoc-gridfs-file-page-private.h>
 
+#include <mongoc/mongoc-gridfs-file-page-private.h>
 #include <mongoc/mongoc-trace-private.h>
 
 

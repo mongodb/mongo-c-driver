@@ -28,9 +28,11 @@
  */
 
 #include <bson/validate-private.h>
+
+#include <bson/bson.h>
+
 #include <mlib/intencode.h>
 #include <mlib/test.h>
-#include <bson/bson.h>
 
 #include <stdbool.h>
 #include <string.h>

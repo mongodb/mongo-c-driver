@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+
+#include <mongoc/mongoc.h>
 
 /* This cursor is returned by the deprecated functions mongoc_client_command,
  * mongoc_database_command, and mongoc_collection_command. It runs the command

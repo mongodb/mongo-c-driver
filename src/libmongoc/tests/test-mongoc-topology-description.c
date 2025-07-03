@@ -1,12 +1,13 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-set-private.h>
+#include <common-oid-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
-#include <common-oid-private.h>
+#include <mongoc/mongoc-set-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static void
 _test_has_readable_writable_server (bool pooled)

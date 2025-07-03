@@ -1,6 +1,6 @@
 #include <mongoc/mcd-integer.h>
 
-#include "TestSuite.h"
+#include <TestSuite.h>
 
 static void
 _test_overflow (void)

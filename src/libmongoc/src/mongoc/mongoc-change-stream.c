@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-change-stream-private.h>
-#include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-error-private.h>
+
+#include <bson/bson.h>
 
 #define CHANGE_STREAM_ERR(_str) \
    _mongoc_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)

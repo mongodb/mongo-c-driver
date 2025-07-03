@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+
+#include <mongoc/mongoc.h>
 
 typedef struct _data_find_t {
    bson_t filter;

@@ -3,6 +3,7 @@
 // Example is expected to be run against a MongoDB Atlas cluster.
 
 #include <mongoc/mongoc.h>
+
 #include <stdlib.h> // abort
 
 #define HANDLE_ERROR(...)            \

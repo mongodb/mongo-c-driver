@@ -1,9 +1,11 @@
-#include <stdio.h>
+#include <mock_server/future.h>
+
+#include "../test-libmongoc.h"
 
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-thread-private.h>
-#include "mock_server/future.h"
-#include "../test-libmongoc.h"
+
+#include <stdio.h>
 
 /**************************************************
  *

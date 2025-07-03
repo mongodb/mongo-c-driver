@@ -18,26 +18,26 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 
-#include <Security/Security.h>
-#include <Security/SecureTransport.h>
-#include <CoreFoundation/CoreFoundation.h>
+#include <common-macros-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-secure-transport-private.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-tls-secure-transport-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
 
 #include <bson/bson.h>
 
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-secure-transport-private.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream-tls-secure-transport-private.h>
-#include <common-macros-private.h>
-#include <common-string-private.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <Security/SecureTransport.h>
+#include <Security/Security.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"

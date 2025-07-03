@@ -19,13 +19,15 @@
 #ifndef MONGOC_STRUCTURED_LOG_PRIVATE_H
 #define MONGOC_STRUCTURED_LOG_PRIVATE_H
 
-#include <bson/bson.h>
 #include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+
 #include <mongoc/mongoc-structured-log.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

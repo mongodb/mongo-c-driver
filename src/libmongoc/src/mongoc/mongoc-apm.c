@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-util-private.h>
+#include <common-oid-private.h>
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-handshake-private.h>
-#include <common-oid-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 /*
  * An Application Performance Management (APM) implementation, complying with

@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
+#include "./sync-queue.h"
+
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-thread-private.h>
-
-#include "sync-queue.h"
-
 
 struct _sync_queue_t {
    mongoc_array_t array;
    mongoc_cond_t cond;
    bson_mutex_t mutex;
 };
-
 
 sync_queue_t *
 q_new (void)
@@ -48,7 +46,6 @@ q_put (sync_queue_t *q, void *item)
    bson_mutex_unlock (&q->mutex);
 }
 
-
 /* call holding the lock */
 static void *
 _get (sync_queue_t *q)
@@ -70,7 +67,6 @@ _get (sync_queue_t *q)
 
    return item;
 }
-
 
 void *
 q_get (sync_queue_t *q, int64_t timeout_msec)

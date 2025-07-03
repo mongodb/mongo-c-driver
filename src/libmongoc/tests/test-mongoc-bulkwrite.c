@@ -17,11 +17,12 @@
 // This file includes tests `mongoc_bulkwrite_t` for basic usage and libmongoc-specific behavior.
 // The specification tests (prose and JSON) include more coverage of driver-agnostic behavior.
 
+#include <mongoc/mongoc-bulkwrite.h>
 #include <mongoc/mongoc.h>
-#include <test-libmongoc.h>
+
 #include <TestSuite.h>
 #include <test-conveniences.h>
-#include <mongoc/mongoc-bulkwrite.h>
+#include <test-libmongoc.h>
 
 static void
 test_bulkwrite_insert (void *unused)

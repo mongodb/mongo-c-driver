@@ -16,9 +16,9 @@
 
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-gridfs-bucket-file-private.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-stream-gridfs-upload-private.h>
 #include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-gridfs-upload"

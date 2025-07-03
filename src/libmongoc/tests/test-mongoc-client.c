@@ -1,31 +1,34 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-set-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <fcntl.h>
 #ifdef MONGOC_ENABLE_SSL
-#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc-ssl.h>
 #endif
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-oid-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-oid-private.h>
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 #ifdef BSON_HAVE_STRINGS_H

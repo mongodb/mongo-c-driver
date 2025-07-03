@@ -3,8 +3,9 @@
 
 /* ./example-session [CONNECTION_STRING] */
 
-#include <stdio.h>
 #include <mongoc/mongoc.h>
+
+#include <stdio.h>
 
 
 int

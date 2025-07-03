@@ -1,4 +1,5 @@
 #include <bson/bson.h>
+
 #include <stdio.h>
 
 #ifndef EXPECT_BSON_VERSION

@@ -20,8 +20,9 @@
 #define MONGOC_BULK_OPERATION_PRIVATE_H
 
 #include <mongoc/mongoc-array-private.h>
-#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-write-command-private.h>
+
+#include <mongoc/mongoc-client.h>
 
 
 BSON_BEGIN_DECLS

@@ -18,8 +18,9 @@
 #define BSONUTIL_BSON_PARSER_H
 
 #include <mongoc/mongoc.h>
+
 #include <bson/bson.h>
-#include "bsonutil/bson-val.h"
+#include <bsonutil/bson-val.h>
 
 /* bson_parser_t is a very simplified parser to parse BSON fields into C values.
  * Example usage:

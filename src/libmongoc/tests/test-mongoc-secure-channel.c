@@ -1,16 +1,18 @@
+#include "./TestSuite.h"
+#include "./test-libmongoc.h"
+
 #include <mongoc/mongoc.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-
 #if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
-#include <mongoc/mongoc-host-list-private.h>  // _mongoc_host_list_from_string_with_err
 #include <mongoc/mongoc-client-private.h>     // mongoc_client_connect_tcp
+#include <mongoc/mongoc-host-list-private.h>  // _mongoc_host_list_from_string_with_err
 #include <mongoc/mongoc-log-private.h>        // _mongoc_log_get_handler
 #include <mongoc/mongoc-stream-tls-private.h> // _mongoc_stream_tls_t
-#include <test-conveniences.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+
 #include <mlib/test.h>
+
+#include <test-conveniences.h>
 
 static mongoc_stream_t *
 connect_with_secure_channel_cred (const mongoc_ssl_opt_t *ssl_opt, mongoc_shared_ptr cred_ptr, bson_error_t *error)

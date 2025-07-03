@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-#include "bsonutil/bson-parser.h"
+#include <bsonutil/bson-parser.h>
 
-#include "unified/util.h"
-#include "test-conveniences.h"
-#include "TestSuite.h"
 #include <mongoc/utlist.h>
+
 #include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <unified/util.h>
 
 typedef enum {
    BSON_PARSER_UTF8,

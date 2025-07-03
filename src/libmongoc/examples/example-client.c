@@ -4,6 +4,7 @@
 /* ./example-client [CONNECTION_STRING [COLLECTION_NAME]] */
 
 #include <mongoc/mongoc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include <mongoc/mongoc-structured-log-private.h>
+
 #include <mongoc/mongoc.h>
 
-#include <mongoc/mongoc-structured-log-private.h>
-#include "test-libmongoc.h"
-#include "TestSuite.h"
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 typedef struct log_assumption {
    mongoc_structured_log_envelope_t expected_envelope;

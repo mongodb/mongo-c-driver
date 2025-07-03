@@ -18,10 +18,11 @@
 #ifndef MONGOC_GRIDFS_BUCKET_FILE_PRIVATE_H
 #define MONGOC_GRIDFS_BUCKET_FILE_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-collection.h>
-#include <mongoc/mongoc-stream.h>
 #include <mongoc/mongoc-gridfs-bucket.h>
+#include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

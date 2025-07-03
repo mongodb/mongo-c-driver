@@ -18,22 +18,24 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-errno-private.h>
+#include <mongoc/mongoc-openssl-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-openssl-bio-private.h>
+#include <mongoc/mongoc-stream-tls-openssl-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-stream-tls.h>
+
 #include <bson/bson.h>
+
+#include <mlib/cmp.h>
 
 #include <errno.h>
 #include <string.h>
-
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-errno-private.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-stream-tls-openssl-bio-private.h>
-#include <mongoc/mongoc-stream-tls-openssl-private.h>
-#include <mongoc/mongoc-openssl-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mlib/cmp.h>
 
 
 #undef MONGOC_LOG_DOMAIN

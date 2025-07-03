@@ -15,10 +15,12 @@
  */
 
 
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-read-concern.h>
+
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
+
+#include <mongoc/mongoc-log.h>
 
 
 static void

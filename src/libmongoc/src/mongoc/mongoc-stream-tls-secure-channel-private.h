@@ -20,14 +20,14 @@
 #define MONGOC_STREAM_TLS_SECURE_CHANNEL_PRIVATE_H
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-shared-private.h>
+
+#include <bson/bson.h>
 
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
-#include <security.h>
 #include <schannel.h>
+#include <security.h>
 
 
 BSON_BEGIN_DECLS

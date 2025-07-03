@@ -22,8 +22,9 @@
 
 
 #include <bson/bson.h>
-#include <stdlib.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #ifndef STDIN_FILENO

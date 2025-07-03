@@ -1,10 +1,10 @@
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-client-pool-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static mongoc_stream_t *

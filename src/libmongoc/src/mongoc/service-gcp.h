@@ -19,9 +19,9 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-http-private.h>
+
+#include <mongoc/mongoc.h>
 
 /**
  * @brief A GCP access token obtained from the GCP metadata server

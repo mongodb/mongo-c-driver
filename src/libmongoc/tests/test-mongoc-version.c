@@ -1,6 +1,6 @@
 #include <mongoc/mongoc.h>
 
-#include "TestSuite.h"
+#include <TestSuite.h>
 
 static void
 test_mongoc_version (void)

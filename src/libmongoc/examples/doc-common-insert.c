@@ -1,3 +1,7 @@
+#include <mongoc/mongoc.h>
+
+#include <stdbool.h>
+
 /* Don't try to compile this file on its own. It's meant to be #included
    by example code */
 

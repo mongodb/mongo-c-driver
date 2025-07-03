@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
-
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-opts-private.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-command-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-opts-private.h>
-#include <common-string-private.h>
-#include <mlib/intencode.h>
+
+#include <bson/bson.h>
+
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 
 #include <inttypes.h>
 

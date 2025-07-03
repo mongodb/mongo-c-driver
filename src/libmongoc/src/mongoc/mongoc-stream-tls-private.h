@@ -19,10 +19,10 @@
 #ifndef MONGOC_STREAM_TLS_PRIVATE_H
 #define MONGOC_STREAM_TLS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>

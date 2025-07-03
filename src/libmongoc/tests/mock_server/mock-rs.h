@@ -17,15 +17,14 @@
 #ifndef MOCK_RS_H
 #define MOCK_RS_H
 
-#include <mongoc/mongoc.h>
+#include "./mock-server.h"
 
-#include "mock-server.h"
+#include <mongoc/mongoc.h>
 
 typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *
 mock_rs_with_auto_hello (int32_t max_wire_version, bool has_primary, int n_secondaries, int n_arbiters);
-
 
 void
 mock_rs_tag_secondary (mock_rs_t *rs, int server_number, const bson_t *tags);

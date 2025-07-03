@@ -15,11 +15,13 @@
  */
 
 
-#include <stdio.h>
-
 #include <bson/bson-keys.h>
+
 #include <common-string-private.h>
+
 #include <mlib/cmp.h>
+
+#include <stdio.h>
 
 
 static const char *gUint32Strs[] = {

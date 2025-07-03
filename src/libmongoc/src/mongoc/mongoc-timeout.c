@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-timeout-private.h>
+
 #include <mongoc/mongoc.h>
 
 struct _mongoc_timeout_t {

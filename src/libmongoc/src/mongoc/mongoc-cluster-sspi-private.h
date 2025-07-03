@@ -19,8 +19,10 @@
 #ifndef MONGOC_CLUSTER_SSPI_PRIVATE_H
 #define MONGOC_CLUSTER_SSPI_PRIVATE_H
 
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-cluster-private.h>
+
+#include <mongoc/mongoc-config.h>
+
 #include <bson/bson.h>
 
 bool

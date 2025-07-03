@@ -1,8 +1,9 @@
-#include <mongoc/mongoc-ts-pool-private.h>
+#include <common-atomic-private.h>
 #include <common-thread-private.h>
+#include <mongoc/mongoc-ts-pool-private.h>
 
 #include <bson/bson.h>
-#include <common-atomic-private.h>
+
 #include <mlib/config.h>
 
 /**

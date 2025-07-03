@@ -23,8 +23,8 @@
 #include <bson/bson.h>
 
 #include <openssl/bio.h>
-#include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/ssl.h>
 
 BSON_BEGIN_DECLS
 

@@ -20,6 +20,7 @@
 #define MONGOC_LOG_PRIVATE_H
 
 #include <mongoc/mongoc-iovec.h>
+#include <mongoc/mongoc-log.h>
 
 /* just for testing */
 void

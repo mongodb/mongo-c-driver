@@ -1,7 +1,9 @@
-#include <mongoc/service-gcp.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include "TestSuite.h"
 #include <common-string-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+
+#include <mongoc/service-gcp.h>
+
+#include <TestSuite.h>
 
 static void
 _test_gcp_parse (void)

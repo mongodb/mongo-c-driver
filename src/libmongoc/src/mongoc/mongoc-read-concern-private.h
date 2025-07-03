@@ -19,8 +19,9 @@
 #ifndef MONGOC_READ_CONCERN_PRIVATE_H
 #define MONGOC_READ_CONCERN_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-read-concern.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

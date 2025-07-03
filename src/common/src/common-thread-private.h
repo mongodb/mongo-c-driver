@@ -15,8 +15,10 @@
  */
 
 #include <common-prelude.h>
-#include <common-config.h>
+
 #include <common-macros-private.h>
+
+#include <common-config.h>
 
 #ifndef MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H

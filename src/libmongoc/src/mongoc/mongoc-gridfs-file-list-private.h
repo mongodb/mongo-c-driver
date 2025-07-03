@@ -19,11 +19,11 @@
 #ifndef MONGOC_GRIDFS_FILE_LIST_PRIVATE_H
 #define MONGOC_GRIDFS_FILE_LIST_PRIVATE_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-gridfs.h>
-#include <mongoc/mongoc-gridfs-file.h>
 #include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-gridfs-file.h>
+#include <mongoc/mongoc-gridfs.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

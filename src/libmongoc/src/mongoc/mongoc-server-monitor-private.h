@@ -19,9 +19,10 @@
 #ifndef MONGOC_SERVER_MONITOR_PRIVATE_H
 #define MONGOC_SERVER_MONITOR_PRIVATE_H
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc.h>
 
 /* For background monitoring of a single server. */
 typedef enum {

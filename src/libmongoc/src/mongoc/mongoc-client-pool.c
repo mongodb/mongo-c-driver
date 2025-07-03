@@ -15,21 +15,23 @@
  */
 
 
-#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-pool.h>
+
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-array-private.h>
-#include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
-#include <mongoc/mongoc-client-pool.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl-private.h>

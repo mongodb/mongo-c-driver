@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-#include "mock_server/mock-server.h"
-#include "mock_server/request.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <mock_server/request.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #define HELLO_SERVER_ONE                  \
    tmp_str ("{'ok': 1,"                   \

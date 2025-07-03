@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-session-private.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
 
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/request.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <mock_server/request.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 typedef struct {
    int server_changed_events;

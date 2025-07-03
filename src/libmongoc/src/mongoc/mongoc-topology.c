@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-config.h>
-
-#include <mongoc/mongoc-handshake.h>
-#include <mongoc/mongoc-handshake-private.h>
-
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <common-oid-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cmd-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
 
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-log.h>
 #include <mongoc/utlist.h>
 
-#include <stdint.h>
-#include <common-string-private.h>
 #include <mlib/cmp.h>
-#include <common-oid-private.h>
+
+#include <stdint.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);

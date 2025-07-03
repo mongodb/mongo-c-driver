@@ -19,6 +19,8 @@
 #ifndef MONGOC_CLIENT_SIDE_ENCRYPTION_H
 #define MONGOC_CLIENT_SIDE_ENCRYPTION_H
 
+#include <mongoc/mongoc-macros.h>
+
 #include <bson/bson.h>
 
 /* Forward declare */

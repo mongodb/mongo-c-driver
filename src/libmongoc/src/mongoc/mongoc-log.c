@@ -20,8 +20,8 @@
 #elif defined(_WIN32)
 #include <process.h>
 #elif defined(__APPLE__)
-#include <pthread.h>
 #include <AvailabilityMacros.h>
+#include <pthread.h>
 #elif defined(__FreeBSD__)
 #include <sys/thr.h>
 #elif defined(__NetBSD__)
@@ -29,15 +29,16 @@
 #else
 #include <unistd.h>
 #endif
-#include <stdarg.h>
-#include <time.h>
-
-#include <mongoc/mongoc-log.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-log-private.h>
 #include <mongoc/mongoc-thread-private.h>
-#include <common-string-private.h>
+
+#include <mongoc/mongoc-log.h>
 
 #include <mlib/config.h>
+
+#include <stdarg.h>
+#include <time.h>
 
 
 static bson_once_t once = BSON_ONCE_INIT;

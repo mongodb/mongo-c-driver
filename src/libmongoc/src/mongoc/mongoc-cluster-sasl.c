@@ -15,16 +15,17 @@
  */
 
 /* for size_t */
-#include <bson/bson.h>
-#include <mongoc/mongoc-config.h>
-
 #include <mongoc/mongoc-cluster-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream-socket.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-stream-socket.h>
+
+#include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_SASL
 

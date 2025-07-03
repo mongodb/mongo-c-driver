@@ -16,9 +16,10 @@
 
 
 #include <bson/bson.h>
-#include <fcntl.h>
 
-#include "TestSuite.h"
+#include <TestSuite.h>
+
+#include <fcntl.h>
 
 
 static void
