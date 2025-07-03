@@ -993,6 +993,9 @@ mongoc_stream_tls_secure_channel_new_with_creds (mongoc_stream_t *base_stream,
       char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
       MONGOC_ERROR ("Failed to initialize security context: %s", msg);
       bson_free (msg);
+      // Detach the base stream so caller can free.
+      tls->base_stream = NULL;
+      mongoc_stream_destroy ((mongoc_stream_t *) tls);
       RETURN (NULL);
    }
 

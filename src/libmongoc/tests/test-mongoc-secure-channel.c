@@ -68,6 +68,18 @@ test_secure_channel_shared_creds_stream (void *unused)
       ASSERT_OR_PRINT (ok, error);
       mongoc_shared_ptr_reset_null (&cred_ptr);
    }
+
+   // Test with bad SCHANNEL_CRED to exercise error path:
+   {
+      mongoc_secure_channel_cred *cred = mongoc_secure_channel_cred_new (&ssl_opt);
+      mongoc_shared_ptr cred_ptr = mongoc_shared_ptr_create (cred, mongoc_secure_channel_cred_deleter);
+      cred->cred.dwVersion = 0; // Invalid version.
+      capture_logs (true);
+      ok = connect_with_secure_channel_cred (&ssl_opt, cred_ptr, &error);
+      ASSERT (!ok);
+      ASSERT_CAPTURED_LOG ("schannel", MONGOC_LOG_LEVEL_ERROR, "Failed to initialize security context");
+      mongoc_shared_ptr_reset_null (&cred_ptr);
+   }
 }
 
 typedef struct {
