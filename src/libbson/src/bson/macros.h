@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#include <bson/bson-prelude.h>
-
-
 #ifndef BSON_MACROS_H
 #define BSON_MACROS_H
 
+#include <bson/config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,8 +25,6 @@
 #ifdef __cplusplus
 #include <algorithm>
 #endif
-
-#include <bson/bson-config.h>
 
 
 #if BSON_OS == 1

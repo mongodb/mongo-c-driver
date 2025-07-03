@@ -29,7 +29,7 @@
 #include <sys/types.h>
 
 #include <bson/bson-reader.h>
-#include <bson/bson-memory.h>
+#include <bson/memory.h>
 
 
 typedef enum {

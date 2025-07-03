@@ -12,8 +12,8 @@
 #ifndef JSONSL_H_
 #define JSONSL_H_
 
-#include <bson/bson-config.h>
-#include <bson/bson-compat.h>
+#include <bson/config.h>
+#include <bson/compat.h>
 
 #include <mlib/config.h>
 

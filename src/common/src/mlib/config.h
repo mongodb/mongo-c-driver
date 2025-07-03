@@ -256,24 +256,24 @@
 #define mlib_diagnostic_push()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic push);) \
    MLIB_IF_MSVC (mlib_pragma (warning (push));)          \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_diagnostic_pop()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic pop);) \
    MLIB_IF_MSVC (mlib_pragma (warning (pop));)          \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_gcc_warning_disable(Warning)                      \
    MLIB_IF_GCC (mlib_pragma (GCC diagnostic ignored Warning);) \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_gnu_warning_disable(Warning)                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic ignored Warning);) \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_msvc_warning(...)                         \
    MLIB_IF_MSVC (mlib_pragma (warning (__VA_ARGS__));) \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 /**
  * @brief Attribute macro that forces the function to be inlined at all call sites.
@@ -366,6 +366,6 @@
  */
 #define mlib_disable_unused_parameter_warnings()                       \
    MLIB_IF_GNU_LIKE (mlib_gnu_warning_disable ("-Wunused-parameter");) \
-   MLIB_IF_MSVC (mlib_msvc_warning (disable : 4100);) mlib_static_assert (true, "")
+   MLIB_IF_MSVC (mlib_msvc_warning (disable : 4100);) mlib_static_assert (1, "")
 
 #endif // MLIB_CONFIG_H_INCLUDED

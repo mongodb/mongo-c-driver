@@ -6420,3 +6420,19 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: verify-headers
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [pr-merge-gate]
+    commands:
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          args:
+            - +verify-headers

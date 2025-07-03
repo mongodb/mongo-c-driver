@@ -21,7 +21,7 @@
 #define BSON_KEYS_H
 
 
-#include <bson/bson-macros.h>
+#include <bson/macros.h>
 #include <bson/bson-types.h>
 
 

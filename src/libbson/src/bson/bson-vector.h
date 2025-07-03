@@ -19,8 +19,8 @@
 #ifndef BSON_VECTOR_H
 #define BSON_VECTOR_H
 
-#include <bson/bson-macros.h>
-#include <bson/bson-compat.h>
+#include <bson/macros.h>
+#include <bson/compat.h>
 #include <bson/bson-endian.h>
 
 BSON_BEGIN_DECLS

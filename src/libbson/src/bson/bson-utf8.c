@@ -17,7 +17,7 @@
 
 #include <string.h>
 
-#include <bson/bson-memory.h>
+#include <bson/memory.h>
 #include <mlib/cmp.h>
 #include <common-json-private.h>
 #include <common-macros-private.h>

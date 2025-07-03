@@ -28,6 +28,7 @@ include(FeatureSummary)
 include (MongoSettings)
 include (MongoPlatform)
 include (GeneratePkgConfig)
+include (VerifyHeaders)
 
 # Subcomponents:
 mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C database driver)")
