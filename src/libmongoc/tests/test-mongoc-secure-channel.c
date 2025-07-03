@@ -78,6 +78,8 @@ typedef struct {
 static void
 count_cert_failures (mongoc_log_level_t log_level, const char *log_domain, const char *message, void *user_data)
 {
+   BSON_UNUSED (log_level);
+   BSON_UNUSED (log_domain);
    cert_failures *cf = user_data;
    if (strstr (message, "Failed to open file: 'does-not-exist.pem'")) {
       cf->failures++;
