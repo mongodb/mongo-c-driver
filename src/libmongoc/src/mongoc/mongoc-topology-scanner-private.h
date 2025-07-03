@@ -33,6 +33,7 @@
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-shared-private.h>
 
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-ssl.h>
@@ -134,6 +135,8 @@ typedef struct mongoc_topology_scanner {
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *openssl_ctx;
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   mongoc_shared_ptr secure_channel_cred_ptr; // Manages a mongoc_secure_channel_cred.
 #endif
 
    int64_t dns_cache_timeout_ms;

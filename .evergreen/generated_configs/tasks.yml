@@ -13,7 +13,7 @@ tasks:
           CXX: clang++
       - func: upload-build
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.2", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -36,7 +36,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.2", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -60,7 +60,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.2", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -83,7 +83,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.2", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -107,7 +107,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.4", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -130,7 +130,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.4", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -154,7 +154,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.4", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -177,7 +177,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.4", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -201,7 +201,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "5.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -224,7 +224,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "5.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -248,7 +248,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "5.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -271,7 +271,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "5.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -295,7 +295,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "6.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -318,7 +318,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "6.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -342,7 +342,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "6.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -365,7 +365,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "6.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -389,7 +389,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -412,7 +412,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -436,7 +436,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "7.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -459,7 +459,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "7.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -483,7 +483,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "8.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -506,7 +506,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "8.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -530,7 +530,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "8.0", openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -553,7 +553,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "8.0", with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -577,7 +577,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, latest, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -600,7 +600,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, latest, with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -624,7 +624,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, latest, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -647,7 +647,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth-with-mongocrypt
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, latest, with-mongocrypt, openssl]
     depends_on: [{ name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -681,7 +681,7 @@ tasks:
           CXX: clang++
       - func: upload-build
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "4.2", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -702,7 +702,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "4.2", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -723,7 +723,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "4.2", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -744,7 +744,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "4.4", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -765,7 +765,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "4.4", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -786,7 +786,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "4.4", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -807,7 +807,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "5.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -828,7 +828,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "5.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -849,7 +849,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "5.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -870,7 +870,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "6.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -891,7 +891,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "6.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -912,7 +912,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "6.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -933,7 +933,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "7.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -954,7 +954,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "7.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -975,7 +975,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "7.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -996,7 +996,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "8.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -1017,7 +1017,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "8.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -1038,7 +1038,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "8.0", openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -1059,7 +1059,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, latest, openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -1080,7 +1080,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, latest, openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -1101,7 +1101,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, latest, openssl]
     depends_on: [{ name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -1604,7 +1604,7 @@ tasks:
           CXX: g++
       - func: upload-build
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "4.2", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1625,7 +1625,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1646,7 +1646,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "4.4", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1667,7 +1667,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1688,7 +1688,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1709,7 +1709,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1730,7 +1730,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1751,7 +1751,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1772,7 +1772,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1793,7 +1793,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1814,7 +1814,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1835,7 +1835,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1856,7 +1856,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -1877,7 +1877,7 @@ tasks:
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3006,7 +3006,7 @@ tasks:
             - .evergreen/scripts/compile.sh
       - func: upload-build
   - name: loadbalanced-rhel8-latest-gcc-test-5.0-auth-openssl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3032,7 +3032,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: openssl
   - name: loadbalanced-rhel8-latest-gcc-test-5.0-noauth-nossl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3058,7 +3058,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: nossl
   - name: loadbalanced-rhel8-latest-gcc-test-6.0-auth-openssl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3084,7 +3084,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: openssl
   - name: loadbalanced-rhel8-latest-gcc-test-6.0-noauth-nossl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3110,7 +3110,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: nossl
   - name: loadbalanced-rhel8-latest-gcc-test-7.0-auth-openssl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3136,7 +3136,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: openssl
   - name: loadbalanced-rhel8-latest-gcc-test-7.0-noauth-nossl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3162,7 +3162,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: nossl
   - name: loadbalanced-rhel8-latest-gcc-test-8.0-auth-openssl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3188,7 +3188,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: openssl
   - name: loadbalanced-rhel8-latest-gcc-test-8.0-noauth-nossl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3214,7 +3214,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: nossl
   - name: loadbalanced-rhel8-latest-gcc-test-latest-auth-openssl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, auth, openssl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3240,7 +3240,7 @@ tasks:
           LOADBALANCED: loadbalanced
           SSL: openssl
   - name: loadbalanced-rhel8-latest-gcc-test-latest-noauth-nossl
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc, noauth, nossl]
     depends_on: [{ name: loadbalanced-rhel8-latest-gcc-compile }]
     commands:
@@ -3662,7 +3662,7 @@ tasks:
           CXX: g++
       - func: upload-build
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, "4.2", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3683,7 +3683,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, "4.4", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3704,7 +3704,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, "5.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3725,7 +3725,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, "6.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3746,7 +3746,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, "7.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3767,7 +3767,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, "8.0", openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -3788,7 +3788,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, auth, server, latest, openssl]
     depends_on: [{ name: sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
     commands:
@@ -4332,7 +4332,7 @@ tasks:
           CXX: g++
       - func: upload-build
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.2-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, "4.2"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4353,7 +4353,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.2-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, "4.2"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4374,7 +4374,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.2-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, "4.2"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4395,7 +4395,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.4-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, "4.4"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4416,7 +4416,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.4-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, "4.4"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4437,7 +4437,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.4-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, "4.4"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4458,7 +4458,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-5.0-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, "5.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4479,7 +4479,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-5.0-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, "5.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4500,7 +4500,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-5.0-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, "5.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4521,7 +4521,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-6.0-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, "6.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4542,7 +4542,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-6.0-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, "6.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4563,7 +4563,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-6.0-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, "6.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4584,7 +4584,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-7.0-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, "7.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4605,7 +4605,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-7.0-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, "7.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4626,7 +4626,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-7.0-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, "7.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4647,7 +4647,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-8.0-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, "8.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4668,7 +4668,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-8.0-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, "8.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4689,7 +4689,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-8.0-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, "8.0"]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4710,7 +4710,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-latest-replica-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, replica, latest]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4731,7 +4731,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-latest-server-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, server, latest]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -4752,7 +4752,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-latest-sharded-noauth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, test, rhel8-latest, gcc, sasl-off, noauth, sharded, latest]
     depends_on: [{ name: sasl-off-nossl-rhel8-latest-gcc-compile }]
     commands:
@@ -5980,7 +5980,7 @@ tasks:
           CXX: clang++
       - func: upload-build
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "4.2", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6001,7 +6001,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "4.2", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6022,7 +6022,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "4.2", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6043,7 +6043,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "4.4", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6064,7 +6064,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "4.4", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6085,7 +6085,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "4.4", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6106,7 +6106,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "5.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6127,7 +6127,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "5.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6148,7 +6148,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "5.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6169,7 +6169,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "6.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6190,7 +6190,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "6.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6211,7 +6211,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "6.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6232,7 +6232,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "7.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6253,7 +6253,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "7.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6274,7 +6274,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "7.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6295,7 +6295,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "8.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6316,7 +6316,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "8.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6337,7 +6337,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "8.0", openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6358,7 +6358,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, latest, openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6379,7 +6379,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, latest, openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:
@@ -6400,7 +6400,7 @@ tasks:
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-sharded-auth
-    run_on: rhel8-latest-small
+    run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, latest, openssl]
     depends_on: [{ name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-compile }]
     commands:

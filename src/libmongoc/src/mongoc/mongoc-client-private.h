@@ -36,6 +36,7 @@
 #endif
 
 #include <mongoc/mongoc-crypt-private.h>
+#include <mongoc/mongoc-shared-private.h>
 #include <mongoc/mongoc-topology-private.h>
 
 #include <mongoc/mongoc-stream.h>
@@ -214,6 +215,7 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        void *openssl_ctx_void,
+                       mongoc_shared_ptr secure_channel_cred_ptr,
                        bson_error_t *error);
 
 
