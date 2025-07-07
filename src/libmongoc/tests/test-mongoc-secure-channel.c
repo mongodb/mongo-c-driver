@@ -50,7 +50,6 @@ test_secure_channel_shared_creds_stream (void *unused)
 {
    BSON_UNUSED (unused);
 
-   mongoc_stream_t *stream;
    bson_error_t error;
    const mongoc_ssl_opt_t ssl_opt = {.ca_file = CERT_TEST_DIR "/ca.pem", .pem_file = CERT_TEST_DIR "/client.pem"};
    // Test with no sharing:
