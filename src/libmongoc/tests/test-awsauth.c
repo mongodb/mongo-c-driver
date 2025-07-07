@@ -18,10 +18,11 @@
 // It may be run in an AWS ECS task or EC2 instance.
 
 #include <common-thread-private.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-cluster-aws-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_getenv
+
+#include <mongoc/mongoc.h>
 
 // Ensure stdout and stderr are flushed prior to possible following abort().
 #define MONGOC_STDERR_PRINTF(format, ...)    \

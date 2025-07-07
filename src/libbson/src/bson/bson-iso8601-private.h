@@ -21,9 +21,10 @@
 #define BSON_ISO8601_PRIVATE_H
 
 
+#include <common-string-private.h>
+
 #include <bson/compat.h>
 #include <bson/macros.h>
-#include <common-string-private.h>
 
 
 BSON_BEGIN_DECLS

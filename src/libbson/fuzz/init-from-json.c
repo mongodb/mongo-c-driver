@@ -1,7 +1,8 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <bson/bson.h>
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int
 LLVMFuzzerTestOneInput (const uint8_t *data, size_t size)

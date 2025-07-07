@@ -15,12 +15,13 @@
  */
 
 
-#include <bson/bson.h>
-#include <common-string-private.h>
 #include <common-bits-private.h>
+#include <common-string-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 static void
 test_bson_strdup_printf (void)

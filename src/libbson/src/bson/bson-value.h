@@ -21,8 +21,8 @@
 #define BSON_VALUE_H
 
 
-#include <bson/macros.h>
 #include <bson/bson-types.h>
+#include <bson/macros.h>
 
 
 BSON_BEGIN_DECLS

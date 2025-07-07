@@ -56,25 +56,26 @@
 
 
 #ifdef BSON_OS_UNIX
-#include <unistd.h>
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 
 
 #include <bson/macros.h>
 
-
-#include <errno.h>
-#include <ctype.h>
-#include <limits.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <stdint.h>
 
 
 BSON_BEGIN_DECLS
@@ -152,17 +153,6 @@ typedef SSIZE_T ssize_t;
 #if defined(__MINGW32__) && !defined(INIT_ONCE_STATIC_INIT)
 #define INIT_ONCE_STATIC_INIT RTL_RUN_ONCE_INIT
 typedef RTL_RUN_ONCE INIT_ONCE;
-#endif
-
-#ifdef BSON_HAVE_STDBOOL_H
-#include <stdbool.h>
-#elif !defined(__bool_true_false_are_defined)
-#ifndef __cplusplus
-typedef signed char bool;
-#define false 0
-#define true 1
-#endif
-#define __bool_true_false_are_defined 1
 #endif
 
 

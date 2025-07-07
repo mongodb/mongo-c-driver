@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
+#include <bson/bson-oid.h>
+
+#include <bson/bson-context-private.h>
+
+#include <bson/bson-endian.h>
 #include <bson/compat.h>
 
 #include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-
-#include <bson/bson-context-private.h>
-#include <bson/bson-oid.h>
-#include <common-string-private.h>
 
 
 /*

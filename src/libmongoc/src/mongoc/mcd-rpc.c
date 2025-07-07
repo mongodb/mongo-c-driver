@@ -1,5 +1,6 @@
-#include <mlib/intencode.h>
 #include <mongoc/mcd-rpc.h>
+
+#include <mlib/intencode.h>
 
 // Header-only dependency. Does NOT require linking with libmongoc.
 #define MONGOC_INSIDE
@@ -7,6 +8,7 @@
 #undef MONGOC_INSIDE
 
 #include <bson/bson.h>
+
 #include <mlib/cmp.h>
 
 

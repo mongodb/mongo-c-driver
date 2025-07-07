@@ -15,10 +15,13 @@
  */
 
 
-#include <bson/memory.h>
-#include <common-string-private.h>
 #include <bson/bson-value.h>
+
+#include <common-string-private.h>
+
 #include <bson/bson-oid.h>
+#include <bson/memory.h>
+
 #include <mlib/cmp.h>
 
 

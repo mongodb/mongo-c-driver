@@ -18,26 +18,25 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-secure-transport-private.h>
-#include <mongoc/mongoc-stream-tls-secure-transport-private.h>
-
-#include <CoreFoundation/CoreFoundation.h>
-#include <Security/Security.h>
-#include <Security/SecKey.h>
-#include <Security/SecureTransport.h>
-#include <CommonCrypto/CommonDigest.h>
-#include <Security/Security.h>
-#include <Security/SecureTransport.h>
-#include <CoreFoundation/CoreFoundation.h>
 #include <common-macros-private.h>
 #include <common-string-private.h>
+#include <mongoc/mongoc-secure-transport-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-tls-secure-transport-private.h>
+#include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
+
+#include <bson/bson.h>
+
+#include <CommonCrypto/CommonDigest.h>
+
+#include <CoreFoundation/CoreFoundation.h>
+#include <Security/SecKey.h>
+#include <Security/SecureTransport.h>
+#include <Security/Security.h>
 
 // CDRIVER-2722: Secure Transport is deprecated on MacOS.
 BEGIN_IGNORE_DEPRECATIONS

@@ -17,8 +17,7 @@
 #ifndef UNIFIED_OPERATION_H
 #define UNIFIED_OPERATION_H
 
-#include "runner.h"
-#include "test-diagnostics.h"
+#include "./runner.h"
 
 #include <signal.h>
 

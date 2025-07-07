@@ -10,13 +10,14 @@
 ** and struct tm by A. Jesse Jiryu Davis for MongoDB, Inc.
 */
 
-#include <bson/compat.h>
-#include <bson/macros.h>
 #include <bson/bson-timegm-private.h>
 
+#include <bson/compat.h>
+#include <bson/macros.h>
+
 #include <errno.h>
-#include <string.h>
 #include <stdint.h> /* for INT64_MAX and INT64_MIN */
+#include <string.h>
 
 #if 2 < __GNUC__ + (96 <= __GNUC_MINOR__)
 #define ATTRIBUTE_PURE __attribute__ ((__pure__))

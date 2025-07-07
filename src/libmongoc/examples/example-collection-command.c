@@ -1,6 +1,8 @@
 // BEGIN:mongoc_collection_command_simple
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
 #include <stdio.h>
 
 static void

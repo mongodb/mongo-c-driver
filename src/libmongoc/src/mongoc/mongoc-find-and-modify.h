@@ -19,9 +19,9 @@
 #ifndef MONGOC_FIND_AND_MODIFY_H
 #define MONGOC_FIND_AND_MODIFY_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

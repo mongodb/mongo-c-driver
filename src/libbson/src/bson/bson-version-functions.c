@@ -15,8 +15,10 @@
  */
 
 
-#include <bson/version.h>
 #include <bson/bson-version-functions.h>
+
+#include <bson/bson-version.h>
+#include <bson/version.h>
 
 
 /**

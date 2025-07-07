@@ -18,8 +18,8 @@
 
 //
 
-#include "test-conveniences.h"
-#include "TestSuite.h"
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 static mongoc_oidc_credential_t *
 _test_oidc_callback_fn_cb (mongoc_oidc_callback_params_t *params)

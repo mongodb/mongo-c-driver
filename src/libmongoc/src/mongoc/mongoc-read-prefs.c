@@ -15,11 +15,12 @@
  */
 
 
-#include <mlib/config.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-trace-private.h>
+
 #include <mlib/cmp.h>
+#include <mlib/config.h>
 
 
 mongoc_read_prefs_t *

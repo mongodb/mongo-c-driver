@@ -15,16 +15,18 @@
  */
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <bson/config.h>
 #include <bson/memory.h>
 
 #include <common-macros-private.h>
+
+#include <bson/config.h>
+
 #include <mlib/config.h>
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Ensure size of exported structs are stable.
 BSON_STATIC_ASSERT2 (bson_mem_vtable_t, sizeof (bson_mem_vtable_t) == sizeof (void *) * 8u);

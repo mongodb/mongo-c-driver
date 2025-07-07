@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#include <common-b64-private.h>
+
 #include <bson/bson.h>
 
-#include "TestSuite.h"
-#include <common-b64-private.h>
 #include <mlib/cmp.h>
+
+#include <TestSuite.h>
 
 static void
 _test_encode_helper (char *input, size_t input_len, char *expected_output, int expected_output_len)

@@ -1092,6 +1092,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-secure-channel.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c

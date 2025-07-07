@@ -21,12 +21,12 @@
 #define BSON_OID_H
 
 
-#include <time.h>
-
 #include <bson/bson-context.h>
-#include <bson/macros.h>
-#include <bson/bson-types.h>
 #include <bson/bson-endian.h>
+#include <bson/bson-types.h>
+#include <bson/macros.h>
+
+#include <time.h>
 
 
 BSON_BEGIN_DECLS

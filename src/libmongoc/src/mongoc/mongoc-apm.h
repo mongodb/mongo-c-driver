@@ -19,12 +19,12 @@
 #ifndef MONGOC_APM_H
 #define MONGOC_APM_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-server-description.h>
 #include <mongoc/mongoc-topology-description.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

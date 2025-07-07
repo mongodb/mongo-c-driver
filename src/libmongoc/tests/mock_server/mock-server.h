@@ -17,9 +17,9 @@
 #ifndef MOCK_SERVER_H
 #define MOCK_SERVER_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-flags-private.h>
+
+#include <bson/bson.h>
 
 // mongoc_reply_flags_t represents flags for the legacy OP_REPLY protocol:
 typedef enum {
@@ -36,7 +36,7 @@ typedef enum {
 #include <mongoc/mongoc-ssl.h>
 #endif
 
-#include "request.h"
+#include "./request.h"
 
 typedef struct _mock_server_t mock_server_t;
 typedef struct _autoresponder_handle_t autoresponder_handle_t;

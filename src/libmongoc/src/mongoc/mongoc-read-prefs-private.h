@@ -19,10 +19,11 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-cluster-private.h>
+
 #include <mongoc/mongoc-read-prefs.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

@@ -19,20 +19,21 @@
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
-#include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-topology-scanner-private.h>
-#include <mongoc/mongoc-server-description-private.h>
-#include <mongoc/mongoc-topology-description-private.h>
-#include <mongoc/mongoc-log-and-monitor-private.h>
-#include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-uri.h>
+#include <common-atomic-private.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-crypt-private.h>
-#include <mongoc/mongoc-ts-pool-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-shared-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-ts-pool-private.h>
+
+#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-sleep.h>
-#include <common-atomic-private.h>
+#include <mongoc/mongoc-uri.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000

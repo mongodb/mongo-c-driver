@@ -2,7 +2,9 @@
  *     $(pkg-config --cflags --libs libmongoc-1.0) */
 
 #include <mongoc/mongoc.h>
+
 #include <pthread.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 

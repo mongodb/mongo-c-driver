@@ -19,10 +19,10 @@
 #ifndef MONGOC_STREAM_BUFFERED_H
 #define MONGOC_STREAM_BUFFERED_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

@@ -1,16 +1,17 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/err.h>
 #endif
 
-#include "ssl-test.h"
-#include "test-conveniences.h"
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <ssl-test.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #define TIMEOUT 10000 /* milliseconds */
 

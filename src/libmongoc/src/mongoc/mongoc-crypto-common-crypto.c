@@ -13,15 +13,17 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-crypto-private.h>
+
+#include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
 #include <mongoc/mongoc-crypto-common-crypto-private.h>
-#include <CommonCrypto/CommonHMAC.h>
-#include <CommonCrypto/CommonDigest.h>
-#include <CommonCrypto/CommonKeyDerivation.h>
+
 #include <CommonCrypto/CommonCryptoError.h>
+#include <CommonCrypto/CommonDigest.h>
+#include <CommonCrypto/CommonHMAC.h>
+#include <CommonCrypto/CommonKeyDerivation.h>
 
 // Ensure lossless conversion between `uint32_t` and `uint` below.
 BSON_STATIC_ASSERT2 (sizeof_uint_uint32_t, sizeof (uint) == sizeof (uint32_t));

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 
-#include "test-libmongoc.h"
+#include <mongoc/mongoc.h>
+
+#include <test-libmongoc.h>
 
 
 #define MONGOC_STREAM_DEBUG 7

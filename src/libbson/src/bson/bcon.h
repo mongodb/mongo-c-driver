@@ -23,6 +23,10 @@
 #ifndef BCON_H_
 #define BCON_H_
 
+// Include specific headers first, because bson.h tries to include this header itself:
+#include <bson/bson-types.h>
+#include <bson/macros.h>
+// For other APIs, not properly grouped, but needed:
 #include <bson/bson.h>
 
 

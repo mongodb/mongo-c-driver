@@ -20,9 +20,9 @@
 #ifndef MONGOC_VERSION_FUNCTIONS_H
 #define MONGOC_VERSION_FUNCTIONS_H
 
-#include <bson/bson.h> /* for "bool" */
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h> /* for "bool" */
 
 BSON_BEGIN_DECLS
 

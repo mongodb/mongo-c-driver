@@ -21,9 +21,9 @@
 #define BSON_PRIVATE_H
 
 
+#include <bson/bson-types.h>
 #include <bson/macros.h>
 #include <bson/memory.h>
-#include <bson/bson-types.h>
 
 
 BSON_BEGIN_DECLS

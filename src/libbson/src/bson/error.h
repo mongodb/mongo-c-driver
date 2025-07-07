@@ -2,6 +2,7 @@
 #define BSON_ERROR_T_INCLUDED
 
 #include <bson/macros.h>
+
 #include <stdint.h>
 
 BSON_BEGIN_DECLS

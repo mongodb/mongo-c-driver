@@ -20,16 +20,16 @@
 #ifndef BSON_TYPES_H
 #define BSON_TYPES_H
 
-
-#include <stdlib.h>
-#include <sys/types.h>
-
-#include <bson/macros.h>
-#include <bson/config.h>
-#include <bson/compat.h>
 #include <bson/bson-endian.h>
 #include <bson/bson_t.h>
+#include <bson/compat.h>
+#include <bson/config.h>
 #include <bson/error.h>
+#include <bson/macros.h>
+
+#include <sys/types.h>
+
+#include <stdlib.h>
 
 BSON_BEGIN_DECLS
 
