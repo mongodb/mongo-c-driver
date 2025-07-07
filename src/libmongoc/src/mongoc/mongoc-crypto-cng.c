@@ -16,16 +16,20 @@
 #include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
-#include <mongoc/mongoc-scram-private.h>
-#include <mongoc/mongoc-crypto-private.h>
 #include <mongoc/mongoc-crypto-cng-private.h>
-#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-thread-private.h>
+
+#include <mongoc/mongoc-log.h>
+
 #include <mlib/cmp.h>
 
-#include <windows.h>
-#include <stdio.h>
 #include <bcrypt.h>
+
+#include <windows.h>
+
+#include <stdio.h>
 #include <string.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)

@@ -20,11 +20,11 @@
 #ifndef MLIB_INTUTIL_H_INCLUDED
 #define MLIB_INTUTIL_H_INCLUDED
 
-#include <limits.h>
-#include <stdint.h>
-#include <stdbool.h>
-
 #include <mlib/config.h>
+
+#include <limits.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 /**
  * @brief Given an integral type, evaluates to `true` if that type is signed,

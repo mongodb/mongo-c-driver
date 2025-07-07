@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-counters-private.h>
-#include "mock_server/mock-server.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "mock_server/future-functions.h"
-#include <mlib/cmp.h>
 #include <common-atomic-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mlib/cmp.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 /* test statistics counters excluding OP_INSERT, OP_UPDATE, and OP_DELETE since
  * those were superseded by write commands in 2.6. */

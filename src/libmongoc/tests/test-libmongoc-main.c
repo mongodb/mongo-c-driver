@@ -1,11 +1,12 @@
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-
 #include <common-thread-private.h>
 
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 int
 main (int argc, char *argv[])

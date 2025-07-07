@@ -17,11 +17,13 @@
 #ifndef UNIFIED_OPERATION_RESULT_H
 #define UNIFIED_OPERATION_RESULT_H
 
-#include "test-diagnostics.h"
-#include "bsonutil/bson-val.h"
-#include "entity-map.h"
-#include <mongoc/mongoc-cursor.h>
+#include "./entity-map.h"
+#include "./test-diagnostics.h"
+
 #include <mongoc/mongoc-bulkwrite.h>
+#include <mongoc/mongoc-cursor.h>
+
+#include <bsonutil/bson-val.h>
 
 typedef struct _result_t result_t;
 

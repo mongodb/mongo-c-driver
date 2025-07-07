@@ -18,28 +18,34 @@
 
 #ifdef MONGOC_ENABLE_SSL
 
-#include <errno.h>
-#include <string.h>
-#include <bson/bson.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-error-private.h>
 
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-stream-private.h>
+#include <bson/bson.h>
+
+#include <errno.h>
+#include <string.h>
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-#include <mongoc/mongoc-stream-tls-openssl.h>
 #include <mongoc/mongoc-openssl-private.h>
+
+#include <mongoc/mongoc-stream-tls-openssl.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #include <mongoc/mongoc-secure-transport-private.h>
+
 #include <mongoc/mongoc-stream-tls-secure-transport.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #include <mongoc/mongoc-secure-channel-private.h>
+
 #include <mongoc/mongoc-stream-tls-secure-channel.h>
 #endif
-#include <mongoc/mongoc-stream-tls.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+
+#include <mongoc/mongoc-stream-tls.h>
+
 #include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN

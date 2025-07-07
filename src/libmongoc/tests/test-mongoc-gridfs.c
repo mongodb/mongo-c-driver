@@ -1,19 +1,21 @@
 #include <mongoc/mongoc.h>
 #define MONGOC_INSIDE
-#include <mongoc/mongoc-gridfs-file-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-gridfs-file-private.h>
 #include <mongoc/mongoc-gridfs-private.h>
 
 #undef MONGOC_INSIDE
 
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
 #include <common-string-private.h>
+
 #include <mlib/cmp.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static mongoc_gridfs_t *

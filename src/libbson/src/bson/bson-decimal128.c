@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
 #include <bson/bson-decimal128.h>
-#include <bson/bson-types.h>
-#include <bson/bson-macros.h>
+
 #include <common-string-private.h>
+
+#include <bson/bson-macros.h>
+#include <bson/bson-types.h>
+
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
+
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 #define BSON_DECIMAL128_EXPONENT_MAX 6111

@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-#include "test-diagnostics.h"
+#include "./test-diagnostics.h"
+
+#include <common-string-private.h>
+#include <common-thread-private.h>
 
 #include <mongoc/utlist.h>
-#include "TestSuite.h"
-#include <common-thread-private.h>
+
+#include <TestSuite.h>
+
 #include <signal.h>
-#include <common-string-private.h>
 
 typedef struct _msg_t {
    char *string;

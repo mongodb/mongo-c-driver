@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-#include <mlib/intencode.h>
+#include <common-atomic-private.h>
 #include <common-thread-private.h>
-#include <mongoc/mongoc-server-monitor-private.h>
-
-#include <mongoc/mcd-rpc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-server-monitor-private.h>
 #include <mongoc/mongoc-ssl-private.h>
 #include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
-#include <common-atomic-private.h>
+
+#include <mongoc/mcd-rpc.h>
+
 #include <mlib/config.h>
+#include <mlib/intencode.h>
 
 #include <inttypes.h>
 

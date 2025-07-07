@@ -19,16 +19,17 @@
 #ifndef MONGOC_SECURE_CHANNEL_PRIVATE_H
 #define MONGOC_SECURE_CHANNEL_PRIVATE_H
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+
+#include <bson/bson.h>
 
 #define SECURITY_WIN32
-#include <security.h>
-#include <schnlsp.h>
 #include <schannel.h>
+#include <schnlsp.h>
+#include <security.h>
 
 BSON_BEGIN_DECLS
 

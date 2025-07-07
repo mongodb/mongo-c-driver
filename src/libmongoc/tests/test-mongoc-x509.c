@@ -1,5 +1,6 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>
@@ -9,9 +10,9 @@
 #include <mongoc/mongoc-secure-channel-private.h>
 #endif
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h" // tmp_bson
+#include <TestSuite.h>
+#include <test-conveniences.h> // tmp_bson
+#include <test-libmongoc.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 /* Test parsing a DER encoded tlsfeature extension contents for the

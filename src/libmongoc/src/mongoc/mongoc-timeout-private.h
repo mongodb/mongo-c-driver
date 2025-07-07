@@ -19,8 +19,8 @@
 #ifndef MONGOC_TIMEOUT_PRIVATE_H
 #define MONGOC_TIMEOUT_PRIVATE_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct _mongoc_timeout_t mongoc_timeout_t;
 

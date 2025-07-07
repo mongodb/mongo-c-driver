@@ -15,11 +15,13 @@
  */
 
 
-#include <mongoc/mongoc-write-concern.h>
-#include <mongoc/mongoc-write-concern-private.h>
 #include <mongoc/mongoc-find-and-modify.h>
+
 #include <mongoc/mongoc-find-and-modify-private.h>
 #include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+
+#include <mongoc/mongoc-write-concern.h>
 
 
 /**

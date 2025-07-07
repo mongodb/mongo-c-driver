@@ -1,12 +1,12 @@
-#include "test-mongoc-retryability-helpers.h"
-
-#include <bson/bson-error.h>
+#include <test-mongoc-retryability-helpers.h>
 
 #include <mongoc/mongoc-array-private.h>
 
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
+#include <bson/bson-error.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #include <stddef.h>
 

@@ -15,21 +15,23 @@
  */
 
 
-#include <bson/bson.h>
-#include <bson/bcon.h>
 #include <bson/bson-private.h>
 #include <bson/validate-private.h>
-#include <fcntl.h>
-#include <time.h>
-
 #include <common-bson-dsl-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <bson/bcon.h>
+#include <bson/bson.h>
 
 #include <mlib/ckdint.h>
-#include <mlib/test.h>
 #include <mlib/intencode.h>
+#include <mlib/test.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+
+#include <fcntl.h>
+
+#include <time.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);

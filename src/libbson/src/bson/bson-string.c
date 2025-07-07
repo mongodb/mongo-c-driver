@@ -15,16 +15,18 @@
  */
 
 
-#include <limits.h>
-#include <stdarg.h>
+#include <common-bits-private.h>
+#include <common-string-private.h>
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <mlib/cmp.h>
-#include <common-string-private.h>
-#include <common-bits-private.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
+
+#include <mlib/cmp.h>
+
+#include <limits.h>
+#include <stdarg.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

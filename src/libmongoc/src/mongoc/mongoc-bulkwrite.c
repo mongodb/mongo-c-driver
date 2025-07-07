@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-#include <mlib/intencode.h>
 #include <mongoc/mongoc-bulkwrite.h>
 
-#include <bson/bson.h>
 #include <common-macros-private.h> // MC_ENABLE_CONVERSION_WARNING_BEGIN
-#include <mongoc/mcd-nsinfo.h>
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-client-private.h>
@@ -27,8 +24,14 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-util-private.h> // _mongoc_iter_document_as_bson
+
+#include <mongoc/mcd-nsinfo.h>
 #include <mongoc/mongoc-optional.h>
+
+#include <bson/bson.h>
+
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 

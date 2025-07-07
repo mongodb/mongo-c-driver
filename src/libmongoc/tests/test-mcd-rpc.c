@@ -1,13 +1,13 @@
 #include <mongoc/mcd-rpc.h>
-
 #include <mongoc/mongoc-iovec.h>
+
+#include <mlib/cmp.h>
 #include <mlib/intencode.h>
 
-#include "test-conveniences.h"
-#include "TestSuite.h"
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #include <inttypes.h>
-#include <mlib/cmp.h>
 
 
 // clang-format off

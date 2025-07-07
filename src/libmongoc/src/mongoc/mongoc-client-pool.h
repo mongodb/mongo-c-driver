@@ -19,12 +19,12 @@
 #ifndef MONGOC_CLIENT_POOL_H
 #define MONGOC_CLIENT_POOL_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-apm.h>
 #include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl.h>
 #endif

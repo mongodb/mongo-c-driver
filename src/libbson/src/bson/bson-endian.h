@@ -20,9 +20,9 @@
 #ifndef BSON_ENDIAN_H
 #define BSON_ENDIAN_H
 
+#include <bson/bson-compat.h>
 #include <bson/bson-config.h>
 #include <bson/bson-macros.h>
-#include <bson/bson-compat.h>
 
 
 BSON_BEGIN_DECLS
