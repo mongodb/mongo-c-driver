@@ -16,10 +16,10 @@ collect sources files (relative to the current source directory). All files
 collected by `<glob>` must live within the current source directory.
 
 After collecting sources according to the `<glob>` patterns, sources are
-excluded if they filepath contains any substring that matches any regular
+excluded if the filepath contains any substring that matches any regular
 expression in the `<pattern>` list. Each `<pattern>` is tested against the
 relative path to the header file that was found by `<glob>`, and not the
-absolute path to the file file.
+absolute path to the file.
 
 The header verification targets are compiled according to the usage requirements
 from all `<library>` arguments.
@@ -56,7 +56,7 @@ function(mongo_verify_headers tag)
         list(APPEND headers_to_verify ${more})
     endforeach()
 
-    # Excluce anything that matches any exclusion regex
+    # Exclude anything that matches any exclusion regex
     foreach(pattern IN LISTS arg_EXCLUDE_REGEX)
         list(FILTER headers_to_verify EXCLUDE REGEX "${pattern}")
     endforeach()
@@ -89,7 +89,7 @@ function(mongo_verify_headers tag)
         message(AUTHOR_WARNING "No C++ compiler is available, so the header-check C++ targets won't be defined")
         unset(cxx_target)
     endif()
-    # Populate the properies and file sets.
+    # Populate the properties and file sets.
     set_target_properties(${c_target} ${cxx_target} PROPERTIES
         # The main header file set:
         HEADER_SET "${headers_to_verify}"
