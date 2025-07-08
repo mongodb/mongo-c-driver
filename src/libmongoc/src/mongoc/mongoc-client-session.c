@@ -240,7 +240,7 @@ retry:
        * actually apply the error label due to reply being NULL */
       _mongoc_client_session_unpin (session);
       if (reply) {
-         bsonBuildAppend (*reply, insert (reply_local, not(key ("errorLabels"))));
+         bsonBuildAppend (*reply, insert (reply_local, not (key ("errorLabels"))));
          _mongoc_error_copy_labels_and_upsert (&reply_local, reply, UNKNOWN_COMMIT_RESULT);
       }
    } else if (reply) {

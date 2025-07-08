@@ -1952,8 +1952,8 @@ test_bson_regex_lengths (void)
       &new, "0_________1_________2_________3___4", -1, "0_________1_________2_________3_________4_________5___4", "i");
 
    ASSERT (new.len == 121);
-   ASSERT (new.flags &BSON_FLAG_STATIC);
-   ASSERT (!(new.flags &BSON_FLAG_INLINE));
+   ASSERT (new.flags & BSON_FLAG_STATIC);
+   ASSERT (!(new.flags & BSON_FLAG_INLINE));
 
    bson_destroy (&new);
 }
@@ -2328,12 +2328,12 @@ test_bson_dsl_predicate (void)
       require (key ("string"), //
                require (type (utf8)),
                require (strEqual ("hello")),
-               require (not(strEqual ("goodbye"))),
+               require (not (strEqual ("goodbye"))),
                require (iStrEqual ("HELLO")),
-               require (not(iStrEqual ("GOODBYE")))),
+               require (not (iStrEqual ("GOODBYE")))),
       require (key ("doc"),
                require (type (doc)),
-               require (not(empty)),
+               require (not (empty)),
                visitEach (require (key ("hello")), require (type (null)))),
       require (key ("null"), require (type (null))),
       require (key ("empty_string"), require (type (utf8))),

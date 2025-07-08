@@ -1136,7 +1136,7 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
       bool found = false;
       bsonParse (*opts,
                  find (key ("encryptedFields"),
-                       if (not(type (doc)), then (error ("'encryptedFields' should be a document"))),
+                       if (not (type (doc)), then (error ("'encryptedFields' should be a document"))),
                        // Update encryptedFields to be a reference to the subdocument:
                        storeDocRef (*encryptedFields),
                        do (found = true)));
@@ -1194,7 +1194,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
 
    if (!bson_empty (&encryptedFields)) {
       // Clone 'opts' without the encryptedFields element
-      bsonBuildDecl (opts_without_encryptedFields, if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+      bsonBuildDecl (opts_without_encryptedFields, if (opts, then (insert (*opts, not (key ("encryptedFields"))))));
 
       mongoc_collection_t *ret = create_collection_with_encryptedFields (
          database, name, &opts_without_encryptedFields, &encryptedFields, error);
