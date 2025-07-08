@@ -1,7 +1,6 @@
 ---
-# Note: The "Lanugage" option is omitted, as we want to apply the same formatting
-# to all files, otherwise clang-format may (sometimes) apply the default format
-# to other languages.
+# Note: the "Language" option is omitted to apply this format style to all files
+# regardless of the detected language.
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignArrayOfStructures: None
