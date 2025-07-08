@@ -35,7 +35,6 @@
 #include <bson/bson-value.h>
 #include <bson/bson-vector.h>
 #include <bson/bson-version-functions.h>
-#include <bson/bson-version.h>
 #include <bson/bson-writer.h>
 #include <bson/compat.h>
 #include <bson/config.h>
