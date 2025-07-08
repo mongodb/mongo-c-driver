@@ -1,5 +1,7 @@
 ---
-Language:        Cpp
+# Note: The "Lanugage" option is omitted, as we want to apply the same formatting
+# to all files, otherwise clang-format may (sometimes) apply the default format
+# to other languages.
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignArrayOfStructures: None

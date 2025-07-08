@@ -2158,7 +2158,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties
    bsonBuildAppend (tmp,
                     // Copy the existing credentials, dropping the existing properties if
                     // present
-                    insert (uri->credentials, not(key (MONGOC_URI_AUTHMECHANISMPROPERTIES))),
+                    insert (uri->credentials, not (key (MONGOC_URI_AUTHMECHANISMPROPERTIES))),
                     // Append the new properties
                     kv (MONGOC_URI_AUTHMECHANISMPROPERTIES, bson (*properties)));
    bson_reinit (&uri->credentials);

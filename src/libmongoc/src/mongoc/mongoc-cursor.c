@@ -332,9 +332,9 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       // Selectively copy the options:
       bsonBuildAppend (cursor->opts,
                        insert (*opts,
-                               not(key ("serverId", "sessionId"),
-                                   // Drop bypassDocumentValidation if it isn't true:
-                                   allOf (key ("bypassDocumentValidation"), isFalse))));
+                               not (key ("serverId", "sessionId"),
+                                    // Drop bypassDocumentValidation if it isn't true:
+                                    allOf (key ("bypassDocumentValidation"), isFalse))));
    }
 
    if (_mongoc_client_session_in_txn (cursor->client_session)) {

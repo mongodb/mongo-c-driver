@@ -109,7 +109,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    /* simulate a MongoDB 3.2+ "find" command */
    _mongoc_cursor_prepare_find_command (cursor, filter, &doc);
 
-   bsonBuildAppend (cursor->opts, insert (doc, not(key ("serverId", "maxAwaitTimeMS", "sessionId"))));
+   bsonBuildAppend (cursor->opts, insert (doc, not (key ("serverId", "maxAwaitTimeMS", "sessionId"))));
 
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 
