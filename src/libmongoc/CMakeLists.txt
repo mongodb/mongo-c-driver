@@ -972,7 +972,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       mongo_generate_pkg_config (mongoc_static FILENAME mongoc${PROJECT_VERSION_MAJOR}-static.pc INSTALL)
    endif()
 
-   if(MONGO_CAN_VERIFY_HEADERS)
+   if(MONGO_CAN_VERIFY_HEADERS AND ENABLE_TESTS)
       mongo_verify_headers(
          mongoc
          USE_LIBRARIES mongoc::static

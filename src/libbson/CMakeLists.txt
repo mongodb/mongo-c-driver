@@ -174,7 +174,7 @@ if(ENABLE_STATIC)
       set_property(TARGET bson_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    endif()
 
-   if(MONGO_CAN_VERIFY_HEADERS)
+   if(MONGO_CAN_VERIFY_HEADERS AND ENABLE_TESTS)
       mongo_verify_headers(
          bson
          USE_LIBRARIES bson::static
