@@ -1,2 +1,2 @@
-// This is an empty placeholder file use for miscellaneous build system tasks
-#include <vector>
+// This is an empty placeholder file used for miscellaneous build system tasks
+#include <cstddef>

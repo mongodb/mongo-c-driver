@@ -1,2 +1,3 @@
-/* This is an empty placeholder file use for miscellaneous build system tasks */
-#include <stdlib.h>
+/* This is an empty placeholder file used for miscellaneous build system tasks
+ */
+#include <stddef.h>

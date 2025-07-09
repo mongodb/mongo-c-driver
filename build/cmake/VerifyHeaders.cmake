@@ -69,7 +69,6 @@ function(mongo_verify_headers tag)
     endforeach()
 
     # We create two targets: One for C and one for C++
-    set(targets)
     # C target
     set(c_target ${tag}-verify-headers-c)
     message(DEBUG "Defining header verification target “${c_target}” (C)")
