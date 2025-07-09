@@ -86,7 +86,7 @@ ADD_CXX_COMPILER:
     ELSE IF test -f /etc/redhat-release
         IF test "$cxx_compiler" = g++
             LET cxx_pkg = "gcc-c++"
-        ELSE IF test "$cxx_cmopiler" = clang++
+        ELSE IF test "$cxx_compiler" = clang++
             LET cxx_pkg = clang gcc-c++
         END
     END
