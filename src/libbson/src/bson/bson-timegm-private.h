@@ -21,8 +21,8 @@
 #define BSON_TIMEGM_PRIVATE_H
 
 
-#include <bson/bson-compat.h>
-#include <bson/bson-macros.h>
+#include <bson/compat.h>
+#include <bson/macros.h>
 
 
 BSON_BEGIN_DECLS

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <bson/bson-compat.h>
-#include <bson/bson-config.h>
+#include <bson/compat.h>
+#include <bson/config.h>
 
 
 #if defined(BSON_HAVE_CLOCK_GETTIME)

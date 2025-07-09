@@ -22,9 +22,9 @@
 
 
 #include <bson/bson-endian.h>
-#include <bson/bson-macros.h>
 #include <bson/bson-types.h>
 #include <bson/bson.h>
+#include <bson/macros.h>
 
 
 BSON_BEGIN_DECLS

@@ -17,9 +17,9 @@
 
 #include <bson/bson-iter.h>
 
-#include <bson/bson-config.h>
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
+#include <bson/config.h>
 
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>

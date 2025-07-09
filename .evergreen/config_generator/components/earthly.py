@@ -38,7 +38,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["none"] # TODO: Once CXX-3103 is released, add latest C++ release tag.
+CxxVersion = Literal["none"]  # TODO: Once CXX-3103 is released, add latest C++ release tag.
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -265,6 +265,13 @@ def tasks() -> Iterable[EvgTask]:
         )
         if task is not None:
             yield task
+
+    yield EvgTask(
+        name="verify-headers",
+        commands=[earthly_exec(kind="test", target="verify-headers")],
+        tags=["pr-merge-gate"],
+        run_on=CONTAINER_RUN_DISTROS,
+    )
 
 
 def variants() -> Iterable[BuildVariant]:

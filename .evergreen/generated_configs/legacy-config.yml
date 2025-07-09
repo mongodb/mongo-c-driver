@@ -16250,6 +16250,7 @@ buildvariants:
   - link-with-cmake
   - link-with-cmake-ssl
   - link-with-cmake-snappy
+  - verify-headers
   - name: link-with-cmake-mac
     distros:
     - macos-14-arm64
