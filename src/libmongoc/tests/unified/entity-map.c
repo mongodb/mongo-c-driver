@@ -755,19 +755,19 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       else (error ("A client 'id' string is required")),
       // Optional 'uriOptions' for the client
       find (key ("uriOptions"),
-            if (not(type (doc)), then (error ("'uriOptions' must be a document value"))),
+            if (not (type (doc)), then (error ("'uriOptions' must be a document value"))),
             storeDocDupPtr (uri_options)),
       // Optional 'useMultipleMongoses' bool
       find (key ("useMultipleMongoses"),
-            if (not(type (boolean)), then (error ("'useMultipleMongoses' must be a bool value"))),
+            if (not (type (boolean)), then (error ("'useMultipleMongoses' must be a bool value"))),
             do (use_multiple_mongoses_set = true),
             storeBool (use_multiple_mongoses)),
       // Events to observe:
       find (key ("observeEvents"),
-            if (not(type (array)), then (error ("'observeEvents' must be an array"))),
+            if (not (type (array)), then (error ("'observeEvents' must be an array"))),
             visitEach (case (
                // Ensure all elements are strings:
-               when (not(type (utf8)), error ("Every 'observeEvents' element must be a string")),
+               when (not (type (utf8)), error ("Every 'observeEvents' element must be a string")),
                // Dispatch based on the event name:
                when (eval (is_supported_event_type (bson_iter_utf8 (&bsonVisitIter, NULL))), do ({
                         const char *const type = bson_iter_utf8 (&bsonVisitIter, NULL);
@@ -781,14 +781,14 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                else (do (test_error ("Unknown event type '%s'", bsonAs (cstr))))))),
       // Command events to ignore
       find (key ("ignoreCommandMonitoringEvents"),
-            if (not(type (array)), then (error ("'ignoreCommandMonitoringEvents' must be an array"))),
-            visitEach (if (not(type (utf8)),
+            if (not (type (array)), then (error ("'ignoreCommandMonitoringEvents' must be an array"))),
+            visitEach (if (not (type (utf8)),
                            then (error ("Every 'ignoreCommandMonitoringEvents' "
                                         "element must be a string")))),
             storeDocDupPtr (entity->ignore_command_monitoring_events)),
       // Parse the serverApi, if present
       find (key ("serverApi"),
-            if (not(type (doc)), then (error ("'serverApi' must be a document"))),
+            if (not (type (doc)), then (error ("'serverApi' must be a document"))),
             parse ( // The "version" string is required first:
                find (keyWithType ("version", utf8), do ({
                         mongoc_server_api_version_t ver;
@@ -801,22 +801,22 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                else (error ("Missing 'version' property in 'serverApi' object")),
                // Toggle strictness:
                find (key ("strict"),
-                     if (not(type (boolean)), then (error ("'serverApi.strict' must be a bool"))),
+                     if (not (type (boolean)), then (error ("'serverApi.strict' must be a bool"))),
                      do (mongoc_server_api_strict (api, bsonAs (boolean)))),
                // Toggle deprecation errors:
                find (key ("deprecationErrors"),
-                     if (not(type (boolean)), then (error ("serverApi.deprecationErrors must be a bool"))),
+                     if (not (type (boolean)), then (error ("serverApi.deprecationErrors must be a bool"))),
                      do (mongoc_server_api_deprecation_errors (api, bsonAs (boolean)))))),
       // Toggle observation of sensitive commands
       find (key ("observeSensitiveCommands"),
-            if (not(type (boolean)), then (error ("'observeSensitiveCommands' must be a bool"))),
+            if (not (type (boolean)), then (error ("'observeSensitiveCommands' must be a bool"))),
             do ({
                bool *p = entity->observe_sensitive_commands = bson_malloc (sizeof (bool));
                *p = bsonAs (boolean);
             })),
       // Which events should be available as entities:
       find (key ("storeEventsAsEntities"),
-            if (not(type (array)), then (error ("'storeEventsAsEntities' must be an array"))),
+            if (not (type (array)), then (error ("'storeEventsAsEntities' must be an array"))),
             visitEach (parse (
                find (keyWithType ("id", utf8), storeStrRef (store_entity_id), do ({
                         if (!entity_map_add_bson_array (em, store_entity_id, error)) {
@@ -827,7 +827,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                         }
                      })),
                find (keyWithType ("events", array),
-                     visitEach (case (when (not(type (utf8)),
+                     visitEach (case (when (not (type (utf8)),
                                             error ("Every 'storeEventsAsEntities.events' "
                                                    "element must be a string")),
                                       when (anyOf (iStrEqual ("commandStartedEvent"),
@@ -844,11 +844,11 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                visitOthers (
                   errorf (err, "Unexpected field '%s' in storeEventsAsEntities", bson_iter_key (&bsonVisitIter)))))),
       find (key ("autoEncryptOpts"),
-            if (not(type (doc)), then (error ("'autoEncryptOpts' must be a document value"))),
+            if (not (type (doc)), then (error ("'autoEncryptOpts' must be a document value"))),
             storeDocDupPtr (auto_encryption_opts)),
       // Log messages to observe:
       find (key ("observeLogMessages"),
-            if (not(type (doc)), then (error ("'observeLogMessages' must be a document"))),
+            if (not (type (doc)), then (error ("'observeLogMessages' must be a document"))),
             do ({
                // Initialize all components to the lowest available level, and install a handler.
                BSON_ASSERT (mongoc_structured_log_opts_set_max_level_for_all_components (
@@ -859,7 +859,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                mongoc_structured_log_opts_set_max_document_length (log_opts, 10000);
             }),
             visitEach (
-               if (not(type (utf8)), then (error ("Every value in 'observeLogMessages' must be a log level string"))),
+               if (not (type (utf8)), then (error ("Every value in 'observeLogMessages' must be a log level string"))),
                do ({
                   const char *const component_name = bson_iter_key (&bsonVisitIter);
                   mongoc_structured_log_component_t component;

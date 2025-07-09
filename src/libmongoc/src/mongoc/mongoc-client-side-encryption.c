@@ -2873,7 +2873,7 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    bsonVisitEach (in_encryptedFields,
                   case (
                      // We only care about the "fields" array
-                     when (not(key ("fields")), appendTo (new_encryptedFields)),
+                     when (not (key ("fields")), appendTo (new_encryptedFields)),
                      // Automaticall fill in the "keyId" no each field:
                      else (storeDocRef (fields_ref), do ({
                               bson_t new_fields = BSON_INITIALIZER;
@@ -2896,7 +2896,7 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    // We've successfully filled out all null keyIds. Now create the collection
    // with our new options:
    bsonBuild (*opt_out_options,
-              insert (*in_options, not(key ("encryptedFields"))),
+              insert (*in_options, not (key ("encryptedFields"))),
               kv ("encryptedFields", bson (new_encryptedFields)));
    if (bsonBuildError) {
       // Error while building the new options.
@@ -2935,7 +2935,7 @@ _init_1_encryptedField (
    BSON_OPTIONAL_PARAM (error);
    bsonVisitEach (*in_field,
                   // If it is not a "keyId":null element, just copy it to the output.
-                  if (not(keyWithType ("keyId", null)), then (appendTo (*out_field), continue)),
+                  if (not (keyWithType ("keyId", null)), then (appendTo (*out_field), continue)),
                   // Otherwise:
                   do ({
                      // Set up factory context
@@ -2971,7 +2971,7 @@ _init_encryptedFields (
    bsonVisitEach (
       *in_fields,
       // Each field must be a document element
-      if (not(type (doc)), then (error ("Each 'encryptedFields' element must be a document"))),
+      if (not (type (doc)), then (error ("Each 'encryptedFields' element must be a document"))),
       // Append a new element with the same name as the field:
       storeDocRef (cur_field),
       append (*out_fields,

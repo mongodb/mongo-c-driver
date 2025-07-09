@@ -622,7 +622,7 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
    _make_aggregate_for_count (coll, filter, &cd_opts, &aggregate_cmd);
    bson_init (&aggregate_opts);
    if (opts) {
-      bsonBuildAppend (aggregate_opts, insert (*opts, not(key ("skip", "limit"))));
+      bsonBuildAppend (aggregate_opts, insert (*opts, not (key ("skip", "limit"))));
    }
 
    ret =
@@ -824,7 +824,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection, const bson_t 
 
    // We've found the encryptedFields, so we need to do something different
    // to drop this collection:
-   bsonBuildAppend (opts_without_encryptedFields, if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   bsonBuildAppend (opts_without_encryptedFields, if (opts, then (insert (*opts, not (key ("encryptedFields"))))));
    if (bsonBuildError) {
       _mongoc_set_error (
          error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Error while updating drop options: %s", bsonBuildError);
