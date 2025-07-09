@@ -49,12 +49,12 @@ _test_checks (void)
 static void
 _test_bits (void)
 {
-   mlib_static_assert (mlib_bits (0, 0) == 0);           // 0b000
-   mlib_static_assert (mlib_bits (1, 0) == 1);           // 0b001
-   mlib_static_assert (mlib_bits (2, 0) == 3);           // 0b011
-   mlib_static_assert (mlib_bits (1, 1) == 2);           // 0b010
-   mlib_static_assert (mlib_bits (5, 3) == 248);         // 0b11111000
-   mlib_static_assert (mlib_bits (64, 0) == UINT64_MAX); // 0b111...
+   mlib_check (mlib_bits (0, 0), eq, 0);           // 0b000
+   mlib_check (mlib_bits (1, 0), eq, 1);           // 0b001
+   mlib_check (mlib_bits (2, 0), eq, 3);           // 0b011
+   mlib_check (mlib_bits (1, 1), eq, 2);           // 0b010
+   mlib_check (mlib_bits (5, 3), eq, 248);         // 0b11111000
+   mlib_check (mlib_bits (64, 0), eq, UINT64_MAX); // 0b111...
 }
 
 static void
