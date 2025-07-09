@@ -19,6 +19,7 @@
 #include <bson/bson-context-private.h>
 
 #include <bson/bson-endian.h>
+#include <bson/bson-string.h>
 #include <bson/compat.h>
 
 #include <limits.h>
