@@ -196,11 +196,11 @@ mlib_extern_c_begin ();
 // Generates an 0b01111 bit pattern for the two's complement max value:
 #define _mlibMaxofSigned(V) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
-   mlib_bits(mlib_bitsizeof(V) - 1, 0)
+   mlib_bits(mlib_bitsizeof(V) - 1u, 0)
 // Generates an 0b10000... bit pattern for the two's complement min value:
 #define _mlibMinofSigned(V) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
-   (0 - mlib_bits(1, mlib_bitsizeof(V) - 1))
+   (0 - mlib_bits(1, mlib_bitsizeof(V) - 1u))
 // For completeness:
 #define _mlibMinofUnsigned(V) 0
 // Yields true iff the operand expression has a signed type, but requires that
@@ -263,7 +263,7 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    // Perform regular wrapping arithmetic on the unsigned value. The bit pattern
    // is equivalent if there is two's complement signed arithmetic.
    const uintmax_t sum = *dst = a + b;
-   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1);
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
    // Now we check whether that overflowed according to the sign configuration.
    // We use some bit fiddling magic that treat the signbit as a boolean for
    // "is this number negative?" or "is this number “large” (i.e. bigger than signed-max)?"
@@ -357,7 +357,7 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
 {
    // Perform the subtraction using regular wrapping arithmetic
    const uintmax_t diff = *dst = a - b;
-   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1);
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
    // Test whether the operation overflowed for the given sign configuration
    // (See mlib_add for more details on why we do this bit fiddling)
    if (dst_signed) {
@@ -458,7 +458,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    mlib_noexcept
 {
    // Multiplication is a lot more subtle
-   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1);
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
    if (dst_signed) {
       if (a_signed) {
          if (b_signed) {

@@ -35,7 +35,7 @@
 /**
  * @brief Like `sizeof`, but returns the number of bits in the object representation
  */
-#define mlib_bitsizeof(T) ((sizeof (T)) * CHAR_BIT)
+#define mlib_bitsizeof(T) ((sizeof (T)) * ((size_t) CHAR_BIT))
 
 // clang-format off
 /**
@@ -78,8 +78,8 @@
  */
 #define mlib_maxof(T) \
    ((T) (mlib_is_signed (T) \
-        ? ((T) mlib_bits(mlib_bitsizeof(T) - 1, 0)) \
-        : ((T) mlib_bits(mlib_bitsizeof(T),     0))))
+        ? ((T) mlib_bits(mlib_bitsizeof(T) - 1u, 0)) \
+        : ((T) mlib_bits(mlib_bitsizeof(T),      0))))
 
 /**
  * @brief Given an integral type, yield an integral constant value for the
@@ -88,7 +88,7 @@
 #define mlib_minof(T) \
    ((T) (!mlib_is_signed (T) \
         ? (T) 0 \
-        : (T) mlib_bits(1, mlib_bitsizeof(T) - 1)))
+        : (T) mlib_bits(1, mlib_bitsizeof(T) - 1u)))
 // clang-format on
 
 /**
