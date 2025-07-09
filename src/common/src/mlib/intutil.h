@@ -32,27 +32,63 @@
  */
 #define mlib_is_signed(T) (!((T) (-1) > 0))
 
+/**
+ * @brief Like `sizeof`, but returns the number of bits in the object representation
+ */
+#define mlib_bitsizeof(T) ((sizeof (T)) * CHAR_BIT)
+
 // clang-format off
+/**
+ * @brief Generate a mask of contiguous bits.
+ *
+ * @param NumOnes The number of contiguous 1 bits
+ * @param NumZeros The number of contiguous 0 bits to set in the low position
+ *
+ * The generated mask is of the form:
+ *
+ *             NumZeros
+ *                 │
+ *                ┌┴─┐
+ *                │  │
+ *     `0..0 1..1 0..0`
+ *           │  │
+ *           └┬─┘
+ *            │
+ *        NumOnes
+ *
+ * Explain the arithmetic below:
+ *
+ * 1. `ones = 0b1111...` : All high bits
+ * 2. `tmp  = ones >> (NumOnes - num_bits_of(ones))` : Truncate to the number of 1s we want
+ * 3. `res  = tmp  << NumZeros` : Add the 0s in the low position
+ */
+#define mlib_bits(NumOnes, NumZeros) ( \
+      /* Create a set of N 1 bits */ \
+      (/* Create a mask of all 0b1111... */ \
+         ~UINTMAX_C(0) \
+         /* Shift down the chop off to only the number of 1 bits we want */ \
+         >> (mlib_bitsizeof(uintmax_t) - (uintmax_t)(NumOnes))) \
+      /* Shift left to add the low zeros */\
+      << ((uintmax_t)(NumZeros)) \
+   )
+
 /**
  * @brief Given an integral type, yield an integral constant value representing
  * the maximal value of that type.
  */
 #define mlib_maxof(T) \
    ((T) (mlib_is_signed (T) \
-        ? ((T) ((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1)) \
-        : ((T) ~(T) 0)))
+        ? ((T) mlib_bits(mlib_bitsizeof(T) - 1, 0)) \
+        : ((T) mlib_bits(mlib_bitsizeof(T),     0))))
 
 /**
  * @brief Given an integral type, yield an integral constant value for the
  * minimal value of that type.
  */
 #define mlib_minof(T) \
-   MLIB_PRAGMA_IF_MSVC (warning (push)) \
-   MLIB_PRAGMA_IF_MSVC (warning (disable : 4146)) \
    ((T) (!mlib_is_signed (T) \
         ? (T) 0 \
-        : (T) (-((((T) 1 << (sizeof (T) * CHAR_BIT - 2)) - 1) * 2 + 1) - 1))) \
-   MLIB_PRAGMA_IF_MSVC (warning (pop))
+        : (T) mlib_bits(1, mlib_bitsizeof(T) - 1)))
 // clang-format on
 
 /**
@@ -63,11 +99,11 @@
 typedef struct mlib_upsized_integer {
    union {
       // The signed value of the integer
-      intmax_t s;
+      intmax_t as_signed;
       // The unsigned value of the integer
-      uintmax_t u;
-   } i;
-   // Whether the upscaled integer is stored in the signed field or the unsigned field
+      uintmax_t as_unsigned;
+   } bits;
+   // Whether the upscaled integer bits should be treated as a two's complement signed integer
    bool is_signed;
 } mlib_upsized_integer;
 
@@ -85,23 +121,29 @@ typedef struct mlib_upsized_integer {
  * If the integer to upcast is the same size as `intmax_t`, we need to decide whether to store
  * it as unsigned. The expression `(_mlibGetOne(Value)) - 2 < 1` will be `true` iff the operand is signed,
  * otherwise false. If the operand is signed, we can safely cast to `intmax_t` (it probably already
- * is of that type), otherwise, we can to `uintmax_t` and the returned `mlib_upsized_integer` will
+ * is of that type), otherwise, we cast to `uintmax_t` and the returned `mlib_upsized_integer` will
  * indicate that the stored value is unsigned. The expression `1 - 2 < 1` is chosen
  * to avoid `-Wtype-limits` warnings from some compilers about unsigned comparison.
  */
 #define mlib_upsize_integer(Value) \
-   MLIB_PRAGMA_IF_MSVC (warning(push)) \
-   MLIB_PRAGMA_IF_MSVC (warning(disable : 4189)) \
+   mlib_upsize_integer((uintmax_t)(intmax_t)((Value)), _mlibShouldTreatBitsAsSigned(Value))
+#define _mlibShouldTreatBitsAsSigned(Value) \
    /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
-   ((sizeof ((Value)) < sizeof (intmax_t) || (_mlibGetOne(Value) - 2) < _mlibGetOne(Value)) \
-      ? mlib_init(mlib_upsized_integer) {{(intmax_t) (Value)}, true} \
-      : mlib_init(mlib_upsized_integer) {{(intmax_t) (uintmax_t) (Value)}}) \
-   MLIB_PRAGMA_IF_MSVC (warning(pop))
+   (sizeof ((Value)) < sizeof (intmax_t) || (_mlibGetOne(Value) - 2) < _mlibGetOne(Value))
 // Yield a 1 value of similar-ish type to the given expression. The ternary
 // forces an integer promotion of literal 1 match the type of `V`, while leaving
 // `V` unevaluated. Note that this will also promote `V` to be at least `(unsigned) int`,
 // so the 1 value is only "similar" to `V`, and may be of a larger type
 #define _mlibGetOne(V) (1 ? 1 : (V))
+// Function impl for upsize_integer
+static inline mlib_upsized_integer
+(mlib_upsize_integer) (uintmax_t bits, bool treat_as_signed)
+{
+   mlib_upsized_integer ret;
+   ret.bits.as_unsigned = bits;
+   ret.is_signed = treat_as_signed;
+   return ret;
+}
 // clang-format on
 
 #endif // MLIB_INTUTIL_H_INCLUDED

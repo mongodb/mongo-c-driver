@@ -190,19 +190,17 @@ mlib_extern_c_begin ();
 // clang-format off
 // Generates an 0b11111 bit pattern for appropriate size:
 #define _mlibMaxofUnsigned(V) \
-   (sizeof(V) == sizeof(uintmax_t) \
-      ? UINTMAX_MAX /* No funny bit math, just return the max of the max int */ \
-      /* Generate an 0b11111... bit pattern */ \
-      : (UINTMAX_C(1) << ( \
-         /* Guard against an over-shift if V is uintmax_t: */ \
-           (sizeof(V) < sizeof(uintmax_t)) \
-         * (sizeof(V) * CHAR_BIT)) \
-         ) - 1)
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   mlib_bits(mlib_bitsizeof((V)), 0)
 
 // Generates an 0b01111 bit pattern for the two's complement max value:
-#define _mlibMaxofSigned(V) (_mlibMaxofUnsigned (V) >> 1ull)
+#define _mlibMaxofSigned(V) \
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   mlib_bits(mlib_bitsizeof(V) - 1, 0)
 // Generates an 0b10000... bit pattern for the two's complement min value:
-#define _mlibMinofSigned(V) ((0 & (V)) - (UINTMAX_C (1) << ((sizeof (V) * CHAR_BIT) - 1)))
+#define _mlibMinofSigned(V) \
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   (0 - mlib_bits(1, mlib_bitsizeof(V) - 1))
 // For completeness:
 #define _mlibMinofUnsigned(V) 0
 // Yields true iff the operand expression has a signed type, but requires that
@@ -265,7 +263,7 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    // Perform regular wrapping arithmetic on the unsigned value. The bit pattern
    // is equivalent if there is two's complement signed arithmetic.
    const uintmax_t sum = *dst = a + b;
-   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1);
    // Now we check whether that overflowed according to the sign configuration.
    // We use some bit fiddling magic that treat the signbit as a boolean for
    // "is this number negative?" or "is this number “large” (i.e. bigger than signed-max)?"
@@ -359,7 +357,7 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
 {
    // Perform the subtraction using regular wrapping arithmetic
    const uintmax_t diff = *dst = a - b;
-   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1);
    // Test whether the operation overflowed for the given sign configuration
    // (See mlib_add for more details on why we do this bit fiddling)
    if (dst_signed) {
@@ -460,7 +458,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    mlib_noexcept
 {
    // Multiplication is a lot more subtle
-   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1);
    if (dst_signed) {
       if (a_signed) {
          if (b_signed) {
@@ -576,7 +574,7 @@ _mlib_ckdint (void *dst,
 {
    // Perform the arithmetic on uintmax_t, for wrapping behavior
    uintmax_t tmp;
-   bool ovr = fn (&tmp, minval < 0, a.is_signed, a.i.u, b.is_signed, b.i.u);
+   bool ovr = fn (&tmp, minval < 0, a.is_signed, a.bits.as_unsigned, b.is_signed, b.bits.as_unsigned);
    // Endian-adjusting for writing the result
    const char *copy_from = (const char *) &tmp;
    if (!mlib_is_little_endian ()) {
@@ -651,7 +649,7 @@ _mlib_checked_cast (intmax_t min_,
                   here.lineno,
                   here.func,
                   expr,
-                  (long long) val.i.s,
+                  (long long) val.bits.as_signed,
                   typename_);
       } else {
          fprintf (stderr,
@@ -660,16 +658,16 @@ _mlib_checked_cast (intmax_t min_,
                   here.lineno,
                   here.func,
                   expr,
-                  (unsigned long long) val.i.u,
+                  (unsigned long long) val.bits.as_unsigned,
                   typename_);
       }
       fflush (stderr);
       abort ();
    }
    if (val.is_signed) {
-      return (uintmax_t) val.i.s;
+      return (uintmax_t) val.bits.as_signed;
    }
-   return val.i.u;
+   return val.bits.as_unsigned;
 }
 
 mlib_extern_c_end ();

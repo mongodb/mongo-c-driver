@@ -89,23 +89,23 @@ _test_upsize (void)
 {
    struct mlib_upsized_integer up;
    up = mlib_upsize_integer (31);
-   ASSERT (up.is_signed);
-   ASSERT (up.i.s == 31);
+   mlib_check (up.is_signed);
+   mlib_check (up.bits.as_signed == 31);
 
    // Casting from the max unsigned integer generates an unsigned upsized integer:
    up = mlib_upsize_integer ((uintmax_t) 1729);
-   ASSERT (!up.is_signed);
-   ASSERT (up.i.u == 1729);
+   mlib_check (!up.is_signed);
+   mlib_check (up.bits.as_unsigned == 1729);
 
    // Max signed integer makes a signed upsized integer:
    up = mlib_upsize_integer ((intmax_t) 1729);
-   ASSERT (up.is_signed);
-   ASSERT (up.i.s == 1729);
+   mlib_check (up.is_signed);
+   mlib_check (up.bits.as_signed == 1729);
 
    // From a literal:
    up = mlib_upsize_integer (UINTMAX_MAX);
-   ASSERT (!up.is_signed);
-   ASSERT (up.i.u == UINTMAX_MAX);
+   mlib_check (!up.is_signed);
+   mlib_check (up.bits.as_unsigned == UINTMAX_MAX);
 }
 
 static void
