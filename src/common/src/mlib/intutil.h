@@ -41,8 +41,8 @@
 /**
  * @brief Generate a mask of contiguous bits.
  *
- * @param NumOnes The number of contiguous 1 bits
- * @param NumZeros The number of contiguous 0 bits to set in the low position
+ * @param NumOnes The non-negative number of contiguous 1 bits
+ * @param NumZeros The non-negative number of contiguous 0 bits to set in the low position
  *
  * The generated mask is of the form:
  *
@@ -63,14 +63,10 @@
  * 3. `res  = tmp  << NumZeros` : Add the 0s in the low position
  */
 #define mlib_bits(NumOnes, NumZeros) ( \
-      /* Create a set of N 1 bits */ \
-      (/* Create a mask of all 0b1111... */ \
-         ~UINTMAX_C(0) \
-         /* Shift down the chop off to only the number of 1 bits we want */ \
-         >> (mlib_bitsizeof(uintmax_t) - (uintmax_t)(NumOnes))) \
-      /* Shift left to add the low zeros */\
-      << ((uintmax_t)(NumZeros)) \
-   )
+   ((NumOnes) \
+      ? (~UINTMAX_C(0) >> ((mlib_bitsizeof(uintmax_t) - (uintmax_t)(NumOnes)))) \
+      : 0) \
+   << ((uintmax_t)(NumZeros)))
 
 /**
  * @brief Given an integral type, yield an integral constant value representing

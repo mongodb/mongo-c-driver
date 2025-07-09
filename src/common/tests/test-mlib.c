@@ -47,6 +47,17 @@ _test_checks (void)
 }
 
 static void
+_test_bits (void)
+{
+   mlib_static_assert (mlib_bits (0, 0) == 0);           // 0b000
+   mlib_static_assert (mlib_bits (1, 0) == 1);           // 0b001
+   mlib_static_assert (mlib_bits (2, 0) == 3);           // 0b011
+   mlib_static_assert (mlib_bits (1, 1) == 2);           // 0b010
+   mlib_static_assert (mlib_bits (5, 3) == 248);         // 0b11111000
+   mlib_static_assert (mlib_bits (64, 0) == UINT64_MAX); // 0b111...
+}
+
+static void
 _test_minmax (void)
 {
    mlib_static_assert (mlib_minof (unsigned) == 0);
@@ -662,6 +673,7 @@ void
 test_mlib_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mlib/checks", _test_checks);
+   TestSuite_Add (suite, "/mlib/intutil/bits", _test_bits);
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
