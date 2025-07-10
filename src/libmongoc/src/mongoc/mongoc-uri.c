@@ -480,7 +480,7 @@ _parse_path (mongoc_uri_t *uri, mstr_view path, bson_error_t *error)
    }
 
    // Check if the database name contains and invalid characters after the %-decode
-   if (mstr_contains_any_of (mstr_cstring (uri->database), mstr_cstring ("/\\. \n\r\f\t\"$"))) {
+   if (mstr_contains_any_of (mstr_cstring (uri->database), mstr_cstring ("/\\. \"$"))) {
       MONGOC_URI_ERROR (error, "Invalid database specifier \"%s\": Contains disallowed characters", uri->database);
       return false;
    }
