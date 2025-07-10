@@ -519,8 +519,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       /* Use rr_data to update the topology's URI. */
       if (rr_data.txt_record_opts &&
-          !mongoc_uri_parse_options (
-             topology->uri, rr_data.txt_record_opts, true /* from_dns */, &topology->scanner->error)) {
+          !_mongoc_uri_apply_query_string (
+             topology->uri, mstr_cstring (rr_data.txt_record_opts), true /* from_dns */, &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 

@@ -145,6 +145,9 @@ typedef struct mlib_source_location {
 #define _mlibCheckCondition_neq(A, B) \
    _mlibCheckIntCmp (                 \
       mlib_equal, false, "!=", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+// Simple assertion with an explanatory string
+#define _mlibCheckCondition_because(Cond, Msg) \
+   _mlibCheckConditionBecause (Cond, #Cond, Msg, mlib_this_source_location ())
 
 /// Check evaluator when given a single boolean
 static inline void
@@ -152,6 +155,17 @@ _mlibCheckConditionSimple (bool c, const char *expr, struct mlib_source_location
 {
    if (!c) {
       fprintf (stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed\n", here.file, here.lineno, here.func, expr);
+      fflush (stderr);
+      abort ();
+   }
+}
+
+static inline void
+_mlibCheckConditionBecause (bool cond, const char *expr, const char *reason, mlib_source_location here)
+{
+   if (!cond) {
+      fprintf (
+         stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed (%s)\n", here.file, here.lineno, here.func, expr, reason);
       fflush (stderr);
       abort ();
    }

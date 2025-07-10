@@ -1236,7 +1236,7 @@ test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe)
 int32_t
 get_current_connection_count (const char *host_and_port)
 {
-   char *uri_str = bson_strdup_printf ("mongodb://%s\n", host_and_port);
+   char *uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
    char *uri_str_with_auth = test_framework_add_user_password_from_env (uri_str);
    mongoc_client_t *client = mongoc_client_new (uri_str_with_auth);
    test_framework_set_ssl_opts (client);
