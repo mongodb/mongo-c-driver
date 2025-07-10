@@ -250,25 +250,17 @@ mstr_latin_casecmp (mstr_view a, mstr_view b)
 static inline size_t
 _mstr_adjust_index (mstr_view s, mlib_upsized_integer pos, bool clamp_to_length)
 {
-   if (clamp_to_length) {
-      if (pos.is_signed) {
-         if (pos.i.s > 0 && (size_t) pos.i.s > s.len) {
-            pos.i.s = (intmax_t) s.len;
-         }
-      } else {
-         if (pos.i.u > s.len) {
-            pos.i.u = s.len;
-         }
-      }
+   if (clamp_to_length && (mlib_cmp) (pos, mlib_upsize_integer (s.len), 0) == mlib_greater) {
+      // We want to clamp to the length, and the given value is greater than the string length.
+      return s.len;
    }
-   if (pos.is_signed) {
-      if (pos.i.s < 0) {
-         // This will add the negative value to the length of the string. If such
-         // an operation would result a negative value, this will terminate the
-         // program.
-         return mlib_assert_add (size_t, s.len, pos.i.s);
-      }
+   if (pos.is_signed && pos.i.s < 0) {
+      // This will add the negative value to the length of the string. If such
+      // an operation would result a negative value, this will terminate the
+      // program.
+      return mlib_assert_add (size_t, s.len, pos.i.s);
    }
+   // No special behavior, just assert that the given position is in-bounds for the string
    mlib_check (pos.i.u <= s.len, because, "the string position index must not be larger than the string length");
    return pos.i.u;
 }
