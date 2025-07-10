@@ -4,6 +4,7 @@
 #include <mlib/intencode.h>
 #include <mlib/intutil.h>
 #include <mlib/loop.h>
+#include <mlib/str.h>
 #include <mlib/test.h>
 
 #include <TestSuite.h>
@@ -499,6 +500,27 @@ _test_int_parse (void)
       int ec = mlib_i64_parse (mstr_cstring (test->in), &value);
       mlib_check (value, eq, test->value);
       mlib_check (ec, eq, test->ec);
+   }
+
+   {
+      // Parsing stops after the three digits when we slice the string
+      int64_t value;
+      int ec = mlib_i64_parse (mstr_view_data ("123abc", 3), &value);
+      mlib_check (ec, eq, 0);
+      mlib_check (value, eq, 123);
+   }
+
+   {
+      // Does not try to parse after the "0x" when we slice
+      int ec = mlib_i64_parse (mstr_view_data ("0x123", 2), NULL);
+      mlib_check (ec, eq, EINVAL);
+   }
+
+   {
+      // Does not try to read past the "+" into stack memory
+      char plus = '+';
+      int ec = mlib_i64_parse (mstr_view_data (&plus, 1), NULL);
+      mlib_check (ec, eq, EINVAL);
    }
 }
 

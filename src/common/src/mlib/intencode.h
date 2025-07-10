@@ -271,7 +271,7 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
 
    // Infer the base value, if we have one
    if (base == 0) {
-      if (in.data[0] == '0') {
+      if (in.len && in.data[0] == '0') {
          if (in.len > 1) {
             if (mlib_latin_tolower (in.data[1]) == 'x') {
                // Hexadecimal
