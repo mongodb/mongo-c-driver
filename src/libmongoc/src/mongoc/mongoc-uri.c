@@ -1811,7 +1811,7 @@ mongoc_uri_finalize_directconnection (mongoc_uri_t *uri, bson_error_t *error)
 
 /**
  * @brief Parse the authority component of the URI string. This is the part following
- * "://" until the path, query, or fragment
+ * "://" until the path or query
  *
  * @param uri The URI to be updated
  * @param authority The full authority string to be parsed
@@ -1860,6 +1860,8 @@ _parse_authority (mongoc_uri_t *uri, const mstr_view authority, bson_error_t *er
  *
  * This isn't strictly conformant to any WWW spec, because our URI strings are weird,
  * but the URI components correspond to the same elements in a normal URL or URI
+ *
+ * Note: We do not include a URI fragment in our string parsing.
  */
 typedef struct {
    /// The scheme of the URI, which precedes the "://" substring
@@ -1874,8 +1876,6 @@ typedef struct {
    mstr_view path;
    /// The query string, including the leading "?"
    mstr_view query;
-   /// The fragment element, including the leading "#"
-   mstr_view fragment;
 } uri_parts;
 
 /**
@@ -1909,14 +1909,14 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
    // Trim down the string as we read from left to right
    mstr_view remain = uri;
 
-   // * remain = "foo://bar@baz:1234/path?query#fragment"
+   // * remain = "foo://bar@baz:1234/path?query"
    // Grab the scheme, which is the part preceding "://"
    if (!mstr_split_around (remain, mstr_cstring ("://"), &parts->scheme, &remain)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid URI, no scheme part specified");
       return false;
    }
 
-   // * remain = "bar@baz:1234/path?query#fragment"
+   // * remain = "bar@baz:1234/path?query"
    // Only ':' is permitted among RFC-3986 gen-delims (":/?#[]@") in userinfo.
    // However, continue supporting these characters for backward compatibility, as permitted by the Connection
    // String spec: for backwards-compatibility reasons, drivers MAY allow reserved characters other than "@" and
@@ -1931,7 +1931,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
          userinfo_end_pos = 0;
       }
       // Find the position of the first character that terminates the authority element
-      const size_t term_pos = mstr_find_first_of (remain, mstr_cstring ("/?#"), userinfo_end_pos);
+      const size_t term_pos = mstr_find_first_of (remain, mstr_cstring ("/?"), userinfo_end_pos);
       mstr_split_at (remain, term_pos, &parts->authority, &remain);
 
       // Now we should split the authority between the userinfo and the hosts
@@ -1947,14 +1947,11 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
       }
    }
 
-   // * remain = "/path?query#fragment" (Each following component is optional, but this is the proper order)
-   const size_t path_end_pos = mstr_find_first_of (remain, mstr_cstring ("?#"));
+   // * remain = "/path?query" (Each following component is optional, but this is the proper order)
+   const size_t path_end_pos = mstr_find_first_of (remain, mstr_cstring ("?"));
    mstr_split_at (remain, path_end_pos, &parts->path, &remain);
-   // * remain = "query#fragment" (Each following component is optional, but this is the proper order)
-   const size_t hash_pos = mstr_find_first_of (remain, mstr_cstring ("#"));
-   mstr_split_at (remain, hash_pos, &parts->query, &remain);
-   // * remain = "#fragment"
-   parts->fragment = remain;
+   // * remain = "?query"
+   parts->query = remain;
    return true;
 }
 
@@ -1976,15 +1973,6 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    mstr_view remain = mstr_cstring (str);
    uri_parts parts;
    if (!_decompose_uri_string (&parts, remain, error)) {
-      return false;
-   }
-
-   // Don't allow a fragment specifier. We don't support that
-   if (parts.fragment.len) {
-      MONGOC_URI_ERROR (error,
-                        "Invalid URI string \"%s\": URIs cannot have a fragment element (got '%.*s')",
-                        str,
-                        MSTR_FMT (parts.fragment));
       return false;
    }
 
