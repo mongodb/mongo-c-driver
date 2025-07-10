@@ -50,7 +50,7 @@
  */
 typedef struct mstr_view {
    /**
-    * @brief Pointer to the first string data viewed by this object.
+    * @brief Pointer to the string data viewed by this object.
     *
     * - This pointer may be null, in which case the string view itself is "null".
     * - If `len > 1`, then this points to a contiguous array of `char` of length
