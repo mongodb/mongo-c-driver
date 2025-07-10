@@ -45,11 +45,27 @@
  * a null-terminated `mstr_view`.
  * @note The viewed string MAY contain nul (zero-value) characters, so using them
  * with C string APIs could truncate unexpectedly.
+ * @note The view itself may be "null" if the `data` member of the string view
+ * is a null pointer. A zero-initialized `mstr_view` is null.
  */
 typedef struct mstr_view {
-   // Pointer to the first character in the string
+   /**
+    * @brief Pointer to the first string data viewed by this object.
+    *
+    * - This pointer may be null, in which case the string view itself is "null".
+    * - If `len > 1`, then this points to a contiguous array of `char` of length
+    *   `len`.
+    * - If `len == 1`, then this *may* point to a single `char` object.
+    * - The pointed-to string might not be a null-terminated C string. Accessing
+    *   the `char` value at `data[len]` is undefined behavior.
+    */
    const char *data;
-   // Length of the array pointed-to by `data`
+   /**
+    * @brief The length of the viewed string pointed-to by `data`
+    *
+    * If `data` points to a single `char` object, then this must be `1`. If
+    * `data` is a null pointer, then this value should be zero.
+    */
    size_t len;
 } mstr_view;
 
@@ -65,24 +81,24 @@ typedef struct mstr_view {
 /**
  * @brief Create an `mstr_view` that views the given array of `char`
  *
- * @param data Pointer to the beginning of the
- * @param len Length of the new string-view
+ * @param data Pointer to the beginning of the string, or pointer to a single
+ * `char`, or a null pointer
+ * @param len Length of the new string-view. If `data` points to a single `char`,
+ * this must be `0` or `1`. If `data` is a null pointer, this should be `0`.
+ *
+ * @note This is defined as a macro that expands to a compound literal to prevent
+ * proliferation of redundant function calls in debug builds.
  */
-static inline mstr_view
-mstr_view_data (const char *data, size_t len)
-{
-   mstr_view ret;
-   ret.data = data;
-   ret.len = len;
-   return ret;
-}
+#define mstr_view_data(DataPointer, Length) (mlib_init (mstr_view){(DataPointer), (Length)})
 
 #if 1 // See "!! NOTE" below
 
 /**
  * @brief Coerce a string-like object to an `mstr_view` of that string
  *
- * This macro requires that the object have `.data` and `.len` members
+ * This macro requires that the object have `.data` and `.len` members.
+ *
+ * @note This macro will double-evaluate its argument.
  */
 #define mstr_view_from(X) mstr_view_data ((X).data, (X).len)
 
@@ -101,6 +117,9 @@ mstr_view_data (const char *data, size_t len)
  *    Do something...
  * }
  * ```
+ *
+ * This also allows us to avoid the double-evaluation problem presented by
+ * `mstr_view_from` being defined as above.
  *
  * Without _Generic, we require all C strings to be wrapped with `mstr_cstring`,
  * which isn't especially onerous, but it is annoying. Additionally, the below
@@ -136,6 +155,9 @@ _mstr_view_trivial_copy (mstr_view s)
  * @brief Create an `mstr_view` referring to the given null-terminated C string
  *
  * @param s Pointer to a C string. The length of the returned string is infered using `strlen`
+ *
+ * This should not defined as a macro, because defining it as a macro would require
+ * double-evaluating for the call to `strlen`.
  */
 static inline mstr_view
 mstr_cstring (const char *s)
