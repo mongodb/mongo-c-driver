@@ -257,13 +257,13 @@ test_mongoc_uri_new (void)
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
    ASSERT (!uri);
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence \"%se\"");
+   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-encoding in username in URI string");
    capture_logs (false);
 
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://user:p%wd@localhost:27017");
    ASSERT (!uri);
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence \"%wd\"");
+   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-encoding in password in URI string");
    capture_logs (false);
 
    capture_logs (true);
@@ -1458,7 +1458,8 @@ test_mongoc_uri_new_with_error (void)
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://user%p:pass@localhost/", &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Truncated %-sequence \"%p\"");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid %-encoding in username in URI string");
 
    error = BSON_ERROR_INIT;
    ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
