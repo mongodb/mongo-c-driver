@@ -303,20 +303,18 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    // Check if the username has invalid unescaped characters
    const mstr_view PROHIBITED_CHARS = mstr_cstring ("@:/");
    if (mstr_find_first_of (username, PROHIBITED_CHARS) != SIZE_MAX) {
-      MONGOC_URI_ERROR (
-         error, "Username \"%.*s\" must not have unescaped chars. %s", MSTR_FMT (username), escape_instructions);
+      MONGOC_URI_ERROR (error, "Username must not have unescaped chars. %s", escape_instructions);
       return false;
    }
    if (mstr_find_first_of (password, PROHIBITED_CHARS) != SIZE_MAX) {
-      MONGOC_URI_ERROR (
-         error, "Password \"%.*s\" must not have unescaped chars. %s", MSTR_FMT (password), escape_instructions);
+      MONGOC_URI_ERROR (error, "Password must not have unescaped chars. %s", escape_instructions);
       return false;
    }
 
    // Store the username and password on the URI
    uri->username = _strdup_pct_decode (username, error);
    if (!uri->username) {
-      MONGOC_URI_ERROR (error, "Invalid username \"%.*s\" in URI string: %s", MSTR_FMT (username), error->message);
+      MONGOC_URI_ERROR (error, "Invalid username in URI string: %s", error->message);
       return false;
    }
 
@@ -324,7 +322,7 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    if (has_password) {
       uri->password = _strdup_pct_decode (password, error);
       if (!uri->password) {
-         MONGOC_URI_ERROR (error, "Invalid password \"%.*s\" in URI string: %s", MSTR_FMT (password), error->message);
+         MONGOC_URI_ERROR (error, "Invalid password in URI string: %s", error->message);
          return false;
       }
    }
