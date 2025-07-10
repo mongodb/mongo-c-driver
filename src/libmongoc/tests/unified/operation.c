@@ -3328,7 +3328,7 @@ operation_wait (test_t *test, operation_t *op, result_t *result, bson_error_t *e
    bson_iter_init_find (&iter, op->arguments, "ms");
    ASSERT (BSON_ITER_HOLDS_INT (&iter));
    const int64_t sleep_msec = bson_iter_as_int64 (&iter);
-   mlib_this_thread_sleep_for (mlib_milliseconds (sleep_msec));
+   mlib_sleep_for (sleep_msec, ms);
 
    result_from_ok (result);
    return true;
@@ -3628,7 +3628,7 @@ log_filter_hide_server_selection_operation (const mongoc_structured_log_entry_t 
 static void
 _operation_hidden_wait (test_t *test, entity_t *client, const char *name)
 {
-   mlib_this_thread_sleep_for (mlib_milliseconds (WAIT_FOR_EVENT_TICK_MS));
+   mlib_sleep_for (WAIT_FOR_EVENT_TICK_MS, ms);
 
    // @todo Re-examine this once we have support for connection pools in the unified test
    //    runner. Without pooling, all events we could be waiting on would be coming

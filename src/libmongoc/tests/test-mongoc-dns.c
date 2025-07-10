@@ -794,7 +794,7 @@ _prose_test_update_srv_single (void *resource)
 
    client = resource;
 
-   mlib_this_thread_sleep_for (mlib_duration_mul (mlib_milliseconds (RESCAN_INTERVAL_MS), 2));
+   mlib_sleep_for ((RESCAN_INTERVAL_MS, ms), mul, 2);
 
    /* Avoid ping given `loadBalanced=true`; see prose test 9. */
    if (!mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_LOADBALANCED, false)) {
@@ -807,7 +807,7 @@ _prose_test_update_srv_pooled (void *resource)
 {
    BSON_ASSERT_PARAM (resource);
 
-   mlib_this_thread_sleep_for (mlib_duration_mul (mlib_milliseconds (RESCAN_INTERVAL_MS), 2));
+   mlib_sleep_for ((RESCAN_INTERVAL_MS, ms), mul, 2);
 }
 
 typedef struct {

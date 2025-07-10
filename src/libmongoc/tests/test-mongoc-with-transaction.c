@@ -24,7 +24,7 @@ with_transaction_fail_transient_txn (mongoc_client_session_t *session, void *ctx
    BSON_UNUSED (ctx);
    BSON_UNUSED (error);
 
-   mlib_this_thread_sleep_for (mlib_milliseconds (session->with_txn_timeout_ms));
+   mlib_sleep_for (session->with_txn_timeout_ms, ms);
 
    *reply = bson_new ();
    BSON_APPEND_ARRAY_BUILDER_BEGIN (*reply, "errorLabels", &labels);

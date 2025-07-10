@@ -802,7 +802,7 @@ test_prose_rtt (void *unused)
 
    /* Sleep for RTT_TEST_INITIAL_SLEEP_SEC seconds to allow multiple heartbeats
     * to succeed. */
-   mlib_this_thread_sleep_for (mlib_seconds (RTT_TEST_INITIAL_SLEEP_SEC));
+   mlib_sleep_for (RTT_TEST_INITIAL_SLEEP_SEC, sec);
 
    /* Set a failpoint to make hello commands take longer. */
    bson_init (&cmd);
@@ -840,7 +840,7 @@ test_prose_rtt (void *unused)
          satisfied = true;
       }
       mongoc_server_description_destroy (sd);
-      mlib_this_thread_sleep_for (mlib_milliseconds (RTT_TEST_TICK_MS));
+      mlib_sleep_for (RTT_TEST_TICK_MS, ms);
    }
 
    if (!satisfied) {

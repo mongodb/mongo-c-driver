@@ -105,7 +105,7 @@ _auto_hello_without_speculative_auth (request_t *request, void *data)
 
    if (mock_server_get_rand_delay (request->server)) {
       int rand_ms = rand () % 10;
-      mlib_this_thread_sleep_for (mlib_milliseconds (rand_ms));
+      mlib_sleep_for (rand_ms, ms);
    }
 
    reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);

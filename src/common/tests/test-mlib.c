@@ -905,64 +905,89 @@ _test_duration (void)
    mlib_duration d = mlib_duration_zero ();
    mlib_check (mlib_microseconds_count (d), eq, 0);
 
+   // Creating durations with the macro name
+   d = mlib_duration ();
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration ()));
+   d = mlib_duration (d);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration ()));
+
+   d = mlib_duration (10, ms);
+   mlib_check (mlib_duration_cmp (d, ==, (10, ms)));
+   d = mlib_duration (10, us);
+   mlib_check (mlib_duration_cmp (d, ==, (10, us)));
+   d = mlib_duration (10, sec);
+   mlib_check (mlib_duration_cmp (d, ==, (10, sec)));
+
+   d = mlib_duration ((10, sec), mul, 3);
+   mlib_check (mlib_duration_cmp (d, ==, (30, sec)));
+
+   d = mlib_duration ((10, sec), plus, (40, ms));
+   mlib_check (mlib_duration_cmp (d, ==, (10040, ms)));
+
+   d = mlib_duration ((10, sec), div, 20);
+   mlib_check (mlib_duration_cmp (d, ==, (500, ms)));
+
+   d = mlib_duration ((4, sec), min, (400, ms));
+   mlib_check (mlib_duration_cmp (d, ==, (400, ms)));
+
    // Comparison
-   mlib_check (mlib_duration_cmp (mlib_seconds (4), mlib_seconds (4)) == 0);
-   mlib_check (mlib_duration_cmp (mlib_seconds (4), mlib_seconds (5)) < 0);
-   mlib_check (mlib_duration_cmp (mlib_seconds (4), mlib_seconds (-5)) > 0);
-   mlib_check (mlib_duration_cmp (mlib_seconds (4), ==, mlib_seconds (4)));
-   mlib_check (mlib_duration_cmp (mlib_seconds (4), <, mlib_seconds (5)));
-   mlib_check (mlib_duration_cmp (mlib_seconds (4), >, mlib_seconds (-5)));
+   mlib_check (mlib_duration_cmp (mlib_duration (4, sec), mlib_duration (4, sec)) == 0);
+   mlib_check (mlib_duration_cmp (mlib_duration (4, sec), mlib_duration (5, sec)) < 0);
+   mlib_check (mlib_duration_cmp (mlib_duration (4, sec), mlib_duration (-5, sec)) > 0);
+   mlib_check (mlib_duration_cmp ((4, sec), ==, (4, sec)));
+   mlib_check (mlib_duration_cmp ((4, sec), <, (5, sec)));
+   mlib_check (mlib_duration_cmp ((4, sec), >, (-5, sec)));
 
    // Overflow saturates:
-   d = mlib_seconds (mlib_maxof (mlib_duration_rep_t));
+   d = mlib_duration (mlib_maxof (mlib_duration_rep_t), sec);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
 
-   d = mlib_duration_mul (d, 16);
+   d = mlib_duration (d, mul, 16);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
 
    // Rounds toward zero
-   d = mlib_milliseconds (1050);
+   d = mlib_duration (1050, ms);
    mlib_check (mlib_seconds_count (d), eq, 1);
-   d = mlib_milliseconds (-1050);
+   d = mlib_duration (-1050, ms);
    mlib_check (mlib_seconds_count (d), eq, -1);
-   d = mlib_microseconds (1729);
+   d = mlib_duration (1729, us);
    mlib_check (mlib_milliseconds_count (d), eq, 1);
-   d = mlib_microseconds (-1729);
+   d = mlib_duration (-1729, us);
    mlib_check (mlib_milliseconds_count (d), eq, -1);
 
-   d = mlib_duration_add (mlib_seconds (1), mlib_milliseconds (729));
-   mlib_check (mlib_microseconds_count (d), eq, 1729000);
-   d = mlib_duration_add (mlib_seconds (-3), mlib_duration_min ());
+   // d = mlib_duration (1, sec, plus, 729, ms);
+   // mlib_check (mlib_microseconds_count (d), eq, 1729000);
+   d = mlib_duration ((-3, sec), plus, mlib_duration_min ());
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
-   d = mlib_duration_add (mlib_seconds (4), mlib_duration_max ());
+   d = mlib_duration ((4, sec), plus, mlib_duration_max ());
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
 
-   d = mlib_duration_sub (mlib_seconds (4), mlib_milliseconds (2271));
+   d = mlib_duration ((4, sec), minus, (2271, ms));
    mlib_check (mlib_milliseconds_count (d), eq, 1729);
    // Overflow saturates:
-   d = mlib_duration_sub (mlib_milliseconds (-4), mlib_duration_max ());
+   d = mlib_duration ((-4, ms), minus, mlib_duration_max ());
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
-   d = mlib_duration_sub (mlib_milliseconds (4), mlib_duration_min ());
+   d = mlib_duration ((4, ms), minus, mlib_duration_min ());
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
 
-   d = mlib_duration_mul (mlib_seconds (4), 5);
-   mlib_check (mlib_duration_cmp (d, ==, mlib_seconds (20)));
-   d = mlib_duration_mul (mlib_duration_max (), 2);
+   d = mlib_duration ((4, sec), mul, 5);
+   mlib_check (mlib_duration_cmp (d, ==, (20, sec)));
+   d = mlib_duration (mlib_duration_max (), mul, 2);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
-   d = mlib_duration_mul (mlib_duration_max (), -2);
+   d = mlib_duration (mlib_duration_max (), mul, -2);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
-   d = mlib_duration_mul (mlib_duration_min (), 2);
+   d = mlib_duration (mlib_duration_min (), mul, 2);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
-   d = mlib_duration_mul (mlib_duration_min (), -2);
+   d = mlib_duration (mlib_duration_min (), mul, -2);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
 
-   d = mlib_duration_div (mlib_duration_max (), -1);
+   d = mlib_duration (mlib_duration_max (), div, -1);
    mlib_check (mlib_duration_cmp (d, mlib_duration_zero ()) < 0);
-   d = mlib_duration_div (mlib_duration_min (), -1);
+   d = mlib_duration (mlib_duration_min (), div, -1);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
    mlib_assert_aborts () {
       // Division by zero
-      d = mlib_duration_div (d, 0);
+      d = mlib_duration (d, div, 0);
    }
 
    // To/from timespec
@@ -970,14 +995,14 @@ _test_duration (void)
    ts.tv_sec = 4;
    ts.tv_nsec = 0;
    d = mlib_duration_from_timespec (ts);
-   mlib_check (mlib_duration_cmp (d, ==, mlib_seconds (4)));
+   mlib_check (mlib_duration_cmp (d, ==, (4, sec)));
    //
    ts.tv_sec = -3;
    ts.tv_nsec = -4000;
    d = mlib_duration_from_timespec (ts);
-   mlib_check (mlib_duration_cmp (d, ==, mlib_microseconds (-3000004)));
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration ((-3000004, us), plus, (0, us))));
    //
-   ts = mlib_duration_to_timespec (mlib_microseconds (-5000908));
+   ts = mlib_duration_to_timespec (mlib_duration (-5000908, us));
    mlib_check (ts.tv_sec, eq, -5);
    mlib_check (ts.tv_nsec, eq, -908000);
 }
@@ -988,7 +1013,7 @@ _test_time_point (void)
    mlib_time_point t = mlib_now ();
 
    // Offset the time point
-   mlib_time_point later = mlib_later (t, mlib_seconds (1));
+   mlib_time_point later = mlib_later (t, mlib_duration (1, sec));
    mlib_check (mlib_time_cmp (t, <, later));
 
    // Difference between two time points is a duration:
@@ -1007,7 +1032,7 @@ static void
 _test_sleep (void)
 {
    mlib_time_point start = mlib_now ();
-   int rc = mlib_this_thread_sleep_for (mlib_milliseconds (50));
+   int rc = mlib_sleep_for (mlib_duration (50, ms));
    mlib_check (rc, eq, 0);
    mlib_duration t = mlib_time_difference (mlib_now (), start);
    mlib_check (mlib_milliseconds_count (t), gte, 45);
@@ -1015,20 +1040,20 @@ _test_sleep (void)
 
    // Sleeping for a negative duration returns immediately with success
    start = mlib_now ();
-   mlib_check (mlib_this_thread_sleep_for (mlib_seconds (-10)), eq, 0);
+   mlib_check (mlib_sleep_for (mlib_duration (-10, sec)), eq, 0);
    mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
 
    // Sleeping until a point in the past returns immediately as well
-   mlib_check (mlib_this_thread_sleep_until (start), eq, 0);
+   mlib_check (mlib_sleep_until (start), eq, 0);
    mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
 }
 
 static void
 _test_timer (void)
 {
-   mlib_timer tm = mlib_expiring_after (mlib_milliseconds (200));
+   mlib_timer tm = mlib_expiring_after (200, ms);
    mlib_check (!mlib_timer_is_expired (tm));
-   mlib_this_thread_sleep_for (mlib_milliseconds (250));
+   mlib_sleep_for (250, ms);
    mlib_check (mlib_timer_is_expired (tm));
 
    // Test the once-var condition
@@ -1041,14 +1066,14 @@ _test_timer (void)
 
    // Try with a not-yet-expired timer
    cond = false;
-   tm = mlib_expiring_after (mlib_seconds (10));
+   tm = mlib_expiring_after (10, sec);
    mlib_check (!mlib_timer_is_expired (tm));
    mlib_check (!mlib_timer_is_expired (tm, &cond));
    // cond was set to `true`, even though we are not yet expired
    mlib_check (cond);
 
    // Create a timer that expired in the past
-   tm = mlib_expires_at (mlib_later (mlib_now (), mlib_seconds (-10)));
+   tm = mlib_expires_at (mlib_later (mlib_now (), mlib_duration (-10, sec)));
    mlib_check (mlib_timer_is_expired (tm));
 }
 

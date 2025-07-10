@@ -238,7 +238,7 @@ _test_session_pool_timeout (bool pooled)
    mongoc_client_session_destroy (s);
    BSON_ASSERT (!mongoc_server_session_pool_is_empty (client->topology->session_pool));
 
-   mlib_this_thread_sleep_for (mlib_milliseconds (1500));
+   mlib_sleep_for (1500, ms);
 
    /* getting a new client session must start a new server session */
    s = mongoc_client_start_session (client, NULL, &error);
@@ -322,7 +322,7 @@ _test_session_pool_reap (bool pooled)
    mongoc_client_session_destroy (a);
    BSON_ASSERT (!mongoc_server_session_pool_is_empty (client->topology->session_pool)); /* session is pooled */
 
-   mlib_this_thread_sleep_for (mlib_milliseconds (1500));
+   mlib_sleep_for (1500, ms);
 
    /*
     * returning session B causes session A to be reaped

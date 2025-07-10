@@ -1175,7 +1175,7 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session, bson
 
       /* Waste the test timeout, if there is one set. */
       if (session->with_txn_timeout_ms) {
-         mlib_this_thread_sleep_for (mlib_milliseconds (session->with_txn_timeout_ms));
+         mlib_sleep_for (session->with_txn_timeout_ms, ms);
       }
 
       RETURN (r);

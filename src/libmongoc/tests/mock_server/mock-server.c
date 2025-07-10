@@ -556,7 +556,7 @@ auto_hello (request_t *request, void *data)
 
    if (mock_server_get_rand_delay (request->server)) {
       const int random_sleep = rand () % 10;
-      mlib_this_thread_sleep_for (mlib_milliseconds (random_sleep));
+      mlib_sleep_for (random_sleep, ms);
    }
 
    reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
@@ -1632,7 +1632,7 @@ mock_server_destroy (mock_server_t *server)
       }
 
       bson_mutex_unlock (&server->mutex);
-      mlib_this_thread_sleep_for (mlib_milliseconds (1));
+      mlib_sleep_for (1, ms);
    }
 
    bson_mutex_lock (&server->mutex);

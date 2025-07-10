@@ -127,7 +127,7 @@ mongoc_async_run (mongoc_async_t *async)
       } else {
          /* currently this does not get hit. we always have at least one command
           * initialized with a stream. */
-         mlib_this_thread_sleep_for (mlib_milliseconds (poll_timeout_msec));
+         mlib_sleep_for (poll_timeout_msec, ms);
       }
 
       if (nactive > 0) {

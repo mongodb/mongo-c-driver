@@ -146,7 +146,7 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
       /* if there were active poll responses which were all silenced,
        * sleep for a little while since subsequent calls to poll may not have
        * any delay. */
-      mlib_this_thread_sleep_for (mlib_milliseconds (5));
+      mlib_sleep_for (5, ms);
    }
    return nactive;
 }
@@ -398,7 +398,7 @@ test_happy_eyeballs_dns_cache (void)
    mongoc_topology_scanner_node_disconnect (testcase.state.ts->nodes, false);
 
    /* wait for DNS cache to expire. */
-   mlib_this_thread_sleep_for (mlib_seconds (2));
+   mlib_sleep_for (2, sec);
 
    /* after running once, the topology scanner should have cached the DNS
     * result for IPv6. It should complete immediately. */

@@ -80,7 +80,7 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
 
    switch (data->behavior) {
    case SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE:
-      mlib_this_thread_sleep_for (mlib_milliseconds (data->handshake_stall_ms));
+      mlib_sleep_for (data->handshake_stall_ms, ms);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
       r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);

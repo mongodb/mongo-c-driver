@@ -1073,7 +1073,7 @@ smm_wait (smm_t *t, size_t count)
       if (now - started > 10 * 1000 * 1000) {
          break;
       }
-      mlib_this_thread_sleep_for (mlib_milliseconds (500));
+      mlib_sleep_for (500, ms);
    }
    return false;
 }

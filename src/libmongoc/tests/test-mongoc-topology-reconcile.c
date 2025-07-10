@@ -258,7 +258,7 @@ _test_topology_reconcile_sharded (bool pooled)
    request_destroy (request);
 
    /* make sure the mongos response is processed first */
-   mlib_this_thread_sleep_for (mlib_seconds (1));
+   mlib_sleep_for (1, sec);
 
    /* replica set secondary - topology removes it */
    request = mock_server_receives_any_hello (secondary);

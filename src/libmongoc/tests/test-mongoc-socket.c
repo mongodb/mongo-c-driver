@@ -81,7 +81,7 @@ static BSON_THREAD_FUN (socket_test_server, data_)
 
    strcpy (buf, "pong");
 
-   mlib_this_thread_sleep_for (mlib_milliseconds (data->server_sleep_ms));
+   mlib_sleep_for (data->server_sleep_ms, ms);
    r = mongoc_stream_writev (stream, &iov, 1, TIMEOUT);
 
    /* if we sleep the client times out, else assert the client reads the data */
@@ -161,7 +161,7 @@ static BSON_THREAD_FUN (socket_test_client, data_)
       start = bson_get_monotonic_time ();
       while (!mongoc_stream_check_closed (stream)) {
          ASSERT_CMPINT64 (bson_get_monotonic_time (), <, start + 1000 * 1000);
-         mlib_this_thread_sleep_for (mlib_milliseconds (1));
+         mlib_sleep_for (1, ms);
       }
       BSON_ASSERT (!mongoc_stream_timed_out (stream));
    } else {

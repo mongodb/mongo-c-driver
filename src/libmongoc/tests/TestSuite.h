@@ -579,7 +579,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                                   BSON_FUNC);                          \
             abort ();                                                  \
          }                                                             \
-         mlib_this_thread_sleep_for (mlib_milliseconds (10));          \
+         mlib_sleep_for (10, ms);                                      \
       }                                                                \
    } while (0)
 

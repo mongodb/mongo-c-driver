@@ -47,7 +47,7 @@ BSON_THREAD_FUN (_interrupt, future_void)
 
    future = future_void;
    interrupt = future_get_param (future, 0)->value.void_ptr_value;
-   mlib_this_thread_sleep_for (mlib_milliseconds (10));
+   mlib_sleep_for (10, ms);
    _mongoc_interrupt_interrupt (interrupt);
    return_value.type = future_value_void_type;
    future_resolve (future, return_value);

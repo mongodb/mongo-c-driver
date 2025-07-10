@@ -66,23 +66,15 @@ typedef struct mlib_duration {
  * @brief A macro that expands to an `mlib_duration` representing no elapsed
  * time
  */
-#define mlib_duration_zero() mlib_init (mlib_duration){0}
+#define mlib_duration_zero() (mlib_init (mlib_duration){0})
 /**
  * @brief A macro that expands to the maximum positive duration
  */
-#define mlib_duration_max()            \
-   mlib_init (mlib_duration)           \
-   {                                   \
-      mlib_maxof (mlib_duration_rep_t) \
-   }
+#define mlib_duration_max() (mlib_init (mlib_duration){mlib_maxof (mlib_duration_rep_t)})
 /**
  * @brief A macro that expands to the minimum duration (a negative duration)
  */
-#define mlib_duration_min()            \
-   mlib_init (mlib_duration)           \
-   {                                   \
-      mlib_minof (mlib_duration_rep_t) \
-   }
+#define mlib_duration_min() (mlib_init (mlib_duration){mlib_minof (mlib_duration_rep_t)})
 
 /**
  * @brief Obtain the count of microseconds represented by the duration (round
@@ -115,97 +107,49 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
 }
 
 /**
- * @brief Create a duration object that represents the given number of
- * nanoseconds
+ * @brief Duration creation and manipulation shorthands
+ *
+ * This function-like macro is used to create and manipulate durations on-the-fly.
+ * It can be called with the following syntaxes:
+ *
+ * - `mlib_duration()` (no arguments)
+ *       creates a zero-valued duration
+ * - `mlib_duration(<dur>)`
+ *       copies the duration object `<dur>`
+ * - `mlib_duration(<count>, <unit>)`
+ *       Creates a duration of `<count>` instances of `<unit>`.
+ * - `mlib_duration(<dur>, <op>, <operand>)`
+ *       Manipulates a duration according to `<op>`.
+ *
+ * In the above, `<dur>` may be a parenthsized `mlib_duration` argument list or a
+ * duration object; `<count>` must be an integral expression and `<unit>` is one of `ns`, `us,`
+ * `ms`, or `sec` to create a duration of `<count>` instances of `<unit>`, and
+ * `<op>` is one of:
+ *
+ * - `plus`/`minus` to add/subtract two durations
+ * - `mul`/`div` to multiply/divide a duration by a scalar factor.
+ * - `min`/`max` to get the minimum/maximum between two durations.
  */
-static inline mlib_duration
-mlib_nanoseconds (const mlib_duration_rep_t n) mlib_noexcept
-{
-   // We encode as a count of microseconds, so we lose precision here.
-   mlib_duration ret;
-   ret._rep = n / 1000;
-   return ret;
-}
+#define mlib_duration(...) (MLIB_EVAL_8 (_mlibDurationMagic (__VA_ARGS__)))
+#define _mlibDurationMagic(...) MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__) MLIB_NOTHING () (__VA_ARGS__)
+// Wraps a `<dur>` argument, and expands to the magic only if it is parenthesized
+#define _mlibDurationArgument(...)                                                     \
+   MLIB_IF_ELSE (MLIB_IS_EMPTY (_mlibExpandToNothingIfFollowedByParens __VA_ARGS__)) ( \
+      _mlibDurationMagic __VA_ARGS__) (__VA_ARGS__)
+#define _mlibExpandToNothingIfFollowedByParens(...)
 
-/**
- * @brief Create a duration object that represents the given number of
- * microseconds
- */
-static inline mlib_duration
-mlib_microseconds (const mlib_duration_rep_t n) mlib_noexcept
-{
-   mlib_duration ret;
-   ret._rep = n;
-   return ret;
-}
+// Zero arguments, just return a zero duration:
+#define _mlib_duration_argc_0() mlib_init (mlib_duration){0}
+// One argument, just copy the duration:
+#define _mlib_duration_argc_1(D) _mlibDurationCopy (D)
+// Two arguments, the second arg is a unit suffix:
+#define _mlib_duration_argc_2(Count, Unit) mlib_duration_with_unit (Count, Unit)
+// Three arguments, an infix operation:
+#define _mlib_duration_argc_3(Duration, Operator, Operand) \
+   MLIB_PASTE (_mlibDurationInfixOperator_, Operator) (_mlibDurationArgument (Duration), Operand)
 
-/**
- * @brief Create a duration object that represents the given number of
- * milliseconds
- */
 static inline mlib_duration
-mlib_milliseconds (const mlib_duration_rep_t n) mlib_noexcept
-{
-   mlib_duration_rep_t clamp = 0;
-   if (mlib_mul (&clamp, n, 1000)) {
-      clamp = n > 0 ? mlib_maxof (mlib_duration_rep_t) : mlib_minof (mlib_duration_rep_t);
-   }
-   return mlib_microseconds (clamp);
-}
-
-/**
- * @brief Create a duration object that represents the given number of seconds
- */
-static inline mlib_duration
-mlib_seconds (const mlib_duration_rep_t n) mlib_noexcept
-{
-   mlib_duration_rep_t clamp = 0;
-   if (mlib_mul (&clamp, n, 1000 * 1000)) {
-      clamp = n > 0 ? mlib_maxof (mlib_duration_rep_t) : mlib_minof (mlib_duration_rep_t);
-   }
-   return mlib_microseconds (clamp);
-}
-
-/**
- * @brief Create a new duration that represents the sum of two other durations
- */
-static inline mlib_duration
-mlib_duration_add (const mlib_duration a, const mlib_duration b) mlib_noexcept
-{
-   mlib_duration ret = {0};
-   if (mlib_add (&ret._rep, a._rep, b._rep)) {
-      if (a._rep > 0) {
-         ret = mlib_duration_max ();
-      } else {
-         ret = mlib_duration_min ();
-      }
-   }
-   return ret;
-}
-
-/**
- * @brief Create a duration from subtracting the right-hand duration from
- * the left-hand duration (computes their difference)
- */
-static inline mlib_duration
-mlib_duration_sub (const mlib_duration a, const mlib_duration b) mlib_noexcept
-{
-   mlib_duration ret = {0};
-   if (mlib_sub (&ret._rep, a._rep, b._rep)) {
-      if (a._rep < 0) {
-         ret = mlib_duration_min ();
-      } else {
-         ret = mlib_duration_max ();
-      }
-   }
-   return ret;
-}
-
-/**
- * @brief Multiply a duration by some factor
- */
-static inline mlib_duration
-mlib_duration_mul (const mlib_duration dur, int fac) mlib_noexcept
+_mlibDurationInfixOperator_mul (const mlib_duration dur, int fac) mlib_noexcept
 {
    mlib_duration ret = {0};
    if (mlib_mul (&ret._rep, dur._rep, fac)) {
@@ -221,11 +165,8 @@ mlib_duration_mul (const mlib_duration dur, int fac) mlib_noexcept
    return ret;
 }
 
-/**
- * @brief Divide a duration by some divisor
- */
 static inline mlib_duration
-mlib_duration_div (mlib_duration a, int div) mlib_noexcept
+_mlibDurationInfixOperator_div (mlib_duration a, int div) mlib_noexcept
 {
    mlib_check (div, neq, 0);
    if (div == -1 && a._rep == mlib_minof (mlib_duration_rep_t)) {
@@ -236,6 +177,109 @@ mlib_duration_div (mlib_duration a, int div) mlib_noexcept
    }
    return a;
 }
+
+static inline mlib_duration
+_mlibDurationCopy (mlib_duration d)
+{
+   return d;
+}
+
+// Addition impl
+#define _mlibDurationInfixOperator_plus(Duration, RHS) \
+   _mlibDurationInfixOperator_plus_impl ((Duration), _mlibDurationArgument (RHS))
+static inline mlib_duration
+_mlibDurationInfixOperator_plus_impl (const mlib_duration a, const mlib_duration b) mlib_noexcept
+{
+   mlib_duration ret = {0};
+   if (mlib_add (&ret._rep, a._rep, b._rep)) {
+      if (a._rep > 0) {
+         ret = mlib_duration_max ();
+      } else {
+         ret = mlib_duration_min ();
+      }
+   }
+   return ret;
+}
+
+// Subtraction impl
+#define _mlibDurationInfixOperator_minus(Duration, Subtrahend) \
+   _mlibDurationInfixOperator_minus_impl (Duration, _mlibDurationArgument (Subtrahend))
+static inline mlib_duration
+_mlibDurationInfixOperator_minus_impl (const mlib_duration a, const mlib_duration b) mlib_noexcept
+{
+   mlib_duration ret = {0};
+   if (mlib_sub (&ret._rep, a._rep, b._rep)) {
+      if (a._rep < 0) {
+         ret = mlib_duration_min ();
+      } else {
+         ret = mlib_duration_max ();
+      }
+   }
+   return ret;
+}
+
+#define _mlibDurationInfixOperator_min(Duration, RHS) \
+   _mlibDurationInfixOperator_min_impl (Duration, _mlibDurationArgument (RHS))
+static inline mlib_duration
+_mlibDurationInfixOperator_min_impl (mlib_duration lhs, mlib_duration rhs)
+{
+   if (lhs._rep < rhs._rep) {
+      return lhs;
+   }
+   return rhs;
+}
+
+#define _mlibDurationInfixOperator_max(Duration, RHS) \
+   _mlibDurationInfixOperator_max_impl (Duration, _mlibDurationArgument (RHS))
+static inline mlib_duration
+_mlibDurationInfixOperator_max_impl (mlib_duration lhs, mlib_duration rhs)
+{
+   if (lhs._rep > rhs._rep) {
+      return lhs;
+   }
+   return rhs;
+}
+
+// Create a duration object with a unit identifier suffix
+#define mlib_duration_with_unit(Count, Unit) MLIB_PASTE (_mlibCreationDurationWithUnitSuffix_, Unit) (Count)
+
+static inline mlib_duration
+_mlibCreationDurationWithUnitSuffix_ns (const mlib_duration_rep_t n) mlib_noexcept
+{
+   // We encode as a count of microseconds, so we lose precision here.
+   mlib_duration ret;
+   ret._rep = n / 1000;
+   return ret;
+}
+
+static inline mlib_duration
+_mlibCreationDurationWithUnitSuffix_us (const mlib_duration_rep_t n) mlib_noexcept
+{
+   mlib_duration ret;
+   ret._rep = n;
+   return ret;
+}
+
+static inline mlib_duration
+_mlibCreationDurationWithUnitSuffix_ms (const mlib_duration_rep_t n) mlib_noexcept
+{
+   mlib_duration_rep_t clamp = 0;
+   if (mlib_mul (&clamp, n, 1000)) {
+      clamp = n > 0 ? mlib_maxof (mlib_duration_rep_t) : mlib_minof (mlib_duration_rep_t);
+   }
+   return mlib_duration (clamp, us);
+}
+
+static inline mlib_duration
+_mlibCreationDurationWithUnitSuffix_sec (mlib_duration_rep_t n)
+{
+   mlib_duration_rep_t clamp = 0;
+   if (mlib_mul (&clamp, n, 1000 * 1000)) {
+      clamp = n > 0 ? mlib_maxof (mlib_duration_rep_t) : mlib_minof (mlib_duration_rep_t);
+   }
+   return mlib_duration (clamp, us);
+}
+
 
 /**
  * @brief Compare two durations
@@ -248,8 +292,10 @@ mlib_duration_div (mlib_duration a, int div) mlib_noexcept
  * as the second argument to do natural duration comparisons:
  *
  * ```
- *    mlib_duration_cmp(a, <=, b)
+ *    mlib_duration_cmp(<dur>, <operator>, <dur>)
  * ```
+ *
+ * Where each `<dur>` should be an arglist for @see mlib_duration
  */
 static inline enum mlib_cmp_result
 mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
@@ -259,7 +305,8 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
 
 #define mlib_duration_cmp(...) MLIB_ARGC_PICK (_mlibDurationCmp, __VA_ARGS__)
 #define _mlibDurationCmp_argc_2 mlib_duration_cmp
-#define _mlibDurationCmp_argc_3(Left, Op, Right) (mlib_duration_cmp ((Left), (Right)) Op 0)
+#define _mlibDurationCmp_argc_3(Left, Op, Right) \
+   (mlib_duration_cmp (_mlibDurationArgument (Left), _mlibDurationArgument (Right)) Op 0)
 
 /**
  * @brief Obtain an mlib_duration that corresponds to a `timespec` value
@@ -272,7 +319,9 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
 static inline mlib_duration
 mlib_duration_from_timespec (const struct timespec ts) mlib_noexcept
 {
-   return mlib_duration_add (mlib_seconds (ts.tv_sec), mlib_nanoseconds (ts.tv_nsec));
+   return mlib_duration ((ts.tv_sec, sec), //
+                         plus,
+                         (ts.tv_nsec, ns));
 }
 
 /**
@@ -287,7 +336,7 @@ mlib_duration_to_timespec (const mlib_duration d) mlib_noexcept
    // Number of full seconds to wait
    const mlib_duration_rep_t n_full_seconds = mlib_seconds_count (d);
    // Duration with full seconds removed:
-   const mlib_duration usec_part = mlib_duration_sub (d, mlib_seconds (n_full_seconds));
+   const mlib_duration usec_part = mlib_duration ((d), minus, (n_full_seconds, sec));
    // Number of microseconds in the duration, minus all full seconds
    const mlib_duration_rep_t n_remaining_microseconds = mlib_microseconds_count (usec_part);
    // Compute the number of nanoseconds:

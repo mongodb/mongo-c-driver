@@ -464,7 +464,7 @@ test_counters_streams_timeout (void)
    reset_all_counters ();
    future = future_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-   mlib_this_thread_sleep_for (mlib_microseconds (350));
+   mlib_sleep_for (350, us);
    request_destroy (request);
    ret = future_get_bool (future);
    BSON_ASSERT (!ret);
@@ -1229,7 +1229,7 @@ wait_for_background_threads (rpc_op_egress_counters expected)
          return;
       }
 
-      mlib_this_thread_sleep_for (mlib_milliseconds (100));
+      mlib_sleep_for (100, ms);
 
       current = rpc_op_egress_counters_current ();
    }

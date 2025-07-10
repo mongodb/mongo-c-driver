@@ -510,7 +510,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
       client = mongoc_client_pool_pop (pool);
       /* CDRIVER-3596 - prevent client discovery of the pool interfering with
        * the test operations. */
-      mlib_this_thread_sleep_for (mlib_seconds (5));
+      mlib_sleep_for (5, sec);
    } else {
       client = test_framework_new_default_client ();
       mongoc_client_set_apm_callbacks (client, callbacks, &cluster_time_test);
@@ -872,7 +872,7 @@ _test_cluster_time_comparison (bool pooled)
       mongoc_client_pool_destroy (pool);
    } else {
       /* trigger next heartbeat, it should contain newest cluster time */
-      mlib_this_thread_sleep_for (mlib_milliseconds (750));
+      mlib_sleep_for (750, ms);
       future = future_ping (client, &error);
       request = mock_server_receives_any_hello_with_match (server,
                                                            "{'$clusterTime': "

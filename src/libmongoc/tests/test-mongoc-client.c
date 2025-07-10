@@ -801,7 +801,7 @@ test_wire_version (void)
                            WIRE_VERSION_MIN - 1);
 
    /* wait until it's time for next heartbeat */
-   mlib_this_thread_sleep_for (mlib_milliseconds (600));
+   mlib_sleep_for (600, ms);
    sd = mongoc_client_select_server (client, true, NULL, &error);
    BSON_ASSERT (!sd);
    BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
@@ -817,7 +817,7 @@ test_wire_version (void)
                            WIRE_VERSION_MAX);
 
    /* wait until it's time for next heartbeat */
-   mlib_this_thread_sleep_for (mlib_milliseconds (600));
+   mlib_sleep_for (600, ms);
    sd = mongoc_client_select_server (client, true, NULL, &error);
    ASSERT_OR_PRINT (sd, error);
    mongoc_server_description_destroy (sd);
@@ -2217,7 +2217,7 @@ test_mongoc_client_descriptions_pooled (void *unused)
    /* wait for background thread to discover all members */
    start = bson_get_monotonic_time ();
    do {
-      mlib_this_thread_sleep_for (mlib_milliseconds (1));
+      mlib_sleep_for (1, ms);
       /* Windows IPv4 tasks may take longer to connect since connection to the
        * first address returned by getaddrinfo may be IPv6, and failure to
        * connect may take a couple seconds. See CDRIVER-3639. */
@@ -2471,7 +2471,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    mongoc_server_description_destroy (sd);
 
    /* let socketCheckIntervalMS pass */
-   mlib_this_thread_sleep_for (mlib_milliseconds (100));
+   mlib_sleep_for (100, ms);
 
    /* second selection requires ping, which fails */
    future = future_client_select_server (client, true, NULL, &error);
@@ -2554,7 +2554,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    future_destroy (future);
 
    /* let socketCheckIntervalMS pass */
-   mlib_this_thread_sleep_for (mlib_milliseconds (100));
+   mlib_sleep_for (100, ms);
 
    /* second selection requires ping, which fails */
    future = future_client_command_simple (client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
@@ -2831,7 +2831,7 @@ _force_hello_with_ping (mongoc_client_t *client, int heartbeat_ms)
    BSON_ASSERT_PARAM (client);
 
    /* Wait until we're overdue to send a hello */
-   mlib_this_thread_sleep_for (mlib_duration_mul (mlib_milliseconds (heartbeat_ms), 2));
+   mlib_sleep_for ((heartbeat_ms, ms), mul, 2);
 
    /* Send a ping */
    future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
@@ -2989,9 +2989,10 @@ _test_client_sends_handshake (bool pooled)
 
       /* We're in cooldown for the next few seconds, so we're not
        * allowed to send hellos. Wait for the cooldown to end. */
-      mlib_this_thread_sleep_for (                                           //
-         mlib_duration_add (mlib_milliseconds (MONGOC_TOPOLOGY_COOLDOWN_MS), //
-                            mlib_seconds (1)));
+      mlib_sleep_for ( //
+         (MONGOC_TOPOLOGY_COOLDOWN_MS, ms),
+         plus,
+         (1, sec));
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 

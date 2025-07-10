@@ -2894,7 +2894,7 @@ BSON_THREAD_FUN (insert_docs, p)
       }
 
       bson_mutex_unlock (&ctx->lock);
-      mlib_this_thread_sleep_for (mlib_milliseconds (100));
+      mlib_sleep_for  (100, ms);
    }
 }
 

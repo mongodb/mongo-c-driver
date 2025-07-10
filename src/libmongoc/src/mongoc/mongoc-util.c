@@ -110,7 +110,7 @@ mongoc_usleep_default_impl (int64_t usec, void *user_data)
 {
    BSON_UNUSED (user_data);
 
-   mlib_this_thread_sleep_for (mlib_microseconds (usec));
+   mlib_sleep_for (usec, us);
 }
 
 

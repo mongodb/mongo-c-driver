@@ -589,7 +589,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 
       sleep_usec = mongocrypt_kms_ctx_usleep (kms_ctx);
-      mlib_this_thread_sleep_for (mlib_microseconds (sleep_usec));
+      mlib_sleep_for (sleep_usec, us);
 
       mongoc_stream_destroy (tls_stream);
       tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);

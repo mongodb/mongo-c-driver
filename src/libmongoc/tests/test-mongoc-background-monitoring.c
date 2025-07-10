@@ -299,8 +299,7 @@ tf_destroy (test_fixture_t *tf)
  * Used to make observations that a scan doesn't occur when a test fixture is
  * configured with a faster heartbeat.
  */
-#define WAIT_TWO_MIN_HEARTBEAT_MS() \
-   mlib_this_thread_sleep_for (mlib_duration_mul (mlib_milliseconds (FAST_HEARTBEAT_MS), 2))
+#define WAIT_TWO_MIN_HEARTBEAT_MS() mlib_sleep_for ((FAST_HEARTBEAT_MS, ms), mul, 2)
 
 static void
 _signal_shutdown (test_fixture_t *tf)

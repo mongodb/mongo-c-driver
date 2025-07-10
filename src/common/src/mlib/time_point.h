@@ -97,7 +97,7 @@ mlib_now (void) mlib_noexcept
    // Number of microseconds beyond the last whole second:
    const int64_t subsecond_us = ((ticks % ticks_per_second) * one_million) / ticks_per_second;
    mlib_time_point ret;
-   ret._time_since_monotonic_start = mlib_microseconds (whole_seconds_1m + subsecond_us);
+   ret._time_since_monotonic_start = mlib_duration ((whole_seconds_1m, us), plus, (subsecond_us, us));
    return ret;
 #else
 #error We do not know how to get the current time on this platform
@@ -118,7 +118,7 @@ static inline mlib_time_point
 mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
 {
    mlib_time_point ret;
-   ret._time_since_monotonic_start = mlib_duration_add (from._time_since_monotonic_start, delta);
+   ret._time_since_monotonic_start = mlib_duration (from._time_since_monotonic_start, plus, delta);
    return ret;
 }
 
@@ -140,7 +140,7 @@ mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
 static inline mlib_duration
 mlib_time_difference (mlib_time_point then, mlib_time_point from)
 {
-   return mlib_duration_sub (then._time_since_monotonic_start, from._time_since_monotonic_start);
+   return mlib_duration (then._time_since_monotonic_start, minus, from._time_since_monotonic_start);
 }
 
 /**
@@ -179,7 +179,7 @@ mlib_time_cmp (mlib_time_point a, mlib_time_point b) mlib_noexcept
  * Windows)
  */
 static inline int
-mlib_this_thread_sleep_for (const mlib_duration d) mlib_noexcept
+mlib_sleep_for (const mlib_duration d) mlib_noexcept
 {
    mlib_duration_rep_t duration_usec = mlib_microseconds_count (d);
    if (duration_usec <= 0) {
@@ -246,9 +246,11 @@ done:
    }
    return retc;
 #else
-#error "mlib_this_thread_sleep_for" is not implemented on this platform.
+#error "mlib_sleep_for" is not implemented on this platform.
 #endif
 }
+
+#define mlib_sleep_for(...) mlib_sleep_for (mlib_duration (__VA_ARGS__))
 
 /**
  * @brief Pause the calling thread until the given time point has been reached
@@ -259,10 +261,10 @@ done:
  * The `when` is the *soonest* successful wake time. The thread may wake at a later time.
  */
 static inline int
-mlib_this_thread_sleep_until (const mlib_time_point when) mlib_noexcept
+mlib_sleep_until (const mlib_time_point when) mlib_noexcept
 {
    const mlib_duration time_until = mlib_time_difference (when, mlib_now ());
-   return mlib_this_thread_sleep_for (time_until);
+   return mlib_sleep_for (time_until);
 }
 
 mlib_extern_c_end ();

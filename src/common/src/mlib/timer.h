@@ -68,6 +68,8 @@ mlib_expiring_after (const mlib_duration dur) mlib_noexcept
    return mlib_expires_at (later);
 }
 
+#define mlib_expiring_after(...) mlib_expiring_after (mlib_duration (__VA_ARGS__))
+
 /**
  * @brief Obtain the duration of time that is remaining until the given timer
  * expires. If the timer has expired, the returned duration will be zero (never
@@ -78,9 +80,9 @@ mlib_timer_remaining (const mlib_timer timer) mlib_noexcept
 {
    // The duration until the expiry time of the timer
    const mlib_duration remain = mlib_time_difference (timer.expires_at, mlib_now ());
-   if (mlib_duration_cmp (remain, <, mlib_duration_zero ())) {
+   if (mlib_duration_cmp (remain, <, mlib_duration ())) {
       // No time remaining. Return a zero duration (not a negative duration)
-      return mlib_duration_zero ();
+      return mlib_duration ();
    }
    return remain;
 }
@@ -98,8 +100,7 @@ mlib_timer_remaining (const mlib_timer timer) mlib_noexcept
  *   timer has expired.
  * - Otherwise, if `*once` is `true`:
  *   - If `timer` has expired, returns `true`
- *   - `*once` is set to `true`
- *   - returns `false`
+ *   - Otherwise, `*once` is set to `true` and returns `false`
  *
  * The intent of the `once` flag is to support loops that check for expiry,
  * where at least one iteration of the loop *must* be attempted, even if the
