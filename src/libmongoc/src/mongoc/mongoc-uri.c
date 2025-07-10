@@ -613,7 +613,7 @@ fail:
 /**
  * @brief Remove a BSON element with the given key, case-insensitive
  *
- * @param doc The document to be updtaed
+ * @param doc The document to be updated
  * @param key The key to be removed
  */
 static void
@@ -638,7 +638,7 @@ _bson_erase_icase (bson_t *doc, mstr_view key)
 }
 
 /**
- * @brief Update a BSON document with a UTF-8 value, replacing it if it alread
+ * @brief Update a BSON document with a UTF-8 value, replacing it if it already
  * exists
  *
  * @param options The doc to be updated
@@ -1934,7 +1934,7 @@ _decompose_uri_string (uri_parts *parts, mstr_view const uri, bson_error_t *erro
    {
       size_t userinfo_end_pos = mstr_find (remain, AT);
       if (userinfo_end_pos == SIZE_MAX) {
-         // There is no userinfo, so we don't need to do anything speical
+         // There is no userinfo, so we don't need to do anything special
          userinfo_end_pos = 0;
       }
       // Find the position of the first character that terminates the authority element

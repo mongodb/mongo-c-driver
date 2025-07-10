@@ -397,17 +397,17 @@ mstr_find (mstr_view hay, mstr_view const needle, mlib_upsized_integer const pos
    mstr_find (mstr_view_from (Hay), mstr_view_from (Needle), mlib_upsize_integer (Start), Stop)
 
 /**
- * @brief Find the zero-based index of the first `char` in `hay` that also occurrs in `needles`
+ * @brief Find the zero-based index of the first `char` in `hay` that also occurs in `needles`
  *
  * This is different from `find()` because it considers each char in `needles` as an individual
  * one-character string to be search for in `hay`.
  *
- * @param hay The string to be search
+ * @param hay The string to be searched
  * @param needles A string containing a set of characters which are searched for in `hay`
  * @param pos The index at which to begin searching (optional, default is zero)
  * @param len The number of characters in `hay` to consider before stopping (optional, default is SIZE_MAX)
  * @return size_t If a needle is found, returns the zero-based index of that first needle.
- * Otherwise, returns SIZE_MAX
+ * Otherwise, returns SIZE_MAX.
  *
  * Callable as:
  *

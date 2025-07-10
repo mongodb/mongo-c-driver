@@ -846,7 +846,7 @@ _test_str_view (void)
       mlib_check (!mstr_split_around (b, space, &a, &b));
       mlib_check (mstr_cmp (a, ==, mstr_cstring ("baz")));
       mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));
-      // Splitting on the final empty string does nothign
+      // Splitting on the final empty string does nothing
       mlib_check (!mstr_split_around (b, space, &a, &b));
       mlib_check (mstr_cmp (a, ==, mstr_cstring ("")));
       mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));

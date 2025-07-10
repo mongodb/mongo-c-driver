@@ -238,7 +238,7 @@ mlib_nat64_parse (mstr_view in, unsigned base, uint64_t *out)
  * - A value of `0` indicates that the parse was successful.
  * - A value of `EINVAL` indicates that the input string is not a valid
  *   representation of an integer.
- * - A value of `ERANGE` indicates thath the input string is a valid integer,
+ * - A value of `ERANGE` indicates that the input string is a valid integer,
  *   but the actual encoded value cannot be represented in an `int64_t`
  * - If the parse fails (returns non-zero), then the value at `*out` will remain
  *   unmodified.
