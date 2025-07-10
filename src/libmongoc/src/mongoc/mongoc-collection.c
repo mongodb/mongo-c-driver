@@ -728,13 +728,7 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    mongoc_collection_t *ecocCollection = NULL;
    bool ok = false;
    const char *name = mongoc_collection_get_name (collection);
-   bson_error_t local_error = {0};
-
-   if (!error) {
-      /* If no error is passed, use a local error. Error codes are checked
-       * when collections are dropped. */
-      error = &local_error;
-   }
+   bson_error_reset (error);
 
    /* Drop ESC collection. */
    escName = _mongoc_get_encryptedField_state_collection (encryptedFields, name, "esc", error);

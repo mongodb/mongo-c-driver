@@ -8,6 +8,7 @@ from docutils.nodes import Node, document
 
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
+
 try:
     from sphinx.builders.dirhtml import DirectoryHTMLBuilder
 except ImportError:
@@ -16,7 +17,8 @@ except ImportError:
 from sphinx.config import Config
 from docutils.parsers.rst import Directive
 
-needs_sphinx = "1.7" # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
+# Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
+needs_sphinx = "1.7"
 author = "MongoDB, Inc"
 
 # -- Options for HTML output ----------------------------------------------
@@ -38,7 +40,8 @@ def _file_man_page_name(fpath: Path) -> Union[str, None]:
             continue
         return mat[1]
 
-def _collect_man (app: Sphinx):
+
+def _collect_man(app: Sphinx):
     # Note: 'app' is partially-formed, as this is called from the Sphinx.__init__
     docdir = Path(app.srcdir)
     # Find everything:
@@ -60,6 +63,7 @@ def _collect_man (app: Sphinx):
 
         assert docname, filepath
         man_pages.append((docname, man_name, "", [author], 3))
+
 
 # -- Options for manual page output ---------------------------------------
 
@@ -167,6 +171,7 @@ def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: Dic
     builder.script_files[:] = prev_scripts
     builder.css_files[:] = prev_css
     sphinx_log.debug("Wrote redirect: %r -> %r", path, page)
+
 
 def mongoc_common_setup(app: Sphinx):
     _collect_man(app)

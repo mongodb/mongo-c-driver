@@ -33,6 +33,7 @@
 #include <bson/bson.h>
 
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 #include <mlib/loop.h>
 
 #include <string.h>
@@ -548,21 +549,39 @@ mongoc_lowercase_inplace (char *src)
 }
 
 bool
-mongoc_parse_port (uint16_t *port, const char *str)
+_mongoc_parse_port (mstr_view spelling, uint16_t *out, bson_error_t *error)
 {
-   unsigned long ul_port;
+   bson_error_reset (error);
+   // Parse a strict natural number
+   uint64_t u = 0;
+   int ec = mlib_nat64_parse (spelling, 10, &u);
 
-   ul_port = strtoul (str, NULL, 10);
-
-   if (ul_port == 0 || ul_port > UINT16_MAX) {
-      /* Parse error or port number out of range. mongod prohibits port 0. */
+   if (!ec && u == 0) {
+      // Successful parse, but the value is zero
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port number cannot be zero");
       return false;
    }
 
-   *port = (uint16_t) ul_port;
+   if (ec == EINVAL) {
+      // The given string is just not a valid integer
+      bson_set_error (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port string is not a valid integer");
+      return false;
+   }
+
+   if (ec == ERANGE || mlib_narrow (out, u)) {
+      // The value is out-of range for u64, or out-of range for u16
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Port number is out-of-range for a 16-bit integer");
+      return false;
+   }
+
+   // No other errors are possible from nat64_parse
+   mlib_check (ec, eq, 0);
    return true;
 }
-
 
 /*--------------------------------------------------------------------------
  *

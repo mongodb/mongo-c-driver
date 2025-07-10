@@ -350,7 +350,11 @@ _mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const ch
 
       va_list args;
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      // Format into a temporary buf before copying into the error, as the existing
+      // error message may be an input to our formatting string
+      char buffer[sizeof (error->message)] = {0};
+      bson_vsnprintf (buffer, sizeof error->message, format, args);
+      memcpy (&error->message, buffer, sizeof buffer);
       va_end (args);
    }
 }
@@ -366,7 +370,9 @@ _mongoc_set_error_with_category (
 
       va_list args;
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      char buffer[sizeof (error->message)] = {0};
+      bson_vsnprintf (buffer, sizeof error->message, format, args);
+      memcpy (&error->message, buffer, sizeof buffer);
       va_end (args);
    }
 }
