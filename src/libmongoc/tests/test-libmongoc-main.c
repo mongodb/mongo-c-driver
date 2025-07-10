@@ -1,11 +1,12 @@
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-
 #include <common-thread-private.h>
 
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 int
 main (int argc, char *argv[])
@@ -161,6 +162,7 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_mcd_nsinfo_install);
    TEST_INSTALL (test_bulkwrite_install);
    TEST_INSTALL (test_mongoc_oidc_callback_install);
+   TEST_INSTALL (test_secure_channel_install);
 
    const int ret = TestSuite_Run (&suite);
 

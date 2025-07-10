@@ -14,39 +14,47 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-topology-scanner-private.h>
-#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-stream-socket.h>
 
-#include <mongoc/mongoc-handshake.h>
-#include <mongoc/mongoc-handshake-private.h>
+#include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-stream-tls.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-#include <openssl/ssl.h>
 #include <mongoc/mongoc-stream-tls-private.h>
+
+#include <openssl/ssl.h>
 #endif
 
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-cluster-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
-#include <common-string-private.h>
-#include <mlib/cmp.h>
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#endif
+
 #include <common-atomic-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/utlist.h>
+
+#include <mlib/cmp.h>
 
 #include <inttypes.h>
 
@@ -429,6 +437,9 @@ mongoc_topology_scanner_new (const mongoc_uri_t *uri,
    /* may be overridden for testing. */
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
    bson_mutex_init (&ts->handshake_cmd_mtx);
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   ts->secure_channel_cred_ptr = MONGOC_SHARED_PTR_NULL;
+#endif
 
    _init_hello (ts);
 
@@ -473,6 +484,10 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX_free (ts->openssl_ctx);
    ts->openssl_ctx = NULL;
+#endif
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   mongoc_shared_ptr_reset_null (&ts->secure_channel_cred_ptr);
 #endif
 
    /* This field can be set by a mongoc_client */
@@ -800,6 +815,9 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (mongoc_topology_scanner_node
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       tls_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
          stream, node->host.host, node->ts->ssl_opts, 1, node->ts->openssl_ctx);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+      tls_stream =
+         mongoc_stream_tls_new_with_secure_channel_cred (stream, node->ts->ssl_opts, node->ts->secure_channel_cred_ptr);
 #else
       tls_stream = mongoc_stream_tls_new_with_hostname (stream, node->host.host, node->ts->ssl_opts, 1);
 #endif

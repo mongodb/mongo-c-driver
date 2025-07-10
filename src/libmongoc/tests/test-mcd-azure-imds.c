@@ -1,9 +1,9 @@
-#include <mongoc/mcd-azure.h>
-
+#include <common-string-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 
-#include "TestSuite.h"
-#include <common-string-private.h>
+#include <mongoc/mcd-azure.h>
+
+#include <TestSuite.h>
 
 #define RAW_STRING(...) #__VA_ARGS__
 

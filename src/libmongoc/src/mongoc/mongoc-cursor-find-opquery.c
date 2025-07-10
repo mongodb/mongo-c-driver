@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+
+#include <mongoc/mongoc.h>
 
 typedef struct _data_find_opquery_t {
    mongoc_cursor_response_legacy_t response_legacy;

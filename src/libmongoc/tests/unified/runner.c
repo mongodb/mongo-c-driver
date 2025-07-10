@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-#include "bson/bson.h"
-#include "bsonutil/bson-match.h"
-#include "bsonutil/bson-parser.h"
-#include "bsonutil/bson-val.h"
-#include "entity-map.h"
-#include "json-test.h"
-#include "operation.h"
-#include "runner.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "test-diagnostics.h"
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc-database-private.h>
-#include "util.h"
-#include <common-string-private.h>
-#include <mlib/cmp.h>
+#include "./entity-map.h"
+#include "./operation.h"
+#include "./runner.h"
+#include "./test-diagnostics.h"
+#include "./util.h"
+
 #include <common-oid-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-database-private.h>
+
+#include <mongoc/utlist.h>
+
+#include <bson/bson.h>
+#include <bsonutil/bson-match.h>
+#include <bsonutil/bson-parser.h>
+#include <bsonutil/bson-val.h>
+
+#include <mlib/cmp.h>
+
+#include <json-test.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 typedef struct {
    const char *file_description;
@@ -391,7 +396,6 @@ test_runner_new (void)
    {
       mongoc_uri_t *const uri = test_framework_get_uri ();
 
-
       /* In load balanced mode, the internal client must use the
        * SINGLE_LB_MONGOS_URI. */
       if (!test_framework_is_loadbalanced ()) {
@@ -555,7 +559,6 @@ is_sharded (bson_t *hello_reply)
    if (!bson_has_field (hello_reply, "msg")) {
       return false;
    }
-
 
    val = bson_lookup_utf8 (hello_reply, "msg");
    if (0 == strcmp (val, "isdbgrid")) {

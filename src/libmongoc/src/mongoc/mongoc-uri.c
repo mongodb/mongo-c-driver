@@ -15,35 +15,36 @@
  */
 
 
+#include <sys/types.h>
+
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <math.h>
 
 /* strcasecmp on windows */
-#include <mongoc/mongoc-util-private.h>
-
-#include <mlib/str.h>
-#include <mlib/intencode.h>
-#include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-handshake-private.h>
-#include <mongoc/mongoc-socket.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-read-concern-private.h>
-#include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-compression-private.h>
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-oidc-env-private.h>
-
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
+#include <mongoc/mongoc-compression-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-oidc-env-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/utlist.h>
+
+#include <mlib/intencode.h>
+#include <mlib/str.h>
 
 struct _mongoc_uri_t {
    char *str;
@@ -2124,7 +2125,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri, const bson_t *properties
    bsonBuildAppend (tmp,
                     // Copy the existing credentials, dropping the existing properties if
                     // present
-                    insert (uri->credentials, not(key (MONGOC_URI_AUTHMECHANISMPROPERTIES))),
+                    insert (uri->credentials, not (key (MONGOC_URI_AUTHMECHANISMPROPERTIES))),
                     // Append the new properties
                     kv (MONGOC_URI_AUTHMECHANISMPROPERTIES, bson (*properties)));
    bson_reinit (&uri->credentials);

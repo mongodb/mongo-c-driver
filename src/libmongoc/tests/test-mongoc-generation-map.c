@@ -16,7 +16,7 @@
 
 #include <mongoc/mongoc-generation-map-private.h>
 
-#include "TestSuite.h"
+#include <TestSuite.h>
 
 static void
 test_generation_map_basic (void)

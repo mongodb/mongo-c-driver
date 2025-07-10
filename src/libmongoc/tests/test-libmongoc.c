@@ -15,23 +15,25 @@
  */
 
 
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-host-list-private.h>
+#include <test-libmongoc.h>
 
-#include <mongoc/mongoc-server-description.h>
+#include <common-atomic-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include <common-string-private.h>
-#include <common-atomic-private.h>
+#include <mongoc/mongoc-server-description.h>
+#include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

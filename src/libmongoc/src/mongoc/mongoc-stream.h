@@ -19,8 +19,8 @@
 #ifndef MONGOC_STREAM_H
 #define MONGOC_STREAM_H
 
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-iovec.h>
+#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-socket.h>
 
 

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-server-api-private.h>
-#include "test-libmongoc.h"
 
-#include "unified/runner.h"
+#include <mongoc/mongoc.h>
+
+#include <test-libmongoc.h>
+#include <unified/runner.h>
 
 static void
 _test_mongoc_server_api_copy (void)

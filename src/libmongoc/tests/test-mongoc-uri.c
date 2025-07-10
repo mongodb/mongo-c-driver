@@ -1,17 +1,17 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-util-private.h>
-
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
 
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include <common-string-private.h>
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static void
 test_mongoc_uri_new (void)

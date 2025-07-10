@@ -18,15 +18,17 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 
-#include <string.h>
-
-#include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-cyrus-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <common-b64-private.h>
 #include <common-string-private.h>
+#include <mongoc/mongoc-cyrus-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-error.h>
+
 #include <mlib/cmp.h>
+
+#include <string.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "CYRUS-SASL"

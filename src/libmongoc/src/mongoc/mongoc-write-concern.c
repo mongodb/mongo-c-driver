@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
+#include <mongoc/mongoc-write-concern.h>
+
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
+
+#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-write-concern.h>
+
 
 static void
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern);

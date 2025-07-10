@@ -1,6 +1,6 @@
 #include <bson/bson.h>
 
-#include "TestSuite.h"
+#include <TestSuite.h>
 
 static void
 test_bson_version (void)

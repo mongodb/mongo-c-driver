@@ -19,8 +19,9 @@
 #ifndef MONGOC_CLIENT_SESSION_H
 #define MONGOC_CLIENT_SESSION_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 /* mongoc_client_session_t, mongoc_transaction_opt_t, and
    mongoc_session_opt_t are typedef'ed here */
 #include <mongoc/mongoc-client.h>

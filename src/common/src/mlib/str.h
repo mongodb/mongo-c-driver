@@ -24,12 +24,12 @@
 #ifndef MLIB_STR_H_INCLUDED
 #define MLIB_STR_H_INCLUDED
 
-#include <mlib/intutil.h>
 #include <mlib/ckdint.h>
-#include <mlib/loop.h>
 #include <mlib/cmp.h>
-#include <mlib/test.h>
 #include <mlib/config.h>
+#include <mlib/intutil.h>
+#include <mlib/loop.h>
+#include <mlib/test.h>
 
 #include <stdbool.h>
 #include <stddef.h>

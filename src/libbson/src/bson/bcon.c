@@ -19,10 +19,11 @@
  */
 
 
-#include <stdio.h>
-
 #include <bson/bcon.h>
+
 #include <bson/bson-config.h>
+
+#include <stdio.h>
 
 /* These stack manipulation macros are used to manage append recursion in
  * bcon_append_ctx_va().  They take care of some awkward dereference rules (the

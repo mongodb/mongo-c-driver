@@ -2,15 +2,14 @@
 
 //
 
-#include <bson/bson.h>
-
+#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <bson/bson.h>
 
-#include "json-test.h"
-#include "test-libmongoc.h"
-#include <mongoc/mongoc-read-concern-private.h>
+#include <json-test.h>
+#include <test-libmongoc.h>
 
 
 /*

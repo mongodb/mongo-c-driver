@@ -20,8 +20,9 @@
 #ifndef MONGOC_COMPRESSION_PRIVATE_H
 #define MONGOC_COMPRESSION_PRIVATE_H
 
-#include <mlib/str.h>
 #include <bson/bson.h>
+
+#include <mlib/str.h>
 
 /* Compressor IDs */
 #define MONGOC_COMPRESSOR_NOOP_ID 0

@@ -18,23 +18,25 @@
 #define _CRT_RAND_S
 #endif
 
-#include <string.h>
+#include <common-md5-private.h>
+#include <common-thread-private.h>
+#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-sleep.h>
 
 #include <bson/bson.h>
 
-#include <common-md5-private.h>
-#include <common-thread-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-rand-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-client.h>
-#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
-#include <mongoc/mongoc-client-session-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-sleep.h>
-#include <mlib/intencode.h>
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 #include <mlib/loop.h>
+
+#include <string.h>
 
 /**
  * ! NOTE

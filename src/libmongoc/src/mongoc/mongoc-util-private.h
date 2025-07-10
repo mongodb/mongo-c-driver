@@ -19,8 +19,10 @@
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
 #include <mlib/str.h>
 
 #ifdef BSON_HAVE_STRINGS_H

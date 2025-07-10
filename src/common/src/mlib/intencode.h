@@ -24,8 +24,8 @@
 #include <mlib/str.h>
 
 #include <errno.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 /**

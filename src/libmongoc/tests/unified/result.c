@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-#include "result.h"
+#include "./result.h"
+#include "./util.h"
+
+#include <common-string-private.h>
+#include <mongoc/mongoc-error-private.h>
 
 #include <bson/bson.h>
-#include "bsonutil/bson-parser.h"
-#include "bsonutil/bson-match.h"
-#include <mongoc/mongoc-error-private.h>
-#include "test-conveniences.h"
-#include "util.h"
-#include "TestSuite.h"
-#include <common-string-private.h>
+#include <bsonutil/bson-match.h>
+#include <bsonutil/bson-parser.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 struct _result_t {
    bool ok;

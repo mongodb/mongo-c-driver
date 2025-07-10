@@ -15,8 +15,9 @@
  */
 
 
-#include <bson/bson.h>
 #include <bson/bson-vector-private.h>
+
+#include <bson/bson.h>
 
 #include <mlib/config.h>
 

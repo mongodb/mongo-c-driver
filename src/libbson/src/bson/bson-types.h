@@ -21,13 +21,14 @@
 #define BSON_TYPES_H
 
 
-#include <stdlib.h>
+#include <bson/bson-compat.h>
+#include <bson/bson-config.h>
+#include <bson/bson-endian.h>
+#include <bson/bson-macros.h>
+
 #include <sys/types.h>
 
-#include <bson/bson-macros.h>
-#include <bson/bson-config.h>
-#include <bson/bson-compat.h>
-#include <bson/bson-endian.h>
+#include <stdlib.h>
 
 BSON_BEGIN_DECLS
 
