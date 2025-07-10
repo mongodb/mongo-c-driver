@@ -309,7 +309,7 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    // Store the username and password on the URI
    uri->username = _strdup_pct_decode (username, error);
    if (!uri->username) {
-      MONGOC_URI_ERROR (error, "Invalid username in URI string: %s", error->message);
+      MONGOC_URI_ERROR (error, "%s", "Invalid %-encoding in username in URI string");
       return false;
    }
 
@@ -317,7 +317,7 @@ _uri_parse_userinfo (mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    if (has_password) {
       uri->password = _strdup_pct_decode (password, error);
       if (!uri->password) {
-         MONGOC_URI_ERROR (error, "Invalid password in URI string: %s", error->message);
+         MONGOC_URI_ERROR (error, "%s", "Invalid %-encoding in password in URI string");
          return false;
       }
    }
