@@ -180,13 +180,12 @@ mlib_write_f64le (void *out, double d)
  * See `mlib_i64_parse` for more details.
  */
 static inline int
-mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
+mlib_nat64_parse (mstr_view in, unsigned base, uint64_t *out)
 {
    if (in.len == 0) {
       // Empty string is not valid
       return EINVAL;
    }
-
 
    // Accummulate into this value:
    uint64_t value = 0;
@@ -198,14 +197,14 @@ mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
       did_overflow = mlib_mul (&value, base) || did_overflow;
       // Case-fold for alpha digits
       int32_t digit = mlib_latin_tolower (in.data[0]);
-      int digit_value = 0;
+      unsigned digit_value = 0;
       // Only standard digits
       if (digit >= '0' && digit <= '9') {
          // Normal digit
-         digit_value = digit - '0';
+         digit_value = (unsigned) (digit - '0');
       } else if (digit >= 'a' && digit <= 'z') {
          // Letter digits
-         digit_value = (digit - 'a') + 10;
+         digit_value = (unsigned) (digit - 'a') + 10;
       } else {
          // Not a valid alnum digit
          return EINVAL;
@@ -249,7 +248,7 @@ mlib_nat64_parse (mstr_view in, int base, uint64_t *out)
  * an error of EINVAL.
  */
 static inline int
-mlib_i64_parse (mstr_view in, int base, int64_t *out)
+mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
 {
    if (in.len == 0) {
       // Empty string is not a valid integer
@@ -327,7 +326,7 @@ mlib_i64_parse (mstr_view in, int base, int64_t *out)
  * See `mlib_i64_parse` for more details.
  */
 static inline int
-mlib_i32_parse (mstr_view in, int base, int32_t *out)
+mlib_i32_parse (mstr_view in, unsigned base, int32_t *out)
 {
    int64_t tmp;
    int ec = mlib_i64_parse (in, base, &tmp);
