@@ -244,10 +244,8 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
       }
       // %-sequence
       if (remain.len < 3) {
-         MONGOC_URI_ERROR (error,
-                           "At offset %llu: Truncated %%-sequence \"%.*s\"",
-                           (long long unsigned) (sv.len - remain.len),
-                           MSTR_FMT (remain));
+         MONGOC_URI_ERROR (
+            error, "At offset %zu: Truncated %%-sequence \"%.*s\"", (sv.len - remain.len), MSTR_FMT (remain));
          bson_free (buf);
          return NULL;
       }
@@ -255,10 +253,7 @@ _strdup_pct_decode (mstr_view const sv, bson_error_t *error)
       mstr_view pair = mstr_substr (remain, 1, 2);
       uint64_t v;
       if (mlib_nat64_parse (pair, 16, &v)) {
-         MONGOC_URI_ERROR (error,
-                           "At offset %llu: Invalid %%-sequence \"%.3s\"",
-                           (long long unsigned) (sv.len - remain.len),
-                           remain.data);
+         MONGOC_URI_ERROR (error, "At offset %zu: Invalid %%-sequence \"%.3s\"", (sv.len - remain.len), remain.data);
          bson_free (buf);
          return NULL;
       }
