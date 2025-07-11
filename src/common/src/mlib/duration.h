@@ -269,7 +269,7 @@ _mlibDurationMaxBetween (mlib_duration lhs, mlib_duration rhs)
 static inline mlib_duration
 _mlibCreateDurationFromUnitCount_us (const mlib_upsized_integer n) mlib_noexcept
 {
-   mlib_duration ret;
+   mlib_duration ret = mlib_duration ();
    if (n.is_signed) {
       // The duration rep is the same as the signed max type, so we don't need to do any
       // special arithmetic to encode it

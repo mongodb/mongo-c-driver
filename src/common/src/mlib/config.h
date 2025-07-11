@@ -155,7 +155,7 @@
  * number of macro arguments.
  */
 #define MLIB_ARGC_PICK(Prefix, ...) \
-   MLIB_EVAL_1 (MLIB_ARGC_PASTE (Prefix, __VA_ARGS__) MLIB_NOTHING ("Force arglist to expand first") (__VA_ARGS__))
+   MLIB_EVAL_4 (MLIB_ARGC_PASTE (Prefix, __VA_ARGS__) (__VA_ARGS__))
 #define MLIB_ARGC_PASTE(Prefix, ...) MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__))
 
 #ifdef __cplusplus
