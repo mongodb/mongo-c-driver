@@ -276,15 +276,16 @@ _mstr_adjust_index (mstr_view s, mlib_upsized_integer pos, bool clamp_to_length)
       // We want to clamp to the length, and the given value is greater than the string length.
       return s.len;
    }
-   if (pos.is_signed && pos.i.s < 0) {
+   if (pos.is_signed && pos.bits.as_signed < 0) {
       // This will add the negative value to the length of the string. If such
       // an operation would result a negative value, this will terminate the
       // program.
-      return mlib_assert_add (size_t, s.len, pos.i.s);
+      return mlib_assert_add (size_t, s.len, pos.bits.as_signed);
    }
    // No special behavior, just assert that the given position is in-bounds for the string
-   mlib_check (pos.i.u <= s.len, because, "the string position index must not be larger than the string length");
-   return pos.i.u;
+   mlib_check (
+      pos.bits.as_unsigned <= s.len, because, "the string position index must not be larger than the string length");
+   return pos.bits.as_unsigned;
 }
 
 /**

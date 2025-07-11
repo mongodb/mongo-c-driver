@@ -53,6 +53,17 @@ _test_checks (void)
 }
 
 static void
+_test_bits (void)
+{
+   mlib_check (mlib_bits (0, 0), eq, 0);           // 0b000
+   mlib_check (mlib_bits (1, 0), eq, 1);           // 0b001
+   mlib_check (mlib_bits (2, 0), eq, 3);           // 0b011
+   mlib_check (mlib_bits (1, 1), eq, 2);           // 0b010
+   mlib_check (mlib_bits (5, 3), eq, 248);         // 0b11111000
+   mlib_check (mlib_bits (64, 0), eq, UINT64_MAX); // 0b111...
+}
+
+static void
 _test_minmax (void)
 {
    mlib_static_assert (mlib_minof (unsigned) == 0);
@@ -95,23 +106,23 @@ _test_upsize (void)
 {
    struct mlib_upsized_integer up;
    up = mlib_upsize_integer (31);
-   ASSERT (up.is_signed);
-   ASSERT (up.i.s == 31);
+   mlib_check (up.is_signed);
+   mlib_check (up.bits.as_signed == 31);
 
    // Casting from the max unsigned integer generates an unsigned upsized integer:
    up = mlib_upsize_integer ((uintmax_t) 1729);
-   ASSERT (!up.is_signed);
-   ASSERT (up.i.u == 1729);
+   mlib_check (!up.is_signed);
+   mlib_check (up.bits.as_unsigned == 1729);
 
    // Max signed integer makes a signed upsized integer:
    up = mlib_upsize_integer ((intmax_t) 1729);
-   ASSERT (up.is_signed);
-   ASSERT (up.i.s == 1729);
+   mlib_check (up.is_signed);
+   mlib_check (up.bits.as_signed == 1729);
 
    // From a literal:
    up = mlib_upsize_integer (UINTMAX_MAX);
-   ASSERT (!up.is_signed);
-   ASSERT (up.i.u == UINTMAX_MAX);
+   mlib_check (!up.is_signed);
+   mlib_check (up.bits.as_unsigned == UINTMAX_MAX);
 }
 
 static void
@@ -880,6 +891,7 @@ void
 test_mlib_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mlib/checks", _test_checks);
+   TestSuite_Add (suite, "/mlib/intutil/bits", _test_bits);
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
