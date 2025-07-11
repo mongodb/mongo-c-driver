@@ -941,6 +941,15 @@ _test_duration (void)
    d = mlib_duration ((4, sec), min, (400, ms));
    mlib_check (mlib_duration_cmp (d, ==, (400, ms)));
 
+   // Clamp to at most five minutes
+   d = mlib_duration (
+      // At least 5 seconds:
+      (d, max, (5, sec)),
+      // At most 90 seconds:
+      min,
+      (90, sec));
+   mlib_check (mlib_duration_cmp (d, ==, (5, sec)));
+
    // Comparison
    mlib_check (mlib_duration_cmp (mlib_duration (4, sec), mlib_duration (4, sec)) == 0);
    mlib_check (mlib_duration_cmp (mlib_duration (4, sec), mlib_duration (5, sec)) < 0);
