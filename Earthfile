@@ -1,4 +1,4 @@
-VERSION --arg-scope-and-set --pass-args 0.7
+VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
 LOCALLY
 
 IMPORT ./tools/ AS tools
@@ -114,7 +114,7 @@ test-cxx-driver:
 
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
-    COMMAND
+    FUNCTION
     LET scratch=/opt/mongoc-cmake
     # Copy the minimal amount that we need, as to avoid cache invalidation
     COPY tools/use.sh tools/platform.sh tools/paths.sh tools/base.sh tools/download.sh \
@@ -462,7 +462,7 @@ env.centos7:
     DO --pass-args +CENTOS_ENV --version=7
 
 ALPINE_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM --pass-args tools+init-env --from alpine:$version
     # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
@@ -484,7 +484,7 @@ ALPINE_ENV:
     DO --pass-args tools+ADD_C_COMPILER --clang_pkg="gcc clang compiler-rt"
 
 UBUNTU_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM --pass-args tools+init-env --from ubuntu:$version
     RUN __install curl build-essential
@@ -502,7 +502,7 @@ UBUNTU_ENV:
     DO +PREP_CMAKE
 
 CENTOS_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
     FROM --pass-args tools+init-env --from centos:$version
     # Update repositories to use vault.centos.org
