@@ -1033,7 +1033,7 @@ _test_time_point (void)
    mlib_time_point t = mlib_now ();
 
    // Offset the time point
-   mlib_time_point later = mlib_later (t, mlib_duration (1, sec));
+   mlib_time_point later = mlib_later (t, (1, sec));
    mlib_check (mlib_time_cmp (t, <, later));
 
    // Difference between two time points is a duration:
@@ -1060,7 +1060,7 @@ _test_sleep (void)
 
    // Sleeping for a negative duration returns immediately with success
    start = mlib_now ();
-   mlib_check (mlib_sleep_for (mlib_duration (-10, sec)), eq, 0);
+   mlib_check (mlib_sleep_for (-10, sec), eq, 0);
    mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
 
    // Sleeping until a point in the past returns immediately as well

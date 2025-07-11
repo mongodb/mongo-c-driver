@@ -122,6 +122,8 @@ mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
    return ret;
 }
 
+#define mlib_later(From, Delta) mlib_later (From, MLIB_EVAL_4 (_mlibDurationArgument (Delta)))
+
 /**
  * @brief Obtain the duration between two points in time.
  *
