@@ -213,16 +213,16 @@ _mlibCheckIntCmp (enum mlib_cmp_result cres, // The cmp result to check
                right_expr);
       fprintf (stderr, "    ");
       if (left.is_signed) {
-         fprintf (stderr, "%lld", (long long) left.i.s);
+         fprintf (stderr, "%lld", (long long) left.bits.as_signed);
       } else {
-         fprintf (stderr, "%llu", (unsigned long long) left.i.u);
+         fprintf (stderr, "%llu", (unsigned long long) left.bits.as_unsigned);
       }
       fprintf (stderr, " ⟨%s⟩\n", left_expr);
       fprintf (stderr, "    ");
       if (right.is_signed) {
-         fprintf (stderr, "%lld", (long long) right.i.s);
+         fprintf (stderr, "%lld", (long long) right.bits.as_signed);
       } else {
-         fprintf (stderr, "%llu", (unsigned long long) right.i.u);
+         fprintf (stderr, "%llu", (unsigned long long) right.bits.as_unsigned);
       }
       fprintf (stderr, " ⟨%s⟩\n", right_expr);
       fflush (stderr);

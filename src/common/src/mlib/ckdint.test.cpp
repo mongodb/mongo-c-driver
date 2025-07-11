@@ -15,9 +15,6 @@
 #endif // __has_builtin
 #endif
 
-static_assert (mlib_upsize_integer (42ll).is_signed, "mlib_upsize_integer yielded the wrong answer");
-static_assert (!mlib_upsize_integer (42ull).is_signed, "mlib_upsize_integer yielded the wrong answer");
-
 template <typename... Ts> struct typelist {
 };
 using integer_types = typelist<char,
