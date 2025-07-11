@@ -130,16 +130,17 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
  * - `mul`/`div` to multiply/divide a duration by a scalar factor.
  * - `min`/`max` to get the minimum/maximum between two durations.
  */
-#define mlib_duration(...) (MLIB_EVAL_8 (_mlibDurationMagic (__VA_ARGS__)))
+#define mlib_duration(...) MLIB_EVAL_8 (_mlibDurationMagic (__VA_ARGS__))
 #define _mlibDurationMagic(...) MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__) MLIB_NOTHING () (__VA_ARGS__)
 // Wraps a `<dur>` argument, and expands to the magic only if it is parenthesized
-#define _mlibDurationArgument(...)                                                     \
-   MLIB_IF_ELSE (MLIB_IS_EMPTY (_mlibExpandToNothingIfFollowedByParens __VA_ARGS__)) ( \
-      _mlibDurationMagic __VA_ARGS__) (__VA_ARGS__)
+#define _mlibDurationArgument(X)                                                       \
+   /* If given a parenthesized expression, act as an invocation of `mlib_duration() */ \
+   MLIB_IF_ELSE (MLIB_IS_PARENTHESIZED (X) MLIB_NOTHING (#X))                          \
+   /* then: */ (_mlibDurationMagic X) /* else: */ (X)
 #define _mlibExpandToNothingIfFollowedByParens(...)
 
 // Zero arguments, just return a zero duration:
-#define _mlib_duration_argc_0() mlib_init (mlib_duration){0}
+#define _mlib_duration_argc_0() (mlib_init (mlib_duration){0})
 // One argument, just copy the duration:
 #define _mlib_duration_argc_1(D) _mlibDurationCopy (D)
 // Two arguments, the second arg is a unit suffix:
