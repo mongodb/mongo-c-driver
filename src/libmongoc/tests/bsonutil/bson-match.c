@@ -259,8 +259,8 @@ special_matches_hex_bytes (const bson_matcher_context_t *context,
 
    expected_bytes = hex_to_bin (bson_iter_utf8 (&iter, NULL), &expected_bytes_len);
    actual_bytes = bson_val_to_binary (actual, &actual_bytes_len);
-   expected_bytes_string = bin_to_hex (expected_bytes, expected_bytes_len);
-   actual_bytes_string = bin_to_hex (actual_bytes, actual_bytes_len);
+   expected_bytes_string = bin_to_hex (expected_bytes, expected_bytes_len, false);
+   actual_bytes_string = bin_to_hex (actual_bytes, actual_bytes_len, false);
 
    if (expected_bytes_len != actual_bytes_len) {
       MATCH_ERR ("expected %" PRIu32 " (%s) but got %" PRIu32 " (%s) bytes",

@@ -1014,13 +1014,18 @@ hex_to_bin (const char *hex, uint32_t *len)
 }
 
 char *
-bin_to_hex (const uint8_t *bin, uint32_t len)
+bin_to_hex (const uint8_t *bin, uint32_t len, bool uppercase)
 {
    char *out = bson_malloc0 (2u * len + 1u);
 
    for (uint32_t i = 0u; i < len; i++) {
+      int req;
+      if (uppercase) {
+         req = bson_snprintf (out + (2u * i), 3, "%02X", bin[i]);
+      } else {
+         req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
+      }
       // Expect no truncation.
-      int req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
       BSON_ASSERT (req < 3);
    }
 

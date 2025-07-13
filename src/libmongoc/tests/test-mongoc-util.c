@@ -97,7 +97,7 @@ test_bin_to_hex (void)
    const char *bin = "foobar";
    const char *expect = "666f6f626172";
 
-   char *got = bin_to_hex ((const uint8_t *) bin, (uint32_t) strlen (bin));
+   char *got = bin_to_hex ((const uint8_t *) bin, (uint32_t) strlen (bin), false);
    ASSERT_CMPSTR (got, expect);
    bson_free (got);
 }
