@@ -1070,8 +1070,8 @@ void jsonsl_jpr_match_state_cleanup(jsonsl_t jsn)
         return;
     }
 
-    free(jsn->jpr_root);
-    free(jsn->jprs);
+    bson_free(jsn->jpr_root);
+    bson_free(jsn->jprs);
     jsn->jprs = NULL;
     jsn->jpr_root = NULL;
     jsn->jpr_count = 0;
