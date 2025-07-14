@@ -57,7 +57,7 @@ typedef struct mlib_time_point {
     * The stable time point may change between program executions, so this
     * object should not be stored outside of the program's execution.
     */
-   mlib_duration _time_since_monotonic_start;
+   mlib_duration time_since_monotonic_start;
 } mlib_time_point;
 
 /**
@@ -75,7 +75,7 @@ mlib_now (void) mlib_noexcept
    mlib_check (rc, eq, 0);
    // Encode the time point:
    mlib_time_point ret;
-   ret._time_since_monotonic_start = mlib_duration_from_timespec (ts);
+   ret.time_since_monotonic_start = mlib_duration_from_timespec (ts);
    return ret;
 #elif defined(_WIN32)
    // Win32 APIs for the high-performance monotonic counter. These APIs never fail after Windows XP
@@ -118,7 +118,7 @@ static inline mlib_time_point
 mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
 {
    mlib_time_point ret;
-   ret._time_since_monotonic_start = mlib_duration (from._time_since_monotonic_start, plus, delta);
+   ret.time_since_monotonic_start = mlib_duration (from.time_since_monotonic_start, plus, delta);
    return ret;
 }
 
@@ -142,7 +142,7 @@ mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
 static inline mlib_duration
 mlib_time_difference (mlib_time_point then, mlib_time_point from)
 {
-   return mlib_duration (then._time_since_monotonic_start, minus, from._time_since_monotonic_start);
+   return mlib_duration (then.time_since_monotonic_start, minus, from.time_since_monotonic_start);
 }
 
 /**
@@ -164,7 +164,7 @@ mlib_time_difference (mlib_time_point then, mlib_time_point from)
 static inline enum mlib_cmp_result
 mlib_time_cmp (mlib_time_point a, mlib_time_point b) mlib_noexcept
 {
-   return mlib_duration_cmp (a._time_since_monotonic_start, b._time_since_monotonic_start);
+   return mlib_duration_cmp (a.time_since_monotonic_start, b.time_since_monotonic_start);
 }
 
 #define mlib_time_cmp(...) MLIB_ARGC_PICK (_mlib_time_cmp, __VA_ARGS__)
