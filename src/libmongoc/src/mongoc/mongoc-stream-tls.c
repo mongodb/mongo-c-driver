@@ -208,8 +208,8 @@ mongoc_stream_t *
 mongoc_stream_tls_new_with_hostname_and_openssl_context (
    mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
 {
-   BSON_ASSERT (base_stream);
-   BSON_ASSERT (opt);
+   BSON_ASSERT_PARAM (base_stream);
+   BSON_ASSERT_PARAM (opt);
 
    /* !client is only used for testing,
     * when the streams are pretending to be the server */
