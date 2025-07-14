@@ -311,12 +311,10 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    }
 
    /* Signal all RTT monitors to shut down. */
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    for (size_t i = 0u; i < n_rtt_monitors; i++) {
       server_monitor = mongoc_set_get_item (topology->rtt_monitors, i);
       mongoc_server_monitor_request_shutdown (server_monitor);
    }
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    for (size_t i = 0u; i < n_srv_monitors; i++) {
       /* Wait for the thread to shutdown. */
