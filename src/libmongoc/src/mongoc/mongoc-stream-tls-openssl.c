@@ -828,7 +828,8 @@ create_stream_with_ctx (
 mongoc_stream_t *
 mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
-   BSON_ASSERT (opt);
+   BSON_ASSERT_PARAM (base_stream);
+   BSON_ASSERT_PARAM (opt);
 
    SSL_CTX *ssl_ctx = _mongoc_openssl_ctx_new (opt);
 
