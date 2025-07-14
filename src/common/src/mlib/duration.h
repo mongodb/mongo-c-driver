@@ -63,11 +63,6 @@ typedef struct mlib_duration {
 } mlib_duration;
 
 /**
- * @brief A macro that expands to an `mlib_duration` representing no elapsed
- * time
- */
-#define mlib_duration_zero() (mlib_init (mlib_duration){0})
-/**
  * @brief A macro that expands to the maximum positive duration
  */
 #define mlib_duration_max() (mlib_init (mlib_duration){mlib_maxof (mlib_duration_rep_t)})
@@ -134,9 +129,10 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
  * arithmetic, and never wrap or trap.
  */
 #define mlib_duration(...) MLIB_EVAL_16 (_mlibDurationMagic (__VA_ARGS__))
-#define _mlibDurationMagic(...)                  \
-   MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__) \
-   MLIB_NOTHING ("force the argument list to expand first") (__VA_ARGS__)
+#define _mlibDurationMagic(...)                             \
+   MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__)            \
+   MLIB_NOTHING ("force the argument list to expand first") \
+   (__VA_ARGS__)
 // Wraps a `<dur>` argument, and expands to the magic only if it is parenthesized
 #define _mlibDurationArgument(X)                                                       \
    /* If given a parenthesized expression, act as an invocation of `mlib_duration() */ \
@@ -152,10 +148,10 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
 // Two arguments, the second arg is a unit suffix:
 #define _mlib_duration_argc_2(Count, Unit) mlib_duration_with_unit (Count, Unit)
 // Three arguments, an infix operation:
-#define _mlib_duration_argc_3(Duration, Operator, Operand)   \
-   MLIB_PASTE (_mlibDurationInfixOperator_, Operator)        \
-   MLIB_NOTHING ("force the first argument to expand first") \
-   (_mlibDurationArgument (Duration), Operand)
+#define _mlib_duration_argc_3(Duration, Operator, Operand) \
+   MLIB_PASTE (_mlibDurationInfixOperator_, Operator)      \
+   MLIB_NOTHING ("force the arguments to expand first")    \
+   (Duration, Operand)
 
 // By-value copy a duration
 static inline mlib_duration
@@ -165,8 +161,9 @@ _mlibDurationCopy (mlib_duration d)
 }
 
 // Duration scalar multiply
+#define _mlibDurationInfixOperator_mul(LHS, Fac) _mlibDurationMultiply (_mlibDurationArgument (LHS), (Fac))
 static inline mlib_duration
-_mlibDurationInfixOperator_mul (const mlib_duration dur, int fac) mlib_noexcept
+_mlibDurationMultiply (const mlib_duration dur, int fac) mlib_noexcept
 {
    mlib_duration ret = {0};
    if (mlib_mul (&ret._rep, dur._rep, fac)) {
@@ -183,8 +180,9 @@ _mlibDurationInfixOperator_mul (const mlib_duration dur, int fac) mlib_noexcept
 }
 
 // Duration scalar divide
+#define _mlibDurationInfixOperator_div(LHS, Div) _mlibDurationDivide (_mlibDurationArgument (LHS), (Div))
 static inline mlib_duration
-_mlibDurationInfixOperator_div (mlib_duration a, int div) mlib_noexcept
+_mlibDurationDivide (mlib_duration a, int div) mlib_noexcept
 {
    mlib_check (div, neq, 0);
    if (div == -1 && a._rep == mlib_minof (mlib_duration_rep_t)) {
@@ -197,7 +195,8 @@ _mlibDurationInfixOperator_div (mlib_duration a, int div) mlib_noexcept
 }
 
 // Duration addition
-#define _mlibDurationInfixOperator_plus(Duration, RHS) _mlibDurationAdd ((Duration), _mlibDurationArgument (RHS))
+#define _mlibDurationInfixOperator_plus(LHS, RHS) \
+   _mlibDurationAdd (_mlibDurationArgument (LHS), _mlibDurationArgument (RHS))
 static inline mlib_duration
 _mlibDurationAdd (const mlib_duration a, const mlib_duration b) mlib_noexcept
 {
@@ -213,8 +212,8 @@ _mlibDurationAdd (const mlib_duration a, const mlib_duration b) mlib_noexcept
 }
 
 // Duration subtraction
-#define _mlibDurationInfixOperator_minus(Duration, Subtrahend) \
-   _mlibDurationSubtract (Duration, _mlibDurationArgument (Subtrahend))
+#define _mlibDurationInfixOperator_minus(LHS, RHS) \
+   _mlibDurationSubtract (_mlibDurationArgument (LHS), _mlibDurationArgument (RHS))
 static inline mlib_duration
 _mlibDurationSubtract (const mlib_duration a, const mlib_duration b) mlib_noexcept
 {
@@ -229,7 +228,8 @@ _mlibDurationSubtract (const mlib_duration a, const mlib_duration b) mlib_noexce
    return ret;
 }
 
-#define _mlibDurationInfixOperator_min(Duration, RHS) _mlibDurationMinBetween (Duration, _mlibDurationArgument (RHS))
+#define _mlibDurationInfixOperator_min(Duration, RHS) \
+   _mlibDurationMinBetween (_mlibDurationArgument (Duration), _mlibDurationArgument (RHS))
 static inline mlib_duration
 _mlibDurationMinBetween (mlib_duration lhs, mlib_duration rhs)
 {
@@ -239,7 +239,8 @@ _mlibDurationMinBetween (mlib_duration lhs, mlib_duration rhs)
    return rhs;
 }
 
-#define _mlibDurationInfixOperator_max(Duration, RHS) _mlibDurationMaxBetween (Duration, _mlibDurationArgument (RHS))
+#define _mlibDurationInfixOperator_max(Duration, RHS) \
+   _mlibDurationMaxBetween (_mlibDurationArgument (Duration), _mlibDurationArgument (RHS))
 static inline mlib_duration
 _mlibDurationMaxBetween (mlib_duration lhs, mlib_duration rhs)
 {

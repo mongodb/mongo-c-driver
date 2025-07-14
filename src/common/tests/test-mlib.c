@@ -913,7 +913,7 @@ _test_str_view (void)
 static void
 _test_duration (void)
 {
-   mlib_duration d = mlib_duration_zero ();
+   mlib_duration d = mlib_duration ();
    mlib_check (mlib_microseconds_count (d), eq, 0);
 
    // Creating durations with the macro name
@@ -1002,7 +1002,7 @@ _test_duration (void)
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
 
    d = mlib_duration (mlib_duration_max (), div, -1);
-   mlib_check (mlib_duration_cmp (d, mlib_duration_zero ()) < 0);
+   mlib_check (mlib_duration_cmp (d, mlib_duration ()) < 0);
    d = mlib_duration (mlib_duration_min (), div, -1);
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
    mlib_assert_aborts () {
