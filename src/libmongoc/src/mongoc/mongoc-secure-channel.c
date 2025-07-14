@@ -39,10 +39,24 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-secure-channel"
 
-/* mingw doesn't define this */
+#ifdef __MINGW32__
+// Define macros omitted from mingw headers:
 #ifndef SECBUFFER_ALERT
 #define SECBUFFER_ALERT 17
 #endif
+#ifndef NCRYPTBUFFER_VERSION
+#define NCRYPTBUFFER_VERSION 0
+#endif
+#ifndef NCRYPT_PKCS8_PRIVATE_KEY_BLOB
+#define NCRYPT_PKCS8_PRIVATE_KEY_BLOB L"PKCS8_PRIVATEKEY"
+#endif
+#ifndef NCRYPT_SILENT_FLAG
+#define NCRYPT_SILENT_FLAG 0x00000040
+#endif
+#ifndef MS_KEY_STORAGE_PROVIDER
+#define MS_KEY_STORAGE_PROVIDER L"Microsoft Software Key Storage Provider"
+#endif
+#endif // #ifdef __MINGW32__
 
 // `decode_pem_base64` decodes a base-64 PEM blob with headers.
 // Returns NULL on error.
