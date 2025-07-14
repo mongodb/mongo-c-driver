@@ -136,6 +136,113 @@ try_insert (mongoc_client_t *client, bson_error_t *error)
    return ok;
 }
 
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+// Define utilities check and delete imported keys for Secure Channel:
+
+// pkcs8_key_name is the deterministic name for the key: client-pkcs8-unencrypted.pem
+static LPCWSTR pkcs8_key_name = L"libmongoc-6659E73980D0FB4EB315CF600E0B10CCBB8C3B74FD3ED94DEAF6DC2D2B6B8317-pkcs8";
+
+static void
+delete_imported_pkcs8_key (void)
+{
+   // Open the software key storage provider:
+   NCRYPT_PROV_HANDLE hProv = 0;
+   SECURITY_STATUS status = NCryptOpenStorageProvider (&hProv, MS_KEY_STORAGE_PROVIDER, 0);
+   ASSERT_WITH_MSG (status == SEC_E_OK, "Failed to open key storage provider: %s", mongoc_winerr_to_string (status));
+
+   // Open the key handle:
+   NCRYPT_PROV_HANDLE keyHandle = 0;
+   status = NCryptOpenKey (hProv, &keyHandle, pkcs8_key_name, 0, 0);
+   ASSERT_WITH_MSG (status == SEC_E_OK, "Failed to open key: %s", mongoc_winerr_to_string (status));
+
+   // Delete key:
+   status = NCryptDeleteKey (keyHandle, 0); // Also frees handle.
+   ASSERT_WITH_MSG (status == SEC_E_OK, "Failed to delete key: %s", mongoc_winerr_to_string (status));
+
+   // NCryptDeleteKey freed handle.
+   NCryptFreeObject (hProv);
+}
+
+static bool
+has_imported_pkcs8_key (void)
+{
+   // Open the software key storage provider:
+   NCRYPT_PROV_HANDLE hProv = 0;
+   SECURITY_STATUS status = NCryptOpenStorageProvider (&hProv, MS_KEY_STORAGE_PROVIDER, 0);
+   ASSERT_WITH_MSG (status == SEC_E_OK, "Failed to open key storage provider: %s", mongoc_winerr_to_string (status));
+
+   // Open the key handle:
+   NCRYPT_PROV_HANDLE keyHandle = 0;
+   status = NCryptOpenKey (hProv, &keyHandle, pkcs8_key_name, 0, 0);
+   ASSERT_WITH_MSG (
+      status == SEC_E_OK || status == NTE_BAD_KEYSET, "Failed to open key: %s", mongoc_winerr_to_string (status));
+   bool found = (keyHandle != 0);
+
+   NCryptFreeObject (keyHandle);
+   NCryptFreeObject (hProv);
+   return found;
+}
+
+// pkcs1_key_name is the deterministic name for the key: client.pem
+static LPCWSTR pkcs1_key_name = L"libmongoc-6659E73980D0FB4EB315CF600E0B10CCBB8C3B74FD3ED94DEAF6DC2D2B6B8317-pkcs1";
+
+static void
+delete_imported_pkcs1_key (void)
+{
+   HCRYPTPROV provider;
+   bool success = CryptAcquireContextW (&provider,                          /* phProv */
+                                        pkcs1_key_name,                     /* pszContainer */
+                                        MS_ENHANCED_PROV_W,                 /* pszProvider */
+                                        PROV_RSA_FULL,                      /* dwProvType */
+                                        CRYPT_DELETEKEYSET | CRYPT_SILENT); /* dwFlags */
+   ASSERT_WITH_MSG (success, "Failed to delete key: %s", mongoc_winerr_to_string (GetLastError ()));
+   CryptReleaseContext (provider, 0);
+}
+
+static bool
+has_imported_pkcs1_key (void)
+{
+   HCRYPTPROV provider = 0;
+   bool success = CryptAcquireContextW (&provider,          /* phProv */
+                                        pkcs1_key_name,     /* pszContainer */
+                                        MS_ENHANCED_PROV_W, /* pszProvider */
+                                        PROV_RSA_FULL,      /* dwProvType */
+                                        CRYPT_SILENT);      /* dwFlags */
+   if (!success) {
+      DWORD lastError = GetLastError ();
+      ASSERT_WITH_MSG (
+         lastError = NTE_BAD_KEYSET, "Unexpected error in acquiring context: %s", mongoc_winerr_to_string (lastError));
+      CryptReleaseContext (provider, 0);
+      return false;
+   }
+
+   CryptReleaseContext (provider, 0);
+   return true;
+}
+
+#define SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED() ASSERT (has_imported_pkcs8_key ())
+#define SCHANNEL_ASSERT_PKCS8_KEY_NOT_IMPORTED() ASSERT (!has_imported_pkcs8_key ())
+#define SCHANNEL_DELETE_PKCS8_KEY() \
+   if (has_imported_pkcs8_key ())   \
+      delete_imported_pkcs8_key (); \
+   else                             \
+      (void) 0
+#define SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED() ASSERT (has_imported_pkcs1_key ())
+#define SCHANNEL_ASSERT_PKCS1_KEY_NOT_IMPORTED() ASSERT (!has_imported_pkcs1_key ())
+#define SCHANNEL_DELETE_PKCS1_KEY() \
+   if (has_imported_pkcs1_key ())   \
+      delete_imported_pkcs1_key (); \
+   else                             \
+      (void) 0
+#else
+#define SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED() (void) 0
+#define SCHANNEL_ASSERT_PKCS8_KEY_NOT_IMPORTED() (void) 0
+#define SCHANNEL_DELETE_PKCS8_KEY() (void) 0
+#define SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED() (void) 0
+#define SCHANNEL_ASSERT_PKCS1_KEY_NOT_IMPORTED() (void) 0
+#define SCHANNEL_DELETE_PKCS1_KEY() (void) 0
+#endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
+
 static void
 test_x509_auth (void *unused)
 {
@@ -158,7 +265,17 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
+         SCHANNEL_DELETE_PKCS8_KEY ();
+         SCHANNEL_ASSERT_PKCS8_KEY_NOT_IMPORTED ();
+
          mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED (); // Imported.
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+
+         // Auth again with key still imported on Secure Channel:
+         SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED (); // Still imported.
+         client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
@@ -167,8 +284,11 @@ test_x509_auth (void *unused)
       mongoc_uri_destroy (uri);
    }
 
-   // Test auth works:
+   // Test auth works with a PKCS1 key:
    {
+      SCHANNEL_DELETE_PKCS1_KEY ();
+      SCHANNEL_ASSERT_PKCS1_KEY_NOT_IMPORTED ();
+
       // Create URI:
       mongoc_uri_t *uri = get_x509_uri ();
       {
@@ -181,6 +301,13 @@ test_x509_auth (void *unused)
       bool ok;
       {
          mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+         SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED (); // Imported.
+         ok = try_insert (client, &error);
+         mongoc_client_destroy (client);
+
+         // Auth again with key still imported on Secure Channel:
+         SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED (); // Still imported.
+         client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
