@@ -235,7 +235,7 @@ generate_key_name (LPBYTE data, DWORD len, const char *suffix)
    BSON_ASSERT_PARAM (data);
    BSON_ASSERT_PARAM (suffix);
 
-   // Compute a hash of the contents:
+   // Compute a hash of the certificate:
    {
       unsigned char hash[32];
       mongoc_crypto_t crypto;
