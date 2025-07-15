@@ -229,9 +229,10 @@ special_matches_hex_bytes (const bson_matcher_context_t *context,
 {
    bool ret = false;
    uint8_t *expected_bytes;
-   uint32_t expected_bytes_len;
+   size_t expected_bytes_len;
    const uint8_t *actual_bytes;
-   uint32_t actual_bytes_len;
+   size_t actual_bytes_len;
+   uint32_t actual_bytes_len_u32;
    char *expected_bytes_string = NULL;
    char *actual_bytes_string = NULL;
    bson_iter_t iter;
@@ -258,12 +259,13 @@ special_matches_hex_bytes (const bson_matcher_context_t *context,
    }
 
    expected_bytes = hex_to_bin (bson_iter_utf8 (&iter, NULL), &expected_bytes_len);
-   actual_bytes = bson_val_to_binary (actual, &actual_bytes_len);
+   actual_bytes = bson_val_to_binary (actual, &actual_bytes_len_u32);
+   actual_bytes_len = actual_bytes_len_u32;
    expected_bytes_string = bin_to_hex_lowercase (expected_bytes, expected_bytes_len);
    actual_bytes_string = bin_to_hex_lowercase (actual_bytes, actual_bytes_len);
 
    if (expected_bytes_len != actual_bytes_len) {
-      MATCH_ERR ("expected %" PRIu32 " (%s) but got %" PRIu32 " (%s) bytes",
+      MATCH_ERR ("expected %zu (%s) but got %zu (%s) bytes",
                  expected_bytes_len,
                  expected_bytes_string,
                  actual_bytes_len,

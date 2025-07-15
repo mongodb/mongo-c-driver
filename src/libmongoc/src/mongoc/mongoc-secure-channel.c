@@ -245,7 +245,10 @@ generate_key_name (LPBYTE data, DWORD len, const char *suffix)
          goto fail;
       }
       // Use uppercase hex to match form of `openssl x509` command:
-      hash_hex = bin_to_hex_uppercase ((const uint8_t *) hash, (uint32_t) sizeof (hash));
+      hash_hex = bin_to_hex_uppercase ((const uint8_t *) hash, sizeof (hash));
+      if (!hash_hex) {
+         goto fail;
+      }
    }
 
    // Convert to a wide string:

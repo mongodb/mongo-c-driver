@@ -99,7 +99,7 @@ test_bin_to_hex (void)
    // Test lowercase:
    {
       const char *expect = "666f6f626172";
-      char *got = bin_to_hex_lowercase ((const uint8_t *) bin, (uint32_t) strlen (bin));
+      char *got = bin_to_hex_lowercase ((const uint8_t *) bin, strlen (bin));
       ASSERT_CMPSTR (got, expect);
       bson_free (got);
    }
@@ -107,7 +107,7 @@ test_bin_to_hex (void)
    // Test uppercase:
    {
       const char *expect = "666F6F626172";
-      char *got = bin_to_hex_uppercase ((const uint8_t *) bin, (uint32_t) strlen (bin));
+      char *got = bin_to_hex_uppercase ((const uint8_t *) bin, strlen (bin));
       ASSERT_CMPSTR (got, expect);
       bson_free (got);
    }
@@ -117,15 +117,15 @@ static void
 test_hex_to_bin (void)
 {
    const char *expect = "foobar";
-   uint32_t len;
+   size_t len;
 
    // Test lowercase:
    {
       const char *hexstr = "666f6f62617200";
-   uint8_t *got = hex_to_bin (hexstr, &len);
-   ASSERT_CMPSTR ((const char *) got, expect);
-   ASSERT_CMPUINT32 (len, ==, 7);
-   bson_free (got);
+      uint8_t *got = hex_to_bin (hexstr, &len);
+      ASSERT_CMPSTR ((const char *) got, expect);
+      ASSERT_CMPSIZE_T (len, ==, 7);
+      bson_free (got);
    }
 
    // Test uppercase:
@@ -133,7 +133,7 @@ test_hex_to_bin (void)
       const char *hexstr = "666F6F62617200";
       uint8_t *got = hex_to_bin (hexstr, &len);
       ASSERT_CMPSTR ((const char *) got, expect);
-      ASSERT_CMPUINT32 (len, ==, 7);
+      ASSERT_CMPSIZE_T (len, ==, 7);
       bson_free (got);
    }
 }

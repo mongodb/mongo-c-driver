@@ -246,14 +246,17 @@ _mongoc_rand_size_t (size_t min, size_t max);
 bool
 _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error_t *error);
 
+// `hex_to_bin` parses `hex` into bytes. Returns NULL on error.
 uint8_t *
-hex_to_bin (const char *hex, uint32_t *len);
+hex_to_bin (const char *hex, size_t *bin_len);
 
+// `bin_to_hex_uppercase` returns uppercase hex for `bin`. Returns NULL on error.
 char *
-bin_to_hex_uppercase (const uint8_t *bin, uint32_t len);
+bin_to_hex_uppercase (const uint8_t *bin, size_t bin_len);
 
+// `bin_to_hex_lowercase` returns lowercase hex for `bin`. Returns NULL on error.
 char *
-bin_to_hex_lowercase (const uint8_t *bin, uint32_t len);
+bin_to_hex_lowercase (const uint8_t *bin, size_t bin_len);
 
 typedef struct {
    bool set;
