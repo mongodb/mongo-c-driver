@@ -241,10 +241,11 @@ def earthly_task(
 
 
 CONTAINER_RUN_DISTROS = [
-    "ubuntu2204-large",
-    "debian10-large",
-    "debian11-large",
     "amazon2",
+    "debian11-large",
+    "debian12-large",
+    "ubuntu2204-large",
+    "ubuntu2404-large",
 ]
 
 

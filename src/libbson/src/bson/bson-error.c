@@ -15,15 +15,16 @@
  */
 
 
-#include <stdio.h>
-#include <stdarg.h>
+#include <bson/bson-error-private.h>
+#include <common-string-private.h>
 
 #include <bson/bson-compat.h>
 #include <bson/bson-config.h>
-#include <bson/bson-error-private.h>
 #include <bson/bson-memory.h>
-#include <common-string-private.h>
 #include <bson/bson-types.h>
+
+#include <stdarg.h>
+#include <stdio.h>
 
 // See `bson_strerror_r()` definition below.
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -77,7 +78,9 @@ bson_set_error (bson_error_t *error, /* OUT */
       bson_set_error_category (error, BSON_ERROR_CATEGORY);
 
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      char buffer[sizeof error->message];
+      bson_vsnprintf (buffer, sizeof error->message, format, args);
+      memcpy (error->message, buffer, sizeof buffer);
       va_end (args);
    }
 }

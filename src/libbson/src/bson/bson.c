@@ -15,21 +15,23 @@
  */
 
 
-#include <bson/validate-private.h>
-#include <mlib/intencode.h>
 #include <bson/bson.h>
-#include <bson/bson-config.h>
-#include <bson/bson-private.h>
+
+#include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
-#include <common-string-private.h>
+#include <bson/bson-private.h>
+#include <bson/validate-private.h>
 #include <common-json-private.h>
 #include <common-macros-private.h>
-#include <bson/bson-iso8601-private.h>
+#include <common-string-private.h>
 
-#include <string.h>
-#include <math.h>
+#include <bson/bson-config.h>
 
 #include <mlib/config.h>
+#include <mlib/intencode.h>
+
+#include <math.h>
+#include <string.h>
 
 
 /*
@@ -299,7 +301,7 @@ BSON_STATIC_ASSERT2 (max_alloc_grow_fits_min_sizet, (uint64_t) BSON_MAX_SIZE * 2
       mlib_diagnostic_pop ();                                         \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
-      *(_list).current++ = (_bson_append_bytes_arg){                  \
+      *(_list).current++ = (_bson_append_bytes_arg) {                 \
          .bytes = (const uint8_t *) (_bytes),                         \
          .length = (_length),                                         \
       };                                                              \

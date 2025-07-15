@@ -1,5 +1,4 @@
 #include <mongoc/mongoc-deprioritized-servers-private.h>
-
 #include <mongoc/mongoc-set-private.h>
 
 // Dedicated non-zero value to avoid confusing "key is present with a NULL item"
@@ -16,7 +15,7 @@ mongoc_deprioritized_servers_new (void)
 {
    mongoc_deprioritized_servers_t *const ret = bson_malloc (sizeof (*ret));
 
-   *ret = (mongoc_deprioritized_servers_t){
+   *ret = (mongoc_deprioritized_servers_t) {
       .ids = mongoc_set_new (1u, NULL, NULL),
    };
 

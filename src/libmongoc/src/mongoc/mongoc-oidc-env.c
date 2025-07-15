@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-oidc-env-private.h>
+
 #include <mongoc/mongoc-oidc-callback.h>
 
 struct _mongoc_oidc_env_t {
@@ -114,8 +115,8 @@ mongoc_oidc_env_callback_new (const mongoc_oidc_env_t *env, const char *token_re
    // Note that the callback's user_data points back to this containing mongoc_oidc_env_callback_t.
    // We expect that the inner callback can only be destroyed via mongoc_oidc_env_callback_destroy.
    *env_callback =
-      (mongoc_oidc_env_callback_t){.inner = mongoc_oidc_callback_new_with_user_data (env->callback_fn, env_callback),
-                                   .token_resource = bson_strdup (token_resource)};
+      (mongoc_oidc_env_callback_t) {.inner = mongoc_oidc_callback_new_with_user_data (env->callback_fn, env_callback),
+                                    .token_resource = bson_strdup (token_resource)};
    return env_callback;
 }
 

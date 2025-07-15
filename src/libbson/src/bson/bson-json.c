@@ -15,22 +15,26 @@
  */
 
 
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <math.h>
-
-#include <bson/bson.h>
-#include <bson/bson-config.h>
-#include <bson/bson-error-private.h>
 #include <bson/bson-json.h>
-#include <bson/bson-json-private.h>
+
+#include <bson/bson-error-private.h>
 #include <bson/bson-iso8601-private.h>
+#include <bson/bson-json-private.h>
+#include <common-b64-private.h>
+
+#include <bson/bson-config.h>
+#include <bson/bson.h>
 
 #include <mlib/cmp.h>
 #include <mlib/config.h>
-#include <common-b64-private.h>
+
 #include <jsonsl/jsonsl.h>
+
+#include <fcntl.h>
+#include <sys/types.h>
+
+#include <errno.h>
+#include <math.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -400,7 +404,7 @@ bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
    bson_json_opts_t *opts;
 
    opts = (bson_json_opts_t *) bson_malloc (sizeof *opts);
-   *opts = (bson_json_opts_t){
+   *opts = (bson_json_opts_t) {
       .mode = mode,
       .max_len = max_len,
       .is_outermost_array = false,

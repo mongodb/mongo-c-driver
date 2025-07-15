@@ -115,14 +115,6 @@ functions:
           - .evergreen/scripts/check-preludes.py .
   clang-format:
     - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        working_dir: mongoc
-        args:
-          - -c
-          - ./tools/poetry.sh install --with=dev
-    - command: subprocess.exec
       type: test
       params:
         binary: bash
@@ -131,7 +123,7 @@ functions:
           DRYRUN: "1"
         args:
           - -c
-          - ./tools/poetry.sh run .evergreen/scripts/clang-format-all.sh
+          - uv run --frozen --only-group format tools/format.py --mode=check
   cse-sasl-cyrus-darwinssl-compile:
     - command: expansions.update
       params:
@@ -313,10 +305,8 @@ functions:
         args:
           - -c
           - |
-            set -o errexit
-            ./tools/poetry.sh install --with=docs
             # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
-            ./tools/poetry.sh run env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
+            uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
   openssl-static-compile:
     - command: subprocess.exec
       type: test

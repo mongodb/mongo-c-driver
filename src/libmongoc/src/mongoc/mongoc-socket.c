@@ -15,22 +15,22 @@
  */
 
 
-#include <errno.h>
-#include <string.h>
-
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-socket-private.h>
-#include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-host-list.h>
+
 #ifdef _WIN32
 #include <Mstcpip.h>
 #include <process.h>
 #endif
 #include <mlib/cmp.h>
 
+#include <errno.h>
 #include <inttypes.h>
+#include <string.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"

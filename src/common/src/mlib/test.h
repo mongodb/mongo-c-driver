@@ -20,13 +20,13 @@
 #pragma once
 
 #include <mlib/cmp.h>
-#include <mlib/intutil.h>
 #include <mlib/config.h>
+#include <mlib/intutil.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 /**
  * @brief Place this macro at the head of a (compound) statement to assert that
@@ -145,6 +145,9 @@ typedef struct mlib_source_location {
 #define _mlibCheckCondition_neq(A, B) \
    _mlibCheckIntCmp (                 \
       mlib_equal, false, "!=", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+// Simple assertion with an explanatory string
+#define _mlibCheckCondition_because(Cond, Msg) \
+   _mlibCheckConditionBecause (Cond, #Cond, Msg, mlib_this_source_location ())
 
 /// Check evaluator when given a single boolean
 static inline void
@@ -152,6 +155,17 @@ _mlibCheckConditionSimple (bool c, const char *expr, struct mlib_source_location
 {
    if (!c) {
       fprintf (stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed\n", here.file, here.lineno, here.func, expr);
+      fflush (stderr);
+      abort ();
+   }
+}
+
+static inline void
+_mlibCheckConditionBecause (bool cond, const char *expr, const char *reason, mlib_source_location here)
+{
+   if (!cond) {
+      fprintf (
+         stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed (%s)\n", here.file, here.lineno, here.func, expr, reason);
       fflush (stderr);
       abort ();
    }
@@ -179,16 +193,16 @@ _mlibCheckIntCmp (enum mlib_cmp_result cres, // The cmp result to check
                right_expr);
       fprintf (stderr, "    ");
       if (left.is_signed) {
-         fprintf (stderr, "%lld", (long long) left.i.s);
+         fprintf (stderr, "%lld", (long long) left.bits.as_signed);
       } else {
-         fprintf (stderr, "%llu", (unsigned long long) left.i.u);
+         fprintf (stderr, "%llu", (unsigned long long) left.bits.as_unsigned);
       }
       fprintf (stderr, " ⟨%s⟩\n", left_expr);
       fprintf (stderr, "    ");
       if (right.is_signed) {
-         fprintf (stderr, "%lld", (long long) right.i.s);
+         fprintf (stderr, "%lld", (long long) right.bits.as_signed);
       } else {
-         fprintf (stderr, "%llu", (unsigned long long) right.i.u);
+         fprintf (stderr, "%llu", (unsigned long long) right.bits.as_unsigned);
       }
       fprintf (stderr, " ⟨%s⟩\n", right_expr);
       fflush (stderr);

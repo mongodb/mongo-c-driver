@@ -18,28 +18,34 @@
 
 #ifdef MONGOC_ENABLE_SSL
 
-#include <errno.h>
-#include <string.h>
-#include <bson/bson.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-error-private.h>
 
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-stream-private.h>
+#include <bson/bson.h>
+
+#include <errno.h>
+#include <string.h>
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-#include <mongoc/mongoc-stream-tls-openssl.h>
 #include <mongoc/mongoc-openssl-private.h>
+
+#include <mongoc/mongoc-stream-tls-openssl.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #include <mongoc/mongoc-secure-transport-private.h>
+
 #include <mongoc/mongoc-stream-tls-secure-transport.h>
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #include <mongoc/mongoc-secure-channel-private.h>
+
 #include <mongoc/mongoc-stream-tls-secure-channel.h>
 #endif
-#include <mongoc/mongoc-stream-tls.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+
+#include <mongoc/mongoc-stream-tls.h>
+
 #include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
@@ -121,37 +127,21 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream, const char *host, in
    return false;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_stream_tls_new_with_hostname --
- *
- *       Creates a new mongoc_stream_tls_t to communicate with a remote
- *       server using a TLS stream.
- *
- *       @host the hostname we are connected to and to verify the
- *       server certificate against
- *
- *       @base_stream should be a stream that will become owned by the
- *       resulting tls stream. It will be used for raw I/O.
- *
- *       @trust_store_dir should be a path to the SSL cert db to use for
- *       verifying trust of the remote server.
- *
- * Returns:
- *       NULL on failure, otherwise a mongoc_stream_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
+// mongoc_stream_tls_new_with_hostname creates a TLS stream.
+//
+// base_stream: underlying data stream. Ownership is transferred to the returned stream on success.
+// host: hostname used to verify the the server certificate.
+// opt: TLS options.
+// client: indicates a client or server stream. Secure Channel implementation does not support server streams.
+//
+// Side effect: May set opt->allow_invalid_hostname to true.
+//
+// Returns a new stream on success. Returns `NULL` on failure.
 mongoc_stream_t *
 mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
    BSON_ASSERT_PARAM (base_stream);
+   BSON_OPTIONAL_PARAM (host);
    BSON_ASSERT_PARAM (opt);
 
    /* !client is only used for testing,
@@ -179,38 +169,27 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *h
 }
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_stream_tls_new_with_hostname_and_openssl_context --
- *
- *       Creates a new mongoc_stream_tls_t to communicate with a remote
- *       server using a TLS stream, using an existing OpenSSL context.
- *
- *       @ssl_ctx is the global OpenSSL context for the mongoc_client_t
- *       associated with this function call.
- *
- *       @host the hostname we are connected to and to verify the
- *       server certificate against
- *
- *       @base_stream should be a stream that will become owned by the
- *       resulting tls stream. It will be used for raw I/O.
- *
- * Returns:
- *       NULL on failure, otherwise a mongoc_stream_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
+// Create an OpenSSL TLS stream with a shared context.
+//
+// This is an internal extension to mongoc_stream_tls_new_with_hostname.
+//
+// base_stream: underlying data stream. Ownership is transferred to the returned stream on success.
+// host: hostname used to verify the the server certificate.
+// opt: TLS options.
+// client: indicates a client or server stream.
+// ssl_ctx: shared context.
+//
+// Side effect: May set opt->allow_invalid_hostname to true for compatibility with mongoc_stream_tls_new_with_hostname.
+//
+// Returns a new stream on success. Returns `NULL` on failure.
 mongoc_stream_t *
 mongoc_stream_tls_new_with_hostname_and_openssl_context (
    mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client, SSL_CTX *ssl_ctx)
 {
    BSON_ASSERT_PARAM (base_stream);
+   BSON_OPTIONAL_PARAM (host);
    BSON_ASSERT_PARAM (opt);
+   BSON_OPTIONAL_PARAM (ssl_ctx);
 
    /* !client is only used for testing,
     * when the streams are pretending to be the server */
@@ -228,5 +207,33 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (
    return mongoc_stream_tls_openssl_new_with_context (base_stream, host, opt, client, ssl_ctx);
 }
 #endif
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+// Create a Secure Channel TLS stream with shared credentials.
+//
+// This is an internal extension to mongoc_stream_tls_new_with_hostname.
+//
+// base_stream: underlying data stream. Ownership is transferred to the returned stream on success.
+// opt: TLS options.
+// secure_channel_cred_ptr: optional shared credentials. May be MONGOC_SHARED_PTR_NULL.
+//
+// Side effect: May set opt->allow_invalid_hostname to true for compatibility with mongoc_stream_tls_new_with_hostname.
+//
+// Returns a new stream on success. Returns `NULL` on failure.
+mongoc_stream_t *
+mongoc_stream_tls_new_with_secure_channel_cred (mongoc_stream_t *base_stream,
+                                                mongoc_ssl_opt_t *opt,
+                                                mongoc_shared_ptr secure_channel_cred_ptr)
+{
+   BSON_ASSERT_PARAM (base_stream);
+   BSON_ASSERT_PARAM (opt);
+
+   if (opt->weak_cert_validation) {
+      // For compatibility with `mongoc_stream_tls_new_with_hostname`, modify `opt` directly:
+      opt->allow_invalid_hostname = true;
+   }
+   return mongoc_stream_tls_secure_channel_new_with_creds (base_stream, opt, secure_channel_cred_ptr);
+}
+#endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 #endif

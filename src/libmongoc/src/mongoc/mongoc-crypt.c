@@ -20,22 +20,24 @@
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
-#include <mongocrypt/mongocrypt.h>
-
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-cluster-aws-private.h>
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-http-private.h>
+#include <mongoc/mongoc-ssl-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/mcd-azure.h>
 #include <mongoc/mcd-time.h>
 #include <mongoc/service-gcp.h>
-#include <common-string-private.h>
+
 #include <mlib/cmp.h>
+
+#include <mongocrypt/mongocrypt.h>
 
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
 // `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for
@@ -739,7 +741,7 @@ static bool
 _check_azure_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 {
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
 
    bson_iter_t iter;
@@ -877,7 +879,7 @@ static bool
 _check_gcp_kms_auto (const bson_t *kmsprov, bson_error_t *error)
 {
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
 
    bson_iter_t iter;

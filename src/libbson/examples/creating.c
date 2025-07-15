@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include <bson/bson.h>
+
+#include <stdio.h>
 
 int
 main (void)

@@ -15,22 +15,23 @@
  */
 
 
-#include <mongoc/mongoc-aggregate-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-collection.h>
-#include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database.h>
+
+#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-aggregate-private.h>
+#include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-change-stream-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-log.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "database"
@@ -1135,7 +1136,7 @@ _mongoc_get_collection_encryptedFields (mongoc_client_t *client,
       bool found = false;
       bsonParse (*opts,
                  find (key ("encryptedFields"),
-                       if (not(type (doc)), then (error ("'encryptedFields' should be a document"))),
+                       if (not (type (doc)), then (error ("'encryptedFields' should be a document"))),
                        // Update encryptedFields to be a reference to the subdocument:
                        storeDocRef (*encryptedFields),
                        do (found = true)));
@@ -1193,7 +1194,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
 
    if (!bson_empty (&encryptedFields)) {
       // Clone 'opts' without the encryptedFields element
-      bsonBuildDecl (opts_without_encryptedFields, if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+      bsonBuildDecl (opts_without_encryptedFields, if (opts, then (insert (*opts, not (key ("encryptedFields"))))));
 
       mongoc_collection_t *ret = create_collection_with_encryptedFields (
          database, name, &opts_without_encryptedFields, &encryptedFields, error);

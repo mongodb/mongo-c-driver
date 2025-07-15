@@ -30,9 +30,9 @@
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-collection-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <TestSuite.h>
+#include <test-libmongoc.h>
+#include <test-conveniences.h>
 
 
 typedef void (*sample_command_fn_t) (mongoc_database_t *db);

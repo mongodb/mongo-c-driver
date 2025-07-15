@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-http-private.h>
-
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mcd-time.h>
 #include <common-string-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-http-private.h>
+#include <mongoc/mongoc-stream-private.h>
+
+#include <mongoc/mcd-time.h>
+#include <mongoc/mongoc-stream-tls.h>
+
 #include <mlib/cmp.h>
 
 void
@@ -121,7 +122,7 @@ _mongoc_http_send (const mongoc_http_request_t *req,
    memset (res, 0, sizeof (*res));
    _mongoc_buffer_init (&http_response_buf, NULL, 0, NULL, NULL);
 
-   if (!_mongoc_host_list_from_hostport_with_err (&host_list, req->host, (uint16_t) req->port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&host_list, mstr_cstring (req->host), (uint16_t) req->port, error)) {
       goto fail;
    }
 

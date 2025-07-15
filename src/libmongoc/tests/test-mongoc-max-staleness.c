@@ -1,14 +1,14 @@
-#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc.h>
 
-#include "TestSuite.h"
-#include "json-test.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
+#include <TestSuite.h>
+#include <json-test.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static int64_t
@@ -84,8 +84,9 @@ test_mongoc_client_max_staleness (void)
    ASSERT (!test_framework_client_new (
       "mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5", NULL));
 
-   ASSERT_CAPTURED_LOG (
-      MONGOC_URI_MAXSTALENESSSECONDS "=10.5", MONGOC_LOG_LEVEL_WARNING, "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported value for \"maxstalenessseconds\"");
    capture_logs (false);
 
    /* 1 is allowed, it'll be rejected once we begin server selection */

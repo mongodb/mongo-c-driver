@@ -212,9 +212,16 @@ functions:
         set -o errexit
         COVERAGE=ON .evergreen/scripts/compile.sh
   build mongohouse:
+  - command: ec2.assume_role
+    params:
+      role_arn: ${aws_test_secrets_role}
   - command: shell.exec
     type: test
     params:
+      include_expansions_in_env:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
       shell: bash
       script: |-
         set -o errexit
@@ -16140,8 +16147,15 @@ task_groups:
 - name: testazurekms_task_group
   setup_group:
   - func: fetch-det
+  - command: ec2.assume_role
+    params:
+      role_arn: ${aws_test_secrets_role}
   - command: shell.exec
     params:
+      include_expansions_in_env:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
       shell: bash
       script: |-
         set -o errexit
@@ -16237,9 +16251,6 @@ buildvariants:
   - link-with-cmake-ssl
   - link-with-cmake-snappy
   - name: link-with-cmake-mac
-    distros:
-    - macos-14-arm64
-  - name: link-with-cmake-mac-deprecated
     distros:
     - macos-14-arm64
   - name: link-with-cmake-windows

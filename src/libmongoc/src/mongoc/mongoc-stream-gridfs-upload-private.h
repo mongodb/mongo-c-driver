@@ -20,6 +20,7 @@
 #define MONGOC_STREAM_GRIDFS_UPLOAD_PRIVATE_H
 
 #include <mongoc/mongoc-gridfs-bucket-file-private.h>
+
 #include <mongoc/mongoc-stream.h>
 
 typedef struct {

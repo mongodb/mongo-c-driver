@@ -15,52 +15,54 @@
  */
 
 
-#include <mlib/intencode.h>
-#include <mongoc/mongoc-config.h>
-
-#include <string.h>
-
-#include <mongoc/mcd-rpc.h>
-#include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-cluster-sasl-private.h>
 #include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-flags-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+
+#include <mongoc/mcd-rpc.h>
+#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-cluster-sasl-private.h>
+
+#include <mlib/intencode.h>
+
+#include <string.h>
 #ifdef MONGOC_ENABLE_SSL
-#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream-tls.h>
 #endif
 #include <common-b64-private.h>
+#include <common-bson-dsl-private.h>
+#include <common-oid-private.h>
+#include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-cmd-private.h>
+#include <mongoc/mongoc-compression-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-set-private.h>
-#include <mongoc/mongoc-socket.h>
 #include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream-socket.h>
-#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-rpc-private.h>
-#include <mongoc/mongoc-compression-private.h>
-#include <mongoc/mongoc-cmd-private.h>
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc-handshake-private.h>
-#include <mongoc/mongoc-cluster-aws-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-stream-tls.h>
+#include <mongoc/utlist.h>
+
 #include <mlib/cmp.h>
-#include <common-oid-private.h>
 
 #include <inttypes.h>
 
@@ -493,7 +495,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    int64_t started = bson_get_monotonic_time ();
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
-   bson_error_t error_local;
    bson_iter_t iter;
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
@@ -508,9 +509,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    if (!reply) {
       reply = &reply_local;
    }
-   if (!error) {
-      error = &error_local;
-   }
+   bson_error_reset (error);
 
    if (_mongoc_cse_is_enabled (cluster->client)) {
       bson_destroy (&encrypted);

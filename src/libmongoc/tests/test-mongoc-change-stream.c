@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-client-private.h>
-#include "mock_server/mock-server.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
 #include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "json-test.h"
-#include "json-test-operations.h"
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <json-test-operations.h>
+#include <json-test.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #define DESTROY_CHANGE_STREAM(cursor_id)                                                                              \
    do {                                                                                                               \
@@ -1170,10 +1172,7 @@ typedef struct {
    bson_t agg_reply;
 } resume_ctx_t;
 
-#define RESUME_INITIALIZER           \
-   {                                 \
-      false, false, BSON_INITIALIZER \
-   }
+#define RESUME_INITIALIZER {false, false, BSON_INITIALIZER}
 
 static void
 _resume_with_post_batch_resume_token_started (const mongoc_apm_command_started_t *event)

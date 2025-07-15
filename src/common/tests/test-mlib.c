@@ -1,12 +1,13 @@
-#include "TestSuite.h"
-
-#include <mlib/intutil.h>
+#include <mlib/ckdint.h>
+#include <mlib/cmp.h>
 #include <mlib/config.h>
 #include <mlib/intencode.h>
+#include <mlib/intutil.h>
 #include <mlib/loop.h>
-#include <mlib/cmp.h>
+#include <mlib/str.h>
 #include <mlib/test.h>
-#include <mlib/ckdint.h>
+
+#include <TestSuite.h>
 
 #include <stddef.h>
 
@@ -44,6 +45,22 @@ _test_checks (void)
    mlib_assert_aborts () {
       mlib_check (1, neq, 1);
    }
+   // "because" string
+   mlib_check (true, because, "just true");
+   mlib_assert_aborts () {
+      mlib_check (false, because, "this will fail");
+   }
+}
+
+static void
+_test_bits (void)
+{
+   mlib_check (mlib_bits (0, 0), eq, 0);           // 0b000
+   mlib_check (mlib_bits (1, 0), eq, 1);           // 0b001
+   mlib_check (mlib_bits (2, 0), eq, 3);           // 0b011
+   mlib_check (mlib_bits (1, 1), eq, 2);           // 0b010
+   mlib_check (mlib_bits (5, 3), eq, 248);         // 0b11111000
+   mlib_check (mlib_bits (64, 0), eq, UINT64_MAX); // 0b111...
 }
 
 static void
@@ -89,23 +106,23 @@ _test_upsize (void)
 {
    struct mlib_upsized_integer up;
    up = mlib_upsize_integer (31);
-   ASSERT (up.is_signed);
-   ASSERT (up.i.s == 31);
+   mlib_check (up.is_signed);
+   mlib_check (up.bits.as_signed == 31);
 
    // Casting from the max unsigned integer generates an unsigned upsized integer:
    up = mlib_upsize_integer ((uintmax_t) 1729);
-   ASSERT (!up.is_signed);
-   ASSERT (up.i.u == 1729);
+   mlib_check (!up.is_signed);
+   mlib_check (up.bits.as_unsigned == 1729);
 
    // Max signed integer makes a signed upsized integer:
    up = mlib_upsize_integer ((intmax_t) 1729);
-   ASSERT (up.is_signed);
-   ASSERT (up.i.s == 1729);
+   mlib_check (up.is_signed);
+   mlib_check (up.bits.as_signed == 1729);
 
    // From a literal:
    up = mlib_upsize_integer (UINTMAX_MAX);
-   ASSERT (!up.is_signed);
-   ASSERT (up.i.u == UINTMAX_MAX);
+   mlib_check (!up.is_signed);
+   mlib_check (up.bits.as_unsigned == UINTMAX_MAX);
 }
 
 static void
@@ -315,6 +332,9 @@ _test_cmp (void)
    // mlib_cmp produces the correct answer:
    ASSERT (mlib_cmp (-27, <, 20u));
 
+   // CDRIVER-6043: until VS 2019 (MSVC 19.20), compound literals seem to "escape" the expression or scope they are
+   // meant to be in. This includes the compound literals used by the conditional operator in mlib_upsize_integer.
+#if !defined(_MSC_VER) || _MSC_VER >= 1920
    {
       // Check that we do not double-evaluate the operand expression.
       intmax_t a = 4;
@@ -322,6 +342,7 @@ _test_cmp (void)
       // We only increment once:
       mlib_check (a, eq, 5);
    }
+#endif
 }
 
 static void
@@ -441,6 +462,76 @@ _test_int_encoding (void)
       o = mlib_write_i64le (buf, 0x0102030405060708);
       mlib_check (o, ptr_eq, buf + 8);
       mlib_check (buf, str_eq, "\x08\x07\x06\x05\x04\x03\x02\x01");
+   }
+}
+
+static void
+_test_int_parse (void)
+{
+   const int64_t bogus_value = 2424242424242424242;
+   struct case_ {
+      const char *in;
+      int64_t value;
+      int ec;
+   } cases[] = {
+      // Basics:
+      {"0", 0},
+      {"1", 1},
+      {"+1", 1},
+      {"-1", -1},
+      // Differences from strtoll
+      // We require at least one digit immediately
+      {"a1", bogus_value, EINVAL},
+      {"", bogus_value, EINVAL},
+      // No space skipping
+      {" 1", bogus_value, EINVAL},
+      {" +42", bogus_value, EINVAL},
+      // No trailing characters
+      {"123a", bogus_value, EINVAL},
+      // strtoll: Set ERANGE if the value is too large
+      {"123456789123456789123", bogus_value, ERANGE},
+      // Difference: We generate EINVAL if its not an integer, even if strtoll says ERANGE
+      {"123456789123456789123abc", bogus_value, EINVAL},
+      // Truncated prefix
+      {"+", bogus_value, EINVAL},
+      {"+0x", bogus_value, EINVAL},
+      {"0x", bogus_value, EINVAL},
+      {"-0b", bogus_value, EINVAL},
+      {"0xff", 0xff},
+      {"0xfr", bogus_value, EINVAL},
+      {"0x0", 0},
+      {"0o755", 0755},
+      {"0755", 0755},
+      // Boundary cases:
+      {"9223372036854775807", INT64_MAX},
+      {"-9223372036854775808", INT64_MIN},
+   };
+   mlib_foreach_arr (struct case_, test, cases) {
+      int64_t value = bogus_value;
+      int ec = mlib_i64_parse (mstr_cstring (test->in), &value);
+      mlib_check (value, eq, test->value);
+      mlib_check (ec, eq, test->ec);
+   }
+
+   {
+      // Parsing stops after the three digits when we slice the string
+      int64_t value;
+      int ec = mlib_i64_parse (mstr_view_data ("123abc", 3), &value);
+      mlib_check (ec, eq, 0);
+      mlib_check (value, eq, 123);
+   }
+
+   {
+      // Does not try to parse after the "0x" when we slice
+      int ec = mlib_i64_parse (mstr_view_data ("0x123", 2), NULL);
+      mlib_check (ec, eq, EINVAL);
+   }
+
+   {
+      // Does not try to read past the "+" into stack memory
+      char plus = '+';
+      int ec = mlib_i64_parse (mstr_view_data (&plus, 1), NULL);
+      mlib_check (ec, eq, EINVAL);
    }
 }
 
@@ -654,19 +745,164 @@ _test_ckdint_partial (void)
    }
 }
 
+static void
+_test_str_view (void)
+{
+   mstr_view sv = mstr_cstring ("Hello, world!");
+   mlib_check (sv.data, str_eq, "Hello, world!");
+
+   mlib_check (mstr_cmp (sv, ==, mstr_cstring ("Hello, world!")));
+   mlib_check (mstr_cmp (sv, >, mstr_cstring ("Hello")));
+   // Longer strings are greater than shorter strings
+   mlib_check (mstr_cmp (sv, <, mstr_cstring ("ZZZZZ")));
+   // str_view_from duplicates a string view:
+   mlib_check (mstr_cmp (sv, ==, mstr_view_from (sv)));
+
+   // Substring
+   {
+      sv = mstr_cstring ("foobar");
+      // Implicit length includes everything:
+      mlib_check (mstr_cmp (mstr_substr (sv, 2), ==, mstr_cstring ("obar")));
+      // Explicit length trims:
+      mlib_check (mstr_cmp (mstr_substr (sv, 2, 1), ==, mstr_cstring ("o")));
+      // Substring over the whole length:
+      mlib_check (mstr_cmp (mstr_substr (sv, sv.len), ==, mstr_cstring ("")));
+   }
+
+   // Substring from end
+   {
+      sv = mstr_cstring ("foobar");
+      mlib_check (mstr_cmp (mstr_substr (sv, -3), ==, mstr_cstring ("bar")));
+      mlib_check (mstr_cmp (mstr_substr (sv, -6), ==, mstr_cstring ("foobar")));
+   }
+
+   // Searching forward:
+   {
+      sv = mstr_cstring ("foobar");
+      mlib_check (mstr_find (sv, mstr_cstring ("foo")), eq, 0);
+      mlib_check (mstr_find (sv, mstr_cstring ("o")), eq, 1);
+      mlib_check (mstr_find (sv, mstr_cstring ("foof")), eq, SIZE_MAX);
+      mlib_check (mstr_find (sv, mstr_cstring ("bar")), eq, 3);
+      mlib_check (mstr_find (sv, mstr_cstring ("barf")), eq, SIZE_MAX);
+      // Start at index 3
+      mlib_check (mstr_find (sv, mstr_cstring ("bar"), 3), eq, 3);
+      // Starting beyond the ocurrence will fail:
+      mlib_check (mstr_find (sv, mstr_cstring ("b"), 4), eq, SIZE_MAX);
+      // Empty string is found immediately:
+      mlib_check (mstr_find (sv, mstr_cstring ("")), eq, 0);
+   }
+
+   {
+      // Searching for certain chars
+      mstr_view digits = mstr_cstring ("1234567890");
+      // The needle chars never occur, so returns SIZE_MAX
+      mlib_check (mstr_find_first_of (mstr_cstring ("foobar"), digits), eq, SIZE_MAX);
+      // `1` at the fourth pos
+      mlib_check (mstr_find_first_of (mstr_cstring ("foo1barbaz4"), digits), eq, 3);
+      // `1` at the fourth pos, with a trimmed window:
+      mlib_check (mstr_find_first_of (mstr_cstring ("foo1barbaz4"), digits, 3), eq, 3);
+      // `4` is found, since we drop the `1` from the window:
+      mlib_check (mstr_find_first_of (mstr_cstring ("foo1barbaz4"), digits, 4), eq, 10);
+      // Empty needles string is never found in any string
+      mlib_check (mstr_find_first_of (mstr_cstring ("foo bar baz"), mstr_cstring ("")), eq, SIZE_MAX);
+      // Find at the end of the string
+      mlib_check (mstr_find_first_of (mstr_cstring ("foo bar baz"), mstr_cstring ("z")), eq, 10);
+   }
+
+   // Splitting
+   {
+      sv = mstr_cstring ("foo bar baz");
+      mstr_view a, b;
+      // Trim at index 3, drop one char:
+      mstr_split_at (sv, 3, 1, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("foo")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("bar baz")));
+      // Trim at index 3, default drop=0:
+      mstr_split_at (sv, 3, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("foo")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring (" bar baz")));
+      // Trim past-the-end
+      mstr_split_at (sv, 5000, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("foo bar baz")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));
+      // Drop too many:
+      mstr_split_at (sv, 0, 5000, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));
+      // Past-the-end and also drop
+      mstr_split_at (sv, 4000, 42, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("foo bar baz")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));
+
+      // Split using a negative index
+      mstr_split_at (sv, -4, 1, &a, &b);
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("foo bar")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("baz")));
+   }
+
+   // Splitting around an infix
+   {
+      sv = mstr_cstring ("foo bar baz");
+      mstr_view a, b;
+      // Split around the first space
+      const mstr_view space = mstr_cstring (" ");
+      mlib_check (mstr_split_around (sv, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("foo")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("bar baz")));
+      // Split again
+      mlib_check (mstr_split_around (b, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("bar")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("baz")));
+      // Split again. This won't find a space, but will still do something
+      mlib_check (!mstr_split_around (b, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("baz")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));
+      // Splitting on the final empty string does nothing
+      mlib_check (!mstr_split_around (b, space, &a, &b));
+      mlib_check (mstr_cmp (a, ==, mstr_cstring ("")));
+      mlib_check (mstr_cmp (b, ==, mstr_cstring ("")));
+   }
+
+   // Case folding
+   {
+      mlib_check (mlib_latin_tolower ('a'), eq, 'a');
+      mlib_check (mlib_latin_tolower ('z'), eq, 'z');
+      mlib_check (mlib_latin_tolower ('A'), eq, 'a');
+      mlib_check (mlib_latin_tolower ('Z'), eq, 'z');
+      // Other chars are unchanged:
+      mlib_check (mlib_latin_tolower ('7'), eq, '7');
+      mlib_check (mlib_latin_tolower ('?'), eq, '?');
+   }
+
+   // Case-insensitive compare
+   {
+      mlib_check (mstr_latin_casecmp (mstr_cstring ("foo"), ==, mstr_cstring ("foo")));
+      mlib_check (mstr_latin_casecmp (mstr_cstring ("foo"), !=, mstr_cstring ("bar")));
+      mlib_check (mstr_latin_casecmp (mstr_cstring ("Foo"), ==, mstr_cstring ("foo")));
+      mlib_check (mstr_latin_casecmp (mstr_cstring ("Foo"), >, mstr_cstring ("bar")));
+      // "Food" < "foo" when case-sensitive ('F' < 'f'):
+      mlib_check (mstr_cmp (mstr_cstring ("Food"), <, mstr_cstring ("foo")));
+      // But "Food" > "foo" when case-insensitive:
+      mlib_check (mstr_latin_casecmp (mstr_cstring ("Food"), >, mstr_cstring ("foo")));
+   }
+}
+
 void
 test_mlib_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/mlib/checks", _test_checks);
+   TestSuite_Add (suite, "/mlib/intutil/bits", _test_bits);
    TestSuite_Add (suite, "/mlib/intutil/minmax", _test_minmax);
    TestSuite_Add (suite, "/mlib/intutil/upsize", _test_upsize);
    TestSuite_Add (suite, "/mlib/cmp", _test_cmp);
    TestSuite_Add (suite, "/mlib/in-range", _test_in_range);
    TestSuite_Add (suite, "/mlib/assert-aborts", _test_assert_aborts);
    TestSuite_Add (suite, "/mlib/int-encoding", _test_int_encoding);
+   TestSuite_Add (suite, "/mlib/int-parse", _test_int_parse);
    TestSuite_Add (suite, "/mlib/foreach", _test_foreach);
    TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
+   TestSuite_Add (suite, "/mlib/str_view", _test_str_view);
 }
 
 mlib_diagnostic_pop ();

@@ -1,12 +1,12 @@
 #include <mongoc/mongoc-ts-pool-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 static void
 test_ts_pool_empty (void)
 {
-   mongoc_ts_pool *pool = mongoc_ts_pool_new ((mongoc_ts_pool_params){.element_size = sizeof (int)});
+   mongoc_ts_pool *pool = mongoc_ts_pool_new ((mongoc_ts_pool_params) {.element_size = sizeof (int)});
    BSON_ASSERT (mongoc_ts_pool_is_empty (pool));
    mongoc_ts_pool_free (pool);
 }
@@ -15,7 +15,7 @@ test_ts_pool_empty (void)
 static void
 test_ts_pool_simple (void)
 {
-   mongoc_ts_pool *pool = mongoc_ts_pool_new ((mongoc_ts_pool_params){.element_size = sizeof (int)});
+   mongoc_ts_pool *pool = mongoc_ts_pool_new ((mongoc_ts_pool_params) {.element_size = sizeof (int)});
    int *item;
    int *item2;
 

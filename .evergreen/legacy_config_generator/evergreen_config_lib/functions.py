@@ -156,11 +156,19 @@ all_functions = OD([
         ''', add_expansions_to_env=True),
     )),
     ('build mongohouse', Function(
+        # Assume role to get AWS secrets.
+        {
+            "command": "ec2.assume_role",
+            "params": {
+                "role_arn": "${aws_test_secrets_role}"
+            }
+        },
+
         shell_exec(r'''
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
         .evergreen/atlas_data_lake/pull-mongohouse-image.sh
-        '''),
+        ''', include_expansions_in_env=[ "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN" ]),
     )),
     ('run mongohouse', Function(
         shell_exec(r'''

@@ -1,7 +1,8 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-queue-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
 
 
 static void

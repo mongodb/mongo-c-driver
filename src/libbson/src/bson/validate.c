@@ -28,9 +28,11 @@
  */
 
 #include <bson/validate-private.h>
+
+#include <bson/bson.h>
+
 #include <mlib/intencode.h>
 #include <mlib/test.h>
-#include <bson/bson.h>
 
 #include <stdbool.h>
 #include <string.h>
@@ -544,7 +546,7 @@ _bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t 
    BSON_ASSERT_PARAM (error);
 
    // Clear the error
-   *error = (bson_error_t){0};
+   *error = (bson_error_t) {0};
 
    // Initialize validation parameters
    validation_params const params = {

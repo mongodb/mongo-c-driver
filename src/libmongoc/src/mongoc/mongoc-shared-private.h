@@ -61,7 +61,7 @@ typedef struct mongoc_shared_ptr {
  * @brief A "null" pointer constant for a mongoc_shared_ptr.
  */
 #define MONGOC_SHARED_PTR_NULL \
-   ((mongoc_shared_ptr){       \
+   ((mongoc_shared_ptr) {      \
       .ptr = NULL,             \
       ._aux = NULL,            \
    })

@@ -1,5 +1,6 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>
@@ -9,9 +10,9 @@
 #include <mongoc/mongoc-secure-channel-private.h>
 #endif
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h" // tmp_bson
+#include <TestSuite.h>
+#include <test-conveniences.h> // tmp_bson
+#include <test-libmongoc.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 /* Test parsing a DER encoded tlsfeature extension contents for the
@@ -346,15 +347,13 @@ test_x509_auth (void *unused)
       bson_error_t error = {0};
       bool ok;
       {
-         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          capture_logs (true);
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
-#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#if defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT) || defined(MONGOC_ENABLE_SSL_OPENSSL)
          ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Cannot find certificate");
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
          ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Failed to open file");
-#elif defined(MONGOC_ENABLE_SSL_OPENSSL)
-         ASSERT_NO_CAPTURED_LOGS ("tls");
 #endif
          mongoc_client_destroy (client);
       }

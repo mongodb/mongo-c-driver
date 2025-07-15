@@ -1075,6 +1075,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-secure-channel.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
@@ -1191,9 +1192,6 @@ if (ENABLE_TESTS)
 
    mongoc_add_test (test-libmongoc ${PROJECT_SOURCE_DIR}/tests/test-libmongoc-main.c)
    target_link_libraries (test-libmongoc PUBLIC test-libmongoc-lib)
-
-   mongoc_add_test (test-atlas-executor ${PROJECT_SOURCE_DIR}/tests/test-atlas-executor.c)
-   target_link_libraries (test-atlas-executor PUBLIC test-libmongoc-lib)
 
    mongoc_add_test (test-mongoc-gssapi ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
    mongoc_add_test (test-mongoc-cache ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)

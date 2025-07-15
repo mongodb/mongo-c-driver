@@ -19,9 +19,9 @@
 #ifndef MONGOC_OIDC_CALLBACK_H
 #define MONGOC_OIDC_CALLBACK_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 #include <stdint.h>
 
