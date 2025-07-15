@@ -36,7 +36,7 @@ if ! is-file "$EARTHLY_EXE"; then
 fi
 
 run-earthly() {
-    "$EARTHLY_EXE" --buildkit-image 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3 "$@"
+    "$EARTHLY_EXE" "$@"
 }
 
 if is-main; then

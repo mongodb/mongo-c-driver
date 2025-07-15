@@ -207,8 +207,12 @@ def earthly_exec(
     return subprocess_exec(
         "./tools/earthly.sh",
         args=[
+            "--buildkit-image",
+            "901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3",
             *(f"--secret={k}" for k in (secrets or ())),
             f"+{target}",
+            # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
+            "--default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub",
             *(f"--{arg}={val}" for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),

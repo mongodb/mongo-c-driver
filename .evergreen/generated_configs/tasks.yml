@@ -1142,7 +1142,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1156,7 +1159,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1181,7 +1187,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1195,7 +1204,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=off
@@ -1220,7 +1232,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1234,7 +1249,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=off
             - --tls=OpenSSL
@@ -1259,7 +1277,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1273,7 +1294,10 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
+            - --buildkit-image
+            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=off
             - --tls=off
