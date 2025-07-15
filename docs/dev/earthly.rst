@@ -182,7 +182,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    In order to run `+sign-file` or any target that depends upon it, the
    container engine client\ [#oci]_ will need to be authenticated with the
-   DevProd-provided Amazon ECR pull-through cache using AWS CLI v2::
+   DevProd-provided Amazon ECR instance using AWS CLI v2::
 
       # Forward the short-term AWS credentials to the container engine client.
       $ aws ecr get-login-password --profile <profile> | podman login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
