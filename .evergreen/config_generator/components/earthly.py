@@ -248,16 +248,6 @@ def earthly_task(
         name=name,
         commands=[
             DockerLoginAmazonECR.call(),
-            # Ensure subsequent Docker commands are authenticated.
-            subprocess_exec(
-                binary="bash",
-                command_type=EvgCommandType.SETUP,
-                include_expansions_in_env=["DOCKER_CONFIG"],
-                args=[
-                    "-c",
-                    r'docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"',
-                ],
-            ),
             # First, just build the "env-warmup" which will prepare the build environment.
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
