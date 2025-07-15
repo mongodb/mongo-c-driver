@@ -563,7 +563,7 @@ test_crl (void *unused)
    bool ok = try_insert (client, &error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
    remove_crl_for_secure_channel (ssl_opts.crl_file);
-   ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "Mutual Authentication failed");
+   ASSERT_CAPTURED_LOG ("tls", MONGOC_LOG_LEVEL_ERROR, "The certificate is revoked");
 #else
    ASSERT_NO_CAPTURED_LOGS ("tls");
 #endif
