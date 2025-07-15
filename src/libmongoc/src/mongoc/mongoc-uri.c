@@ -904,7 +904,10 @@ mongoc_uri_options_validate_names (const bson_t *a, const bson_t *b, bson_error_
    /* Scan `a` looking for deprecated names
     * where the canonical name was also used in `a`,
     * or was used in `b`. */
-   bson_iter_init (&key_iter, a);
+   if (!bson_iter_init (&key_iter, a)) {
+      return false;
+   }
+
    while (bson_iter_next (&key_iter)) {
       key = bson_iter_key (&key_iter);
       value = bson_iter_utf8_unsafe (&key_iter, &value_len);
@@ -966,7 +969,10 @@ mongoc_uri_apply_options (mongoc_uri_t *uri, const bson_t *options, bool from_dn
    size_t value_len;
    bool bval;
 
-   bson_iter_init (&iter, options);
+   if (!bson_iter_init (&iter, options)) {
+      return false;
+   }
+
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
       canon = mongoc_uri_canonicalize_option (key);
