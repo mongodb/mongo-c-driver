@@ -1142,8 +1142,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
@@ -1159,8 +1158,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
@@ -1187,8 +1185,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
@@ -1204,8 +1201,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
@@ -1232,8 +1228,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
@@ -1249,8 +1244,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
@@ -1277,8 +1271,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
@@ -1294,8 +1287,7 @@ tasks:
           include_expansions_in_env:
             - DOCKER_CONFIG
           args:
-            - --buildkit-image
-            - 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
