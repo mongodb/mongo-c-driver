@@ -136,6 +136,15 @@ test_hex_to_bin (void)
       ASSERT_CMPSIZE_T (len, ==, 7);
       bson_free (got);
    }
+
+   // Test whitespace is an error:
+   ASSERT (!hex_to_bin ("  66", &len));
+
+   // Test non-even number of digits is an error:
+   ASSERT (!hex_to_bin ("666", &len));
+
+   // Test non-hex digits is an error:
+   ASSERT (!hex_to_bin ("ZZ", &len));
 }
 
 void

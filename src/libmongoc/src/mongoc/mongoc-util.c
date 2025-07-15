@@ -1001,15 +1001,15 @@ hex_to_bin (const char *hex, size_t *bin_len)
    out = bson_malloc0 (*bin_len);
 
    for (size_t i = 0; i < hex_len; i += 2u) {
-      uint32_t hex_char;
+      uint64_t byte_value;
 
-      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+      if (mlib_nat64_parse (mstr_view_data (hex + i, 2), 16, &byte_value)) {
          bson_free (out);
          return NULL;
       }
 
-      BSON_ASSERT (mlib_in_range (uint8_t, hex_char));
-      out[i / 2u] = (uint8_t) hex_char;
+      BSON_ASSERT (mlib_in_range (uint8_t, byte_value));
+      out[i / 2u] = (uint8_t) byte_value;
    }
    return out;
 }
@@ -1017,6 +1017,7 @@ hex_to_bin (const char *hex, size_t *bin_len)
 static char *
 bin_to_hex_impl (const uint8_t *bin, size_t bin_len, bool uppercase)
 {
+   BSON_ASSERT_PARAM (bin);
    size_t hex_len = bin_len;
 
    if (mlib_mul (&hex_len, 2u) || mlib_add (&hex_len, 1u)) {
