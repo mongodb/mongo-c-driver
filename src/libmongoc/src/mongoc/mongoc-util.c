@@ -1013,8 +1013,8 @@ hex_to_bin (const char *hex, uint32_t *len)
    return out;
 }
 
-char *
-bin_to_hex (const uint8_t *bin, uint32_t len, bool uppercase)
+static char *
+bin_to_hex_impl (const uint8_t *bin, uint32_t len, bool uppercase)
 {
    char *out = bson_malloc0 (2u * len + 1u);
 
@@ -1030,4 +1030,16 @@ bin_to_hex (const uint8_t *bin, uint32_t len, bool uppercase)
    }
 
    return out;
+}
+
+char *
+bin_to_hex_uppercase (const uint8_t *bin, uint32_t len)
+{
+   return bin_to_hex_impl (bin, len, true);
+}
+
+char *
+bin_to_hex_lowercase (const uint8_t *bin, uint32_t len)
+{
+   return bin_to_hex_impl (bin, len, false);
 }

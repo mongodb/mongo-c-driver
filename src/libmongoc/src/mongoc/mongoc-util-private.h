@@ -250,7 +250,10 @@ uint8_t *
 hex_to_bin (const char *hex, uint32_t *len);
 
 char *
-bin_to_hex (const uint8_t *bin, uint32_t len, bool uppercase);
+bin_to_hex_uppercase (const uint8_t *bin, uint32_t len);
+
+char *
+bin_to_hex_lowercase (const uint8_t *bin, uint32_t len);
 
 typedef struct {
    bool set;
