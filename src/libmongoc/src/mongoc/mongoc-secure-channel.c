@@ -256,8 +256,9 @@ generate_key_name (LPBYTE data, DWORD len, const char *suffix)
       key_name = bson_strdup_printf ("libmongoc-%s-%s", hash_hex, suffix);
       size_t key_name_wide_chars = strlen (key_name) + 1;
       key_name_wide = bson_malloc (sizeof (WCHAR) * (key_name_wide_chars));
-      if (0 ==
-          MultiByteToWideChar (CP_UTF8, 0, key_name, -1 /* NULL terminate */, key_name_wide, key_name_wide_chars)) {
+      BSON_ASSERT (mlib_in_range (int, key_name_wide_chars));
+      if (0 == MultiByteToWideChar (
+                  CP_UTF8, 0, key_name, -1 /* NULL terminate */, key_name_wide, (int) key_name_wide_chars)) {
          goto fail;
       }
    }
