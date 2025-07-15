@@ -183,8 +183,8 @@ If you start `mongod` with SSL, set these variables to configure how
   * If CRL tests abort before deleting the CRL file, this may cause later test errors like `The certificate is revoked`. Manually remove the CRL file with:
     ```powershell
     $crl = ".\src\libmongoc\tests\x509gen\crl.pem"
-    $thumbprint = (openssl crl -in ".\src\libmongoc\tests\x509gen\crl.pem" -noout -fingerprint) -replace 'SHA1 Fingerprint=', '' -replace ':', ''
-    certutil -delstore Root $thumbprint
+    $fingerprint = (openssl crl -in ".\src\libmongoc\tests\x509gen\crl.pem" -noout -fingerprint) -replace 'SHA1 Fingerprint=', '' -replace ':', ''
+    certutil -delstore Root $fingerprint
     ```
 
 The SASL / GSSAPI / Kerberos tests are skipped by default. To run them, set up a

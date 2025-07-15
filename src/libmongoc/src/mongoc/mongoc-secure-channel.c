@@ -222,7 +222,7 @@ decode_object (const char *structType,
    return out;
 }
 
-// `generate_key_name` generates a deterministic name for a key of the form: "libmongoc-<SHA256 thumbprint>-<suffix>".
+// `generate_key_name` generates a deterministic name for a key of the form: "libmongoc-<SHA256 fingerprint>-<suffix>".
 // Returns NULL on error.
 static LPWSTR
 generate_key_name (LPBYTE data, DWORD len, const char *suffix)
@@ -344,7 +344,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
          goto fail;
       }
 
-      // Import persisted key with a deterministic name of the form "libmongoc-<SHA256 thumbprint>-pkcs1":
+      // Import persisted key with a deterministic name of the form "libmongoc-<SHA256 fingerprint>-pkcs1":
       key_name = generate_key_name (encoded_cert, encoded_cert_len, "pkcs1");
       if (!key_name) {
          MONGOC_ERROR ("Failed to generate key name");
@@ -423,7 +423,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       NCryptBuffer buffer;
       NCryptBufferDesc bufferDesc;
 
-      // Import persisted key with a deterministic name of the form "libmongoc-<SHA256 thumbprint>-pkcs8":
+      // Import persisted key with a deterministic name of the form "libmongoc-<SHA256 fingerprint>-pkcs8":
       key_name = generate_key_name (encoded_cert, encoded_cert_len, "pkcs8");
       if (!key_name) {
          MONGOC_ERROR ("Failed to generate key name");
