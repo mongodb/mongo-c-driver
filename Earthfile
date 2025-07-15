@@ -203,7 +203,7 @@ signing-pubkey:
 #   to be used to access them. (Refer to dev docs)
 sign-file:
     # Pull from Garasign:
-    FROM artifactory.corp.mongodb.com/release-infrastructure/garasign-gpg
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/garasign-gpg
     # Copy the file to be signed
     ARG --required file
     COPY $file /s/file
@@ -253,7 +253,7 @@ signed-release:
 
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
     # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 

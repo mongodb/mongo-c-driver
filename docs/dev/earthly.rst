@@ -149,7 +149,8 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. earthly-target:: +sign-file
 
    Signs a file using Garasign. Use of this target requires authenticating
-   against MongoDB's AWS ECR instance! (Refer to: `earthly.aws-ecr`)
+   against the DevProd-provided Amazon ECR instance! (Refer to:
+   `earthly.amazon-ecr`)
 
    .. earthly-artifact:: +sign-file/signature.asc
 
@@ -174,14 +175,14 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       .. seealso:: `earthly.secrets`
 
-   .. _earthly.aws-ecr:
+   .. _earthly.amazon-ecr:
 
-   Authenticating with AWS ECR
-   ===========================
+   Authenticating with Amazon ECR
+   ==============================
 
    In order to run `+sign-file` or any target that depends upon it, the
    container engine client\ [#oci]_ will need to be authenticated with the
-   MongoDB's AWS ECR pull-through cache using AWS CLI v2::
+   DevProd-provided Amazon ECR pull-through cache using AWS CLI v2::
 
       # Forward the short-term AWS credentials to the container engine client.
       $ aws ecr get-login-password --profile <profile> | podman login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
