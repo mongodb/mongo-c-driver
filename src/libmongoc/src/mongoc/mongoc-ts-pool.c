@@ -153,16 +153,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
    node->owner_pool = pool;
    if (pool->params.constructor) {
       /* To construct, we need to know if that constructor fails */
-      bson_error_t my_error;
-      if (!error) {
-         /* Caller doesn't care about the error, but we care in case the
-          * constructor might fail */
-         error = &my_error;
-      }
-      /* Clear the error */
-      error->code = 0;
-      error->domain = 0;
-      error->message[0] = 0;
+      bson_error_reset (error);
       /* Construct the object */
       pool->params.constructor (_pool_node_get_data (node), pool->params.userdata, error);
       if (error->code != 0) {

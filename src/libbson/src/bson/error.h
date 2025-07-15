@@ -47,6 +47,47 @@ bson_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const char 
 BSON_EXPORT (char *)
 bson_strerror_r (int err_code, char *buf, size_t buflen);
 
+/**
+ * @brief Reset the content of a bson_error_t to indicate no error.
+ *
+ * @param error Pointer to an error to be overwritten. If null, this function
+ * has no effect.
+ *
+ * This is static-inline because it is trivially optimizable as a (conditional)
+ * `memset`.
+ */
+static inline void
+bson_error_clear (bson_error_t *error)
+{
+   if (!error) {
+      return;
+   }
+   // Statically initialized to a zero struct:
+   static bson_error_t zero_error;
+   // Replace the caller's value:
+   *error = zero_error;
+}
+
+/**
+ * @brief Given a `bson_error_t` pointer l-value, ensure that it is non-null, and clear any
+ * error value that it might hold.
+ *
+ * @param ErrorPointer An l-value expression of type `bson_error_t*`.
+ *
+ * If the passed pointer is null, then it will be updated to point to an anonymous
+ * `bson_error_t` object that lives in the caller's scope.
+ *
+ * @note This macro is not valid in C++ because it relies on C99 compound literal semantics
+ */
+#define bson_error_reset(ErrorPointer) bson_error_reset (&(ErrorPointer), &(bson_error_t) {0})
+static inline void (bson_error_reset) (bson_error_t **error, bson_error_t *localptr)
+{
+   if (*error == NULL) {
+      *error = localptr;
+   }
+   bson_error_clear (*error);
+}
+
 BSON_END_DECLS
 
 

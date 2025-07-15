@@ -84,8 +84,9 @@ test_mongoc_client_max_staleness (void)
    ASSERT (!test_framework_client_new (
       "mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5", NULL));
 
-   ASSERT_CAPTURED_LOG (
-      MONGOC_URI_MAXSTALENESSSECONDS "=10.5", MONGOC_LOG_LEVEL_WARNING, "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported value for \"maxstalenessseconds\"");
    capture_logs (false);
 
    /* 1 is allowed, it'll be rejected once we begin server selection */

@@ -728,13 +728,7 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    mongoc_collection_t *ecocCollection = NULL;
    bool ok = false;
    const char *name = mongoc_collection_get_name (collection);
-   bson_error_t local_error = {0};
-
-   if (!error) {
-      /* If no error is passed, use a local error. Error codes are checked
-       * when collections are dropped. */
-      error = &local_error;
-   }
+   bson_error_reset (error);
 
    /* Drop ESC collection. */
    escName = _mongoc_get_encryptedField_state_collection (encryptedFields, name, "esc", error);
@@ -943,8 +937,12 @@ _mongoc_collection_index_keys_equal (const bson_t *expected, const bson_t *actua
    bson_iter_t iter_expected;
    bson_iter_t iter_actual;
 
-   bson_iter_init (&iter_expected, expected);
-   bson_iter_init (&iter_actual, actual);
+   if (!bson_iter_init (&iter_expected, expected)) {
+      return false;
+   }
+   if (!bson_iter_init (&iter_actual, actual)) {
+      return false;
+   }
 
    while (bson_iter_next (&iter_expected)) {
       /* If the key document has fewer items than expected, indexes are unequal

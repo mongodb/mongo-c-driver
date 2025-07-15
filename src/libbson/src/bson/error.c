@@ -78,7 +78,9 @@ bson_set_error (bson_error_t *error, /* OUT */
       bson_set_error_category (error, BSON_ERROR_CATEGORY);
 
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      char buffer[sizeof error->message];
+      bson_vsnprintf (buffer, sizeof error->message, format, args);
+      memcpy (error->message, buffer, sizeof buffer);
       va_end (args);
    }
 }
