@@ -180,7 +180,7 @@ has_imported_pkcs8_key (void)
       status == SEC_E_OK || status == NTE_BAD_KEYSET, "Failed to open key: %s", mongoc_winerr_to_string (status));
 
    if (keyHandle) {
-   ASSERT (NCryptFreeObject (keyHandle) == ERROR_SUCCESS);
+      ASSERT (NCryptFreeObject (keyHandle) == ERROR_SUCCESS);
    }
    ASSERT (NCryptFreeObject (hProv) == ERROR_SUCCESS);
    return found;
@@ -199,7 +199,7 @@ delete_imported_pkcs1_key (void)
                                         PROV_RSA_FULL,                      /* dwProvType */
                                         CRYPT_DELETEKEYSET | CRYPT_SILENT); /* dwFlags */
    ASSERT_WITH_MSG (success, "Failed to delete key: %s", mongoc_winerr_to_string (GetLastError ()));
-   CryptReleaseContext (provider, 0);
+   // CRYPT_DELETEKEYSET leaves provider undefined. Do not call CryptReleaseContext.
 }
 
 static bool
@@ -216,11 +216,10 @@ has_imported_pkcs1_key (void)
       // NTE_BAD_KEYSET is expected if key is not found.
       ASSERT_WITH_MSG (
          lastError = NTE_BAD_KEYSET, "Unexpected error in acquiring context: %s", mongoc_winerr_to_string (lastError));
-      CryptReleaseContext (provider, 0);
       return false;
    }
 
-   CryptReleaseContext (provider, 0);
+   ASSERT (CryptReleaseContext (provider, 0));
    return true;
 }
 
