@@ -239,12 +239,12 @@ has_imported_pkcs1_key (void)
    else                             \
       (void) 0
 #else
-#define SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED() (void) 0
-#define SCHANNEL_ASSERT_PKCS8_KEY_NOT_IMPORTED() (void) 0
-#define SCHANNEL_DELETE_PKCS8_KEY() (void) 0
-#define SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED() (void) 0
-#define SCHANNEL_ASSERT_PKCS1_KEY_NOT_IMPORTED() (void) 0
-#define SCHANNEL_DELETE_PKCS1_KEY() (void) 0
+#define SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED() ((void) 0)
+#define SCHANNEL_ASSERT_PKCS8_KEY_NOT_IMPORTED() ((void) 0)
+#define SCHANNEL_DELETE_PKCS8_KEY() ((void) 0)
+#define SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED() ((void) 0)
+#define SCHANNEL_ASSERT_PKCS1_KEY_NOT_IMPORTED() ((void) 0)
+#define SCHANNEL_DELETE_PKCS1_KEY() ((void) 0)
 #endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 static void
