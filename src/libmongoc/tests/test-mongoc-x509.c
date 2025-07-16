@@ -174,9 +174,10 @@ has_imported_pkcs8_key (void)
    // Open the key handle:
    NCRYPT_PROV_HANDLE keyHandle = 0;
    status = NCryptOpenKey (hProv, &keyHandle, pkcs8_key_name, 0, 0);
+   bool found = (status == SEC_E_OK);
+   // NTE_BAD_KEYSET is expected if key is not found.
    ASSERT_WITH_MSG (
       status == SEC_E_OK || status == NTE_BAD_KEYSET, "Failed to open key: %s", mongoc_winerr_to_string (status));
-   bool found = (keyHandle != 0);
 
    NCryptFreeObject (keyHandle);
    NCryptFreeObject (hProv);
@@ -210,6 +211,7 @@ has_imported_pkcs1_key (void)
                                         CRYPT_SILENT);      /* dwFlags */
    if (!success) {
       DWORD lastError = GetLastError ();
+      // NTE_BAD_KEYSET is expected if key is not found.
       ASSERT_WITH_MSG (
          lastError = NTE_BAD_KEYSET, "Unexpected error in acquiring context: %s", mongoc_winerr_to_string (lastError));
       CryptReleaseContext (provider, 0);
