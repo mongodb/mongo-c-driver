@@ -898,12 +898,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
    return mongoc_client_connect (
-      true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, MONGOC_SHARED_PTR_NULL, error);
+      false, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, MONGOC_SHARED_PTR_NULL, error);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    return mongoc_client_connect (
-      true, use_ssl, ssl_opts_void, uri, host, NULL, client->topology->scanner->secure_channel_cred_ptr, error);
+      false, use_ssl, ssl_opts_void, uri, host, NULL, client->topology->scanner->secure_channel_cred_ptr, error);
 #else
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, MONGOC_SHARED_PTR_NULL, error);
+   return mongoc_client_connect (false, use_ssl, ssl_opts_void, uri, host, NULL, MONGOC_SHARED_PTR_NULL, error);
 #endif
 }
 
