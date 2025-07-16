@@ -145,7 +145,7 @@ class Configuration(NamedTuple):
         return _SEPARATOR.join(f"{k}={v}" for k, v in self._asdict().items())
 
 
-# Use DevProd-provided Amazon ECR instance to obtain earthly-buildkitd in advance.
+# Authenticate with DevProd-provided Amazon ECR instance to use as pull-through cache for DockerHub.
 class DockerLoginAmazonECR(Function):
     name = 'docker-login-amazon-ecr'
     commands = [
