@@ -268,18 +268,21 @@ test_x509_auth (void *unused)
       // Try auth:
       bson_error_t error = {0};
       bool ok;
+
+      // Test SChannel key is not previously imported:
       {
          SCHANNEL_DELETE_PKCS8_KEY ();
          SCHANNEL_ASSERT_PKCS8_KEY_NOT_IMPORTED ();
-
-         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
-         SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED (); // Imported.
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL); // Imports key.
+         SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED ();
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
+      }
 
-         // Auth again with key still imported on Secure Channel:
-         SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED (); // Still imported.
-         client = test_framework_client_new_from_uri (uri, NULL);
+      // Test SChannel key is previously imported:
+      {
+         SCHANNEL_ASSERT_PKCS8_KEY_IMPORTED ();
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
@@ -303,15 +306,20 @@ test_x509_auth (void *unused)
       // Try auth:
       bson_error_t error = {0};
       bool ok;
+      // Test SChannel key is not previously imported:
       {
-         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
-         SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED (); // Imported.
+         SCHANNEL_DELETE_PKCS1_KEY ();
+         SCHANNEL_ASSERT_PKCS1_KEY_NOT_IMPORTED ();
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL); // Imports key.
+         SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED ();
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
+      }
 
-         // Auth again with key still imported on Secure Channel:
-         SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED (); // Still imported.
-         client = test_framework_client_new_from_uri (uri, NULL);
+      // Test SChannel key is previously imported:
+      {
+         SCHANNEL_ASSERT_PKCS1_KEY_IMPORTED ();
+         mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
          ok = try_insert (client, &error);
          mongoc_client_destroy (client);
       }
