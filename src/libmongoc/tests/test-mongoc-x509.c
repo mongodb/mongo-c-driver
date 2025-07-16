@@ -139,7 +139,7 @@ try_insert (mongoc_client_t *client, bson_error_t *error)
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 // Define utilities check and delete imported keys for Secure Channel:
 
-// pkcs8_key_name is the deterministic name for the key: client-pkcs8-unencrypted.pem
+// The deterministic name for the certificate in src/libmongoc/tests/x509gen/client-pkcs8-unencrypted.pem.
 static LPCWSTR pkcs8_key_name = L"libmongoc-6659E73980D0FB4EB315CF600E0B10CCBB8C3B74FD3ED94DEAF6DC2D2B6B8317-pkcs8";
 
 static void
@@ -184,7 +184,7 @@ has_imported_pkcs8_key (void)
    return found;
 }
 
-// pkcs1_key_name is the deterministic name for the key: client.pem
+// The deterministic name for the certificate in src/libmongoc/tests/x509gen/client.pem.
 static LPCWSTR pkcs1_key_name = L"libmongoc-6659E73980D0FB4EB315CF600E0B10CCBB8C3B74FD3ED94DEAF6DC2D2B6B8317-pkcs1";
 
 static void
