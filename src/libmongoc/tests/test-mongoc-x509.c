@@ -212,10 +212,11 @@ has_imported_pkcs1_key (void)
                                         PROV_RSA_FULL,      /* dwProvType */
                                         CRYPT_SILENT);      /* dwFlags */
    if (!success) {
-      DWORD lastError = GetLastError ();
+      const DWORD lastError = GetLastError ();
       // NTE_BAD_KEYSET is expected if key is not found.
-      ASSERT_WITH_MSG (
-         lastError = NTE_BAD_KEYSET, "Unexpected error in acquiring context: %s", mongoc_winerr_to_string (lastError));
+      ASSERT_WITH_MSG (lastError == (DWORD) NTE_BAD_KEYSET,
+                       "Unexpected error in acquiring context: %s",
+                       mongoc_winerr_to_string (lastError));
       return false;
    }
 
