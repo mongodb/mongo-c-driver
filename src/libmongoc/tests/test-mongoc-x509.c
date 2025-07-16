@@ -160,7 +160,7 @@ delete_imported_pkcs8_key (void)
    ASSERT_WITH_MSG (status == SEC_E_OK, "Failed to delete key: %s", mongoc_winerr_to_string (status));
 
    // NCryptDeleteKey freed handle.
-   NCryptFreeObject (hProv);
+   ASSERT (NCryptFreeObject (hProv) == ERROR_SUCCESS);
 }
 
 static bool
@@ -179,8 +179,10 @@ has_imported_pkcs8_key (void)
    ASSERT_WITH_MSG (
       status == SEC_E_OK || status == NTE_BAD_KEYSET, "Failed to open key: %s", mongoc_winerr_to_string (status));
 
-   NCryptFreeObject (keyHandle);
-   NCryptFreeObject (hProv);
+   if (keyHandle) {
+   ASSERT (NCryptFreeObject (keyHandle) == ERROR_SUCCESS);
+   }
+   ASSERT (NCryptFreeObject (hProv) == ERROR_SUCCESS);
    return found;
 }
 
