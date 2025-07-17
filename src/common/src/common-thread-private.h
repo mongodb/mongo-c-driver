@@ -23,11 +23,9 @@
 #ifndef MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H
 #define MONGO_C_DRIVER_COMMON_THREAD_PRIVATE_H
 
-#define BSON_INSIDE
-#include <bson/bson-compat.h>
-#include <bson/bson-config.h>
-#include <bson/bson-macros.h>
-#undef BSON_INSIDE
+#include <bson/compat.h>
+#include <bson/config.h>
+#include <bson/macros.h>
 
 BSON_BEGIN_DECLS
 

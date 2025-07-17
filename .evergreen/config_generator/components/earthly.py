@@ -304,6 +304,13 @@ def tasks() -> Iterable[EvgTask]:
         if task is not None:
             yield task
 
+    yield EvgTask(
+        name="verify-headers",
+        commands=[earthly_exec(kind="test", target="verify-headers")],
+        tags=["pr-merge-gate"],
+        run_on=CONTAINER_RUN_DISTROS,
+    )
+
 
 def variants() -> Iterable[BuildVariant]:
     yield from (ev.as_evg_variant() for ev in all_possible(EarthlyVariant))

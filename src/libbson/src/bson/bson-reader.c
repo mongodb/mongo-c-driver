@@ -25,8 +25,8 @@
 #include <io.h>
 #include <share.h>
 #endif
-#include <bson/bson-memory.h>
 #include <bson/bson-reader.h>
+#include <bson/memory.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>

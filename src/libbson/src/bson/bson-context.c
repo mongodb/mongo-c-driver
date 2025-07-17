@@ -21,8 +21,9 @@
 #include <common-thread-private.h>
 
 #include <bson/bson-clock.h>
-#include <bson/bson-compat.h>
-#include <bson/bson-memory.h>
+#include <bson/bson-context.h>
+#include <bson/compat.h>
+#include <bson/memory.h>
 
 #include <mlib/intencode.h>
 

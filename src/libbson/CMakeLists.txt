@@ -116,13 +116,13 @@ else ()
 endif ()
 
 configure_file (
-   "${PROJECT_SOURCE_DIR}/src/bson/bson-config.h.in"
-   "${PROJECT_BINARY_DIR}/src/bson/bson-config.h"
+   "${PROJECT_SOURCE_DIR}/src/bson/config.h.in"
+   "${PROJECT_BINARY_DIR}/src/bson/config.h"
 )
 
 configure_file (
-   "${PROJECT_SOURCE_DIR}/src/bson/bson-version.h.in"
-   "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
+   "${PROJECT_SOURCE_DIR}/src/bson/version.h.in"
+   "${PROJECT_BINARY_DIR}/src/bson/version.h"
 )
 
 # 8888888b.            .d888 d8b          d8b 888    d8b
@@ -172,6 +172,25 @@ if(ENABLE_STATIC)
    if(ENABLE_PIC)
       # User wants static libs to use PIC code.
       set_property(TARGET bson_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   endif()
+
+   if(MONGO_CAN_VERIFY_HEADERS AND ENABLE_TESTS)
+      mongo_verify_headers(
+         bson
+         USE_LIBRARIES bson::static
+         HEADERS
+            # Grab all headers
+            "src/*.h"
+         EXCLUDE_REGEX
+            # No -private headers
+            "-private\\.h"
+            # Ignore all headers that start with "bson-", as they have not
+            # been sanitized for direct inclusion.
+            "bson/bson-.*\\.h"
+            # Don't check jsonsl.h or bcon.h either
+            "jsonsl\\.h"
+            "bcon\\.h"
+         )
    endif()
 endif()
 

@@ -22,8 +22,8 @@
 #include <bson/bson-json-private.h>
 #include <common-b64-private.h>
 
-#include <bson/bson-config.h>
 #include <bson/bson.h>
+#include <bson/config.h>
 
 #include <mlib/cmp.h>
 #include <mlib/config.h>

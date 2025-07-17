@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-
 #include <bson/bson-version-functions.h>
 
-#include <bson/bson-version.h>
-
+#include <bson/version.h>
 
 /**
  * bson_get_major_version:
@@ -30,7 +28,6 @@ bson_get_major_version (void)
 {
    return BSON_MAJOR_VERSION;
 }
-
 
 /**
  * bson_get_minor_version:
