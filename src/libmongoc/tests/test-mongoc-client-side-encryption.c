@@ -533,7 +533,7 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       mongoc_bulkwriteexception_destroy (bwr.exc);
 
       /* Insert two documents that each exceed 2MiB after encryption occurs. Expect
-       * the bulk write to succeed and run as two separate inserts.
+       * the bulk write to succeed and run as two separate bulkWrite commands.
        */
 
 
