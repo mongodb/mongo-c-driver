@@ -985,8 +985,11 @@ _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error
 }
 
 uint8_t *
-hex_to_bin (const char *hex, uint32_t *len)
+hex_to_bin (const char *hex, size_t *bin_len)
 {
+   BSON_ASSERT_PARAM (hex);
+   BSON_ASSERT_PARAM (bin_len);
+
    uint8_t *out;
 
    const size_t hex_len = strlen (hex);
@@ -994,35 +997,58 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (mlib_in_range (uint32_t, hex_len / 2u));
+   *bin_len = hex_len / 2u;
+   out = bson_malloc0 (*bin_len);
 
-   *len = (uint32_t) (hex_len / 2u);
-   out = bson_malloc0 (*len);
+   for (size_t i = 0; i < hex_len; i += 2u) {
+      uint64_t byte_value;
 
-   for (uint32_t i = 0; i < hex_len; i += 2u) {
-      uint32_t hex_char;
-
-      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+      if (mlib_nat64_parse (mstr_view_data (hex + i, 2), 16, &byte_value)) {
          bson_free (out);
          return NULL;
       }
 
-      BSON_ASSERT (mlib_in_range (uint8_t, hex_char));
-      out[i / 2u] = (uint8_t) hex_char;
+      BSON_ASSERT (mlib_in_range (uint8_t, byte_value));
+      out[i / 2u] = (uint8_t) byte_value;
    }
    return out;
 }
 
-char *
-bin_to_hex (const uint8_t *bin, uint32_t len)
+static char *
+bin_to_hex_impl (const uint8_t *bin, size_t bin_len, bool uppercase)
 {
-   char *out = bson_malloc0 (2u * len + 1u);
+   BSON_ASSERT_PARAM (bin);
+   size_t hex_len = bin_len;
 
-   for (uint32_t i = 0u; i < len; i++) {
+   if (mlib_mul (&hex_len, 2u) || mlib_add (&hex_len, 1u)) {
+      // Overflow
+      return NULL;
+   }
+
+   char *out = bson_malloc0 (hex_len);
+
+   for (size_t i = 0u; i < bin_len; i++) {
+      int req;
+      if (uppercase) {
+         req = bson_snprintf (out + (2u * i), 3, "%02X", bin[i]);
+      } else {
+         req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
+      }
       // Expect no truncation.
-      int req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
       BSON_ASSERT (req < 3);
    }
 
    return out;
+}
+
+char *
+bin_to_hex_uppercase (const uint8_t *bin, size_t bin_len)
+{
+   return bin_to_hex_impl (bin, bin_len, true);
+}
+
+char *
+bin_to_hex_lowercase (const uint8_t *bin, size_t bin_len)
+{
+   return bin_to_hex_impl (bin, bin_len, false);
 }
