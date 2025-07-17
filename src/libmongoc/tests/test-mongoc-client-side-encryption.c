@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-#include "TestSuite.h"
-#include "bson/bson.h"
-#include "json-test.h"
-#include <mongoc/mongoc.h>
-
-#include "test-libmongoc.h"
-
+#include <common-b64-private.h>
 #include <common-bson-dsl-private.h>
 
-#include <common-b64-private.h>
+#include <json-test.h>
+#include <test-libmongoc.h>
 
 /* _mongoc_host_list_from_string_with_err */
-#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 
 /* MONGOC_SERVER_ERR_NS_NOT_FOUND */
-#include <mongoc/mongoc-error-private.h>
-
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-http-private.h>
 
 #include <mongoc/mongoc-uri.h>
-#include <mongoc/mongoc-http-private.h>
+
 #include <mlib/cmp.h>
 
 static void
@@ -336,6 +331,7 @@ _make_kms_masterkey (char const *provider)
 
 typedef struct {
    int num_inserts;
+   int num_bulk_writes;
 } limits_apm_ctx_t;
 
 static void
@@ -345,8 +341,11 @@ _command_started (const mongoc_apm_command_started_t *event)
 
    ctx = (limits_apm_ctx_t *) mongoc_apm_command_started_get_context (event);
    const char *cmd_name = mongoc_apm_command_started_get_command_name(event);
-   if (0 == strcmp ("insert", cmd_name) || 0 == strcmp("bulkWrite", cmd_name)) {
+   if (0 == strcmp ("insert", cmd_name)) {
       ctx->num_inserts++;
+   }
+   if (0 == strcmp("bulkWrite", cmd_name)) {
+      ctx->num_bulk_writes++;
    }
 }
 
@@ -426,7 +425,6 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
    coll = mongoc_client_get_collection (client, "db", "coll");
    /* End of setup */
 
-   /* Case 1 */
    /* Insert { "_id": "over_2mib_under_16mib", "unencrypted": <the string "a"
     * repeated 2097152 times> } */
    docs[0] = BCON_NEW ("_id", "over_2mib_under_16mib");
@@ -459,8 +457,6 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
    BSON_ASSERT (!mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 2, "too large");
    bson_destroy (docs[0]);
-
-   /* Case 2: collection bulkWrite */
 
    /* Insert two documents that each exceed 2MiB but no encryption occurs.
     * Expect the bulk write to succeed and run as two separate inserts.
@@ -523,9 +519,10 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
 
+      ctx.num_bulk_writes = 0;
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute (bw, bw_opts);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
-      ASSERT_CMPINT (ctx.num_inserts, ==, 2);
+      ASSERT_CMPINT (ctx.num_bulk_writes, ==, 2);
       bson_destroy (docs[0]);
       bson_destroy (docs[1]);
       mongoc_bulkwrite_destroy (bw);
@@ -535,8 +532,6 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       /* Insert two documents that each exceed 2MiB after encryption occurs. Expect
        * the bulk write to succeed and run as two separate bulkWrite commands.
        */
-
-
       docs[0] = get_bson_from_json_file ("./src/libmongoc/tests/client_side_encryption_prose/limits-qe-doc.json");
       bson_append_utf8 (docs[0], "_id", -1, "encryption_exceeds_2mib_3", -1);
       bson_append_utf8 (docs[0], "foo", -1, as, exceeds_2mib_after_encryption - 1500);
@@ -549,9 +544,10 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
 
+      ctx.num_bulk_writes = 0;
       bwr = mongoc_bulkwrite_execute (bw, bw_opts);
       ASSERT_NO_BULKWRITEEXCEPTION (bwr);
-      ASSERT_CMPINT (ctx.num_inserts, ==, 2);
+      ASSERT_CMPINT (ctx.num_bulk_writes, ==, 2);
       bson_destroy (docs[0]);
       bson_destroy (docs[1]);
       mongoc_bulkwrite_destroy (bw);
