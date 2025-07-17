@@ -201,8 +201,8 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    ``aws ecr get-login-password ... | podman login ...`` command described
    above.
 
-   .. seealso:: `"DevProd Platforms Container Registry"
-   <https://docs.devprod.prod.corp.mongodb.com/devprod-platforms-ecr>`_ and `"Configuring IAM Identity Center authentication with the AWS CLI" <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html>`_.
+   .. seealso:: `"DevProd Platforms Container Registry" <https://docs.devprod.prod.corp.mongodb.com/devprod-platforms-ecr>`_
+      and `"Configuring IAM Identity Center authentication with the AWS CLI" <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html>`_.
 
 .. earthly-target:: +sbom-generate
 
