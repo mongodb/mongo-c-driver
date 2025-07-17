@@ -885,7 +885,9 @@ _max_time_ms_failure (bson_t *reply)
       return true;
    }
 
-   bson_iter_init (&iter, reply);
+   if (!bson_iter_init (&iter, reply)) {
+      return false;
+   }
    if (bson_iter_find_descendant (&iter, "writeConcernError.codeName", &descendant) &&
        BSON_ITER_HOLDS_UTF8 (&descendant) && 0 == strcmp (bson_iter_utf8 (&descendant, NULL), MAX_TIME_MS_EXPIRED)) {
       return true;

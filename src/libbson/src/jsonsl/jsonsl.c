@@ -1052,9 +1052,9 @@ void jsonsl_jpr_match_state_init(jsonsl_t jsn,
     if (njprs == 0) {
         return;
     }
-    jsn->jprs = (jsonsl_jpr_t *)malloc(sizeof(jsonsl_jpr_t) * njprs);
+    jsn->jprs = (jsonsl_jpr_t *) bson_malloc (sizeof (jsonsl_jpr_t) * njprs);
     jsn->jpr_count = njprs;
-    jsn->jpr_root = (size_t*)calloc(1, sizeof(size_t) * njprs * jsn->levels_max);
+    jsn->jpr_root = (size_t *) bson_malloc0 (sizeof (size_t) * njprs * jsn->levels_max);
     memcpy(jsn->jprs, jprs, sizeof(jsonsl_jpr_t) * njprs);
     /* Set the initial jump table values */
 
@@ -1070,8 +1070,8 @@ void jsonsl_jpr_match_state_cleanup(jsonsl_t jsn)
         return;
     }
 
-    free(jsn->jpr_root);
-    free(jsn->jprs);
+    bson_free(jsn->jpr_root);
+    bson_free(jsn->jprs);
     jsn->jprs = NULL;
     jsn->jpr_root = NULL;
     jsn->jpr_count = 0;
