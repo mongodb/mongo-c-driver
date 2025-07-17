@@ -18,11 +18,11 @@
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cluster-sspi-private.h>
 #include <mongoc/mongoc-cluster-sasl-private.h>
+#include <mongoc/mongoc-cluster-sspi-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-sasl-private.h>
 #include <mongoc/mongoc-sspi-private.h>
-#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 
@@ -129,7 +129,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    uint32_t buflen;
    bson_t reply;
    const char *tmpstr;
-   int conv_id;
+   int conv_id = 0;
    bson_t cmd;
    int res = MONGOC_SSPI_AUTH_GSS_CONTINUE;
    int step;
@@ -174,6 +174,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       if (step == 0) {
          _mongoc_cluster_build_sasl_start (&cmd, "GSSAPI", state->response, (uint32_t) strlen (state->response));
       } else {
+         // `conv_id` is set during step 0 below by invoking `_mongoc_cluster_get_conversation_id` and guarded by `step
+         // > 0`.
          if (state->response) {
             _mongoc_cluster_build_sasl_continue (&cmd, conv_id, state->response, (uint32_t) strlen (state->response));
          } else {

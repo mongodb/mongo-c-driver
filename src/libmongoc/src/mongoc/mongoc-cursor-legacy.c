@@ -20,21 +20,21 @@
  * - receiving OP_REPLY documents in a stream (instead of batch)
  */
 
-#include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-cursor-private.h>
+#include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-write-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-log.h>
 
 static bool
 _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_stream_t *server_stream)
@@ -109,7 +109,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    /* simulate a MongoDB 3.2+ "find" command */
    _mongoc_cursor_prepare_find_command (cursor, filter, &doc);
 
-   bsonBuildAppend (cursor->opts, insert (doc, not(key ("serverId", "maxAwaitTimeMS", "sessionId"))));
+   bsonBuildAppend (cursor->opts, insert (doc, not (key ("serverId", "maxAwaitTimeMS", "sessionId"))));
 
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 

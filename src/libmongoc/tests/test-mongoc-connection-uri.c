@@ -2,15 +2,14 @@
 
 //
 
-#include <bson/bson.h>
-
+#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <bson/bson.h>
 
-#include "json-test.h"
-#include "test-libmongoc.h"
-#include <mongoc/mongoc-read-concern-private.h>
+#include <json-test.h>
+#include <test-libmongoc.h>
 
 
 /*
@@ -92,7 +91,7 @@ run_uri_test (const char *uri_string,
          if (strchr (bson_iter_utf8 (&iter, NULL), '.')) {
             BSON_ASSERT (!uri);
             ASSERT_ERROR_CONTAINS (
-               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
+               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database specifier \"admin.");
             clear_captured_logs ();
             return;
          }

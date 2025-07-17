@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern.h>
-#include <mongoc/mongoc-write-concern-private.h>
+
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-write-concern.h>
 
 
 static void
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern);
-
 
 /**
  * mongoc_write_concern_new:
@@ -50,7 +51,6 @@ mongoc_write_concern_new (void)
    return write_concern;
 }
 
-
 mongoc_write_concern_t *
 mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
 {
@@ -69,7 +69,6 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
    return ret;
 }
 
-
 /**
  * mongoc_write_concern_destroy:
  * @write_concern: A mongoc_write_concern_t.
@@ -86,7 +85,6 @@ mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern)
    }
 }
 
-
 bool
 mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern)
 {
@@ -94,14 +92,12 @@ mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern)
    return (write_concern->journal == true);
 }
 
-
 bool
 mongoc_write_concern_journal_is_set (const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (write_concern);
    return (write_concern->journal != MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT);
 }
-
 
 /**
  * mongoc_write_concern_set_journal:
@@ -121,14 +117,12 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern, bool jo
    write_concern->frozen = false;
 }
 
-
 int32_t
 mongoc_write_concern_get_w (const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (write_concern);
    return write_concern->w;
 }
-
 
 /**
  * mongoc_write_concern_set_w:
@@ -154,13 +148,11 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern, int32_t w)
    write_concern->frozen = false;
 }
 
-
 int32_t
 mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
 {
    return (int32_t) mongoc_write_concern_get_wtimeout_int64 (write_concern);
 }
-
 
 int64_t
 mongoc_write_concern_get_wtimeout_int64 (const mongoc_write_concern_t *write_concern)
@@ -169,13 +161,11 @@ mongoc_write_concern_get_wtimeout_int64 (const mongoc_write_concern_t *write_con
    return write_concern->wtimeout;
 }
 
-
 void
 mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern, int32_t wtimeout_msec)
 {
    mongoc_write_concern_set_wtimeout_int64 (write_concern, (int64_t) wtimeout_msec);
 }
-
 
 void
 mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern, int64_t wtimeout_msec)
@@ -191,14 +181,12 @@ mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern, 
    write_concern->frozen = false;
 }
 
-
 bool
 mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (write_concern);
    return (write_concern->w == MONGOC_WRITE_CONCERN_W_MAJORITY);
 }
-
 
 /**
  * mongoc_write_concern_set_wmajority:
@@ -226,7 +214,6 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern, int32
    }
 }
 
-
 const char *
 mongoc_write_concern_get_wtag (const mongoc_write_concern_t *write_concern)
 {
@@ -238,7 +225,6 @@ mongoc_write_concern_get_wtag (const mongoc_write_concern_t *write_concern)
 
    return NULL;
 }
-
 
 void
 mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern, const char *wtag)
@@ -284,7 +270,6 @@ mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern)
    return !write_concern || write_concern->is_default;
 }
 
-
 /**
  * mongoc_write_concern_freeze:
  * @write_concern: A mongoc_write_concern_t.
@@ -327,7 +312,6 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
    }
 }
 
-
 /**
  * mongoc_write_concern_is_acknowledged:
  * @concern: (in): A mongoc_write_concern_t.
@@ -346,7 +330,6 @@ mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concer
    }
    return true;
 }
-
 
 /**
  * mongoc_write_concern_is_valid:
@@ -377,7 +360,6 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
    return true;
 }
 
-
 static bool
 _mongoc_write_concern_validate (const mongoc_write_concern_t *write_concern, bson_error_t *error)
 {
@@ -387,7 +369,6 @@ _mongoc_write_concern_validate (const mongoc_write_concern_t *write_concern, bso
    }
    return true;
 }
-
 
 /**
  * _mongoc_parse_wc_err:
@@ -420,7 +401,6 @@ _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error)
    }
    return false;
 }
-
 
 /**
  * mongoc_write_concern_append:

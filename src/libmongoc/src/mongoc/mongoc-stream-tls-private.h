@@ -19,14 +19,16 @@
 #ifndef MONGOC_STREAM_TLS_PRIVATE_H
 #define MONGOC_STREAM_TLS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
+
+#include <mongoc/mongoc-shared-private.h>
 
 BSON_BEGIN_DECLS
 
@@ -53,7 +55,12 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context (mongoc_stream_t *base_s
                                                          mongoc_ssl_opt_t *opt,
                                                          int client,
                                                          SSL_CTX *ssl_ctx) BSON_GNUC_WARN_UNUSED_RESULT;
-#endif
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+mongoc_stream_t *
+mongoc_stream_tls_new_with_secure_channel_cred (mongoc_stream_t *base_stream,
+                                                mongoc_ssl_opt_t *opt,
+                                                mongoc_shared_ptr secure_channel_cred_ptr) BSON_GNUC_WARN_UNUSED_RESULT;
+#endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 BSON_END_DECLS
 

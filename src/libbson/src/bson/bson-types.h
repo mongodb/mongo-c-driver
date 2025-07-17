@@ -21,13 +21,14 @@
 #define BSON_TYPES_H
 
 
-#include <stdlib.h>
+#include <bson/bson-compat.h>
+#include <bson/bson-config.h>
+#include <bson/bson-endian.h>
+#include <bson/bson-macros.h>
+
 #include <sys/types.h>
 
-#include <bson/bson-macros.h>
-#include <bson/bson-config.h>
-#include <bson/bson-compat.h>
-#include <bson/bson-endian.h>
+#include <stdlib.h>
 
 BSON_BEGIN_DECLS
 
@@ -136,13 +137,7 @@ BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) typedef struct _bson_t {
  * bson_t b = BSON_INITIALIZER;
  * ]|
  */
-#define BSON_INITIALIZER \
-   {                     \
-      3, 5,              \
-      {                  \
-         5               \
-      }                  \
-   }
+#define BSON_INITIALIZER {3, 5, {5}}
 
 
 BSON_STATIC_ASSERT2 (bson_t, sizeof (bson_t) == 128);
@@ -185,25 +180,54 @@ typedef struct {
 
 
 /**
- * bson_validate_flags_t:
+ * @brief Flags and error codes for BSON validation functions.
  *
- * This enumeration is used for validation of BSON documents. It allows
- * selective control on what you wish to validate.
+ * Pass these flags bits to control the behavior of the `bson_validate` family
+ * of functions.
  *
- * %BSON_VALIDATE_NONE: No additional validation occurs.
- * %BSON_VALIDATE_UTF8: Check that strings are valid UTF-8.
- * %BSON_VALIDATE_DOLLAR_KEYS: Check that keys do not start with $.
- * %BSON_VALIDATE_DOT_KEYS: Check that keys do not contain a period.
- * %BSON_VALIDATE_UTF8_ALLOW_NULL: Allow NUL bytes in UTF-8 text.
- * %BSON_VALIDATE_EMPTY_KEYS: Prohibit zero-length field names
+ * Additionally, if validation fails, then the error code set on a `bson_error_t`
+ * will have the value corresponding to the reason that validation failed.
  */
 typedef enum {
+   /**
+    * @brief No special validation behavior specified.
+    */
    BSON_VALIDATE_NONE = 0,
+   /**
+    * @brief Check that all text components of the BSON data are valid UTF-8.
+    *
+    * Note that this will also cause validation to reject valid text that contains
+    * a null character. This can be changed by also passing
+    * `BSON_VALIDATE_UTF8_ALLOW_NULL`
+    */
    BSON_VALIDATE_UTF8 = (1 << 0),
+   /**
+    * @brief Check that element keys do not begin with an ASCII dollar `$`
+    */
    BSON_VALIDATE_DOLLAR_KEYS = (1 << 1),
+   /**
+    * @brief Check that element keys do not contain an ASCII period `.`
+    */
    BSON_VALIDATE_DOT_KEYS = (1 << 2),
+   /**
+    * @brief If set then it is *not* an error for a UTF-8 string to contain
+    * embedded null characters.
+    *
+    * This has no effect unless `BSON_VALIDATE_UTF8` is also passed.
+    */
    BSON_VALIDATE_UTF8_ALLOW_NULL = (1 << 3),
+   /**
+    * @brief Check that no element key is a zero-length empty string.
+    */
    BSON_VALIDATE_EMPTY_KEYS = (1 << 4),
+   /**
+    * @brief This is not a flag that controls behavior, but is instead used to indicate
+    * that a BSON document is corrupted in some way. This is the value that will
+    * appear as an error code.
+    *
+    * Passing this as a flag has no effect.
+    */
+   BSON_VALIDATE_CORRUPT = (1 << 5),
 } bson_validate_flags_t;
 
 
@@ -459,6 +483,46 @@ typedef struct _bson_error_t {
 
 BSON_STATIC_ASSERT2 (error_t, sizeof (bson_error_t) == 512);
 
+/**
+ * @brief Reset the content of a bson_error_t to indicate no error.
+ *
+ * @param error Pointer to an error to be overwritten. If null, this function
+ * has no effect.
+ *
+ * This is static-inline because it is trivially optimizable as a (conditional)
+ * `memset`.
+ */
+static inline void
+bson_error_clear (bson_error_t *error)
+{
+   if (!error) {
+      return;
+   }
+   // Statically initialized to a zero struct:
+   static bson_error_t zero_error;
+   // Replace the caller's value:
+   *error = zero_error;
+}
+
+/**
+ * @brief Given a `bson_error_t` pointer l-value, ensure that it is non-null, and clear any
+ * error value that it might hold.
+ *
+ * @param ErrorPointer An l-value expression of type `bson_error_t*`.
+ *
+ * If the passed pointer is null, then it will be updated to point to an anonymous
+ * `bson_error_t` object that lives in the caller's scope.
+ *
+ * @note This macro is not valid in C++ because it relies on C99 compound literal semantics
+ */
+#define bson_error_reset(ErrorPointer) bson_error_reset (&(ErrorPointer), &(bson_error_t) {0})
+static inline void (bson_error_reset) (bson_error_t **error, bson_error_t *localptr)
+{
+   if (*error == NULL) {
+      *error = localptr;
+   }
+   bson_error_clear (*error);
+}
 
 /**
  * bson_next_power_of_two:

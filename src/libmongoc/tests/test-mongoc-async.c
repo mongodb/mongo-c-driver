@@ -1,14 +1,15 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-client-private.h>
-
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-async-private.h>
 #include <mongoc/mongoc-async-cmd-private.h>
-#include "TestSuite.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-errno-private.h>
-#include "test-libmongoc.h"
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-libmongoc.h>
 
 #define TIMEOUT 10000 /* milliseconds */
 #define NSERVERS 10
@@ -214,6 +215,8 @@ test_large_hello_helper (mongoc_async_cmd_t *acmd,
                          const bson_t *bson,
                          int64_t duration_usec)
 {
+   BSON_UNUSED (duration_usec);
+
    bson_iter_t iter;
    bson_error_t *error = &acmd->error;
 
@@ -235,6 +238,8 @@ test_large_hello_helper (mongoc_async_cmd_t *acmd,
 static void
 test_large_hello (void *ctx)
 {
+   BSON_UNUSED (ctx);
+
    mongoc_async_t *async;
    mongoc_stream_t *sock_stream;
    bson_t q = BSON_INITIALIZER;

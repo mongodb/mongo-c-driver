@@ -1,10 +1,11 @@
 #ifndef FUTURE_H
 #define FUTURE_H
 
+#include <mongoc/mongoc-thread-private.h>
+
 #include <bson/bson.h>
 
-#include "mock_server/future-value.h"
-#include <mongoc/mongoc-thread-private.h>
+#include <mock_server/future-value.h>
 
 /**************************************************
  *

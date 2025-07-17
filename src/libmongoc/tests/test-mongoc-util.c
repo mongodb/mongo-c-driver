@@ -1,10 +1,11 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
 
 #include <mlib/config.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 
 static void

@@ -19,8 +19,11 @@
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <mlib/str.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -100,8 +103,19 @@ mongoc_ends_with (const char *str, const char *suffix);
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */);
 
+void
+mongoc_lowercase_inplace (char *src);
+
+/**
+ * @brief Parse a network port number
+ *
+ * @param spelling The decimal spelling of the port number
+ * @param out The port number to be updated
+ * @return true If the parse is successful
+ * @return false Otherwise
+ */
 bool
-mongoc_parse_port (uint16_t *port, const char *str);
+_mongoc_parse_port (mstr_view spelling, uint16_t *out, bson_error_t *error);
 
 void
 _mongoc_bson_array_add_label (bson_t *bson, const char *label);

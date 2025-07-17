@@ -153,7 +153,7 @@
       "description": "Username containing percent encoded multi-byte UTF-8 is valid",
       "uri": "mongodb://%E2%D8%83",
       "valid": false,
-      "warning": true
+      "warning": false
     },
     {
       "description": "Valid connection and timeout options are parsed correctly, libmongoc version without maxIdleTimeMS",

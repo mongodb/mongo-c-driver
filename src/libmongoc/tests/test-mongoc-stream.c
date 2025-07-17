@@ -1,10 +1,12 @@
+#include <mongoc/mongoc-stream-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
 
 #include <fcntl.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <stdlib.h>
 
-#include "TestSuite.h"
+#include <stdlib.h>
 
 
 static void
@@ -182,7 +184,7 @@ _writev_timeout_stream_new (void)
 {
    writev_timeout_stream_t *const stream = bson_malloc (sizeof (writev_timeout_stream_t));
 
-   *stream = (writev_timeout_stream_t){
+   *stream = (writev_timeout_stream_t) {
       .vtable =
          {
             .type = 999, // For testing purposes.

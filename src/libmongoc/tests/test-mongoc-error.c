@@ -1,13 +1,15 @@
+#include <mongoc/mongoc-error-private.h>
+
 #include <mongoc/mongoc.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include <mongoc/mongoc-error-private.h>
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #include <inttypes.h>
 
@@ -233,6 +235,44 @@ test_mongoc_error_with_category (void)
    ASSERT_CMPUINT (error.reserved, ==, 99u);
 }
 
+#ifdef _WIN32
+static void
+test_mongoc_winerr_to_string (void)
+{
+   // Test WIN32 success.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) NO_ERROR);
+      const char *expect = "(0x00000000) The operation completed successfully.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test WIN32 error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) ERROR_FILE_NOT_FOUND);
+      const char *expect = "(0x00000002) The system cannot find the file specified.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test SECURITY_STATUS error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) SEC_E_CERT_EXPIRED);
+      const char *expect = "(0x80090328) The received certificate has expired.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+
+   // Test DNS_STATUS error.
+   {
+      char *got = mongoc_winerr_to_string ((DWORD) DNS_ERROR_RCODE_SERVER_FAILURE);
+      const char *expect = "(0x0000232A) DNS server failure.";
+      ASSERT_CMPSTR (expect, got);
+      bson_free (got);
+   }
+}
+#endif // _WIN32
+
 void
 test_error_install (TestSuite *suite)
 {
@@ -245,4 +285,7 @@ test_error_install (TestSuite *suite)
    TestSuite_Add (suite, "/Error/state_change", test_state_change);
    TestSuite_Add (suite, "/Error/basic", test_mongoc_error_basic);
    TestSuite_Add (suite, "/Error/category", test_mongoc_error_with_category);
+#ifdef _WIN32
+   TestSuite_Add (suite, "/Error/windows_error_to_string", test_mongoc_winerr_to_string);
+#endif
 }

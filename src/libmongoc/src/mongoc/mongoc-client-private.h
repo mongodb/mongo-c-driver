@@ -19,25 +19,28 @@
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-read-prefs.h>
-#include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-opcode.h>
+#include <mongoc/mongoc-read-prefs.h>
+
+#include <bson/bson.h>
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl.h>
 #endif
 
-#include <mongoc/mongoc-stream.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-write-concern.h>
 #include <mongoc/mongoc-crypt-private.h>
+#include <mongoc/mongoc-shared-private.h>
+#include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-write-concern.h>
 
 BSON_BEGIN_DECLS
 
@@ -166,7 +169,6 @@ void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t server_id,
                             int64_t cursor_id,
-                            int64_t operation_id,
                             const char *db,
                             const char *collection,
                             mongoc_client_session_t *cs);
@@ -213,6 +215,7 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        void *openssl_ctx_void,
+                       mongoc_shared_ptr secure_channel_cred_ptr,
                        bson_error_t *error);
 
 

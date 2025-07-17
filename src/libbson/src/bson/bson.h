@@ -20,20 +20,17 @@
 
 #define BSON_INSIDE
 
+#include <bson/bcon.h>
+#include <bson/bson-clock.h>
 #include <bson/bson-compat.h>
-
-#include <string.h>
-#include <time.h>
-
-#include <bson/bson-macros.h>
 #include <bson/bson-config.h>
 #include <bson/bson-context.h>
-#include <bson/bson-clock.h>
 #include <bson/bson-decimal128.h>
 #include <bson/bson-error.h>
 #include <bson/bson-iter.h>
 #include <bson/bson-json.h>
 #include <bson/bson-keys.h>
+#include <bson/bson-macros.h>
 #include <bson/bson-memory.h>
 #include <bson/bson-oid.h>
 #include <bson/bson-reader.h>
@@ -42,10 +39,12 @@
 #include <bson/bson-utf8.h>
 #include <bson/bson-value.h>
 #include <bson/bson-vector.h>
-#include <bson/bson-version.h>
 #include <bson/bson-version-functions.h>
+#include <bson/bson-version.h>
 #include <bson/bson-writer.h>
-#include <bson/bcon.h>
+
+#include <string.h>
+#include <time.h>
 
 #undef BSON_INSIDE
 

@@ -20,7 +20,9 @@
 #define MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
 
 #include <bson/bson.h>
+
 #include <mlib/cmp.h>
+
 #include <string.h>
 
 

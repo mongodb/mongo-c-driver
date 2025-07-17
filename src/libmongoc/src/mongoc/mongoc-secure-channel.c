@@ -18,18 +18,20 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-secure-channel-private.h>
-#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <common-string-private.h>
+#include <mongoc/mongoc-secure-channel-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
+
+#include <bson/bson.h>
+
 #include <mlib/cmp.h>
 
 
@@ -149,6 +151,62 @@ fail:
 }
 
 
+// `decode_object` decodes a cryptographic object from a blob.
+// Returns NULL on error.
+static LPBYTE
+decode_object (const char *structType,
+               const LPBYTE data,
+               DWORD data_len,
+               DWORD *out_len,
+               const char *descriptor,
+               const char *filename)
+{
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (structType);
+   BSON_ASSERT_PARAM (out_len);
+   BSON_ASSERT_PARAM (descriptor);
+   BSON_ASSERT_PARAM (filename);
+   // Get needed output length:
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             NULL,                                    /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      return NULL;
+   }
+
+   if (*out_len == 0) {
+      return NULL;
+   }
+   LPBYTE out = (LPBYTE) bson_malloc (*out_len);
+
+   if (!CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
+                             structType,                              /* lpszStructType */
+                             data,                                    /* pbEncoded */
+                             data_len,                                /* cbEncoded */
+                             0,                                       /* dwFlags */
+                             NULL,                                    /* pDecodePara */
+                             out,                                     /* pvStructInfo */
+                             out_len                                  /* pcbStructInfo */
+                             )) {
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to decode %s from '%s': %s", descriptor, filename, msg);
+      bson_free (msg);
+      bson_free (out);
+      return NULL;
+   }
+
+   return out;
+}
+
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
@@ -161,9 +219,11 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    LPBYTE encoded_cert = NULL;
    const char *pem_public;
    const char *pem_private;
-   LPBYTE blob_private = NULL;
    PCCERT_CONTEXT cert = NULL;
+   LPBYTE blob_private = NULL;
    DWORD blob_private_len = 0;
+   LPBYTE blob_private_rsa = NULL;
+   DWORD blob_private_rsa_len = 0;
    DWORD encoded_private_len = 0;
    LPBYTE encoded_private = NULL;
 
@@ -185,16 +245,6 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
-   pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----");
-   if (!pem_private) {
-      pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----");
-   }
-
-   if (!pem_private) {
-      MONGOC_ERROR ("Can't find private key in '%s'", filename);
-      goto fail;
-   }
-
    encoded_cert = decode_pem_base64 (pem_public, &encoded_cert_len, "public key", filename);
    if (!encoded_cert) {
       goto fail;
@@ -202,52 +252,53 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
 
    if (!cert) {
-      MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X", filename, (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Failed to extract public key from '%s': %s", filename, msg);
+      bson_free (msg);
       goto fail;
    }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380285%28v=vs.85%29.aspx
-    */
-   encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
-   if (!encoded_private) {
-      goto fail;
-   }
+   if (NULL != (pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----"))) {
+      encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
+      if (!encoded_private) {
+         goto fail;
+      }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa379912%28v=vs.85%29.aspx
-    */
-   success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* dwCertEncodingType */
-                                  PKCS_RSA_PRIVATE_KEY,                    /* lpszStructType */
-                                  encoded_private,                         /* pbEncoded */
-                                  encoded_private_len,                     /* cbEncoded */
-                                  0,                                       /* dwFlags */
-                                  NULL,                                    /* pDecodePara */
-                                  NULL,                                    /* pvStructInfo */
-                                  &blob_private_len);                      /* pcbStructInfo */
-   if (!success) {
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     GetLastError (),
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-      MONGOC_ERROR ("Failed to parse private key. %s (0x%.8X)", msg, (unsigned int) GetLastError ());
-      LocalFree (msg);
-      goto fail;
-   }
+      blob_private_rsa = decode_object (
+         PKCS_RSA_PRIVATE_KEY, encoded_private, encoded_private_len, &blob_private_rsa_len, "private key", filename);
+      if (!blob_private_rsa) {
+         goto fail;
+      }
+   } else if (NULL != (pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----"))) {
+      encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
+      if (!encoded_private) {
+         goto fail;
+      }
 
-   blob_private = (LPBYTE) bson_malloc0 (blob_private_len);
-   success = CryptDecodeObjectEx (X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-                                  PKCS_RSA_PRIVATE_KEY,
-                                  encoded_private,
-                                  encoded_private_len,
-                                  0,
-                                  NULL,
-                                  blob_private,
-                                  &blob_private_len);
-   if (!success) {
-      MONGOC_ERROR ("Failed to parse private key. Error 0x%.8X", (unsigned int) GetLastError ());
+      blob_private = decode_object (
+         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_len, "private key", filename);
+      if (!blob_private) {
+         goto fail;
+      }
+
+      // Have PrivateKey. Get RSA key from it.
+      CRYPT_PRIVATE_KEY_INFO *privateKeyInfo = (CRYPT_PRIVATE_KEY_INFO *) blob_private;
+      if (strcmp (privateKeyInfo->Algorithm.pszObjId, szOID_RSA_RSA) != 0) {
+         MONGOC_ERROR ("Non-RSA private keys are not supported");
+         goto fail;
+      }
+
+      blob_private_rsa = decode_object (PKCS_RSA_PRIVATE_KEY,
+                                        privateKeyInfo->PrivateKey.pbData,
+                                        privateKeyInfo->PrivateKey.cbData,
+                                        &blob_private_rsa_len,
+                                        "private key",
+                                        filename);
+      if (!blob_private_rsa) {
+         goto fail;
+      }
+   } else {
+      MONGOC_ERROR ("Can't find private key in '%s'", filename);
       goto fail;
    }
 
@@ -259,21 +310,25 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                   PROV_RSA_FULL,        /* dwProvType */
                                   CRYPT_VERIFYCONTEXT); /* dwFlags */
    if (!success) {
-      MONGOC_ERROR ("CryptAcquireContext failed with error 0x%.8X", (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("CryptAcquireContext failed: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
    HCRYPTKEY hKey;
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380207%28v=vs.85%29.aspx
     */
-   success = CryptImportKey (provider,         /* hProv */
-                             blob_private,     /* pbData */
-                             blob_private_len, /* dwDataLen */
-                             0,                /* hPubKey */
-                             0,                /* dwFlags */
-                             &hKey);           /* phKey, OUT */
+   success = CryptImportKey (provider,             /* hProv */
+                             blob_private_rsa,     /* pbData */
+                             blob_private_rsa_len, /* dwDataLen */
+                             0,                    /* hPubKey */
+                             0,                    /* dwFlags */
+                             &hKey);               /* phKey, OUT */
    if (!success) {
-      MONGOC_ERROR ("CryptImportKey for private key failed with error 0x%.8X", (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("CryptImportKey for private key failed: %s", msg);
+      bson_free (msg);
       CryptReleaseContext (provider, 0);
       goto fail;
    }
@@ -287,7 +342,9 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                                 0,                            /* dwFlags */
                                                 (const void *) provider);     /* pvData */
    if (!success) {
-      MONGOC_ERROR ("Can't associate private key with public key: 0x%.8X", (unsigned int) GetLastError ());
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Can't associate private key with public key: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
@@ -305,6 +362,11 @@ fail:
       bson_free (encoded_private);
    }
 
+   if (blob_private_rsa) {
+      SecureZeroMemory (blob_private_rsa, blob_private_rsa_len);
+      bson_free (blob_private_rsa);
+   }
+
    if (blob_private) {
       SecureZeroMemory (blob_private, blob_private_len);
       bson_free (blob_private);
@@ -319,14 +381,14 @@ fail:
 }
 
 PCCERT_CONTEXT
-mongoc_secure_channel_setup_certificate (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_certificate (const mongoc_ssl_opt_t *opt)
 {
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
 
 bool
-mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_ca (const mongoc_ssl_opt_t *opt)
 {
    bool ok = false;
    char *pem = NULL;
@@ -356,7 +418,9 @@ mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
 
    cert = CertCreateCertificateContext (X509_ASN_ENCODING, encoded_cert, encoded_cert_len);
    if (!cert) {
-      MONGOC_WARNING ("Could not convert certificate");
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Could not convert certificate: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
@@ -368,12 +432,16 @@ mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
                                L"Root");                                /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      MONGOC_ERROR ("Error opening certificate store");
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Error opening certificate store: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
    if (!CertAddCertificateContextToStore (cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      MONGOC_WARNING ("Failed adding the cert");
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Failed adding the cert: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
@@ -430,7 +498,7 @@ fail:
 }
 
 bool
-mongoc_secure_channel_setup_crl (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_crl (const mongoc_ssl_opt_t *opt)
 {
    HCERTSTORE cert_store = NULL;
    bool ok = false;
@@ -447,12 +515,16 @@ mongoc_secure_channel_setup_crl (mongoc_ssl_opt_t *opt)
                                L"Root");                                /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      MONGOC_ERROR ("Error opening certificate store");
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Error opening certificate store: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
    if (!CertAddCRLContextToStore (cert_store, crl, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      MONGOC_WARNING ("Failed adding the CRL");
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_WARNING ("Failed adding the CRL: %s", msg);
+      bson_free (msg);
       goto fail;
    }
 
@@ -601,26 +673,25 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls, char *hostname
    secure_channel->ctxt = (mongoc_secure_channel_ctxt *) bson_malloc0 (sizeof (mongoc_secure_channel_ctxt));
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx */
-   sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle, /* phCredential */
-                                            NULL,                               /* phContext */
-                                            hostname,                           /* pszTargetName */
-                                            secure_channel->req_flags,          /* fContextReq */
-                                            0,                                  /* Reserved1, must be 0 */
-                                            0,                                  /* TargetDataRep, unused */
-                                            NULL,                               /* pInput */
-                                            0,                                  /* Reserved2, must be 0 */
-                                            &secure_channel->ctxt->ctxt_handle, /* phNewContext OUT param */
-                                            &outbuf_desc,                       /* pOutput OUT param */
-                                            &secure_channel->ret_flags,         /* pfContextAttr OUT param */
-                                            &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
+   sspi_status = InitializeSecurityContext (&secure_channel->cred_handle->cred_handle, /* phCredential */
+                                            NULL,                                      /* phContext */
+                                            hostname,                                  /* pszTargetName */
+                                            secure_channel->req_flags,                 /* fContextReq */
+                                            0,                                         /* Reserved1, must be 0 */
+                                            0,                                         /* TargetDataRep, unused */
+                                            NULL,                                      /* pInput */
+                                            0,                                         /* Reserved2, must be 0 */
+                                            &secure_channel->ctxt->ctxt_handle,        /* phNewContext OUT param */
+                                            &outbuf_desc,                              /* pOutput OUT param */
+                                            &secure_channel->ret_flags,                /* pfContextAttr OUT param */
+                                            &secure_channel->ctxt->time_stamp          /* ptsExpiry OUT param */
    );
-
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
-      MONGOC_LOG_AND_SET_ERROR (error,
-                                MONGOC_ERROR_STREAM,
-                                MONGOC_ERROR_STREAM_SOCKET,
-                                "initial InitializeSecurityContext failed: %ld",
-                                sspi_status);
+      // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
+      MONGOC_LOG_AND_SET_ERROR (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "initial InitializeSecurityContext failed: %s", msg);
+      bson_free (msg);
       return false;
    }
 
@@ -670,7 +741,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
    TRACE ("%s", "SSL/TLS connection with endpoint (step 2/3)");
 
-   if (!secure_channel->cred || !secure_channel->ctxt) {
+   if (!secure_channel->cred_handle || !secure_channel->ctxt) {
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "required TLS credentials or context not provided");
 
@@ -740,7 +811,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
       /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx
        */
-      sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle,
+      sspi_status = InitializeSecurityContext (&secure_channel->cred_handle->cred_handle,
                                                &secure_channel->ctxt->ctxt_handle,
                                                hostname,
                                                secure_channel->req_flags,
@@ -849,24 +920,14 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
 
          default: {
-            LPTSTR msg = NULL;
-
-            FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                           NULL,
-                           GetLastError (),
-                           LANG_NEUTRAL,
-                           (LPTSTR) &msg,
-                           0,
-                           NULL);
+            // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+            char *msg = mongoc_winerr_to_string ((DWORD) sspi_status);
             MONGOC_LOG_AND_SET_ERROR (error,
                                       MONGOC_ERROR_STREAM,
                                       MONGOC_ERROR_STREAM_SOCKET,
-                                      "Failed to initialize security context, error code: "
-                                      "0x%04X%04X: %s",
-                                      (unsigned int) (sspi_status >> 16) & 0xffff,
-                                      (unsigned int) sspi_status & 0xffff,
+                                      "Failed to initialize security context: %s",
                                       msg);
-            LocalFree (msg);
+            bson_free (msg);
          }
          }
          return false;
@@ -930,7 +991,7 @@ mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls, char *hostname
 
    TRACE ("SSL/TLS connection with %s (step 3/3)", hostname);
 
-   if (!secure_channel->cred) {
+   if (!secure_channel->cred_handle) {
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "required TLS credentials not provided");
       return false;

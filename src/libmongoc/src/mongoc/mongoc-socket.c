@@ -15,22 +15,22 @@
  */
 
 
-#include <errno.h>
-#include <string.h>
-
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-socket-private.h>
-#include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-host-list.h>
+
 #ifdef _WIN32
 #include <Mstcpip.h>
 #include <process.h>
 #endif
 #include <mlib/cmp.h>
 
+#include <errno.h>
 #include <inttypes.h>
+#include <string.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
@@ -1207,6 +1207,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
          RETURN (ret ? ret : -1);
       }
 
+      BSON_ASSERT (mlib_cmp (wrote, <=, SSIZE_MAX - ret));
       ret += wrote;
 
       if (mlib_cmp (wrote, !=, iov[i].iov_len)) {

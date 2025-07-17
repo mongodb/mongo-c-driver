@@ -1,13 +1,15 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
+
+#include <mongoc/mongoc.h>
+
 #include <mlib/loop.h>
 
-#include "TestSuite.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static void
 _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)

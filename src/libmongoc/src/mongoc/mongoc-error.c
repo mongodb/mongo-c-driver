@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-error.h>
+
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-rpc-private.h>
-#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-server-description-private.h>
+
+#include <bson/bson.h>
 
 bool
 mongoc_error_has_label (const bson_t *reply, const char *label)
@@ -349,7 +350,11 @@ _mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const ch
 
       va_list args;
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      // Format into a temporary buf before copying into the error, as the existing
+      // error message may be an input to our formatting string
+      char buffer[sizeof (error->message)] = {0};
+      bson_vsnprintf (buffer, sizeof error->message, format, args);
+      memcpy (&error->message, buffer, sizeof buffer);
       va_end (args);
    }
 }
@@ -365,7 +370,46 @@ _mongoc_set_error_with_category (
 
       va_list args;
       va_start (args, format);
-      bson_vsnprintf (error->message, sizeof error->message, format, args);
+      char buffer[sizeof (error->message)] = {0};
+      bson_vsnprintf (buffer, sizeof error->message, format, args);
+      memcpy (&error->message, buffer, sizeof buffer);
       va_end (args);
    }
 }
+
+#ifdef _WIN32
+
+char *
+mongoc_winerr_to_string (DWORD err_code)
+{
+   LPSTR msg = NULL;
+   if (0 == FormatMessageA (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY |
+                               FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                            NULL,
+                            err_code,
+                            MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+                            (LPSTR) &msg,
+                            0,
+                            NULL)) {
+      LocalFree (msg);
+      return bson_strdup_printf ("(0x%.8lX) (Failed to get error message)", err_code);
+   }
+
+   // Remove trailing newline.
+   size_t msglen = strlen (msg);
+   if (msglen >= 1 && msg[msglen - 1] == '\n') {
+      if (msglen >= 2 && msg[msglen - 2] == '\r') {
+         // Remove trailing \r\n.
+         msg[msglen - 2] = '\0';
+      } else {
+         // Just remove trailing \n.
+         msg[msglen - 1] = '\0';
+      }
+   }
+
+   char *ret = bson_strdup_printf ("(0x%.8lX) %s", err_code, msg);
+   LocalFree (msg);
+   return ret;
+}
+
+#endif // _WIN32

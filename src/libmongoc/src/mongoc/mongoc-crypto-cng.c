@@ -16,16 +16,20 @@
 #include <mongoc/mongoc-config.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
-#include <mongoc/mongoc-scram-private.h>
-#include <mongoc/mongoc-crypto-private.h>
 #include <mongoc/mongoc-crypto-cng-private.h>
-#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-thread-private.h>
+
+#include <mongoc/mongoc-log.h>
+
 #include <mlib/cmp.h>
 
-#include <windows.h>
-#include <stdio.h>
 #include <bcrypt.h>
+
+#include <windows.h>
+
+#include <stdio.h>
 #include <string.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
@@ -265,6 +269,7 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     unsigned char *output)
 {
 #if defined(MONGOC_HAVE_BCRYPT_PBKDF2)
+   BSON_UNUSED (crypto);
    return _bcrypt_derive_key_pbkdf2 (
       _sha1_hmac_algo, password, password_len, salt, salt_len, iterations, output_len, output);
 #else
@@ -281,6 +286,8 @@ mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
                              int data_len,
                              unsigned char *hmac_out)
 {
+   BSON_UNUSED (crypto);
+
    if (!_sha1_hmac_algo) {
       return;
    }
@@ -294,6 +301,8 @@ mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
                         const size_t input_len,
                         unsigned char *hash_out)
 {
+   BSON_UNUSED (crypto);
+
    bool res;
 
    if (!_sha1_hash_algo) {
@@ -333,6 +342,8 @@ mongoc_crypto_cng_hmac_sha256 (mongoc_crypto_t *crypto,
                                int data_len,
                                unsigned char *hmac_out)
 {
+   BSON_UNUSED (crypto);
+
    if (!_sha256_hmac_algo) {
       return;
    }
@@ -346,6 +357,8 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
                           const size_t input_len,
                           unsigned char *hash_out)
 {
+   BSON_UNUSED (crypto);
+
    bool res;
 
    if (!_sha256_hash_algo) {

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-#include "TestSuite.h"
-#include <mongoc/mongoc-config.h>
-#include "test-conveniences.h"
 #include <common-string-private.h>
+
+#include <mongoc/mongoc-config.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl-private.h>

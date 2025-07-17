@@ -14,37 +14,43 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/mongoc.h>
 
+#include <bson/bson.h>
+
 #include <fcntl.h>
-#include <stdarg.h>
 
-#include <mongoc/mongoc-thread-private.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <mongoc/mongoc-util-private.h>
 #if !defined(_WIN32)
+#include <sys/time.h>
 #include <sys/types.h>
-#include <inttypes.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <sys/time.h>
+
+#include <inttypes.h>
 
 #else
 #include <windows.h>
 #endif
 
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include <common-string-private.h>
 #include <common-json-private.h>
+#include <common-string-private.h>
+
 #include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
+
+#include <signal.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SKIP_LINE_BUFFER_SIZE 1024
 
@@ -105,14 +111,12 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
 #endif
 }
 
-
 static BSON_ONCE_FUN (_test_suite_ensure_mutex_once)
 {
    bson_mutex_init (&gTestMutex);
 
    BSON_ONCE_RETURN;
 }
-
 
 void
 TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
@@ -337,7 +341,7 @@ _TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func,
    Test *test;
    va_list ap;
    TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));
-   *ctx = (TestFnCtx){.test_fn = func, .dtor = NULL};
+   *ctx = (TestFnCtx) {.test_fn = func, .dtor = NULL};
 
    va_start (ap, func);
    test = _V_TestSuite_AddFull (suite, name, TestSuite_AddHelper, _TestSuite_TestFnCtxDtor, ctx, ap);
@@ -391,20 +395,11 @@ _TestSuite_TestFnCtxDtor (void *ctx)
 static void
 _print_getlasterror_win (const char *msg)
 {
-   LPTSTR err_msg;
-
-   FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL,
-                  GetLastError (),
-                  MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  /* FormatMessage is weird about this param. */
-                  (LPTSTR) &err_msg,
-                  0,
-                  NULL);
+   char *err_msg = mongoc_winerr_to_string (GetLastError ());
 
    test_error ("%s: %s", msg, err_msg);
 
-   LocalFree (err_msg);
+   bson_free (err_msg);
 }
 
 
@@ -1241,7 +1236,7 @@ test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe)
 int32_t
 get_current_connection_count (const char *host_and_port)
 {
-   char *uri_str = bson_strdup_printf ("mongodb://%s\n", host_and_port);
+   char *uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
    char *uri_str_with_auth = test_framework_add_user_password_from_env (uri_str);
    mongoc_client_t *client = mongoc_client_new (uri_str_with_auth);
    test_framework_set_ssl_opts (client);

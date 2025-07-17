@@ -19,8 +19,9 @@
 #ifndef MONGOC_APM_PRIVATE_H
 #define MONGOC_APM_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-apm.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

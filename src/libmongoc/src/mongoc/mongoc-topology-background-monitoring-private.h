@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2009-present MongoDB, Inc.
  *
@@ -20,8 +19,9 @@
 #ifndef MONGOC_TOPOLOGY_BACKGROUND_MONITORING_PRIVATE_H
 #define MONGOC_TOPOLOGY_BACKGROUND_MONITORING_PRIVATE_H
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc.h>
 
 /* Methods of mongoc_topology_t for managing background monitoring. */
 

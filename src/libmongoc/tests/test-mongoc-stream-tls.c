@@ -5,10 +5,10 @@
 #include <openssl/err.h>
 #endif
 
-#include "ssl-test.h"
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <TestSuite.h>
+#include <ssl-test.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 
@@ -413,6 +413,8 @@ test_mongoc_tls_insecure_nowarning (void)
 void
 test_stream_tls_install (TestSuite *suite)
 {
+   BSON_UNUSED (suite);
+
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 
    /* Disable /TLS/commonName on macOS due to CDRIVER-4256. */

@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-config.h>
+#include <common-atomic-private.h>
+#include <common-bson-dsl-private.h>
+#include <common-oid-private.h>
+#include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-compression-private.h>
 
-#include <common-bson-dsl-private.h>
-#include <common-atomic-private.h>
-#include <common-oid-private.h>
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-uri.h>
 
 #include <mlib/config.h>
 
@@ -529,7 +529,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    }
 
    bson_destroy (&sd->last_hello_response);
-   bsonBuild (sd->last_hello_response, insert (*hello_response, not(key ("speculativeAuthenticate"))));
+   bsonBuild (sd->last_hello_response, insert (*hello_response, not (key ("speculativeAuthenticate"))));
    sd->has_hello_response = true;
 
    /* Only reinitialize the topology version if we have a hello response.
@@ -794,7 +794,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
          const uint8_t *data = bson_get_data (&copy->last_hello_response) + offset;                                  \
          uint32_t len = description->FIELD.len;                                                                      \
          MONGOC_DEBUG_ASSERT (offset + len <= copy->last_hello_response.len);                                        \
-         bson_init_static (&copy->FIELD, data, len);                                                                 \
+         BSON_ASSERT (bson_init_static (&copy->FIELD, data, len));                                                   \
       } else {                                                                                                       \
          bson_init (&copy->FIELD);                                                                                   \
       }                                                                                                              \

@@ -1,13 +1,16 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-uri-private.h>
 
-#include "TestSuite.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <mongoc/mongoc.h>
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static bool
 _can_be_command (const char *query)
@@ -532,7 +535,10 @@ test_read_prefs_mongos_hedged_reads (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    bson_append_bool (&hedge_doc, "enabled", 7, true);
 
+   mlib_diagnostic_push ();
+   mlib_disable_deprecation_warnings ();
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
+   mlib_diagnostic_pop ();
 
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);

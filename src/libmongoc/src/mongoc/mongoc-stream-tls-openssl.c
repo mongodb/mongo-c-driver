@@ -18,33 +18,34 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
-#include <bson/bson.h>
-
-#include <errno.h>
-#include <string.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/x509v3.h>
-
+#include <common-macros-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-errno-private.h>
-#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-openssl-private.h>
 #include <mongoc/mongoc-ssl-private.h>
-#include <mongoc/mongoc-stream-tls.h>
 #include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-openssl-bio-private.h>
 #include <mongoc/mongoc-stream-tls-openssl-private.h>
-#include <mongoc/mongoc-openssl-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-error-private.h>
 
-#include <common-macros-private.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
+
+#include <bson/bson.h>
+
 #include <mlib/cmp.h>
 
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+#include <errno.h>
 #include <inttypes.h>
+#include <string.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -628,24 +629,9 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream, const char *host,
 
    /* Otherwise, use simple error info. */
    {
-#ifdef _WIN32
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     errno, /* WSAETIMEDOUT */
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-#else
-      const char *msg = strerror (errno); /* ETIMEDOUT */
-#endif
-
+      char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
+      char *msg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
       _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed: %s", msg);
-
-#ifdef _WIN32
-      LocalFree (msg);
-#endif
    }
 
    RETURN (false);
@@ -843,6 +829,9 @@ create_stream_with_ctx (
 mongoc_stream_t *
 mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
+   BSON_ASSERT_PARAM (base_stream);
+   BSON_ASSERT_PARAM (opt);
+
    SSL_CTX *ssl_ctx = _mongoc_openssl_ctx_new (opt);
 
    if (!ssl_ctx) {

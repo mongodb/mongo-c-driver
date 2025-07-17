@@ -21,8 +21,8 @@
 
 #include <bson/bson.h>
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /// Return 'true' iff (left * right) would overflow with int64
 static BSON_INLINE bool

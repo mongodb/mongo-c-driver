@@ -12,8 +12,8 @@ from config_generator.components.funcs.upload_build import UploadBuild
 from config_generator.etc.distros import make_distro_str, find_small_distro, find_large_distro
 from config_generator.etc.utils import bash_exec
 
-# Use `rhel8.9` distro. `rhel8.9` distro includes necessary dependency: `haproxy`.
-_DISTRO_NAME = "rhel8.9"
+# Use `rhel8-latest` distro. `rhel8-latest` distro includes necessary dependency: `haproxy`.
+_DISTRO_NAME = "rhel8-latest"
 _COMPILER = "gcc"
 
 
@@ -44,7 +44,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
         name=f"loadbalanced-{distro_str}-test-{server_version}-{auth_str}-{ssl_str}",
         depends_on=[EvgTaskDependency(
             name=f"loadbalanced-{distro_str}-compile")],
-        run_on=find_small_distro(_DISTRO_NAME).name,
+        run_on=find_large_distro(_DISTRO_NAME).name, # DEVPROD-18763
         tags=['loadbalanced', _DISTRO_NAME, _COMPILER, auth_str, ssl_str],
         commands=[
             FetchBuild.call(build_name=f"loadbalanced-{distro_str}-compile"),

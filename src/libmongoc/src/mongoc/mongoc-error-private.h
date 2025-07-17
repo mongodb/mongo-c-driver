@@ -19,12 +19,12 @@
 #ifndef MONGOC_ERROR_PRIVATE_H
 #define MONGOC_ERROR_PRIVATE_H
 
-#include "mongoc-error.h"
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-server-description.h>
 
 #include <bson/bson.h>
-#include <stddef.h>
 
-#include <mongoc/mongoc-server-description.h>
+#include <stddef.h>
 
 BSON_BEGIN_DECLS
 
@@ -128,6 +128,12 @@ _mongoc_set_error_category (bson_error_t *error, uint8_t category)
    BSON_ASSERT_PARAM (error);
    error->reserved = category;
 }
+
+#ifdef _WIN32
+// Call `mongoc_winerr_to_string` on a Windows error code (e.g. a return from GetLastError()).
+char *
+mongoc_winerr_to_string (DWORD err_code);
+#endif
 
 BSON_END_DECLS
 

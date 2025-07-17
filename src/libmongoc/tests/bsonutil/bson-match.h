@@ -17,7 +17,7 @@
 #ifndef BSONUTIL_BSON_MATCH_H
 #define BSONUTIL_BSON_MATCH_H
 
-#include "bsonutil/bson-val.h"
+#include <bsonutil/bson-val.h>
 
 /* Matches bson values in accordance with the unified test format's "Evaluating
  * Matches" rules. */

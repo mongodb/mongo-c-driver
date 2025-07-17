@@ -16,23 +16,24 @@
 
 #ifndef _WIN32
 #include <sys/wait.h>
+
 #include <signal.h>
 #endif
 
+#include <common-atomic-private.h>
 #include <common-bson-dsl-private.h>
-
-#include <mongoc/mongoc.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
+#include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <common-string-private.h>
-#include <common-atomic-private.h>
+
+#include <mongoc/mongoc.h>
 
 /*--------------------------------------------------------------------------
  * Auto Encryption options.
@@ -1378,24 +1379,14 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
                         NULL /* current directory */,
                         &startup_info,
                         &process_information)) {
-      long lastError = GetLastError ();
-      LPSTR message = NULL;
-
-      FormatMessageA (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY | FORMAT_MESSAGE_FROM_SYSTEM |
-                         FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL,
-                      lastError,
-                      0,
-                      (LPSTR) &message,
-                      0,
-                      NULL);
+      char *message = mongoc_winerr_to_string (GetLastError ());
 
       _mongoc_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                          "failed to spawn mongocryptd: %s",
                          message);
-      LocalFree (message);
+      bson_free (message);
       mcommon_string_from_append_destroy (&command);
       return false;
    }
@@ -2882,7 +2873,7 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    bsonVisitEach (in_encryptedFields,
                   case (
                      // We only care about the "fields" array
-                     when (not(key ("fields")), appendTo (new_encryptedFields)),
+                     when (not (key ("fields")), appendTo (new_encryptedFields)),
                      // Automaticall fill in the "keyId" no each field:
                      else (storeDocRef (fields_ref), do ({
                               bson_t new_fields = BSON_INITIALIZER;
@@ -2905,7 +2896,7 @@ mongoc_client_encryption_create_encrypted_collection (mongoc_client_encryption_t
    // We've successfully filled out all null keyIds. Now create the collection
    // with our new options:
    bsonBuild (*opt_out_options,
-              insert (*in_options, not(key ("encryptedFields"))),
+              insert (*in_options, not (key ("encryptedFields"))),
               kv ("encryptedFields", bson (new_encryptedFields)));
    if (bsonBuildError) {
       // Error while building the new options.
@@ -2944,7 +2935,7 @@ _init_1_encryptedField (
    BSON_OPTIONAL_PARAM (error);
    bsonVisitEach (*in_field,
                   // If it is not a "keyId":null element, just copy it to the output.
-                  if (not(keyWithType ("keyId", null)), then (appendTo (*out_field), continue)),
+                  if (not (keyWithType ("keyId", null)), then (appendTo (*out_field), continue)),
                   // Otherwise:
                   do ({
                      // Set up factory context
@@ -2980,7 +2971,7 @@ _init_encryptedFields (
    bsonVisitEach (
       *in_fields,
       // Each field must be a document element
-      if (not(type (doc)), then (error ("Each 'encryptedFields' element must be a document"))),
+      if (not (type (doc)), then (error ("Each 'encryptedFields' element must be a document"))),
       // Append a new element with the same name as the field:
       storeDocRef (cur_field),
       append (*out_fields,
@@ -3010,7 +3001,7 @@ _mongoc_encryptedFields_fill_auto_datakeys (
    BSON_ASSERT_PARAM (factory);
 
    if (error) {
-      *error = (bson_error_t){0};
+      *error = (bson_error_t) {0};
    }
    bson_init (out_fields);
 

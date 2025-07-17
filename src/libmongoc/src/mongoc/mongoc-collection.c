@@ -15,34 +15,35 @@
  */
 
 
-#include <stdio.h>
+#include <mongoc/mongoc-collection.h>
 
-#include <bson/bson.h>
+#include <common-bson-dsl-private.h>
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-string-private.h>
 #include <mongoc/mongoc-aggregate-private.h>
-#include <mongoc/mongoc-bulk-operation.h>
 #include <mongoc/mongoc-bulk-operation-private.h>
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-find-and-modify-private.h>
-#include <mongoc/mongoc-find-and-modify.h>
-#include <mongoc/mongoc-collection.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-cursor-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-find-and-modify-private.h>
+#include <mongoc/mongoc-opts-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
-#include <mongoc/mongoc-write-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-command-private.h>
-#include <mongoc/mongoc-opts-private.h>
-#include <mongoc/mongoc-write-command-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-database-private.h>
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <mongoc/mongoc-write-concern-private.h>
 
-#include <common-bson-dsl-private.h>
-#include <common-string-private.h>
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-find-and-modify.h>
+#include <mongoc/mongoc-log.h>
+
+#include <bson/bson.h>
+
+#include <stdio.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -621,7 +622,7 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
    _make_aggregate_for_count (coll, filter, &cd_opts, &aggregate_cmd);
    bson_init (&aggregate_opts);
    if (opts) {
-      bsonBuildAppend (aggregate_opts, insert (*opts, not(key ("skip", "limit"))));
+      bsonBuildAppend (aggregate_opts, insert (*opts, not (key ("skip", "limit"))));
    }
 
    ret =
@@ -727,13 +728,7 @@ drop_with_opts_with_encryptedFields (mongoc_collection_t *collection,
    mongoc_collection_t *ecocCollection = NULL;
    bool ok = false;
    const char *name = mongoc_collection_get_name (collection);
-   bson_error_t local_error = {0};
-
-   if (!error) {
-      /* If no error is passed, use a local error. Error codes are checked
-       * when collections are dropped. */
-      error = &local_error;
-   }
+   bson_error_reset (error);
 
    /* Drop ESC collection. */
    escName = _mongoc_get_encryptedField_state_collection (encryptedFields, name, "esc", error);
@@ -823,7 +818,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection, const bson_t 
 
    // We've found the encryptedFields, so we need to do something different
    // to drop this collection:
-   bsonBuildAppend (opts_without_encryptedFields, if (opts, then (insert (*opts, not(key ("encryptedFields"))))));
+   bsonBuildAppend (opts_without_encryptedFields, if (opts, then (insert (*opts, not (key ("encryptedFields"))))));
    if (bsonBuildError) {
       _mongoc_set_error (
          error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Error while updating drop options: %s", bsonBuildError);
@@ -942,8 +937,12 @@ _mongoc_collection_index_keys_equal (const bson_t *expected, const bson_t *actua
    bson_iter_t iter_expected;
    bson_iter_t iter_actual;
 
-   bson_iter_init (&iter_expected, expected);
-   bson_iter_init (&iter_actual, actual);
+   if (!bson_iter_init (&iter_expected, expected)) {
+      return false;
+   }
+   if (!bson_iter_init (&iter_actual, actual)) {
+      return false;
+   }
 
    while (bson_iter_next (&iter_expected)) {
       /* If the key document has fewer items than expected, indexes are unequal

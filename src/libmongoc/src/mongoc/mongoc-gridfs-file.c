@@ -18,24 +18,27 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs_file"
 
-#include <limits.h>
-#include <time.h>
-#include <errno.h>
-
-#include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-cursor-private.h>
-#include <mongoc/mongoc-collection.h>
-#include <mongoc/mongoc-gridfs.h>
-#include <mongoc/mongoc-gridfs-private.h>
 #include <mongoc/mongoc-gridfs-file.h>
-#include <mongoc/mongoc-gridfs-file-private.h>
-#include <mongoc/mongoc-gridfs-file-page.h>
+
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-gridfs-file-page-private.h>
-#include <mongoc/mongoc-iovec.h>
+#include <mongoc/mongoc-gridfs-file-private.h>
+#include <mongoc/mongoc-gridfs-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-error-private.h>
+
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-cursor.h>
+#include <mongoc/mongoc-gridfs-file-page.h>
+#include <mongoc/mongoc-gridfs.h>
+#include <mongoc/mongoc-iovec.h>
+
 #include <mlib/cmp.h>
+
+#include <errno.h>
+#include <limits.h>
+#include <time.h>
 
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-ssl.h>
-
 #include <mongoc/mongoc-prelude.h>
+
 #include <common-string-private.h>
+
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc.h>
 
 #ifndef MONGOC_HTTP_PRIVATE_H
 #define MONGOC_HTTP_PRIVATE_H

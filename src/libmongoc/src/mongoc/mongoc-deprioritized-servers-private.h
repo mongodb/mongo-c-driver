@@ -19,9 +19,9 @@
 #ifndef MONGOC_DEPRIORITIZED_SERVERS_PRIVATE_H
 #define MONGOC_DEPRIORITIZED_SERVERS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-server-description.h>
+
+#include <bson/bson.h>
 
 #include <stdbool.h>
 

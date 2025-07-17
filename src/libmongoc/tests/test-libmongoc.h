@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-
 #ifndef TEST_LIBMONGOC_H
 #define TEST_LIBMONGOC_H
 
+#include <mongoc/mongoc.h>
+
+#include <stdbool.h>
 
 struct _TestSuite;
 struct _bson_t;
 struct _server_version_t;
 
-
 void
-test_libmongoc_init (struct _TestSuite *suite, const char *name, int argc, char **argv);
+test_libmongoc_init (struct _TestSuite *suite, int argc, char **argv);
 void
 test_libmongoc_destroy (struct _TestSuite *suite);
-
 
 mongoc_database_t *
 get_test_database (mongoc_client_t *client);
@@ -288,13 +288,14 @@ test_framework_skip_if_serverless (void);
 bool
 test_framework_is_loadbalanced (void);
 
-// `test_framework_skip_if_no_server_ssl` skips if test runner was not told to connect to the server with SSL.
+// `test_framework_skip_if_no_server_ssl` skips if test runner was not told to
+// connect to the server with SSL.
 int
 test_framework_skip_if_no_server_ssl (void);
 
-
 // `skip_if_no_large_allocations` skip tests requiring large allocations.
-// Large allocations were observed to fail when run with TSan, and are time consuming with ASan.
+// Large allocations were observed to fail when run with TSan, and are time
+// consuming with ASan.
 int
 skip_if_no_large_allocations (void);
 

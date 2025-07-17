@@ -15,16 +15,18 @@
  */
 
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <bson/bson-config.h>
 #include <bson/bson-memory.h>
 
 #include <common-macros-private.h>
 
+#include <bson/bson-config.h>
+
+#include <mlib/config.h>
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Ensure size of exported structs are stable.
 BSON_STATIC_ASSERT2 (bson_mem_vtable_t, sizeof (bson_mem_vtable_t) == sizeof (void *) * 8u);
@@ -59,13 +61,15 @@ _aligned_alloc_impl (size_t alignment, size_t num_bytes)
 }
 #endif
 
-
+mlib_diagnostic_push ();
+mlib_msvc_warning (disable : 4232);
 static bson_mem_vtable_t gMemVtable = {.malloc = malloc,
                                        .calloc = calloc,
                                        .realloc = realloc,
                                        .free = free,
                                        .aligned_alloc = _aligned_alloc_impl,
                                        .padding = {0}};
+mlib_diagnostic_pop ();
 
 
 /*

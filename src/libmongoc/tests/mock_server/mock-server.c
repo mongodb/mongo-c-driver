@@ -15,21 +15,23 @@
  */
 
 
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc.h>
-
-#include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mongoc-socket-private.h>
-#include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include "sync-queue.h"
-#include "mock-server.h"
+#include "../TestSuite.h"
 #include "../test-conveniences.h"
 #include "../test-libmongoc.h"
-#include "../TestSuite.h"
-#include <common-string-private.h>
+#include "./mock-server.h"
+#include "./sync-queue.h"
+
 #include <common-json-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
+
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
 

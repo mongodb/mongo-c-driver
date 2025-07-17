@@ -25,8 +25,9 @@
 #define CRYPT_STRING_NOCRLF 0x40000000
 #endif
 
-#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-sspi-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 void
 _mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state)
@@ -56,16 +57,9 @@ _mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state)
 void
 _mongoc_sspi_set_gsserror (DWORD errCode, const SEC_CHAR *msg)
 {
-   SEC_CHAR *err;
-   DWORD status;
-   DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-   status = FormatMessageA (flags, NULL, errCode, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &err, 0, NULL);
-   if (status) {
-      MONGOC_ERROR ("SSPI: %s: %s", msg, err);
-      LocalFree (err);
-   } else {
-      MONGOC_ERROR ("SSPI: %s", msg);
-   }
+   char *err = mongoc_winerr_to_string (errCode);
+   MONGOC_ERROR ("SSPI: %s: %s", msg, err);
+   bson_free (err);
 }
 
 static SEC_CHAR *

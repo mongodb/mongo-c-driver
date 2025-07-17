@@ -14,55 +14,59 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-config.h>
+
+#include <bson/bson.h>
 #ifdef MONGOC_HAVE_DNSAPI
 /* for DnsQuery_UTF8 */
-#include <Windows.h>
 #include <WinDNS.h>
+#include <Windows.h>
 #include <ws2tcpip.h>
 #else
 #if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
+#include <arpa/nameser.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <arpa/nameser.h>
 #include <resolv.h>
 #endif
 #endif
 
+#include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
-#include <mongoc/mongoc-gridfs-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-gridfs-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-queue-private.h>
-#include <mongoc/mongoc-socket.h>
-#include <mongoc/mongoc-stream-buffered.h>
-#include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-set-private.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include <mongoc/mongoc-read-concern-private.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-change-stream-private.h>
-#include <mongoc/mongoc-client-session-private.h>
-#include <mongoc/mongoc-cursor-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-stream-buffered.h>
+#include <mongoc/mongoc-stream-socket.h>
+
+#include <mlib/str.h>
 
 #ifdef MONGOC_ENABLE_SSL
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-ssl-private.h>
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-opts-private.h>
+#include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc-stream-tls.h>
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
@@ -70,7 +74,13 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #endif
 
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#endif
+
 #include <common-string-private.h>
+
 #include <mlib/cmp.h>
 
 #include <inttypes.h>
@@ -108,13 +118,16 @@ typedef bool (*mongoc_rr_callback_t) (const char *hostname,
 static bool
 srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
+   BSON_UNUSED (hostname);
+
    mongoc_host_list_t new_host;
 
    if (rr_data && rr_data->hosts) {
       _mongoc_host_list_remove_host (&(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (&new_host, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (
+          &new_host, mstr_cstring (pdns->Data.SRV.pNameTarget), pdns->Data.SRV.wPort, error)) {
       return false;
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
@@ -126,6 +139,9 @@ srv_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data,
 static bool
 txt_callback (const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, bson_error_t *error)
 {
+   BSON_UNUSED (hostname);
+   BSON_UNUSED (error);
+
    DWORD i;
 
    mcommon_string_append_t txt;
@@ -202,13 +218,10 @@ _mongoc_get_rr_dnsapi (
    res = DnsQuery_UTF8 (hostname, nst, options, NULL /* IP Address */, &pdns, 0 /* reserved */);
 
    if (res) {
-      DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-
-      if (FormatMessage (flags, 0, res, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, 0)) {
-         DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, (char *) lpMsgBuf);
-      }
-
-      DNS_ERROR ("Failed to look up %s record \"%s\": Unknown error", rr_type_name, hostname);
+      // Cast signed DNS_STATUS to unsigned DWORD. FormatMessage expects DWORD.
+      char *msg = mongoc_winerr_to_string ((DWORD) res);
+      DNS_ERROR ("Failed to look up %s record \"%s\": %s", rr_type_name, hostname, msg);
+      bson_free (msg);
    }
 
    if (!pdns) {
@@ -309,7 +322,7 @@ srv_callback (const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data
       DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"", hostname, _mongoc_hstrerror (h_errno));
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err (&new_host, name, port, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err (&new_host, mstr_cstring (name), port, error)) {
       GOTO (done);
    }
    _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
@@ -562,6 +575,11 @@ _mongoc_client_get_rr (const char *hostname,
    BSON_ASSERT (rr_data);
 
 #if MONGOC_ENABLE_SRV == 0
+   BSON_UNUSED (hostname);
+   BSON_UNUSED (rr_type);
+   BSON_UNUSED (rr_data);
+   BSON_UNUSED (initial_buffer_size);
+   BSON_UNUSED (prefer_tcp);
    // Disabled
    _mongoc_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -569,6 +587,8 @@ _mongoc_client_get_rr (const char *hostname,
                       "libresolv unavailable, cannot use mongodb+srv URI");
    return false;
 #elif defined(MONGOC_HAVE_DNSAPI)
+   BSON_UNUSED (hostname);
+   BSON_UNUSED (initial_buffer_size);
    return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, prefer_tcp, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
    return _mongoc_get_rr_search (hostname, rr_type, rr_data, initial_buffer_size, prefer_tcp, error);
@@ -696,6 +716,7 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 {
 #ifdef _WIN32
    ENTRY;
+   BSON_UNUSED (host);
    _mongoc_set_error (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "UNIX domain sockets not supported on win32.");
    RETURN (NULL);
@@ -746,6 +767,7 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        void *openssl_ctx_void,
+                       mongoc_shared_ptr secure_channel_cred_ptr,
                        bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
@@ -753,6 +775,9 @@ mongoc_client_connect (bool buffered,
 
    BSON_ASSERT (uri);
    BSON_ASSERT (host);
+
+   BSON_UNUSED (openssl_ctx_void);
+   BSON_UNUSED (secure_channel_cred_ptr);
 
 #ifndef MONGOC_ENABLE_SSL
    if (ssl_opts_void || mongoc_uri_get_tls (uri)) {
@@ -802,6 +827,9 @@ mongoc_client_connect (bool buffered,
          // Use shared OpenSSL context.
          base_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context (
             base_stream, host->host, ssl_opts, true, (SSL_CTX *) openssl_ctx_void);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+         // Use shared Secure Channel credentials.
+         base_stream = mongoc_stream_tls_new_with_secure_channel_cred (base_stream, ssl_opts, secure_channel_cred_ptr);
 #else
          base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host, ssl_opts, true);
 #endif
@@ -869,9 +897,13 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, error);
+   return mongoc_client_connect (
+      true, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, MONGOC_SHARED_PTR_NULL, error);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   return mongoc_client_connect (
+      true, use_ssl, ssl_opts_void, uri, host, NULL, client->topology->scanner->secure_channel_cred_ptr, error);
 #else
-   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, error);
+   return mongoc_client_connect (true, use_ssl, ssl_opts_void, uri, host, NULL, MONGOC_SHARED_PTR_NULL, error);
 #endif
 }
 
@@ -1016,6 +1048,12 @@ _mongoc_client_set_ssl_opts_for_single_or_pooled (mongoc_client_t *client, const
       SSL_CTX_free (client->topology->scanner->openssl_ctx);
       client->topology->scanner->openssl_ctx = _mongoc_openssl_ctx_new (&client->ssl_opts);
 #endif
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+      mongoc_shared_ptr_reset (&client->topology->scanner->secure_channel_cred_ptr,
+                               mongoc_secure_channel_cred_new (&client->ssl_opts),
+                               mongoc_secure_channel_cred_deleter);
+#endif
    }
 }
 #endif // MONGOC_ENABLE_SSL
@@ -1034,6 +1072,9 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
    return client;
 }
 
+// Defined in mongoc-init.c.
+extern bool
+mongoc_get_init_called (void);
 
 mongoc_client_t *
 mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *error)
@@ -1046,7 +1087,6 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri, bson_error_t *er
 
    BSON_ASSERT (uri);
 
-   extern bool mongoc_get_init_called (void);
    if (!mongoc_get_init_called ()) {
       _mongoc_set_error (error,
                          MONGOC_ERROR_CLIENT,
@@ -2104,7 +2144,6 @@ void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t server_id,
                             int64_t cursor_id,
-                            int64_t operation_id,
                             const char *db,
                             const char *collection,
                             mongoc_client_session_t *cs)

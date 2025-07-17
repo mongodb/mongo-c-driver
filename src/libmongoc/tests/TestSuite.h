@@ -19,16 +19,16 @@
 #define TEST_SUITE_H
 
 
-#include <bson/bson.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <inttypes.h>
-
 #include <common-string-private.h>
-
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <bson/bson.h>
+
+#include <inttypes.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 #ifdef __cplusplus
@@ -62,8 +62,9 @@ extern "C" {
 
 
 #ifdef BSON_OS_WIN32
-#include <stdarg.h>
 #include <share.h>
+
+#include <stdarg.h>
 static __inline int
 bson_open (const char *filename, int flags, ...)
 {

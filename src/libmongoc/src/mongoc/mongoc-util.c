@@ -18,37 +18,47 @@
 #define _CRT_RAND_S
 #endif
 
-#include <string.h>
+#include <common-md5-private.h>
+#include <common-thread-private.h>
+#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-sleep.h>
 
 #include <bson/bson.h>
 
-#include <common-md5-private.h>
-#include <common-thread-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-rand-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-client.h>
-#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
-#include <mongoc/mongoc-client-session-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-sleep.h>
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 #include <mlib/loop.h>
 
-const bson_validate_flags_t _mongoc_default_insert_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
+#include <string.h>
 
-const bson_validate_flags_t _mongoc_default_replace_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
-
-const bson_validate_flags_t _mongoc_default_update_vflags =
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS;
+/**
+ * ! NOTE
+ *
+ * In earlier releases, these flags had `BSON_VALIDATE_UTF8` and `BSON_VALIDATE_UTF8_ALLOW_NULL`.
+ * Due to a bug, the CRUD APIs did not actually do UTF-8 validation. This issue has been fixed, but
+ * we want to maintain backward compatibility, so the UTF-8 validation was removed from these flag
+ * values.
+ *
+ * A future API may add the UTF-8 validation back, but it would be a breaking change.
+ */
+const bson_validate_flags_t _mongoc_default_insert_vflags = BSON_VALIDATE_EMPTY_KEYS;
+const bson_validate_flags_t _mongoc_default_replace_vflags = BSON_VALIDATE_EMPTY_KEYS;
+const bson_validate_flags_t _mongoc_default_update_vflags = BSON_VALIDATE_EMPTY_KEYS;
 
 int
 _mongoc_rand_simple (unsigned int *seed)
 {
 #ifdef _WIN32
    /* ignore the seed */
+   BSON_UNUSED (seed);
+
    unsigned int ret = 0;
    errno_t err;
 
@@ -526,22 +536,52 @@ mongoc_lowercase (const char *src, char *buf /* OUT */)
    }
 }
 
-bool
-mongoc_parse_port (uint16_t *port, const char *str)
+void
+mongoc_lowercase_inplace (char *src)
 {
-   unsigned long ul_port;
+   for (; *src; ++src) {
+      /* UTF8 non-ascii characters have a 1 at the leftmost bit. If this is the
+       * case, just leave as-is */
+      if ((*src & (0x1 << 7)) == 0) {
+         *src = (char) tolower (*src);
+      }
+   }
+}
 
-   ul_port = strtoul (str, NULL, 10);
+bool
+_mongoc_parse_port (mstr_view spelling, uint16_t *out, bson_error_t *error)
+{
+   bson_error_reset (error);
+   // Parse a strict natural number
+   uint64_t u = 0;
+   int ec = mlib_nat64_parse (spelling, 10, &u);
 
-   if (ul_port == 0 || ul_port > UINT16_MAX) {
-      /* Parse error or port number out of range. mongod prohibits port 0. */
+   if (!ec && u == 0) {
+      // Successful parse, but the value is zero
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port number cannot be zero");
       return false;
    }
 
-   *port = (uint16_t) ul_port;
+   if (ec == EINVAL) {
+      // The given string is just not a valid integer
+      bson_set_error (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port string is not a valid integer");
+      return false;
+   }
+
+   if (ec == ERANGE || mlib_narrow (out, u)) {
+      // The value is out-of range for u64, or out-of range for u16
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Port number is out-of-range for a 16-bit integer");
+      return false;
+   }
+
+   // No other errors are possible from nat64_parse
+   mlib_check (ec, eq, 0);
    return true;
 }
-
 
 /*--------------------------------------------------------------------------
  *

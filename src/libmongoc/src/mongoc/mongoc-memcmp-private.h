@@ -19,9 +19,9 @@
 #ifndef MONGOC_MEMCMP_PRIVATE_H
 #define MONGOC_MEMCMP_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-config.h>
+
+#include <bson/bson.h>
 
 /* WARNING: mongoc_memcmp() must be used to verify if two secret keys
  * are equal, in constant time.

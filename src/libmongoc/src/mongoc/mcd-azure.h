@@ -19,11 +19,10 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-http-private.h>
 
 #include <mongoc/mcd-time.h>
+#include <mongoc/mongoc.h>
 
 /**
  * @brief An Azure OAuth2 access token obtained from the Azure API

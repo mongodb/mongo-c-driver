@@ -19,15 +19,16 @@
 #ifndef MONGOC_ASYNC_CMD_PRIVATE_H
 #define MONGOC_ASYNC_CMD_PRIVATE_H
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-buffer-private.h>
+#include <mongoc/mongoc-cmd-private.h>
 
 #include <mongoc/mcd-rpc.h>
 #include <mongoc/mongoc-client.h>
-#include <mongoc/mongoc-async-private.h>
-#include <mongoc/mongoc-array-private.h>
-#include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-thread-private.h>
+
+#include <mongoc/mongoc.h>
 
 
 static const char *GSSAPI_HOST = "MONGOC_TEST_GSSAPI_HOST";

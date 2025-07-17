@@ -18,27 +18,31 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
-#include <bson/bson.h>
-#include <limits.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/ocsp.h>
-#include <openssl/x509v3.h>
-#include <openssl/crypto.h>
-
-#include <string.h>
-
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
-#include <mongoc/mongoc-init.h>
 #include <mongoc/mongoc-openssl-private.h>
-#include <mongoc/mongoc-socket.h>
-#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream-tls-openssl-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-init.h>
+#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-ssl.h>
+
+#include <bson/bson.h>
+
 #include <mlib/cmp.h>
+
+#include <openssl/bio.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/ocsp.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+#include <limits.h>
+#include <string.h>
 
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 #include <mongoc/mongoc-ocsp-cache-private.h>
@@ -140,16 +144,9 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE 
                                store_name);                             /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     GetLastError (),
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-      MONGOC_ERROR ("Can't open CA store: 0x%.8lX: '%s'", GetLastError (), msg);
-      LocalFree (msg);
+      char *msg = mongoc_winerr_to_string (GetLastError ());
+      MONGOC_ERROR ("Can't open CA store: %s", msg);
+      bson_free (msg);
       return false;
    }
 

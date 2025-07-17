@@ -1,5 +1,6 @@
-#include <mlib/intencode.h>
 #include <mongoc/mcd-rpc.h>
+
+#include <mlib/intencode.h>
 
 // Header-only dependency. Does NOT require linking with libmongoc.
 #define MONGOC_INSIDE
@@ -7,6 +8,7 @@
 #undef MONGOC_INSIDE
 
 #include <bson/bson.h>
+
 #include <mlib/cmp.h>
 
 
@@ -201,7 +203,7 @@ union _mcd_rpc_message {
       return true;                                                                          \
    }
 
-MONGOC_RPC_CONSUME (uint8_t, uint8_t, (uint8_t))
+MONGOC_RPC_CONSUME (uint8_t, uint8_t, (uint8_t) )
 MONGOC_RPC_CONSUME (int32_t, uint32_t, BSON_UINT32_FROM_LE)
 MONGOC_RPC_CONSUME (uint32_t, uint32_t, BSON_UINT32_FROM_LE)
 MONGOC_RPC_CONSUME (int64_t, uint64_t, BSON_UINT64_FROM_LE)
@@ -811,7 +813,7 @@ mcd_rpc_message_from_data (const void *data, size_t length, const void **data_en
    mcd_rpc_message *rpc = bson_malloc (sizeof (mcd_rpc_message));
    mcd_rpc_message *ret = NULL;
 
-   *rpc = (mcd_rpc_message){.msg_header = {0}};
+   *rpc = (mcd_rpc_message) {.msg_header = {0}};
 
    if (!mcd_rpc_message_from_data_in_place (rpc, data, length, data_end)) {
       goto fail;
@@ -991,13 +993,13 @@ _append_iovec (mongoc_iovec_t *iovecs, size_t *capacity, size_t *count, mongoc_i
       return _append_iovec (iovecs,                                                                        \
                             capacity,                                                                      \
                             count,                                                                         \
-                            (mongoc_iovec_t){                                                              \
+                            (mongoc_iovec_t) {                                                             \
                                .iov_base = (void *) value,                                                 \
                                .iov_len = sizeof (type),                                                   \
                             });                                                                            \
    }
 
-MONGOC_RPC_APPEND_IOVEC (uint8_t, uint8_t, (uint8_t))
+MONGOC_RPC_APPEND_IOVEC (uint8_t, uint8_t, (uint8_t) )
 MONGOC_RPC_APPEND_IOVEC (int32_t, uint32_t, BSON_UINT32_TO_LE)
 MONGOC_RPC_APPEND_IOVEC (uint32_t, uint32_t, BSON_UINT32_TO_LE)
 MONGOC_RPC_APPEND_IOVEC (int64_t, uint64_t, BSON_UINT64_TO_LE)
@@ -1008,7 +1010,7 @@ _append_iovec_data (mongoc_iovec_t *iovecs, size_t *capacity, size_t *count, con
    return _append_iovec (iovecs,
                          capacity,
                          count,
-                         (mongoc_iovec_t){
+                         (mongoc_iovec_t) {
                             .iov_base = (void *) data,
                             .iov_len = length,
                          });
@@ -1022,7 +1024,7 @@ _append_iovec_reserved_zero (mongoc_iovec_t *iovecs, size_t *capacity, size_t *c
    return _append_iovec (iovecs,
                          capacity,
                          count,
-                         (mongoc_iovec_t){
+                         (mongoc_iovec_t) {
                             .iov_base = (void *) &zero,
                             .iov_len = sizeof (zero),
                          });
@@ -1543,7 +1545,7 @@ mcd_rpc_message *
 mcd_rpc_message_new (void)
 {
    mcd_rpc_message *const rpc = bson_malloc (sizeof (mcd_rpc_message));
-   *rpc = (mcd_rpc_message){.msg_header = {0}};
+   *rpc = (mcd_rpc_message) {.msg_header = {0}};
    return rpc;
 }
 
@@ -1639,7 +1641,7 @@ mcd_rpc_message_reset (mcd_rpc_message *rpc)
 
    _mcd_rpc_message_free_owners (rpc);
 
-   *rpc = (mcd_rpc_message){.msg_header = {0}};
+   *rpc = (mcd_rpc_message) {.msg_header = {0}};
 }
 
 void
@@ -2419,8 +2421,8 @@ int32_t
 mcd_rpc_op_delete_get_flags (const mcd_rpc_message *rpc)
 {
    ASSERT_MCD_RPC_ACCESSOR_PRECONDITIONS;
-   return rpc->op_delete.flags;
    BSON_ASSERT (rpc->msg_header.op_code == MONGOC_OP_CODE_DELETE);
+   return rpc->op_delete.flags;
 }
 
 const void *
