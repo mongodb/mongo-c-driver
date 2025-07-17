@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-handshake-os-private.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #ifdef MONGOC_OS_IS_LINUX
 static void

@@ -15,9 +15,9 @@
  */
 
 
-#include <string.h>
-
 #include <mongoc/mongoc-queue-private.h>
+
+#include <string.h>
 
 
 void

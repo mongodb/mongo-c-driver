@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-#include <inttypes.h> // PRIu16
-
-#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+
+#include <inttypes.h> // PRIu16
 /* strcasecmp on windows */
 #include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/utlist.h>
+
 #include <mlib/cmp.h>
 
 static mongoc_host_list_t *
@@ -76,7 +78,6 @@ _mongoc_host_list_upsert (mongoc_host_list_t **list, const mongoc_host_list_t *n
    memcpy (link, new_host, sizeof (mongoc_host_list_t));
    link->next = next_link;
 }
-
 
 /* Duplicates a host list.
  */
@@ -138,7 +139,6 @@ _mongoc_host_list_contains_one (mongoc_host_list_t *host_list, mongoc_host_list_
    return NULL != _mongoc_host_list_find_host_and_port (host_list, host->host_and_port);
 }
 
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -181,113 +181,120 @@ _mongoc_host_list_from_string (mongoc_host_list_t *link_, const char *address)
    return true;
 }
 
-bool
-_mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_, const char *address, bson_error_t *error)
+static inline bool
+_parse_host_ipv6 (mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
 {
-   char *close_bracket;
-   char *sport;
-   uint16_t port;
-   char *host;
-   bool ret;
-   bool ipv6 = false;
+   bson_error_reset (error);
+   _mongoc_set_error (error, 0, 0, "Invalid IPv6 literal address '%.*s'", MSTR_FMT (addr));
+   // Find the opening bracket (must be the first char)
+   const size_t open_square_pos = mstr_find (addr, mstr_cstring ("["), 0, 1);
+   if (open_square_pos != 0) {
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "%s: Must start with a bracket '['",
+                         error->message);
+      return false;
+   }
+   // Find the closing bracket
+   const size_t close_square_pos = mstr_find (addr, mstr_cstring ("]"));
+   if (close_square_pos == SIZE_MAX) {
+      // Closing bracket is missing
+      _mongoc_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "%s: Mising closing bracket ']'",
+                         error->message);
+      return false;
+   }
+   // Find the port delimiter, if present. It must be the next character
+   const size_t port_delim_pos = mstr_find (addr, mstr_cstring (":"), close_square_pos + 1, 1);
 
-   close_bracket = strchr (address, ']');
-
-   /* if this is an ipv6 address. */
-   if (close_bracket) {
-      /* if present, the port should immediately follow after ] */
-      sport = strchr (close_bracket, ':');
-      if (sport > close_bracket + 1) {
+   if (port_delim_pos == SIZE_MAX) {
+      // There is no port specifier, or it is misplaced, so the closing bracket
+      // should be the final character:
+      if (close_square_pos != addr.len - 1) {
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "If present, port should immediately follow the \"]\""
-                            "in an IPv6 address");
+                            "%s: Invalid trailing content following closing bracket ']'",
+                            error->message);
          return false;
       }
+   }
 
-      /* otherwise ] should be the last char. */
-      if (!sport && *(close_bracket + 1) != '\0') {
+   uint16_t port = MONGOC_DEFAULT_PORT;
+   if (port_delim_pos != SIZE_MAX) {
+      bson_error_t err2;
+      const mstr_view port_str = mstr_substr (addr, port_delim_pos + 1);
+      if (!_mongoc_parse_port (port_str, &port, &err2)) {
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "If port is not supplied, \"[\" should be the last"
-                            "character");
+                            "%s: Invalid port '%.*s': %s",
+                            error->message,
+                            MSTR_FMT (port_str),
+                            err2.message);
          return false;
       }
-
-      if (*address != '[') {
-         _mongoc_set_error (
-            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Missing matching bracket \"[\"");
-         return false;
-      }
-
-      ipv6 = true;
-   }
-   /* otherwise, just find the first : */
-   else {
-      sport = strchr (address, ':');
    }
 
-   /* like "example.com:27019" or "[fe80::1]:27019", but not "[fe80::1]" */
-   if (sport) {
-      if (sport == address) {
-         /* bad address like ":27017" */
+   return _mongoc_host_list_from_hostport_with_err (
+      link, mstr_slice (addr, open_square_pos + 1, close_square_pos), port, error);
+}
+
+static inline bool
+_parse_host (mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
+{
+   if (mstr_contains (spec, mstr_cstring ("]"))) {
+      // There is a "]" bracket, so this is probably an IPv6 literal, which is
+      // more strict
+      return _parse_host_ipv6 (link, spec, error);
+   }
+   // Parsing anything else is simpler.
+   uint16_t port = MONGOC_DEFAULT_PORT;
+   // Try to split around the port delimiter:
+   mstr_view hostname, port_str;
+   if (mstr_split_around (spec, mstr_cstring (":"), &hostname, &port_str)) {
+      // We have a ":" delimiter. Try to parse it as a port number:
+      bson_error_t e2;
+      if (!_mongoc_parse_port (port_str, &port, &e2)) {
+         // Invalid port number
          _mongoc_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Bad address, \":\" should not be first character");
+                            "Invalid host specifier '%.*s': Invalid port string '%.*s': %s",
+                            MSTR_FMT (spec),
+                            MSTR_FMT (port_str),
+                            e2.message);
          return false;
       }
-
-      if (!mongoc_parse_port (&port, sport + 1)) {
-         _mongoc_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port could not be parsed");
-         return false;
-      }
-
-      /* if this is an ipv6 address, strip the [ and ] */
-      if (ipv6) {
-         host = bson_strndup (address + 1, close_bracket - address - 1);
-      } else {
-         host = bson_strndup (address, sport - address);
-      }
-   } else {
-      /* if this is an ipv6 address, strip the [ and ] */
-      if (ipv6) {
-         host = bson_strndup (address + 1, close_bracket - address - 1);
-      } else {
-         host = bson_strdup (address);
-      }
-      port = MONGOC_DEFAULT_PORT;
    }
 
-   ret = _mongoc_host_list_from_hostport_with_err (link_, host, port, error);
-
-   bson_free (host);
-
-   return ret;
+   return _mongoc_host_list_from_hostport_with_err (link, hostname, port, error);
 }
 
 bool
-_mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
-                                          const char *host,
-                                          uint16_t port,
-                                          bson_error_t *error)
+_mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_, const char *address, bson_error_t *error)
 {
-   BSON_ASSERT (host);
+   return _parse_host (link_, mstr_cstring (address), error);
+}
+
+bool
+_mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_, mstr_view host, uint16_t port, bson_error_t *error)
+{
    BSON_ASSERT (link_);
-   size_t host_len = strlen (host);
-   *link_ = (mongoc_host_list_t){
+   *link_ = (mongoc_host_list_t) {
       .next = NULL,
       .port = port,
    };
 
-   if (host_len == 0) {
+   if (host.len == 0) {
       _mongoc_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "Empty hostname in URI");
       return false;
    }
 
-   if (host_len > BSON_HOST_NAME_MAX) {
+   if (host.len > BSON_HOST_NAME_MAX) {
       _mongoc_set_error (error,
                          MONGOC_ERROR_STREAM,
                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
@@ -296,15 +303,15 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       return false;
    }
 
-   bson_strncpy (link_->host, host, host_len + 1);
+   bson_strncpy (link_->host, host.data, host.len + 1);
 
    /* like "fe80::1" or "::1" */
-   if (strchr (host, ':')) {
+   if (mstr_contains (host, mstr_cstring (":"))) {
       link_->family = AF_INET6;
 
       // Check that IPv6 literal is two less than the max to account for `[` and
       // `]` added below.
-      if (host_len > BSON_HOST_NAME_MAX - 2) {
+      if (host.len > BSON_HOST_NAME_MAX - 2) {
          _mongoc_set_error (error,
                             MONGOC_ERROR_STREAM,
                             MONGOC_ERROR_STREAM_NAME_RESOLUTION,
@@ -319,9 +326,9 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       BSON_ASSERT (mlib_in_range (size_t, req));
       // Use `<`, not `<=` to account for NULL byte.
       BSON_ASSERT ((size_t) req < sizeof link_->host_and_port);
-   } else if (strchr (host, '/') && strstr (host, ".sock")) {
+   } else if (mstr_contains (host, mstr_cstring ("/")) && mstr_contains (host, mstr_cstring (".sock"))) {
       link_->family = AF_UNIX;
-      bson_strncpy (link_->host_and_port, link_->host, host_len + 1);
+      bson_strncpy (link_->host_and_port, link_->host, host.len + 1);
    } else {
       /* This is either an IPv4 or hostname. */
       link_->family = AF_UNSPEC;

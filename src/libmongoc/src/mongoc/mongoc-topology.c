@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-config.h>
-
-#include <mongoc/mongoc-handshake.h>
-#include <mongoc/mongoc-handshake-private.h>
-
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <common-oid-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cmd-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
 
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-log.h>
 #include <mongoc/utlist.h>
 
-#include <stdint.h>
-#include <common-string-private.h>
 #include <mlib/cmp.h>
-#include <common-oid-private.h>
+
+#include <stdint.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -520,8 +519,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       /* Use rr_data to update the topology's URI. */
       if (rr_data.txt_record_opts &&
-          !mongoc_uri_parse_options (
-             topology->uri, rr_data.txt_record_opts, true /* from_dns */, &topology->scanner->error)) {
+          !_mongoc_uri_apply_query_string (
+             topology->uri, mstr_cstring (rr_data.txt_record_opts), true /* from_dns */, &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
@@ -1992,7 +1991,7 @@ mc_tpld_modify_begin (mongoc_topology_t *tpl)
    prev_td = mc_tpld_take_ref (tpl);
    new_td = mongoc_topology_description_new_copy (prev_td.ptr);
    mc_tpld_drop_ref (&prev_td);
-   return (mc_tpld_modification){
+   return (mc_tpld_modification) {
       .new_td = new_td,
       .topology = tpl,
    };

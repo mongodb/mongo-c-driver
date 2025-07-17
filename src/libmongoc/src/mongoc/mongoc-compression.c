@@ -15,11 +15,12 @@
  */
 
 
-#include <mongoc/mongoc-config.h>
-
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-config.h>
+
 #include <mlib/cmp.h>
 
 #ifdef MONGOC_ENABLE_COMPRESSION
@@ -62,30 +63,33 @@ mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t len)
 }
 
 bool
-mongoc_compressor_supported (const char *compressor)
+mongoc_compressor_supported (mstr_view compressor)
 {
+   bool have_snappy = false, have_zlib = false, have_zstd = false;
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-   if (!strcasecmp (compressor, MONGOC_COMPRESSOR_SNAPPY_STR)) {
-      return true;
-   }
+   have_snappy = true;
 #endif
-
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-   if (!strcasecmp (compressor, MONGOC_COMPRESSOR_ZLIB_STR)) {
-      return true;
-   }
+   have_zlib = true;
 #endif
-
 #ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
-   if (!strcasecmp (compressor, MONGOC_COMPRESSOR_ZSTD_STR)) {
-      return true;
-   }
+   have_zstd = true;
 #endif
 
-   if (!strcasecmp (compressor, MONGOC_COMPRESSOR_NOOP_STR)) {
-      return true;
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("snappy"))) {
+      return have_snappy;
+   }
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("zlib"))) {
+      return have_zlib;
+   }
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("zstd"))) {
+      return have_zstd;
+   }
+   if (mstr_latin_casecmp (compressor, ==, mstr_cstring ("noop"))) {
+      return true; // We always have "noop"
    }
 
+   // Any other compressor name is unrecognized
    return false;
 }
 

@@ -13,9 +13,10 @@
  * License.
  */
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
 #include <mongoc/mongoc-cluster-aws-private.h>
+
+#include <TestSuite.h>
+#include <test-libmongoc.h>
 
 static void
 test_obtain_credentials (void *unused)

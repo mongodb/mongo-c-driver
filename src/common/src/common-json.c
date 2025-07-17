@@ -15,11 +15,13 @@
  */
 
 
-#include <string.h>
-#include <bson/bson.h>
+#include <common-json-private.h>
 #include <common-string-private.h>
 #include <common-utf8-private.h>
-#include <common-json-private.h>
+
+#include <bson/bson.h>
+
+#include <string.h>
 
 
 typedef struct {

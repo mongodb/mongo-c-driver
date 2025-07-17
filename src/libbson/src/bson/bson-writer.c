@@ -15,8 +15,9 @@
  */
 
 
-#include <bson/bson-private.h>
 #include <bson/bson-writer.h>
+
+#include <bson/bson-private.h>
 
 
 struct _bson_writer_t {

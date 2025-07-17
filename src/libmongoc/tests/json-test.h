@@ -17,14 +17,14 @@
 #ifndef JSON_TEST_H
 #define JSON_TEST_H
 
-#include "TestSuite.h"
-
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
-#include "test-conveniences.h"
-#include "json-test-monitoring.h"
-#include "json-test-operations.h"
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <json-test-monitoring.h>
+#include <json-test-operations.h>
+#include <test-conveniences.h>
 
 #define MAX_NUM_TESTS 150
 
@@ -51,10 +51,7 @@ typedef struct _json_test_config_t {
 } json_test_config_t;
 
 
-#define JSON_TEST_CONFIG_INIT                                      \
-   {                                                               \
-      NULL, NULL, NULL, NULL, NULL, NULL, false, false, NULL, NULL \
-   }
+#define JSON_TEST_CONFIG_INIT {NULL, NULL, NULL, NULL, NULL, NULL, false, false, NULL, NULL}
 
 bson_t *
 get_bson_from_json_file (char *filename);

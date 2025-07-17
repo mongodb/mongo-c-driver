@@ -25,16 +25,18 @@
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
-#include <mongoc/mongoc-async-private.h>
-#include <mongoc/mongoc-async-cmd-private.h>
-#include <mongoc/mongoc-handshake-private.h>
-#include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-apm-private.h>
-#include <mongoc/mongoc-scram-private.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-crypto-private.h>
-#include <mongoc/mongoc-server-description-private.h>
 #include <common-thread-private.h>
+#include <mongoc/mongoc-apm-private.h>
+#include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/mongoc-async-private.h>
+#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-shared-private.h>
+
+#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-ssl.h>
 
 BSON_BEGIN_DECLS
 
@@ -133,6 +135,8 @@ typedef struct mongoc_topology_scanner {
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *openssl_ctx;
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   mongoc_shared_ptr secure_channel_cred_ptr; // Manages a mongoc_secure_channel_cred.
 #endif
 
    int64_t dns_cache_timeout_ms;

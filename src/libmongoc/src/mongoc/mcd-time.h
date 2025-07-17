@@ -37,9 +37,9 @@ typedef struct mcd_time_point {
 } mcd_time_point;
 
 /// The latest representable future point-in-time
-#define MCD_TIME_POINT_MAX ((mcd_time_point){._rep = INT64_MAX})
+#define MCD_TIME_POINT_MAX ((mcd_time_point) {._rep = INT64_MAX})
 /// The oldest representable past point-in-time
-#define MCD_TIME_POINT_MIN ((mcd_time_point){._rep = INT64_MIN})
+#define MCD_TIME_POINT_MIN ((mcd_time_point) {._rep = INT64_MIN})
 
 /**
  * @brief Represents a (possibly negative) duration of time.
@@ -56,11 +56,11 @@ typedef struct mcd_duration {
 } mcd_duration;
 
 /// The maximum representable duration
-#define MCD_DURATION_MAX ((mcd_duration){._rep = INT64_MAX})
+#define MCD_DURATION_MAX ((mcd_duration) {._rep = INT64_MAX})
 /// The minimal representable (negative) duration
-#define MCD_DURATION_MIN ((mcd_duration){._rep = INT64_MIN})
+#define MCD_DURATION_MIN ((mcd_duration) {._rep = INT64_MIN})
 /// A duration representing zero amount of time
-#define MCD_DURATION_ZERO ((mcd_duration){._rep = 0})
+#define MCD_DURATION_ZERO ((mcd_duration) {._rep = 0})
 
 /**
  * @brief Obtain the current time point. This is only an abstract
@@ -71,7 +71,7 @@ static BSON_INLINE mcd_time_point
 mcd_now (void)
 {
    // Create a time point representing the current time.
-   return (mcd_time_point){._rep = bson_get_monotonic_time ()};
+   return (mcd_time_point) {._rep = bson_get_monotonic_time ()};
 }
 
 /**
@@ -88,7 +88,7 @@ mcd_microseconds (int64_t s)
 {
    // 'mcd_duration' is encoded in a number of microseconds, so we don't need to
    // do bounds checking here.
-   return (mcd_duration){._rep = s};
+   return (mcd_duration) {._rep = s};
 }
 
 /**
@@ -305,7 +305,7 @@ typedef struct mcd_timer {
 static BSON_INLINE mcd_timer
 mcd_timer_expire_at (mcd_time_point time)
 {
-   return (mcd_timer){time};
+   return (mcd_timer) {time};
 }
 
 /**

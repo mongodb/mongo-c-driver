@@ -1,16 +1,16 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-socket-private.h>
+#include <common-oid-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
-#include <mongoc/mongoc-client-private.h>
-#include "common-oid-private.h"
-
-#include "TestSuite.h"
-#include "mock_server/mock-server.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <mock_server/mock-server.h>
+#include <test-libmongoc.h>
 
 #define TIMEOUT 20000 /* milliseconds */
 
@@ -342,35 +342,17 @@ _testcase_run (he_testcase_t *testcase)
    _check_stream (node->stream, expected->conn_succeeds_to, "checking client's final connection");
 }
 
-#define CLIENT(client) \
-   {                   \
-      #client          \
-   }
+#define CLIENT(client) {#client}
 
-#define CLIENT_WITH_DNS_CACHE_TIMEOUT(type, timeout) \
-   {                                                 \
-      #type, timeout                                 \
-   }
+#define CLIENT_WITH_DNS_CACHE_TIMEOUT(type, timeout) {#type, timeout}
 #define HANGUP true
 #define LISTEN false
-#define SERVER(type, hangup) \
-   {                         \
-      #type, hangup          \
-   }
-#define DELAYED_SERVER(type, hangup, delay) \
-   {                                        \
-      #type, hangup, delay                  \
-   }
-#define SERVERS(...) \
-   {                 \
-      __VA_ARGS__    \
-   }
+#define SERVER(type, hangup) {#type, hangup}
+#define DELAYED_SERVER(type, hangup, delay) {#type, hangup, delay}
+#define SERVERS(...) {__VA_ARGS__}
 #define DELAY_MS(val) val
 #define DURATION_MS(min, max) (min), (max)
-#define EXPECT(type, num_acmds, duration) \
-   {                                      \
-      #type, num_acmds, duration          \
-   }
+#define EXPECT(type, num_acmds, duration) {#type, num_acmds, duration}
 #define NCMDS(n) (n)
 
 static void

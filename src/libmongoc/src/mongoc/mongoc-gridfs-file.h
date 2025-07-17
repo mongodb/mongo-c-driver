@@ -19,13 +19,12 @@
 #ifndef MONGOC_GRIDFS_FILE_H
 #define MONGOC_GRIDFS_FILE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-socket.h>
 
-BSON_BEGIN_DECLS
+#include <bson/bson.h>
 
+BSON_BEGIN_DECLS
 
 #define MONGOC_GRIDFS_FILE_STR_HEADER(name)                    \
    MONGOC_EXPORT (const char *)                                \
@@ -33,17 +32,14 @@ BSON_BEGIN_DECLS
    MONGOC_EXPORT (void)                                        \
    mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file, const char *str);
 
-
 #define MONGOC_GRIDFS_FILE_BSON_HEADER(name)                   \
    MONGOC_EXPORT (const bson_t *)                              \
    mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file); \
    MONGOC_EXPORT (void)                                        \
    mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file, const bson_t *bson);
 
-
 typedef struct _mongoc_gridfs_file_t mongoc_gridfs_file_t;
 typedef struct _mongoc_gridfs_file_opt_t mongoc_gridfs_file_opt_t;
-
 
 struct _mongoc_gridfs_file_opt_t {
    const char *md5;
@@ -54,13 +50,11 @@ struct _mongoc_gridfs_file_opt_t {
    uint32_t chunk_size;
 };
 
-
 MONGOC_GRIDFS_FILE_STR_HEADER (md5)
 MONGOC_GRIDFS_FILE_STR_HEADER (filename)
 MONGOC_GRIDFS_FILE_STR_HEADER (content_type)
 MONGOC_GRIDFS_FILE_BSON_HEADER (aliases)
 MONGOC_GRIDFS_FILE_BSON_HEADER (metadata)
-
 
 MONGOC_EXPORT (const bson_value_t *)
 mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file);

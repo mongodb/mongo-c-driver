@@ -1,4 +1,3 @@
-
 #include <mongoc/mongoc.h>
 
 /* EXAMPLE_FAM_BYPASS_BEGIN */

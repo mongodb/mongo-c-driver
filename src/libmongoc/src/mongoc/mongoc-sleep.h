@@ -3,9 +3,10 @@
 #ifndef MONGOC_SLEEP_H
 #define MONGOC_SLEEP_H
 
-#include <bson/bson.h>
-
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

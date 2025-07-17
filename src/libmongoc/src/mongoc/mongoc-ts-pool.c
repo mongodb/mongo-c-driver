@@ -1,8 +1,9 @@
-#include <mongoc/mongoc-ts-pool-private.h>
+#include <common-atomic-private.h>
 #include <common-thread-private.h>
+#include <mongoc/mongoc-ts-pool-private.h>
 
 #include <bson/bson.h>
-#include <common-atomic-private.h>
+
 #include <mlib/config.h>
 
 /**
@@ -152,16 +153,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
    node->owner_pool = pool;
    if (pool->params.constructor) {
       /* To construct, we need to know if that constructor fails */
-      bson_error_t my_error;
-      if (!error) {
-         /* Caller doesn't care about the error, but we care in case the
-          * constructor might fail */
-         error = &my_error;
-      }
-      /* Clear the error */
-      error->code = 0;
-      error->domain = 0;
-      error->message[0] = 0;
+      bson_error_reset (error);
       /* Construct the object */
       pool->params.constructor (_pool_node_get_data (node), pool->params.userdata, error);
       if (error->code != 0) {

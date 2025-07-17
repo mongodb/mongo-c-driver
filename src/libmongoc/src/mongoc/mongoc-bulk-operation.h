@@ -21,16 +21,13 @@
 #define MONGOC_BULK_OPERATION_H
 
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-write-concern.h>
 
+#include <bson/bson.h>
+
 /* ordered, bypass_document_validation, has_collation, multi */
-#define MONGOC_BULK_WRITE_FLAGS_INIT \
-   {                                 \
-      true, false, 0                 \
-   }
+#define MONGOC_BULK_WRITE_FLAGS_INIT {true, false, 0}
 
 BSON_BEGIN_DECLS
 

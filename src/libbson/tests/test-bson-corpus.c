@@ -1,14 +1,15 @@
-#include <bson/bson.h>
-#include "TestSuite.h"
-#include "json-test.h"
-#include "corpus-test.h"
+#include "./corpus-test.h"
+
 #include <common-string-private.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <json-test.h>
 
 #include <inttypes.h>
 
-
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull
-
 
 typedef struct {
    const char *scenario;
@@ -31,13 +32,11 @@ skipped_corpus_test_t SKIPPED_CORPUS_TESTS[] = {
    {"String", "three-byte UTF-8 (\xe2\x98\x86)"},          /* \u2606 */
    {0}};
 
-
 skipped_corpus_test_t VS2013_SKIPPED_CORPUS_TESTS[] = {
    /* VS 2013 and older is imprecise stackoverflow.com/questions/32232331 */
    {"Double type", "1.23456789012345677E+18"},
    {"Double type", "-1.23456789012345677E+18"},
    {0}};
-
 
 static void
 compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len)
@@ -67,7 +66,6 @@ compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len
    }
 }
 
-
 static bool
 is_test_skipped (const char *scenario, const char *description)
 {
@@ -90,7 +88,6 @@ is_test_skipped (const char *scenario, const char *description)
 
    return false;
 }
-
 
 /*
 See:
@@ -189,7 +186,6 @@ test_bson_corpus_valid (test_bson_valid_type_t *test)
    bson_destroy (&cB);
 }
 
-
 /*
 See:
 github.com/mongodb/specifications/blob/master/source/bson-corpus/bson-corpus.rst
@@ -215,7 +211,6 @@ test_bson_corpus_decode_error (test_bson_decode_error_type_t *test)
    ASSERT (!bson_init_static (&invalid_bson, test->bson, test->bson_len) || bson_empty (&invalid_bson) ||
            !bson_as_canonical_extended_json (&invalid_bson, NULL));
 }
-
 
 /*
 See:
@@ -271,7 +266,6 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
       abort ();
    }
 }
-
 
 static void
 test_bson_corpus_cb (void *scenario)

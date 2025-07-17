@@ -19,9 +19,12 @@
 #ifndef MONGOC_SSL_PRIVATE_H
 #define MONGOC_SSL_PRIVATE_H
 
-#include <bson/bson.h>
 #include <common-string-private.h>
 #include <mongoc/mongoc-uri-private.h>
+
+#include <mongoc/mongoc-ssl.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

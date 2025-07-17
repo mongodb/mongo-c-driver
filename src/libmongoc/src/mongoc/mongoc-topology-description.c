@@ -16,16 +16,17 @@
 
 #include <common-oid-private.h>
 #include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-topology-description-apm-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-set-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-host-list-private.h>
+
 #include <mongoc/utlist.h>
 
 

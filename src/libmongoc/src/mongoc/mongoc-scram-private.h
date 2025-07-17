@@ -21,8 +21,9 @@
 #define MONGOC_SCRAM_PRIVATE_H
 
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-crypto-private.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

@@ -18,10 +18,13 @@
 #include <mongoc/mongoc-ocsp-cache-private.h>
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 
-#include <mongoc/utlist.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <bson/bson.h>
 #include <common-thread-private.h>
+#include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/utlist.h>
+
+#include <bson/bson.h>
+
 #include <mlib/config.h>
 
 typedef struct _cache_entry_list_t {

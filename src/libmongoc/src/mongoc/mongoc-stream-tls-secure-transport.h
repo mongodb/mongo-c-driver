@@ -20,9 +20,9 @@
 #define MONGOC_STREAM_TLS_SECURE_TRANSPORT_H
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

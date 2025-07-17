@@ -19,9 +19,9 @@
 #ifndef MONGOC_CHANGE_STREAM_H
 #define MONGOC_CHANGE_STREAM_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 

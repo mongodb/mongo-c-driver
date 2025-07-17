@@ -24,21 +24,22 @@
 #include <windows.h>
 #endif
 
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
-#include <mongoc/mongoc-handshake.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-compiler-private.h>
 #include <mongoc/mongoc-handshake-os-private.h>
 #include <mongoc/mongoc-handshake-private.h>
-#include <mongoc/mongoc-client.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-version.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <common-bson-dsl-private.h>
-#include <common-string-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-version.h>
+
 #include <mlib/cmp.h>
 #include <mlib/config.h>
 
@@ -543,7 +544,7 @@ _mongoc_handshake_cleanup (void)
    _free_driver_info (h);
    _free_platform_string (h);
    _free_env_info (h);
-   *h = (mongoc_handshake_t){0};
+   *h = (mongoc_handshake_t) {0};
 
    bson_mutex_destroy (&gHandshakeLock);
 }
