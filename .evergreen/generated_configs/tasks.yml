@@ -1133,20 +1133,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
@@ -1157,8 +1155,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1174,20 +1176,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1198,8 +1198,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1215,20 +1219,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r4.1.0
@@ -1239,8 +1241,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1256,20 +1262,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=master
@@ -1280,8 +1284,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
@@ -1297,20 +1305,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1321,8 +1327,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=off
@@ -1338,20 +1348,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r4.1.0
@@ -1362,8 +1370,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
@@ -1379,20 +1391,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
@@ -1403,8 +1413,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=OpenSSL
@@ -1420,20 +1434,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1444,8 +1456,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=off
             - --tls=OpenSSL
@@ -1461,20 +1477,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=r4.1.0
@@ -1485,8 +1499,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=OpenSSL
@@ -1502,20 +1520,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=master
@@ -1526,8 +1542,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=off
@@ -1543,20 +1563,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1567,8 +1585,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example
             - --sasl=off
             - --tls=off
@@ -1584,20 +1606,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=r4.1.0
@@ -1608,8 +1628,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=off
