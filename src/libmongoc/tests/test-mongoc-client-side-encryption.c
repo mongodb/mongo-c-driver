@@ -340,11 +340,11 @@ _command_started (const mongoc_apm_command_started_t *event)
    limits_apm_ctx_t *ctx;
 
    ctx = (limits_apm_ctx_t *) mongoc_apm_command_started_get_context (event);
-   const char *cmd_name = mongoc_apm_command_started_get_command_name(event);
+   const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
    if (0 == strcmp ("insert", cmd_name)) {
       ctx->num_inserts++;
    }
-   if (0 == strcmp("bulkWrite", cmd_name)) {
+   if (0 == strcmp ("bulkWrite", cmd_name)) {
       ctx->num_bulk_writes++;
    }
 }
@@ -504,7 +504,7 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       // Create a newly named collection to avoid cached previous JSON Schema.
       mongoc_collection_t *coll2 = mongoc_database_create_collection (db, "coll2", coll_opts, &error);
       ASSERT_OR_PRINT (coll2, error);
-      mongoc_collection_destroy(coll2);
+      mongoc_collection_destroy (coll2);
 
       /* Insert two documents that each exceed 2MiB but no encryption occurs.
        * Expect two separate bulkWrite commands.
