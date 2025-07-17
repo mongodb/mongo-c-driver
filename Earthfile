@@ -1,5 +1,8 @@
-VERSION --arg-scope-and-set --pass-args 0.7
-FROM alpine:3.21
+VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
+LOCALLY
+
+# Allow setting the "default" container image registry to use for image short names (e.g. to Amazon ECR).
+ARG --global default_search_registry=docker.io
 
 IMPORT ./tools/ AS tools
 
@@ -117,7 +120,7 @@ test-cxx-driver:
 
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
-    COMMAND
+    FUNCTION
     LET scratch=/opt/mongoc-cmake
     # Copy the minimal amount that we need, as to avoid cache invalidation
     COPY tools/use.sh tools/platform.sh tools/paths.sh tools/base.sh tools/download.sh \
@@ -160,7 +163,7 @@ multibuild:
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM $default_search_registry/library/alpine:3.20
     RUN apk add git bash
     ARG --required prefix
     ARG --required ref
@@ -205,7 +208,7 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM $default_search_registry/library/alpine:3.20
     RUN apk add curl
     RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
     SAVE ARTIFACT /c-driver.pub
@@ -215,7 +218,7 @@ signing-pubkey:
 #   to be used to access them. (Refer to dev docs)
 sign-file:
     # Pull from Garasign:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/garasign-gpg
     # Copy the file to be signed
     ARG --required file
     COPY $file /s/file
@@ -235,7 +238,7 @@ sign-file:
 #   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
 #   (Refer to dev docs)
 signed-release:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.20
+    FROM $default_search_registry/library/alpine:3.20
     RUN apk add git
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
@@ -265,7 +268,7 @@ signed-release:
 
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
     # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
@@ -324,7 +327,7 @@ sbom-validate:
             --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 artifactory.corp.mongodb.com/dockerhub/library/ubuntu:24.04
+    FROM --platform=linux/amd64 $default_search_registry/library/ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
@@ -396,7 +399,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM artifactory.corp.mongodb.com/dockerhub/library/alpine:3.18
+    FROM $default_search_registry/library/alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git
@@ -455,7 +458,7 @@ env.alpine3.19:
     DO --pass-args +ALPINE_ENV --version=3.19
 
 env.archlinux:
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/archlinux
+    FROM --pass-args tools+init-env --from $default_search_registry/library/archlinux
     RUN pacman-key --init
     ARG --required purpose
 
@@ -474,9 +477,9 @@ env.centos7:
     DO --pass-args +CENTOS_ENV --version=7
 
 ALPINE_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/alpine:$version
+    FROM --pass-args tools+init-env --from $default_search_registry/library/alpine:$version
     # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
     # very up-to-date and much faster than building our own from source (since
     # Kitware does not (yet) provide libmuslc builds of CMake)
@@ -496,9 +499,9 @@ ALPINE_ENV:
     DO --pass-args tools+ADD_C_COMPILER --clang_pkg="gcc clang compiler-rt"
 
 UBUNTU_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/ubuntu:$version
+    FROM --pass-args tools+init-env --from $default_search_registry/library/ubuntu:$version
     RUN __install curl build-essential
     ARG --required purpose
 
@@ -514,13 +517,13 @@ UBUNTU_ENV:
     DO +PREP_CMAKE
 
 CENTOS_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from artifactory.corp.mongodb.com/dockerhub/library/centos:$version
+    FROM --pass-args tools+init-env --from $default_search_registry/library/centos:$version
     # Update repositories to use vault.centos.org
     RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
         sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-    RUN yum -y install epel-release && yum -y update
+    RUN yum -y --enablerepo=extras install epel-release && yum -y update
     RUN yum -y install curl gcc gcc-c++ make
     ARG --required purpose
 
