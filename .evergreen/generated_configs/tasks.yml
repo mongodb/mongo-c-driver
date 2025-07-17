@@ -1124,6 +1124,49 @@ tasks:
   - name: check-headers
     commands:
       - func: check-headers
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
@@ -1165,6 +1208,92 @@ tasks:
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=master
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
@@ -1210,6 +1339,92 @@ tasks:
             - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
@@ -1253,6 +1468,92 @@ tasks:
             - --test_mongocxx_ref=none
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=master
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
@@ -1294,6 +1595,49 @@ tasks:
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0"
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r4.1.0
+            - --env=${MONGOC_EARTHLY_ENV}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --targets=test-example test-cxx-driver
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r4.1.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: clang-format

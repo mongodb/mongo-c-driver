@@ -47,7 +47,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["none"]  # TODO: Once CXX-3103 is released, add latest C++ release tag.
+CxxVersion = Literal["master", "r4.1.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -179,8 +179,8 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     configuration values.
     """
     match env, conf:
-        # u16/centos7 are not capable of building mongocxx
-        case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^CentOS 7", e.display_name):
+        # u16/u18/centos7 are not capable of building mongocxx
+        case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^Ubuntu 18|^CentOS 7", e.display_name):
             # Only build if C++ driver is test is disabled
             return cxx == "none"
         # Anything else: Allow it to run:
