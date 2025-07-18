@@ -214,6 +214,7 @@ if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
 
   # Limit tests executed to CSE tests.
   test_args+=("-l" "/client_side_encryption/*")
+  test_args+=("-l" "/unified/*") # Includes PoC tests for CSFLE/QE.
 fi
 
 if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
