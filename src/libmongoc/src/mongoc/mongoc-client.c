@@ -761,8 +761,7 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 }
 
 mongoc_stream_t *
-mongoc_client_connect (bool buffered,
-                       bool use_ssl,
+mongoc_client_connect (bool use_ssl,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
@@ -851,9 +850,6 @@ mongoc_client_connect (bool buffered,
    if (!base_stream) {
       return NULL;
    }
-   if (buffered) {
-      return mongoc_stream_buffered_new (base_stream, 1024);
-   }
    return base_stream;
 }
 
@@ -897,13 +893,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
    SSL_CTX *ssl_ctx = client->topology->scanner->openssl_ctx;
-   return mongoc_client_connect (
-      false, use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, MONGOC_SHARED_PTR_NULL, error);
+   return mongoc_client_connect (use_ssl, ssl_opts_void, uri, host, (void *) ssl_ctx, MONGOC_SHARED_PTR_NULL, error);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    return mongoc_client_connect (
-      false, use_ssl, ssl_opts_void, uri, host, NULL, client->topology->scanner->secure_channel_cred_ptr, error);
+      use_ssl, ssl_opts_void, uri, host, NULL, client->topology->scanner->secure_channel_cred_ptr, error);
 #else
-   return mongoc_client_connect (false, use_ssl, ssl_opts_void, uri, host, NULL, MONGOC_SHARED_PTR_NULL, error);
+   return mongoc_client_connect (use_ssl, ssl_opts_void, uri, host, NULL, MONGOC_SHARED_PTR_NULL, error);
 #endif
 }
 
