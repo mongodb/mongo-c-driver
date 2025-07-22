@@ -38,10 +38,6 @@ class StaticOpenSSLCompile(Function):
         ),
     ]
 
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
-
 
 def functions():
     return StaticOpenSSLCompile.defn()
