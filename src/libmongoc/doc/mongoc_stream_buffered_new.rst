@@ -23,7 +23,7 @@ This function shall create a new :symbol:`mongoc_stream_t` that buffers bytes to
 
 .. warning::
   
-  The internal buffer does not reduce in size once grown. Receiving a large message may result in a large allocation that persists until the returned :symbol:`mongoc_stream_t` is freed with :symbol:`mongoc_stream_destroy()`. The allocation strategy of the internal buffer is subject to change.
+  The internal buffer does not reduce in size once grown. Receiving a large message may result in a large allocation that persists until the returned :symbol:`mongoc_stream_t` is freed with :symbol:`mongoc_stream_destroy()`.
 
 Returns
 -------
