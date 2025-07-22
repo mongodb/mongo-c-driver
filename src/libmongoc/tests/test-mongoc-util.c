@@ -137,14 +137,9 @@ test_hex_to_bin (void)
       bson_free (got);
    }
 
-   // Test whitespace is an error:
-   ASSERT (!hex_to_bin ("  66", &len));
-
-   // Test non-even number of digits is an error:
-   ASSERT (!hex_to_bin ("666", &len));
-
-   // Test non-hex digits is an error:
-   ASSERT (!hex_to_bin ("ZZ", &len));
+   ASSERT_WITH_MSG (!hex_to_bin ("  66", &len), "whitespace is an error");
+   ASSERT_WITH_MSG (!hex_to_bin ("666", &len), "non-even number of digits is an error");
+   ASSERT_WITH_MSG (!hex_to_bin ("ZZ", &len), "non-hex digits is an error");
 }
 
 void
