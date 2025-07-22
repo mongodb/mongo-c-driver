@@ -119,7 +119,7 @@ fi
 echo "Checking requested C standard is supported..."
 pushd "$(mktemp -d)"
 cat >CMakeLists.txt <<DOC
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.30...4.0)
 project(c_standard_latest LANGUAGES C)
 set(c_std_version "${C_STD_VERSION:?}")
 if(c_std_version STREQUAL "latest") # Special-case MSVC's /std:clatest flag.
