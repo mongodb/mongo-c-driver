@@ -23,10 +23,6 @@ class MakeDocs(Function):
         ),
     ]
 
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
-
 
 class UploadDocs(Function):
     name = "upload-docs"
@@ -69,10 +65,6 @@ class UploadDocs(Function):
         ),
     ]
 
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
-
 
 class UploadManPages(Function):
     name = "upload-man-pages"
@@ -113,10 +105,6 @@ class UploadManPages(Function):
             remote_file="${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html",
         ),
     ]
-
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
 
 
 def functions():

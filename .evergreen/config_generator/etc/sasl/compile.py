@@ -30,7 +30,3 @@ class CompileCommon(Function):
                 script='.evergreen/scripts/compile.sh',
             ),
         ]
-
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)

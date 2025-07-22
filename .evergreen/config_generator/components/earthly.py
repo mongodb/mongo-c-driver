@@ -168,10 +168,6 @@ class DockerLoginAmazonECR(Function):
         ),
     ]
 
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
-
 
 def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     """
