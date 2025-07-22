@@ -854,44 +854,51 @@ _mongoc_crypto_rand_size_t (void)
 
 #endif /* defined(MONGOC_ENABLE_CRYPTO) */
 
-static BSON_ONCE_FUN (_mongoc_simple_rand_init)
+#define _mongoc_thread_local BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec (thread))
+
+// Use a thread-local random seed for calls to `rand_r`:
+static _mongoc_thread_local unsigned int _mongoc_simple_rand_seed = 0;
+static _mongoc_thread_local bool _mongoc_simple_rand_seed_initialized = false;
+
+static void
+_mongoc_simple_rand_init (void)
 {
+   if (_mongoc_simple_rand_seed_initialized) {
+      return;
+   }
+   _mongoc_simple_rand_seed_initialized = true;
    struct timeval tv;
-   unsigned int seed = 0;
 
    bson_gettimeofday (&tv);
 
-   seed ^= (unsigned int) tv.tv_sec;
-   seed ^= (unsigned int) tv.tv_usec;
-
-   srand (seed);
-
-   BSON_ONCE_RETURN;
+   _mongoc_simple_rand_seed ^= (unsigned int) tv.tv_sec;
+   _mongoc_simple_rand_seed ^= (unsigned int) tv.tv_usec;
 }
-
-static bson_once_t _mongoc_simple_rand_init_once = BSON_ONCE_INIT;
 
 uint32_t
 _mongoc_simple_rand_uint32_t (void)
 {
-   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   _mongoc_simple_rand_init ();
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint32_t) rand () & 0x7FFFu) << 0u) | (((uint32_t) rand () & 0x7FFFu) << 15u) |
-          (((uint32_t) rand () & 0x0003u) << 30u);
+   return (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 0u) |
+          (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x0003u) << 30u);
 }
 
 uint64_t
 _mongoc_simple_rand_uint64_t (void)
 {
-   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   _mongoc_simple_rand_init ();
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint64_t) rand () & 0x7FFFu) << 0u) | (((uint64_t) rand () & 0x7FFFu) << 15u) |
-          (((uint64_t) rand () & 0x7FFFu) << 30u) | (((uint64_t) rand () & 0x7FFFu) << 45u) |
-          (((uint64_t) rand () & 0x0003u) << 60u);
+   return (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 0u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 30u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 45u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x0003u) << 60u);
 }
 
 uint32_t
