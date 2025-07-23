@@ -260,7 +260,7 @@ static inline void
 _acmd_cancel (mongoc_async_cmd_t *self)
 {
    // XXX: Should this check if ther command has already finished/failed?
-   self->state = MONGOC_ASYNC_CMD_ERROR_STATE;
+   self->state = MONGOC_ASYNC_CMD_CANCELLED_STATE;
 }
 
 /**
