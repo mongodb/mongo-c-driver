@@ -69,7 +69,7 @@ mongo_bool_setting(
 
 # Configure-time platform checks. These start as regular CMake booleans, but are
 # converted to 0/1 values (with mongo_bool01) so that they can be inserted into
-# bson-config.h as preprocessor values. We cannot use #cmakedefine01, as we need
+# bson/config.h as preprocessor values. We cannot use #cmakedefine01, as we need
 # to keep compatibility with an external Autotools-generated library configuration
 
 include (CheckFunctionExists)
