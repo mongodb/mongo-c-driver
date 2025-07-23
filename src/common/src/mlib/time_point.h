@@ -47,18 +47,52 @@ mlib_extern_c_begin ();
 /**
  * @brief An abstract point-in-time type
  *
- * This type represents an abstract stable point in time.
+ * The time point is encoded as a duration relative to some stable reference point
+ * provided by the system. See the docs for the `time_since_monotonic_start`
+ * member for more details.
+ *
+ * At time of writing, there is no easy way to convert this monotonic time point
+ * into a human-readable wall time. Thus, the time-point itself is abstract.
  */
 typedef struct mlib_time_point {
    /**
     * @brief The encoding of the time point as a duration relative to some
     * unspecified stable real point in time.
     *
-    * The stable time point may change between program executions, so this
-    * object should not be stored outside of the program's execution.
+    * It is important to understand the nature of the reference point: `mlib_now()`
+    * uses the system's monotonic high-resolution clock, which has an unspecified
+    * reference point in the past. That stable reference point may change between
+    * program executions, so it is not safe to store/transmit this value outside
+    * of the current program execution.
+    *
+    * If you attempt to store a duration in this member that is with respect to
+    * some other clock, then the resulting time point object will have an unspecified
+    * relationship to other time points created with different clocks. For this reason,
+    * this member should not be set to any absolute values, and should only be adjusted
+    * relative to its current value.
     */
    mlib_duration time_since_monotonic_start;
 } mlib_time_point;
+
+/**
+ * @brief Given two time points, selects the time point that occurs earliest
+ */
+static inline mlib_time_point
+mlib_soonest (mlib_time_point l, mlib_time_point r)
+{
+   l.time_since_monotonic_start = mlib_duration (l.time_since_monotonic_start, min, r.time_since_monotonic_start);
+   return l;
+}
+
+/**
+ * @brief Given two time points, selects the time point that occurs later
+ */
+static inline mlib_time_point
+mlib_latest (mlib_time_point l, mlib_time_point r)
+{
+   l.time_since_monotonic_start = mlib_duration (l.time_since_monotonic_start, max, r.time_since_monotonic_start);
+   return l;
+}
 
 /**
  * @brief Obtain a point-in-time corresponding to the current time
@@ -69,8 +103,14 @@ mlib_now (void) mlib_noexcept
 #if mlib_have_posix_clocks()
    // Use POSIX clock_gettime
    struct timespec ts;
-   // Use the POSIX monotonic clock
+// Use the POSIX monotonic clock
+#ifdef CLOCK_MONOTONIC_RAW
+   // Linux had a bad definition of CLOCK_MONOTONIC, which would jump based on NTP adjustments.
+   // They replaced it with CLOCK_MONOTONIC_RAW, which is stable and cannot be adjusted.
+   int rc = clock_gettime (CLOCK_MONOTONIC_RAW, &ts);
+#else
    int rc = clock_gettime (CLOCK_MONOTONIC, &ts);
+#endif
    // The above call must never fail:
    mlib_check (rc, eq, 0);
    // Encode the time point:
@@ -122,7 +162,25 @@ mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
    return ret;
 }
 
-#define mlib_later(From, Delta) mlib_later (From, MLIB_EVAL_4 (_mlibDurationArgument (Delta)))
+#define mlib_later(From, Delta) mlib_later (From, mlib_duration_arg (Delta))
+
+/**
+ * @brief Adjust a time-point in-place
+ *
+ * @param time Pointer to the valid time object to be updated
+ * @param delta The duration to add/remove from the point-in-time
+ * @return mlib_time_point Returns the previous value of the time point
+ */
+static inline mlib_time_point
+mlib_time_adjust (mlib_time_point *time, mlib_duration delta) mlib_noexcept
+{
+   mlib_check (time, because, "Pointer-to-time is required");
+   mlib_time_point prev = *time;
+   *time = mlib_later (*time, delta);
+   return prev;
+}
+
+#define mlib_time_adjust(Time, Duration) mlib_time_adjust (Time, mlib_duration_arg (Duration))
 
 /**
  * @brief Obtain the duration between two points in time.
@@ -143,6 +201,22 @@ static inline mlib_duration
 mlib_time_difference (mlib_time_point then, mlib_time_point from)
 {
    return mlib_duration (then.time_since_monotonic_start, minus, from.time_since_monotonic_start);
+}
+
+/**
+ * @brief Obtain the amount of time that has elapsed since the time point `t`,
+ * or a negative duration if the time is in the future.
+ *
+ * @param t The time point to be inspected
+ * @return mlib_duration If `t` is in the past, returns the duration of time
+ * that has elapsed since that point-in-time. If `t` is in the future, returns
+ * a negative time representing the amount of time that be be waited until we
+ * reach `t`.
+ */
+static inline mlib_duration
+mlib_elapsed_since (mlib_time_point t)
+{
+   return mlib_time_difference (mlib_now (), t);
 }
 
 /**

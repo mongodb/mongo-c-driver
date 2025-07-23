@@ -96,10 +96,11 @@
 #define _mlibCommaIfParens(...) ,
 
 /**
- * @brief Expands to `1` if the given argument list is a parenthesized
- * group of tokens otherwize `0`
+ * @brief Expands to `1` if the given macro argument is a parenthesized group of
+ *    tokens, otherwize `0`
  */
-#define MLIB_IS_PARENTHESIZED(X) _mlibHasComma(_mlibCommaIfParens X MLIB_NOTHING(#X))
+#define MLIB_IS_PARENTHESIZED(X) \
+   _mlibHasComma(_mlibCommaIfParens X MLIB_NOTHING("Inhibit immediate expansion: " #X))
 
 /**
  * A helper for isEmpty(): If given (0, 0, 0, 1), expands as:

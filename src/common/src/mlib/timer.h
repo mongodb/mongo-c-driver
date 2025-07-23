@@ -62,13 +62,23 @@ mlib_expires_at (const mlib_time_point t) mlib_noexcept
  * elapsed from the point-in-time at which this function is called
  */
 static inline mlib_timer
-mlib_expiring_after (const mlib_duration dur) mlib_noexcept
+mlib_expires_after (const mlib_duration dur) mlib_noexcept
 {
    const mlib_time_point later = mlib_later (mlib_now (), dur);
    return mlib_expires_at (later);
 }
 
-#define mlib_expiring_after(...) mlib_expiring_after (mlib_duration (__VA_ARGS__))
+#define mlib_expires_after(...) mlib_expires_after (mlib_duration (__VA_ARGS__))
+
+/**
+ * @brief Between two timers, return the timer that will expire the soonest
+ */
+static inline mlib_timer
+mlib_soonest_timer (mlib_timer l, mlib_timer r) mlib_noexcept
+{
+   l.expires_at = mlib_soonest (l.expires_at, r.expires_at);
+   return l;
+}
 
 /**
  * @brief Obtain the duration of time that is remaining until the given timer

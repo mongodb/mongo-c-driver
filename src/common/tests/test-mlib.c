@@ -1071,7 +1071,7 @@ _test_sleep (void)
 static void
 _test_timer (void)
 {
-   mlib_timer tm = mlib_expiring_after (200, ms);
+   mlib_timer tm = mlib_expires_after (200, ms);
    mlib_check (!mlib_timer_is_expired (tm));
    mlib_sleep_for (250, ms);
    mlib_check (mlib_timer_is_expired (tm));
@@ -1086,7 +1086,7 @@ _test_timer (void)
 
    // Try with a not-yet-expired timer
    cond = false;
-   tm = mlib_expiring_after (10, sec);
+   tm = mlib_expires_after (10, sec);
    mlib_check (!mlib_timer_is_expired (tm));
    mlib_check (!mlib_timer_is_expired (tm, &cond));
    // cond was set to `true`, even though we are not yet expired

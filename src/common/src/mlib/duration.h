@@ -141,6 +141,9 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
    /* then: */ (_mlibDurationMagic MLIB_NOTHING () X) /* else: */ (X)
 #define _mlibExpandToNothingIfFollowedByParens(...)
 
+// Wrap a macro argument that should support the duration DSL
+#define mlib_duration_arg(X) MLIB_EVAL_8 (_mlibDurationArgument (X))
+
 // Zero arguments, just return a zero duration:
 #define _mlib_duration_argc_0() (mlib_init (mlib_duration){0})
 // One argument, just copy the duration:
@@ -337,10 +340,10 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
    return mlib_cmp (a._rep, b._rep);
 }
 
-#define mlib_duration_cmp(...) MLIB_EVAL_4 (MLIB_ARGC_PICK (_mlibDurationCmp, __VA_ARGS__))
+#define mlib_duration_cmp(...) MLIB_ARGC_PICK (_mlibDurationCmp, __VA_ARGS__)
 #define _mlibDurationCmp_argc_2 mlib_duration_cmp
 #define _mlibDurationCmp_argc_3(Left, Op, Right) \
-   (mlib_duration_cmp (_mlibDurationArgument (Left), _mlibDurationArgument (Right)) Op 0)
+   (mlib_duration_cmp (mlib_duration_arg (Left), mlib_duration_arg (Right)) Op 0)
 
 /**
  * @brief Obtain an mlib_duration that corresponds to a `timespec` value
@@ -353,9 +356,7 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
 static inline mlib_duration
 mlib_duration_from_timespec (const struct timespec ts) mlib_noexcept
 {
-   return mlib_duration ((ts.tv_sec, sec), //
-                         plus,
-                         (ts.tv_nsec, ns));
+   return mlib_duration ((ts.tv_sec, sec), plus, (ts.tv_nsec, ns));
 }
 
 /**
