@@ -215,9 +215,9 @@ static void
 test_large_hello_helper (mongoc_async_cmd_t *acmd,
                          mongoc_async_cmd_result_t result,
                          const bson_t *bson,
-                         int64_t duration_usec)
+                         mlib_duration deadline)
 {
-   BSON_UNUSED (duration_usec);
+   BSON_UNUSED (deadline);
 
    bson_iter_t iter;
    bson_error_t *error = &acmd->error;
@@ -294,7 +294,7 @@ test_large_hello (void *ctx)
                          MONGOC_OP_CODE_QUERY, /* used by legacy hello */
                          &test_large_hello_helper,
                          NULL,
-                         TIMEOUT);
+                         mlib_duration (TIMEOUT, ms));
 
    mongoc_async_run (async);
    mongoc_async_destroy (async);
