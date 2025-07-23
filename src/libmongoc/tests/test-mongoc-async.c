@@ -281,8 +281,8 @@ test_large_hello (void *ctx)
                          sock_stream,
                          false, /* is setup done. */
                          NULL /* dns result, n/a. */,
-                         NULL, /* initiator. */
-                         0,    /* initiate delay. */
+                         NULL,             /* initiator. */
+                         mlib_duration (), /* initiate delay. */
 #ifdef MONGOC_ENABLE_SSL
                          test_framework_get_ssl () ? mongoc_async_cmd_tls_setup : NULL,
 #else
