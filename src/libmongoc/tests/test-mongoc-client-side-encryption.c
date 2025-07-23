@@ -492,7 +492,6 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
    bson_destroy (docs[1]);
 
    if (with_qe) {
-      /* Case 3: client bulkWrite */
       mongoc_bulkwriteopts_t *bw_opts = mongoc_bulkwriteopts_new ();
       mongoc_bulkwriteopts_set_verboseresults (bw_opts, true);
 
@@ -514,7 +513,6 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       docs[1] = BCON_NEW ("_id", "over_2mib_4");
       bson_append_utf8 (docs[1], "unencrypted", -1, as, size_2mib - 1500);
 
-      ctx.num_inserts = 0;
       mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new (client);
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
@@ -539,7 +537,6 @@ test_bson_size_limits_and_batch_splitting (bool with_qe)
       bson_append_utf8 (docs[1], "_id", -1, "encryption_exceeds_2mib_4", -1);
       bson_append_utf8 (docs[1], "foo", -1, as, exceeds_2mib_after_encryption - 1500);
 
-      ctx.num_inserts = 0;
       bw = mongoc_client_bulkwrite_new (client);
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[0], NULL, &error), error);
       ASSERT_OR_PRINT (mongoc_bulkwrite_append_insertone (bw, "db.coll2", docs[1], NULL, &error), error);
