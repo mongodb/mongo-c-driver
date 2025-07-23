@@ -240,8 +240,10 @@ generate_key_name (LPBYTE data, DWORD len, const char *suffix)
       unsigned char hash[32];
       mongoc_crypto_t crypto;
       mongoc_crypto_init (&crypto, MONGOC_CRYPTO_ALGORITHM_SHA_256);
-      BSON_ASSERT (mlib_in_range (size_t, len));
-      if (!mongoc_crypto_hash (&crypto, (const unsigned char *) data, (size_t) len, hash)) {
+      if (!mongoc_crypto_hash (&crypto, 
+                               (const unsigned char *) data,
+                               mlib_assert_narrow (size_t, len), 
+                               hash)) {
          goto fail;
       }
       // Use uppercase hex to match form of `openssl x509` command:
