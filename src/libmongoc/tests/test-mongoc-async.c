@@ -80,7 +80,7 @@ test_hello_impl (bool with_ssl)
    mock_server_t *servers[NSERVERS];
    mongoc_async_t *async;
    mongoc_stream_t *sock_streams[NSERVERS];
-   mongoc_async_cmd_setup_t setup = NULL;
+   mongoc_async_cmd_stream_setup_cb setup = NULL;
    void *setup_ctx = NULL;
    uint16_t ports[NSERVERS];
    struct result results[NSERVERS];

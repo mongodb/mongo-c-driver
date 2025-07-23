@@ -42,7 +42,7 @@
 typedef mongoc_async_cmd_result_t (*_mongoc_async_cmd_phase_t) (mongoc_async_cmd_t *cmd);
 
 static mongoc_async_cmd_result_t
-_mongoc_async_cmd_phase_initiate (mongoc_async_cmd_t *cmd);
+_mongoc_async_cmd_phase_connect (mongoc_async_cmd_t *cmd);
 static mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_stream_setup (mongoc_async_cmd_t *cmd);
 static mongoc_async_cmd_result_t
@@ -53,7 +53,7 @@ static mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *cmd);
 
 static const _mongoc_async_cmd_phase_t gMongocCMDPhases[] = {
-   _mongoc_async_cmd_phase_initiate,
+   _mongoc_async_cmd_phase_connect,
    _mongoc_async_cmd_phase_stream_setup,
    _mongoc_async_cmd_phase_send,
    _mongoc_async_cmd_phase_recv_len,
@@ -100,7 +100,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 
    /* if we have successfully connected to the node, call the callback. */
    if (acmd->state == MONGOC_ASYNC_CMD_SEND) {
-      acmd->cb (acmd, MONGOC_ASYNC_CMD_CONNECTED, NULL, _acmd_elapsed (acmd));
+      acmd->_event_callback (acmd, MONGOC_ASYNC_CMD_CONNECTED, NULL, _acmd_elapsed (acmd));
    }
 
    _mongoc_async_cmd_phase_t const phase_callback = gMongocCMDPhases[acmd->state];
@@ -119,7 +119,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
    case MONGOC_ASYNC_CMD_SUCCESS:
    case MONGOC_ASYNC_CMD_ERROR:
    case MONGOC_ASYNC_CMD_TIMEOUT:
-      acmd->cb (acmd, result, &acmd->reply, _acmd_elapsed (acmd));
+      acmd->_event_callback (acmd, result, &acmd->_response_data, _acmd_elapsed (acmd));
       // No more work on this command. Destroy the object and tell the caller
       // it's been removed
       mongoc_async_cmd_destroy (acmd);
@@ -148,12 +148,12 @@ _mongoc_async_cmd_init_send (const int32_t cmd_opcode, mongoc_async_cmd_t *acmd,
       message_length += mcd_rpc_op_query_set_full_collection_name (acmd->rpc, acmd->ns);
       message_length += mcd_rpc_op_query_set_number_to_skip (acmd->rpc, 0);
       message_length += mcd_rpc_op_query_set_number_to_return (acmd->rpc, -1);
-      message_length += mcd_rpc_op_query_set_query (acmd->rpc, bson_get_data (&acmd->cmd));
+      message_length += mcd_rpc_op_query_set_query (acmd->rpc, bson_get_data (&acmd->_command));
    } else {
       mcd_rpc_op_msg_set_sections_count (acmd->rpc, 1u);
       message_length += mcd_rpc_op_msg_set_flag_bits (acmd->rpc, MONGOC_OP_MSG_FLAG_NONE);
       message_length += mcd_rpc_op_msg_section_set_kind (acmd->rpc, 0u, 0);
-      message_length += mcd_rpc_op_msg_section_set_body (acmd->rpc, 0u, bson_get_data (&acmd->cmd));
+      message_length += mcd_rpc_op_msg_section_set_body (acmd->rpc, 0u, bson_get_data (&acmd->_command));
    }
 
    mcd_rpc_message_set_length (acmd->rpc, message_length);
@@ -170,10 +170,10 @@ _mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd, bool is_setup_done)
 {
    if (!acmd->stream) {
       // No stream yet associated, so we need to initiate a new connection
-      acmd->state = MONGOC_ASYNC_CMD_INITIATE;
-   } else if (acmd->setup && !is_setup_done) {
+      acmd->state = MONGOC_ASYNC_CMD_PENDING_CONNECT;
+   } else if (acmd->_stream_setup && !is_setup_done) {
       // We have a stream, and a setup callback, so call that setup callback next
-      acmd->state = MONGOC_ASYNC_CMD_SETUP;
+      acmd->state = MONGOC_ASYNC_CMD_STREAM_SETUP;
    } else {
       // We have a stream, and no setup required. We're ready to send immediately.
       acmd->state = MONGOC_ASYNC_CMD_SEND;
@@ -187,14 +187,14 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       mongoc_stream_t *stream,
                       bool is_setup_done,
                       struct addrinfo *dns_result,
-                      mongoc_async_cmd_connect_cb initiator,
-                      mlib_duration initiate_delay,
-                      mongoc_async_cmd_setup_t setup,
-                      void *setup_ctx,
+                      mongoc_async_cmd_connect_cb connect_cb,
+                      mlib_duration connect_delay,
+                      mongoc_async_cmd_stream_setup_cb stream_setup,
+                      void *setup_userdata,
                       const char *dbname,
                       const bson_t *cmd,
                       const int32_t cmd_opcode, /* OP_QUERY or OP_MSG */
-                      mongoc_async_cmd_cb_t cb,
+                      mongoc_async_cmd_event_cb event_cb,
                       void *userdata,
                       mlib_duration timeout)
 {
@@ -202,24 +202,24 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    BSON_ASSERT_PARAM (dbname);
 
    mongoc_async_cmd_t *const acmd = BSON_ALIGNED_ALLOC0 (mongoc_async_cmd_t);
-   acmd->initiate_delay_timer = mlib_expires_after (initiate_delay);
+   acmd->_connect_delay_timer = mlib_expires_after (connect_delay);
    acmd->async = async;
    acmd->dns_result = dns_result;
    acmd->_timeout = timeout;
    acmd->stream = stream;
-   acmd->initiator = initiator;
-   acmd->setup = setup;
-   acmd->setup_ctx = setup_ctx;
-   acmd->cb = cb;
-   acmd->data = userdata;
+   acmd->_stream_connect = connect_cb;
+   acmd->_stream_setup = stream_setup;
+   acmd->_stream_seutp_userdata = setup_userdata;
+   acmd->_event_callback = event_cb;
+   acmd->_userdata = userdata;
    acmd->_start_time = mlib_now ();
-   acmd->state = MONGOC_ASYNC_CMD_INITIATE;
-   acmd->reply = (bson_t) BSON_INITIALIZER;
-   bson_copy_to (cmd, &acmd->cmd);
+   acmd->state = MONGOC_ASYNC_CMD_PENDING_CONNECT;
+   acmd->_response_data = (bson_t) BSON_INITIALIZER;
+   bson_copy_to (cmd, &acmd->_command);
 
    if (MONGOC_OP_CODE_MSG == cmd_opcode) {
       /* If we're sending an OP_MSG, we need to add the "db" field: */
-      bson_append_utf8 (&acmd->cmd, "$db", 3, "admin", 5);
+      bson_append_utf8 (&acmd->_command, "$db", 3, "admin", 5);
    }
 
    acmd->rpc = mcd_rpc_message_new ();
@@ -245,8 +245,8 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
    DL_DELETE (acmd->async->cmds, acmd);
    acmd->async->ncmds--;
 
-   bson_destroy (&acmd->cmd);
-   bson_destroy (&acmd->reply);
+   bson_destroy (&acmd->_command);
+   bson_destroy (&acmd->_response_data);
 
    bson_free (acmd->iovec);
    _mongoc_buffer_destroy (&acmd->buffer);
@@ -257,17 +257,17 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
 }
 
 mongoc_async_cmd_result_t
-_mongoc_async_cmd_phase_initiate (mongoc_async_cmd_t *acmd)
+_mongoc_async_cmd_phase_connect (mongoc_async_cmd_t *acmd)
 {
-   acmd->stream = acmd->initiator (acmd);
+   acmd->stream = acmd->_stream_connect (acmd);
    if (!acmd->stream) {
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
    _acmd_reset_elapsed (acmd);
-   if (acmd->setup) {
+   if (acmd->_stream_setup) {
       // There is a setup callback that we need to call
-      acmd->state = MONGOC_ASYNC_CMD_SETUP;
+      acmd->state = MONGOC_ASYNC_CMD_STREAM_SETUP;
    } else {
       // There is no setup callback, so we can send data immediately
       acmd->state = MONGOC_ASYNC_CMD_SEND;
@@ -278,7 +278,8 @@ _mongoc_async_cmd_phase_initiate (mongoc_async_cmd_t *acmd)
 static mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_stream_setup (mongoc_async_cmd_t *acmd)
 {
-   int const retval = acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx, _acmd_deadline (acmd), &acmd->error);
+   int const retval = acmd->_stream_setup (
+      acmd->stream, &acmd->events, acmd->_stream_seutp_userdata, _acmd_deadline (acmd), &acmd->error);
    switch (retval) {
    case -1:
       return MONGOC_ASYNC_CMD_ERROR;
@@ -454,7 +455,7 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
          _mongoc_buffer_init (&acmd->buffer, decompressed_data, decompressed_data_len, NULL, NULL);
       }
 
-      if (!mcd_rpc_message_get_body (acmd->rpc, &acmd->reply)) {
+      if (!mcd_rpc_message_get_body (acmd->rpc, &acmd->_response_data)) {
          _mongoc_set_error (
             &acmd->error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply from server");
          return MONGOC_ASYNC_CMD_ERROR;

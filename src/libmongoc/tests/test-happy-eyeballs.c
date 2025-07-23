@@ -152,7 +152,7 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
 }
 
 static mongoc_stream_t *
-_mock_initiator (mongoc_async_cmd_t *acmd)
+_mock_connect (mongoc_async_cmd_t *acmd)
 {
    mongoc_stream_t *stream = _mongoc_topology_scanner_tcp_initiate (acmd);
    /* override poll */
@@ -312,7 +312,7 @@ _testcase_run (he_testcase_t *testcase)
 
    DL_FOREACH (ts->async->cmds, iter)
    {
-      iter->initiator = _mock_initiator;
+      iter->_stream_connect = _mock_connect;
    }
 
    mongoc_topology_scanner_work (ts);

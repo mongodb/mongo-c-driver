@@ -568,7 +568,7 @@ _retired_fails_to_initiate_cb (
 }
 
 static mongoc_stream_t *
-null_initiator (mongoc_async_cmd_t *acmd)
+null_connect (mongoc_async_cmd_t *acmd)
 {
    BSON_UNUSED (acmd);
 
@@ -609,7 +609,7 @@ test_topology_retired_fails_to_initiate (void)
     * a failed mongoc_socket_new or mongoc_stream_connect. */
    DL_FOREACH (scanner->async->cmds, acmd)
    {
-      scanner->async->cmds->initiator = null_initiator;
+      scanner->async->cmds->_stream_connect = null_connect;
    }
 
    mongoc_topology_scanner_work (scanner);

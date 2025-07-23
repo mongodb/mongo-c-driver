@@ -85,12 +85,12 @@ mongoc_async_run (mongoc_async_t *async)
       /* check if any cmds are ready to be initiated. */
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
-         if (acmd->state == MONGOC_ASYNC_CMD_INITIATE) {
+         if (acmd->state == MONGOC_ASYNC_CMD_PENDING_CONNECT) {
             // Command is waiting to be initiated.
             // Timer for when the command should be initiated:
             // Should not yet have an associated stream
             BSON_ASSERT (!acmd->stream);
-            if (mlib_timer_is_expired (acmd->initiate_delay_timer)) {
+            if (mlib_timer_is_expired (acmd->_connect_delay_timer)) {
                /* time to initiate. */
                if (mongoc_async_cmd_run (acmd)) {
                   // We should now have an associated stream
@@ -101,7 +101,7 @@ mongoc_async_run (mongoc_async_t *async)
                }
             } else {
                // Wake up poll() when the initiation timeout is hit
-               poll_timer = mlib_soonest_timer (poll_timer, acmd->initiate_delay_timer);
+               poll_timer = mlib_soonest_timer (poll_timer, acmd->_connect_delay_timer);
             }
          }
 
@@ -164,18 +164,18 @@ mongoc_async_run (mongoc_async_t *async)
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
          /* check if an initiated cmd has passed the connection timeout.  */
-         if (acmd->state != MONGOC_ASYNC_CMD_INITIATE && _acmd_has_timed_out (acmd)) {
+         if (acmd->state != MONGOC_ASYNC_CMD_PENDING_CONNECT && _acmd_has_timed_out (acmd)) {
             _mongoc_set_error (&acmd->error,
                                MONGOC_ERROR_STREAM,
                                MONGOC_ERROR_STREAM_CONNECT,
                                acmd->state == MONGOC_ASYNC_CMD_SEND ? "connection timeout" : "socket timeout");
 
-            acmd->cb (acmd, MONGOC_ASYNC_CMD_TIMEOUT, NULL, _acmd_elapsed (acmd));
+            acmd->_event_callback (acmd, MONGOC_ASYNC_CMD_TIMEOUT, NULL, _acmd_elapsed (acmd));
 
             /* Remove acmd from the async->cmds doubly-linked list */
             mongoc_async_cmd_destroy (acmd);
-         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELED_STATE) {
-            acmd->cb (acmd, MONGOC_ASYNC_CMD_ERROR, NULL, _acmd_elapsed (acmd));
+         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELLED_STATE) {
+            acmd->_event_callback (acmd, MONGOC_ASYNC_CMD_ERROR, NULL, _acmd_elapsed (acmd));
 
             /* Remove acmd from the async->cmds doubly-linked list */
             mongoc_async_cmd_destroy (acmd);

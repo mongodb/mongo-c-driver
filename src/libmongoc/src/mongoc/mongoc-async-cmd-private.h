@@ -38,9 +38,9 @@ BSON_BEGIN_DECLS
 
 typedef enum {
    // The command has no stream and needs to connect to a peer
-   MONGOC_ASYNC_CMD_INITIATE,
+   MONGOC_ASYNC_CMD_PENDING_CONNECT,
    // The command has connected and has a stream, but needs to run stream setup
-   MONGOC_ASYNC_CMD_SETUP,
+   MONGOC_ASYNC_CMD_STREAM_SETUP,
    // The command has data to send to the peer
    MONGOC_ASYNC_CMD_SEND,
    // The command is ready to receive the response length header
@@ -50,7 +50,7 @@ typedef enum {
    // The command is in an invalid error state
    MONGOC_ASYNC_CMD_ERROR_STATE,
    // The command has been cancelled.
-   MONGOC_ASYNC_CMD_CANCELED_STATE,
+   MONGOC_ASYNC_CMD_CANCELLED_STATE,
 } mongoc_async_cmd_state_t;
 
 /**
@@ -76,10 +76,10 @@ typedef enum {
  * @param duration The elapsed duration that the command object has been running.
  * This will be zero when the CONNECTED state is invoked.
  */
-typedef void (*mongoc_async_cmd_cb_t) (struct _mongoc_async_cmd *acmd,
-                                       mongoc_async_cmd_result_t result,
-                                       const bson_t *bson,
-                                       mlib_duration duration);
+typedef void (*mongoc_async_cmd_event_cb) (struct _mongoc_async_cmd *acmd,
+                                           mongoc_async_cmd_result_t result,
+                                           const bson_t *bson,
+                                           mlib_duration duration);
 
 /**
  * @brief Callback that is used to open a new stream for a command object.
@@ -103,7 +103,7 @@ typedef mongoc_stream_t *(*mongoc_async_cmd_connect_cb) (struct _mongoc_async_cm
  * @return int The function should return -1 on failure, 1 if the stream
  * immediately has data to send, or 0 for generic success.
  */
-typedef int (*mongoc_async_cmd_setup_t) (
+typedef int (*mongoc_async_cmd_stream_setup_cb) (
    mongoc_stream_t *stream, int *events, void *ctx, mlib_timer timeout, bson_error_t *error);
 
 
@@ -130,27 +130,27 @@ typedef struct _mongoc_async_cmd {
     * @brief User-provided callback that will be used to lazily create the I/O stream
     * for the command.
     */
-   mongoc_async_cmd_connect_cb initiator;
+   mongoc_async_cmd_connect_cb _stream_connect;
    /**
     * @brief User-provided callback function to do setup on the command's stream
     * after the stream has been created automatically.
     */
-   mongoc_async_cmd_setup_t setup;
+   mongoc_async_cmd_stream_setup_cb _stream_setup;
    // Arbitrary userdata pointer passed to the stream setup function
-   void *setup_ctx;
+   void *_stream_seutp_userdata;
    /**
     * @brief User-provided command event callback. Invoked with the final result
     * and once when the command completes.
     */
-   mongoc_async_cmd_cb_t cb;
+   mongoc_async_cmd_event_cb _event_callback;
    // Arbitrary userdata passed when the object was created
-   void *data;
+   void *_userdata;
    /**
     * @brief Timer to when the command should attempt to lazily initiate a new
     * connection with the _stream_connect callback. This does not apply if the
     * command was given a stream upon construction.
     */
-   mlib_timer initiate_delay_timer;
+   mlib_timer _connect_delay_timer;
    /**
     * @brief The "start" reference point-in-time for the command object
     *
@@ -166,7 +166,7 @@ typedef struct _mongoc_async_cmd {
    /**
     * @brief The BSON document of the command to be executed on the server.
     */
-   bson_t cmd;
+   bson_t _command;
    mongoc_buffer_t buffer;
    mongoc_iovec_t *iovec;
    size_t niovec;
@@ -178,7 +178,7 @@ typedef struct _mongoc_async_cmd {
     *
     * Initialized with BSON_INITIALIZER, so safe to pass/destroy upon construction.
     */
-   bson_t reply;
+   bson_t _response_data;
    char *ns;
    /**
     * @brief The DNS address info that was associated with the command when
@@ -219,12 +219,12 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       struct addrinfo *dns_result,
                       mongoc_async_cmd_connect_cb connect_callback,
                       mlib_duration connect_delay,
-                      mongoc_async_cmd_setup_t setup,
+                      mongoc_async_cmd_stream_setup_cb setup,
                       void *setup_ctx,
                       const char *dbname,
                       const bson_t *cmd,
                       const int32_t cmd_opcode,
-                      mongoc_async_cmd_cb_t cb,
+                      mongoc_async_cmd_event_cb cb,
                       void *userdata,
                       mlib_duration timeout);
 
@@ -275,7 +275,7 @@ _acmd_cancel (mongoc_async_cmd_t *self)
 static inline void
 _acmd_adjust_connect_delay (mongoc_async_cmd_t *self, const mlib_duration d)
 {
-   mlib_time_adjust (&self->initiate_delay_timer.expires_at, d);
+   mlib_time_adjust (&self->_connect_delay_timer.expires_at, d);
 }
 
 /**
@@ -315,7 +315,7 @@ _acmd_elapsed (mongoc_async_cmd_t const *self)
  * @param T The type to read from the pointer
  * @param Command Pointer to a command object
  */
-#define _acmd_userdata(T, Command) ((T *) ((Command)->data))
+#define _acmd_userdata(T, Command) ((T *) ((Command)->_userdata))
 
 void
 mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd);
