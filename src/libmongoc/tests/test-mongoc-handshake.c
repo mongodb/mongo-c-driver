@@ -399,6 +399,7 @@ clear_faas_env (void)
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", ""));
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", ""));
    ASSERT (_mongoc_setenv ("K_SERVICE", ""));
+   ASSERT (_mongoc_setenv ("KUBERNETES_SERVICE_HOST", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_MEMORY_MB", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_REGION", ""));
@@ -640,6 +641,28 @@ test_aws_not_lambda (void *test_ctx)
    _handshake_check_required_fields (doc);
 
    ASSERT (!bson_has_field (doc, "env"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_aws_and_container (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+   ASSERT (_mongoc_setenv ("KUBERNETES_SERVICE_HOST", "1"));
+
+   _override_host_platform_os ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+
+   ASSERT_CMPSTR (bson_lookup_utf8 (doc, "container.orchestrator"), "kubernetes");
+   ASSERT_CMPSTR (bson_lookup_utf8 (doc, "env.name"), "aws.lambda");
+   _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -1396,6 +1419,12 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/MongoDB/handshake/faas/aws_not_lambda",
                       test_aws_not_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/aws_and_container",
+                      test_aws_and_container,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_setenv);

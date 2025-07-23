@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.15...4.0)
 
 list (INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
 # Defines BUILD_VERSION, which we use throughout:
@@ -348,11 +348,6 @@ set (CMAKE_MACOSX_RPATH ON)
 if(WIN32)
    set (CMAKE_IMPORT_LIBRARY_SUFFIX .dll.lib)
 endif()
-
-# https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
-# Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
-# silence a CMake 3.11 warning that the old behavior is deprecated.
-cmake_policy (SET CMP0042 NEW)
 
 # By default, ensure conformance with a minimum C standard.
 # Required extensions to the language (i.e. POSIX) are (re)enabled further below.

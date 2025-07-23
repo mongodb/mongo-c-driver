@@ -113,6 +113,9 @@ typedef struct _mongoc_handshake_t {
    char *compiler_info;
    char *flags;
 
+   bool docker;
+   bool kubernetes;
+
    mongoc_handshake_env_t env;
    optional_int32 env_timeout_sec;
    optional_int32 env_memory_mb;
