@@ -118,7 +118,7 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
  *
  * In the above, `<dur>` may be a parenthsized `mlib_duration` argument list or a
  * duration object; `<count>` must be an integral expression and `<unit>` is a
- * unit suffix identiifer (see: `mlib_duration_with_unit`) to create a duration
+ * unit suffix identifer (see: `mlib_duration_with_unit`) to create a duration
  * of `<count>` instances of `<unit>`, and `<op>` is one of:
  *
  * - `plus`/`minus` to add/subtract two durations.
@@ -139,14 +139,13 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
    MLIB_IF_ELSE (MLIB_IS_PARENTHESIZED (X))                                            \
    MLIB_NOTHING ("force the 'then' branch to expand first")                            \
    /* then: */ (_mlibDurationMagic MLIB_NOTHING () X) /* else: */ (X)
-#define _mlibExpandToNothingIfFollowedByParens(...)
 
 // Wrap a macro argument that should support the duration DSL
 #define mlib_duration_arg(X) MLIB_EVAL_8 (_mlibDurationArgument (X))
 
 // Zero arguments, just return a zero duration:
 #define _mlib_duration_argc_0() (mlib_init (mlib_duration){0})
-// One argument, just copy the duration:
+// One argument, just copy the duration. Passing through a function forces the type to be correct
 #define _mlib_duration_argc_1(D) _mlibDurationCopy (D)
 // Two arguments, the second arg is a unit suffix:
 #define _mlib_duration_argc_2(Count, Unit) mlib_duration_with_unit (Count, Unit)
