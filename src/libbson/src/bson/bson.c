@@ -25,7 +25,7 @@
 #include <common-macros-private.h>
 #include <common-string-private.h>
 
-#include <bson/bson-config.h>
+#include <bson/config.h>
 
 #include <mlib/config.h>
 #include <mlib/intencode.h>

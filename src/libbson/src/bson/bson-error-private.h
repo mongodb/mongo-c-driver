@@ -19,8 +19,8 @@
 #ifndef BSON_ERROR_PRIVATE_H
 #define BSON_ERROR_PRIVATE_H
 
-#include <bson/bson-error.h>
-#include <bson/bson-macros.h>
+#include <bson/error.h>
+#include <bson/macros.h>
 
 
 #define BSON_ERROR_CATEGORY 1

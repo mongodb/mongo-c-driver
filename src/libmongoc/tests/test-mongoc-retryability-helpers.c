@@ -1,8 +1,8 @@
-#include <test-mongoc-retryability-helpers.h>
+#include "./test-mongoc-retryability-helpers.h"
 
 #include <mongoc/mongoc-array-private.h>
 
-#include <bson/bson-error.h>
+#include <bson/error.h>
 
 #include <TestSuite.h>
 #include <test-conveniences.h>

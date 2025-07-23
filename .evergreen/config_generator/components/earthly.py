@@ -68,7 +68,9 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         case "centos7":
             return "CentOS", "7.0"
         case _:
-            raise ValueError(f"Failed to split OS env key {env=} into a name+version pair (unrecognized)")
+            raise ValueError(
+                f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
+            )
 
 
 class EarthlyVariant(NamedTuple):
@@ -147,11 +149,15 @@ class Configuration(NamedTuple):
 
 # Authenticate with DevProd-provided Amazon ECR instance to use as pull-through cache for DockerHub.
 class DockerLoginAmazonECR(Function):
-    name = 'docker-login-amazon-ecr'
+    name = "docker-login-amazon-ecr"
     commands = [
         # Avoid inadvertently using a pre-existing and potentially conflicting Docker config.
-        expansions_update(updates=[KeyValueParam(key='DOCKER_CONFIG', value='${workdir}/.docker')]),
-        ec2_assume_role(role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"),
+        expansions_update(
+            updates=[KeyValueParam(key="DOCKER_CONFIG", value="${workdir}/.docker")]
+        ),
+        ec2_assume_role(
+            role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"
+        ),
         subprocess_exec(
             binary="bash",
             command_type=EvgCommandType.SETUP,
@@ -163,7 +169,7 @@ class DockerLoginAmazonECR(Function):
             ],
             args=[
                 "-c",
-                'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com',
+                "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com",
             ],
         ),
     ]
@@ -176,7 +182,9 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     """
     match env, conf:
         # u16/u18/centos7 are not capable of building mongocxx
-        case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^Ubuntu 18|^CentOS 7", e.display_name):
+        case e, (_sasl, _tls, cxx) if re.match(
+            r"^Ubuntu 16|^Ubuntu 18|^CentOS 7", e.display_name
+        ):
             # Only build if C++ driver is test is disabled
             return cxx == "none"
         # Anything else: Allow it to run:
@@ -299,6 +307,13 @@ def tasks() -> Iterable[EvgTask]:
         )
         if task is not None:
             yield task
+
+    yield EvgTask(
+        name="verify-headers",
+        commands=[earthly_exec(kind="test", target="verify-headers")],
+        tags=["pr-merge-gate"],
+        run_on=CONTAINER_RUN_DISTROS,
+    )
 
 
 def variants() -> Iterable[BuildVariant]:

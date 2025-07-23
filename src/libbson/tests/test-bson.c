@@ -19,7 +19,7 @@
 #include <bson/validate-private.h>
 #include <common-bson-dsl-private.h>
 
-#include <bson/bcon.h>
+#include <bson/bson-bcon.h>
 #include <bson/bson.h>
 
 #include <mlib/ckdint.h>

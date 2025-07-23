@@ -83,6 +83,12 @@ ADD_CXX_COMPILER:
             # Old Alpine 3.16 bundles libstdc++ in g++, so we need to pull GCC along anyway
             LET cxx_pkg = clang g++
         END
+    ELSE IF test -f /etc/redhat-release
+        IF test "$cxx_compiler" = g++
+            LET cxx_pkg = "gcc-c++"
+        ELSE IF test "$cxx_compiler" = clang++
+            LET cxx_pkg = clang gcc-c++
+        END
     END
     IF test "$cxx_pkg" = ""
         RUN __fail "Unable to infer package name for --cxx_compiler “%s” on this platform (check spelling or pass a “--cxx_pkg” argument)" "$cxx_compiler"

@@ -9,7 +9,7 @@
 
 #include <mongoc/mongoc.h>
 
-#include <bson/bcon.h>
+#include <bson/bson-bcon.h>
 
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>

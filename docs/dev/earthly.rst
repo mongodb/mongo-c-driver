@@ -297,6 +297,21 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       See: `SNYK_TOKEN`
 
 
+.. program:: +verify-headers
+.. earthly-target:: +verify-headers
+
+   This runs `CMake's header verification`__ on the library sources, to ensure
+   that the public API headers can be ``#include``\ 'd directly in a C++
+   compiler.
+
+   __ https://cmake.org/cmake/help/latest/prop_tgt/VERIFY_INTERFACE_HEADER_SETS.html
+
+   This target does not produce any output artifacts. This only checks that our
+   public API headers are valid. This checks against a variety of environments
+   to test that we are including the necessary standard library headers in our
+   public API headers.
+
+
 .. _earthly.secrets:
 
 Setting Earthly Secrets
