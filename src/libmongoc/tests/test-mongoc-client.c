@@ -3849,7 +3849,7 @@ void
 test_client_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
-   TestSuite_AddLive (suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
+   TestSuite_AddLive (suite, "/Client/ipv6/pooled", test_mongoc_client_ipv6_pooled);
 
    TestSuite_AddFull (
       suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, test_framework_skip_if_no_auth);
