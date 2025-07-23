@@ -1014,8 +1014,8 @@ hex_to_bin (const char *hex, size_t *bin_len)
    return out;
 }
 
-static char *
-bin_to_hex_impl (const uint8_t *bin, size_t bin_len, bool uppercase)
+char *
+bin_to_hex (const uint8_t *bin, size_t bin_len)
 {
    BSON_ASSERT_PARAM (bin);
    size_t hex_len = bin_len;
@@ -1028,27 +1028,10 @@ bin_to_hex_impl (const uint8_t *bin, size_t bin_len, bool uppercase)
    char *out = bson_malloc0 (hex_len);
 
    for (size_t i = 0u; i < bin_len; i++) {
-      int req;
-      if (uppercase) {
-         req = bson_snprintf (out + (2u * i), 3, "%02X", bin[i]);
-      } else {
-         req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
-      }
+      int req = bson_snprintf (out + (2u * i), 3, "%02X", bin[i]);
       // Expect no truncation.
       BSON_ASSERT (req < 3);
    }
 
    return out;
-}
-
-char *
-bin_to_hex_uppercase (const uint8_t *bin, size_t bin_len)
-{
-   return bin_to_hex_impl (bin, bin_len, true);
-}
-
-char *
-bin_to_hex_lowercase (const uint8_t *bin, size_t bin_len)
-{
-   return bin_to_hex_impl (bin, bin_len, false);
 }

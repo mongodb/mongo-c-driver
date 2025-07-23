@@ -26,7 +26,7 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-util-private.h> // bin_to_hex_uppercase
+#include <mongoc/mongoc-util-private.h> // bin_to_hex
 
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-ssl.h>
@@ -244,7 +244,7 @@ generate_key_name (LPBYTE data, DWORD len, const char *suffix)
          goto fail;
       }
       // Use uppercase hex to match form of `openssl x509` command:
-      hash_hex = bin_to_hex_uppercase ((const uint8_t *) hash, sizeof (hash));
+      hash_hex = bin_to_hex ((const uint8_t *) hash, sizeof (hash));
       if (!hash_hex) {
          goto fail;
       }

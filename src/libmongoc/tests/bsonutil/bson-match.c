@@ -261,8 +261,8 @@ special_matches_hex_bytes (const bson_matcher_context_t *context,
    expected_bytes = hex_to_bin (bson_iter_utf8 (&iter, NULL), &expected_bytes_len);
    actual_bytes = bson_val_to_binary (actual, &actual_bytes_len_u32);
    actual_bytes_len = actual_bytes_len_u32;
-   expected_bytes_string = bin_to_hex_lowercase (expected_bytes, expected_bytes_len);
-   actual_bytes_string = bin_to_hex_lowercase (actual_bytes, actual_bytes_len);
+   expected_bytes_string = bin_to_hex (expected_bytes, expected_bytes_len);
+   actual_bytes_string = bin_to_hex (actual_bytes, actual_bytes_len);
 
    if (expected_bytes_len != actual_bytes_len) {
       MATCH_ERR ("expected %zu (%s) but got %zu (%s) bytes",

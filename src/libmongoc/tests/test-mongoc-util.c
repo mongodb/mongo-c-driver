@@ -95,22 +95,10 @@ static void
 test_bin_to_hex (void)
 {
    const char *bin = "foobar";
-
-   // Test lowercase:
-   {
-      const char *expect = "666f6f626172";
-      char *got = bin_to_hex_lowercase ((const uint8_t *) bin, strlen (bin));
-      ASSERT_CMPSTR (got, expect);
-      bson_free (got);
-   }
-
-   // Test uppercase:
-   {
-      const char *expect = "666F6F626172";
-      char *got = bin_to_hex_uppercase ((const uint8_t *) bin, strlen (bin));
-      ASSERT_CMPSTR (got, expect);
-      bson_free (got);
-   }
+   const char *expect = "666F6F626172";
+   char *got = bin_to_hex ((const uint8_t *) bin, strlen (bin));
+   ASSERT_CMPSTR (got, expect);
+   bson_free (got);
 }
 
 static void
