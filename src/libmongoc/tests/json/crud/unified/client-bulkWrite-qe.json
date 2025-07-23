@@ -288,7 +288,8 @@
             ]
           },
           "expectError": {
-            "isError": true
+            "isError": true,
+            "errorContains": "Only insert is supported in BulkWrite with multiple operations and Queryable Encryption"
           }
         }
       ]
