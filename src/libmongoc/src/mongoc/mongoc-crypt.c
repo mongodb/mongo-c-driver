@@ -314,7 +314,7 @@ _state_machine_destroy (_state_machine_t *state_machine)
 
 /* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO{_WITH_DB} */
 static bool
-_state_need_mongo_collinfo (_state_machine_t *state_machine, bool with_db, bson_error_t *error)
+_state_need_mongo_collinfo (_state_machine_t *state_machine, const char *db_name, bson_error_t *error)
 {
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -338,7 +338,6 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine, bool with_db, bson_
    }
 
    bson_append_document (&opts, "filter", -1, &filter_bson);
-   const char *db_name = with_db ? mongocrypt_ctx_mongo_db (state_machine->ctx) : state_machine->db_name;
    if (!db_name) {
       _ctx_check_error (state_machine->ctx, error, true);
       goto fail;
@@ -1086,7 +1085,7 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
          _ctx_check_error (state_machine->ctx, error, true);
          goto fail;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-         if (!_state_need_mongo_collinfo (state_machine, false, error)) {
+         if (!_state_need_mongo_collinfo (state_machine, state_machine->db_name, error)) {
             goto fail;
          }
          break;
@@ -1119,11 +1118,16 @@ _state_machine_run (_state_machine_t *state_machine, bson_t *result, bson_error_
       case MONGOCRYPT_CTX_DONE:
          goto success;
          break;
-      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
-         if (!_state_need_mongo_collinfo (state_machine, true, error)) {
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: {
+         const char *db_name = mongocrypt_ctx_mongo_db (state_machine->ctx);
+         if (!db_name) {
+            _ctx_check_error (state_machine->ctx, error, true);
             goto fail;
          }
-         break;
+         if (!_state_need_mongo_collinfo (state_machine, db_name, error)) {
+            goto fail;
+         }
+      } break;
       }
    }
 
