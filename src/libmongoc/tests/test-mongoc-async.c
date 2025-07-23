@@ -6,6 +6,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
+
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/mock-server.h>
@@ -47,9 +49,9 @@ static void
 test_hello_helper (mongoc_async_cmd_t *acmd,
                    mongoc_async_cmd_result_t result,
                    const bson_t *bson,
-                   int64_t duration_usec)
+                   mlib_duration duration_usec)
 {
-   struct result *r = (struct result *) acmd->data;
+   struct result *r = _acmd_userdata (struct result, acmd);
    bson_iter_t iter;
    bson_error_t *error = &acmd->error;
 
@@ -139,8 +141,8 @@ test_hello_impl (bool with_ssl)
                             sock_streams[i],
                             false,
                             NULL /* dns result, n/a. */,
-                            NULL, /* initiator. */
-                            0,    /* initiate delay. */
+                            NULL,             /* initiator. */
+                            mlib_duration (), /* No initiate delay. */
                             setup,
                             setup_ctx,
                             "admin",
@@ -148,7 +150,7 @@ test_hello_impl (bool with_ssl)
                             MONGOC_OP_CODE_QUERY, /* used by legacy hello */
                             &test_hello_helper,
                             (void *) &results[i],
-                            TIMEOUT);
+                            mlib_duration (TIMEOUT, ms));
    }
 
    future = future_async_run (async);
@@ -310,19 +312,19 @@ static void
 test_hello_delay_callback (mongoc_async_cmd_t *acmd,
                            mongoc_async_cmd_result_t result,
                            const bson_t *bson,
-                           int64_t duration_usec)
+                           mlib_duration duration_usec)
 {
    BSON_UNUSED (result);
    BSON_UNUSED (bson);
    BSON_UNUSED (duration_usec);
 
-   ((stream_with_result_t *) acmd->data)->finished = true;
+   _acmd_userdata (stream_with_result_t, acmd)->finished = true;
 }
 
 static mongoc_stream_t *
 test_hello_delay_initializer (mongoc_async_cmd_t *acmd)
 {
-   return ((stream_with_result_t *) acmd->data)->stream;
+   return _acmd_userdata (stream_with_result_t, acmd)->stream;
 }
 
 static void
@@ -346,15 +348,15 @@ test_hello_delay (void)
                          false, /* is setup done. */
                          NULL,  /* dns result. */
                          test_hello_delay_initializer,
-                         100,  /* delay 100ms. */
-                         NULL, /* setup function. */
-                         NULL, /* setup ctx. */
+                         mlib_duration (100, ms), /* delay 100ms. */
+                         NULL,                    /* setup function. */
+                         NULL,                    /* setup ctx. */
                          "admin",
                          &hello_cmd,
                          MONGOC_OP_CODE_QUERY, /* used by legacy hello */
                          &test_hello_delay_callback,
                          &stream_with_result,
-                         TIMEOUT);
+                         mlib_duration (TIMEOUT, ms));
 
    mongoc_async_run (async);
 
