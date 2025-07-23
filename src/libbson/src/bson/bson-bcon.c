@@ -19,7 +19,7 @@
  */
 
 
-#include <bson/bcon.h>
+#include <bson/bson-bcon.h>
 
 #include <bson/config.h>
 

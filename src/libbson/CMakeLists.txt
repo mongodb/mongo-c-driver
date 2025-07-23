@@ -187,9 +187,8 @@ if(ENABLE_STATIC)
             # Ignore all headers that start with "bson-", as they have not
             # been sanitized for direct inclusion.
             "bson/bson-.*\\.h"
-            # Don't check jsonsl.h or bcon.h either
+            # Don't check jsonsl.h either
             "jsonsl\\.h"
-            "bcon\\.h"
          )
    endif()
 endif()

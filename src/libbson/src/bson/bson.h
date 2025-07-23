@@ -20,7 +20,7 @@
 
 #define BSON_INSIDE
 
-#include <bson/bcon.h>
+#include <bson/bson-bcon.h>
 #include <bson/bson-clock.h>
 #include <bson/bson-context.h>
 #include <bson/bson-decimal128.h>
