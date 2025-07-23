@@ -50,6 +50,7 @@ all_variants = [
             "link-with-cmake",
             "link-with-cmake-ssl",
             "link-with-cmake-snappy",
+            "verify-headers",
             OD([("name", "link-with-cmake-mac"), ("distros", ["macos-14-arm64"])]),
             OD([("name", "link-with-cmake-windows"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "link-with-cmake-windows-ssl"), ("distros", ["windows-vsCurrent-large"])]),
@@ -67,7 +68,7 @@ all_variants = [
             OD([("name", "install-uninstall-check-mingw"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "install-uninstall-check-msvc"), ("distros", ["windows-vsCurrent-large"])]),
             "debug-compile-with-warnings",
-            OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian10-small"])]),
+            OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian11-small"])]),
             "install-libmongoc-after-libbson",
         ],
         {
@@ -84,7 +85,7 @@ all_variants = [
             "build-and-run-authentication-tests-openssl-1.0.1",
             "build-and-run-authentication-tests-openssl-1.0.2",
             "build-and-run-authentication-tests-openssl-1.1.0",
-            "build-and-run-authentication-tests-openssl-1.0.1-fips"
+            "build-and-run-authentication-tests-openssl-1.0.1-fips",
         ],
         {},
     ),
@@ -126,13 +127,6 @@ all_variants = [
             ".authentication-tests .openssl",
             ".latest .nossl",
         ],
-        {"CC": "gcc"},
-    ),
-    Variant(
-        "gcc83",
-        "GCC 8.3 (Debian 10.0)",
-        "debian10-test",
-        ["release-compile", "debug-compile-nosasl-nossl", ".latest .nossl"],
         {"CC": "gcc"},
     ),
     Variant(
@@ -363,7 +357,7 @@ all_variants = [
                 "name": "ocsp-openssl-1.0.1",
                 "execution_tasks": [".ocsp-openssl-1.0.1"],
             },
-        ]
+        ],
     ),
     Variant(
         "packaging",
@@ -387,7 +381,7 @@ all_variants = [
             ".versioned-api .5.0",
             ".versioned-api .6.0",
             ".versioned-api .7.0",
-            ".versioned-api .8.0"
+            ".versioned-api .8.0",
         ],
         {},
     ),

@@ -837,44 +837,51 @@ _mongoc_crypto_rand_size_t (void)
 
 #endif /* defined(MONGOC_ENABLE_CRYPTO) */
 
-static BSON_ONCE_FUN (_mongoc_simple_rand_init)
+#define _mongoc_thread_local BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec (thread))
+
+// Use a thread-local random seed for calls to `rand_r`:
+static _mongoc_thread_local unsigned int _mongoc_simple_rand_seed = 0;
+static _mongoc_thread_local bool _mongoc_simple_rand_seed_initialized = false;
+
+static void
+_mongoc_simple_rand_init (void)
 {
+   if (_mongoc_simple_rand_seed_initialized) {
+      return;
+   }
+   _mongoc_simple_rand_seed_initialized = true;
    struct timeval tv;
-   unsigned int seed = 0;
 
    bson_gettimeofday (&tv);
 
-   seed ^= (unsigned int) tv.tv_sec;
-   seed ^= (unsigned int) tv.tv_usec;
-
-   srand (seed);
-
-   BSON_ONCE_RETURN;
+   _mongoc_simple_rand_seed ^= (unsigned int) tv.tv_sec;
+   _mongoc_simple_rand_seed ^= (unsigned int) tv.tv_usec;
 }
-
-static bson_once_t _mongoc_simple_rand_init_once = BSON_ONCE_INIT;
 
 uint32_t
 _mongoc_simple_rand_uint32_t (void)
 {
-   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   _mongoc_simple_rand_init ();
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint32_t) rand () & 0x7FFFu) << 0u) | (((uint32_t) rand () & 0x7FFFu) << 15u) |
-          (((uint32_t) rand () & 0x0003u) << 30u);
+   return (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 0u) |
+          (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x0003u) << 30u);
 }
 
 uint64_t
 _mongoc_simple_rand_uint64_t (void)
 {
-   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   _mongoc_simple_rand_init ();
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint64_t) rand () & 0x7FFFu) << 0u) | (((uint64_t) rand () & 0x7FFFu) << 15u) |
-          (((uint64_t) rand () & 0x7FFFu) << 30u) | (((uint64_t) rand () & 0x7FFFu) << 45u) |
-          (((uint64_t) rand () & 0x0003u) << 60u);
+   return (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 0u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 30u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 45u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x0003u) << 60u);
 }
 
 uint32_t
@@ -968,8 +975,11 @@ _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error
 }
 
 uint8_t *
-hex_to_bin (const char *hex, uint32_t *len)
+hex_to_bin (const char *hex, size_t *bin_len)
 {
+   BSON_ASSERT_PARAM (hex);
+   BSON_ASSERT_PARAM (bin_len);
+
    uint8_t *out;
 
    const size_t hex_len = strlen (hex);
@@ -977,33 +987,39 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (mlib_in_range (uint32_t, hex_len / 2u));
+   *bin_len = hex_len / 2u;
+   out = bson_malloc0 (*bin_len);
 
-   *len = (uint32_t) (hex_len / 2u);
-   out = bson_malloc0 (*len);
+   for (size_t i = 0; i < hex_len; i += 2u) {
+      uint64_t byte_value;
 
-   for (uint32_t i = 0; i < hex_len; i += 2u) {
-      uint32_t hex_char;
-
-      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+      if (mlib_nat64_parse (mstr_view_data (hex + i, 2), 16, &byte_value)) {
          bson_free (out);
          return NULL;
       }
 
-      BSON_ASSERT (mlib_in_range (uint8_t, hex_char));
-      out[i / 2u] = (uint8_t) hex_char;
+      BSON_ASSERT (mlib_in_range (uint8_t, byte_value));
+      out[i / 2u] = (uint8_t) byte_value;
    }
    return out;
 }
 
 char *
-bin_to_hex (const uint8_t *bin, uint32_t len)
+bin_to_hex (const uint8_t *bin, size_t bin_len)
 {
-   char *out = bson_malloc0 (2u * len + 1u);
+   BSON_ASSERT_PARAM (bin);
+   size_t hex_len = bin_len;
 
-   for (uint32_t i = 0u; i < len; i++) {
+   if (mlib_mul (&hex_len, 2u) || mlib_add (&hex_len, 1u)) {
+      // Overflow
+      return NULL;
+   }
+
+   char *out = bson_malloc0 (hex_len);
+
+   for (size_t i = 0u; i < bin_len; i++) {
+      int req = bson_snprintf (out + (2u * i), 3, "%02X", bin[i]);
       // Expect no truncation.
-      int req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
       BSON_ASSERT (req < 3);
    }
 

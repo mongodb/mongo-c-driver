@@ -1317,6 +1317,20 @@ _get_kms_providers_docs (bson_t *kms_from_file, bson_t *kms_providers, bson_t *t
    return true;
 }
 
+static void
+maybe_set_extra_crypt_shared (bson_t *extra)
+{
+   if (bson_has_field (extra, "cryptSharedLibPath")) {
+      return; // Already set.
+   }
+
+   char *const path = test_framework_getenv ("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   if (path) {
+      BSON_APPEND_UTF8 (extra, "cryptSharedLibPath", path);
+      bson_free (path);
+   }
+}
+
 static bool
 _parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson_error_t *error)
 {
@@ -1325,6 +1339,7 @@ _parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson
    bson_t kms_providers = BSON_INITIALIZER;
    bson_t tls_opts = BSON_INITIALIZER;
    BSON_ASSERT (client);
+   bson_t *extra = NULL;
 
    bson_parser_t *const parser = bson_parser_new ();
 
@@ -1397,7 +1412,9 @@ _parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson
    }
 
    if (extra_options) {
-      mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra_options);
+      extra = bson_copy (extra_options);
+      maybe_set_extra_crypt_shared (extra);
+      mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
    }
 
    if (!mongoc_client_enable_auto_encryption (client, auto_encryption_opts, error)) {
@@ -1406,6 +1423,7 @@ _parse_and_set_auto_encryption_opts (mongoc_client_t *client, bson_t *opts, bson
    ret = true;
 
 done:
+   bson_destroy (extra);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
    bson_destroy (&kms_providers);
    bson_destroy (&tls_opts);

@@ -7,7 +7,9 @@ libmongoc 2.1.0 (Unreleased)
 
 ## Changes
 
-Removed:
+* The CMake project now sets a CMake policy max version of `4.0` (previously unset).
+
+## Removed
 
 * Support for Debian 9 and Debian 10.
 

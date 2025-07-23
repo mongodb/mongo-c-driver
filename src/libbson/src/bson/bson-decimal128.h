@@ -21,9 +21,9 @@
 #define BSON_DECIMAL128_H
 
 
-#include <bson/bson-config.h>
-#include <bson/bson-macros.h>
 #include <bson/bson-types.h>
+#include <bson/config.h>
+#include <bson/macros.h>
 
 #include <string.h>
 

@@ -15,7 +15,7 @@
  */
 
 
-#include <bson/bcon.h>
+#include <bson/bson-bcon.h>
 #include <bson/bson.h>
 
 #include <TestSuite.h>

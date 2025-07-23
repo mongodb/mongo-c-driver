@@ -19,9 +19,9 @@
  */
 
 
-#include <bson/bcon.h>
+#include <bson/bson-bcon.h>
 
-#include <bson/bson-config.h>
+#include <bson/config.h>
 
 #include <stdio.h>
 

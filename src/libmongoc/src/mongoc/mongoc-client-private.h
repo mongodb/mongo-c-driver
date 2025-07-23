@@ -211,8 +211,7 @@ mongoc_stream_t *
 mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *host, bson_error_t *error);
 
 mongoc_stream_t *
-mongoc_client_connect (bool buffered,
-                       bool use_ssl,
+mongoc_client_connect (bool use_ssl,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,

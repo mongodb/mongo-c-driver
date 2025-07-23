@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <bson/bson-compat.h>
-#include <bson/bson-config.h>
+#include <bson/compat.h>
+#include <bson/config.h>
 
 #include <mlib/duration.h>
 #include <mlib/time_point.h>

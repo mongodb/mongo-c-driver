@@ -2708,7 +2708,7 @@ operation_upload (test_t *test, operation_t *op, result_t *result, bson_error_t 
    if (stream) {
       size_t total_written = 0u;
       uint8_t *source_bytes;
-      uint32_t source_bytes_len;
+      size_t source_bytes_len;
       bson_iter_t iter;
 
       if (!bson_iter_init_find (&iter, source, "$$hexBytes") || !BSON_ITER_HOLDS_UTF8 (&iter)) {

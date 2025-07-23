@@ -21,8 +21,8 @@
 #define BSON_STRING_H
 
 
-#include <bson/bson-macros.h>
 #include <bson/bson-types.h>
+#include <bson/macros.h>
 
 #include <stdarg.h>
 

@@ -16250,6 +16250,7 @@ buildvariants:
   - link-with-cmake
   - link-with-cmake-ssl
   - link-with-cmake-snappy
+  - verify-headers
   - name: link-with-cmake-mac
     distros:
     - macos-14-arm64
@@ -16293,7 +16294,7 @@ buildvariants:
   - debug-compile-with-warnings
   - name: build-and-test-with-toolchain
     distros:
-    - debian10-small
+    - debian11-small
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
@@ -16339,15 +16340,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-sasl-openssl
   - .authentication-tests .openssl
-  - .latest .nossl
-- name: gcc83
-  display_name: GCC 8.3 (Debian 10.0)
-  expansions:
-    CC: gcc
-  run_on: debian10-test
-  tasks:
-  - release-compile
-  - debug-compile-nosasl-nossl
   - .latest .nossl
 - name: gcc102
   display_name: GCC 10.2 (Debian 11.0)
@@ -16587,7 +16579,7 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian10-small
+  run_on: debian11-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task

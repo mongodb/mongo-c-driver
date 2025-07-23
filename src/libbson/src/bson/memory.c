@@ -15,11 +15,11 @@
  */
 
 
-#include <bson/bson-memory.h>
+#include <bson/memory.h>
 
 #include <common-macros-private.h>
 
-#include <bson/bson-config.h>
+#include <bson/config.h>
 
 #include <mlib/config.h>
 

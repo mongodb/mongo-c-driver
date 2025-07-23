@@ -1,5 +1,3 @@
-cmake_policy(VERSION 3.15)
-
 if(NOT CMAKE_SCRIPT_MODE_FILE)
     # We are being included from within a project, so we should generate the install rules
     # The script name is "uninstall" by default:

@@ -12,8 +12,8 @@
 
 #include <bson/bson-timegm-private.h>
 
-#include <bson/bson-compat.h>
-#include <bson/bson-macros.h>
+#include <bson/compat.h>
+#include <bson/macros.h>
 
 #include <errno.h>
 #include <stdint.h> /* for INT64_MAX and INT64_MIN */

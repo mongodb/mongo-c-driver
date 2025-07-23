@@ -23,8 +23,8 @@
 
 #include <bson/bson-context.h>
 #include <bson/bson-endian.h>
-#include <bson/bson-macros.h>
 #include <bson/bson-types.h>
+#include <bson/macros.h>
 
 #include <time.h>
 
