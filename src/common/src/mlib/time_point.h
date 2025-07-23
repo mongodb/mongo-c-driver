@@ -137,7 +137,7 @@ mlib_now (void) mlib_noexcept
    // Number of microseconds beyond the last whole second:
    const int64_t subsecond_us = ((ticks % ticks_per_second) * one_million) / ticks_per_second;
    mlib_time_point ret;
-   ret._time_since_monotonic_start = mlib_duration ((whole_seconds_1m, us), plus, (subsecond_us, us));
+   ret.time_since_monotonic_start = mlib_duration ((whole_seconds_1m, us), plus, (subsecond_us, us));
    return ret;
 #else
 #error We do not know how to get the current time on this platform
