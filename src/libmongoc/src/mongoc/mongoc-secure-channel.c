@@ -222,6 +222,27 @@ decode_object (const char *structType,
    return out;
 }
 
+// `utf8_to_wide` converts a UTF-8 string into a wide string using the Windows API MultiByteToWideChar.
+// Returns a NULL-terminated wide character string on success. Returns NULL on error.
+static WCHAR *
+utf8_to_wide (const char *utf8)
+{
+   // Get necessary character count (not bytes!) of result:
+   int required_wide_chars = MultiByteToWideChar (CP_UTF8, 0, utf8, -1 /* NULL terminated */, NULL, 0);
+   if (required_wide_chars == 0) {
+      return NULL;
+   }
+
+   // Since -1 was passed as the input length, the returned character count includes space for the null character.
+   WCHAR *wide_chars = bson_malloc (sizeof (WCHAR) * required_wide_chars);
+   if (0 == MultiByteToWideChar (CP_UTF8, 0, utf8, -1 /* NULL terminated */, wide_chars, required_wide_chars)) {
+      bson_free (wide_chars);
+      return NULL;
+   }
+
+   return wide_chars;
+}
+
 // `generate_key_name` generates a deterministic name for a key of the form: "libmongoc-<SHA256 fingerprint>-<suffix>".
 // Returns NULL on error.
 static LPWSTR
@@ -253,11 +274,8 @@ generate_key_name (LPBYTE data, DWORD len, const char *suffix)
    // Convert to a wide string:
    {
       key_name = bson_strdup_printf ("libmongoc-%s-%s", hash_hex, suffix);
-      size_t key_name_wide_chars = strlen (key_name) + 1;
-      key_name_wide = bson_malloc (sizeof (WCHAR) * (key_name_wide_chars));
-      BSON_ASSERT (mlib_in_range (int, key_name_wide_chars));
-      if (0 == MultiByteToWideChar (
-                  CP_UTF8, 0, key_name, -1 /* NULL terminate */, key_name_wide, (int) key_name_wide_chars)) {
+      key_name_wide = utf8_to_wide (key_name);
+      if (!key_name_wide) {
          goto fail;
       }
    }
