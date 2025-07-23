@@ -48,8 +48,8 @@
  * compiled with Native SSL support on Windows
  */
 #define MONGOC_ENABLE_SSL_SECURE_CHANNEL @MONGOC_ENABLE_SSL_SECURE_CHANNEL@
-
-#if MONGOC_ENABLE_SSL_SECURE_CHANNEL != 1
+#define MONGOC_SECURE_CHANNEL_ENABLED() @MONGOC_ENABLE_SSL_SECURE_CHANNEL@
+#if MONGOC_SECURE_CHANNEL_ENABLED() != 1
 #  undef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 #endif
 
@@ -65,8 +65,8 @@
 #endif
 
 /*
- * MONGOC_HAVE_BCRYPT_PBKDF2 is set from configure to determine if 
- * our Bcrypt Windows library supports PBKDF2 
+ * MONGOC_HAVE_BCRYPT_PBKDF2 is set from configure to determine if
+ * our Bcrypt Windows library supports PBKDF2
  */
 #define MONGOC_HAVE_BCRYPT_PBKDF2 @MONGOC_HAVE_BCRYPT_PBKDF2@
 
@@ -101,8 +101,8 @@
  * compiled with OpenSSL support.
  */
 #define MONGOC_ENABLE_SSL_OPENSSL @MONGOC_ENABLE_SSL_OPENSSL@
-
-#if MONGOC_ENABLE_SSL_OPENSSL != 1
+#define MONGOC_OPENSSL_ENABLED() @MONGOC_ENABLE_SSL_OPENSSL@
+#if MONGOC_OPENSSL_ENABLED() != 1
 #  undef MONGOC_ENABLE_SSL_OPENSSL
 #endif
 

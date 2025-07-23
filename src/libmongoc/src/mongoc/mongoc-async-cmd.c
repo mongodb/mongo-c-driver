@@ -70,17 +70,17 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream, int *events, void *ctx, mli
    const char *host = (const char *) ctx;
    int retry_events = 0;
 
-
    for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
    }
 
-   mlib_duration_rep_t remain_ms = mlib_milliseconds_count (mlib_timer_remaining (deadline));
-
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-   /* pass 0 for the timeout to begin / continue non-blocking handshake */
-   remain_ms = 0;
-#endif
+   // Try to do a non-blocking operation, if our backend allows it
+   const mlib_duration_rep_t remain_ms = //
+      (MONGOC_SECURE_CHANNEL_ENABLED () || MONGOC_OPENSSL_ENABLED ())
+         // Pass 0 for the timeout to begin / continue a non-blocking handshake
+         ? 0
+         // Otherwise, use the deadline
+         : mlib_milliseconds_count (mlib_timer_remaining (deadline));
    if (mongoc_stream_tls_handshake (tls_stream, host, remain_ms, &retry_events, error)) {
       return 1;
    }
