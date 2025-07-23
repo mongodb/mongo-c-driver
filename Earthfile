@@ -12,7 +12,7 @@ IMPORT ./tools/ AS tools
 # COPY_SOURCE :
 #   Copy source files required for the build into the specified "--into" directory
 COPY_SOURCE:
-    COMMAND
+    FUNCTION
     ARG --required into
     COPY --dir \
         build/ \
@@ -28,7 +28,7 @@ COPY_SOURCE:
 # CONFIGURE :
 #   Configure the project in $source_dir into $build_dir with a common set of configuration options
 CONFIGURE:
-    COMMAND
+    FUNCTION
     ARG --required source_dir
     ARG --required build_dir
     ARG --required tls
