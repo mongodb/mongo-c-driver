@@ -941,7 +941,6 @@ _test_duration (void)
    d = mlib_duration ((4, sec), min, (400, ms));
    mlib_check (mlib_duration_cmp (d, ==, (400, ms)));
 
-   // Clamp to at most five minutes
    d = mlib_duration (
       // At least 5 seconds:
       (d, max, (5, sec)),
@@ -975,8 +974,6 @@ _test_duration (void)
    d = mlib_duration (-1729, us);
    mlib_check (mlib_milliseconds_count (d), eq, -1);
 
-   // d = mlib_duration (1, sec, plus, 729, ms);
-   // mlib_check (mlib_microseconds_count (d), eq, 1729000);
    d = mlib_duration ((-3, sec), plus, mlib_duration_min ());
    mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
    d = mlib_duration ((4, sec), plus, mlib_duration_max ());
@@ -1061,11 +1058,11 @@ _test_sleep (void)
    // Sleeping for a negative duration returns immediately with success
    start = mlib_now ();
    mlib_check (mlib_sleep_for (-10, sec), eq, 0);
-   mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
+   mlib_check (mlib_duration_cmp (mlib_elapsed_since (start), <, (100, ms)));
 
    // Sleeping until a point in the past returns immediately as well
    mlib_check (mlib_sleep_until (start), eq, 0);
-   mlib_check (mlib_milliseconds_count (mlib_time_difference (start, mlib_now ())) < 100);
+   mlib_check (mlib_duration_cmp (mlib_elapsed_since (start), <, (100, ms)));
 }
 
 static void
@@ -1093,7 +1090,7 @@ _test_timer (void)
    mlib_check (cond);
 
    // Create a timer that expired in the past
-   tm = mlib_expires_at (mlib_later (mlib_now (), mlib_duration (-10, sec)));
+   tm = mlib_expires_at (mlib_later (mlib_now (), (-10, sec)));
    mlib_check (mlib_timer_is_expired (tm));
 }
 
