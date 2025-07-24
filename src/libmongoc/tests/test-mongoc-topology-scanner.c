@@ -1,11 +1,3 @@
-#include "./TestSuite.h"
-#include "./mock_server/future-functions.h"
-#include "./mock_server/future.h"
-#include "./mock_server/mock-rs.h"
-#include "./mock_server/mock-server.h"
-#include "./test-conveniences.h"
-#include "./test-libmongoc.h"
-
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
@@ -16,7 +8,6 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>

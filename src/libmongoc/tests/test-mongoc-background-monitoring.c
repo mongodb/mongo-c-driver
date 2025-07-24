@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "./mock_server/mock-server.h"
-
 #include <common-string-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
@@ -27,7 +25,6 @@
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>

@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-#include "./TestSuite.h"
-#include "./mock_server/future-functions.h"
-#include "./mock_server/mock-server.h"
-#include "./test-conveniences.h"
-#include "./test-libmongoc.h"
-
 #include <common-atomic-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>

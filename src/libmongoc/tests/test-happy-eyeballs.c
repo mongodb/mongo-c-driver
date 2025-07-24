@@ -1,7 +1,3 @@
-#include "./TestSuite.h"
-#include "./mock_server/mock-server.h"
-#include "./test-libmongoc.h"
-
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>

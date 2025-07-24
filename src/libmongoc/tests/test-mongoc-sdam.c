@@ -1,6 +1,3 @@
-#include "./json-test.h"
-#include "./test-libmongoc.h"
-
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-set-private.h>
@@ -10,7 +7,6 @@
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <json-test.h>

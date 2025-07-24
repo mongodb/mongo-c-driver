@@ -16,8 +16,6 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <mlib/duration.h>
-
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 

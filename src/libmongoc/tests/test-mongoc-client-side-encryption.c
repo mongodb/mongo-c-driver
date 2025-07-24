@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-#include "./json-test.h"
-#include "./test-libmongoc.h"
-
 #include <common-b64-private.h>
 #include <common-bson-dsl-private.h>
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <json-test.h>

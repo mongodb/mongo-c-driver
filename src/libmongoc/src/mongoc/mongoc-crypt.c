@@ -35,9 +35,7 @@
 #include <mongoc/mcd-time.h>
 #include <mongoc/service-gcp.h>
 
-#include <mlib/ckdint.h>
 #include <mlib/cmp.h>
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <mongocrypt/mongocrypt.h>

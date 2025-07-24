@@ -1,10 +1,3 @@
-#include "./TestSuite.h"
-#include "./json-test.h"
-#include "./mock_server/future-functions.h"
-#include "./mock_server/mock-server.h"
-#include "./test-conveniences.h"
-#include "./test-libmongoc.h"
-
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-change-stream-private.h>
 #include <mongoc/mongoc-collection-private.h>
@@ -14,7 +7,6 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
-#include <mlib/duration.h>
 #include <mlib/loop.h>
 #include <mlib/time_point.h>
 

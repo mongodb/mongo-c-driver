@@ -23,22 +23,21 @@
  * These are the C examples for that page.
  */
 
-/* clang-format off */
-#include <assert.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-database-private.h>
-#include <mongoc/mongoc-collection-private.h>
-
-#include <TestSuite.h>
-#include <test-libmongoc.h>
-#include <test-conveniences.h>
 #include "./TestSuite.h"
-#include <mlib/duration.h>
-#include <mlib/time_point.h>
-#include "./test-libmongoc.h"
 #include "./test-conveniences.h"
+#include "./test-libmongoc.h"
 
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <mlib/time_point.h>
+
+#include <assert.h>
+
+/* clang-format off */
 
 typedef void (*sample_command_fn_t) (mongoc_database_t *db);
 typedef void (*sample_txn_command_fn_t) (mongoc_client_t *client);

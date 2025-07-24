@@ -1,6 +1,3 @@
-#include "./TestSuite.h"
-#include "./test-libmongoc.h"
-
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
@@ -8,7 +5,6 @@
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>

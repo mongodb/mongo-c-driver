@@ -1,5 +1,3 @@
-#include "./test-libmongoc.h"
-
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -8,7 +6,6 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/cmp.h>
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>

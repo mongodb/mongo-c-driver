@@ -1,16 +1,7 @@
-#include "./TestSuite.h"
-#include "./json-test.h"
-#include "./mock_server/future-functions.h"
-#include "./mock_server/mock-server.h"
-#include "./test-conveniences.h"
-#include "./test-libmongoc.h"
-
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mongoc.h>
-
-#include <mlib/duration.h>
 
 #include <TestSuite.h>
 #include <json-test.h>

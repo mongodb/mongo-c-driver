@@ -1,12 +1,7 @@
-#include "./json-test.h"
-#include "./test-conveniences.h"
-#include "./test-libmongoc.h"
-
 #include <mongoc/mongoc-client-session-private.h>
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <json-test.h>
