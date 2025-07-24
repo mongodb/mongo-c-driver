@@ -10,8 +10,6 @@ echo
 
 set SRCROOT=%CD%
 set TAR=C:\cygwin\bin\tar
-set CMAKE=C:\cmake\bin\cmake
-set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
 rem Ensure Cygwin executables like sh.exe are not in PATH
 set PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc
 
@@ -43,6 +41,8 @@ if "%BSON_ONLY%"=="1" (
 )
 
 echo.%CC%| findstr /I "gcc">Nul && (
+  set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
+
   rem Build libmongoc, with flags that the downstream R driver mongolite uses
   %CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %BSON_ONLY_OPTION% .
   %CMAKE% --build .
