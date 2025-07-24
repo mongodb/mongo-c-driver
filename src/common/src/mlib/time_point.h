@@ -263,13 +263,16 @@ mlib_sleep_for (const mlib_duration d) mlib_noexcept
       return 0;
    }
 #if mlib_have_posix_clocks()
-   // Convert the microseconds count to the value for the usleep function
+   // Convert the microseconds count to the value for the usleep function. We don't
+   // know the precise integer type that `usleep` expects, so do a checked-narrow
+   // to handle too-large values.
    useconds_t i = 0;
-   if (mlib_narrow (&i, mlib_microseconds_count (d))) {
-      // Too many microseconds. Sleep for the max.
+   if (mlib_narrow (&i, duration_usec)) {
+      // Too many microseconds. Sleep for the max. This will only be reached
+      // for positive durations because of the above check against `<= 0`
       i = mlib_maxof (useconds_t);
    }
-   int rc = usleep (mlib_microseconds_count (d));
+   int rc = usleep (i);
    if (rc != 0) {
       return errno;
    }
