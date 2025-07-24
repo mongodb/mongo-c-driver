@@ -287,10 +287,11 @@ all_tasks = [
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
-                export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd""",
+                CMAKE="$(cygpath -aw "$CMAKE")"
+                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-mingw.cmd
+                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-mingw.cmd""",
                 include_expansions_in_env=["distro_id"],
+                redirect_standard_error_to_output=True,
             )
         ],
     ),
@@ -302,10 +303,12 @@ all_tasks = [
                 r"""
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
+                CMAKE="$(cygpath -aw "$CMAKE")"
                 export CC="Visual Studio 14 2015 Win64"
-                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd""",
+                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-msvc.cmd
+                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-msvc.cmd""",
                 include_expansions_in_env=["distro_id"],
+                redirect_standard_error_to_output=True,
             )
         ],
     ),
