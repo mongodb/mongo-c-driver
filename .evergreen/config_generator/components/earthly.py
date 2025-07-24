@@ -310,7 +310,10 @@ def tasks() -> Iterable[EvgTask]:
 
     yield EvgTask(
         name="verify-headers",
-        commands=[earthly_exec(kind="test", target="verify-headers")],
+        commands=[
+            DockerLoginAmazonECR.call(),
+            earthly_exec(kind="test", target="verify-headers"),
+        ],
         tags=["pr-merge-gate"],
         run_on=CONTAINER_RUN_DISTROS,
     )
