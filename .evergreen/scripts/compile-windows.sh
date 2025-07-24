@@ -56,7 +56,6 @@ IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 
 configure_flags_append "-DCMAKE_INSTALL_PREFIX=$(native-path "${install_dir}")"
 configure_flags_append "-DCMAKE_PREFIX_PATH=$(native-path "${install_dir}")"
-configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
 configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION:-}"
