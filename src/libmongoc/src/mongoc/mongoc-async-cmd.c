@@ -209,7 +209,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    acmd->stream = stream;
    acmd->_stream_connect = connect_cb;
    acmd->_stream_setup = stream_setup;
-   acmd->_stream_seutp_userdata = setup_userdata;
+   acmd->_stream_setup_userdata = setup_userdata;
    acmd->_event_callback = event_cb;
    acmd->_userdata = userdata;
    acmd->_start_time = mlib_now ();
@@ -279,7 +279,7 @@ static mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_stream_setup (mongoc_async_cmd_t *acmd)
 {
    int const retval = acmd->_stream_setup (
-      acmd->stream, &acmd->events, acmd->_stream_seutp_userdata, _acmd_deadline (acmd), &acmd->error);
+      acmd->stream, &acmd->events, acmd->_stream_setup_userdata, _acmd_deadline (acmd), &acmd->error);
    switch (retval) {
    case -1:
       return MONGOC_ASYNC_CMD_ERROR;

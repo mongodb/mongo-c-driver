@@ -137,10 +137,10 @@ typedef struct _mongoc_async_cmd {
     */
    mongoc_async_cmd_stream_setup_cb _stream_setup;
    // Arbitrary userdata pointer passed to the stream setup function
-   void *_stream_seutp_userdata;
+   void *_stream_setup_userdata;
    /**
     * @brief User-provided command event callback. Invoked with the final result
-    * and once when the command completes.
+    * and once when the command connects.
     */
    mongoc_async_cmd_event_cb _event_callback;
    // Arbitrary userdata passed when the object was created
@@ -156,11 +156,17 @@ typedef struct _mongoc_async_cmd {
     *
     * This is used to determine how long the command has been in progress,
     * including for when to consider the command to have timed-out.
+    *
+    * NOTE: This value can change! See: `_acmd_reset_elapsed`
     */
    mlib_time_point _start_time;
-   // The timeout duration allotted to this command object
+   /**
+    * @brief The timeout duration allotted to the command object.
+    *
+    * We need to store it as a duration rather than a timer, because we need to
+    * reset the timeout at certain points (see: `_acmd_reset_elapsed`)
+    */
    mlib_duration _timeout;
-
 
    bson_error_t error;
    /**
