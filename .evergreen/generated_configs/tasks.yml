@@ -5181,8 +5181,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
-          CC: mingw
-          CXX: mingw
+          CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-test-8.0-server-auth
     run_on: windows-vsCurrent-small
@@ -5195,8 +5195,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: mingw }
-            - { key: CXX, value: mingw }
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -5216,8 +5216,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: mingw }
-            - { key: CXX, value: mingw }
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }

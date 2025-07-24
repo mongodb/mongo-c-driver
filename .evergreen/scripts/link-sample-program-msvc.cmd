@@ -34,8 +34,8 @@ if "%ENABLE_SNAPPY%"=="1" (
   %TAR% xzf 1.1.7.tar.gz || goto :error
   cd snappy-1.1.7 || goto :error
   %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -S snappy-1.1.7 -B snappy-1.1.7-build || goto :error
-  %CMAKE% --build snappy-1.1.7-build --target ALL_BUILD --config "Debug" -- /m || goto :error
-  %CMAKE% --build snappy-1.1.7-build --target INSTALL --config "Debug" -- /m || goto :error
+  %CMAKE% --build snappy-1.1.7-build --config "Debug" --target ALL_BUILD -- /m || goto :error
+  %CMAKE% --build snappy-1.1.7-build --config "Debug" --target INSTALL -- /m || goto :error
   set SNAPPY_OPTION=-DENABLE_SNAPPY=ON
 ) else (
   set SNAPPY_OPTION=-DENABLE_SNAPPY=OFF
@@ -49,8 +49,8 @@ if "%ENABLE_SSL%"=="1" (
   %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF %ENABLE_SNAPPY_OPTION% .. || goto :error
 )
 
-%CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m || goto :error
-%CMAKE% --build . --target INSTALL --config "Debug" -- /m || goto :error
+%CMAKE% --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
+%CMAKE% --build . --config "Debug" --target INSTALL -- /m || goto :error
 
 rem Test our CMake package config file with CMake's find_package command.
 set EXAMPLE_DIR=%SRCROOT%\src\libmongoc\examples\cmake\find_package
@@ -68,7 +68,7 @@ if "%ENABLE_SSL%"=="1" (
 )
 
 %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
-%CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m || goto :error
+%CMAKE% --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
 
 rem Yes, they should've named it "dependencies".
 dumpbin.exe /dependents Debug\hello_mongoc.exe || goto :error

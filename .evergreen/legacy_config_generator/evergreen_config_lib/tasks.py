@@ -304,7 +304,6 @@ all_tasks = [
                 . .evergreen/scripts/find-cmake-latest.sh
                 export CMAKE="$(find_cmake_latest)"
                 CMAKE="$(cygpath -aw "$CMAKE")"
-                export CC="Visual Studio 14 2015 Win64"
                 BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-msvc.cmd
                 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-msvc.cmd""",
                 include_expansions_in_env=["distro_id"],

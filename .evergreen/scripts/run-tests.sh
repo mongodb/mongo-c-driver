@@ -168,7 +168,7 @@ wait_for_server() {
   return 1
 }
 
-if [[ "${CC}" =~ mingw ]]; then
+if [[ "${CC}" =~ gcc ]]; then
   echo "Waiting for simple HTTP server to start..."
   wait_for_server "simple HTTP" 8000
   echo "Waiting for simple HTTP server to start... done."

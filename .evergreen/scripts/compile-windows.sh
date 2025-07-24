@@ -97,17 +97,15 @@ CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 declare build_dir
 build_dir="cmake-build"
 
-if [[ "${CC}" =~ mingw ]]; then
+if [[ "${CC}" =~ 'gcc' ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
   env \
-    "CC=gcc" \
-    "CXX=g++" \
     "${cmake_binary:?}" \
     -S . \
     -B "${build_dir:?}" \
-    -G "MinGW Makefiles" \
+    -G "Ninja" \
     "${configure_flags[@]}" \
     "${extra_configure_flags[@]}"
 

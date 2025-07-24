@@ -1,5 +1,4 @@
 REM Supported/used environment variables:
-REM    CC             Compiler, "mingw" or "Visual Studio 14 2015 Win64".
 REM    BSON_ONLY      Whether to build only the BSON library.
 
 rem Ensure Cygwin executables like sh.exe are not in PATH
@@ -10,8 +9,6 @@ echo
 
 set SRCROOT=%CD%
 set TAR=C:\cygwin\bin\tar
-rem Ensure Cygwin executables like sh.exe are not in PATH
-set PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc
 
 set version=1.31.0
 set major=1
@@ -39,10 +36,8 @@ if "%BSON_ONLY%"=="1" (
   set BSON_ONLY_OPTION=-DENABLE_MONGOC=ON
 )
 
-set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
-
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %BSON_ONLY_OPTION% .. || goto :error
+%CMAKE% -G "Ninja" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %BSON_ONLY_OPTION% .. || goto :error
 %CMAKE% --build . || goto :error
 %CMAKE% --build . --target install || goto :error
 

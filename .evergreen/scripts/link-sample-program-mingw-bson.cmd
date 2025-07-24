@@ -25,7 +25,7 @@ set version=1.31.0
 cd %BUILD_DIR% || goto :error
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_STATIC=ON .. || goto :error
+%CMAKE% -G "Ninja" DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_C_FLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_STATIC=ON .. || goto :error
 %CMAKE% --build . --parallel || goto :error
 %CMAKE% --build . --target install || goto :error
 

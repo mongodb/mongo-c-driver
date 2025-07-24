@@ -122,37 +122,49 @@ string(REPLACE "\n" ";" header_lines "${header}")
 
 # Prefix for the Batch script:
 set(bat_preamble [[
-goto :init
+call :init
+
+:print
+<nul set /p_=%~1
+exit /b
 
 :rmfile
 set f=%__prefix%\%~1
-<nul set /p "=Remove file %f% "
+call :print "Remove file %f% "
 if EXIST "%f%" (
     del /Q /F "%f%" || exit /b %errorlevel%
-    echo " - ok"
+    call :print " - ok"
 ) else (
-    echo " - skipped: not present"
+    call :print " - skipped: not present"
 )
+echo(
 exit /b
 
 :rmdir
 set f=%__prefix%\%~1
-<nul set /p "=Remove directory: %f% "
+call :print "Remove directory: %f% "
 if EXIST "%f%" (
     rmdir /Q "%f%" 2>nul
     if ERRORLEVEL 0 (
-        echo "- ok"
+        call :print "- ok"
     ) else (
-        echo "- skipped (non-empty?)"
+        call :print "- skipped (non-empty?)"
     )
 ) else (
-    echo "- skipped: not present"
+    call :print " - skipped: not present"
 )
+echo(
 exit /b
 
 :init
 setlocal EnableDelayedExpansion
 setlocal EnableExtensions
+if /i "%~dp0" NEQ "%TEMP%\" (
+    set tmpfile=%TEMP%\mongoc-%~nx0
+    copy "%~f0" "!tmpfile!" >nul
+    call "!tmpfile!" & del "!tmpfile!"
+    exit /b
+)
 ]])
 
 # Prefix for the shell script:
@@ -263,10 +275,6 @@ set(dirs_to_remove)
 foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
     # Get the relative path from the prefix (the uninstaller will fix it up later)
     file(RELATIVE_PATH relpath "${install_prefix}" "${installed}")
-    # Allow the batch script to delete itself without error.
-    if(WIN32 AND "${relpath}" STREQUAL "${UNINSTALL_SCRIPT_SELF}")
-        continue()
-    endif()
     # Add a removal:
     add_rmfile("${relpath}")
     # Climb the path and collect directories:
@@ -292,11 +300,5 @@ foreach(dir IN LISTS dirs_to_remove)
     file(RELATIVE_PATH relpath "${install_prefix}" "${dir}")
     add_rmdir("${relpath}")
 endforeach()
-
-# Allow the batch script delete itself without error.
-if(WIN32)
-    append_line("echo Remove uninstall script %~f0")
-    append_line("(GOTO) 2>nul & del \"%~f0\"")
-endif()
 
 message(STATUS "Generated uninstaller: ${UNINSTALL_WRITE_FILE}")

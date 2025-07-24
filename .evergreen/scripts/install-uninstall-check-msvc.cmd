@@ -1,5 +1,4 @@
 REM Supported/used environment variables:
-REM    CC             Compiler, "mingw" or "Visual Studio 14 2015 Win64".
 REM    BSON_ONLY      Whether to build only the BSON library.
 
 rem Ensure Cygwin executables like sh.exe are not in PATH
@@ -41,7 +40,7 @@ if "%BSON_ONLY%"=="1" (
   set BSON_ONLY_OPTION=-DENABLE_MONGOC=ON
 )
 
-%CMAKE% -G "Visual Studio 15 2017" -A x64 "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%" "-DCMAKE_BUILD_TYPE=Debug" %BSON_ONLY_OPTION% .. || goto :error
+%CMAKE% -G "Visual Studio 15 2017" -A x64 "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%" %BSON_ONLY_OPTION% .. || goto :error
 %CMAKE% --build . --config Debug || goto :error
 %CMAKE% --build . --config Debug --target install || goto :error
 
@@ -70,7 +69,7 @@ if exist %INSTALL_DIR%\lib\cmake\kms_message\kms_message-config.cmake (
 dir %INSTALL_DIR%\share\mongo-c-driver || goto :error
 
 rem CDRIVER-6062: uninstall script may return non-zero exit code despite success.
-%CMAKE% --build . --target uninstall || true
+%CMAKE% --build . --config Debug --target uninstall || true
 
 if exist %INSTALL_DIR%\lib\pkgconfig\bson%major%.pc (
    echo bson%major%.pc found!

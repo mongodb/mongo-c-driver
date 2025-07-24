@@ -1,9 +1,9 @@
-echo on
-echo
-
 rem Load environment for Visual Studio 15 2017.
 rem https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-150
 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat" || goto :error
+
+echo on
+echo
 
 rem Use DENABLE_SSL=OFF. Windows hosts do not have a MinGW ABI compatible OpenSSL install.
 set CMAKE_FLAGS=-DENABLE_SSL=OFF -DENABLE_SASL=CYRUS
@@ -25,7 +25,7 @@ set major=1
 cd %BUILD_DIR% || goto :error
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %CMAKE_FLAGS% .. || goto :error
+%CMAKE% -G "Ninja" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_C_FLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %CMAKE_FLAGS% .. || goto :error
 %CMAKE% --build . --parallel || goto :error
 %CMAKE% --build . --target install || goto :error
 
