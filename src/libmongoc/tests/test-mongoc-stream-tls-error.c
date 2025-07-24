@@ -4,7 +4,6 @@
 #include <mongoc/mongoc-stream-tls.h>
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL

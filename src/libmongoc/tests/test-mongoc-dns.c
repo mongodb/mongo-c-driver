@@ -7,7 +7,6 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #ifdef MONGOC_ENABLE_SSL

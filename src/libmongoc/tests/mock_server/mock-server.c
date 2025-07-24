@@ -33,7 +33,6 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/cmp.h>
-#include <mlib/duration.h>
 #include <mlib/intencode.h>
 #include <mlib/time_point.h>
 

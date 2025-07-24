@@ -16,7 +16,6 @@
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>

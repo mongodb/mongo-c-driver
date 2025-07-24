@@ -32,7 +32,6 @@
 
 #include <bson/bson.h>
 
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>

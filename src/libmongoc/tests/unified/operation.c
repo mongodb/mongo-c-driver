@@ -27,7 +27,6 @@
 #include <mongoc/utlist.h>
 
 #include <mlib/cmp.h>
-#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <test-libmongoc.h>
