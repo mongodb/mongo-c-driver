@@ -6781,6 +6781,7 @@ tasks:
       - ubuntu2404-large
     tags: [pr-merge-gate]
     commands:
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: test
         params:
