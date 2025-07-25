@@ -39,7 +39,7 @@ exit /B 0
 set PKG_CONFIG_PATH=%INSTALL_DIR%\lib\pkgconfig
 
 rem http://stackoverflow.com/questions/2323292
-for /f %%i in ('pkg-config --libs --cflags bson%major%' || goto :error) do set PKG_CONFIG_OUT=%%i
+for /f %%i in ('pkg-config --libs --cflags bson%major%') do set PKG_CONFIG_OUT=%%i
 
 echo PKG_CONFIG_OUT is %PKG_CONFIG_OUT%
 
