@@ -66,7 +66,7 @@ sudo chroot ./unstable-chroot /bin/bash -c '(\
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
-  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )'
+  gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c -lmongoc2 -lbson2 )'
 
 [ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
 (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
@@ -98,7 +98,7 @@ sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
-  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )'
+  gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c -lmongoc2 -lbson2 )'
 
 [ -e ./unstable-i386-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
 (cd ./unstable-i386-chroot/tmp/ ; tar zcvf ../../deb-i386.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
