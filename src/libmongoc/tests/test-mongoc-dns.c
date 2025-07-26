@@ -7,6 +7,8 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
+#include <mlib/time_point.h>
+
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl-private.h>
 
@@ -791,7 +793,7 @@ _prose_test_update_srv_single (void *resource)
 
    client = resource;
 
-   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+   mlib_sleep_for ((RESCAN_INTERVAL_MS, ms), mul, 2);
 
    /* Avoid ping given `loadBalanced=true`; see prose test 9. */
    if (!mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_LOADBALANCED, false)) {
@@ -804,7 +806,7 @@ _prose_test_update_srv_pooled (void *resource)
 {
    BSON_ASSERT_PARAM (resource);
 
-   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+   mlib_sleep_for ((RESCAN_INTERVAL_MS, ms), mul, 2);
 }
 
 typedef struct {

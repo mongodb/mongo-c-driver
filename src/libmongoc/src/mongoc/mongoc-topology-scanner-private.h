@@ -124,7 +124,7 @@ typedef struct mongoc_topology_scanner {
    mongoc_topology_scanner_cb_t cb;
    void *cb_data;
    const mongoc_uri_t *uri;
-   mongoc_async_cmd_setup_t setup;
+   mongoc_async_cmd_stream_setup_cb setup;
    mongoc_stream_initiator_t initiator;
    void *initiator_context;
    bson_error_t error;

@@ -92,7 +92,15 @@
    MLIB_JUST(_mlibPickSixteenth \
                MLIB_NOTHING("MSVC workaround") \
             (__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~))
+// Expands to a single comma if invoked as a function-like macro
 #define _mlibCommaIfParens(...) ,
+
+/**
+ * @brief Expands to `1` if the given macro argument is a parenthesized group of
+ *    tokens, otherwize `0`
+ */
+#define MLIB_IS_PARENTHESIZED(X) \
+   _mlibHasComma(_mlibCommaIfParens X MLIB_NOTHING("Inhibit immediate expansion: " #X))
 
 /**
  * A helper for isEmpty(): If given (0, 0, 0, 1), expands as:
@@ -147,8 +155,8 @@
  * @brief Expand to a call expression `Prefix##_argc_N(...)`, where `N` is the
  * number of macro arguments.
  */
-#define MLIB_ARGC_PICK(Prefix, ...) \
-   MLIB_JUST (MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__)) (__VA_ARGS__))
+#define MLIB_ARGC_PICK(Prefix, ...) MLIB_EVAL_4 (MLIB_ARGC_PASTE (Prefix, __VA_ARGS__) (__VA_ARGS__))
+#define MLIB_ARGC_PASTE(Prefix, ...) MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__))
 
 #ifdef __cplusplus
 #define mlib_is_cxx() 1

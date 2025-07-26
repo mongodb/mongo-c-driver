@@ -7,6 +7,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #include <json-test.h>
 #include <test-libmongoc.h>
 
@@ -796,7 +798,7 @@ test_prose_rtt (void *unused)
 
    /* Sleep for RTT_TEST_INITIAL_SLEEP_SEC seconds to allow multiple heartbeats
     * to succeed. */
-   _mongoc_usleep (RTT_TEST_INITIAL_SLEEP_SEC * 1000 * 1000);
+   mlib_sleep_for (RTT_TEST_INITIAL_SLEEP_SEC, sec);
 
    /* Set a failpoint to make hello commands take longer. */
    bson_init (&cmd);
@@ -834,7 +836,7 @@ test_prose_rtt (void *unused)
          satisfied = true;
       }
       mongoc_server_description_destroy (sd);
-      _mongoc_usleep (RTT_TEST_TICK_MS * 1000);
+      mlib_sleep_for (RTT_TEST_TICK_MS, ms);
    }
 
    if (!satisfied) {

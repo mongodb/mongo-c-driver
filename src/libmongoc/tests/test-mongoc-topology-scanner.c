@@ -8,6 +8,8 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
@@ -185,7 +187,7 @@ test_topology_scanner_discovery (void)
    request_destroy (request);
 
    /* let client process that response */
-   _mongoc_usleep (250 * 1000);
+   mlib_sleep_for (250, ms);
 
    /* a check of the secondary is scheduled in this scan */
    request = mock_server_receives_any_hello (secondary);
@@ -259,13 +261,13 @@ test_topology_scanner_oscillate (void)
    request_destroy (request);
 
    /* let client process that response */
-   _mongoc_usleep (250 * 1000);
+   mlib_sleep_for (250, ms);
 
    request = mock_server_receives_any_hello (server1);
    reply_to_request_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */
-   _mongoc_usleep (250 * 1000);
+   mlib_sleep_for (250, ms);
 
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    BSON_ASSERT (scanner->async->ncmds == 0);
@@ -348,7 +350,7 @@ slow_initiator (const mongoc_uri_t *uri, const mongoc_host_list_t *host, void *u
    data = (initiator_data_t *) user_data;
 
    if (host->port == data->slow_port) {
-      _mongoc_usleep (500 * 1000); /* 500 ms is longer than connectTimeoutMS */
+      mlib_sleep_for (500, ms); /* 500 ms is longer than connectTimeoutMS */
    }
 
    return mongoc_client_default_stream_initiator (uri, host, data->client, err);
@@ -557,7 +559,7 @@ _retired_fails_to_initiate_cb (
 }
 
 static mongoc_stream_t *
-null_initiator (mongoc_async_cmd_t *acmd)
+null_connect (mongoc_async_cmd_t *acmd)
 {
    BSON_UNUSED (acmd);
 
@@ -598,7 +600,7 @@ test_topology_retired_fails_to_initiate (void)
     * a failed mongoc_socket_new or mongoc_stream_connect. */
    DL_FOREACH (scanner->async->cmds, acmd)
    {
-      scanner->async->cmds->initiator = null_initiator;
+      scanner->async->cmds->_stream_connect = null_connect;
    }
 
    mongoc_topology_scanner_work (scanner);
@@ -659,7 +661,7 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   _mongoc_usleep (1500 * 1000); /* 1.5 seconds */
+   mlib_sleep_for (1500, ms);
 
    r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);

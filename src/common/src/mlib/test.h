@@ -144,10 +144,30 @@ typedef struct mlib_source_location {
 // Integer not-equal:
 #define _mlibCheckCondition_neq(A, B) \
    _mlibCheckIntCmp (                 \
-      mlib_equal, false, "!=", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+      mlib_equal, false, "≠", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
 // Simple assertion with an explanatory string
 #define _mlibCheckCondition_because(Cond, Msg) \
    _mlibCheckConditionBecause (Cond, #Cond, Msg, mlib_this_source_location ())
+// Integer comparisons:
+#define _mlibCheckCondition_lt(A, B) \
+   _mlibCheckIntCmp (                \
+      mlib_less, true, "<", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+#define _mlibCheckCondition_lte(A, B)         \
+   _mlibCheckIntCmp (mlib_greater,            \
+                     false,                   \
+                     "≤",                     \
+                     mlib_upsize_integer (A), \
+                     mlib_upsize_integer (B), \
+                     #A,                      \
+                     #B,                      \
+                     mlib_this_source_location ())
+#define _mlibCheckCondition_gt(A, B) \
+   _mlibCheckIntCmp (                \
+      mlib_greater, true, ">", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+#define _mlibCheckCondition_gte(A, B) \
+   _mlibCheckIntCmp (                 \
+      mlib_less, false, "≥", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+
 
 /// Check evaluator when given a single boolean
 static inline void
