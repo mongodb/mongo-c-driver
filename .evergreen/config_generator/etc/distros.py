@@ -221,6 +221,12 @@ def compiler_to_vars(compiler):
                 'CMAKE_GENERATOR_PLATFORM': to_platform(vs),
             }
 
+        case _, ['mingw', *rest]:
+            return {
+                'CC': '-'.join(['gcc'] + rest),
+                'CXX': '-'.join(['g++'] + rest),
+            }
+
         case compiler, _:
             return {
                 'CC': compiler,

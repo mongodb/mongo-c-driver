@@ -1,1 +1,2 @@
 tests/binary/* text eol=lf
+*.bat text eol=crlf

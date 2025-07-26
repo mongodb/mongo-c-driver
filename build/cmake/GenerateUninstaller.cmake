@@ -51,6 +51,13 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
 endif()
 
 # We get here if running in script mode (e.g. at CMake install-time)
+cmake_policy(VERSION 3.15...4.0)
+
+# Avoid CMake Issue 26678: https://gitlab.kitware.com/cmake/cmake/-/issues/26678
+if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.27")
+    cmake_policy(SET CMP0147 OLD)
+endif()
+
 if(NOT DEFINED CMAKE_INSTALL_MANIFEST_FILES)
     message(FATAL_ERROR "This file is only for use with CMake's install(CODE/SCRIPT) command")
 endif()
