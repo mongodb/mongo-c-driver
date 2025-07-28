@@ -1,3 +1,11 @@
+# This script may be executed in script mode by the uninstall target.
+cmake_policy(VERSION 3.15...4.0)
+
+# Avoid CMake Issue 26678: https://gitlab.kitware.com/cmake/cmake/-/issues/26678
+if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.27")
+    cmake_policy(SET CMP0147 OLD)
+endif()
+
 if(NOT CMAKE_SCRIPT_MODE_FILE)
     # We are being included from within a project, so we should generate the install rules
     # The script name is "uninstall" by default:
@@ -48,14 +56,6 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     endif()
     # Stop here: The rest of the file is for install-time
     return()
-endif()
-
-# We get here if running in script mode (e.g. at CMake install-time)
-cmake_policy(VERSION 3.15...4.0)
-
-# Avoid CMake Issue 26678: https://gitlab.kitware.com/cmake/cmake/-/issues/26678
-if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.27")
-    cmake_policy(SET CMP0147 OLD)
 endif()
 
 if(NOT DEFINED CMAKE_INSTALL_MANIFEST_FILES)
@@ -291,6 +291,12 @@ foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
         list(APPEND dirs_to_remove "${installed}")
     endwhile()
 endforeach()
+
+# Allow the batch script delete itself without error.
+if(WIN32)
+    append_line("echo Remove uninstall script %~f0")
+    append_line("(GOTO) 2>nul & del \"%~f0\"")
+endif()
 
 # Now generate commands to remove (empty) directories:
 list(REMOVE_DUPLICATES dirs_to_remove)
