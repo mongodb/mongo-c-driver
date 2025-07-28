@@ -1,6 +1,6 @@
 {
   "description": "QE-Text-compactStructuredEncryptionData",
-  "schemaVersion": "1.23",
+  "schemaVersion": "1.25",
   "runOnRequirements": [
     {
       "minServerVersion": "8.2.0",
@@ -9,7 +9,9 @@
         "sharded",
         "load-balanced"
       ],
-      "csfle": true
+      "csfle": {
+        "minLibmongocryptVersion": "1.15.0"
+      }
     }
   ],
   "createEntities": [
@@ -46,43 +48,6 @@
   ],
   "initialData": [
     {
-      "databaseName": "db",
-      "collectionName": "coll",
-      "documents": [],
-      "createOptions": {
-        "encryptedFields": {
-          "fields": [
-            {
-              "keyId": {
-                "$binary": {
-                  "base64": "q83vqxI0mHYSNBI0VniQEg==",
-                  "subType": "04"
-                }
-              },
-              "path": "encryptedText",
-              "bsonType": "string",
-              "queries": [
-                {
-                  "queryType": "prefixPreview",
-                  "contention": {
-                    "$numberLong": "0"
-                  },
-                  "strMinQueryLength": {
-                    "$numberLong": "3"
-                  },
-                  "strMaxQueryLength": {
-                    "$numberLong": "30"
-                  },
-                  "caseSensitive": true,
-                  "diacriticSensitive": true
-                }
-              ]
-            }
-          ]
-        }
-      }
-    },
-    {
       "databaseName": "keyvault",
       "collectionName": "datakeys",
       "documents": [
@@ -117,6 +82,43 @@
           }
         }
       ]
+    },
+    {
+      "databaseName": "db",
+      "collectionName": "coll",
+      "documents": [],
+      "createOptions": {
+        "encryptedFields": {
+          "fields": [
+            {
+              "keyId": {
+                "$binary": {
+                  "base64": "q83vqxI0mHYSNBI0VniQEg==",
+                  "subType": "04"
+                }
+              },
+              "path": "encryptedText",
+              "bsonType": "string",
+              "queries": [
+                {
+                  "queryType": "suffixPreview",
+                  "contention": {
+                    "$numberLong": "0"
+                  },
+                  "strMinQueryLength": {
+                    "$numberLong": "3"
+                  },
+                  "strMaxQueryLength": {
+                    "$numberLong": "30"
+                  },
+                  "caseSensitive": true,
+                  "diacriticSensitive": true
+                }
+              ]
+            }
+          ]
+        }
+      }
     }
   ],
   "tests": [
@@ -207,7 +209,7 @@
                             "bsonType": "string",
                             "queries": [
                               {
-                                "queryType": "prefixPreview",
+                                "queryType": "suffixPreview",
                                 "contention": {
                                   "$numberLong": "0"
                                 },
