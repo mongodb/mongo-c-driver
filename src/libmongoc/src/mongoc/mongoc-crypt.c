@@ -39,6 +39,12 @@
 
 #include <mongocrypt/mongocrypt.h>
 
+const char *
+_mongoc_crypt_get_libmongocrypt_version (void)
+{
+   return mongocrypt_version (NULL);
+}
+
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
 // `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for
 // consistency with the CSE and URI specifications.
