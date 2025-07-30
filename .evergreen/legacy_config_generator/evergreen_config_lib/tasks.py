@@ -279,53 +279,6 @@ all_tasks = [
             shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
-    NamedTask(
-        "install-uninstall-check-mingw",
-        commands=[
-            func("find-cmake-latest"),
-            shell_mongoc(
-                r"""
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(find_cmake_latest)"
-                CMAKE="$(cygpath -aw "$CMAKE")"
-                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-mingw.cmd
-                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-mingw.cmd""",
-                include_expansions_in_env=["distro_id"],
-                redirect_standard_error_to_output=True,
-            )
-        ],
-    ),
-    NamedTask(
-        "install-uninstall-check-msvc",
-        commands=[
-            func("find-cmake-latest"),
-            shell_mongoc(
-                r"""
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(find_cmake_latest)"
-                CMAKE="$(cygpath -aw "$CMAKE")"
-                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-msvc.cmd
-                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-msvc.cmd""",
-                include_expansions_in_env=["distro_id"],
-                redirect_standard_error_to_output=True,
-            )
-        ],
-    ),
-    NamedTask(
-        "install-uninstall-check",
-        commands=[
-            func("find-cmake-latest"),
-            shell_mongoc(
-                r"""
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(find_cmake_latest)"
-                DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
-                BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
-                .evergreen/scripts/install-uninstall-check.sh""",
-                include_expansions_in_env=["distro_id"],
-            )
-        ],
-    ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",
