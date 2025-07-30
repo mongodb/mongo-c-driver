@@ -225,15 +225,15 @@ _test_last_write_date (bool pooled)
    r = mongoc_collection_insert_one (collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   mlib_sleep_for (1, sec);
+   mlib_sleep_for (1, s);
    s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
-   mlib_sleep_for (1, sec);
+   mlib_sleep_for (1, s);
    r = mongoc_collection_insert_one (collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   mlib_sleep_for (1, sec);
+   mlib_sleep_for (1, s);
    s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, TEST_SS_LOG_CONTEXT, NULL, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
    ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);

@@ -393,7 +393,7 @@ test_happy_eyeballs_dns_cache (void)
    mongoc_topology_scanner_node_disconnect (testcase.state.ts->nodes, false);
 
    /* wait for DNS cache to expire. */
-   mlib_sleep_for (2, sec);
+   mlib_sleep_for (2, s);
 
    /* after running once, the topology scanner should have cached the DNS
     * result for IPv6. It should complete immediately. */

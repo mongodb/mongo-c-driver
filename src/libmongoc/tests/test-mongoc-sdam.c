@@ -755,7 +755,7 @@ heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
 }
 
 #define RTT_TEST_TIMEOUT mlib_duration (1, min)
-#define RTT_TEST_INITIAL_SLEEP mlib_duration (2, sec)
+#define RTT_TEST_INITIAL_SLEEP mlib_duration (2, s)
 #define RTT_TEST_TICK mlib_duration (10, ms)
 
 static void

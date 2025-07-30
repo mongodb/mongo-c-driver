@@ -261,8 +261,9 @@ _mlibDurationMaxBetween (mlib_duration lhs, mlib_duration rhs)
  * - `ns` (nanoseconds)
  * - `us` (microseconds)
  * - `ms` (milliseconds)
- * - `sec` (seconds)
+ * - `s` (seconds)
  * - `min` (minutes)
+ * - `h` (hours)
  *
  * Other unit suffixes will generate a compile-time error
  */
@@ -306,7 +307,7 @@ _mlibCreateDurationFromUnitCount_ms (const mlib_upsized_integer n) mlib_noexcept
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_sec (const mlib_upsized_integer n)
+_mlibCreateDurationFromUnitCount_s (const mlib_upsized_integer n)
 {
    return mlib_duration (_mlibCreateDurationFromUnitCount_us (n), mul, 1000 * 1000);
 }
@@ -315,6 +316,12 @@ static inline mlib_duration
 _mlibCreateDurationFromUnitCount_min (const mlib_upsized_integer n)
 {
    return mlib_duration (_mlibCreateDurationFromUnitCount_us (n), mul, 60 * 1000 * 1000);
+}
+
+static inline mlib_duration
+_mlibCreateDurationFromUnitCount_h (const mlib_upsized_integer n)
+{
+   return mlib_duration (_mlibCreateDurationFromUnitCount_min (n), mul, 60);
 }
 
 /**
@@ -355,7 +362,7 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
 static inline mlib_duration
 mlib_duration_from_timespec (const struct timespec ts) mlib_noexcept
 {
-   return mlib_duration ((ts.tv_sec, sec), plus, (ts.tv_nsec, ns));
+   return mlib_duration ((ts.tv_sec, s), plus, (ts.tv_nsec, ns));
 }
 
 /**
@@ -370,7 +377,7 @@ mlib_duration_to_timespec (const mlib_duration d) mlib_noexcept
    // Number of full seconds in the duration
    const mlib_duration_rep_t n_full_seconds = mlib_seconds_count (d);
    // Duration with full seconds removed
-   const mlib_duration usec_part = mlib_duration (d, minus, (n_full_seconds, sec));
+   const mlib_duration usec_part = mlib_duration (d, minus, (n_full_seconds, s));
    // Number of microseconds in the duration, minus all full seconds
    const mlib_duration_rep_t n_remaining_microseconds = mlib_microseconds_count (usec_part);
    // Compute the number of nanoseconds:

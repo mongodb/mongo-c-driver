@@ -126,7 +126,7 @@ _run_test_single_or_pooled (_test_fn_t test, bool use_pooled)
       _setup_test_with_client (client);
       /* Wait one second to be assured that the RTT connection has been
        * established as well. */
-      mlib_sleep_for (1, sec);
+      mlib_sleep_for (1, s);
       test (client);
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);

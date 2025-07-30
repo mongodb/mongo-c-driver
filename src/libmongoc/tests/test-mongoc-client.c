@@ -2991,7 +2991,7 @@ _test_client_sends_handshake (bool pooled)
       mlib_sleep_for ( //
          (MONGOC_TOPOLOGY_COOLDOWN_MS, ms),
          plus,
-         (1, sec));
+         (1, s));
       future = _force_hello_with_ping (client, heartbeat_ms);
    }
 

@@ -716,7 +716,7 @@ test_cooldown_standalone (void)
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                           "No servers yet eligible for rescan");
 
-   mlib_sleep_for (1, sec);
+   mlib_sleep_for (1, s);
 
    /* third selection doesn't try to call hello: we're still in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -834,7 +834,7 @@ test_cooldown_rs (void)
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   mlib_sleep_for (1, sec);
+   mlib_sleep_for (1, s);
 
    /* second selection doesn't try hello on server 1: it's in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -1235,7 +1235,7 @@ test_rtt (void *ctx)
    future = future_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    request = mock_server_receives_any_hello (server);
-   mlib_sleep_for (1, sec);
+   mlib_sleep_for (1, s);
    reply_to_request (
       request,
       MONGOC_REPLY_NONE,
