@@ -99,9 +99,6 @@ configure_flags_append "-DCMAKE_INSTALL_PREFIX=${install_dir:?}"
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
-export PKG_CONFIG_PATH
-PKG_CONFIG_PATH="${mongoc_install_dir:?}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-
 if [[ "${OSTYPE}" == darwin* ]]; then
   # MacOS does not have nproc.
   nproc() {
