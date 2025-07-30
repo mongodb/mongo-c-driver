@@ -114,7 +114,7 @@ _scanner_node_of (mongoc_async_cmd_t const *a)
 // Test whether two async commands are associated with the same topology scanner node,
 // and aren't the same command object
 static bool
-_is_sibling_command (mongoc_async_cmd_t const *l, mongoc_async_cmd_t *r)
+_is_sibling_command (mongoc_async_cmd_t const *l, mongoc_async_cmd_t const *r)
 {
    return l != r && _scanner_node_of (l) == _scanner_node_of (r);
 }
