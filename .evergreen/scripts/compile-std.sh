@@ -207,8 +207,8 @@ lib_dir="$(find "${install_dir:?}" -mindepth 1 -maxdepth 1 -type d -name 'lib*' 
 # This file should not be deleted!
 touch "${install_dir:?}/${lib_dir:?}/canary.txt"
 
-# Linux/MacOS: uninstall*.sh
-# Windows:     uninstall*.bat
+# Linux/MacOS: uninstall.sh
+# Windows:     uninstall.cmd
 "${cmake_binary}" --build "${build_dir:?}" --target uninstall || true # CDRIVER-6062
 
 # No files should remain except canary.txt.
