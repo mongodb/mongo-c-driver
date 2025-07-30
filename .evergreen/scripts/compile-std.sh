@@ -199,7 +199,11 @@ rm -rf "${mongoc_build_dir:?}" "${mongoc_install_dir:?}"
 "${cmake_binary}" --install "${mongoc_build_dir:?}" --config Debug
 
 # "lib" vs. "lib64"
-lib_dir="$(find "${mongoc_install_dir:?}" -mindepth 1 -maxdepth 1 -type d -name 'lib*' -printf '%P\n')"
+if [[ -d "${mongoc_install_dir:?}/lib64" ]]; then
+  lib_dir="lib64"
+else
+  lib_dir="lib"
+fi
 
 # This file should not be deleted!
 touch "${mongoc_install_dir:?}/${lib_dir:?}/canary.txt"
