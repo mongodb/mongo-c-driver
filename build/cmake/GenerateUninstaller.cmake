@@ -276,7 +276,7 @@ endforeach()
 
 # Allow the batch script delete itself without error.
 if(WIN32)
-    append_line("  true")
+    append_line("  ver>nul")
     append_line(")")
 endif()
 
