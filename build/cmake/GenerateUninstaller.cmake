@@ -120,12 +120,6 @@ limitations under the License.]])
 string(STRIP header "${header}")
 string(REPLACE "\n" ";" header_lines "${header}")
 
-# Prefix for the Batch script:
-set(bat_preamble [[
-setlocal EnableDelayedExpansion
-setlocal EnableExtensions
-]])
-
 # Prefix for the shell script:
 set(sh_preamble [[
 set -eu
@@ -184,7 +178,6 @@ if(UNINSTALL_IS_WIN32)
         ""
         "${header_lines}"
         ""
-        "${bat_preamble}"
         "if \"%DESTDIR%\"==\"\" (set __prefix=${install_prefix}) else (set __prefix=!DESTDIR!\\${relative_prefix})"
         ""
         "(GOTO) 2>nul & (")
