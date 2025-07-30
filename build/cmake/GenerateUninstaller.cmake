@@ -1,3 +1,11 @@
+# This script may be executed in script mode by the uninstall target.
+cmake_policy(VERSION 3.15...4.0)
+
+# Avoid CMake Issue 26678: https://gitlab.kitware.com/cmake/cmake/-/issues/26678
+if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.27")
+    cmake_policy(SET CMP0147 OLD)
+endif()
+
 if(NOT CMAKE_SCRIPT_MODE_FILE)
     # We are being included from within a project, so we should generate the install rules
     # The script name is "uninstall" by default:
@@ -50,7 +58,6 @@ if(NOT CMAKE_SCRIPT_MODE_FILE)
     return()
 endif()
 
-# We get here if running in script mode (e.g. at CMake install-time)
 if(NOT DEFINED CMAKE_INSTALL_MANIFEST_FILES)
     message(FATAL_ERROR "This file is only for use with CMake's install(CODE/SCRIPT) command")
 endif()
@@ -183,13 +190,10 @@ __rmdir() {
     printf "Remove directory %s: " "$abs"
     if test -d "$abs"
     then
-        list=$(ls --almost-all "$abs")
+        list="$(find "$abs" -mindepth 1)"
         if test "$list" = ""
         then
-            rmdir -- "$abs"
-            echo "ok"
-        else
-            echo "skipped: not empty"
+            rmdir -- "$abs" 2>/dev/null && echo "ok" || echo "skipped: not empty"
         fi
     else
         echo "skipped: not present"
