@@ -22,7 +22,7 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
-declare mongoc_install_dir="${mongoc_dir}/install-dir"
+declare mongoc_install_dir="${mongoc_dir}/install-dir" # Also libmongocrypt.
 
 declare -a configure_flags
 
