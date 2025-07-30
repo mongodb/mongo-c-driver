@@ -226,7 +226,7 @@ function(add_rmdir dirname)
       set(rmdir_lines
         "  <nul set /p \"=Remove directory: ${dir} \""
         "  if EXIST \"${dir}\" ("
-        "    rmdir /Q \"${dir}\" 2>nul && echo - ok || echo - skipped (non-empty?^)"
+        "    rmdir /Q \"${dir}\" 2>nul && echo - ok || echo - skipped ^(non-empty?^)"
         "  ) ELSE echo - skipped: not present"
         ") && (")
       string(REPLACE ";" "\n" rmdir "${rmdir_lines}")
