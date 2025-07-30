@@ -6,7 +6,7 @@
  * This file contains APIs for creating fixed-deadline timer object that represent
  * a stable expiration point.
  *
- * @copyright Copyright (c) 2025
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

@@ -12,7 +12,7 @@
  * The `mlib_duration` is a trivial object that represents a duration of time.
  * The internal representation should not be inspected outside of this file.
  *
- * @copyright Copyright (c) 2025
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

@@ -7,7 +7,7 @@
  * itself is relative to a monotonic clock for the program, so it should not be
  * transmitted or persisted outside of the execution of a program that uses it.
  *
- * @copyright Copyright (c) 2025
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
