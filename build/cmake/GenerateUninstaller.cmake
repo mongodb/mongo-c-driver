@@ -292,12 +292,6 @@ foreach(installed IN LISTS CMAKE_INSTALL_MANIFEST_FILES script_self)
     endwhile()
 endforeach()
 
-# Allow the batch script delete itself without error.
-if(WIN32)
-    append_line("echo Remove uninstall script %~f0")
-    append_line("(GOTO) 2>nul & del \"%~f0\"")
-endif()
-
 # Now generate commands to remove (empty) directories:
 list(REMOVE_DUPLICATES dirs_to_remove)
 # Order them by depth so that we remove subdirectories before their parents:
