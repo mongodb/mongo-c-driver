@@ -4,6 +4,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/cmp.h>
+#include <mlib/time_point.h>
 
 #include <json-test-monitoring.h>
 #include <json-test.h>

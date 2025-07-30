@@ -8,6 +8,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #include <json-test.h>
 #include <test-libmongoc.h>

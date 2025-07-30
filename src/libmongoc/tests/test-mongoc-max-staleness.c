@@ -3,6 +3,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <json-test.h>
 #include <mock_server/future-functions.h>
