@@ -22,7 +22,7 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
-declare mongoc_install_dir="${mongoc_dir}/install-dir" # Also libmongocrypt.
+declare libmongocrypt_install_dir="${mongoc_dir}/libmongocrypt-install-dir"
 
 declare -a configure_flags
 
@@ -38,7 +38,7 @@ configure_flags_append_if_not_null() {
   fi
 }
 
-configure_flags_append "-DCMAKE_PREFIX_PATH=${mongoc_install_dir:?}"
+configure_flags_append "-DCMAKE_PREFIX_PATH=${libmongocrypt_install_dir:?}"
 configure_flags_append "-DCMAKE_SKIP_RPATH=TRUE" # Avoid hardcoding absolute paths to dependency libraries.
 configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
@@ -90,11 +90,11 @@ CXXFLAGS+=" ${flags+${flags[*]}}"
 declare cmake_binary
 cmake_binary="$(find_cmake_latest)"
 
-declare build_dir install_dir
-build_dir="cmake-build"
-install_dir="cmake-install"
+declare mongoc_build_dir mongoc_install_dir
+mongoc_build_dir="cmake-build"
+mongoc_install_dir="cmake-install"
 
-configure_flags_append "-DCMAKE_INSTALL_PREFIX=${install_dir:?}"
+configure_flags_append "-DCMAKE_INSTALL_PREFIX=${mongoc_install_dir:?}"
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
@@ -164,7 +164,7 @@ echo "Checking requested C standard is supported... done."
 
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${mongoc_install_dir:?}" &>output.txt || {
+"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${libmongocrypt_install_dir:?}" &>output.txt || {
   cat output.txt 1>&2
   exit 1
 }
@@ -188,30 +188,30 @@ else
 fi
 
 # Ensure we're starting with a clean slate.
-rm -rf "${build_dir:?}" "${install_dir:?}"
+rm -rf "${mongoc_build_dir:?}" "${mongoc_install_dir:?}"
 
-"${cmake_binary}" -S . -B "${build_dir:?}" "${configure_flags[@]}"
-"${cmake_binary}" --build "${build_dir:?}" --config Debug \
+"${cmake_binary}" -S . -B "${mongoc_build_dir:?}" "${configure_flags[@]}"
+"${cmake_binary}" --build "${mongoc_build_dir:?}" --config Debug \
   --target mongo_c_driver_tests \
   --target mongo_c_driver_examples \
   --target public-header-warnings \
   --target "${all_target:?}"
-"${cmake_binary}" --install "${build_dir:?}" --config Debug
+"${cmake_binary}" --install "${mongoc_build_dir:?}" --config Debug
 
 # "lib" vs. "lib64"
-lib_dir="$(find "${install_dir:?}" -mindepth 1 -maxdepth 1 -type d -name 'lib*' -printf '%P\n')"
+lib_dir="$(find "${mongoc_install_dir:?}" -mindepth 1 -maxdepth 1 -type d -name 'lib*' -printf '%P\n')"
 
 # This file should not be deleted!
-touch "${install_dir:?}/${lib_dir:?}/canary.txt"
+touch "${mongoc_install_dir:?}/${lib_dir:?}/canary.txt"
 
 # Linux/MacOS: uninstall.sh
 # Windows:     uninstall.cmd
-"${cmake_binary}" --build "${build_dir:?}" --target uninstall || true # CDRIVER-6062
+"${cmake_binary}" --build "${mongoc_build_dir:?}" --target uninstall || true # CDRIVER-6062
 
 # No files should remain except canary.txt.
 # No directories except top-level directories should remain.
 echo "Checking results of uninstall..."
-diff <(cd "${install_dir:?}" && find . -mindepth 1 | sort) <(
+diff <(cd "${mongoc_install_dir:?}" && find . -mindepth 1 | sort) <(
   echo "./bin"
   echo "./include"
   echo "./${lib_dir:?}"
