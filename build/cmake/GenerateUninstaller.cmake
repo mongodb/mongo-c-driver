@@ -190,13 +190,10 @@ __rmdir() {
     printf "Remove directory %s: " "$abs"
     if test -d "$abs"
     then
-        list=$(ls --almost-all "$abs")
+        list="$(find "$abs" -mindepth 1)"
         if test "$list" = ""
         then
-            rmdir -- "$abs"
-            echo "ok"
-        else
-            echo "skipped: not empty"
+            rmdir -- "$abs" 2>/dev/null && echo "ok" || echo "skipped: not empty"
         fi
     else
         echo "skipped: not present"
