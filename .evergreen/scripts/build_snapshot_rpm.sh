@@ -39,7 +39,7 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-40-aarch64}
+config=${MOCK_TARGET_CONFIG:=fedora-43-aarch64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
@@ -81,7 +81,11 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdev
 # This step is needed to avoid the following error on rocky+epel8:
 # Problem: conflicting requests
 #  - package utf8proc-devel-2.6.1-3.module+el8.7.0+1065+42200b2e.aarch64 from powertools is filtered out by modular filtering
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --dnf-cmd --setopt=powertools.module_hotfixes=true install utf8proc-devel
+if [[ "${config}" == "rocky+epel-8-aarch64" ]]; then
+  sudo mock -r ${config} --use-bootstrap-image --isolation=simple --dnf-cmd --setopt=powertools.module_hotfixes=true install utf8proc-devel
+else
+  sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install utf8proc-devel
+fi
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" .
