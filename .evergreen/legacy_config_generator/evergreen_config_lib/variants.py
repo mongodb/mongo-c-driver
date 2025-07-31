@@ -68,7 +68,7 @@ all_variants = [
             OD([("name", "install-uninstall-check-mingw"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "install-uninstall-check-msvc"), ("distros", ["windows-vsCurrent-large"])]),
             "debug-compile-with-warnings",
-            OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian10-small"])]),
+            OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian11-small"])]),
             "install-libmongoc-after-libbson",
         ],
         {
@@ -127,13 +127,6 @@ all_variants = [
             ".authentication-tests .openssl",
             ".latest .nossl",
         ],
-        {"CC": "gcc"},
-    ),
-    Variant(
-        "gcc83",
-        "GCC 8.3 (Debian 10.0)",
-        "debian10-test",
-        ["release-compile", "debug-compile-nosasl-nossl", ".latest .nossl"],
         {"CC": "gcc"},
     ),
     Variant(
