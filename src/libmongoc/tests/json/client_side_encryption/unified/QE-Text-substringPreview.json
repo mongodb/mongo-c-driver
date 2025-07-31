@@ -1,5 +1,5 @@
 {
-  "description": "QE-Text-suffixPreview",
+  "description": "QE-Text-substringPreview",
   "schemaVersion": "1.25",
   "runOnRequirements": [
     {
