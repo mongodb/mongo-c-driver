@@ -33,7 +33,7 @@ if "%ENABLE_SNAPPY%"=="1" (
   curl -sS --retry 5 -LO https://github.com/google/snappy/archive/1.1.7.tar.gz
   %TAR% xzf 1.1.7.tar.gz
   cd snappy-1.1.7
-  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
+  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
   %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
   %CMAKE% --build . --target INSTALL --config "Debug" -- /m
   set SNAPPY_OPTION=-DENABLE_SNAPPY=ON
@@ -44,9 +44,9 @@ if "%ENABLE_SNAPPY%"=="1" (
 cd %BUILD_DIR%
 rem Build libmongoc
 if "%ENABLE_SSL%"=="1" (
-  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS %ENABLE_SNAPPY_OPTION% .
+  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS %ENABLE_SNAPPY_OPTION% .
 ) else (
-  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF %ENABLE_SNAPPY_OPTION% .
+  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF %ENABLE_SNAPPY_OPTION% .
 )
 
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
@@ -90,7 +90,7 @@ if "%ENABLE_SSL%"=="1" (
   set MONGODB_EXAMPLE_URI="mongodb://localhost/?ssl=true&sslclientcertificatekeyfile=client.pem&sslcertificateauthorityfile=ca.pem&sslallowinvalidhostnames=true"
 )
 
-%CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
+%CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
 %CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 
 rem Yes, they should've named it "dependencies".

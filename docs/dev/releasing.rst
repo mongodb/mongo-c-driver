@@ -380,9 +380,10 @@ Specifically, it is generated using the :any:`+signed-release` target. Before
 running :any:`+signed-release`, one will need to set up some environment that is
 required for it to succeed:
 
-1. :ref:`Authenticate with Artifactory <earthly.artifactory-auth>`
-2. Set the Earthly secrets required for the :any:`+sign-file` and
-   :any:`+sbom-download` targets.
+1. :ref:`Authenticate with the DevProd-provided Amazon ECR instance <earthly.amazon-ecr>`
+2. Set the Earthly secrets required for the :any:`+sign-file` target.
+3. Download an augmented SBOM from a recent execution of the ``sbom`` task in
+   an Evergreen patch or commit build and save it to ``etc/augmented-sbom.json``.
 
 Once these prerequesites are met, creating the release archive can be done using
 the :any:`+signed-release` target.::
@@ -638,4 +639,3 @@ updating the mongo-cxx-driver container image files to use the newly released C 
 version. `Details for this process are documented here`__
 
 __ https://github.com/mongodb/mongo-cxx-driver/blob/5f2077f98140ea656983ea5881de31d73bb3f735/etc/releasing.md#docker-image-build-and-publish
-

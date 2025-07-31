@@ -11,7 +11,9 @@ set -o igncr # Ignore CR in this script for Windows compatibility.
 
 check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
-check_var_opt CC "Visual Studio 15 2017 Win64"
+check_var_opt CC
+check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR_PLATFORM
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
 check_var_opt EXTRA_CONFIGURE_FLAGS
 check_var_opt RELEASE "OFF"
@@ -134,7 +136,15 @@ if [ "${COMPILE_LIBMONGOCRYPT}" = "ON" ]; then
   configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 fi
 
-"${cmake_binary:?}" -S . -B "${build_dir:?}" -G "$CC" "${configure_flags[@]}" "${extra_configure_flags[@]}"
+# Use ccache if able.
+. "${script_dir:?}/find-ccache.sh"
+find_ccache_and_export_vars "$(pwd)" || true
+if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+  configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+  configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+fi
+
+"${cmake_binary:?}" -S . -B "${build_dir:?}" "${configure_flags[@]}" "${extra_configure_flags[@]}"
 "${cmake_binary:?}" --build "${build_dir:?}" --config "${build_config:?}"
 "${cmake_binary:?}" --install "${build_dir:?}" --config "${build_config:?}"
 

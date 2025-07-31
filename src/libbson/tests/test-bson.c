@@ -2344,7 +2344,7 @@ test_bson_dsl_build (void)
    // Insert a subdoc
    bson_t *subdoc = TMP_BSON_FROM_JSON ({"child" : [ 1, 2, 3 ], "other" : null});
 
-   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, true))));
+   bsonBuild (doc, kv ("subdoc", doc (insert (*subdoc, always))));
    ASSERT_BSON_EQUAL (doc, {"subdoc" : {"child" : [ 1, 2, 3 ], "other" : null}});
    bson_destroy (&doc);
 
@@ -2359,7 +2359,7 @@ test_bson_dsl_build (void)
                   doc (kv ("inner1", array ()),
                        kv ("inner2", null),
                        kv ("inner3", array (int32 (1), int32 (2), int32 (3))),
-                       insert (*subdoc, true),
+                       insert (*subdoc, always),
                        kv ("inner4", doc (kv ("innermost", int32 (42)))))));
    ASSERT_BSON_EQUAL (doc, {
       "top" : {

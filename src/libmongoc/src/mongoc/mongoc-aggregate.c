@@ -119,7 +119,7 @@ _make_agg_cmd (
                     append (*command, kv ("pipeline", iterValue (bsonVisitIter)))),
               else ( // We did not find a "pipeline" array. copy the pipeline as
                      // an array into the command
-                 append (*command, kv ("pipeline", array (insert (*pipeline, true))))));
+                 append (*command, kv ("pipeline", array (insert (*pipeline, always))))));
    if ((error = bsonParseError)) {
       error_hint = "append-pipeline";
       goto fail;

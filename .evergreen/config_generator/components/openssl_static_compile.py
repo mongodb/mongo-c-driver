@@ -6,7 +6,7 @@ from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 
 from config_generator.etc.distros import find_large_distro
 from config_generator.etc.distros import make_distro_str
-from config_generator.etc.distros import to_cc
+from config_generator.etc.distros import compiler_to_vars
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
 
@@ -17,10 +17,11 @@ TAG = f'{SSL}-matrix'
 # pylint: disable=line-too-long
 # fmt: off
 MATRIX = [
-  ('debian92',   'gcc', None),
-  ('debian10',   'gcc', None),
   ('debian11',   'gcc', None),
+  ('debian12',   'gcc', None),
   ('ubuntu2004', 'gcc', None),
+  ('ubuntu2204', 'gcc', None),
+  ('ubuntu2404', 'gcc', None),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -55,7 +56,7 @@ def tasks():
         distro = find_large_distro(distro_name)
 
         compile_vars = None
-        compile_vars = {'CC': to_cc(compiler)}
+        compile_vars = compiler_to_vars(compiler)
 
         if arch:
             tags.append(arch)
@@ -72,7 +73,7 @@ def tasks():
                 tags=tags,
                 commands=[
                     FindCMakeLatest.call(),
-                    StaticOpenSSLCompile.call(vars=compile_vars),
+                    StaticOpenSSLCompile.call(vars=compile_vars if compile_vars else None),
                 ],
             )
         )
