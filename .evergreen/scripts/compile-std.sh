@@ -210,7 +210,7 @@ touch "${mongoc_install_dir:?}/${lib_dir:?}/canary.txt"
 
 # Linux/MacOS: uninstall.sh
 # Windows:     uninstall.cmd
-"${cmake_binary}" --build "${mongoc_build_dir:?}" --target uninstall || true # CDRIVER-6062
+"${cmake_binary}" --build "${mongoc_build_dir:?}" --target uninstall
 
 # No files should remain except canary.txt.
 # No directories except top-level directories should remain.
