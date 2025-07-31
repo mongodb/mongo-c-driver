@@ -4,7 +4,6 @@
   "runOnRequirements": [
     {
       "minServerVersion": "3.6",
-      "maxServerVersion": "8.1",
       "topologies": [
         "replicaset"
       ],
@@ -113,8 +112,7 @@
       "description": "Test array truncation",
       "runOnRequirements": [
         {
-          "minServerVersion": "4.7",
-          "maxServerVersion": "8.1"
+          "minServerVersion": "4.7"
         }
       ],
       "operations": [
@@ -183,7 +181,12 @@
                   "field": "array",
                   "newSize": 2
                 }
-              ]
+              ],
+              "disambiguatedPaths": {
+                "$$unsetOrMatches": {
+                  "$$exists": true
+                }
+              }
             }
           }
         }
@@ -1407,6 +1410,11 @@
               },
               "removedFields": [],
               "truncatedArrays": {
+                "$$unsetOrMatches": {
+                  "$$exists": true
+                }
+              },
+              "disambiguatedPaths": {
                 "$$unsetOrMatches": {
                   "$$exists": true
                 }
