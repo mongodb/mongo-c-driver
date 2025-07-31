@@ -380,7 +380,7 @@ Specifically, it is generated using the :any:`+signed-release` target. Before
 running :any:`+signed-release`, one will need to set up some environment that is
 required for it to succeed:
 
-1. :ref:`Authenticate with Artifactory <earthly.artifactory-auth>`
+1. :ref:`Authenticate with the DevProd-provided Amazon ECR instance <earthly.amazon-ecr>`
 2. Set the Earthly secrets required for the :any:`+sign-file` target.
 3. Download an augmented SBOM from a recent execution of the ``sbom`` task in
    an Evergreen patch or commit build and save it to ``etc/augmented-sbom.json``.
