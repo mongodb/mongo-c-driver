@@ -96,7 +96,7 @@ entity_map_destroy (entity_map_t *em);
 /* Creates an entry in the entity map based on what is specified in @bson.
  */
 bool
-entity_map_create (entity_map_t *em, bson_t *bson, bson_error_t *error);
+entity_map_create (entity_map_t *em, bson_t *bson, const bson_t *cluster_time_after_initial_data, bson_error_t *error);
 
 /* Steals ownership of changestream. */
 bool
