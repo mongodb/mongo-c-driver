@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-: "${EARTHLY_VERSION:=0.8.3}"
+: "${EARTHLY_VERSION:=0.8.16}"
 
 # Calc the arch of the executable we want
 case "$ARCHNAME" in
