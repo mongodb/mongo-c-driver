@@ -40,6 +40,7 @@
 #endif
 
 #include <errno.h>
+#include <limits.h>
 #include <time.h>
 
 mlib_extern_c_begin ();
@@ -95,6 +96,28 @@ mlib_latest (mlib_time_point l, mlib_time_point r)
 }
 
 /**
+ * @brief Obtain the integer clock ID that is used by `mlib_now()` to obtain
+ * the time. This value only has meaning on POSIX systems. On Win32, returns
+ * INT_MIN.
+ *
+ * @return int The integer clock ID, corresponding to a value of `CLOCK_...`
+ *    object macro.
+ */
+static inline int
+mlib_now_clockid (void) mlib_noexcept
+{
+#ifdef CLOCK_MONOTONIC_RAW
+   // Linux had a bad definition of CLOCK_MONOTONIC, which would jump based on NTP adjustments.
+   // They replaced it with CLOCK_MONOTONIC_RAW, which is stable and cannot be adjusted.
+   return CLOCK_MONOTONIC_RAW;
+#elif defined(CLOCK_MONOTONIC)
+   return CLOCK_MONOTONIC;
+#else
+   return INT_MIN;
+#endif
+}
+
+/**
  * @brief Obtain a point-in-time corresponding to the current time
  */
 static inline mlib_time_point
@@ -103,14 +126,8 @@ mlib_now (void) mlib_noexcept
 #if mlib_have_posix_clocks()
    // Use POSIX clock_gettime
    struct timespec ts;
-// Use the POSIX monotonic clock
-#ifdef CLOCK_MONOTONIC_RAW
-   // Linux had a bad definition of CLOCK_MONOTONIC, which would jump based on NTP adjustments.
-   // They replaced it with CLOCK_MONOTONIC_RAW, which is stable and cannot be adjusted.
-   int rc = clock_gettime (CLOCK_MONOTONIC_RAW, &ts);
-#else
-   int rc = clock_gettime (CLOCK_MONOTONIC, &ts);
-#endif
+   // Use the POSIX monotonic clock
+   int rc = clock_gettime (mlib_now_clockid (), &ts);
    // The above call must never fail:
    mlib_check (rc, eq, 0);
    // Encode the time point:
