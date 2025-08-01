@@ -34,6 +34,7 @@
 
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
+#include <mlib/time_point.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -553,7 +554,8 @@ auto_hello (request_t *request, void *data)
    response_json = bson_as_relaxed_extended_json (&response, 0);
 
    if (mock_server_get_rand_delay (request->server)) {
-      _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
+      const int random_sleep = rand () % 10;
+      mlib_sleep_for (random_sleep, ms);
    }
 
    reply_to_request (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
@@ -1629,7 +1631,7 @@ mock_server_destroy (mock_server_t *server)
       }
 
       bson_mutex_unlock (&server->mutex);
-      _mongoc_usleep (1000);
+      mlib_sleep_for (1, ms);
    }
 
    bson_mutex_lock (&server->mutex);

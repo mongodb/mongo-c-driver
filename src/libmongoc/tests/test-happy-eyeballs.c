@@ -8,6 +8,8 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <mock_server/mock-server.h>
 #include <test-libmongoc.h>
@@ -139,13 +141,13 @@ _mock_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
       /* if there were active poll responses which were all silenced,
        * sleep for a little while since subsequent calls to poll may not have
        * any delay. */
-      _mongoc_usleep (5 * 1000);
+      mlib_sleep_for (5, ms);
    }
    return nactive;
 }
 
 static mongoc_stream_t *
-_mock_initiator (mongoc_async_cmd_t *acmd)
+_mock_connect (mongoc_async_cmd_t *acmd)
 {
    mongoc_stream_t *stream = _mongoc_topology_scanner_tcp_initiate (acmd);
    /* override poll */
@@ -305,7 +307,7 @@ _testcase_run (he_testcase_t *testcase)
 
    DL_FOREACH (ts->async->cmds, iter)
    {
-      iter->initiator = _mock_initiator;
+      iter->_stream_connect = _mock_connect;
    }
 
    mongoc_topology_scanner_work (ts);
@@ -391,7 +393,7 @@ test_happy_eyeballs_dns_cache (void)
    mongoc_topology_scanner_node_disconnect (testcase.state.ts->nodes, false);
 
    /* wait for DNS cache to expire. */
-   _mongoc_usleep (2000 * 1000);
+   mlib_sleep_for (2, s);
 
    /* after running once, the topology scanner should have cached the DNS
     * result for IPv6. It should complete immediately. */
