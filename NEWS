@@ -3,7 +3,7 @@ libmongoc 2.1.0
 
 ## Fixes
 
-* Windows Secure Channel is fixed to support newer signatures to verify client certifictes.
+* Windows Secure Channel is fixed to support newer signatures to verify client certificates.
 * Replace use of `rand()` with thread-safe alternatives.
 * The uninstall script for Windows is fixed so it no longer "succeeds" with a non-zero `%ERRORLABEL%` value.
 * The uninstall script for non-Windows environments now calls `find "$dir" -maxdepth 1` instead of `ls --almost-all "$dir"` when detecting non-empty directories to fix macOS compatibility.
