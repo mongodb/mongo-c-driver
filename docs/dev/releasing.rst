@@ -97,6 +97,21 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 :term:`vendored dependencies <vendored dependency>`. If any items need to be
 updated, refer to `sbom-lite-updating`.
 
+Join the Release Team
+#####################
+
+The release process may require creating new branches, new tags, and directly
+pushing to development branches. These operations are normally restricted by
+branch protection rules.
+
+When assigned the responsibility of performing a release, submit a request to a
+repository administrator to be temporarily added to the
+`releases team <dbx-c-cxx-releases-github_>`_ on GitHub for the duration of the
+release process. The team member must be added via
+`MANA <dbx-c-cxx-releases-mana_>`_ (the GitHub team should normally be empty,
+meaning there should not be any member with the "Maintainer" role to add new
+users via GitHub).
+
 Create a New Clone of ``mongo-c-driver``
 ########################################
 
@@ -251,21 +266,6 @@ __ https://github.com/settings/tokens
       publishing release artifacts. No other permissions need to be modified.
       (Selecting this permission may also enable the *Metadata* permission; this is
       normal.)
-
-Join the Release Team
-#####################
-
-The release process may require creating new branches, new tags, and directly
-pushing to development branches. These operations are normally restricted by
-branch protection rules.
-
-When assigned the responsibility of performing a release, submit a request to a
-repository administrator to be temporarily added to the
-`releases team <dbx-c-cxx-releases-github_>`_ on GitHub for the duration of the
-release process. The team member must be added via
-`MANA <dbx-c-cxx-releases-mana_>`_ (the GitHub team should normally be empty,
-meaning there should not be any member with the "Maintainer" role to add new
-users via GitHub).
 
 Do the Release
 ##############
