@@ -97,6 +97,21 @@ Check that the `etc/purls.txt` file is up-to-date with the set of
 :term:`vendored dependencies <vendored dependency>`. If any items need to be
 updated, refer to `sbom-lite-updating`.
 
+Join the Release Team
+#####################
+
+The release process may require creating new branches, new tags, and directly
+pushing to development branches. These operations are normally restricted by
+branch protection rules.
+
+When assigned the responsibility of performing a release, submit a request to a
+repository administrator to be temporarily added to the
+`releases team <dbx-c-cxx-releases-github_>`_ on GitHub for the duration of the
+release process. The team member must be added via
+`MANA <dbx-c-cxx-releases-mana_>`_ (the GitHub team should normally be empty,
+meaning there should not be any member with the "Maintainer" role to add new
+users via GitHub).
+
 Create a New Clone of ``mongo-c-driver``
 ########################################
 
@@ -251,21 +266,6 @@ __ https://github.com/settings/tokens
       publishing release artifacts. No other permissions need to be modified.
       (Selecting this permission may also enable the *Metadata* permission; this is
       normal.)
-
-Join the Release Team
-#####################
-
-The release process may require creating new branches, new tags, and directly
-pushing to development branches. These operations are normally restricted by
-branch protection rules.
-
-When assigned the responsibility of performing a release, submit a request to a
-repository administrator to be temporarily added to the
-`releases team <dbx-c-cxx-releases-github_>`_ on GitHub for the duration of the
-release process. The team member must be added via
-`MANA <dbx-c-cxx-releases-mana_>`_ (the GitHub team should normally be empty,
-meaning there should not be any member with the "Maintainer" role to add new
-users via GitHub).
 
 Do the Release
 ##############
@@ -491,6 +491,11 @@ Do the following:
    contain the version that you have just released. This text should match the
    generated Git tag. (The tag should always be an ancestor of the branch that
    contains that :file:`etc/prior_version.txt`.)
+4. For a non-patch release, update the SBOM serial number with :any:`+sbom-generate-new-serial-number`:
+
+   .. code-block:: console
+
+      $ tools/earthly.sh +sbom-generate-new-serial-number
 
 Push this branch to your fork of the repository::
 
@@ -500,6 +505,21 @@ Now `create a new GitHub Pull Request`__ to merge the ``post-release-merge``
 changes back into the ``master`` branch.
 
 __ https://github.com/mongodb/mongo-c-driver/pulls
+
+Update SBOM serial number
+*************************
+
+Regenerate the SBOM serial number so the next patch release will have a unique SBOM serial number.
+
+Check out the release branch and run :any:`+sbom-generate-new-serial-number`:
+
+.. code-block:: console
+
+   $ git checkout $RELEASE_BRANCH
+   $ tools/earthly.sh +sbom-generate-new-serial-number
+   $ git add etc/cyclonedx.sbom.json
+   $ git commit -m "update SBOM serial number"
+   $ git push origin $RELEASE_BRANCH
 
 
 Leave the Release Team
