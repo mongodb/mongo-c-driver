@@ -509,9 +509,9 @@ __ https://github.com/mongodb/mongo-c-driver/pulls
 Update SBOM serial number
 *************************
 
-Regenerate the SBOM serial number to give releases unique SBOM serial numbers.
+Regenerate the SBOM serial number to the subsequent patch release a unique SBOM serial number.
 
-For a patch release, check out the release branch and run :any:`+sbom-generate-new-serial-number`:
+Check out the release branch and run :any:`+sbom-generate-new-serial-number`:
 
 .. code-block:: console
 
@@ -521,7 +521,6 @@ For a patch release, check out the release branch and run :any:`+sbom-generate-n
    $ git commit -m "update SBOM serial number"
    $ git push origin $RELEASE_BRANCH
 
-For a non-patch release, the SBOM serial number is updated in previous steps.
 
 Leave the Release Team
 **********************
