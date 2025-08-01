@@ -491,6 +491,11 @@ Do the following:
    contain the version that you have just released. This text should match the
    generated Git tag. (The tag should always be an ancestor of the branch that
    contains that :file:`etc/prior_version.txt`.)
+4. For a non-patch release, update the SBOM serial number with :any:`+sbom-generate-new-serial-number`:
+
+   .. code-block:: console
+
+      $ tools/earthly.sh +sbom-generate-new-serial-number
 
 Push this branch to your fork of the repository::
 
@@ -501,6 +506,22 @@ changes back into the ``master`` branch.
 
 __ https://github.com/mongodb/mongo-c-driver/pulls
 
+Update SBOM serial number
+*************************
+
+Regenerate the SBOM serial number to give releases unique SBOM serial numbers.
+
+For a patch release, check out the release branch and run :any:`+sbom-generate-new-serial-number`:
+
+.. code-block:: console
+
+   $ git checkout $RELEASE_BRANCH
+   $ tools/earthly.sh +sbom-generate-new-serial-number
+   $ git add etc/cyclonedx.sbom.json
+   $ git commit -m "update SBOM serial number"
+   $ git push origin $RELEASE_BRANCH
+
+For a non-patch release, the SBOM serial number is updated in previous steps.
 
 Leave the Release Team
 **********************

@@ -216,6 +216,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
 
+.. program:: +sbom-generate-new-serial-number
 .. earthly-target:: +sbom-generate-new-serial-number
 
    Equivalent to `+sbom-generate` but uses the ``--generate-new-serial-number``
