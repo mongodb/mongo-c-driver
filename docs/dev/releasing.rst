@@ -509,7 +509,7 @@ __ https://github.com/mongodb/mongo-c-driver/pulls
 Update SBOM serial number
 *************************
 
-Regenerate the SBOM serial number to the subsequent patch release a unique SBOM serial number.
+Regenerate the SBOM serial number so the next patch release will have a unique SBOM serial number.
 
 Check out the release branch and run :any:`+sbom-generate-new-serial-number`:
 
