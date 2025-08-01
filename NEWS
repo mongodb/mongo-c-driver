@@ -1,5 +1,5 @@
-libmongoc 2.1.0 (Unreleased)
-============================
+libmongoc 2.1.0
+===============
 
 ## Fixes
 
@@ -17,6 +17,17 @@ libmongoc 2.1.0 (Unreleased)
 ## Removed
 
 * Support for Debian 9 and Debian 10.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Adrian Dole
+  * Azat Khuzhin
+  * Jeroen Ooms
+  * Roberto C. Sánchez
+  * Micah Scott
 
 
 libmongoc 2.0.2
