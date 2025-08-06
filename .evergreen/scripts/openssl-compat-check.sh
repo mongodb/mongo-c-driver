@@ -95,7 +95,7 @@ echo "Configuring... done."
 echo "Verifying the correct OpenSSL library was found..."
 (
   log="$(perl -lne 'print $1 if m|^FIND_PACKAGE_MESSAGE_DETAILS_OpenSSL:INTERNAL=(.*)$|' "${mongoc_build_dir:?}/CMakeCache.txt")"
-  pattern="^\[([^\]]*)\]\[([^\]]*)\]\[([^\]]*)\]\[([^\]]*)\]" # [library][include][??][version]
+  pattern="^\[([^\]]*)\]\[([^\]]*)\]\[([^\]]*)\]\[([^\]]*)\]" # [library][include][?][version]
 
   library="$(echo "${log:?}" | perl -lne "print \$1 if m|${pattern:?}|")"
   version="$(echo "${log:?}" | perl -lne "print \$4 if m|${pattern:?}|")"
@@ -104,6 +104,18 @@ echo "Verifying the correct OpenSSL library was found..."
     echo "expected \"${openssl_install_dir:?}\" in \"${library:-}\""
     exit 1
   } >&2
+
+  if [[ "${OPENSSL_USE_STATIC_LIBS:-}" == "ON" ]]; then
+    [[ "${library:-}" =~ "libcrypto.a" ]] || {
+      echo "expected \"libcrypto.a\" in \"${library:-}\""
+      exit 1
+    } >&2
+  else
+    [[ "${library:-}" =~ "libcrypto.so" ]] || {
+      echo "expected \"libcrypto.so\" in \"${library:-}\""
+      exit 1
+    } >&2
+  fi
 
   [[ "${version:-}" =~ "${OPENSSL_VERSION:?}" ]] || {
     echo "expected \"${OPENSSL_VERSION:?}\" in \"${version:-}\""
