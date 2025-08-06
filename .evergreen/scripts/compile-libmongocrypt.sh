@@ -11,17 +11,14 @@ compile_libmongocrypt() {
   # divergence in the copied files.
 
   # Clone libmongocrypt and check-out commit containing changes for SPM-4158.
-  git clone -q https://github.com/mongodb/libmongocrypt || return
-  cd libmongocrypt
-  git checkout 5b4691bfb964155bd1374666f0330446278708df
-  cd ..
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.15.0 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
     "-DBUILD_TESTING=OFF"
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
-    "-DBUILD_VERSION=1.15.0-pre"
+    "-DBUILD_VERSION=1.15.0"
   )
 
   . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
