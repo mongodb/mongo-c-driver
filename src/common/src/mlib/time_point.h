@@ -32,6 +32,7 @@
 // Check for POSIX clock functions functions
 #if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || (defined(_DEFAULT_SOURCE) && !defined(_WIN32))
 #include <sys/types.h>
+#undef mlib_have_posix_clocks
 #define mlib_have_posix_clocks() 1
 #endif
 
@@ -79,7 +80,7 @@ typedef struct mlib_time_point {
  * @brief Given two time points, selects the time point that occurs earliest
  */
 static inline mlib_time_point
-mlib_soonest (mlib_time_point l, mlib_time_point r)
+mlib_earliest (mlib_time_point l, mlib_time_point r)
 {
    l.time_since_monotonic_start = mlib_duration (l.time_since_monotonic_start, min, r.time_since_monotonic_start);
    return l;
@@ -172,32 +173,14 @@ mlib_now (void) mlib_noexcept
  * is a point-in-time *before* 'from'.
  */
 static inline mlib_time_point
-mlib_later (mlib_time_point from, mlib_duration delta) mlib_noexcept
+mlib_time_add (mlib_time_point from, mlib_duration delta) mlib_noexcept
 {
    mlib_time_point ret;
    ret.time_since_monotonic_start = mlib_duration (from.time_since_monotonic_start, plus, delta);
    return ret;
 }
 
-#define mlib_later(From, Delta) mlib_later (From, mlib_duration_arg (Delta))
-
-/**
- * @brief Adjust a time-point in-place
- *
- * @param time Pointer to the valid time object to be updated
- * @param delta The duration to add/remove from the point-in-time
- * @return mlib_time_point Returns the previous value of the time point
- */
-static inline mlib_time_point
-mlib_time_adjust (mlib_time_point *time, mlib_duration delta) mlib_noexcept
-{
-   mlib_check (time, because, "Pointer-to-time is required");
-   mlib_time_point prev = *time;
-   *time = mlib_later (*time, delta);
-   return prev;
-}
-
-#define mlib_time_adjust(Time, Duration) mlib_time_adjust (Time, mlib_duration_arg (Duration))
+#define mlib_time_add(From, Delta) mlib_time_add (From, mlib_duration_arg (Delta))
 
 /**
  * @brief Obtain the duration between two points in time.

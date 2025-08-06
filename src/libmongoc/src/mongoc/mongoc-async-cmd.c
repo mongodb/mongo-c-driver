@@ -202,7 +202,8 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    BSON_ASSERT_PARAM (dbname);
 
    mongoc_async_cmd_t *const acmd = BSON_ALIGNED_ALLOC0 (mongoc_async_cmd_t);
-   acmd->_connect_delay_timer = mlib_expires_after (connect_delay);
+   acmd->_start_time = mlib_now ();
+   acmd->_connect_delay_timer = mlib_expires_at (mlib_time_add (acmd->_start_time, connect_delay));
    acmd->async = async;
    acmd->dns_result = dns_result;
    acmd->_timeout = timeout;
@@ -212,7 +213,6 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    acmd->_stream_setup_userdata = setup_userdata;
    acmd->_event_callback = event_cb;
    acmd->_userdata = userdata;
-   acmd->_start_time = mlib_now ();
    acmd->state = MONGOC_ASYNC_CMD_PENDING_CONNECT;
    acmd->_response_data = (bson_t) BSON_INITIALIZER;
    bson_copy_to (cmd, &acmd->_command);

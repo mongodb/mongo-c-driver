@@ -64,7 +64,7 @@ mongoc_async_run (mongoc_async_t *async)
 
    DL_FOREACH (async->cmds, acmd)
    {
-      // XXX: See _acmd_reset_elapsed doc comment to explain this hack
+      // CDRIVER-1571: See _acmd_reset_elapsed doc comment to explain this hack
       _acmd_reset_elapsed (acmd);
    }
 

@@ -64,7 +64,7 @@ mlib_expires_at (const mlib_time_point t) mlib_noexcept
 static inline mlib_timer
 mlib_expires_after (const mlib_duration dur) mlib_noexcept
 {
-   const mlib_time_point later = mlib_later (mlib_now (), dur);
+   const mlib_time_point later = mlib_time_add (mlib_now (), dur);
    return mlib_expires_at (later);
 }
 
@@ -76,7 +76,7 @@ mlib_expires_after (const mlib_duration dur) mlib_noexcept
 static inline mlib_timer
 mlib_soonest_timer (mlib_timer l, mlib_timer r) mlib_noexcept
 {
-   l.expires_at = mlib_soonest (l.expires_at, r.expires_at);
+   l.expires_at = mlib_earliest (l.expires_at, r.expires_at);
    return l;
 }
 
@@ -118,7 +118,7 @@ mlib_timer_remaining (const mlib_timer timer) mlib_noexcept
  *
  * ```
  *      void do_thing() {
- *          bool once = 0;
+ *          bool once = false;
  *          while (!mlib_timer_is_expired(timer, &once)) {
  *              try_thing(timer);
  *          }

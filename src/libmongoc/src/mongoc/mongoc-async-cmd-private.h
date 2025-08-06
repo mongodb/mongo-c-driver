@@ -139,8 +139,8 @@ typedef struct _mongoc_async_cmd {
    // Arbitrary userdata pointer passed to the stream setup function
    void *_stream_setup_userdata;
    /**
-    * @brief User-provided command event callback. Invoked with the final result
-    * and once when the command connects.
+    * @brief User-provided command event callback. Invoked after a new
+    * connection is established, and again when the command completes.
     */
    mongoc_async_cmd_event_cb _event_callback;
    // Arbitrary userdata passed when the object was created
@@ -244,7 +244,8 @@ mongoc_async_cmd_new (mongoc_async_t *async,
 static inline mlib_timer
 _acmd_deadline (const mongoc_async_cmd_t *self)
 {
-   return mlib_expires_at (mlib_later (self->_start_time, self->_timeout));
+   BSON_ASSERT_PARAM (self);
+   return mlib_expires_at (mlib_time_add (self->_start_time, self->_timeout));
 }
 
 /**
@@ -265,6 +266,8 @@ _acmd_has_timed_out (const mongoc_async_cmd_t *self)
 static inline void
 _acmd_cancel (mongoc_async_cmd_t *self)
 {
+   BSON_ASSERT_PARAM (self);
+
    // XXX: Should this check if ther command has already finished/failed?
    self->state = MONGOC_ASYNC_CMD_CANCELLED_STATE;
 }
@@ -281,7 +284,7 @@ _acmd_cancel (mongoc_async_cmd_t *self)
 static inline void
 _acmd_adjust_connect_delay (mongoc_async_cmd_t *self, const mlib_duration d)
 {
-   mlib_time_adjust (&self->_connect_delay_timer.expires_at, d);
+   self->_connect_delay_timer.expires_at = mlib_time_add (self->_connect_delay_timer.expires_at, d);
 }
 
 /**

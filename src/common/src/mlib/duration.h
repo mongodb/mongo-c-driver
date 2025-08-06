@@ -116,7 +116,7 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
  * - `mlib_duration(<dur>, <op>, <operand>)`
  *       Manipulates a duration according to `<op>`.
  *
- * In the above, `<dur>` may be a parenthsized `mlib_duration` argument list or a
+ * In the above, `<dur>` may be a parenthesized `mlib_duration` argument list or a
  * duration object; `<count>` must be an integral expression and `<unit>` is a
  * unit suffix identifer (see: `mlib_duration_with_unit`) to create a duration
  * of `<count>` instances of `<unit>`, and `<op>` is one of:
@@ -163,13 +163,15 @@ _mlibDurationCopy (mlib_duration d)
 }
 
 // Duration scalar multiply
-#define _mlibDurationInfixOperator_mul(LHS, Fac) _mlibDurationMultiply (_mlibDurationArgument (LHS), (Fac))
+#define _mlibDurationInfixOperator_mul(LHS, Fac) \
+   _mlibDurationMultiply (_mlibDurationArgument (LHS), mlib_upsize_integer (Fac))
 static inline mlib_duration
-_mlibDurationMultiply (const mlib_duration dur, int fac) mlib_noexcept
+_mlibDurationMultiply (const mlib_duration dur, mlib_upsized_integer fac) mlib_noexcept
 {
    mlib_duration ret = {0};
-   if (mlib_mul (&ret._rep, dur._rep, fac)) {
-      if ((dur._rep < 0) != (fac < 0)) {
+   uintmax_t bits;
+   if ((mlib_mul) (&bits, true, true, (uintmax_t) dur._rep, fac.is_signed, fac.bits.as_unsigned)) {
+      if ((dur._rep < 0) != (fac.is_signed && fac.bits.as_signed < 0)) {
          // Different signs:  Neg × Pos = Neg
          ret = mlib_duration_min ();
       } else {
@@ -177,21 +179,29 @@ _mlibDurationMultiply (const mlib_duration dur, int fac) mlib_noexcept
          //             Neg × Neg = Pos
          ret = mlib_duration_max ();
       }
+   } else {
+      ret._rep = (intmax_t) bits;
    }
    return ret;
 }
 
 // Duration scalar divide
-#define _mlibDurationInfixOperator_div(LHS, Div) _mlibDurationDivide (_mlibDurationArgument (LHS), (Div))
+#define _mlibDurationInfixOperator_div(LHS, Div) \
+   _mlibDurationDivide (_mlibDurationArgument (LHS), mlib_upsize_integer (Div))
 static inline mlib_duration
-_mlibDurationDivide (mlib_duration a, int div) mlib_noexcept
+_mlibDurationDivide (mlib_duration a, mlib_upsized_integer div) mlib_noexcept
 {
-   mlib_check (div, neq, 0);
-   if (div == -1 && a._rep == mlib_minof (mlib_duration_rep_t)) {
+   mlib_check (div.bits.as_unsigned, neq, 0);
+   if ((div.is_signed && div.bits.as_signed == -1) //
+       && a._rep == mlib_minof (mlib_duration_rep_t)) {
       // MIN / -1 is UB, but the saturating result is the max
       a = mlib_duration_max ();
    } else {
-      a._rep /= div;
+      if (div.is_signed) {
+         a._rep /= div.bits.as_signed;
+      } else {
+         a._rep /= div.bits.as_unsigned;
+      }
    }
    return a;
 }

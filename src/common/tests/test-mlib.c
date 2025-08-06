@@ -1037,7 +1037,7 @@ _test_time_point (void)
    mlib_time_point t = mlib_now ();
 
    // Offset the time point
-   mlib_time_point later = mlib_later (t, (1, s));
+   mlib_time_point later = mlib_time_add (t, (1, s));
    mlib_check (mlib_time_cmp (t, <, later));
 
    // Difference between two time points is a duration:
@@ -1097,7 +1097,7 @@ _test_timer (void)
    mlib_check (cond);
 
    // Create a timer that expired in the past
-   tm = mlib_expires_at (mlib_later (mlib_now (), (-10, s)));
+   tm = mlib_expires_at (mlib_time_add (mlib_now (), (-10, s)));
    mlib_check (mlib_timer_is_expired (tm));
 }
 
