@@ -129,19 +129,17 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
  * arithmetic, and never wrap or trap.
  */
 #define mlib_duration(...) MLIB_EVAL_16 (_mlibDurationMagic (__VA_ARGS__))
-#define _mlibDurationMagic(...)                             \
-   MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__)            \
-   MLIB_NOTHING ("force the argument list to expand first") \
+#define _mlibDurationMagic(...)                                  \
+   MLIB_DEFERRED (MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__)) \
    (__VA_ARGS__)
 // Wraps a `<dur>` argument, and expands to the magic only if it is parenthesized
 #define _mlibDurationArgument(X)                                                       \
    /* If given a parenthesized expression, act as an invocation of `mlib_duration() */ \
    MLIB_IF_ELSE (MLIB_IS_PARENTHESIZED (X))                                            \
-   MLIB_NOTHING ("force the 'then' branch to expand first")                            \
-   /* then: */ (_mlibDurationMagic MLIB_NOTHING () X) /* else: */ (X)
+   /* then: */ (_mlibDurationMagic X) /* else: */ (X)
 
 // Wrap a macro argument that should support the duration DSL
-#define mlib_duration_arg(X) MLIB_EVAL_8 (_mlibDurationArgument (X))
+#define mlib_duration_arg(X) MLIB_EVAL_16 (_mlibDurationArgument (X))
 
 // Zero arguments, just return a zero duration:
 #define _mlib_duration_argc_0() (mlib_init (mlib_duration){0})
@@ -150,9 +148,8 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
 // Two arguments, the second arg is a unit suffix:
 #define _mlib_duration_argc_2(Count, Unit) mlib_duration_with_unit (Count, Unit)
 // Three arguments, an infix operation:
-#define _mlib_duration_argc_3(Duration, Operator, Operand) \
-   MLIB_PASTE (_mlibDurationInfixOperator_, Operator)      \
-   MLIB_NOTHING ("force the arguments to expand first")    \
+#define _mlib_duration_argc_3(Duration, Operator, Operand)            \
+   MLIB_DEFERRED (MLIB_PASTE (_mlibDurationInfixOperator_, Operator)) \
    (Duration, Operand)
 
 // By-value copy a duration
