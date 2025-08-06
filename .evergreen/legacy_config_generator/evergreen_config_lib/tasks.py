@@ -776,7 +776,9 @@ aws_compile_task = NamedTask(
         func('find-cmake-latest'),
         shell_mongoc(
             """
-            export distro_id='${distro_id}' # Required by find_cmake_latest.
+            set -o errexit
+            set -o pipefail
+
             . .evergreen/scripts/find-cmake-latest.sh
             cmake_binary="$(find_cmake_latest)"
 
@@ -785,10 +787,11 @@ aws_compile_task = NamedTask(
             find_ccache_and_export_vars "$(pwd)" || true
 
             # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
-            export CC='${CC}'
-            "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
-            "$cmake_binary" --build . --target test-awsauth
-            """
+            "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
+            "$cmake_binary" --build cmake-build --target test-awsauth
+            """,
+            include_expansions_in_env=['distro_id', 'CC'],
+            redirect_standard_error_to_output=True,
         ),
         func("upload-build"),
     ],

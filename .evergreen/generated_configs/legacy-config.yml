@@ -1541,19 +1541,23 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
+      include_expansions_in_env:
+      - distro_id
+      - CC
       shell: bash
       script: |-
         set -o errexit
-        export distro_id='${distro_id}' # Required by find_cmake_latest.
+        set -o errexit
+        set -o pipefail
         . .evergreen/scripts/find-cmake-latest.sh
         cmake_binary="$(find_cmake_latest)"
         # Use ccache if able.
         . .evergreen/scripts/find-ccache.sh
         find_ccache_and_export_vars "$(pwd)" || true
         # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
-        export CC='${CC}'
-        "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
-        "$cmake_binary" --build . --target test-awsauth
+        "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
+        "$cmake_binary" --build cmake-build --target test-awsauth
   - func: upload-build
 - name: test-aws-openssl-regular-latest
   tags:
