@@ -49,13 +49,6 @@
     #include <sys/types.h>
 #endif
 
-// Feature detection
-#ifdef __has_include
-    #if __has_include(<features.h>)
-        #include <features.h>
-    #endif
-#endif
-
 // clang-format on
 
 #endif // MLIB_PLATFORM_H_INCLUDED
