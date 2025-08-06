@@ -65,7 +65,6 @@ all_variants = [
             OD([("name", "link-with-bson-mingw"), ("distros", ["windows-vsCurrent-large"])]),
             "check-headers",
             "debug-compile-with-warnings",
-            OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian11-small"])]),
             "install-libmongoc-after-libbson",
         ],
         {

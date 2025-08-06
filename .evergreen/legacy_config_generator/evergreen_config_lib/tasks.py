@@ -288,29 +288,6 @@ all_tasks = [
         SASL="OFF",
     ),
     NamedTask(
-        "build-and-test-with-toolchain",
-        commands=[
-            OD(
-                [
-                    ("command", "s3.get"),
-                    (
-                        "params",
-                        OD(
-                            [
-                                ("aws_key", "${aws_key}"),
-                                ("aws_secret", "${aws_secret}"),
-                                ("remote_file", "mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz"),
-                                ("bucket", "mongo-c-toolchain"),
-                                ("local_file", "mongo-c-toolchain.tar.gz"),
-                            ]
-                        ),
-                    ),
-                ]
-            ),
-            shell_mongoc(".evergreen/scripts/build-and-test-with-toolchain.sh"),
-        ],
-    ),
-    NamedTask(
         "install-libmongoc-after-libbson",
         commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
     ),

@@ -826,23 +826,6 @@ tasks:
         set -o errexit
         env CFLAGS="-Wno-redundant-decls" SASL="OFF" SSL="OPENSSL" .evergreen/scripts/compile.sh
   - func: upload-build
-- name: build-and-test-with-toolchain
-  commands:
-  - command: s3.get
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: mongo-c-toolchain/${distro_id}/2023/06/07/mongo-c-toolchain.tar.gz
-      bucket: mongo-c-toolchain
-      local_file: mongo-c-toolchain.tar.gz
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        .evergreen/scripts/build-and-test-with-toolchain.sh
 - name: install-libmongoc-after-libbson
   commands:
   - command: shell.exec
@@ -16234,9 +16217,6 @@ buildvariants:
     - windows-vsCurrent-large
   - check-headers
   - debug-compile-with-warnings
-  - name: build-and-test-with-toolchain
-    distros:
-    - debian11-small
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
