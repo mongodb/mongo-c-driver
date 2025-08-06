@@ -80,7 +80,7 @@ mongoc_async_run (mongoc_async_t *async)
       unsigned nstreams = 0;
 
       // The timer to wake up the poll()
-      mlib_timer poll_timer = mlib_expires_after (mlib_duration_max ());
+      mlib_timer poll_timer = mlib_expires_never ();
 
       /* check if any cmds are ready to be initiated. */
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)

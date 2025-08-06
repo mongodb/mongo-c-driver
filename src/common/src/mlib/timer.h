@@ -71,6 +71,21 @@ mlib_expires_after (const mlib_duration dur) mlib_noexcept
 #define mlib_expires_after(...) mlib_expires_after (mlib_duration (__VA_ARGS__))
 
 /**
+ * @brief Obtain a timer that will "never" expire
+ *
+ * In actuality, the timer expires at a time so far in the future that no computer
+ * program could ever hope to continue running to that point, and by the time
+ * that point is reached it will be some other civilization's problem.
+ */
+static inline mlib_timer
+mlib_expires_never (void) mlib_noexcept
+{
+   mlib_timer t;
+   t.expires_at.time_since_monotonic_start = mlib_duration_max ();
+   return t;
+}
+
+/**
  * @brief Between two timers, return the timer that will expire the soonest
  */
 static inline mlib_timer
