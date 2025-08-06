@@ -37,10 +37,14 @@ struct _mongoc_database_t;
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGE "Range"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
+#define MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW "TextPreview"
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW "prefixPreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW "suffixPreview"
 
 
 BSON_BEGIN_DECLS
@@ -104,6 +108,8 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback (mongoc_auto_en
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
+typedef struct _mongoc_client_encryption_encrypt_text_per_index_opts_t mongoc_client_encryption_encrypt_text_per_index_opts_t;
+typedef struct _mongoc_client_encryption_encrypt_text_opts_t mongoc_client_encryption_encrypt_text_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t mongoc_client_encryption_datakey_opts_t;
 typedef struct _mongoc_client_encryption_rewrap_many_datakey_result_t
@@ -228,6 +234,12 @@ mongoc_client_encryption_decrypt (mongoc_client_encryption_t *client_encryption,
 MONGOC_EXPORT (mongoc_client_encryption_encrypt_opts_t *)
 mongoc_client_encryption_encrypt_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 
+MONGOC_EXPORT (mongoc_client_encryption_encrypt_text_per_index_opts_t *)
+mongoc_client_encryption_encrypt_text_per_index_opts_new (void);
+
+MONGOC_EXPORT (mongoc_client_encryption_encrypt_text_opts_t *)
+mongoc_client_encryption_encrypt_text_opts_new (void);
+
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_destroy (mongoc_client_encryption_encrypt_opts_t *opts);
 
@@ -280,6 +292,30 @@ mongoc_client_encryption_encrypt_range_opts_set_precision (mongoc_client_encrypt
 MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_set_range_opts (mongoc_client_encryption_encrypt_opts_t *opts,
                                                       const mongoc_client_encryption_encrypt_range_opts_t *range_opts);
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_opts_set_text_opts (mongoc_client_encryption_encrypt_opts_t *opts,
+   const mongoc_client_encryption_encrypt_text_opts_t *text_opts);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(mongoc_client_encryption_encrypt_text_opts_t *opts, bool case_sensitive);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(mongoc_client_encryption_encrypt_text_opts_t *opts, bool diacritic_sensitive);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_per_index_opts_set_str_max_length(mongoc_client_encryption_encrypt_text_per_index_opts_t *opts, int32_t str_max_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_per_index_opts_set_str_max_query_length(mongoc_client_encryption_encrypt_text_per_index_opts_t *opts, int32_t str_max_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_per_index_opts_set_str_min_query_length(mongoc_client_encryption_encrypt_text_per_index_opts_t *opts, int32_t str_min_query_length);
+
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_prefix(mongoc_client_encryption_encrypt_text_opts_t *opts, mongoc_client_encryption_encrypt_text_per_index_opts_t *per_index_opts);
+
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_suffix(mongoc_client_encryption_encrypt_text_opts_t *opts, mongoc_client_encryption_encrypt_text_per_index_opts_t *per_index_opts);
+
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_substring(mongoc_client_encryption_encrypt_text_opts_t *opts, mongoc_client_encryption_encrypt_text_per_index_opts_t *per_index_opts);
 
 MONGOC_EXPORT (mongoc_client_encryption_datakey_opts_t *)
 mongoc_client_encryption_datakey_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
