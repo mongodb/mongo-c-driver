@@ -136,12 +136,6 @@ elif command -v otool >/dev/null; then
 fi
 
 maybe_skip() {
-  if true; then
-    # TODO: Remove if-block when resolving CDRIVER-5995.
-    echo "Skipping test until DEVPROD-9029 is resolved."
-    return 
-  fi
-
   if $IS_ZSERIES; then
     # TODO: Remove if-block when resolving CDRIVER-5990.
     echo "Skipping test until DEVPROD-16954 is resolved."
