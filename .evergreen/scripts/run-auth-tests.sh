@@ -24,12 +24,20 @@ secrets_dir="$(to_absolute "${mongoc_dir}/../secrets")"
 mkdir -p "${secrets_dir}"
 chmod 700 "${secrets_dir}"
 
-# Create certificate to test X509 auth with Atlas:
+# Create certificate to test X509 auth with Atlas on cloud-prod:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
 echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
 # Fix path on Windows:
 if $IS_WINDOWS; then
-    atlas_x509_path="$(cygpath -m "${secrets_dir:?}/atlas_x509.pem")"
+    atlas_x509_path="$(cygpath -m "${atlas_x509_path}")"
+fi
+
+# Create certificate to test X509 auth with Atlas on cloud-dev
+atlas_x509_dev_path="${secrets_dir:?}/atlas_x509_dev.pem"
+echo "${atlas_x509_dev_cert_base64:?}" | base64 --decode > "${atlas_x509_dev_path:?}"
+# Fix path on Windows:
+if $IS_WINDOWS; then
+    atlas_x509_dev_path="$(cygpath -m "${atlas_x509_dev_path}")"
 fi
 
 # Create Kerberos config and keytab files.
@@ -187,8 +195,11 @@ if [[ "${ssl}" != "OFF" ]]; then
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
   fi
 
-  echo "Connecting to Atlas with X509"
+  echo "Connecting to Atlas (cloud-prod) with X509"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_x509:?}&tlsCertificateKeyFile=${atlas_x509_path}&${c_timeout}"
+
+  echo "Connecting to Atlas (cloud-dev) with X509"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_x509_dev:?}&tlsCertificateKeyFile=${atlas_x509_dev_path}&${c_timeout}"
 
 fi
 

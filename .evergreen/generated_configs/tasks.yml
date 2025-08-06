@@ -5181,8 +5181,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
-          CC: mingw
-          CXX: mingw
+          CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-test-8.0-server-auth
     run_on: windows-vsCurrent-small
@@ -5195,8 +5195,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: mingw }
-            - { key: CXX, value: mingw }
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -5216,8 +5216,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: mingw }
-            - { key: CXX, value: mingw }
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -6772,3 +6772,24 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: verify-headers
+    run_on:
+      - amazon2
+      - debian11-large
+      - debian12-large
+      - ubuntu2204-large
+      - ubuntu2404-large
+    tags: [pr-merge-gate]
+    commands:
+      - func: docker-login-amazon-ecr
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +verify-headers
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub

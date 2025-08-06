@@ -22,7 +22,7 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
-declare install_dir="${mongoc_dir}/install-dir"
+declare libmongocrypt_install_dir="${mongoc_dir}/libmongocrypt-install-dir"
 
 declare -a configure_flags
 
@@ -38,7 +38,7 @@ configure_flags_append_if_not_null() {
   fi
 }
 
-configure_flags_append "-DCMAKE_PREFIX_PATH=${install_dir}"
+configure_flags_append "-DCMAKE_PREFIX_PATH=${libmongocrypt_install_dir:?}"
 configure_flags_append "-DCMAKE_SKIP_RPATH=TRUE" # Avoid hardcoding absolute paths to dependency libraries.
 configure_flags_append "-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
 configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
@@ -90,14 +90,14 @@ CXXFLAGS+=" ${flags+${flags[*]}}"
 declare cmake_binary
 cmake_binary="$(find_cmake_latest)"
 
-declare build_dir
-build_dir="cmake-build"
+declare mongoc_build_dir mongoc_install_dir
+mongoc_build_dir="cmake-build"
+mongoc_install_dir="cmake-install"
+
+configure_flags_append "-DCMAKE_INSTALL_PREFIX=${mongoc_install_dir:?}"
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
-
-export PKG_CONFIG_PATH
-PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   # MacOS does not have nproc.
@@ -119,7 +119,7 @@ fi
 echo "Checking requested C standard is supported..."
 pushd "$(mktemp -d)"
 cat >CMakeLists.txt <<DOC
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.30...4.0)
 project(c_standard_latest LANGUAGES C)
 set(c_std_version "${C_STD_VERSION:?}")
 if(c_std_version STREQUAL "latest") # Special-case MSVC's /std:clatest flag.
@@ -164,7 +164,7 @@ echo "Checking requested C standard is supported... done."
 
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {
+"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${libmongocrypt_install_dir:?}" &>output.txt || {
   cat output.txt 1>&2
   exit 1
 }
@@ -187,9 +187,39 @@ else
   all_target="all"
 fi
 
-"${cmake_binary}" -S . -B "${build_dir:?}" "${configure_flags[@]}"
-"${cmake_binary}" --build "${build_dir:?}" --config Debug \
+# Ensure we're starting with a clean slate.
+rm -rf "${mongoc_build_dir:?}" "${mongoc_install_dir:?}"
+
+"${cmake_binary}" -S . -B "${mongoc_build_dir:?}" "${configure_flags[@]}"
+"${cmake_binary}" --build "${mongoc_build_dir:?}" --config Debug \
   --target mongo_c_driver_tests \
   --target mongo_c_driver_examples \
   --target public-header-warnings \
   --target "${all_target:?}"
+"${cmake_binary}" --install "${mongoc_build_dir:?}" --config Debug
+
+# "lib" vs. "lib64"
+if [[ -d "${mongoc_install_dir:?}/lib64" ]]; then
+  lib_dir="lib64"
+else
+  lib_dir="lib"
+fi
+
+# This file should not be deleted!
+touch "${mongoc_install_dir:?}/${lib_dir:?}/canary.txt"
+
+# Linux/MacOS: uninstall.sh
+# Windows:     uninstall.cmd
+"${cmake_binary}" --build "${mongoc_build_dir:?}" --target uninstall
+
+# No files should remain except canary.txt.
+# No directories except top-level directories should remain.
+echo "Checking results of uninstall..."
+diff <(cd "${mongoc_install_dir:?}" && find . -mindepth 1 | sort) <(
+  echo "./bin"
+  echo "./include"
+  echo "./${lib_dir:?}"
+  echo "./${lib_dir:?}/canary.txt"
+  echo "./share"
+)
+echo "Checking results of uninstall... done."

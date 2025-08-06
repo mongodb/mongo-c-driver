@@ -168,9 +168,9 @@ wait_for_server() {
   return 1
 }
 
-if [[ "${CC}" =~ mingw ]]; then
+if [[ "${OSTYPE:?}" == cygwin && "${CC}" =~ gcc ]]; then
   echo "Waiting for simple HTTP server to start..."
-  wait_for_server "simple HTTP" 8000
+  wait_for_server "simple HTTP" 18000
   echo "Waiting for simple HTTP server to start... done."
 
   chmod -f +x ./cmake-build/src/libmongoc/test-libmongoc.exe
@@ -214,6 +214,7 @@ if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
 
   # Limit tests executed to CSE tests.
   test_args+=("-l" "/client_side_encryption/*")
+  test_args+=("-l" "/unified/*") # Includes PoC tests for CSFLE/QE.
 fi
 
 if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then

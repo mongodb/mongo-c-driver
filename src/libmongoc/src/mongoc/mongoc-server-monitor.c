@@ -948,8 +948,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
       secure_channel_cred_ptr = server_monitor->topology->scanner->secure_channel_cred_ptr;
 #endif
 
-      server_monitor->stream = mongoc_client_connect (false,
-                                                      ssl_opts_void != NULL,
+      server_monitor->stream = mongoc_client_connect (ssl_opts_void != NULL,
                                                       ssl_opts_void,
                                                       server_monitor->uri,
                                                       &server_monitor->description->host,

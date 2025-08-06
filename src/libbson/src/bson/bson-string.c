@@ -18,10 +18,10 @@
 #include <common-bits-private.h>
 #include <common-string-private.h>
 
-#include <bson/bson-compat.h>
-#include <bson/bson-config.h>
-#include <bson/bson-memory.h>
 #include <bson/bson-utf8.h>
+#include <bson/compat.h>
+#include <bson/config.h>
+#include <bson/memory.h>
 
 #include <mlib/cmp.h>
 

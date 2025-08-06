@@ -9,6 +9,42 @@ IMPORT ./tools/ AS tools
 # For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
 # Example use: <earthly> +build --env=u22 --sasl=off --tls=OpenSSL --c_compiler=gcc
 
+# COPY_SOURCE :
+#   Copy source files required for the build into the specified "--into" directory
+COPY_SOURCE:
+    FUNCTION
+    ARG --required into
+    COPY --dir \
+        build/ \
+        CMakeLists.txt \
+        COPYING \
+        NEWS \
+        README.rst \
+        src/ \
+        THIRD_PARTY_NOTICES \
+        VERSION_CURRENT \
+        "$into"
+
+# CONFIGURE :
+#   Configure the project in $source_dir into $build_dir with a common set of configuration options
+CONFIGURE:
+    FUNCTION
+    ARG --required source_dir
+    ARG --required build_dir
+    ARG --required tls
+    ARG --required sasl
+    RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
+        -D ENABLE_MAINTAINER_FLAGS=ON \
+        -D ENABLE_SHM_COUNTERS=ON \
+        -D ENABLE_SASL=$(echo $sasl | __str upper) \
+        -D ENABLE_SNAPPY=ON \
+        -D ENABLE_SRV=ON \
+        -D ENABLE_ZLIB=BUNDLED \
+        -D ENABLE_SSL=$(echo $tls | __str upper) \
+        -D ENABLE_COVERAGE=ON \
+        -D ENABLE_DEBUG_ASSERTIONS=ON \
+        -Werror
+
 # build :
 #   Build libmongoc and libbson using the specified environment.
 #
@@ -28,28 +64,9 @@ build:
     ARG --required tls
     LET source_dir=/opt/mongoc/source
     LET build_dir=/opt/mongoc/build
-    COPY --dir \
-        build/ \
-        CMakeLists.txt \
-        COPYING \
-        NEWS \
-        README.rst \
-        src/ \
-        THIRD_PARTY_NOTICES \
-        VERSION_CURRENT \
-        "$source_dir"
+    DO +COPY_SOURCE --into=$source_dir
     ENV CCACHE_HOME=/root/.cache/ccache
-    RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
-        -D ENABLE_MAINTAINER_FLAGS=ON \
-        -D ENABLE_SHM_COUNTERS=ON \
-        -D ENABLE_SASL=$(echo $sasl | __str upper) \
-        -D ENABLE_SNAPPY=ON \
-        -D ENABLE_SRV=ON \
-        -D ENABLE_ZLIB=BUNDLED \
-        -D ENABLE_SSL=$(echo $tls | __str upper) \
-        -D ENABLE_COVERAGE=ON \
-        -D ENABLE_DEBUG_ASSERTIONS=ON \
-        -Werror
+    DO --pass-args +CONFIGURE --source_dir=$source_dir --build_dir=$build_dir
     RUN --mount=type=cache,target=$CCACHE_HOME \
         env CCACHE_BASE="$source_dir" \
             cmake --build $build_dir --config $config
@@ -398,6 +415,34 @@ vcpkg-base:
     LET src_dir=/opt/mongoc-vcpkg-example
     COPY src/libmongoc/examples/cmake/vcpkg/ $src_dir
     WORKDIR $src_dir
+
+# verify-headers :
+#   Execute CMake header verification on the sources
+#
+#   See `earthly.rst` for more details.
+verify-headers:
+    # We test against multiple different platforms, because glibc/musl versions may
+    # rearrange their header contents and requirements, so we want to check against as
+    # many as possible.
+    BUILD +do-verify-headers-impl \
+        --from +env.alpine3.19 \
+        --from +env.u22 \
+        --from +env.centos7 \
+        --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc
+
+do-verify-headers-impl:
+    ARG --required from
+    # We don't really care about the specifics of the build env/settings, so set some
+    # reasonable defaults so the caller doesn't need to specify. In the future, it is
+    # possible that we will need to test other environments and build settings.
+    FROM --pass-args "$from" --purpose=build
+    # Add C++ so we can test as C++ headers
+    DO --pass-args tools+ADD_CXX_COMPILER
+    DO +COPY_SOURCE --into=/s
+    DO --pass-args +CONFIGURE --source_dir /s --build_dir /s/_build
+    # The "all_verify_interface_header_sets" target is created automatically
+    # by CMake for the VERIFY_INTERFACE_HEADER_SETS target property.
+    RUN cmake --build /s/_build --target all_verify_interface_header_sets
 
 # run :
 #   Run one or more targets simultaneously.

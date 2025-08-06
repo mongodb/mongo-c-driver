@@ -22,7 +22,7 @@
 #include <common-string-private.h>
 #include <common-utf8-private.h>
 
-#include <bson/bson-memory.h>
+#include <bson/memory.h>
 
 #include <mlib/cmp.h>
 

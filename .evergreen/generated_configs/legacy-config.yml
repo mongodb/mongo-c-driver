@@ -797,57 +797,6 @@ tasks:
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
         export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
         .evergreen/scripts/build_snapshot_rpm.sh
-- name: install-uninstall-check-mingw
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
-      shell: bash
-      script: |-
-        set -o errexit
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(find_cmake_latest)"
-        export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-        cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-- name: install-uninstall-check-msvc
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
-      shell: bash
-      script: |-
-        set -o errexit
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(find_cmake_latest)"
-        export CC="Visual Studio 14 2015 Win64"
-        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-        cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-- name: install-uninstall-check
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
-      shell: bash
-      script: |-
-        set -o errexit
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(find_cmake_latest)"
-        DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
-        BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
-        .evergreen/scripts/install-uninstall-check.sh
 - name: debug-compile-with-warnings
   commands:
   - func: find-cmake-latest
@@ -16250,6 +16199,7 @@ buildvariants:
   - link-with-cmake
   - link-with-cmake-ssl
   - link-with-cmake-snappy
+  - verify-headers
   - name: link-with-cmake-mac
     distros:
     - macos-14-arm64
@@ -16283,13 +16233,6 @@ buildvariants:
     distros:
     - windows-vsCurrent-large
   - check-headers
-  - install-uninstall-check
-  - name: install-uninstall-check-mingw
-    distros:
-    - windows-vsCurrent-large
-  - name: install-uninstall-check-msvc
-    distros:
-    - windows-vsCurrent-large
   - debug-compile-with-warnings
   - name: build-and-test-with-toolchain
     distros:

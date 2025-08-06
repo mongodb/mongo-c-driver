@@ -95,9 +95,8 @@ static void
 test_bin_to_hex (void)
 {
    const char *bin = "foobar";
-   const char *expect = "666f6f626172";
-
-   char *got = bin_to_hex ((const uint8_t *) bin, (uint32_t) strlen (bin));
+   const char *expect = "666F6F626172";
+   char *got = bin_to_hex ((const uint8_t *) bin, strlen (bin));
    ASSERT_CMPSTR (got, expect);
    bson_free (got);
 }
@@ -105,14 +104,30 @@ test_bin_to_hex (void)
 static void
 test_hex_to_bin (void)
 {
-   const char *hexstr = "666f6f62617200";
    const char *expect = "foobar";
+   size_t len;
 
-   uint32_t len;
-   uint8_t *got = hex_to_bin (hexstr, &len);
-   ASSERT_CMPSTR ((const char *) got, expect);
-   ASSERT_CMPUINT32 (len, ==, 7);
-   bson_free (got);
+   // Test lowercase:
+   {
+      const char *hexstr = "666f6f62617200";
+      uint8_t *got = hex_to_bin (hexstr, &len);
+      ASSERT_CMPSTR ((const char *) got, expect);
+      ASSERT_CMPSIZE_T (len, ==, 7);
+      bson_free (got);
+   }
+
+   // Test uppercase:
+   {
+      const char *hexstr = "666F6F62617200";
+      uint8_t *got = hex_to_bin (hexstr, &len);
+      ASSERT_CMPSTR ((const char *) got, expect);
+      ASSERT_CMPSIZE_T (len, ==, 7);
+      bson_free (got);
+   }
+
+   ASSERT_WITH_MSG (!hex_to_bin ("  66", &len), "whitespace is an error");
+   ASSERT_WITH_MSG (!hex_to_bin ("666", &len), "non-even number of digits is an error");
+   ASSERT_WITH_MSG (!hex_to_bin ("ZZ", &len), "non-hex digits is an error");
 }
 
 void

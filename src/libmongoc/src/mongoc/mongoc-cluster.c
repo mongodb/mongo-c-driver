@@ -2358,7 +2358,7 @@ mongoc_cluster_init (mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *c
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
 
-   cluster->operation_id = rand ();
+   cluster->operation_id = _mongoc_simple_rand_uint64_t ();
 
    EXIT;
 }

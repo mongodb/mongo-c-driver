@@ -20,11 +20,12 @@
 #ifndef BSON_TYPES_H
 #define BSON_TYPES_H
 
-
-#include <bson/bson-compat.h>
-#include <bson/bson-config.h>
 #include <bson/bson-endian.h>
-#include <bson/bson-macros.h>
+#include <bson/bson_t.h>
+#include <bson/compat.h>
+#include <bson/config.h>
+#include <bson/error.h>
+#include <bson/macros.h>
 
 #include <sys/types.h>
 
@@ -102,45 +103,6 @@ typedef struct _bson_context_t bson_context_t;
  * set no limit for serialization length.
  */
 typedef struct _bson_json_opts_t bson_json_opts_t;
-
-
-/**
- * bson_t:
- *
- * This structure manages a buffer whose contents are a properly formatted
- * BSON document. You may perform various transforms on the BSON documents.
- * Additionally, it can be iterated over using bson_iter_t.
- *
- * See bson_iter_init() for iterating the contents of a bson_t.
- *
- * When building a bson_t structure using the various append functions,
- * memory allocations may occur. That is performed using power of two
- * allocations and realloc().
- *
- * See http://bsonspec.org for the BSON document spec.
- *
- * This structure is meant to fit in two sequential 64-byte cachelines.
- */
-BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) typedef struct _bson_t {
-   uint32_t flags;       /* Internal flags for the bson_t. */
-   uint32_t len;         /* Length of BSON data. */
-   uint8_t padding[120]; /* Padding for stack allocation. */
-} bson_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
-
-/**
- * BSON_INITIALIZER:
- *
- * This macro can be used to initialize a #bson_t structure on the stack
- * without calling bson_init().
- *
- * |[
- * bson_t b = BSON_INITIALIZER;
- * ]|
- */
-#define BSON_INITIALIZER {3, 5, {5}}
-
-
-BSON_STATIC_ASSERT2 (bson_t, sizeof (bson_t) == 128);
 
 
 /**
@@ -470,59 +432,6 @@ typedef struct {
    void *padding[7];
 } bson_visitor_t;
 
-#define BSON_ERROR_BUFFER_SIZE 503
-
-BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) // Aligned for backwards-compatibility.
-typedef struct _bson_error_t {
-   uint32_t domain;
-   uint32_t code;
-   char message[BSON_ERROR_BUFFER_SIZE];
-   uint8_t reserved; // For internal use only!
-} bson_error_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
-
-
-BSON_STATIC_ASSERT2 (error_t, sizeof (bson_error_t) == 512);
-
-/**
- * @brief Reset the content of a bson_error_t to indicate no error.
- *
- * @param error Pointer to an error to be overwritten. If null, this function
- * has no effect.
- *
- * This is static-inline because it is trivially optimizable as a (conditional)
- * `memset`.
- */
-static inline void
-bson_error_clear (bson_error_t *error)
-{
-   if (!error) {
-      return;
-   }
-   // Statically initialized to a zero struct:
-   static bson_error_t zero_error;
-   // Replace the caller's value:
-   *error = zero_error;
-}
-
-/**
- * @brief Given a `bson_error_t` pointer l-value, ensure that it is non-null, and clear any
- * error value that it might hold.
- *
- * @param ErrorPointer An l-value expression of type `bson_error_t*`.
- *
- * If the passed pointer is null, then it will be updated to point to an anonymous
- * `bson_error_t` object that lives in the caller's scope.
- *
- * @note This macro is not valid in C++ because it relies on C99 compound literal semantics
- */
-#define bson_error_reset(ErrorPointer) bson_error_reset (&(ErrorPointer), &(bson_error_t) {0})
-static inline void (bson_error_reset) (bson_error_t **error, bson_error_t *localptr)
-{
-   if (*error == NULL) {
-      *error = localptr;
-   }
-   bson_error_clear (*error);
-}
 
 /**
  * bson_next_power_of_two:

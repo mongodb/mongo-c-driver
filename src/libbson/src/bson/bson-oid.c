@@ -17,9 +17,10 @@
 #include <bson/bson-oid.h>
 
 #include <bson/bson-context-private.h>
-#include <common-string-private.h>
 
-#include <bson/bson-compat.h>
+#include <bson/bson-endian.h>
+#include <bson/bson-string.h>
+#include <bson/compat.h>
 
 #include <limits.h>
 #include <stdarg.h>
