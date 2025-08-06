@@ -1796,7 +1796,6 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    }
 
    /* extract value */
-   printf("%s\n", bson_as_canonical_extended_json(&result,NULL));
    if (!bson_iter_init_find (&iter, &result, "v")) {
       _mongoc_set_error (error,
                          MONGOC_ERROR_CLIENT,

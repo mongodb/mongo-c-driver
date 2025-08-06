@@ -4485,7 +4485,7 @@ test_explicit_encryption_text(void *unused)
 
       bsonBuildDecl (expr,
                      kv ("$expr",
-                         doc ( kv ("encStrStartsWith",
+                         doc ( kv ("$encStrStartsWith",
                             doc (kv ("input", cstr("$encrypted-textPreview")),
                                  kv ("prefix", value(findPayload)))))));
       ASSERT_OR_PRINT (ok, error);
@@ -4522,7 +4522,7 @@ test_explicit_encryption_text(void *unused)
 
       bsonBuildDecl (expr,
                      kv ("$expr",
-                         doc ( kv ("encStrEndsWith",
+                         doc ( kv ("$encStrEndsWith",
                             doc (kv ("input", cstr("$encrypted-textPreview")),
                                  kv ("suffix", value(findPayload)))))));
       ASSERT_OR_PRINT (ok, error);
@@ -4559,19 +4559,17 @@ test_explicit_encryption_text(void *unused)
 
       bsonBuildDecl (expr,
                      kv ("$expr",
-                         doc ( kv ("encStrEndsWith",
+                         doc ( kv ("$encStrEndsWith",
                             doc (kv ("input", cstr("$encrypted-textPreview")),
                                  kv ("suffix", value(findPayload)))))));
       ASSERT_OR_PRINT (ok, error);
-      printf("%s\n", bson_as_canonical_extended_json(&expr, NULL));
 
       mongoc_cursor_t *cursor;
       const bson_t *got;
 
       cursor = mongoc_collection_find_with_opts (eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
-      // ASSERT (!mongoc_cursor_next (cursor, &got) && "expected no documents to be returned, got some");
+      ASSERT (!mongoc_cursor_next (cursor, &got) && "expected no documents to be returned, got some");
       mongoc_cursor_next (cursor, &got);
-      printf("%s\n", bson_as_canonical_extended_json(got, NULL));
 
       mongoc_cursor_destroy (cursor);
       bson_destroy (&expr);
@@ -4596,7 +4594,7 @@ test_explicit_encryption_text(void *unused)
 
       bsonBuildDecl (expr,
                      kv ("$expr",
-                         doc ( kv ("encStrStartsWith",
+                         doc ( kv ("$encStrStartsWith",
                             doc (kv ("input", cstr("$encrypted-textPreview")),
                                  kv ("prefix", value(findPayload)))))));
       ASSERT_OR_PRINT (ok, error);
