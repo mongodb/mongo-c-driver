@@ -7,7 +7,6 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CMAKE_GENERATOR
@@ -39,7 +38,6 @@ declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
 declare install_dir="${mongoc_dir}/install-dir"
-declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
 declare cmake_prefix_path="${install_dir}"
 if [[ -n "${EXTRA_CMAKE_PREFIX_PATH:-}" ]]; then
@@ -89,11 +87,7 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
-if [[ "${SSL}" == "OPENSSL_STATIC" ]]; then
-  configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
-else
-  configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL}"
-fi
+configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL:-}"
 
 if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
@@ -134,17 +128,10 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
+# shellcheck source=.evergreen/scripts/find-cmake-version.sh
+. "${script_dir}/find-cmake-latest.sh"
 declare cmake_binary
-if [[ "${BYPASS_FIND_CMAKE}" == "OFF" ]]; then
-  # Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
-  # to avoid interfering with potential CMake build configuration.
-  # shellcheck source=.evergreen/scripts/find-cmake-latest.sh
-  . "${script_dir}/find-cmake-latest.sh"
-  cmake_binary="$(find_cmake_latest)"
-else
-  cmake_binary="cmake"
-fi
-
+cmake_binary="$(find_cmake_latest)"
 "${cmake_binary:?}" --version
 
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
@@ -152,14 +139,6 @@ fi
 
 export PKG_CONFIG_PATH
 PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-
-if [[ -d "${openssl_install_dir}" ]]; then
-  # Use custom SSL library if present.
-  configure_flags_append "-DOPENSSL_ROOT_DIR=${openssl_install_dir}"
-  PKG_CONFIG_PATH="${openssl_install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-fi
-
-echo "SSL Version: $(pkg-config --modversion libssl 2>/dev/null || echo "N/A")"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   # MacOS does not have nproc.
