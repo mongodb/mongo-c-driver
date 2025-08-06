@@ -2190,6 +2190,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2224,6 +2225,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2258,6 +2260,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2292,6 +2295,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2326,6 +2330,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2360,6 +2365,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2394,6 +2400,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2428,6 +2435,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2462,6 +2470,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2496,6 +2505,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2530,6 +2540,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2564,6 +2575,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2598,6 +2610,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2632,6 +2645,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2666,6 +2680,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2700,6 +2715,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2734,6 +2750,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2768,6 +2785,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2802,6 +2820,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2836,6 +2855,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2870,6 +2890,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2904,6 +2925,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2938,6 +2960,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -2972,6 +2995,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3006,6 +3030,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3040,6 +3065,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3074,6 +3100,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3108,6 +3135,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3142,6 +3170,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3176,6 +3205,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3210,6 +3240,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3244,6 +3275,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3278,6 +3310,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3312,6 +3345,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3346,6 +3380,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3380,6 +3415,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3414,6 +3450,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3448,6 +3485,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3482,6 +3520,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3516,6 +3555,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3550,6 +3590,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3584,6 +3625,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3618,6 +3660,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3652,6 +3695,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3686,6 +3730,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3720,6 +3765,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3754,6 +3800,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3788,6 +3835,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3822,6 +3870,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3856,6 +3905,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3890,6 +3940,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3924,6 +3975,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3958,6 +4010,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -3992,6 +4045,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4026,6 +4080,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4060,6 +4115,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4094,6 +4150,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4128,74 +4185,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_3-rsa-delegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_3-rsa-delegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4230,6 +4220,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4264,6 +4255,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4298,6 +4290,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4332,6 +4325,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4366,6 +4360,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4400,6 +4395,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4434,6 +4430,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4468,6 +4465,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4502,6 +4500,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4536,6 +4535,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4570,6 +4570,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4604,6 +4605,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4638,6 +4640,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4672,6 +4675,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4706,6 +4710,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4740,6 +4745,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4774,6 +4780,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4808,6 +4815,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4842,6 +4850,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4876,6 +4885,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4910,6 +4920,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -4944,74 +4955,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_3-rsa-nodelegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_3-rsa-nodelegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5046,6 +4990,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5080,6 +5025,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5114,6 +5060,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5148,6 +5095,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5182,6 +5130,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5216,6 +5165,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5250,6 +5200,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5284,6 +5235,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5318,6 +5270,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5352,6 +5305,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5386,6 +5340,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5420,6 +5375,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5454,6 +5410,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5488,6 +5445,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5522,6 +5480,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5556,6 +5515,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5590,6 +5550,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5624,6 +5585,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5658,6 +5620,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5692,6 +5655,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5726,6 +5690,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5760,74 +5725,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_4-rsa-delegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_4-rsa-delegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5862,6 +5760,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5896,6 +5795,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5930,6 +5830,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5964,6 +5865,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -5998,6 +5900,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6032,6 +5935,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6066,6 +5970,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6100,6 +6005,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6134,6 +6040,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6168,6 +6075,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6202,6 +6110,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6236,6 +6145,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6270,6 +6180,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6304,6 +6215,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6338,6 +6250,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6372,6 +6285,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6406,6 +6320,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6440,6 +6355,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6474,6 +6390,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6508,6 +6425,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6542,6 +6460,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6576,74 +6495,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_4-rsa-nodelegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-test_4-rsa-nodelegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6678,6 +6530,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6712,6 +6565,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6746,6 +6600,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6780,6 +6635,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6814,6 +6670,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6848,6 +6705,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6882,6 +6740,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6916,6 +6775,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6950,6 +6810,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -6984,6 +6845,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7018,6 +6880,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7052,6 +6915,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7086,6 +6950,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7120,6 +6985,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7154,6 +7020,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7188,6 +7055,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7222,6 +7090,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7256,210 +7125,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-latest
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: latest
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-8.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '8.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-7.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '7.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-6.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7494,6 +7160,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7528,6 +7195,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7562,6 +7230,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7596,6 +7265,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7630,6 +7300,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7664,6 +7335,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7698,6 +7370,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7732,6 +7405,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7766,6 +7440,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7800,6 +7475,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7834,6 +7510,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7868,6 +7545,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7902,6 +7580,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7936,6 +7615,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -7970,6 +7650,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8004,6 +7685,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8038,6 +7720,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8072,6 +7755,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8106,6 +7790,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8140,6 +7825,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8174,6 +7860,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8208,74 +7895,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8310,6 +7930,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8344,6 +7965,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8378,6 +8000,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8412,6 +8035,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8446,6 +8070,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8480,6 +8105,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8514,6 +8140,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8548,6 +8175,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8582,6 +8210,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8616,6 +8245,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8650,6 +8280,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8684,6 +8315,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8718,6 +8350,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8752,6 +8385,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8786,6 +8420,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8820,6 +8455,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8854,6 +8490,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8888,6 +8525,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8922,6 +8560,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8956,6 +8595,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -8990,6 +8630,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9024,74 +8665,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-5.0
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-4.4
-  tags:
-  - ocsp-darwinssl
-  depends_on:
-    name: debug-compile-nosasl-darwinssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-darwinssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9126,6 +8700,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9160,6 +8735,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9194,6 +8770,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9228,6 +8805,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9262,6 +8840,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9296,6 +8875,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9330,6 +8910,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9364,6 +8945,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9398,6 +8980,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9432,6 +9015,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9466,6 +9050,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9500,6 +9085,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9534,6 +9120,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9568,6 +9155,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9602,6 +9190,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9636,6 +9225,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9670,6 +9260,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9704,6 +9295,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9738,6 +9330,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9772,6 +9365,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9806,6 +9400,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9840,6 +9435,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9874,6 +9470,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9908,6 +9505,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9942,6 +9540,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -9976,6 +9575,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -10010,6 +9610,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -10044,6 +9645,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -10078,6 +9680,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -10112,6 +9715,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit

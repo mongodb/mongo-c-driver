@@ -847,7 +847,8 @@ class OCSPTask(MatrixTask):
                 shell_mongoc(
                     f"""
                     TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
-                    """
+                    """,
+                    redirect_standard_error_to_output=True,
                 )
             )
 
@@ -866,16 +867,26 @@ class OCSPTask(MatrixTask):
             # Secure Transport quietly ignores a must-staple certificate with no stapled response.
             prohibit(self.test == "malicious_server_test_2")
 
-        # ECDSA certs can't be loaded (in the PEM format they're stored) on Windows/macOS. Skip them.
+            # Why does this fail with Secure Transport (CSSMERR_TP_CERT_SUSPENDED)...?
+            prohibit(self.test == "TEST_3")
+
+            # Secure Transport (mongoc-stream-tls-secure-transport.c:_verify_peer) does not implement soft failure.
+            prohibit(self.test == "soft_fail_test")
+
+            # Only Server 6.0+ are available on MacOS ARM64.
+            if self.settings.version != "latest":
+                prohibit(Version(self.settings.version) < Version("6.0"))
+
         if self.settings.ssl == "darwinssl" or self.settings.ssl == "winssl":
+            # ECDSA certs can't be loaded (in the PEM format they're stored) on Windows/macOS. Skip them.
             prohibit(self.settings.cert == "ecdsa")
 
-        # OCSP stapling is not supported on macOS or Windows.
-        if self.settings.ssl == "darwinssl" or self.settings.ssl == "winssl":
+            # OCSP stapling is not supported on macOS or Windows.
             prohibit(self.test in ["test_1", "test_2", "cache"])
 
         if self.test == "soft_fail_test" or self.test == "malicious_server_test_2" or self.test == "cache":
             prohibit(self.settings.delegate == "delegate")
+
         return True
 
 
