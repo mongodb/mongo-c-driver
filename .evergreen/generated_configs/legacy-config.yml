@@ -2515,7 +2515,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-8.0
   tags:
@@ -2549,7 +2549,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-7.0
   tags:
@@ -2583,7 +2583,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-6.0
   tags:
@@ -2617,7 +2617,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-5.0
   tags:
@@ -2651,7 +2651,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-4.4
   tags:
@@ -2685,7 +2685,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_1-ecdsa-delegate-latest
   tags:
@@ -2923,7 +2923,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-8.0
   tags:
@@ -2957,7 +2957,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-7.0
   tags:
@@ -2991,7 +2991,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-6.0
   tags:
@@ -3025,7 +3025,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-5.0
   tags:
@@ -3059,7 +3059,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-4.4
   tags:
@@ -3093,7 +3093,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_1-rsa-nodelegate-latest
   tags:
@@ -3331,7 +3331,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-8.0
   tags:
@@ -3365,7 +3365,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-7.0
   tags:
@@ -3399,7 +3399,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-6.0
   tags:
@@ -3433,7 +3433,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-5.0
   tags:
@@ -3467,7 +3467,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-4.4
   tags:
@@ -3501,7 +3501,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_1-ecdsa-nodelegate-latest
   tags:
@@ -3739,7 +3739,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-8.0
   tags:
@@ -3773,7 +3773,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-7.0
   tags:
@@ -3807,7 +3807,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-6.0
   tags:
@@ -3841,7 +3841,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-5.0
   tags:
@@ -3875,7 +3875,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-4.4
   tags:
@@ -3909,7 +3909,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_2-rsa-delegate-latest
   tags:
@@ -4147,7 +4147,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-8.0
   tags:
@@ -4181,7 +4181,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-7.0
   tags:
@@ -4215,7 +4215,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-6.0
   tags:
@@ -4249,7 +4249,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-5.0
   tags:
@@ -4283,7 +4283,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-4.4
   tags:
@@ -4317,7 +4317,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_2-ecdsa-delegate-latest
   tags:
@@ -4555,7 +4555,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-8.0
   tags:
@@ -4589,7 +4589,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-7.0
   tags:
@@ -4623,7 +4623,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-6.0
   tags:
@@ -4657,7 +4657,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-5.0
   tags:
@@ -4691,7 +4691,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-4.4
   tags:
@@ -4725,7 +4725,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_2-rsa-nodelegate-latest
   tags:
@@ -4963,7 +4963,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-8.0
   tags:
@@ -4997,7 +4997,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-7.0
   tags:
@@ -5031,7 +5031,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-6.0
   tags:
@@ -5065,7 +5065,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-5.0
   tags:
@@ -5099,7 +5099,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-4.4
   tags:
@@ -5133,7 +5133,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_2-ecdsa-nodelegate-latest
   tags:
@@ -5371,7 +5371,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-8.0
   tags:
@@ -5405,7 +5405,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-7.0
   tags:
@@ -5439,7 +5439,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-6.0
   tags:
@@ -5473,7 +5473,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-5.0
   tags:
@@ -5507,7 +5507,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-4.4
   tags:
@@ -5541,7 +5541,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_3-rsa-delegate-latest
   tags:
@@ -5779,7 +5779,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-8.0
   tags:
@@ -5813,7 +5813,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-7.0
   tags:
@@ -5847,7 +5847,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-6.0
   tags:
@@ -5881,7 +5881,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-5.0
   tags:
@@ -5915,7 +5915,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-4.4
   tags:
@@ -5949,7 +5949,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-test_3-rsa-delegate-latest
   tags:
@@ -6595,7 +6595,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-8.0
   tags:
@@ -6629,7 +6629,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-7.0
   tags:
@@ -6663,7 +6663,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-6.0
   tags:
@@ -6697,7 +6697,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-5.0
   tags:
@@ -6731,7 +6731,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-4.4
   tags:
@@ -6765,7 +6765,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_3-rsa-nodelegate-latest
   tags:
@@ -7003,7 +7003,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-8.0
   tags:
@@ -7037,7 +7037,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-7.0
   tags:
@@ -7071,7 +7071,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-6.0
   tags:
@@ -7105,7 +7105,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-5.0
   tags:
@@ -7139,7 +7139,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-4.4
   tags:
@@ -7173,7 +7173,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-test_3-rsa-nodelegate-latest
   tags:
@@ -7819,7 +7819,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-8.0
   tags:
@@ -7853,7 +7853,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-7.0
   tags:
@@ -7887,7 +7887,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-6.0
   tags:
@@ -7921,7 +7921,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-5.0
   tags:
@@ -7955,7 +7955,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-4.4
   tags:
@@ -7989,7 +7989,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_4-rsa-delegate-latest
   tags:
@@ -8227,7 +8227,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-8.0
   tags:
@@ -8261,7 +8261,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-7.0
   tags:
@@ -8295,7 +8295,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-6.0
   tags:
@@ -8329,7 +8329,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-5.0
   tags:
@@ -8363,7 +8363,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-4.4
   tags:
@@ -8397,7 +8397,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-test_4-rsa-delegate-latest
   tags:
@@ -9043,7 +9043,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-8.0
   tags:
@@ -9077,7 +9077,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-7.0
   tags:
@@ -9111,7 +9111,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-6.0
   tags:
@@ -9145,7 +9145,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-5.0
   tags:
@@ -9179,7 +9179,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-4.4
   tags:
@@ -9213,7 +9213,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-test_4-rsa-nodelegate-latest
   tags:
@@ -9451,7 +9451,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-8.0
   tags:
@@ -9485,7 +9485,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-7.0
   tags:
@@ -9519,7 +9519,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-6.0
   tags:
@@ -9553,7 +9553,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-5.0
   tags:
@@ -9587,7 +9587,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-4.4
   tags:
@@ -9621,7 +9621,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-test_4-rsa-nodelegate-latest
   tags:
@@ -10267,7 +10267,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-8.0
   tags:
@@ -10301,7 +10301,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-7.0
   tags:
@@ -10335,7 +10335,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-6.0
   tags:
@@ -10369,7 +10369,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-5.0
   tags:
@@ -10403,7 +10403,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-4.4
   tags:
@@ -10437,7 +10437,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-soft_fail_test-rsa-nodelegate-latest
   tags:
@@ -10675,7 +10675,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-8.0
   tags:
@@ -10709,7 +10709,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-7.0
   tags:
@@ -10743,7 +10743,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-6.0
   tags:
@@ -10777,7 +10777,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-5.0
   tags:
@@ -10811,7 +10811,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-4.4
   tags:
@@ -10845,7 +10845,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-latest
   tags:
@@ -11491,7 +11491,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-8.0
   tags:
@@ -11525,7 +11525,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-7.0
   tags:
@@ -11559,7 +11559,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-6.0
   tags:
@@ -11593,7 +11593,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-5.0
   tags:
@@ -11627,7 +11627,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-4.4
   tags:
@@ -11661,7 +11661,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-malicious_server_test_1-rsa-delegate-latest
   tags:
@@ -11899,7 +11899,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-8.0
   tags:
@@ -11933,7 +11933,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-7.0
   tags:
@@ -11967,7 +11967,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-6.0
   tags:
@@ -12001,7 +12001,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-5.0
   tags:
@@ -12035,7 +12035,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-4.4
   tags:
@@ -12069,7 +12069,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-latest
   tags:
@@ -12715,7 +12715,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-8.0
   tags:
@@ -12749,7 +12749,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-7.0
   tags:
@@ -12783,7 +12783,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-6.0
   tags:
@@ -12817,7 +12817,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-5.0
   tags:
@@ -12851,7 +12851,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-4.4
   tags:
@@ -12885,7 +12885,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
@@ -13123,7 +13123,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-8.0
   tags:
@@ -13157,7 +13157,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-7.0
   tags:
@@ -13191,7 +13191,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-6.0
   tags:
@@ -13225,7 +13225,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-5.0
   tags:
@@ -13259,7 +13259,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
@@ -13293,7 +13293,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
@@ -13939,7 +13939,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-8.0
   tags:
@@ -13973,7 +13973,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-7.0
   tags:
@@ -14007,7 +14007,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-6.0
   tags:
@@ -14041,7 +14041,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-5.0
   tags:
@@ -14075,7 +14075,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-4.4
   tags:
@@ -14109,7 +14109,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-latest
   tags:
@@ -14347,7 +14347,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-8.0
   tags:
@@ -14381,7 +14381,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-7.0
   tags:
@@ -14415,7 +14415,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-6.0
   tags:
@@ -14449,7 +14449,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-5.0
   tags:
@@ -14483,7 +14483,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
@@ -14517,7 +14517,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-winssl-malicious_server_test_2-rsa-nodelegate-latest
   tags:
@@ -14959,7 +14959,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-8.0
   tags:
@@ -14993,7 +14993,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-7.0
   tags:
@@ -15027,7 +15027,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-6.0
   tags:
@@ -15061,7 +15061,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-5.0
   tags:
@@ -15095,7 +15095,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-4.4
   tags:
@@ -15129,7 +15129,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
   patchable: false
 - name: ocsp-openssl-cache-rsa-nodelegate-latest
   tags:
@@ -15160,6 +15160,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15194,6 +15195,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15228,6 +15230,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15262,6 +15265,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15296,6 +15300,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15330,6 +15335,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15364,10 +15370,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-8.0
   tags:
@@ -15398,10 +15405,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-7.0
   tags:
@@ -15432,10 +15440,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-6.0
   tags:
@@ -15466,10 +15475,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-5.0
   tags:
@@ -15500,10 +15510,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-4.4
   tags:
@@ -15534,10 +15545,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-cache-ecdsa-nodelegate-latest
   tags:
@@ -15568,6 +15580,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15602,6 +15615,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15636,6 +15650,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15670,6 +15685,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15704,6 +15720,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15738,6 +15755,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
@@ -15772,10 +15790,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-8.0
   tags:
@@ -15806,10 +15825,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-7.0
   tags:
@@ -15840,10 +15860,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-6.0
   tags:
@@ -15874,10 +15895,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-5.0
   tags:
@@ -15908,10 +15930,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-4.4
   tags:
@@ -15942,10 +15965,11 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      redirect_standard_error_to_output: true
       shell: bash
       script: |-
         set -o errexit
-        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
+        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
   patchable: false
 - name: testazurekms-task
   commands:

@@ -917,24 +917,15 @@ class OCSPTask(MatrixTask):
 
         yield (orchestration)
 
-        if self.build_task_name == "debug-compile-nosasl-openssl-1.0.1":
-            # LD_LIBRARY_PATH is needed so the in-tree OpenSSL 1.0.1 is found at runtime
-            if self.test == "cache":
-                yield (
-                    shell_mongoc(
-                        f"""
-                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
-                        """
-                    )
+        if self.test == "cache":
+            yield (
+                shell_mongoc(
+                    f"""
+                    CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
+                    """,
+                    redirect_standard_error_to_output=True,
                 )
-            else:
-                yield (
-                    shell_mongoc(
-                        f"""
-                        LD_LIBRARY_PATH=$(pwd)/install-dir/lib TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
-                        """
-                    )
-                )
+            )
         else:
             if self.test == "cache":
                 yield (
