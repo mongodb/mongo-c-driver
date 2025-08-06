@@ -72,12 +72,7 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 configure_flags_append "-DCMAKE_BUILD_TYPE=${build_config:?}"
-
-if [ "${SSL}" == "OPENSSL_STATIC" ]; then
-  configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
-else
-  configure_flags_append "-DENABLE_SSL=${SSL}"
-fi
+configure_flags_append "-DENABLE_SSL=${SSL:-}"
 
 declare cmake_binary
 if [[ "${BYPASS_FIND_CMAKE:-}" == "OFF" ]]; then

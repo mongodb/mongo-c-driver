@@ -23,12 +23,12 @@ openssl_version_to_url() {
   echo "${url:?}"
 }
 
-# Download the requested OpenSSL version as `openssl.tar.gz`.
+# Download the requested OpenSSL version into `openssl-<version>`.
 openssl_download() {
   declare version
   version="${1:?"usage: openssl_download_checksum <version>"}"
 
-  command -v curl perl sha256sum >/dev/null || return
+  command -v curl perl tar sha256sum >/dev/null || return
 
   declare url
   url="$(openssl_version_to_url "${version:?}")" || return
@@ -47,38 +47,21 @@ openssl_download() {
   declare checksum_name
   checksum_name="openssl_checksum_$(echo "${version:?}" | perl -lpe 's|\.|_|g')" || return
 
-  [[ -n "$(eval "echo \${${checksum_name:?}}")" ]] || {
+  [[ -n "$(eval "echo \${${checksum_name:-}:-}")" ]] || {
     echo "missing checksum for OpenSSL version \"${version:?}\""
     return 1
   } >&2
 
-  declare filename
-  filename="openssl.tar.gz"
+  declare tarfile
+  tarfile="openssl-${version:?}.tar.gz"
 
   echo "Downloading OpenSSL ${version:?}..."
-  curl -sSL -o "${filename:?}" "${url:?}" || return
+  curl -sSL -o "${tarfile:?}" "${url:?}" || return
   echo "Downloading OpenSSL ${version:?}... done."
 
-  echo "${!checksum_name:?} ${filename:?}" | sha256sum -c >/dev/null || return
-}
+  echo "${!checksum_name:?} ${tarfile:?}" | sha256sum -c >/dev/null || return
 
-# Download the OpenSSL FIPS Object Module 2.0: https://wiki.openssl.org/index.php/FIPS_module_2.0
-openssl_download_fips() {
-  command -v curl perl sha256sum >/dev/null || return
-
-  declare version uversion
-  version="2.0.16"
-  uversion="$(echo "${version:?}" | perl -lpe 's|\.|_|g')" || return
-
-  declare checksum
-  checksum="19cf79cc43517c82609954133d05ed879fe12c4cab5441bb634f96b8e8d0e0c4"
-
-  declare filename
-  filename="openssl-fips.tar.gz"
-
-  echo "Downloading OpenSSL FIPS Module ${version:?}..."
-  curl -sSL -o openssl-fips.tar.gz "https://github.com/openssl/openssl/releases/download/OpenSSL-fips-${uversion:?}/openssl-fips-ecp-${version:?}.tar.gz"
-  echo "Downloading OpenSSL FIPS Module ${version:?}... done."
-
-  echo "${checksum:?} ${filename:?}" | sha256sum -c >/dev/null || return
+  echo "Decompressing openssl-${version:?}.tar.gz..."
+  tar --one-top-level="openssl-${version:?}" --strip-components=1 -xzf "${tarfile:?}" || return
+  echo "Decompressing openssl-${version:?}.tar.gz... done."
 }

@@ -193,18 +193,9 @@ all_tasks = [
     CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align"),
     CompileTask("release-compile", config="release"),
     CompileTask("debug-compile-nosasl-openssl", tags=["debug-compile", "nosasl", "openssl"], SSL="OPENSSL"),
-    CompileTask(
-        "debug-compile-nosasl-openssl-static", tags=["debug-compile", "nosasl", "openssl-static"], SSL="OPENSSL_STATIC"
-    ),
     CompileTask("debug-compile-nosasl-darwinssl", tags=["debug-compile", "nosasl", "darwinssl"], SSL="DARWIN"),
     CompileTask("debug-compile-nosasl-winssl", tags=["debug-compile", "nosasl", "winssl"], SSL="WINDOWS"),
     CompileTask("debug-compile-sasl-openssl", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"),
-    CompileTask(
-        "debug-compile-sasl-openssl-static",
-        tags=["debug-compile", "sasl", "openssl-static"],
-        SASL="AUTO",
-        SSL="OPENSSL_STATIC",
-    ),
     CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
     CompileTask("debug-compile-rdtscp", ENABLE_RDTSCP="ON"),
     CompileTask("debug-compile-sspi-winssl", tags=["debug-compile", "sspi", "winssl"], SASL="SSPI", SSL="WINDOWS"),
@@ -280,13 +271,6 @@ all_tasks = [
         ],
     ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
-    CompileTask(
-        "debug-compile-nosasl-openssl-1.0.1",
-        prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
-        CFLAGS="-Wno-redundant-decls",
-        SSL="OPENSSL",
-        SASL="OFF",
-    ),
     NamedTask(
         "install-libmongoc-after-libbson",
         commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
@@ -646,74 +630,6 @@ for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
     )
 
 
-class SSLTask(Task):
-    def __init__(
-        self,
-        version: str,
-        patch: str,
-        cflags: str = "",
-        fips: bool = False,
-        enable_ssl: str | Literal[False] = False,
-        test_params: Mapping[str, Scalar] | None = None,
-    ):
-        full_version = version + patch + ("-fips" if fips else "")
-        self.enable_ssl = enable_ssl
-        script = "env"
-        if cflags:
-            script += f" CFLAGS={cflags}"
-
-        script += " SASL=OFF"
-
-        if enable_ssl is not False:
-            script += " SSL=" + enable_ssl
-        else:
-            script += " SSL=OPENSSL"
-
-        script += " .evergreen/scripts/compile.sh"
-
-        super(SSLTask, self).__init__(
-            commands=[
-                func("install ssl", SSL=full_version),
-                func("find-cmake-latest"),
-                shell_mongoc(script, add_expansions_to_env=True),
-                func("run auth tests", **(test_params or {})),
-                func("upload-build"),
-            ]
-        )
-
-        self.version = version
-        self.fips = fips
-
-    @property
-    def name(self):
-        s = "build-and-run-authentication-tests-" + self.version
-        if self.fips:
-            return s + "-fips"
-        if self.enable_ssl is not False:
-            return s + "-" + str(self.enable_ssl).lower()
-
-        return s
-
-
-all_tasks = chain(
-    all_tasks,
-    [
-        SSLTask(
-            "openssl-1.0.1",
-            "u",
-            cflags="-Wno-redundant-decls",
-        ),
-        SSLTask("openssl-1.0.1", "u", cflags="-Wno-redundant-decls", fips=True),
-        SSLTask(
-            "openssl-1.0.2",
-            "l",
-            cflags="-Wno-redundant-decls",
-        ),
-        SSLTask("openssl-1.1.0", "l")
-    ],
-)
-
-
 class IPTask(MatrixTask):
     axes = OD(
         [
@@ -858,7 +774,7 @@ class OCSPTask(MatrixTask):
             ),
             ("delegate", ["delegate", "nodelegate"]),
             ("cert", ["rsa", "ecdsa"]),
-            ("ssl", ["openssl", "openssl-1.0.1", "darwinssl", "winssl"]),
+            ("ssl", ["openssl", "darwinssl", "winssl"]),
             ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
         ]
     )
@@ -927,22 +843,13 @@ class OCSPTask(MatrixTask):
                 )
             )
         else:
-            if self.test == "cache":
-                yield (
-                    shell_mongoc(
-                        f"""
-                        CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-cache-test.sh
-                        """
-                    )
+            yield (
+                shell_mongoc(
+                    f"""
+                    TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
+                    """
                 )
-            else:
-                yield (
-                    shell_mongoc(
-                        f"""
-                        TEST_COLUMN={self.test.upper()} CERT_TYPE={self.settings.cert} .evergreen/scripts/run-ocsp-test.sh
-                        """
-                    )
-                )
+            )
 
     def to_dict(self):
         task = super(MatrixTask, self).to_dict()

@@ -39,7 +39,6 @@ declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
 declare install_dir="${mongoc_dir}/install-dir"
-declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
 
 declare cmake_prefix_path="${install_dir}"
 if [[ -n "${EXTRA_CMAKE_PREFIX_PATH:-}" ]]; then
@@ -89,11 +88,7 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
-if [[ "${SSL}" == "OPENSSL_STATIC" ]]; then
-  configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
-else
-  configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL}"
-fi
+configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL:-}"
 
 if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
@@ -152,14 +147,6 @@ fi
 
 export PKG_CONFIG_PATH
 PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-
-if [[ -d "${openssl_install_dir}" ]]; then
-  # Use custom SSL library if present.
-  configure_flags_append "-DOPENSSL_ROOT_DIR=${openssl_install_dir}"
-  PKG_CONFIG_PATH="${openssl_install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-fi
-
-echo "SSL Version: $(pkg-config --modversion libssl 2>/dev/null || echo "N/A")"
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   # MacOS does not have nproc.
