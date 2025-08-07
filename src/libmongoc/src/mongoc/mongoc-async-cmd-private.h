@@ -268,8 +268,11 @@ _acmd_cancel (mongoc_async_cmd_t *self)
 {
    BSON_ASSERT_PARAM (self);
 
-   // XXX: Should this check if ther command has already finished/failed?
-   self->state = MONGOC_ASYNC_CMD_CANCELLED_STATE;
+   // Don't attempt to cancel a comman in the error state, as it will already have
+   // a waiting completion.
+   if (self->state != MONGOC_ASYNC_CMD_ERROR_STATE) {
+      self->state = MONGOC_ASYNC_CMD_CANCELLED_STATE;
+   }
 }
 
 /**
