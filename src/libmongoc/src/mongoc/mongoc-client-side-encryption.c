@@ -509,10 +509,23 @@ mongoc_client_encryption_encrypt_text_per_index_opts_new (void)
    return bson_malloc0 (sizeof (mongoc_client_encryption_encrypt_text_per_index_opts_t));
 }
 
+void
+mongoc_client_encryption_encrypt_text_per_index_opts_destroy (
+   mongoc_client_encryption_encrypt_text_per_index_opts_t *iopts)
+{
+   bson_free (iopts);
+}
+
 mongoc_client_encryption_encrypt_text_opts_t *
 mongoc_client_encryption_encrypt_text_opts_new (void)
 {
    return bson_malloc0 (sizeof (mongoc_client_encryption_encrypt_text_opts_t));
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_destroy (mongoc_client_encryption_encrypt_text_opts_t *topts)
+{
+   bson_free (topts);
 }
 
 void
@@ -2847,6 +2860,7 @@ mongoc_client_encryption_encrypt (mongoc_client_encryption_t *client_encryption,
 
    ret = true;
 fail:
+   bson_destroy (text_opts);
    bson_destroy (range_opts);
    RETURN (ret);
 }

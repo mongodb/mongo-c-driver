@@ -242,6 +242,13 @@ MONGOC_EXPORT (mongoc_client_encryption_encrypt_text_opts_t *)
 mongoc_client_encryption_encrypt_text_opts_new (void);
 
 MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_text_per_index_opts_destroy (
+   mongoc_client_encryption_encrypt_text_per_index_opts_t *iopts);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_encrypt_text_opts_destroy (mongoc_client_encryption_encrypt_text_opts_t *topts);
+
+MONGOC_EXPORT (void)
 mongoc_client_encryption_encrypt_opts_destroy (mongoc_client_encryption_encrypt_opts_t *opts);
 
 MONGOC_EXPORT (void)
