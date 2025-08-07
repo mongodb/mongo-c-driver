@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson/bson.h"
+#include <bson/bson.h>
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
 #include <mongoc/mongoc-crypt-private.h>

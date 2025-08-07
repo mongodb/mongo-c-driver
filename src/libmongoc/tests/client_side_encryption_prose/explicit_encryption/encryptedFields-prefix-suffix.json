@@ -13,7 +13,7 @@
                 {
                     "queryType": "prefixPreview",
                     "strMinQueryLength": {
-                        "$numberInt": "1"
+                        "$numberInt": "2"
                     },
                     "strMaxQueryLength": {
                         "$numberInt": "10"
@@ -24,7 +24,7 @@
                 {
                     "queryType": "suffixPreview",
                     "strMinQueryLength": {
-                        "$numberInt": "1"
+                        "$numberInt": "2"
                     },
                     "strMaxQueryLength": {
                         "$numberInt": "10"
@@ -33,16 +33,6 @@
                     "diacriticSensitive": true
                 }
             ]
-        },
-    {
-      "keyId": {
-        "$binary": {
-          "base64": "q83vqxI0mHYSNBI0VniQEg==",
-          "subType": "04"
         }
-      },
-      "path": "encryptedUnindexed",
-      "bsonType": "string"
-    }
   ]
 }
