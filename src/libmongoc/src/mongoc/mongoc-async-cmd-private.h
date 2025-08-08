@@ -39,7 +39,7 @@ BSON_BEGIN_DECLS
 typedef enum {
    // The command has no stream and needs to connect to a peer
    MONGOC_ASYNC_CMD_PENDING_CONNECT,
-   // The command has connected and has a stream, but needs to run stream setup
+   // The command has connected and has a stream, but needs to run stream setup (e.g. TLS handshake)
    MONGOC_ASYNC_CMD_STREAM_SETUP,
    // The command has data to send to the peer
    MONGOC_ASYNC_CMD_SEND,

@@ -101,7 +101,7 @@ mlib_latest (mlib_time_point l, mlib_time_point r)
  * the time. This value only has meaning on POSIX systems. On Win32, returns
  * INT_MIN.
  *
- * @return int The integer clock ID, corresponding to a value of `CLOCK_...`
+ * @return int The integer clock ID, corresponding to the value of a `CLOCK_...`
  *    object macro.
  */
 static inline int
@@ -127,7 +127,6 @@ mlib_now (void) mlib_noexcept
 #if mlib_have_posix_clocks()
    // Use POSIX clock_gettime
    struct timespec ts;
-   // Use the POSIX monotonic clock
    int rc = clock_gettime (mlib_now_clockid (), &ts);
    // The above call must never fail:
    mlib_check (rc, eq, 0);
@@ -135,7 +134,7 @@ mlib_now (void) mlib_noexcept
    mlib_time_point ret;
    ret.time_since_monotonic_start = mlib_duration_from_timespec (ts);
    return ret;
-#elif defined(_WIN32)
+#elif mlib_is_win32()
    // Win32 APIs for the high-performance monotonic counter. These APIs never fail after Windows XP
    LARGE_INTEGER freq;
    QueryPerformanceFrequency (&freq);
@@ -150,12 +149,10 @@ mlib_now (void) mlib_noexcept
    const int64_t one_million = 1000000;
    // Number of whole seconds that have elapsed:
    const int64_t whole_seconds = ticks / ticks_per_second;
-   // Times one million:
-   const int64_t whole_seconds_1m = whole_seconds * one_million;
    // Number of microseconds beyond the last whole second:
    const int64_t subsecond_us = ((ticks % ticks_per_second) * one_million) / ticks_per_second;
    mlib_time_point ret;
-   ret.time_since_monotonic_start = mlib_duration ((whole_seconds_1m, us), plus, (subsecond_us, us));
+   ret.time_since_monotonic_start = mlib_duration ((whole_seconds, s), plus, (subsecond_us, us));
    return ret;
 #else
 #error We do not know how to get the current time on this platform
@@ -185,22 +182,22 @@ mlib_time_add (mlib_time_point from, mlib_duration delta) mlib_noexcept
 /**
  * @brief Obtain the duration between two points in time.
  *
- * @param then The target time
- * @param from The base time
+ * @param stop The target time
+ * @param start The base time
  * @return mlib_duration The amount of time you would need to wait starting
- * at 'from' for the time to become 'then' (the result may be a negative
+ * at 'start' for the time to become 'stop' (the result may be a negative
  * duration).
  *
- * Intuition: If "then" is "in the future" relative to "from", you will
+ * Intuition: If "stop" is "in the future" relative to "start", you will
  * receive a positive duration, indicating an amount of time to wait
- * beginning at 'from' to reach 'then'. If "then" is actually *before*
- * "from", you will receive a paradoxical *negative* duration, indicating
- * the amount of time needed to time-travel backwards to reach "then."
+ * beginning at 'start' to reach 'stop'. If "stop" is actually *before*
+ * "start", you will receive a paradoxical *negative* duration, indicating
+ * the amount of time needed to time-travel backwards to reach "stop."
  */
 static inline mlib_duration
-mlib_time_difference (mlib_time_point then, mlib_time_point from)
+mlib_time_difference (mlib_time_point stop, mlib_time_point start)
 {
-   return mlib_duration (then.time_since_monotonic_start, minus, from.time_since_monotonic_start);
+   return mlib_duration (stop.time_since_monotonic_start, minus, start.time_since_monotonic_start);
 }
 
 /**

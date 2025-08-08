@@ -3,8 +3,8 @@
  * @brief Timer types and functions
  * @date 2025-04-18
  *
- * This file contains APIs for creating fixed-deadline timer object that represent
- * a stable expiration point.
+ * This file contains APIs for creating fixed-deadline timer objects that represent
+ * stable expiration points.
  *
  * @copyright Copyright 2009-present MongoDB, Inc.
  *
