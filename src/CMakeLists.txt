@@ -43,6 +43,7 @@ target_compile_options(public-header-warnings PRIVATE
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-reserved-identifier>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-documentation-unknown-command>
   $<$<C_COMPILER_ID:AppleClang,Clang>:-Wno-unknown-warning-option>
+  $<$<C_COMPILER_ID:AppleClang>:-Wno-poison-system-directories>
   $<$<C_COMPILER_ID:MSVC>:/W4>
   $<$<C_COMPILER_ID:MSVC>:/WX>
   $<$<C_COMPILER_ID:MSVC>:/wd4324>
