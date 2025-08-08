@@ -4,6 +4,8 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/cmp.h>
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #include <json-test-monitoring.h>
 #include <json-test.h>
@@ -1059,7 +1061,7 @@ smm_new (const char *mode)
 static bool
 smm_wait (smm_t *t, size_t count)
 {
-   int64_t started = bson_get_monotonic_time ();
+   const mlib_timer deadline = mlib_expires_after (10, s);
    while (true) {
       bson_mutex_lock (&t->lock);
       if (t->events_len >= count) {
@@ -1068,12 +1070,11 @@ smm_wait (smm_t *t, size_t count)
       }
       bson_mutex_unlock (&t->lock);
 
-      int64_t now = bson_get_monotonic_time ();
       // Timeout
-      if (now - started > 10 * 1000 * 1000) {
+      if (mlib_timer_is_expired (deadline)) {
          break;
       }
-      _mongoc_usleep (500 * 1000); // Sleep for 500ms.
+      mlib_sleep_for (500, ms);
    }
    return false;
 }
