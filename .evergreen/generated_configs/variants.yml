@@ -1,46 +1,4 @@
 buildvariants:
-  - name: alpine3.16-clang
-    display_name: Alpine 3.16 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.16
-    tasks:
-      - name: .alpine3.16-clang
-  - name: alpine3.16-gcc
-    display_name: Alpine 3.16 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.16
-    tasks:
-      - name: .alpine3.16-gcc
-  - name: alpine3.17-clang
-    display_name: Alpine 3.17 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.17
-    tasks:
-      - name: .alpine3.17-clang
-  - name: alpine3.17-gcc
-    display_name: Alpine 3.17 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.17
-    tasks:
-      - name: .alpine3.17-gcc
-  - name: alpine3.18-clang
-    display_name: Alpine 3.18 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.18
-    tasks:
-      - name: .alpine3.18-clang
-  - name: alpine3.18-gcc
-    display_name: Alpine 3.18 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.18
-    tasks:
-      - name: .alpine3.18-gcc
   - name: alpine3.19-clang
     display_name: Alpine 3.19 (LLVM/Clang)
     expansions:
@@ -55,6 +13,48 @@ buildvariants:
       MONGOC_EARTHLY_ENV: alpine3.19
     tasks:
       - name: .alpine3.19-gcc
+  - name: alpine3.20-clang
+    display_name: Alpine 3.20 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: alpine3.20
+    tasks:
+      - name: .alpine3.20-clang
+  - name: alpine3.20-gcc
+    display_name: Alpine 3.20 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: alpine3.20
+    tasks:
+      - name: .alpine3.20-gcc
+  - name: alpine3.21-clang
+    display_name: Alpine 3.21 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: alpine3.21
+    tasks:
+      - name: .alpine3.21-clang
+  - name: alpine3.21-gcc
+    display_name: Alpine 3.21 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: alpine3.21
+    tasks:
+      - name: .alpine3.21-gcc
+  - name: alpine3.22-clang
+    display_name: Alpine 3.22 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: alpine3.22
+    tasks:
+      - name: .alpine3.22-clang
+  - name: alpine3.22-gcc
+    display_name: Alpine 3.22 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: alpine3.22
+    tasks:
+      - name: .alpine3.22-gcc
   - name: archlinux-clang
     display_name: ArchLinux (LLVM/Clang)
     expansions:
@@ -69,20 +69,34 @@ buildvariants:
       MONGOC_EARTHLY_ENV: archlinux
     tasks:
       - name: .archlinux-gcc
-  - name: centos7-clang
-    display_name: CentOS 7.0 (LLVM/Clang)
+  - name: centos10-clang
+    display_name: CentOS 10 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: centos7
+      MONGOC_EARTHLY_ENV: centos10
     tasks:
-      - name: .centos7-clang
-  - name: centos7-gcc
-    display_name: CentOS 7.0 (GCC)
+      - name: .centos10-clang
+  - name: centos10-gcc
+    display_name: CentOS 10 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: centos7
+      MONGOC_EARTHLY_ENV: centos10
     tasks:
-      - name: .centos7-gcc
+      - name: .centos10-gcc
+  - name: centos9-clang
+    display_name: CentOS 9 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: centos9
+    tasks:
+      - name: .centos9-clang
+  - name: centos9-gcc
+    display_name: CentOS 9 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: centos9
+    tasks:
+      - name: .centos9-gcc
   - name: clang-format
     display_name: clang-format
     run_on:
@@ -305,34 +319,6 @@ buildvariants:
     display_name: std-matrix
     tasks:
       - name: .std-matrix
-  - name: u16-clang
-    display_name: Ubuntu 16.04 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: u16
-    tasks:
-      - name: .u16-clang
-  - name: u16-gcc
-    display_name: Ubuntu 16.04 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: u16
-    tasks:
-      - name: .u16-gcc
-  - name: u18-clang
-    display_name: Ubuntu 18.04 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: u18
-    tasks:
-      - name: .u18-clang
-  - name: u18-gcc
-    display_name: Ubuntu 18.04 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: u18
-    tasks:
-      - name: .u18-gcc
   - name: u20-clang
     display_name: Ubuntu 20.04 (LLVM/Clang)
     expansions:
