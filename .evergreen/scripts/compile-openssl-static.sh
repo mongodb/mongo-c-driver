@@ -8,7 +8,7 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 check_var_opt CC
-check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR "Ninja"
 check_var_opt CMAKE_GENERATOR_PLATFORM
 check_var_opt MARCH
 
@@ -25,6 +25,12 @@ declare cmake_prefix_path="${install_dir}"
 if [[ -n "${EXTRA_CMAKE_PREFIX_PATH:-}" ]]; then
   cmake_prefix_path+=";${EXTRA_CMAKE_PREFIX_PATH}"
 fi
+
+. "${script_dir:?}/install-build-tools.sh"
+install_build_tools
+
+cmake --version | head -n 1
+echo "ninja version: $(ninja --version)"
 
 declare -a configure_flags
 
@@ -82,28 +88,15 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-# Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
-# to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake-latest.sh
-. "${script_dir}/find-cmake-latest.sh" # ${CMAKE}
-CMAKE=$(find_cmake_latest)
-
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
 export PKG_CONFIG_PATH
 PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
-if [[ "${OSTYPE}" == darwin* ]]; then
-  # MacOS does not have nproc.
-  nproc() {
-    sysctl -n hw.logicalcpu
-  }
-fi
-
 # Use ccache if able.
 . "${script_dir:?}/find-ccache.sh"
 find_ccache_and_export_vars "$(pwd)" || true
 
-"${CMAKE}" "${configure_flags[@]}" .
-"${CMAKE}" --build . -- -j "$(nproc)"
+cmake "${configure_flags[@]}" .
+cmake --build .

@@ -20,7 +20,7 @@ class ClangFormat(Function):
             env={
                 "DRYRUN": "1",
             },
-            script="uv run --frozen --only-group=format tools/format.py --mode=check",
+            script='PATH="${UV_INSTALL_DIR}:$PATH" uv run --frozen --only-group=format tools/format.py --mode=check',
         ),
     ]
 

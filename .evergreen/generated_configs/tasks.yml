@@ -1,12 +1,13 @@
 tasks:
   - name: abi-compliance-check
     commands:
+      - func: install-uv
       - func: abi-compliance-check
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-compile
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, compile, rhel8-latest, clang, cse, asan, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -32,6 +33,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -56,6 +58,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -79,6 +82,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -103,6 +107,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -126,6 +131,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -150,6 +156,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -173,6 +180,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -197,6 +205,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -220,6 +229,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -244,6 +254,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -267,6 +278,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -291,6 +303,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -314,6 +327,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -338,6 +352,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -361,6 +376,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -385,6 +401,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -408,6 +425,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -432,6 +450,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -455,6 +474,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -479,6 +499,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -502,6 +523,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -526,6 +548,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -549,6 +572,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -573,6 +597,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -596,6 +621,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -620,6 +646,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -643,6 +670,7 @@ tasks:
             - { key: CLIENT_SIDE_ENCRYPTION, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -667,6 +695,7 @@ tasks:
             - { key: SKIP_CRYPT_SHARED_LIB, value: "on" }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-mock-kms-servers
       - func: run-tests
@@ -674,7 +703,7 @@ tasks:
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, compile, rhel8-latest, clang, asan, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -699,6 +728,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
@@ -720,6 +750,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-sharded-auth
@@ -741,6 +772,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
@@ -762,6 +794,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
@@ -783,6 +816,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-sharded-auth
@@ -804,6 +838,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
@@ -825,6 +860,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
@@ -846,6 +882,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-sharded-auth
@@ -867,6 +904,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
@@ -888,6 +926,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
@@ -909,6 +948,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-sharded-auth
@@ -930,6 +970,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
@@ -951,6 +992,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
@@ -972,6 +1014,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-sharded-auth
@@ -993,6 +1036,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
@@ -1014,6 +1058,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
@@ -1035,6 +1080,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-sharded-auth
@@ -1056,6 +1102,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
@@ -1077,6 +1124,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
@@ -1098,6 +1146,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-sharded-auth
@@ -1119,6 +1168,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: check-headers
@@ -1648,7 +1698,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, compile, macos-14-arm64, clang, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -1673,6 +1723,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-server-auth
@@ -1694,6 +1745,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-sharded-auth
@@ -1715,6 +1767,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-replica-auth
@@ -1736,6 +1789,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-server-auth
@@ -1757,6 +1811,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-sharded-auth
@@ -1778,6 +1833,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-replica-auth
@@ -1799,6 +1855,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-server-auth
@@ -1820,6 +1877,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-sharded-auth
@@ -1841,6 +1899,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-replica-auth
@@ -1862,6 +1921,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-server-auth
@@ -1883,6 +1943,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-sharded-auth
@@ -1904,13 +1965,14 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile
     run_on: macos-14
     tags: [cse-matrix-darwinssl, compile, macos-14, clang, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -1935,6 +1997,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.4-sharded-auth
@@ -1956,6 +2019,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-5.0-sharded-auth
@@ -1977,13 +2041,14 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-debian11-clang-compile
     run_on: debian11-large
     tags: [cse-matrix-openssl, compile, debian11, clang, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -1993,7 +2058,7 @@ tasks:
     run_on: debian11-large
     tags: [cse-matrix-openssl, compile, debian11, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2003,7 +2068,7 @@ tasks:
     run_on: debian12-large
     tags: [cse-matrix-openssl, compile, debian12, clang, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -2013,7 +2078,7 @@ tasks:
     run_on: debian12-large
     tags: [cse-matrix-openssl, compile, debian12, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2023,7 +2088,7 @@ tasks:
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, compile, rhel8-latest, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2048,6 +2113,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
@@ -2069,6 +2135,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-sharded-auth
@@ -2090,6 +2157,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-replica-auth
@@ -2111,6 +2179,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
@@ -2132,6 +2201,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-sharded-auth
@@ -2153,6 +2223,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-replica-auth
@@ -2174,6 +2245,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
@@ -2195,6 +2267,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-sharded-auth
@@ -2216,6 +2289,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
@@ -2237,6 +2311,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
@@ -2258,6 +2333,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-sharded-auth
@@ -2279,6 +2355,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-replica-auth
@@ -2300,6 +2377,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
@@ -2321,6 +2399,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-sharded-auth
@@ -2342,6 +2421,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
@@ -2363,6 +2443,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
@@ -2384,6 +2465,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-sharded-auth
@@ -2405,6 +2487,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
@@ -2426,6 +2509,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
@@ -2447,6 +2531,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
@@ -2468,6 +2553,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
@@ -2475,7 +2561,7 @@ tasks:
     tags: [cse-matrix-openssl, compile, rhel8-zseries, gcc, cse, sasl-cyrus]
     patchable: false
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2501,6 +2587,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
@@ -2523,13 +2610,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [cse-matrix-openssl, compile, rhel80, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2539,7 +2627,7 @@ tasks:
     run_on: ubuntu2004-arm64-large
     tags: [cse-matrix-openssl, compile, ubuntu2004-arm64, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2564,6 +2652,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
@@ -2585,6 +2674,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-sharded-auth
@@ -2606,6 +2696,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-replica-auth
@@ -2627,6 +2718,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
@@ -2648,6 +2740,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-sharded-auth
@@ -2669,6 +2762,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-replica-auth
@@ -2690,6 +2784,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
@@ -2711,6 +2806,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-sharded-auth
@@ -2732,6 +2828,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
@@ -2753,6 +2850,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
@@ -2774,6 +2872,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-sharded-auth
@@ -2795,6 +2894,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-replica-auth
@@ -2816,6 +2916,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
@@ -2837,6 +2938,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-sharded-auth
@@ -2858,6 +2960,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
@@ -2879,6 +2982,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
@@ -2900,6 +3004,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-sharded-auth
@@ -2921,13 +3026,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [cse-matrix-openssl, compile, ubuntu2004, clang, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -2937,7 +3043,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [cse-matrix-openssl, compile, ubuntu2004, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2947,7 +3053,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [cse-matrix-openssl, compile, ubuntu2204, clang-12, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang-12
@@ -2957,7 +3063,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [cse-matrix-openssl, compile, ubuntu2204, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2967,7 +3073,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [cse-matrix-openssl, compile, ubuntu2404, clang-14, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang-14
@@ -2977,7 +3083,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [cse-matrix-openssl, compile, ubuntu2404, gcc, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -2987,7 +3093,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-openssl, compile, windows-vsCurrent, vs2022x64, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -3012,6 +3118,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-server-auth
@@ -3033,6 +3140,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
@@ -3054,6 +3162,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-replica-auth
@@ -3075,6 +3184,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-server-auth
@@ -3096,6 +3206,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
@@ -3117,6 +3228,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-replica-auth
@@ -3138,6 +3250,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-server-auth
@@ -3159,6 +3272,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
@@ -3180,6 +3294,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-replica-auth
@@ -3201,6 +3316,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-server-auth
@@ -3222,6 +3338,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
@@ -3243,6 +3360,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-replica-auth
@@ -3264,6 +3382,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-server-auth
@@ -3285,6 +3404,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
@@ -3306,6 +3426,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-replica-auth
@@ -3327,6 +3448,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-server-auth
@@ -3348,6 +3470,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
@@ -3369,6 +3492,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-replica-auth
@@ -3390,6 +3514,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-server-auth
@@ -3411,6 +3536,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-sharded-auth
@@ -3432,13 +3558,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2015x64, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 14 2015
@@ -3463,6 +3590,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-test-latest-sharded-auth
@@ -3484,13 +3612,14 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2022x64, cse, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: cse-sasl-cyrus-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -3515,6 +3644,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.2-server-auth
@@ -3536,6 +3666,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
@@ -3557,6 +3688,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.4-replica-auth
@@ -3578,6 +3710,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.4-server-auth
@@ -3599,6 +3732,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
@@ -3620,6 +3754,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-5.0-replica-auth
@@ -3641,6 +3776,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-5.0-server-auth
@@ -3662,6 +3798,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
@@ -3683,6 +3820,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-6.0-replica-auth
@@ -3704,6 +3842,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-6.0-server-auth
@@ -3725,6 +3864,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
@@ -3746,6 +3886,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-7.0-replica-auth
@@ -3767,6 +3908,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-7.0-server-auth
@@ -3788,6 +3930,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
@@ -3809,6 +3952,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-8.0-replica-auth
@@ -3830,6 +3974,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-8.0-server-auth
@@ -3851,6 +3996,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
@@ -3872,6 +4018,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-latest-replica-auth
@@ -3893,6 +4040,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-latest-server-auth
@@ -3914,6 +4062,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-latest-sharded-auth
@@ -3935,6 +4084,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-mock-kms-servers
       - func: run-tests
   - name: kms-divergence-check
@@ -3944,7 +4094,7 @@ tasks:
     run_on: rhel8-latest-large
     tags: [loadbalanced, rhel8-latest, gcc]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - command: subprocess.exec
         type: test
         params:
@@ -3954,6 +4104,9 @@ tasks:
             CC: gcc
             CFLAGS: -fno-omit-frame-pointer
             SSL: OPENSSL
+          include_expansions_in_env:
+            - distro_id
+            - UV_INSTALL_DIR
           args:
             - -c
             - .evergreen/scripts/compile.sh
@@ -3974,6 +4127,7 @@ tasks:
           MONGODB_VERSION: "5.0"
           SSL: openssl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4000,6 +4154,7 @@ tasks:
           MONGODB_VERSION: "5.0"
           SSL: nossl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4026,6 +4181,7 @@ tasks:
           MONGODB_VERSION: "6.0"
           SSL: openssl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4052,6 +4208,7 @@ tasks:
           MONGODB_VERSION: "6.0"
           SSL: nossl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4078,6 +4235,7 @@ tasks:
           MONGODB_VERSION: "7.0"
           SSL: openssl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4104,6 +4262,7 @@ tasks:
           MONGODB_VERSION: "7.0"
           SSL: nossl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4130,6 +4289,7 @@ tasks:
           MONGODB_VERSION: "8.0"
           SSL: openssl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4156,6 +4316,7 @@ tasks:
           MONGODB_VERSION: "8.0"
           SSL: nossl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4182,6 +4343,7 @@ tasks:
           MONGODB_VERSION: latest
           SSL: openssl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4208,6 +4370,7 @@ tasks:
           MONGODB_VERSION: latest
           SSL: nossl
           TOPOLOGY: sharded_cluster
+      - func: install-uv
       - func: run-simple-http-server
       - func: start-load-balancer
         vars:
@@ -4220,16 +4383,15 @@ tasks:
           SSL: nossl
   - name: make-docs
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: make-docs
       - func: upload-docs
       - func: upload-man-pages
   - name: mock-server-test
     run_on: ubuntu2204-small
     commands:
-      - func: fetch-det
+      - func: install-uv
       - func: run-simple-http-server
-      - func: find-cmake-latest
       - command: subprocess.exec
         type: test
         params:
@@ -4252,7 +4414,7 @@ tasks:
     tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 1.0.2
@@ -4262,7 +4424,7 @@ tasks:
     tags: [openssl-compat, openssl-1.0.2, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4273,7 +4435,7 @@ tasks:
     tags: [openssl-compat, openssl-1.1.1, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 1.1.1
@@ -4283,7 +4445,7 @@ tasks:
     tags: [openssl-compat, openssl-1.1.1, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4294,7 +4456,7 @@ tasks:
     tags: [openssl-compat, openssl-3.0.9, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.0.9
@@ -4304,7 +4466,7 @@ tasks:
     tags: [openssl-compat, openssl-3.0.9, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4315,7 +4477,7 @@ tasks:
     tags: [openssl-compat, openssl-3.1.2, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.1.2
@@ -4325,7 +4487,7 @@ tasks:
     tags: [openssl-compat, openssl-3.1.2, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4336,7 +4498,7 @@ tasks:
     tags: [openssl-compat, openssl-3.2.5, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.2.5
@@ -4346,7 +4508,7 @@ tasks:
     tags: [openssl-compat, openssl-3.2.5, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4357,7 +4519,7 @@ tasks:
     tags: [openssl-compat, openssl-3.3.4, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.3.4
@@ -4367,7 +4529,7 @@ tasks:
     tags: [openssl-compat, openssl-3.3.4, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4378,7 +4540,7 @@ tasks:
     tags: [openssl-compat, openssl-3.4.2, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.4.2
@@ -4388,7 +4550,7 @@ tasks:
     tags: [openssl-compat, openssl-3.4.2, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4399,7 +4561,7 @@ tasks:
     tags: [openssl-compat, openssl-3.5.1, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.5.1
@@ -4409,7 +4571,7 @@ tasks:
     tags: [openssl-compat, openssl-3.5.1, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
@@ -4420,7 +4582,7 @@ tasks:
     tags: [openssl-compat, openssl-fips-3.0.9, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_ENABLE_FIPS: "ON"
@@ -4431,7 +4593,7 @@ tasks:
     tags: [openssl-compat, openssl-fips-3.0.9, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_ENABLE_FIPS: "ON"
@@ -4443,7 +4605,7 @@ tasks:
     tags: [openssl-compat, openssl-fips-3.1.2, openssl-shared, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_ENABLE_FIPS: "ON"
@@ -4454,7 +4616,7 @@ tasks:
     tags: [openssl-compat, openssl-fips-3.1.2, openssl-static, ubuntu2404, gcc]
     commands:
       - func: fetch-source
-      - func: find-cmake-latest
+      - func: install-uv
       - func: openssl-compat
         vars:
           OPENSSL_ENABLE_FIPS: "ON"
@@ -4465,7 +4627,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-14-arm64, clang, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -4490,6 +4652,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-replica-auth
@@ -4511,6 +4674,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-replica-auth
@@ -4532,6 +4696,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-replica-auth
@@ -4553,13 +4718,14 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-clang-compile
     run_on: macos-14
     tags: [sasl-matrix-darwinssl, compile, macos-14, clang, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-darwinssl-compile
         vars:
           CC: clang
@@ -4584,6 +4750,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-clang-test-4.4-replica-auth
@@ -4605,6 +4772,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-darwinssl-macos-14-clang-test-5.0-replica-auth
@@ -4626,13 +4794,14 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
     run_on: amazon2023-arm64-latest-large-m8g
     tags: [sasl-matrix-openssl, compile, amazon2023-arm64-latest-large-m8g, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -4657,6 +4826,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
@@ -4678,6 +4848,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
@@ -4699,13 +4870,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-debian11-gcc-compile
     run_on: debian11-large
     tags: [sasl-matrix-openssl, compile, debian11, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -4715,7 +4887,7 @@ tasks:
     run_on: debian12-large
     tags: [sasl-matrix-openssl, compile, debian12, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -4725,7 +4897,7 @@ tasks:
     run_on: rhel8-latest-large
     tags: [sasl-matrix-openssl, compile, rhel8-latest, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -4750,6 +4922,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
@@ -4771,6 +4944,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
@@ -4792,6 +4966,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
@@ -4813,6 +4988,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
@@ -4834,6 +5010,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
@@ -4855,6 +5032,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
@@ -4876,6 +5054,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
@@ -4883,7 +5062,7 @@ tasks:
     tags: [sasl-matrix-openssl, compile, rhel8-power, gcc, sasl-cyrus]
     patchable: false
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -4909,6 +5088,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.4-server-auth
@@ -4931,6 +5111,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-5.0-server-auth
@@ -4953,6 +5134,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-6.0-server-auth
@@ -4975,6 +5157,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-7.0-server-auth
@@ -4997,6 +5180,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-8.0-server-auth
@@ -5019,6 +5203,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-power-gcc-test-latest-server-auth
@@ -5041,6 +5226,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
@@ -5048,7 +5234,7 @@ tasks:
     tags: [sasl-matrix-openssl, compile, rhel8-zseries, gcc, sasl-cyrus]
     patchable: false
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -5074,6 +5260,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-6.0-server-auth
@@ -5096,6 +5283,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-server-auth
@@ -5118,6 +5306,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
@@ -5140,6 +5329,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
@@ -5162,13 +5352,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [sasl-matrix-openssl, compile, rhel80, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -5178,7 +5369,7 @@ tasks:
     run_on: ubuntu2004-arm64-large
     tags: [sasl-matrix-openssl, compile, ubuntu2004-arm64, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -5203,6 +5394,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
@@ -5224,6 +5416,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
@@ -5245,6 +5438,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
@@ -5266,6 +5460,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
@@ -5287,6 +5482,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
@@ -5308,13 +5504,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
     run_on: ubuntu2004-large
     tags: [sasl-matrix-openssl, compile, ubuntu2004, clang, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -5324,7 +5521,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [sasl-matrix-openssl, compile, ubuntu2204, clang-12, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang-12
@@ -5334,7 +5531,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [sasl-matrix-openssl, compile, ubuntu2204, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -5344,7 +5541,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [sasl-matrix-openssl, compile, ubuntu2404, clang-14, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang-14
@@ -5354,7 +5551,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [sasl-matrix-openssl, compile, ubuntu2404, gcc, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: gcc
@@ -5364,7 +5561,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-openssl, compile, windows-vsCurrent, vs2017x64, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
@@ -5389,13 +5586,14 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-compile
     run_on: rhel8-latest-large
     tags: [sasl-matrix-nossl, compile, rhel8-latest, gcc, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
@@ -5420,6 +5618,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.2-server-noauth
@@ -5441,6 +5640,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.2-sharded-noauth
@@ -5462,6 +5662,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.4-replica-noauth
@@ -5483,6 +5684,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.4-server-noauth
@@ -5504,6 +5706,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-4.4-sharded-noauth
@@ -5525,6 +5728,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-5.0-replica-noauth
@@ -5546,6 +5750,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-5.0-server-noauth
@@ -5567,6 +5772,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-5.0-sharded-noauth
@@ -5588,6 +5794,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-6.0-replica-noauth
@@ -5609,6 +5816,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-6.0-server-noauth
@@ -5630,6 +5838,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-6.0-sharded-noauth
@@ -5651,6 +5860,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-7.0-replica-noauth
@@ -5672,6 +5882,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-7.0-server-noauth
@@ -5693,6 +5904,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-7.0-sharded-noauth
@@ -5714,6 +5926,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-8.0-replica-noauth
@@ -5735,6 +5948,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-8.0-server-noauth
@@ -5756,6 +5970,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-8.0-sharded-noauth
@@ -5777,6 +5992,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-latest-replica-noauth
@@ -5798,6 +6014,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-latest-server-noauth
@@ -5819,6 +6036,7 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-rhel8-latest-gcc-test-latest-sharded-noauth
@@ -5840,13 +6058,14 @@ tasks:
             - { key: SSL, value: nossl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-off-nossl-ubuntu2204-gcc-compile
     run_on: ubuntu2204-large
     tags: [sasl-matrix-nossl, compile, ubuntu2204, gcc, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
@@ -5856,7 +6075,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [sasl-matrix-nossl, compile, ubuntu2404, gcc, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-nossl-compile
         vars:
           CC: gcc
@@ -5866,7 +6085,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-nossl, compile, windows-vsCurrent, vs2017x64, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-nossl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
@@ -5876,7 +6095,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2015x64, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 14 2015
@@ -5886,7 +6105,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
@@ -5896,7 +6115,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2019x64, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 16 2019
@@ -5906,7 +6125,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x64, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -5916,7 +6135,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x86, sasl-off]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-off-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -5926,7 +6145,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, mingw, sasl-sspi]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-sspi-winssl-compile
         vars:
           CC: gcc
@@ -5951,6 +6170,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-mingw-test-latest-sharded-auth
@@ -5972,13 +6192,14 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2015-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2015x64, sasl-sspi]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-sspi-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 14 2015
@@ -5988,7 +6209,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-sspi]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-sspi-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
@@ -5998,7 +6219,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2019x64, sasl-sspi]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-sspi-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 16 2019
@@ -6008,7 +6229,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x64, sasl-sspi]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-sspi-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -6033,6 +6254,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-server-auth
@@ -6054,6 +6276,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
@@ -6075,6 +6298,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-replica-auth
@@ -6096,6 +6320,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-server-auth
@@ -6117,6 +6342,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
@@ -6138,6 +6364,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-replica-auth
@@ -6159,6 +6386,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-server-auth
@@ -6180,6 +6408,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
@@ -6201,6 +6430,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-replica-auth
@@ -6222,6 +6452,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-server-auth
@@ -6243,6 +6474,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
@@ -6264,6 +6496,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-replica-auth
@@ -6285,6 +6518,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-server-auth
@@ -6306,6 +6540,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
@@ -6327,6 +6562,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-8.0-replica-auth
@@ -6348,6 +6584,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-8.0-server-auth
@@ -6369,6 +6606,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
@@ -6390,6 +6628,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-latest-replica-auth
@@ -6411,6 +6650,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-latest-server-auth
@@ -6432,6 +6672,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-latest-sharded-auth
@@ -6453,13 +6694,14 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x86-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x86, sasl-sspi]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-sspi-winssl-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -6484,6 +6726,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sasl-sspi-winssl-windows-2019-vs2022-x86-test-latest-sharded-auth
@@ -6505,6 +6748,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: sbom
@@ -6516,7 +6760,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [scan-build-matrix, macos-14-arm64, clang]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: scan-build
         vars:
           CC: clang
@@ -6526,7 +6770,7 @@ tasks:
     run_on: ubuntu2004-arm64-large
     tags: [scan-build-matrix, ubuntu2004-arm64, clang]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: scan-build
         vars:
           CC: clang
@@ -6536,7 +6780,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [scan-build-matrix, ubuntu2004, clang, i686]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: scan-build
         vars:
           CC: clang
@@ -6547,7 +6791,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-10
@@ -6557,7 +6801,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6567,7 +6811,7 @@ tasks:
     run_on: rhel7-latest-large
     tags: [std-matrix, rhel7-latest, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6577,7 +6821,7 @@ tasks:
     run_on: rhel80-large
     tags: [std-matrix, rhel80, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6587,7 +6831,7 @@ tasks:
     run_on: rhel80-large
     tags: [std-matrix, rhel80, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6597,7 +6841,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6607,7 +6851,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6617,7 +6861,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6627,7 +6871,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6637,7 +6881,7 @@ tasks:
     run_on: rhel91-large
     tags: [std-matrix, rhel91, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6647,7 +6891,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6657,7 +6901,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6667,7 +6911,7 @@ tasks:
     run_on: rhel93-large
     tags: [std-matrix, rhel93, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6677,7 +6921,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6687,7 +6931,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6697,7 +6941,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6707,7 +6951,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6717,7 +6961,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-10
@@ -6727,7 +6971,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-9
@@ -6737,7 +6981,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [std-matrix, ubuntu2204, clang, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-12
@@ -6747,7 +6991,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [std-matrix, ubuntu2404, gcc, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-13
@@ -6757,7 +7001,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 14 2015
@@ -6767,7 +7011,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
@@ -6777,7 +7021,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 16 2019
@@ -6787,7 +7031,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c11]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -6797,7 +7041,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-10
@@ -6807,7 +7051,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6817,7 +7061,7 @@ tasks:
     run_on: rhel80-large
     tags: [std-matrix, rhel80, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6827,7 +7071,7 @@ tasks:
     run_on: rhel80-large
     tags: [std-matrix, rhel80, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6837,7 +7081,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6847,7 +7091,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6857,7 +7101,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6867,7 +7111,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6877,7 +7121,7 @@ tasks:
     run_on: rhel91-large
     tags: [std-matrix, rhel91, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6887,7 +7131,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6897,7 +7141,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6907,7 +7151,7 @@ tasks:
     run_on: rhel93-large
     tags: [std-matrix, rhel93, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6917,7 +7161,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6927,7 +7171,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6937,7 +7181,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -6947,7 +7191,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -6957,7 +7201,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-10
@@ -6967,7 +7211,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-9
@@ -6977,7 +7221,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [std-matrix, ubuntu2204, clang, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-12
@@ -6987,7 +7231,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [std-matrix, ubuntu2404, gcc, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-13
@@ -6997,7 +7241,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 16 2019
@@ -7007,7 +7251,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c17]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -7017,7 +7261,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-10
@@ -7027,7 +7271,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7037,7 +7281,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7047,7 +7291,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7057,7 +7301,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7067,7 +7311,7 @@ tasks:
     run_on: rhel91-large
     tags: [std-matrix, rhel91, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7077,7 +7321,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7087,7 +7331,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7097,7 +7341,7 @@ tasks:
     run_on: rhel93-large
     tags: [std-matrix, rhel93, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7107,7 +7351,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7117,7 +7361,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7127,7 +7371,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7137,7 +7381,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7147,7 +7391,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-10
@@ -7157,7 +7401,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-9
@@ -7167,7 +7411,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [std-matrix, ubuntu2204, clang, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-12
@@ -7177,7 +7421,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [std-matrix, ubuntu2404, gcc, compile, std-c23]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-13
@@ -7187,7 +7431,7 @@ tasks:
     run_on: debian11-large
     tags: [std-matrix, debian11, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-10
@@ -7197,7 +7441,7 @@ tasks:
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7207,7 +7451,7 @@ tasks:
     run_on: rhel7-latest-large
     tags: [std-matrix, rhel7-latest, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7217,7 +7461,7 @@ tasks:
     run_on: rhel80-large
     tags: [std-matrix, rhel80, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7227,7 +7471,7 @@ tasks:
     run_on: rhel80-large
     tags: [std-matrix, rhel80, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7237,7 +7481,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7247,7 +7491,7 @@ tasks:
     run_on: rhel84-large
     tags: [std-matrix, rhel84, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7257,7 +7501,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7267,7 +7511,7 @@ tasks:
     run_on: rhel90-large
     tags: [std-matrix, rhel90, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7277,7 +7521,7 @@ tasks:
     run_on: rhel91-large
     tags: [std-matrix, rhel91, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7287,7 +7531,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7297,7 +7541,7 @@ tasks:
     run_on: rhel92-large
     tags: [std-matrix, rhel92, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7307,7 +7551,7 @@ tasks:
     run_on: rhel93-large
     tags: [std-matrix, rhel93, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7317,7 +7561,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7327,7 +7571,7 @@ tasks:
     run_on: rhel94-large
     tags: [std-matrix, rhel94, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7337,7 +7581,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang
@@ -7347,7 +7591,7 @@ tasks:
     run_on: rhel95-large
     tags: [std-matrix, rhel95, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc
@@ -7357,7 +7601,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-10
@@ -7367,7 +7611,7 @@ tasks:
     run_on: ubuntu2004-large
     tags: [std-matrix, ubuntu2004, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-9
@@ -7377,7 +7621,7 @@ tasks:
     run_on: ubuntu2204-large
     tags: [std-matrix, ubuntu2204, clang, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: clang-12
@@ -7387,7 +7631,7 @@ tasks:
     run_on: ubuntu2404-large
     tags: [std-matrix, ubuntu2404, gcc, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CC: gcc-13
@@ -7397,7 +7641,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 14 2015
@@ -7407,7 +7651,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 15 2017
@@ -7417,7 +7661,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2019x64, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 16 2019
@@ -7427,7 +7671,7 @@ tasks:
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2022x64, compile, std-c99]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: std-compile
         vars:
           CMAKE_GENERATOR: Visual Studio 17 2022
@@ -7437,7 +7681,7 @@ tasks:
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, compile, rhel8-latest, clang, tsan, sasl-cyrus]
     commands:
-      - func: find-cmake-latest
+      - func: install-uv
       - func: sasl-cyrus-openssl-compile
         vars:
           CC: clang
@@ -7462,6 +7706,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
@@ -7483,6 +7728,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-sharded-auth
@@ -7504,6 +7750,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
@@ -7525,6 +7772,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
@@ -7546,6 +7794,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-sharded-auth
@@ -7567,6 +7816,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
@@ -7588,6 +7838,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
@@ -7609,6 +7860,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-sharded-auth
@@ -7630,6 +7882,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
@@ -7651,6 +7904,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
@@ -7672,6 +7926,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-sharded-auth
@@ -7693,6 +7948,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
@@ -7714,6 +7970,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
@@ -7735,6 +7992,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-sharded-auth
@@ -7756,6 +8014,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
@@ -7777,6 +8036,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
@@ -7798,6 +8058,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-sharded-auth
@@ -7819,6 +8080,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
@@ -7840,6 +8102,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
@@ -7861,6 +8124,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-sharded-auth
@@ -7882,6 +8146,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
+      - func: install-uv
       - func: run-simple-http-server
       - func: run-tests
   - name: verify-headers
