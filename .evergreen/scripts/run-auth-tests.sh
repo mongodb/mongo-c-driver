@@ -135,11 +135,21 @@ elif command -v otool >/dev/null; then
   otool -L "${test_gssapi:?}" | grep "libssl" || true
 fi
 
+maybe_skip() {
+  if $IS_ZSERIES; then
+    # TODO: Remove if-block when resolving CDRIVER-5990.
+    echo "Skipping test until DEVPROD-16954 is resolved."
+    return
+  fi
+  # Run the test command:
+  "$@"
+}
+
 if [[ "${ssl}" != "OFF" ]]; then
   # FIXME: CDRIVER-2008 for the cygwin check
   if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
-    "${mongoc_ping:?}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host:?}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout:?}"
+    maybe_skip "${mongoc_ping:?}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host:?}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout:?}"
   fi
   echo "Connecting to Atlas Free Tier"
   "${mongoc_ping:?}" "${atlas_free:?}&${c_timeout:?}"
@@ -188,18 +198,18 @@ if [[ "${ssl}" != "OFF" ]]; then
 fi
 
 echo "Authenticating using PLAIN"
-"${mongoc_ping:?}" "mongodb://${auth_plain:?}@${auth_host:?}/?authMechanism=PLAIN&${c_timeout:?}"
+maybe_skip "${mongoc_ping:?}" "mongodb://${auth_plain:?}@${auth_host:?}/?authMechanism=PLAIN&${c_timeout:?}"
 
 echo "Authenticating using default auth mechanism"
 # Though the auth source is named "mongodb-cr", authentication uses the default mechanism (currently SCRAM-SHA-1).
-"${mongoc_ping:?}" "mongodb://${auth_mongodbcr:?}@${auth_host:?}/mongodb-cr?${c_timeout:?}"
+maybe_skip "${mongoc_ping:?}" "mongodb://${auth_mongodbcr:?}@${auth_host:?}/mongodb-cr?${c_timeout:?}"
 
 if [[ "${sasl}" != "OFF" ]]; then
   echo "Authenticating using GSSAPI"
-  "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
+  maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
 
   echo "Authenticating with CANONICALIZE_HOST_NAME"
-  "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout:?}"
+  maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout:?}"
 
   declare ld_preload="${LD_PRELOAD:-}"
   if [[ "${ASAN:-}" == "on" ]]; then
@@ -207,13 +217,13 @@ if [[ "${sasl}" != "OFF" ]]; then
   fi
 
   echo "Test threaded GSSAPI auth"
-  MONGOC_TEST_GSSAPI_HOST="${auth_host:?}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi:?}" LD_PRELOAD="${ld_preload:-}" "${test_gssapi:?}"
+  MONGOC_TEST_GSSAPI_HOST="${auth_host:?}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi:?}" LD_PRELOAD="${ld_preload:-}" maybe_skip "${test_gssapi:?}"
   echo "Threaded GSSAPI auth OK"
 
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-    "${mongoc_ping:?}" "mongodb://${auth_crossrealm:?}@${auth_host:?}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout:?}"
+    maybe_skip "${mongoc_ping:?}" "mongodb://${auth_crossrealm:?}@${auth_host:?}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout:?}"
     echo "Authenticating using GSSAPI (UTF-8 credentials)"
-    "${mongoc_ping:?}" "mongodb://${auth_gssapi_utf8:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
+    maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi_utf8:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
   fi
 fi
