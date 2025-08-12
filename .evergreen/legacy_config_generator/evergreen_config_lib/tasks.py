@@ -870,7 +870,7 @@ class OCSPTask(MatrixTask):
             # Why does this fail with Secure Transport (CSSMERR_TP_CERT_SUSPENDED)...?
             prohibit(self.test == "TEST_3")
 
-            # Secure Transport (mongoc-stream-tls-secure-transport.c:_verify_peer) does not implement soft failure.
+            # CDRIVER-3759: Secure Transport does not implement soft failure?
             prohibit(self.test == "soft_fail_test")
 
             # Only Server 6.0+ are available on MacOS ARM64.
