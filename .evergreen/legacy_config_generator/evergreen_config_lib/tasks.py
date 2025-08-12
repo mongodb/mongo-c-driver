@@ -868,7 +868,7 @@ class OCSPTask(MatrixTask):
             prohibit(self.test == "malicious_server_test_2")
 
             # Why does this fail with Secure Transport (CSSMERR_TP_CERT_SUSPENDED)...?
-            prohibit(self.test == "TEST_3")
+            prohibit(self.test == "test_3")
 
             # CDRIVER-3759: Secure Transport does not implement soft failure?
             prohibit(self.test == "soft_fail_test")
