@@ -92,10 +92,10 @@ command -V "${mongoc_ping:?}"
 if [[ -d "${openssl_install_dir:?}" ]]; then
     if [[ -d "${openssl_install_dir:?}/lib64" ]]; then
         LD_LIBRARY_PATH="${openssl_install_dir:?}/lib64:${LD_LIBRARY_PATH:-}"
-        DYLD_LIBRARY_PATH="${openssl_install_dir:?}/lib64:${LD_LIBRARY_PATH:-}"
+        DYLD_LIBRARY_PATH="${openssl_install_dir:?}/lib64:${DYLD_LIBRARY_PATH:-}"
     else
         LD_LIBRARY_PATH="${openssl_install_dir:?}/lib:${LD_LIBRARY_PATH:-}"
-        DYLD_LIBRARY_PATH="${openssl_install_dir:?}/lib:${LD_LIBRARY_PATH:-}"
+        DYLD_LIBRARY_PATH="${openssl_install_dir:?}/lib:${DYLD_LIBRARY_PATH:-}"
     fi
     export LD_LIBRARY_PATH DYLD_LIBRARY_PATH
 fi
