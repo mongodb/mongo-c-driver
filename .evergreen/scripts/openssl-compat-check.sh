@@ -39,30 +39,9 @@ CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 
 # libmongocrypt must use the same OpenSSL library.
 echo "Installing libmongocrypt..."
-(
-  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch 1.13.0
-
-  declare -a crypt_cmake_flags=(
-    "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir:?}"
-    "-DBUILD_TESTING=OFF"
-    "-DENABLE_ONLINE_TESTS=OFF"
-    "-DENABLE_MONGOC=OFF"
-    "-DBUILD_VERSION=1.13.0"
-    "${openssl_cmake_flags[@]:?}"
-  )
-
-  . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
-  find_ccache_and_export_vars "$(pwd)/libmongocrypt" || true
-
-  env \
-    DEBUG="0" \
-    CMAKE_EXE="${cmake_binary:?}" \
-    MONGOCRYPT_INSTALL_PREFIX=${libmongocrypt_install_dir:?} \
-    DEFAULT_BUILD_ONLY=true \
-    LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]}" \
-    ./libmongocrypt/.evergreen/compile.sh
-) &>output.txt || {
-  cat output.txt >&2
+# shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
+"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary:?}" "${mongoc_dir:?}" "${mongoc_install_dir:?}" "${openssl_cmake_flags[@]:?}" &>output.txt || {
+  cat output.txt 1>&2
   exit 1
 }
 echo "Installing libmongocrypt... done."
