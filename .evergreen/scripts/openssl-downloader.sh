@@ -26,7 +26,7 @@ openssl_version_to_url() {
 # Download the requested OpenSSL version into `openssl-<version>`.
 openssl_download() {
   declare version
-  version="${1:?"usage: openssl_download_checksum <version>"}"
+  version="${1:?"usage: openssl_download <version>"}"
 
   command -v curl perl tar sha256sum >/dev/null || return
 
