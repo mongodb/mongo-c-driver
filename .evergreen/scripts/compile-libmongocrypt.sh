@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 compile_libmongocrypt() {
-  declare -r cmake_binary="${1:?}"; shift
-  declare -r mongoc_dir="${2:?}"; shift
-  declare -r install_dir="${3:?}"; shift
+  declare -r cmake_binary="${1:?"missing path to CMake binary"}"; shift
+  declare -r mongoc_dir="${1:?"missing path to mongoc directory"}"; shift
+  declare -r install_dir="${1:?"missing path to install directory"}"; shift
 
   # When updating libmongocrypt, also update openssl-compat-check.sh and the copy of libmongocrypt's kms-message in
   # `src/kms-message`.
@@ -42,8 +42,4 @@ compile_libmongocrypt() {
     ./libmongocrypt/.evergreen/compile.sh || return
 }
 
-: "${1:?"missing path to CMake binary"}"
-: "${2:?"missing path to mongoc directory"}"
-: "${3:?"missing path to install directory"}"
-
-compile_libmongocrypt "${1}" "${2}" "${3}"
+compile_libmongocrypt "${@}"
