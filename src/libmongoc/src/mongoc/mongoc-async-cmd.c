@@ -74,9 +74,17 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream, int *events, void *ctx, mli
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
    }
 
+   const bool use_non_blocking =
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+      true
+#else
+      false
+#endif
+      ;
+
    // Try to do a non-blocking operation, if our backend allows it
    const mlib_duration_rep_t remain_ms = //
-      (MONGOC_SECURE_CHANNEL_ENABLED () || MONGOC_OPENSSL_ENABLED ())
+      use_non_blocking
          // Pass 0 for the timeout to begin / continue a non-blocking handshake
          ? 0
          // Otherwise, use the deadline

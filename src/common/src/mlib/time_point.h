@@ -30,14 +30,11 @@
 #include <mlib/platform.h>
 
 // Check for POSIX clock functions functions
+#define mlib_have_posix_clocks() 0
 #if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309L) || (defined(_DEFAULT_SOURCE) && !defined(_WIN32))
 #include <sys/types.h>
 #undef mlib_have_posix_clocks
 #define mlib_have_posix_clocks() 1
-#endif
-
-#ifndef mlib_have_posix_clocks
-#define mlib_have_posix_clocks() 0
 #endif
 
 #include <errno.h>
