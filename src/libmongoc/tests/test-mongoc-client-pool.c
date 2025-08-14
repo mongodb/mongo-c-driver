@@ -603,7 +603,6 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/ClientPool/max_pool_size_exceeded", test_client_pool_max_pool_size_exceeded);
    TestSuite_Add (suite, "/ClientPool/can_override_sockettimeoutms", test_client_pool_can_override_sockettimeoutms);
 
-#if 0 // CDRIVER-6080
    TestSuite_AddFull (
       suite,
       "/client_pool/disconnects_removed_servers/on_push",
@@ -621,7 +620,6 @@ test_client_pool_install (TestSuite *suite)
       NULL,
       test_framework_skip_if_not_mongos /* require mongos to ensure two servers available */,
       test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
-#endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    TestSuite_Add (suite, "/ClientPool/openssl/change_ssl_opts", test_mongoc_client_pool_change_openssl_ctx);
