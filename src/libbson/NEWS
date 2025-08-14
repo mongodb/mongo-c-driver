@@ -1,3 +1,10 @@
+libmongoc 2.2.0 (Unreleased)
+============================
+
+## Deprecated
+
+- Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
+
 libbson 2.1.0
 =============
 
@@ -39,7 +46,7 @@ Fixes:
 libbson 1.30.5
 ==============
 
-Fixes:
+Fixes: (Unreleased)
 
 * Various fixes have been applied to the `bson_validate` family of functions,
   with some minor behavioral changes.
