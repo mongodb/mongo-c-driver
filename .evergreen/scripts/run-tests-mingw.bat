@@ -1,5 +1,3 @@
-set PATH=C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongo-c-driver\bin
-
 rem "make install" would work, except we run tests on different Evergreen hosts,
 rem in different working directories, than where the driver was built. This
 rem causes errors in "make install" like:

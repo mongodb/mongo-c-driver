@@ -9,7 +9,6 @@ set -o igncr # Ignore CR in this script for Windows compatibility.
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CMAKE_GENERATOR
@@ -56,7 +55,6 @@ IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 
 configure_flags_append "-DCMAKE_INSTALL_PREFIX=$(native-path "${install_dir}")"
 configure_flags_append "-DCMAKE_PREFIX_PATH=$(native-path "${install_dir}")"
-configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
 configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION:-}"
@@ -73,23 +71,12 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 configure_flags_append "-DCMAKE_BUILD_TYPE=${build_config:?}"
+configure_flags_append "-DENABLE_SSL=${SSL:-}"
 
-if [ "${SSL}" == "OPENSSL_STATIC" ]; then
-  configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
-else
-  configure_flags_append "-DENABLE_SSL=${SSL}"
-fi
-
-declare cmake_binary
-if [[ "${BYPASS_FIND_CMAKE:-}" == "OFF" ]]; then
   # shellcheck source=.evergreen/scripts/find-cmake-version.sh
-  . "${script_dir}/find-cmake-latest.sh"
-
-  cmake_binary="$(find_cmake_latest)"
-else
-  cmake_binary="cmake"
-fi
-
+. "${script_dir}/find-cmake-latest.sh"
+declare cmake_binary
+cmake_binary="$(find_cmake_latest)"
 "${cmake_binary:?}" --version
 
 export CMAKE_BUILD_PARALLEL_LEVEL
@@ -98,17 +85,15 @@ CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 declare build_dir
 build_dir="cmake-build"
 
-if [[ "${CC}" =~ mingw ]]; then
+if [[ "${CC}" =~ 'gcc' ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
   env \
-    "CC=gcc" \
-    "CXX=g++" \
     "${cmake_binary:?}" \
     -S . \
     -B "${build_dir:?}" \
-    -G "MinGW Makefiles" \
+    -G "Ninja" \
     "${configure_flags[@]}" \
     "${extra_configure_flags[@]}"
 

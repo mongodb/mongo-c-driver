@@ -3646,51 +3646,220 @@ tasks:
           args:
             - -c
             - .evergreen/scripts/run-mock-server-tests.sh
-  - name: openssl-static-compile-debian11-gcc
-    run_on: debian11-large
-    tags: [openssl-static-matrix, debian11, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-debian12-gcc
-    run_on: debian12-large
-    tags: [openssl-static-matrix, debian12, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-ubuntu2004-gcc
-    run_on: ubuntu2004-large
-    tags: [openssl-static-matrix, ubuntu2004, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-ubuntu2204-gcc
-    run_on: ubuntu2204-large
-    tags: [openssl-static-matrix, ubuntu2204, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-ubuntu2404-gcc
+  - name: openssl-compat-1.0.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
-    tags: [openssl-static-matrix, ubuntu2404, gcc]
+    tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]
     commands:
+      - func: fetch-source
       - func: find-cmake-latest
-      - func: openssl-static-compile
+      - func: openssl-compat
         vars:
-          CC: gcc
-          CXX: g++
+          OPENSSL_VERSION: 1.0.2
+      - func: run auth tests
+  - name: openssl-compat-1.0.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-1.0.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 1.0.2
+      - func: run auth tests
+  - name: openssl-compat-1.1.1-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-1.1.1, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 1.1.1
+      - func: run auth tests
+  - name: openssl-compat-1.1.1-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-1.1.1, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 1.1.1
+      - func: run auth tests
+  - name: openssl-compat-3.0.9-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.0.9, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-3.0.9-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.0.9, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-3.1.2-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.1.2, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
+  - name: openssl-compat-3.1.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.1.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
+  - name: openssl-compat-3.2.5-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.2.5, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.2.5
+      - func: run auth tests
+  - name: openssl-compat-3.2.5-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.2.5, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.2.5
+      - func: run auth tests
+  - name: openssl-compat-3.3.4-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.3.4, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.3.4
+      - func: run auth tests
+  - name: openssl-compat-3.3.4-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.3.4, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.3.4
+      - func: run auth tests
+  - name: openssl-compat-3.4.2-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.4.2, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.4.2
+      - func: run auth tests
+  - name: openssl-compat-3.4.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.4.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.4.2
+      - func: run auth tests
+  - name: openssl-compat-3.5.1-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.5.1, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.5.1
+      - func: run auth tests
+  - name: openssl-compat-3.5.1-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.5.1, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.5.1
+      - func: run auth tests
+  - name: openssl-compat-fips-3.0.9-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.0.9, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-fips-3.0.9-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.0.9, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-fips-3.1.2-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.1.2, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
+  - name: openssl-compat-fips-3.1.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.1.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
   - name: sasl-cyrus-darwinssl-macos-11-arm64-clang-compile
     run_on: macos-11-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-11-arm64, clang, sasl-cyrus]
@@ -5181,8 +5350,8 @@ tasks:
       - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
-          CC: mingw
-          CXX: mingw
+          CC: gcc
+          CXX: g++
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-test-8.0-server-auth
     run_on: windows-vsCurrent-small
@@ -5195,8 +5364,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: mingw }
-            - { key: CXX, value: mingw }
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
@@ -5216,8 +5385,8 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: mingw }
-            - { key: CXX, value: mingw }
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
@@ -6781,10 +6950,15 @@ tasks:
       - ubuntu2404-large
     tags: [pr-merge-gate]
     commands:
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: test
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +verify-headers
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
