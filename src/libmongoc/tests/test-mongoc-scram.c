@@ -754,7 +754,7 @@ test_scram_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_replset); // CDRIVER-6079: test expects at most two servers(?).
+                      test_framework_skip_if_macos); // CDRIVER-6079
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
                       test_mongoc_scram_auth,
