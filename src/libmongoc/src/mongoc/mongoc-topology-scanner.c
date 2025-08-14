@@ -109,6 +109,7 @@ _delete_retired_nodes (mongoc_topology_scanner_t *ts);
 static mongoc_topology_scanner_node_t *
 _scanner_node_of (mongoc_async_cmd_t const *a)
 {
+   BSON_ASSERT_PARAM (a);
    return _acmd_userdata (mongoc_topology_scanner_node_t, a);
 }
 
@@ -117,6 +118,8 @@ _scanner_node_of (mongoc_async_cmd_t const *a)
 static bool
 _is_sibling_command (mongoc_async_cmd_t const *l, mongoc_async_cmd_t const *r)
 {
+   BSON_ASSERT_PARAM (l);
+   BSON_ASSERT_PARAM (r);
    return l != r && _scanner_node_of (l) == _scanner_node_of (r);
 }
 
@@ -136,6 +139,7 @@ _count_acmds (mongoc_topology_scanner_node_t *node);
 static void
 _jumpstart_other_acmds (mongoc_async_cmd_t const *const self)
 {
+   BSON_ASSERT_PARAM (self);
    mongoc_async_cmd_t *other;
    DL_FOREACH (self->async->cmds, other)
    {
@@ -684,6 +688,7 @@ mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts, mongoc
 static void
 _async_connected (mongoc_async_cmd_t *acmd)
 {
+   BSON_ASSERT_PARAM (acmd);
    mongoc_topology_scanner_node_t *const node = _scanner_node_of (acmd);
    /* this cmd connected successfully, cancel other cmds on this node. */
    _cancel_commands_excluding (node, acmd);
@@ -693,6 +698,8 @@ _async_connected (mongoc_async_cmd_t *acmd)
 static void
 _async_success (mongoc_async_cmd_t *acmd, const bson_t *hello_response, mlib_duration elapsed)
 {
+   BSON_ASSERT_PARAM (acmd);
+   BSON_ASSERT_PARAM (hello_response);
    mongoc_topology_scanner_node_t *const node = _scanner_node_of (acmd);
    mongoc_stream_t *const stream = acmd->stream;
    mongoc_topology_scanner_t *ts = node->ts;
@@ -738,6 +745,7 @@ _async_success (mongoc_async_cmd_t *acmd, const bson_t *hello_response, mlib_dur
 static void
 _async_error_or_timeout (mongoc_async_cmd_t *acmd, mlib_duration elapsed, const char *default_err_msg)
 {
+   BSON_ASSERT_PARAM (acmd);
    mongoc_topology_scanner_node_t *const node = _scanner_node_of (acmd);
    mongoc_stream_t *stream = acmd->stream;
    mongoc_topology_scanner_t *ts = node->ts;
@@ -865,6 +873,7 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (mongoc_topology_scanner_node
 mongoc_stream_t *
 _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd)
 {
+   BSON_ASSERT_PARAM (acmd);
    mongoc_topology_scanner_node_t *const node = _scanner_node_of (acmd);
    struct addrinfo *res = acmd->dns_result;
    mongoc_socket_t *sock = NULL;

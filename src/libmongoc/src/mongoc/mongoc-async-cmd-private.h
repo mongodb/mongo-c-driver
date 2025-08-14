@@ -16,6 +16,8 @@
 
 #include <mongoc/mongoc-prelude.h>
 
+#include <bson/macros.h>
+
 #ifndef MONGOC_ASYNC_CMD_PRIVATE_H
 #define MONGOC_ASYNC_CMD_PRIVATE_H
 
@@ -287,6 +289,7 @@ _acmd_cancel (mongoc_async_cmd_t *self)
 static inline void
 _acmd_adjust_connect_delay (mongoc_async_cmd_t *self, const mlib_duration d)
 {
+   BSON_ASSERT_PARAM (self);
    self->_connect_delay_timer.expires_at = mlib_time_add (self->_connect_delay_timer.expires_at, d);
 }
 
