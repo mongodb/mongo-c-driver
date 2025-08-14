@@ -14,21 +14,35 @@
  * limitations under the License.
  */
 
+#include <common-atomic-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-async-cmd-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-topology-scanner-private.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-stream-socket.h>
+#include <mongoc/utlist.h>
 
 #include <bson/bson.h>
 
+#include <mlib/cmp.h>
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
+
+#include <inttypes.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-stream-tls.h>
@@ -44,23 +58,6 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 #endif
-
-#include <common-atomic-private.h>
-#include <common-string-private.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cluster-private.h>
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-util-private.h>
-
-#include <mongoc/utlist.h>
-
-#include <mlib/cmp.h>
-
-#include <inttypes.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -146,7 +143,7 @@ _jumpstart_other_acmds (mongoc_async_cmd_t const *const self)
       // Only consider commands on the same node
       if (_is_sibling_command (self, other)) {
          // Decrease the delay by the happy eyeballs duration.
-         _acmd_adjust_connect_delay (other, mlib_duration ((0, us), minus, HAPPY_EYEBALLS_DELAY));
+         _acmd_adjust_connect_delay (other, mlib_duration (HAPPY_EYEBALLS_DELAY, mul, -1));
       }
    }
 }
