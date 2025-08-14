@@ -197,7 +197,7 @@ _mlibDurationDivide (mlib_duration a, mlib_upsized_integer div) mlib_noexcept
       if (div.is_signed) {
          a._rep /= div.bits.as_signed;
       } else {
-         a._rep /= div.bits.as_unsigned;
+         a._rep = (mlib_duration_rep_t) ((uintmax_t) a._rep / div.bits.as_unsigned);
       }
    }
    return a;
