@@ -209,10 +209,10 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
-  - name: openssl-static-matrix
-    display_name: openssl-static-matrix
+  - name: openssl-compat-matrix
+    display_name: OpenSSL Compatibility Matrix
     tasks:
-      - name: .openssl-static-matrix
+      - name: .openssl-compat
   - name: sanitizers-matrix-asan
     display_name: sanitizers-matrix-asan
     expansions:
