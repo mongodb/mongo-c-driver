@@ -1,6 +1,7 @@
 mongo-c-driver (2.1.0-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * libmongoc-dev.install: include the static library
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 14 Aug 2025 14:36:00 -0400
 

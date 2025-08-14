@@ -1,4 +1,5 @@
 usr/include/mongoc*
+usr/lib/*/libmongoc*.a
 usr/lib/*/libmongoc*.so
 usr/lib/*/pkgconfig/mongoc*
 usr/lib/*/cmake/mongoc*
