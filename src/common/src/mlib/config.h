@@ -172,8 +172,11 @@
 /**
  * @brief Expand to a call expression `Prefix##_argc_N(...)`, where `N` is the
  * number of macro arguments.
+ *
+ * XXX: The `MLIB_JUST` forces an additional expansion pass that works around a
+ * bug in the old MSVC preprocessor, but is not required in a conforming preprocessor.
  */
-#define MLIB_ARGC_PICK(Prefix, ...) MLIB_ARGC_PASTE (Prefix, __VA_ARGS__) (__VA_ARGS__)
+#define MLIB_ARGC_PICK(Prefix, ...) MLIB_JUST (MLIB_ARGC_PASTE (Prefix, __VA_ARGS__) (__VA_ARGS__))
 #define MLIB_ARGC_PASTE(Prefix, ...) MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__))
 
 #ifdef __cplusplus
