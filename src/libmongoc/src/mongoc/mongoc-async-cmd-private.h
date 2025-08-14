@@ -16,8 +16,6 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <bson/macros.h>
-
 #ifndef MONGOC_ASYNC_CMD_PRIVATE_H
 #define MONGOC_ASYNC_CMD_PRIVATE_H
 
@@ -31,6 +29,7 @@
 #include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
+#include <bson/macros.h>
 
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
