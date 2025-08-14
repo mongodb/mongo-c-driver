@@ -46,7 +46,7 @@ Fixes:
 libbson 1.30.5
 ==============
 
-Fixes: (Unreleased)
+Fixes:
 
 * Various fixes have been applied to the `bson_validate` family of functions,
   with some minor behavioral changes.
