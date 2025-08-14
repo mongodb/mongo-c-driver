@@ -10,6 +10,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #include <fcntl.h>
 #ifdef MONGOC_ENABLE_SSL
@@ -2196,35 +2197,29 @@ test_mongoc_client_descriptions_single (void)
 static void
 test_mongoc_client_descriptions_pooled (void *unused)
 {
-   mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
-   mongoc_server_description_t **sds;
-   size_t n, expected_n;
-   int64_t start;
-
    BSON_UNUSED (unused);
 
-   expected_n = test_framework_server_count ();
-   n = 0;
+   const size_t expected_n = test_framework_server_count ();
+   size_t n = 0;
 
    /*
     * pooled
     */
-   pool = test_framework_new_default_client_pool ();
-   client = mongoc_client_pool_pop (pool);
+   mongoc_client_pool_t *const pool = test_framework_new_default_client_pool ();
+   mongoc_client_t *const client = mongoc_client_pool_pop (pool);
 
    /* wait for background thread to discover all members */
-   start = bson_get_monotonic_time ();
+   const mlib_timer deadline = mlib_expires_after (3, s);
    do {
       mlib_sleep_for (1, ms);
       /* Windows IPv4 tasks may take longer to connect since connection to the
        * first address returned by getaddrinfo may be IPv6, and failure to
        * connect may take a couple seconds. See CDRIVER-3639. */
-      if (bson_get_monotonic_time () - start > 3 * 1000 * 1000) {
+      if (mlib_timer_is_expired (deadline)) {
          test_error ("still have %d descriptions, not expected %d, after 1 sec", (int) n, (int) expected_n);
       }
 
-      sds = mongoc_client_get_server_descriptions (client, &n);
+      mongoc_server_description_t **const sds = mongoc_client_get_server_descriptions (client, &n);
       mongoc_server_descriptions_destroy_all (sds, n);
    } while (n != expected_n);
 
