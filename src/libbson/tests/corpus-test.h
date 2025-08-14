@@ -17,9 +17,9 @@
 #ifndef CORPUS_TEST_H
 #define CORPUS_TEST_H
 
-#include "TestSuite.h"
-
 #include <bson/bson.h>
+
+#include <TestSuite.h>
 
 /*
 See:

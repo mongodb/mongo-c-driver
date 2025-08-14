@@ -17,6 +17,8 @@ MongoDB C driver library. The release includes the following steps:
 .. _evg-release: https://spruce.mongodb.com/commits/mongo-c-driver-latest-release
 .. _evg-release-settings: https://spruce.mongodb.com/project/mongo-c-driver-latest-release/settings/general
 .. _snyk: https://app.snyk.io
+.. _dbx-c-cxx-releases-github: https://github.com/orgs/mongodb/teams/dbx-c-cxx-releases/
+.. _dbx-c-cxx-releases-mana: https://mana.corp.mongodb.com/resources/68029673d39aa9f7de6399f9
 
 .. rubric:: Checklist Form
 
@@ -250,6 +252,20 @@ __ https://github.com/settings/tokens
       (Selecting this permission may also enable the *Metadata* permission; this is
       normal.)
 
+Join the Release Team
+#####################
+
+The release process may require creating new branches, new tags, and directly
+pushing to development branches. These operations are normally restricted by
+branch protection rules.
+
+When assigned the responsibility of performing a release, submit a request to a
+repository administrator to be temporarily added to the
+`releases team <dbx-c-cxx-releases-github_>`_ on GitHub for the duration of the
+release process. The team member must be added via
+`MANA <dbx-c-cxx-releases-mana_>`_ (the GitHub team should normally be empty,
+meaning there should not be any member with the "Maintainer" role to add new
+users via GitHub).
 
 Do the Release
 ##############
@@ -380,7 +396,7 @@ Specifically, it is generated using the :any:`+signed-release` target. Before
 running :any:`+signed-release`, one will need to set up some environment that is
 required for it to succeed:
 
-1. :ref:`Authenticate with Artifactory <earthly.artifactory-auth>`
+1. :ref:`Authenticate with the DevProd-provided Amazon ECR instance <earthly.amazon-ecr>`
 2. Set the Earthly secrets required for the :any:`+sign-file` target.
 3. Download an augmented SBOM from a recent execution of the ``sbom`` task in
    an Evergreen patch or commit build and save it to ``etc/augmented-sbom.json``.
@@ -484,6 +500,13 @@ Now `create a new GitHub Pull Request`__ to merge the ``post-release-merge``
 changes back into the ``master`` branch.
 
 __ https://github.com/mongodb/mongo-c-driver/pulls
+
+
+Leave the Release Team
+**********************
+
+Remove yourself from the `releases team <dbx-c-cxx-releases-github_>`_ on GitHub
+via `MANA <dbx-c-cxx-releases-mana_>`_.
 
 
 .. _releasing.jira:

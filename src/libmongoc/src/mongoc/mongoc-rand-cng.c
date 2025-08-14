@@ -18,14 +18,16 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
-#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc-rand-private.h>
 
+#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc.h>
 
-#include <windows.h>
-#include <stdio.h>
 #include <bcrypt.h>
+
+#include <windows.h>
+
+#include <stdio.h>
 
 #define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
 #define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)
@@ -56,12 +58,17 @@ _mongoc_rand_bytes (uint8_t *buf, int num)
 void
 mongoc_rand_seed (const void *buf, int num)
 {
+   BSON_UNUSED (buf);
+   BSON_UNUSED (num);
    /* N/A - OS Does not need entropy seed */
 }
 
 void
 mongoc_rand_add (const void *buf, int num, double entropy)
 {
+   BSON_UNUSED (buf);
+   BSON_UNUSED (num);
+   BSON_UNUSED (entropy);
    /* N/A - OS Does not need entropy seed */
 }
 

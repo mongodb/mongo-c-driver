@@ -14,6 +14,7 @@
  */
 
 #include <bson/bson.h>
+
 #include <mlib/cmp.h>
 
 enum {
@@ -36,17 +37,18 @@ enum {
 BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #endif
 
-#define _bsonDSL_disableWarnings()                                        \
-   if (1) {                                                               \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic push");)                 \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\"");) \
-   } else                                                                 \
+#define _bsonDSL_disableWarnings()           \
+   if (1) {                                  \
+      mlib_diagnostic_push ();               \
+      mlib_gnu_warning_disable ("-Wshadow"); \
+      mlib_msvc_warning (disable : 4456);    \
+   } else                                    \
       ((void) 0)
 
-#define _bsonDSL_restoreWarnings()                       \
-   if (1) {                                              \
-      BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic pop");) \
-   } else                                                \
+#define _bsonDSL_restoreWarnings() \
+   if (1) {                        \
+      mlib_diagnostic_pop ();      \
+   } else                          \
       ((void) 0)
 
 /**
@@ -58,9 +60,12 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
    _bsonDSL_begin ("bsonParse(%s)", _bsonDSL_str (Document)); \
    _bsonDSL_disableWarnings ();                               \
    bsonParseError = NULL;                                     \
-   BSON_MAYBE_UNUSED bool _bvHalt = false;                    \
-   BSON_MAYBE_UNUSED const bool _bvContinue = false;          \
-   BSON_MAYBE_UNUSED const bool _bvBreak = false;             \
+   bool _bvHalt = false;                                      \
+   const bool _bvContinue = false;                            \
+   const bool _bvBreak = false;                               \
+   (void) _bvHalt;                                            \
+   (void) _bvContinue;                                        \
+   (void) _bvBreak;                                           \
    _bsonDSL_eval (_bsonParse ((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings ();                               \
    _bsonDSL_end
@@ -71,7 +76,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 #define bsonVisitEach(Document, ...)                              \
    _bsonDSL_begin ("bsonVisitEach(%s)", _bsonDSL_str (Document)); \
    _bsonDSL_disableWarnings ();                                   \
-   BSON_MAYBE_UNUSED bool _bvHalt = false;                        \
+   bool _bvHalt = false;                                          \
+   (void) _bvHalt;                                                \
    _bsonDSL_eval (_bsonVisitEach ((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings ();                                   \
    _bsonDSL_end
@@ -516,7 +522,8 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
 
 #define _bsonVisitOperation_case(...)                  \
    _bsonDSL_begin ("case:%s", "");                     \
-   BSON_MAYBE_UNUSED bool _bvCaseMatched = false;      \
+   bool _bvCaseMatched = false;                        \
+   (void) _bvCaseMatched;                              \
    _bsonDSL_mapMacro (_bsonVisitCase, ~, __VA_ARGS__); \
    _bsonDSL_end
 
@@ -544,8 +551,10 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       if (!bson_iter_init (&_bvCtx.iter, &(Doc))) {                                       \
          bsonParseError = "Invalid BSON data [a]";                                        \
       }                                                                                   \
-      BSON_MAYBE_UNUSED bool _bvBreak = false;                                            \
-      BSON_MAYBE_UNUSED bool _bvContinue = false;                                         \
+      bool _bvBreak = false;                                                              \
+      bool _bvContinue = false;                                                           \
+      (void) _bvBreak;                                                                    \
+      (void) _bvContinue;                                                                 \
       while (bson_iter_next (&_bvCtx.iter) && !_bvHalt && !bsonParseError && !_bvBreak) { \
          _bvContinue = false;                                                             \
          _bsonVisit_applyOps (__VA_ARGS__);                                               \
@@ -622,19 +631,23 @@ BSON_IF_GNU_LIKE (_Pragma ("GCC diagnostic ignored \"-Wshadow\""))
       }                                                  \
    } while (0);
 
-#define _bsonParse(Doc, ...)                                                                        \
-   do {                                                                                             \
-      BSON_MAYBE_UNUSED const bson_t *_bpDoc = &(Doc);                                              \
-      /* Keep track of which elements have been visited based on their index*/                      \
-      uint64_t _bpVisitBits_static[4] = {0};                                                        \
-      BSON_MAYBE_UNUSED uint64_t *_bpVisitBits = _bpVisitBits_static;                               \
-      BSON_MAYBE_UNUSED size_t _bpNumVisitBitInts = sizeof _bpVisitBits_static / sizeof (uint64_t); \
-      BSON_MAYBE_UNUSED bool _bpFoundElement = false;                                               \
-      _bsonParse_applyOps (__VA_ARGS__);                                                            \
-      /* We may have allocated for visit bits */                                                    \
-      if (_bpVisitBits != _bpVisitBits_static) {                                                    \
-         bson_free (_bpVisitBits);                                                                  \
-      }                                                                                             \
+#define _bsonParse(Doc, ...)                                                      \
+   do {                                                                           \
+      /* Keep track of which elements have been visited based on their index*/    \
+      uint64_t _bpVisitBits_static[4] = {0};                                      \
+      const bson_t *_bpDoc = &(Doc);                                              \
+      uint64_t *_bpVisitBits = _bpVisitBits_static;                               \
+      size_t _bpNumVisitBitInts = sizeof _bpVisitBits_static / sizeof (uint64_t); \
+      bool _bpFoundElement = false;                                               \
+      (void) _bpDoc;                                                              \
+      (void) _bpVisitBits;                                                        \
+      (void) _bpNumVisitBitInts;                                                  \
+      (void) _bpFoundElement;                                                     \
+      _bsonParse_applyOps (__VA_ARGS__);                                          \
+      /* We may have allocated for visit bits */                                  \
+      if (_bpVisitBits != _bpVisitBits_static) {                                  \
+         bson_free (_bpVisitBits);                                                \
+      }                                                                           \
    } while (0)
 
 #define _bsonParse_applyOps(...) _bsonDSL_mapMacro (_bsonParse_applyOp, ~, __VA_ARGS__)

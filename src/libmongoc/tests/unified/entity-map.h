@@ -17,13 +17,16 @@
 #ifndef UNIFIED_ENTITY_MAP_H
 #define UNIFIED_ENTITY_MAP_H
 
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-topology-description-private.h>
-#include <mongoc/mongoc-array-private.h>
+#include "./test-diagnostics.h"
+
 #include <common-thread-private.h>
-#include "bsonutil/bson-match.h"
-#include "test-diagnostics.h"
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+#include <bsonutil/bson-match.h>
 
 typedef struct _event_t {
    struct _event_t *next;
@@ -96,7 +99,7 @@ entity_map_destroy (entity_map_t *em);
 /* Creates an entry in the entity map based on what is specified in @bson.
  */
 bool
-entity_map_create (entity_map_t *em, bson_t *bson, bson_error_t *error);
+entity_map_create (entity_map_t *em, bson_t *bson, const bson_t *cluster_time_after_initial_data, bson_error_t *error);
 
 /* Steals ownership of changestream. */
 bool
@@ -210,6 +213,5 @@ entity_map_log_filter_push (entity_map_t *entity_map, const char *entity_id, log
 
 void
 entity_map_log_filter_pop (entity_map_t *entity_map, const char *entity_id, log_filter_func_t *func, void *user_data);
-
 
 #endif /* UNIFIED_ENTITY_MAP_H */

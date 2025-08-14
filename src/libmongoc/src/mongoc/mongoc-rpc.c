@@ -15,10 +15,9 @@
  */
 
 
-#include <mongoc/mongoc-rpc-private.h>
-
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-trace-private.h>
 
 
@@ -35,7 +34,7 @@ mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply)
          case 0: { // Body.
             const uint8_t *const body = mcd_rpc_op_msg_section_get_body (rpc, index);
 
-            const int32_t body_len = bson_iter_int32_unsafe (&(bson_iter_t){.raw = body});
+            const int32_t body_len = bson_iter_int32_unsafe (&(bson_iter_t) {.raw = body});
 
             return bson_init_static (reply, body, (size_t) body_len);
          }
@@ -59,7 +58,7 @@ mcd_rpc_message_get_body (const mcd_rpc_message *rpc, bson_t *reply)
       // Assume the first document in OP_REPLY is the body.
       const uint8_t *const body = mcd_rpc_op_reply_get_documents (rpc);
 
-      return bson_init_static (reply, body, (size_t) bson_iter_int32_unsafe (&(bson_iter_t){.raw = body}));
+      return bson_init_static (reply, body, (size_t) bson_iter_int32_unsafe (&(bson_iter_t) {.raw = body}));
    }
 
    default:
@@ -328,14 +327,14 @@ mcd_rpc_message_egress (const mcd_rpc_message *rpc)
    // `mcd_rpc_message_to_iovecs`, which converts the opCode field to
    // little endian.
    int32_t op_code = mcd_rpc_header_get_op_code (rpc);
-   op_code = bson_iter_int32_unsafe (&(bson_iter_t){.raw = (const uint8_t *) &op_code});
+   op_code = bson_iter_int32_unsafe (&(bson_iter_t) {.raw = (const uint8_t *) &op_code});
 
    if (op_code == MONGOC_OP_CODE_COMPRESSED) {
       mongoc_counter_op_egress_compressed_inc ();
       mongoc_counter_op_egress_total_inc ();
 
       op_code = mcd_rpc_op_compressed_get_original_opcode (rpc);
-      op_code = bson_iter_int32_unsafe (&(bson_iter_t){.raw = (const uint8_t *) &op_code});
+      op_code = bson_iter_int32_unsafe (&(bson_iter_t) {.raw = (const uint8_t *) &op_code});
    }
 
    switch (op_code) {

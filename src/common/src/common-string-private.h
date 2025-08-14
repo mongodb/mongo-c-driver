@@ -20,7 +20,9 @@
 #define MONGO_C_DRIVER_COMMON_STRING_PRIVATE_H
 
 #include <bson/bson.h>
+
 #include <mlib/cmp.h>
+
 #include <string.h>
 
 
@@ -483,7 +485,7 @@ mcommon_string_append_overflow (mcommon_string_append_t *append)
  */
 bool
 mcommon_string_append_selected_chars (mcommon_string_append_t *append,
-                                      const char *template,
+                                      const char *template_,
                                       const char *selector,
                                       size_t selector_len);
 

@@ -1,19 +1,20 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
-
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-oid-private.h>
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
+
+#include <fcntl.h>
 
 
 /* Server support for exhaust cursors depends on server topology and version:
@@ -31,7 +32,7 @@
 
  * Server Version      libmongoc behavior
  * ------------------  -----------------------------------
- * mongod <4.2         uses OP_QUERY.
+ * mongod <4.2         N/A. libmongoc only supports 4.2+.
  * mongod >=4.2,<5.1   uses OP_MSG.
  * mongod >=5.1        uses OP_MSG.
 
@@ -525,7 +526,8 @@ _request_error (request_t *request, exhaust_error_type_t error_type)
    if (error_type == NETWORK_ERROR) {
       reply_to_request_with_reset (request);
    } else {
-      reply_to_request (request, MONGOC_REPLY_QUERY_FAILURE, 123, 0, 0, "{'$err': 'uh oh', 'code': 4321}");
+      reply_to_op_msg_request (
+         request, MONGOC_OP_MSG_FLAG_NONE, tmp_bson (BSON_STR ({"ok" : 0, "errmsg" : "uh oh", "code" : 4321})));
    }
 }
 
@@ -584,12 +586,17 @@ _mock_test_exhaust (bool pooled, exhaust_error_when_t error_when, exhaust_error_
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (
-      server, "db.test", MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST, 0, 0, "{}", NULL);
+   // Expect "find" command with exhaust flag. Reply with one document.
+   request = mock_server_receives_msg (
+      server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, tmp_bson (BSON_STR ({"find" : "test", "filter" : {}})));
 
    if (error_when == SECOND_BATCH) {
       /* initial query succeeds, gets a doc and cursor id of 123 */
-      reply_to_request (request, MONGOC_REPLY_NONE, 123, 1, 1, "{'a': 1}");
+      reply_to_op_msg_request (
+         request, MONGOC_OP_MSG_FLAG_NONE, tmp_bson (BSON_STR ({
+            "ok" : 1,
+            "cursor" : {"id" : {"$numberLong" : "123"}, "ns" : "test.test", "firstBatch" : [ {"a" : 1} ]}
+         })));
       ASSERT (future_get_bool (future));
       assert_match_bson (doc, tmp_bson ("{'a': 1}"), false);
       ASSERT_CMPINT64 ((int64_t) 123, ==, mongoc_cursor_get_id (cursor));
@@ -598,6 +605,11 @@ _mock_test_exhaust (bool pooled, exhaust_error_when_t error_when, exhaust_error_
 
       /* error after initial batch */
       future = future_cursor_next (cursor, &doc);
+
+      request_destroy (request);
+      // Expect "getMore" command.
+      request = mock_server_receives_msg (
+         server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, tmp_bson (BSON_STR ({"getMore" : {"$numberLong" : "123"}})));
    }
 
    _request_error (request, error_type);
@@ -606,7 +618,22 @@ _mock_test_exhaust (bool pooled, exhaust_error_when_t error_when, exhaust_error_
 
    future_destroy (future);
    request_destroy (request);
-   mongoc_cursor_destroy (cursor);
+   // If error occurs after the first batch, expect `mongoc_cursor_destroy` sends `killCursors` to clean up the
+   // server-side cursor.
+   if (error_when == SECOND_BATCH && error_type != NETWORK_ERROR) {
+      // If connection is still alive, driver will try to send `getMore`, but fail.
+      future = future_cursor_destroy (cursor);
+      request = mock_server_receives_msg (
+         server,
+         MONGOC_OP_MSG_FLAG_NONE,
+         tmp_bson (BSON_STR ({"killCursors" : "test", "cursors" : [ {"$numberLong" : "123"} ]})));
+      reply_to_op_msg_request (request, MONGOC_OP_MSG_FLAG_NONE, tmp_bson ("{'ok': 1}"));
+      request_destroy (request);
+      ASSERT (future_wait (future));
+      future_destroy (future);
+   } else {
+      mongoc_cursor_destroy (cursor);
+   }
    mongoc_collection_destroy (collection);
 
    if (pooled) {

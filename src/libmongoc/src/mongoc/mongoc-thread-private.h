@@ -19,11 +19,12 @@
 #ifndef MONGOC_THREAD_PRIVATE_H
 #define MONGOC_THREAD_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <common-thread-private.h>
+
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-log.h>
+
+#include <bson/bson.h>
 
 #if defined(BSON_OS_UNIX)
 #define mongoc_cond_t pthread_cond_t
@@ -94,6 +95,7 @@ mongo_cond_ret_is_timedout (int ret)
 static BSON_INLINE int
 mongoc_cond_destroy (mongoc_cond_t *_ignored)
 {
+   (void) _ignored;
    return 0;
 }
 #endif

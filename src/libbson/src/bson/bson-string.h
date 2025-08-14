@@ -21,10 +21,10 @@
 #define BSON_STRING_H
 
 
-#include <stdarg.h>
-
-#include <bson/bson-macros.h>
 #include <bson/bson-types.h>
+#include <bson/macros.h>
+
+#include <stdarg.h>
 
 
 BSON_BEGIN_DECLS

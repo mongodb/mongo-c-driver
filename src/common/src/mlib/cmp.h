@@ -46,9 +46,6 @@ enum mlib_cmp_result {
 /**
  * @brief Compare two integral values safely.
  *
- * NOTE: This macro may evaluate the operand expressions more than once! Do not
- * use expressions that are expensive or have side effects!
- *
  * This function can be called with two arguments or with three:
  *
  * - `mlib_cmp(a, b)` Returns a value of type `mlib_cmp_result`
@@ -80,32 +77,32 @@ mlib_always_inline static enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_i
    if (x.is_signed) {
       if (y.is_signed) {
          // Both signed
-         if (x.i.s < y.i.s) {
+         if (x.bits.as_signed < y.bits.as_signed) {
             return mlib_less;
-         } else if (x.i.s > y.i.s) {
+         } else if (x.bits.as_signed > y.bits.as_signed) {
             return mlib_greater;
          }
       } else {
          // X signed, Y unsigned
-         if (x.i.s < 0 || (uintmax_t) x.i.s < y.i.u) {
+         if (x.bits.as_signed < 0 || (uintmax_t) x.bits.as_signed < y.bits.as_unsigned) {
             return mlib_less;
-         } else if ((uintmax_t) x.i.s > y.i.u) {
+         } else if ((uintmax_t) x.bits.as_signed > y.bits.as_unsigned) {
             return mlib_greater;
          }
       }
    } else {
       if (!y.is_signed) {
          // Both unsigned
-         if (x.i.u < y.i.u) {
+         if (x.bits.as_unsigned < y.bits.as_unsigned) {
             return mlib_less;
-         } else if (x.i.u > y.i.u) {
+         } else if (x.bits.as_unsigned > y.bits.as_unsigned) {
             return mlib_greater;
          }
       } else {
          // X unsigned, Y signed
-         if (y.i.s < 0 || x.i.u > (uintmax_t) y.i.s) {
+         if (y.bits.as_signed < 0 || x.bits.as_unsigned > (uintmax_t) y.bits.as_signed) {
             return mlib_greater;
-         } else if (x.i.u < (uintmax_t) y.i.s) {
+         } else if (x.bits.as_unsigned < (uintmax_t) y.bits.as_signed) {
             return mlib_less;
          }
       }
@@ -126,9 +123,9 @@ mlib_always_inline static enum mlib_cmp_result (mlib_cmp) (struct mlib_upsized_i
 static inline bool (mlib_in_range) (intmax_t min_, uintmax_t max_, struct mlib_upsized_integer val) mlib_noexcept
 {
    if (val.is_signed) {
-      return mlib_cmp (val.i.s, >=, min_) && mlib_cmp (val.i.s, <=, max_);
+      return mlib_cmp (val.bits.as_signed, >=, min_) && mlib_cmp (val.bits.as_signed, <=, max_);
    } else {
-      return mlib_cmp (val.i.u, >=, min_) && mlib_cmp (val.i.u, <=, max_);
+      return mlib_cmp (val.bits.as_unsigned, >=, min_) && mlib_cmp (val.bits.as_unsigned, <=, max_);
    }
 }
 

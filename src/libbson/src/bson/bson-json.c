@@ -15,21 +15,26 @@
  */
 
 
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <math.h>
+#include <bson/bson-json.h>
+
+#include <bson/bson-error-private.h>
+#include <bson/bson-iso8601-private.h>
+#include <bson/bson-json-private.h>
+#include <common-b64-private.h>
 
 #include <bson/bson.h>
-#include <bson/bson-config.h>
-#include <bson/bson-error-private.h>
-#include <bson/bson-json.h>
-#include <bson/bson-json-private.h>
-#include <bson/bson-iso8601-private.h>
+#include <bson/config.h>
 
 #include <mlib/cmp.h>
-#include <common-b64-private.h>
+#include <mlib/config.h>
+
 #include <jsonsl/jsonsl.h>
+
+#include <fcntl.h>
+#include <sys/types.h>
+
+#include <errno.h>
+#include <math.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -270,22 +275,25 @@ _noop (void)
 #define STACK_IS_DBPOINTER (STACK_FRAME_TYPE == BSON_JSON_FRAME_DBPOINTER)
 #define FRAME_TYPE_HAS_BSON(_type) ((_type) == BSON_JSON_FRAME_SCOPE || (_type) == BSON_JSON_FRAME_DBPOINTER)
 #define STACK_HAS_BSON FRAME_TYPE_HAS_BSON (STACK_FRAME_TYPE)
-#define STACK_PUSH(frame_type)                       \
-   do {                                              \
-      if (bson->n >= (STACK_MAX - 1)) {              \
-         return;                                     \
-      }                                              \
-      bson->n++;                                     \
-      if (STACK_HAS_BSON) {                          \
-         if (FRAME_TYPE_HAS_BSON (frame_type)) {     \
-            bson_reinit (STACK_BSON_CHILD);          \
-         } else {                                    \
-            bson_destroy (STACK_BSON_CHILD);         \
-         }                                           \
-      } else if (FRAME_TYPE_HAS_BSON (frame_type)) { \
-         bson_init (STACK_BSON_CHILD);               \
-      }                                              \
-      STACK_FRAME_TYPE = frame_type;                 \
+#define STACK_PUSH(frame_type)                                  \
+   do {                                                         \
+      if (bson->n >= (STACK_MAX - 1)) {                         \
+         return;                                                \
+      }                                                         \
+      bson->n++;                                                \
+      mlib_diagnostic_push ();                                  \
+      mlib_disable_constant_conditional_expression_warnings (); \
+      if (STACK_HAS_BSON) {                                     \
+         if (FRAME_TYPE_HAS_BSON (frame_type)) {                \
+            bson_reinit (STACK_BSON_CHILD);                     \
+         } else {                                               \
+            bson_destroy (STACK_BSON_CHILD);                    \
+         }                                                      \
+      } else if (FRAME_TYPE_HAS_BSON (frame_type)) {            \
+         bson_init (STACK_BSON_CHILD);                          \
+      }                                                         \
+      mlib_diagnostic_pop ();                                   \
+      STACK_FRAME_TYPE = frame_type;                            \
    } while (0)
 #define STACK_PUSH_ARRAY(statement)       \
    do {                                   \
@@ -343,13 +351,17 @@ _noop (void)
       bson->code_data.in_scope = false; \
    } while (0)
 #define STACK_POP_DBPOINTER STACK_POP_DOC (_noop ())
-#define BASIC_CB_PREAMBLE                         \
-   const char *key;                               \
-   size_t len;                                    \
-   bson_json_reader_bson_t *bson = &reader->bson; \
-   _bson_json_read_fixup_key (bson);              \
-   key = bson->key;                               \
-   len = bson->key_buf.len;                       \
+#define BASIC_CB_PREAMBLE                                                                                            \
+   const char *key;                                                                                                  \
+   size_t len;                                                                                                       \
+   bson_json_reader_bson_t *bson = &reader->bson;                                                                    \
+   _bson_json_read_fixup_key (bson);                                                                                 \
+   key = bson->key;                                                                                                  \
+   len = bson->key_buf.len;                                                                                          \
+   if (len > INT_MAX) {                                                                                              \
+      _bson_json_read_set_error (reader, "Failed to read JSON. key size %zu is too large. Max is %d", len, INT_MAX); \
+      return;                                                                                                        \
+   }                                                                                                                 \
    (void) 0
 #define BASIC_CB_BAIL_IF_NOT_NORMAL(_type)                                                                   \
    if (bson->read_state != BSON_JSON_REGULAR) {                                                              \
@@ -392,7 +404,7 @@ bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
    bson_json_opts_t *opts;
 
    opts = (bson_json_opts_t *) bson_malloc (sizeof *opts);
-   *opts = (bson_json_opts_t){
+   *opts = (bson_json_opts_t) {
       .mode = mode,
       .max_len = max_len,
       .is_outermost_array = false,
@@ -620,7 +632,7 @@ _bson_json_read_integer (bson_json_reader_t *reader, uint64_t val, int64_t sign)
       BASIC_CB_BAIL_IF_NOT_NORMAL ("integer");
 
       if (val <= INT32_MAX || (sign == -1 && val <= (uint64_t) INT32_MAX + 1)) {
-         bson_append_int32 (STACK_BSON_CHILD, key, (int) len, (int) (val * sign));
+         bson_append_int32 (STACK_BSON_CHILD, key, (int) len, (int32_t) ((int64_t) val * sign));
       } else if (sign == -1) {
 #if defined(_WIN32) && !defined(__MINGW32__)
          // Unary negation of unsigned integer is deliberate.

@@ -21,12 +21,16 @@
 #define MONGOC_TRACE_PRIVATE_H
 
 
-#include <bson/bson.h>
-#include <ctype.h>
-
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-log-private.h>
+
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-log.h>
+
+#include <bson/bson.h>
+
+#include <mlib/config.h>
+
+#include <ctype.h>
 
 
 BSON_BEGIN_DECLS
@@ -34,47 +38,72 @@ BSON_BEGIN_DECLS
 // `gLogTrace` determines if tracing is enabled at runtime.
 extern bool gLogTrace;
 
-#define TRACE(msg, ...)                        \
-   do {                                        \
-      if (MONGOC_TRACE_ENABLED && gLogTrace) { \
-         mongoc_log (MONGOC_LOG_LEVEL_TRACE,   \
-                     MONGOC_LOG_DOMAIN,        \
-                     "TRACE: %s():%d " msg,    \
-                     BSON_FUNC,                \
-                     (int) (__LINE__),         \
-                     __VA_ARGS__);             \
-      }                                        \
-   } while (0)
+#define TRACE(msg, ...)                                         \
+   if (1) {                                                     \
+      mlib_diagnostic_push ();                                  \
+      mlib_disable_constant_conditional_expression_warnings (); \
+      if (MONGOC_TRACE_ENABLED && gLogTrace) {                  \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE,                    \
+                     MONGOC_LOG_DOMAIN,                         \
+                     "TRACE: %s():%d " msg,                     \
+                     BSON_FUNC,                                 \
+                     (int) (__LINE__),                          \
+                     __VA_ARGS__);                              \
+      }                                                         \
+      mlib_diagnostic_pop ();                                   \
+   } else                                                       \
+      ((void) 0)
+
 #define ENTRY                                                                                                   \
-   do {                                                                                                         \
+   if (1) {                                                                                                     \
+      mlib_diagnostic_push ();                                                                                  \
+      mlib_disable_constant_conditional_expression_warnings ();                                                 \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                  \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "ENTRY: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
-   } while (0)
+      mlib_diagnostic_pop ();                                                                                   \
+   } else                                                                                                       \
+      ((void) 0)
+
 #define EXIT                                                                                                    \
    do {                                                                                                         \
+      mlib_diagnostic_push ();                                                                                  \
+      mlib_disable_constant_conditional_expression_warnings ();                                                 \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                  \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
+      mlib_diagnostic_pop ();                                                                                   \
       return;                                                                                                   \
-   } while (0)
+   } while (0) // do-while instead of if-else to avoid false-positive -Wreturn-type warnings with GCC 11.
+
 #define RETURN(ret)                                                                                             \
    do {                                                                                                         \
+      mlib_diagnostic_push ();                                                                                  \
+      mlib_disable_constant_conditional_expression_warnings ();                                                 \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                  \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, (int) (__LINE__)); \
       }                                                                                                         \
+      mlib_diagnostic_pop ();                                                                                   \
       return ret;                                                                                               \
-   } while (0)
+   } while (0) // do-while instead of if-else to avoid false-positive -Wreturn-type warnings with GCC 11.
+
 #define GOTO(label)                                                                                               \
-   do {                                                                                                           \
+   if (1) {                                                                                                       \
+      mlib_diagnostic_push ();                                                                                    \
+      mlib_disable_constant_conditional_expression_warnings ();                                                   \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                                                                    \
          mongoc_log (                                                                                             \
             MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " GOTO: %s():%d %s", BSON_FUNC, (int) (__LINE__), #label); \
       }                                                                                                           \
+      mlib_diagnostic_pop ();                                                                                     \
       goto label;                                                                                                 \
-   } while (0)
+   } else                                                                                                         \
+      ((void) 0)
+
 #define DUMP_BSON(_bson)                                               \
-   do {                                                                \
+   if (1) {                                                            \
+      mlib_diagnostic_push ();                                         \
+      mlib_disable_constant_conditional_expression_warnings ();        \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                         \
          char *_bson_str;                                              \
          if (_bson) {                                                  \
@@ -91,9 +120,14 @@ extern bool gLogTrace;
                      _bson_str);                                       \
          bson_free (_bson_str);                                        \
       }                                                                \
-   } while (0)
+      mlib_diagnostic_pop ();                                          \
+   } else                                                              \
+      ((void) 0)
+
 #define DUMP_IOVEC(_n, _iov, _iovcnt)                               \
-   do {                                                             \
+   if (1) {                                                         \
+      mlib_diagnostic_push ();                                      \
+      mlib_disable_constant_conditional_expression_warnings ();     \
       if (MONGOC_TRACE_ENABLED && gLogTrace) {                      \
          mongoc_log (MONGOC_LOG_LEVEL_TRACE,                        \
                      MONGOC_LOG_DOMAIN,                             \
@@ -105,7 +139,9 @@ extern bool gLogTrace;
                      (int) _iovcnt);                                \
          mongoc_log_trace_iovec (MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
       }                                                             \
-   } while (0)
+      mlib_diagnostic_pop ();                                       \
+   } else                                                           \
+      ((void) 0)
 
 
 BSON_END_DECLS

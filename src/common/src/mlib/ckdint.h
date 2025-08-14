@@ -5,9 +5,6 @@
  *
  * This file implements the C23 checked-integer-arithmetic functions as macros.
  *
- * The implementation is nearly perfect: The macros necessarily evaluate the
- * operand expressions more than once, so callers should be aware of this caveat.
- *
  * The function-like macros are defined:
  *
  * - `mlib_add(Dst, L, R)` / `mlib_add(Dst, A)`
@@ -159,7 +156,7 @@ mlib_extern_c_begin ();
  * @param T A type specifier for a target integral type for the cast.
  * @param Operand The integral value to be converted.
  *
- * If the cast would result in the operand value chaning, the program will be
+ * If the cast would result in the operand value changing, the program will be
  * terminated with a diagnostic.
  */
 #define mlib_assert_narrow(T, Operand) \
@@ -193,19 +190,17 @@ mlib_extern_c_begin ();
 // clang-format off
 // Generates an 0b11111 bit pattern for appropriate size:
 #define _mlibMaxofUnsigned(V) \
-   (sizeof(V) == sizeof(uintmax_t) \
-      ? UINTMAX_MAX /* No funny bit math, just return the max of the max int */ \
-      /* Generate an 0b11111... bit pattern */ \
-      : (UINTMAX_C(1) << ( \
-         /* Guard against an over-shift if V is uintmax_t: */ \
-           (sizeof(V) < sizeof(uintmax_t)) \
-         * (sizeof(V) * CHAR_BIT)) \
-         ) - 1)
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   mlib_bits(mlib_bitsizeof((V)), 0)
 
 // Generates an 0b01111 bit pattern for the two's complement max value:
-#define _mlibMaxofSigned(V) (_mlibMaxofUnsigned (V) >> 1ull)
+#define _mlibMaxofSigned(V) \
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   mlib_bits(mlib_bitsizeof(V) - 1u, 0)
 // Generates an 0b10000... bit pattern for the two's complement min value:
-#define _mlibMinofSigned(V) ((0 & (V)) - (UINTMAX_C (1) << ((sizeof (V) * CHAR_BIT) - 1)))
+#define _mlibMinofSigned(V) \
+   /* NOLINTNEXTLINE(bugprone-sizeof-expression) */ \
+   (0 - mlib_bits(1, mlib_bitsizeof(V) - 1u))
 // For completeness:
 #define _mlibMinofUnsigned(V) 0
 // Yields true iff the operand expression has a signed type, but requires that
@@ -268,7 +263,7 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    // Perform regular wrapping arithmetic on the unsigned value. The bit pattern
    // is equivalent if there is two's complement signed arithmetic.
    const uintmax_t sum = *dst = a + b;
-   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
    // Now we check whether that overflowed according to the sign configuration.
    // We use some bit fiddling magic that treat the signbit as a boolean for
    // "is this number negative?" or "is this number “large” (i.e. bigger than signed-max)?"
@@ -280,9 +275,9 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             // Expanded:
             // Test whether the product sign is unequal to both input signs
             // X ^ Y yields a negative value if the signs are unequal
-            const bool a_signflipped = (intmax_t) (sum ^ a) < 0;
-            const bool b_signflipped = (intmax_t) (sum ^ b) < 0;
-            return a_signflipped && b_signflipped;
+            //     const bool a_signflipped = (intmax_t) (sum ^ a) < 0;
+            //     const bool b_signflipped = (intmax_t) (sum ^ b) < 0;
+            //     return a_signflipped && b_signflipped;
          } else { // S = S + U
             // Flip the sign bit of a, test whether that sum overflows
             a ^= signbit;
@@ -303,49 +298,48 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // U = S + S
             return signbit & (((sum | a) & b) | ((sum & a) & ~b));
             // Expanded:
-            const bool a_is_negative = (intmax_t) a < 0;
-            const bool b_is_negative = (intmax_t) b < 0;
-            const bool sum_is_large = sum > INTMAX_MAX;
-            if (b_is_negative) {
-               if (a_is_negative) {
-                  // The sum must be negative, and therefore cannot be stored in an unsigned
-                  return true;
-               } else if (sum_is_large) {
-                  // We added a negative value B to a positive value A, but the sum
-                  // ended up larger than the max signed value, so we wrapped
-                  return true;
-               }
-            } else if (a_is_negative) {
-               if (sum_is_large) {
-                  // Same as above case with sum_is_large
-                  return true;
-               }
-            }
-            return false;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     const bool sum_is_large = sum > INTMAX_MAX;
+            //     if (b_is_negative) {
+            //        if (a_is_negative) {
+            //           // The sum must be negative, and therefore cannot be stored in an unsigned
+            //           return true;
+            //        } else if (sum_is_large) {
+            //           // We added a negative value B to a positive value A, but the sum
+            //           // ended up larger than the max signed value, so we wrapped
+            //           return true;
+            //        }
+            //     } else if (a_is_negative) {
+            //        if (sum_is_large) {
+            //           // Same as above case with sum_is_large
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          } else { // U = S + U
             return signbit & (sum ^ a ^ signbit) & (sum ^ b);
             // Expanded:
-            const bool sum_is_large = sum > INTMAX_MAX;
-            const bool b_is_large = b > INTMAX_MAX;
-            const bool a_is_negative = (intmax_t) a < 0;
-
-            if (!a_is_negative && b_is_large) {
-               // We are adding a non-negative value to a large number, so the
-               // sum must also be large
-               if (!sum_is_large) {
-                  // We ended up with a smaller value, meaning that we must have wrapped
-                  return true;
-               }
-            }
-            if (a_is_negative && !b_is_large) {
-               // We subtracted a non-negative value from a non-large number, so
-               // the result should not be large
-               if (sum_is_large) {
-                  // We ended up with a large value, so we must have wrapped
-                  return true;
-               }
-            }
-            return false;
+            //     const bool sum_is_large = sum > INTMAX_MAX;
+            //     const bool b_is_large = b > INTMAX_MAX;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     if (!a_is_negative && b_is_large) {
+            //        // We are adding a non-negative value to a large number, so the
+            //        // sum must also be large
+            //        if (!sum_is_large) {
+            //           // We ended up with a smaller value, meaning that we must have wrapped
+            //           return true;
+            //        }
+            //     }
+            //     if (a_is_negative && !b_is_large) {
+            //        // We subtracted a non-negative value from a non-large number, so
+            //        // the result should not be large
+            //        if (sum_is_large) {
+            //           // We ended up with a large value, so we must have wrapped
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          }
       } else {
          if (b_signed) { // U = U + S  --- (See [U = S + U] for an explanation)
@@ -363,7 +357,7 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
 {
    // Perform the subtraction using regular wrapping arithmetic
    const uintmax_t diff = *dst = a - b;
-   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
    // Test whether the operation overflowed for the given sign configuration
    // (See mlib_add for more details on why we do this bit fiddling)
    if (dst_signed) {
@@ -372,18 +366,18 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // S = S - S
             return signbit & (a ^ b) & (diff ^ a);
             // Explain:
-            const bool a_is_negative = (intmax_t) a < 0;
-            const bool b_is_negative = (intmax_t) b < 0;
-            if (a_is_negative != b_is_negative) {
-               // Given: Pos - Neg = Pos
-               //      ∧ Neg - Pos = Neg
-               // We expect that the difference preserves the sign of the minuend
-               if (diff_is_negative != a_is_negative) {
-                  return true;
-               }
-            }
-            // Otherwise, `Pos - Pos` and `Neg - Neg` cannot possibly overflow
-            return false;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     if (a_is_negative != b_is_negative) {
+            //        // Given: Pos - Neg = Pos
+            //        //      ∧ Neg - Pos = Neg
+            //        // We expect that the difference preserves the sign of the minuend
+            //        if (diff_is_negative != a_is_negative) {
+            //           return true;
+            //        }
+            //     }
+            //     // Otherwise, `Pos - Pos` and `Neg - Neg` cannot possibly overflow
+            //     return false;
          } else { // S = S - U
             // The diff overflows if the sign-bit-flipped minuend is smaller than the subtrahend
             return (a ^ signbit) < b;
@@ -402,29 +396,29 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // U = S - S
             return signbit & (((diff & a) & b) | ((diff | a) & ~b));
             // Expanded:
-            const bool a_is_negative = (intmax_t) a < 0;
-            const bool b_is_negative = (intmax_t) b < 0;
-            const bool diff_is_large = diff > INTMAX_MAX;
-            if (!b_is_negative) {
-               if (a_is_negative) {
-                  // We subtracted a non-negative from a negative value, so the difference
-                  // must be negative and cannot be stored as unsigned
-                  return true;
-               }
-               if (diff_is_large) {
-                  // We subtracted a positive value from a signed value, so we must not
-                  // end up with a large value
-                  return true;
-               }
-            }
-            if (a_is_negative) {
-               if (diff_is_large) {
-                  // A is negative, and there is no possible value that we can subtract
-                  // from it to obtain this large integer, so we must have overflowed
-                  return true;
-               }
-            }
-            return false;
+            //     const bool a_is_negative = (intmax_t) a < 0;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     const bool diff_is_large = diff > INTMAX_MAX;
+            //     if (!b_is_negative) {
+            //        if (a_is_negative) {
+            //           // We subtracted a non-negative from a negative value, so the difference
+            //           // must be negative and cannot be stored as unsigned
+            //           return true;
+            //        }
+            //        if (diff_is_large) {
+            //           // We subtracted a positive value from a signed value, so we must not
+            //           // end up with a large value
+            //           return true;
+            //        }
+            //     }
+            //     if (a_is_negative) {
+            //        if (diff_is_large) {
+            //           // A is negative, and there is no possible value that we can subtract
+            //           // from it to obtain this large integer, so we must have overflowed
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          } else { //
             return (b > a) || (signbit & a);
          }
@@ -432,26 +426,26 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) { // U = U - S
             return signbit & (a ^ b ^ signbit) & (diff ^ a);
             // Explain:
-            const bool a_is_large = a > INTMAX_MAX;
-            const bool b_is_negative = (intmax_t) b < 0;
-            const bool diff_is_large = diff > INTMAX_MAX;
-            if (a_is_large && b_is_negative) {
-               // The difference between a large value and a negative
-               // value must also be a large value
-               if (!diff_is_large) {
-                  // We expected another large value to appear.
-                  return true;
-               }
-            }
-            if (!a_is_large && !b_is_negative) {
-               // The difference between a non-large positive value and a non-negative value
-               // must not be a large value
-               if (diff_is_large) {
-                  // We did not expect a large difference
-                  return true;
-               }
-            }
-            return false;
+            //     const bool a_is_large = a > INTMAX_MAX;
+            //     const bool b_is_negative = (intmax_t) b < 0;
+            //     const bool diff_is_large = diff > INTMAX_MAX;
+            //     if (a_is_large && b_is_negative) {
+            //        // The difference between a large value and a negative
+            //        // value must also be a large value
+            //        if (!diff_is_large) {
+            //           // We expected another large value to appear.
+            //           return true;
+            //        }
+            //     }
+            //     if (!a_is_large && !b_is_negative) {
+            //        // The difference between a non-large positive value and a non-negative value
+            //        // must not be a large value
+            //        if (diff_is_large) {
+            //           // We did not expect a large difference
+            //           return true;
+            //        }
+            //     }
+            //     return false;
          } else {
             return a < b;
          }
@@ -464,7 +458,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
    mlib_noexcept
 {
    // Multiplication is a lot more subtle
-   const uintmax_t signbit = (UINTMAX_C (1) << ((sizeof (intmax_t) * CHAR_BIT) - 1));
+   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
    if (dst_signed) {
       if (a_signed) {
          if (b_signed) {
@@ -580,7 +574,7 @@ _mlib_ckdint (void *dst,
 {
    // Perform the arithmetic on uintmax_t, for wrapping behavior
    uintmax_t tmp;
-   bool ovr = fn (&tmp, minval < 0, a.is_signed, a.i.u, b.is_signed, b.i.u);
+   bool ovr = fn (&tmp, minval < 0, a.is_signed, a.bits.as_unsigned, b.is_signed, b.bits.as_unsigned);
    // Endian-adjusting for writing the result
    const char *copy_from = (const char *) &tmp;
    if (!mlib_is_little_endian ()) {
@@ -655,7 +649,7 @@ _mlib_checked_cast (intmax_t min_,
                   here.lineno,
                   here.func,
                   expr,
-                  (long long) val.i.s,
+                  (long long) val.bits.as_signed,
                   typename_);
       } else {
          fprintf (stderr,
@@ -664,16 +658,16 @@ _mlib_checked_cast (intmax_t min_,
                   here.lineno,
                   here.func,
                   expr,
-                  (unsigned long long) val.i.u,
+                  (unsigned long long) val.bits.as_unsigned,
                   typename_);
       }
       fflush (stderr);
       abort ();
    }
    if (val.is_signed) {
-      return (uintmax_t) val.i.s;
+      return (uintmax_t) val.bits.as_signed;
    }
-   return val.i.u;
+   return val.bits.as_unsigned;
 }
 
 mlib_extern_c_end ();

@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-#include <bson/bson-config.h>
-#include <bson/bson-compat.h>
+#include <bson/compat.h>
+#include <bson/config.h>
 
 
 #if defined(BSON_HAVE_CLOCK_GETTIME)
-#include <time.h>
 #include <sys/time.h>
+
+#include <time.h>
 #endif
 
 #include <bson/bson-clock.h>

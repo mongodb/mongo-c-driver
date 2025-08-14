@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-#include <mlib/intencode.h>
+#include <common-atomic-private.h>
 #include <common-thread-private.h>
-#include <mongoc/mongoc-server-monitor-private.h>
-
-#include <mongoc/mcd-rpc.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-server-monitor-private.h>
 #include <mongoc/mongoc-ssl-private.h>
 #include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-structured-log-private.h>
-#include <common-atomic-private.h>
+
+#include <mongoc/mcd-rpc.h>
+
+#include <mlib/config.h>
+#include <mlib/intencode.h>
 
 #include <inttypes.h>
 
@@ -116,11 +118,15 @@ static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t
 }
 
 #define MONITOR_LOG(sm, ...)                                            \
-   do {                                                                 \
+   if (1) {                                                             \
+      mlib_diagnostic_push ();                                          \
+      mlib_disable_constant_conditional_expression_warnings ();         \
       if (MONGOC_TRACE_ENABLED) {                                       \
          _server_monitor_log (sm, MONGOC_LOG_LEVEL_TRACE, __VA_ARGS__); \
       }                                                                 \
-   } while (0)
+      mlib_diagnostic_pop ();                                           \
+   } else                                                               \
+      ((void) 0)
 
 /* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_ERROR */
 #define MONITOR_LOG_ERROR(sm, ...) _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
@@ -928,6 +934,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    } else {
       void *ssl_opts_void = NULL;
       void *openssl_ctx_void = NULL;
+      mongoc_shared_ptr secure_channel_cred_ptr = MONGOC_SHARED_PTR_NULL;
 
 #ifdef MONGOC_ENABLE_SSL
       ssl_opts_void = server_monitor->ssl_opts;
@@ -937,12 +944,16 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
       openssl_ctx_void = server_monitor->topology->scanner->openssl_ctx;
 #endif
 
-      server_monitor->stream = mongoc_client_connect (false,
-                                                      ssl_opts_void != NULL,
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+      secure_channel_cred_ptr = server_monitor->topology->scanner->secure_channel_cred_ptr;
+#endif
+
+      server_monitor->stream = mongoc_client_connect (ssl_opts_void != NULL,
                                                       ssl_opts_void,
                                                       server_monitor->uri,
                                                       &server_monitor->description->host,
                                                       openssl_ctx_void,
+                                                      secure_channel_cred_ptr,
                                                       error);
    }
 

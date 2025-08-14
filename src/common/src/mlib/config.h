@@ -245,29 +245,35 @@
 #define mlib_pragma(...) _Pragma (#__VA_ARGS__) mlib_static_assert (1, "")
 #endif
 
+#define MLIB_PRAGMA_IF_CLANG(...) MLIB_IF_CLANG (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_GCC(...) MLIB_IF_GCC (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_GNU_LIKE(...) MLIB_IF_GNU_LIKE (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_UNIX_LIKE(...) MLIB_IF_UNIX_LIKE (_Pragma (#__VA_ARGS__))
+#define MLIB_PRAGMA_IF_MSVC(...) MLIB_IF_MSVC (__pragma (__VA_ARGS__))
+
 #define MLIB_FUNC MLIB_IF_GNU_LIKE (__func__) MLIB_IF_MSVC (__FUNCTION__)
 
 #define mlib_diagnostic_push()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic push);) \
    MLIB_IF_MSVC (mlib_pragma (warning (push));)          \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_diagnostic_pop()                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic pop);) \
    MLIB_IF_MSVC (mlib_pragma (warning (pop));)          \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_gcc_warning_disable(Warning)                      \
    MLIB_IF_GCC (mlib_pragma (GCC diagnostic ignored Warning);) \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_gnu_warning_disable(Warning)                           \
    MLIB_IF_GNU_LIKE (mlib_pragma (GCC diagnostic ignored Warning);) \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 #define mlib_msvc_warning(...)                         \
    MLIB_IF_MSVC (mlib_pragma (warning (__VA_ARGS__));) \
-   mlib_static_assert (true, "")
+   mlib_static_assert (1, "")
 
 /**
  * @brief Attribute macro that forces the function to be inlined at all call sites.
@@ -349,5 +355,17 @@
  * even when not in C23 mode.
  */
 #define mlib_typeof(...) MLIB_IF_ELSE (mlib_have_typeof ()) (__typeof__) (__mlib_typeof_is_not_supported) (__VA_ARGS__)
+
+/**
+ * @brief Disable warnings for constant conditional expressions.
+ */
+#define mlib_disable_constant_conditional_expression_warnings() mlib_msvc_warning (disable : 4127)
+
+/**
+ * @brief Disable warnings for potentially unused parameters.
+ */
+#define mlib_disable_unused_parameter_warnings()                       \
+   MLIB_IF_GNU_LIKE (mlib_gnu_warning_disable ("-Wunused-parameter");) \
+   MLIB_IF_MSVC (mlib_msvc_warning (disable : 4100);) mlib_static_assert (1, "")
 
 #endif // MLIB_CONFIG_H_INCLUDED

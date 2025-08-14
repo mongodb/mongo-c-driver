@@ -1,11 +1,10 @@
 #ifndef FUTURE_VALUE_H
 #define FUTURE_VALUE_H
 
-#include <mongoc/mongoc.h>
-
-
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc.h>
 
 
 /**************************************************

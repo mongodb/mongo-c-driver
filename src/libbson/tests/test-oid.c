@@ -17,8 +17,8 @@
 
 #include <bson/bson.h>
 #define BSON_INSIDE
-#include <bson/bson-iso8601-private.h>
 #include <bson/bson-context-private.h>
+#include <bson/bson-iso8601-private.h>
 #include <common-thread-private.h>
 #undef BSON_INSIDE
 
@@ -26,11 +26,14 @@
 #include <strings.h>
 #endif
 
-#include <limits.h>
-
-#include "TestSuite.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <common-json-private.h>
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+
+#include <limits.h>
 
 #define N_THREADS 4
 
@@ -237,7 +240,10 @@ test_bson_oid_get_time_t (void)
 
    /* if time_t is a signed int32, then a negative value may be interpreted
     * as a negative date when printing. */
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (sizeof (time_t) == 8) {
+      mlib_diagnostic_pop ();
       bson_oid_init_from_string (&oid, "7FFFFFFF0000000000000000");
       str = get_time_as_string (&oid);
       ASSERT_CMPSTR (str, "2038-01-19T03:14:07Z");

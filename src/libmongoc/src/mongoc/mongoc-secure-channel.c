@@ -18,28 +18,45 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-ssl.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-secure-channel-private.h>
-#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-crypto-private.h> // mongoc_crypto_hash
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <common-string-private.h>
-#include <mlib/cmp.h>
+#include <mongoc/mongoc-secure-channel-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-stream-tls-secure-channel-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h> // bin_to_hex
 
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream-tls.h>
+
+#include <bson/bson.h>
+
+#include <mlib/cmp.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-secure-channel"
 
-/* mingw doesn't define this */
+#ifdef __MINGW32__
+// Define macros omitted from mingw headers:
 #ifndef SECBUFFER_ALERT
 #define SECBUFFER_ALERT 17
 #endif
+#ifndef NCRYPTBUFFER_VERSION
+#define NCRYPTBUFFER_VERSION 0
+#endif
+#ifndef NCRYPT_PKCS8_PRIVATE_KEY_BLOB
+#define NCRYPT_PKCS8_PRIVATE_KEY_BLOB L"PKCS8_PRIVATEKEY"
+#endif
+#ifndef NCRYPT_SILENT_FLAG
+#define NCRYPT_SILENT_FLAG 0x00000040
+#endif
+#ifndef MS_KEY_STORAGE_PROVIDER
+#define MS_KEY_STORAGE_PROVIDER L"Microsoft Software Key Storage Provider"
+#endif
+#endif // #ifdef __MINGW32__
 
 // `decode_pem_base64` decodes a base-64 PEM blob with headers.
 // Returns NULL on error.
@@ -205,6 +222,76 @@ decode_object (const char *structType,
    return out;
 }
 
+// `utf8_to_wide` converts a UTF-8 string into a wide string using the Windows API MultiByteToWideChar.
+// Returns a NULL-terminated wide character string on success. Returns NULL on error.
+static WCHAR *
+utf8_to_wide (const char *utf8)
+{
+   // Get necessary character count (not bytes!) of result:
+   int required_wide_chars = MultiByteToWideChar (CP_UTF8, 0, utf8, -1 /* NULL terminated */, NULL, 0);
+   if (required_wide_chars == 0) {
+      return NULL;
+   }
+
+   // Since -1 was passed as the input length, the returned character count includes space for the null character.
+   WCHAR *wide_chars = bson_malloc (sizeof (WCHAR) * required_wide_chars);
+   if (0 == MultiByteToWideChar (CP_UTF8, 0, utf8, -1 /* NULL terminated */, wide_chars, required_wide_chars)) {
+      bson_free (wide_chars);
+      return NULL;
+   }
+
+   return wide_chars;
+}
+
+// `generate_key_name` generates a deterministic name for a key of the form: "libmongoc-<SHA256 fingerprint>-<suffix>".
+// Returns NULL on error.
+static LPWSTR
+generate_key_name (LPBYTE data, DWORD len, const char *suffix)
+{
+   bool ok = false;
+   char *hash_hex = NULL;
+   char *key_name = NULL;
+   LPWSTR key_name_wide = NULL;
+
+   BSON_ASSERT_PARAM (data);
+   BSON_ASSERT_PARAM (suffix);
+
+   // Compute a hash of the certificate:
+   {
+      unsigned char hash[32];
+      mongoc_crypto_t crypto;
+      mongoc_crypto_init (&crypto, MONGOC_CRYPTO_ALGORITHM_SHA_256);
+      if (!mongoc_crypto_hash (&crypto, (const unsigned char *) data, mlib_assert_narrow (size_t, len), hash)) {
+         goto fail;
+      }
+      // Use uppercase hex to match form of `openssl x509` command:
+      hash_hex = bin_to_hex ((const uint8_t *) hash, sizeof (hash));
+      if (!hash_hex) {
+         goto fail;
+      }
+   }
+
+   // Convert to a wide string:
+   {
+      key_name = bson_strdup_printf ("libmongoc-%s-%s", hash_hex, suffix);
+      key_name_wide = utf8_to_wide (key_name);
+      if (!key_name_wide) {
+         goto fail;
+      }
+   }
+
+   ok = true;
+fail:
+   bson_free (key_name);
+   bson_free (hash_hex);
+   if (!ok) {
+      bson_free (key_name_wide);
+      key_name_wide = NULL;
+   }
+
+   return key_name_wide;
+}
+
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
@@ -212,7 +299,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    bool ret = false;
    bool success;
    size_t pem_length;
-   HCRYPTPROV provider;
+   HCRYPTPROV provider = 0u;
    DWORD encoded_cert_len;
    LPBYTE encoded_cert = NULL;
    const char *pem_public;
@@ -224,6 +311,10 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    DWORD blob_private_rsa_len = 0;
    DWORD encoded_private_len = 0;
    LPBYTE encoded_private = NULL;
+   NCRYPT_PROV_HANDLE cng_provider = 0u;
+   LPWSTR key_name = NULL;
+
+   BSON_ASSERT_PARAM (filename);
 
    pem = read_file_and_null_terminate (filename, &pem_length);
    if (!pem) {
@@ -256,7 +347,10 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       goto fail;
    }
 
+   // Import private key as a persisted (not ephemeral) key.
+   // Ephemeral keys do not appear to support modern signatures. See CDRIVER-5998.
    if (NULL != (pem_private = strstr (pem, "-----BEGIN RSA PRIVATE KEY-----"))) {
+      // Import PKCS#1 as a persisted CAPI key. Windows CNG API does not appear to support PKCS#1.
       encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
       if (!encoded_private) {
          goto fail;
@@ -267,89 +361,160 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       if (!blob_private_rsa) {
          goto fail;
       }
+
+      // Import persisted key with a deterministic name of the form "libmongoc-<SHA256 fingerprint>-pkcs1":
+      key_name = generate_key_name (encoded_cert, encoded_cert_len, "pkcs1");
+      if (!key_name) {
+         MONGOC_ERROR ("Failed to generate key name");
+         goto fail;
+      }
+
+      bool exists = false;
+      success = CryptAcquireContextW (&provider,                       /* phProv */
+                                      key_name,                        /* pszContainer */
+                                      MS_ENHANCED_PROV_W,              /* pszProvider */
+                                      PROV_RSA_FULL,                   /* dwProvType */
+                                      CRYPT_NEWKEYSET | CRYPT_SILENT); /* dwFlags */
+      if (!success) {
+         DWORD last_error = GetLastError ();
+         exists = last_error == (DWORD) NTE_EXISTS;
+         if (!exists) {
+            // Unexpected error:
+            char *msg = mongoc_winerr_to_string (last_error);
+            MONGOC_ERROR ("CryptAcquireContext failed: %s", msg);
+            bson_free (msg);
+            goto fail;
+         }
+      }
+
+      if (!exists) {
+         // Import CAPI key:
+         HCRYPTKEY hKey;
+         success = CryptImportKey (provider,             /* hProv */
+                                   blob_private_rsa,     /* pbData */
+                                   blob_private_rsa_len, /* dwDataLen */
+                                   0,                    /* hPubKey */
+                                   0,                    /* dwFlags */
+                                   &hKey);               /* phKey, OUT */
+         if (!success) {
+            char *msg = mongoc_winerr_to_string (GetLastError ());
+            MONGOC_ERROR ("CryptImportKey for private key failed: %s", msg);
+            bson_free (msg);
+            goto fail;
+         }
+         CryptDestroyKey (hKey);
+      }
+
+      CRYPT_KEY_PROV_INFO keyProvInfo = {0};
+      keyProvInfo.pwszContainerName = key_name;
+      keyProvInfo.pwszProvName = MS_ENHANCED_PROV_W,
+      keyProvInfo.dwFlags |= CERT_SET_KEY_PROV_HANDLE_PROP_ID | CERT_SET_KEY_CONTEXT_PROP_ID | CRYPT_SILENT;
+      keyProvInfo.dwProvType = PROV_RSA_FULL;
+      keyProvInfo.dwKeySpec = AT_KEYEXCHANGE;
+      success = CertSetCertificateContextProperty (cert,                         /* pCertContext */
+                                                   CERT_KEY_PROV_INFO_PROP_ID,   /* dwPropId */
+                                                   0,                            /* dwFlags */
+                                                   (const void *) &keyProvInfo); /* pvData */
+      if (!success) {
+         char *msg = mongoc_winerr_to_string (GetLastError ());
+         MONGOC_ERROR ("Can't associate private key with public key: %s", msg);
+         bson_free (msg);
+         goto fail;
+      }
    } else if (NULL != (pem_private = strstr (pem, "-----BEGIN PRIVATE KEY-----"))) {
+      // Import PKCS#8 as a persisted CNG key.
       encoded_private = decode_pem_base64 (pem_private, &encoded_private_len, "private key", filename);
       if (!encoded_private) {
          goto fail;
       }
 
-      blob_private = decode_object (
-         PKCS_PRIVATE_KEY_INFO, encoded_private, encoded_private_len, &blob_private_len, "private key", filename);
-      if (!blob_private) {
+      // Open the software key storage provider:
+      SECURITY_STATUS status = NCryptOpenStorageProvider (&cng_provider, MS_KEY_STORAGE_PROVIDER, 0);
+      if (status != SEC_E_OK) {
+         char *msg = mongoc_winerr_to_string (GetLastError ());
+         MONGOC_ERROR ("Can't open key storage provider: %s", msg);
+         bson_free (msg);
          goto fail;
       }
 
-      // Have PrivateKey. Get RSA key from it.
-      CRYPT_PRIVATE_KEY_INFO *privateKeyInfo = (CRYPT_PRIVATE_KEY_INFO *) blob_private;
-      if (strcmp (privateKeyInfo->Algorithm.pszObjId, szOID_RSA_RSA) != 0) {
-         MONGOC_ERROR ("Non-RSA private keys are not supported");
+      // Supply a key name to persist the key:
+      NCryptBuffer buffer;
+      NCryptBufferDesc bufferDesc;
+
+      // Import persisted key with a deterministic name of the form "libmongoc-<SHA256 fingerprint>-pkcs8":
+      key_name = generate_key_name (encoded_cert, encoded_cert_len, "pkcs8");
+      if (!key_name) {
+         MONGOC_ERROR ("Failed to generate key name");
          goto fail;
       }
 
-      blob_private_rsa = decode_object (PKCS_RSA_PRIVATE_KEY,
-                                        privateKeyInfo->PrivateKey.pbData,
-                                        privateKeyInfo->PrivateKey.cbData,
-                                        &blob_private_rsa_len,
-                                        "private key",
-                                        filename);
-      if (!blob_private_rsa) {
-         goto fail;
+      buffer.cbBuffer = (ULONG) (wcslen (key_name) + 1) * sizeof (WCHAR);
+      buffer.BufferType = NCRYPTBUFFER_PKCS_KEY_NAME;
+      buffer.pvBuffer = key_name;
+
+      bufferDesc.ulVersion = NCRYPTBUFFER_VERSION;
+      bufferDesc.cBuffers = 1;
+      bufferDesc.pBuffers = &buffer;
+
+      // Import the private key blob as a persisted CNG key:
+      {
+         NCRYPT_KEY_HANDLE hKey = 0;
+         status = NCryptImportKey (cng_provider,
+                                   0,
+                                   NCRYPT_PKCS8_PRIVATE_KEY_BLOB,
+                                   &bufferDesc,
+                                   &hKey,
+                                   encoded_private,
+                                   encoded_private_len,
+                                   NCRYPT_SILENT_FLAG);
+         if (hKey) {
+            NCryptFreeObject (hKey);
+         }
+
+         // Ignore `NTE_EXISTS` error since key may have already been imported:
+         if (status != SEC_E_OK && status != NTE_EXISTS) {
+            char *msg = mongoc_winerr_to_string ((DWORD) status);
+            MONGOC_ERROR ("Failed to import key: %s", msg);
+            bson_free (msg);
+            goto fail;
+         }
+      }
+
+      // Attach key to certificate:
+      {
+         CRYPT_KEY_PROV_INFO keyProvInfo = {0};
+         keyProvInfo.pwszContainerName = key_name;
+         keyProvInfo.pwszProvName = MS_KEY_STORAGE_PROVIDER,
+         keyProvInfo.dwFlags |= CERT_SET_KEY_PROV_HANDLE_PROP_ID | CERT_SET_KEY_CONTEXT_PROP_ID | CRYPT_SILENT;
+         keyProvInfo.dwProvType = 0 /* CNG */;
+         keyProvInfo.dwKeySpec = AT_KEYEXCHANGE;
+         if (!CertSetCertificateContextProperty (cert, CERT_KEY_PROV_INFO_PROP_ID, 0, &keyProvInfo)) {
+            char *msg = mongoc_winerr_to_string (GetLastError ());
+            MONGOC_ERROR ("Failed to attach key to certificate: %s", msg);
+            bson_free (msg);
+            goto fail;
+         }
       }
    } else {
       MONGOC_ERROR ("Can't find private key in '%s'", filename);
       goto fail;
    }
 
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa379886%28v=vs.85%29.aspx
-    */
-   success = CryptAcquireContext (&provider,            /* phProv */
-                                  NULL,                 /* pszContainer */
-                                  MS_ENHANCED_PROV,     /* pszProvider */
-                                  PROV_RSA_FULL,        /* dwProvType */
-                                  CRYPT_VERIFYCONTEXT); /* dwFlags */
-   if (!success) {
-      char *msg = mongoc_winerr_to_string (GetLastError ());
-      MONGOC_ERROR ("CryptAcquireContext failed: %s", msg);
-      bson_free (msg);
-      goto fail;
-   }
-
-   HCRYPTKEY hKey;
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa380207%28v=vs.85%29.aspx
-    */
-   success = CryptImportKey (provider,             /* hProv */
-                             blob_private_rsa,     /* pbData */
-                             blob_private_rsa_len, /* dwDataLen */
-                             0,                    /* hPubKey */
-                             0,                    /* dwFlags */
-                             &hKey);               /* phKey, OUT */
-   if (!success) {
-      char *msg = mongoc_winerr_to_string (GetLastError ());
-      MONGOC_ERROR ("CryptImportKey for private key failed: %s", msg);
-      bson_free (msg);
-      CryptReleaseContext (provider, 0);
-      goto fail;
-   }
-   CryptDestroyKey (hKey);
-
-   /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa376573%28v=vs.85%29.aspx
-    */
-   // The CERT_KEY_PROV_HANDLE_PROP_ID property takes ownership of `provider`.
-   success = CertSetCertificateContextProperty (cert,                         /* pCertContext */
-                                                CERT_KEY_PROV_HANDLE_PROP_ID, /* dwPropId */
-                                                0,                            /* dwFlags */
-                                                (const void *) provider);     /* pvData */
-   if (!success) {
-      char *msg = mongoc_winerr_to_string (GetLastError ());
-      MONGOC_ERROR ("Can't associate private key with public key: %s", msg);
-      bson_free (msg);
-      goto fail;
-   }
 
    TRACE ("%s", "Successfully loaded client certificate");
    ret = true;
 
 fail:
+   bson_free (key_name);
+
+   if (cng_provider) {
+      NCryptFreeObject (cng_provider);
+   }
+
+   if (provider) {
+      CryptReleaseContext (provider, 0);
+   }
+
    if (pem) {
       SecureZeroMemory (pem, pem_length);
       bson_free (pem);
@@ -379,14 +544,14 @@ fail:
 }
 
 PCCERT_CONTEXT
-mongoc_secure_channel_setup_certificate (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_certificate (const mongoc_ssl_opt_t *opt)
 {
    return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
 }
 
 
 bool
-mongoc_secure_channel_setup_ca (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_ca (const mongoc_ssl_opt_t *opt)
 {
    bool ok = false;
    char *pem = NULL;
@@ -496,7 +661,7 @@ fail:
 }
 
 bool
-mongoc_secure_channel_setup_crl (mongoc_ssl_opt_t *opt)
+mongoc_secure_channel_setup_crl (const mongoc_ssl_opt_t *opt)
 {
    HCERTSTORE cert_store = NULL;
    bool ok = false;
@@ -671,18 +836,18 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls, char *hostname
    secure_channel->ctxt = (mongoc_secure_channel_ctxt *) bson_malloc0 (sizeof (mongoc_secure_channel_ctxt));
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx */
-   sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle, /* phCredential */
-                                            NULL,                               /* phContext */
-                                            hostname,                           /* pszTargetName */
-                                            secure_channel->req_flags,          /* fContextReq */
-                                            0,                                  /* Reserved1, must be 0 */
-                                            0,                                  /* TargetDataRep, unused */
-                                            NULL,                               /* pInput */
-                                            0,                                  /* Reserved2, must be 0 */
-                                            &secure_channel->ctxt->ctxt_handle, /* phNewContext OUT param */
-                                            &outbuf_desc,                       /* pOutput OUT param */
-                                            &secure_channel->ret_flags,         /* pfContextAttr OUT param */
-                                            &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
+   sspi_status = InitializeSecurityContext (&secure_channel->cred_handle->cred_handle, /* phCredential */
+                                            NULL,                                      /* phContext */
+                                            hostname,                                  /* pszTargetName */
+                                            secure_channel->req_flags,                 /* fContextReq */
+                                            0,                                         /* Reserved1, must be 0 */
+                                            0,                                         /* TargetDataRep, unused */
+                                            NULL,                                      /* pInput */
+                                            0,                                         /* Reserved2, must be 0 */
+                                            &secure_channel->ctxt->ctxt_handle,        /* phNewContext OUT param */
+                                            &outbuf_desc,                              /* pOutput OUT param */
+                                            &secure_channel->ret_flags,                /* pfContextAttr OUT param */
+                                            &secure_channel->ctxt->time_stamp          /* ptsExpiry OUT param */
    );
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
@@ -739,7 +904,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
    TRACE ("%s", "SSL/TLS connection with endpoint (step 2/3)");
 
-   if (!secure_channel->cred || !secure_channel->ctxt) {
+   if (!secure_channel->cred_handle || !secure_channel->ctxt) {
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "required TLS credentials or context not provided");
 
@@ -809,7 +974,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls, char *hostname
 
       /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx
        */
-      sspi_status = InitializeSecurityContext (&secure_channel->cred->cred_handle,
+      sspi_status = InitializeSecurityContext (&secure_channel->cred_handle->cred_handle,
                                                &secure_channel->ctxt->ctxt_handle,
                                                hostname,
                                                secure_channel->req_flags,
@@ -989,7 +1154,7 @@ mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls, char *hostname
 
    TRACE ("SSL/TLS connection with %s (step 3/3)", hostname);
 
-   if (!secure_channel->cred) {
+   if (!secure_channel->cred_handle) {
       MONGOC_LOG_AND_SET_ERROR (
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "required TLS credentials not provided");
       return false;

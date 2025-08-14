@@ -19,13 +19,13 @@
 #ifndef MONGOC_AGGREGATE_PRIVATE_H
 #define MONGOC_AGGREGATE_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-flags.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-write-concern.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS

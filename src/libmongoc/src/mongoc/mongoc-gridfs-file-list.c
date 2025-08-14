@@ -15,18 +15,20 @@
  */
 
 
-#include <limits.h>
+#include <mongoc/mongoc-gridfs-file-list.h>
+
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-gridfs-file-list-private.h>
+#include <mongoc/mongoc-gridfs-file-private.h>
+#include <mongoc/mongoc-gridfs-private.h>
+#include <mongoc/mongoc-trace-private.h>
 
 #include <mongoc/mongoc-cursor.h>
-#include <mongoc/mongoc-cursor-private.h>
-#include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-gridfs.h>
-#include <mongoc/mongoc-gridfs-private.h>
 #include <mongoc/mongoc-gridfs-file.h>
-#include <mongoc/mongoc-gridfs-file-private.h>
-#include <mongoc/mongoc-gridfs-file-list.h>
-#include <mongoc/mongoc-gridfs-file-list-private.h>
-#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-gridfs.h>
+
+#include <limits.h>
 
 
 mongoc_gridfs_file_list_t *

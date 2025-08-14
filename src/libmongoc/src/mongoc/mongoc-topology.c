@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-config.h>
-
-#include <mongoc/mongoc-handshake.h>
-#include <mongoc/mongoc-handshake-private.h>
-
-#include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <common-oid-private.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cmd-private.h>
-#include <mongoc/mongoc-uri-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
+#include <mongoc/mongoc-topology-background-monitoring-private.h>
+#include <mongoc/mongoc-topology-description-apm-private.h>
+#include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
 
+#include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-log.h>
 #include <mongoc/utlist.h>
 
-#include <stdint.h>
-#include <common-string-private.h>
 #include <mlib/cmp.h>
-#include <common-oid-private.h>
+
+#include <stdint.h>
 
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology, bson_error_t *error_out);
@@ -520,8 +519,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       /* Use rr_data to update the topology's URI. */
       if (rr_data.txt_record_opts &&
-          !mongoc_uri_parse_options (
-             topology->uri, rr_data.txt_record_opts, true /* from_dns */, &topology->scanner->error)) {
+          !_mongoc_uri_apply_query_string (
+             topology->uri, mstr_cstring (rr_data.txt_record_opts), true /* from_dns */, &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
@@ -1746,7 +1745,6 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
                                 uint32_t generation,
                                 const bson_oid_t *service_id,
                                 const mongoc_server_description_t *sd,
-                                uint32_t max_wire_version,
                                 const bson_t *reply)
 {
    bson_error_t cmd_error;
@@ -1779,7 +1777,7 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
       return false;
    }
 
-   should_clear_pool = (max_wire_version <= WIRE_VERSION_4_0 || _mongoc_error_is_shutdown (&cmd_error));
+   should_clear_pool = _mongoc_error_is_shutdown (&cmd_error);
 
    tdmod = mc_tpld_modify_begin (topology);
 
@@ -1861,7 +1859,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    _mongoc_sdam_app_error_type_t type,
                                    const bson_t *reply,
                                    const bson_error_t *why,
-                                   uint32_t max_wire_version,
                                    uint32_t generation,
                                    const bson_oid_t *service_id)
 {
@@ -1897,8 +1894,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
 
    /* Do something with the error */
    if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
-      cleared_pool = _handle_sdam_app_error_command (
-         topology, td.ptr, server_id, generation, service_id, sd, max_wire_version, reply);
+      cleared_pool = _handle_sdam_app_error_command (topology, td.ptr, server_id, generation, service_id, sd, reply);
    } else {
       /* Invalidate the server that saw the error. */
       mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
@@ -1995,7 +1991,7 @@ mc_tpld_modify_begin (mongoc_topology_t *tpl)
    prev_td = mc_tpld_take_ref (tpl);
    new_td = mongoc_topology_description_new_copy (prev_td.ptr);
    mc_tpld_drop_ref (&prev_td);
-   return (mc_tpld_modification){
+   return (mc_tpld_modification) {
       .new_td = new_td,
       .topology = tpl,
    };

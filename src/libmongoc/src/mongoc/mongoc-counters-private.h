@@ -19,19 +19,20 @@
 #ifndef MONGOC_COUNTERS_PRIVATE_H
 #define MONGOC_COUNTERS_PRIVATE_H
 
-#include <bson/bson.h>
 #include <common-atomic-private.h>
 
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
 
 #ifdef __linux__
 #include <sched.h>
 #include <sys/sysinfo.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 #include <sched.h>
-#include <sys/types.h>
-#include <sys/sysctl.h>
 #include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
 #elif defined(__hpux__)
 #include <sys/pstat.h>
 #endif
@@ -192,21 +193,22 @@ enum {
 
 #else
 /* when counters are disabled, these functions are no-ops */
-#define COUNTER(ident, Category, Name, Description)                                     \
-   static BSON_INLINE void mongoc_counter_##ident##_add (BSON_MAYBE_UNUSED int64_t val) \
-   {                                                                                    \
-   }                                                                                    \
-   static BSON_INLINE void mongoc_counter_##ident##_inc (void)                          \
-   {                                                                                    \
-   }                                                                                    \
-   static BSON_INLINE void mongoc_counter_##ident##_dec (void)                          \
-   {                                                                                    \
-   }                                                                                    \
-   static BSON_INLINE void mongoc_counter_##ident##_reset (void)                        \
-   {                                                                                    \
-   }                                                                                    \
-   static BSON_INLINE void mongoc_counter_##ident##_count (void)                        \
-   {                                                                                    \
+#define COUNTER(ident, Category, Name, Description)                   \
+   static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
+   {                                                                  \
+      (void) val;                                                     \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_inc (void)        \
+   {                                                                  \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_dec (void)        \
+   {                                                                  \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_reset (void)      \
+   {                                                                  \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_count (void)      \
+   {                                                                  \
    }
 #include <mongoc/mongoc-counters.defs>
 #undef COUNTER

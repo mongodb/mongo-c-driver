@@ -18,7 +18,10 @@
 
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-error-private.h>
+
 #include <mongoc/uthash.h>
+
+#include <mlib/config.h>
 
 typedef struct {
    char *ns; // Hash key.
@@ -58,6 +61,8 @@ mcd_nsinfo_destroy (mcd_nsinfo_t *self)
    bson_free (self);
 }
 
+mlib_diagnostic_push ();
+mlib_msvc_warning (disable : 4702); // HASH_ADD_KEYPTR
 int32_t
 mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
 {
@@ -78,8 +83,12 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
 
    // Add to hash table.
    ns_to_index_t *entry = bson_malloc (sizeof (*entry));
-   *entry = (ns_to_index_t){.index = ns_index, .ns = bson_strdup (ns), .hh = {0}};
+   *entry = (ns_to_index_t) {.index = ns_index, .ns = bson_strdup (ns), .hh = {0}};
+
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    HASH_ADD_KEYPTR (hh, self->n2i, entry->ns, strlen (entry->ns), entry);
+   mlib_diagnostic_pop ();
 
    // Append to buffer.
    bson_t mcd_nsinfo_bson = BSON_INITIALIZER;
@@ -88,6 +97,7 @@ mcd_nsinfo_append (mcd_nsinfo_t *self, const char *ns, bson_error_t *error)
    bson_destroy (&mcd_nsinfo_bson);
    return ns_index;
 }
+mlib_diagnostic_pop ();
 
 int32_t
 mcd_nsinfo_find (const mcd_nsinfo_t *self, const char *ns)
@@ -96,7 +106,12 @@ mcd_nsinfo_find (const mcd_nsinfo_t *self, const char *ns)
    BSON_ASSERT_PARAM (ns);
 
    ns_to_index_t *found;
+
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    HASH_FIND_STR (self->n2i, ns, found);
+   mlib_diagnostic_pop ();
+
    if (found == NULL) {
       return -1;
    }

@@ -1,18 +1,18 @@
-#include <bson/bcon.h>
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-write-command-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
 
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
+#include <bson/bson-bcon.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static void

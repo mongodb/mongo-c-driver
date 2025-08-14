@@ -15,7 +15,7 @@
 # Demonstrates how to use the CMake 'find_package' mechanism to locate
 # and build against libbson.
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.15...4.0)
 
 project (hello_bson LANGUAGES C)
 

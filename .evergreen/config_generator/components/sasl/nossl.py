@@ -15,16 +15,17 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu2004',        'gcc',         None,   ['off']),
-    ('windows-vsCurrent', 'vs2017x64',   None,   ['off']),
-    ('debian10',          'gcc',         None,   ['off']),
+    # For test matrix.
+    ('rhel8-latest', 'gcc', None, ['off']),
+
+    # For compile only.
+    ('ubuntu2204', 'gcc', None, ['off']),
+    ('ubuntu2404', 'gcc', None, ['off']),
+    ('windows-vsCurrent', 'vs2017x64', None, ['off']),
 ]
 
 TEST_MATRIX = [
-    ('ubuntu2004', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-
-    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
-    ('debian10',   'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.2']), 
+    ('rhel8-latest', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

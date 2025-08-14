@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
+#include <bson/bson-context.h>
+
+#include <bson/bson-context-private.h>
+#include <common-atomic-private.h>
+#include <common-thread-private.h>
+
+#include <bson/bson-clock.h>
+#include <bson/bson-context.h>
+#include <bson/compat.h>
+#include <bson/memory.h>
+
 #include <mlib/intencode.h>
-#include <bson/bson-compat.h>
 
 #include <limits.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#include <common-atomic-private.h>
-#include <bson/bson-clock.h>
-#include <bson/bson-context.h>
-#include <bson/bson-context-private.h>
-#include <bson/bson-memory.h>
-#include <common-thread-private.h>
 
 
 #ifndef HOST_NAME_MAX
@@ -322,7 +325,6 @@ bson_context_destroy (bson_context_t *context) /* IN */
 {
    bson_free (context);
 }
-
 
 static BSON_ONCE_FUN (_bson_context_init_default)
 {

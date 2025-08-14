@@ -1,15 +1,17 @@
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "test-libmongoc.h"
-#include "mock_server/mock-rs.h"
+#include <mongoc/mongoc.h>
+
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 typedef struct {
@@ -451,13 +453,14 @@ test_exhaust (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   /* Find, getMore and killCursors commands spec: "The find command does not
-    * support the exhaust flag from OP_QUERY. Drivers that support exhaust MUST
-    * fallback to existing OP_QUERY wire protocol messages."
-    */
-   request = mock_server_receives_request (server);
-   reply_to_find_request (
-      request, MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST, 0, 0, "db.collection", "{}", false /* is_command */);
+   // Expect find command with exhaust flag. Reply with one document.
+   {
+      const bson_t *cmd = tmp_bson (BSON_STR ({"find" : "collection", "filter" : {}}));
+      request = mock_server_receives_msg (server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, cmd);
+      const bson_t *reply = tmp_bson (BSON_STR (
+         {"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.collection", "firstBatch" : [ {} ]}}));
+      reply_to_op_msg_request (request, MONGOC_OP_MSG_FLAG_NONE, reply);
+   }
 
    ASSERT (future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);

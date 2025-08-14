@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-#include "result.h"
+#include "./result.h"
+#include "./util.h"
+
+#include <common-string-private.h>
+#include <mongoc/mongoc-error-private.h>
 
 #include <bson/bson.h>
-#include "bsonutil/bson-parser.h"
-#include "bsonutil/bson-match.h"
-#include <mongoc/mongoc-error-private.h>
-#include "test-conveniences.h"
-#include "util.h"
-#include "TestSuite.h"
-#include <common-string-private.h>
+#include <bsonutil/bson-match.h>
+#include <bsonutil/bson-parser.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 struct _result_t {
    bool ok;
@@ -413,7 +415,7 @@ result_check (result_t *result, entity_map_t *em, bson_val_t *expect_result, bso
       }
 
       if (error_contains) {
-         if (strstr (result->error.message, error_contains) == NULL) {
+         if (mongoc_strcasestr (result->error.message, error_contains) == NULL) {
             test_set_error (
                error, "expected error to contain \"%s\", but got: \"%s\"", error_contains, result->error.message);
             goto done;

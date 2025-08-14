@@ -1,31 +1,34 @@
-#include <fcntl.h>
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-set-private.h>
+
+#include <mongoc/mongoc.h>
+
+#include <fcntl.h>
 #ifdef MONGOC_ENABLE_SSL
-#include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-ssl-private.h>
+
+#include <mongoc/mongoc-ssl.h>
 #endif
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <common-oid-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
-#include <common-oid-private.h>
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -3770,6 +3773,26 @@ test_failure_to_auth (void)
    mongoc_uri_destroy (uri);
 }
 
+// test_failure_to_auth_logs tests that auth failure logs at an error level.
+// Regression test for CDRIVER-5828.
+static void
+test_failure_to_auth_logs (void *unused)
+{
+   BSON_UNUSED (unused);
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   mongoc_uri_set_username (uri, "foo");
+   mongoc_uri_set_password (uri, "bar");
+   mongoc_client_t *client = test_framework_client_new_from_uri (uri, NULL);
+   test_framework_set_ssl_opts (client);
+   capture_logs (true);
+   bool ok = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, NULL /* error */);
+   ASSERT (!ok);
+   ASSERT_CAPTURED_LOG ("auth failure", MONGOC_LOG_LEVEL_ERROR, "Authentication failed");
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
+
 static void
 test_killCursors (void)
 {
@@ -3988,6 +4011,8 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Client/resends_handshake_on_network_error", test_mongoc_client_resends_handshake_on_network_error);
    TestSuite_Add (suite, "/Client/failure_to_auth", test_failure_to_auth);
+   TestSuite_AddFull (
+      suite, "/Client/failure_to_auth_logs", test_failure_to_auth_logs, NULL, NULL, test_framework_skip_if_no_auth);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    TestSuite_AddFull (suite,
                       "/Client/openssl/change_ssl_opts_before_ops",

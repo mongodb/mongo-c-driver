@@ -1,27 +1,30 @@
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-
 #include <common-thread-private.h>
 
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 int
 main (int argc, char *argv[])
 {
    TestSuite suite;
-   int ret;
 
-   test_libmongoc_init (&suite, "libmongoc", argc, argv);
+   test_libmongoc_init (&suite, argc, argv);
 
    /* libbson */
 
-#define TEST_INSTALL(FuncName)                 \
-   if (1) {                                    \
-      extern void FuncName (TestSuite *suite); \
-      FuncName (&suite);                       \
-   } else                                      \
+#define TEST_INSTALL(FuncName)                  \
+   if (1) {                                     \
+      mlib_diagnostic_push ();                  \
+      mlib_msvc_warning (disable : 4210);       \
+      extern void FuncName (TestSuite * suite); \
+      mlib_diagnostic_pop ();                   \
+      FuncName (&suite);                        \
+   } else                                       \
       ((void) 0)
 
    TEST_INSTALL (test_bcon_basic_install);
@@ -158,8 +161,10 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_service_gcp_install);
    TEST_INSTALL (test_mcd_nsinfo_install);
    TEST_INSTALL (test_bulkwrite_install);
+   TEST_INSTALL (test_mongoc_oidc_callback_install);
+   TEST_INSTALL (test_secure_channel_install);
 
-   ret = TestSuite_Run (&suite);
+   const int ret = TestSuite_Run (&suite);
 
    test_libmongoc_destroy (&suite);
 

@@ -15,12 +15,13 @@
  */
 
 
-#include <bson/bson-compat.h>
-#include <bson/bson-macros.h>
-#include <bson/bson-error.h>
 #include <bson/bson-iso8601-private.h>
-#include <bson/bson-json.h>
 #include <bson/bson-timegm-private.h>
+
+#include <bson/bson-json.h>
+#include <bson/compat.h>
+#include <bson/error.h>
+#include <bson/macros.h>
 
 
 static bool

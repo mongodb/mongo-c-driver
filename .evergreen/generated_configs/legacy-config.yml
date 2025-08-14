@@ -212,9 +212,16 @@ functions:
         set -o errexit
         COVERAGE=ON .evergreen/scripts/compile.sh
   build mongohouse:
+  - command: ec2.assume_role
+    params:
+      role_arn: ${aws_test_secrets_role}
   - command: shell.exec
     type: test
     params:
+      include_expansions_in_env:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
       shell: bash
       script: |-
         set -o errexit
@@ -790,57 +797,6 @@ tasks:
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
         export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
         .evergreen/scripts/build_snapshot_rpm.sh
-- name: install-uninstall-check-mingw
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
-      shell: bash
-      script: |-
-        set -o errexit
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(find_cmake_latest)"
-        export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-        cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-- name: install-uninstall-check-msvc
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
-      shell: bash
-      script: |-
-        set -o errexit
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(find_cmake_latest)"
-        export CC="Visual Studio 14 2015 Win64"
-        BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-        cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-- name: install-uninstall-check
-  commands:
-  - func: find-cmake-latest
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
-      shell: bash
-      script: |-
-        set -o errexit
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(find_cmake_latest)"
-        DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
-        BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
-        .evergreen/scripts/install-uninstall-check.sh
 - name: debug-compile-with-warnings
   commands:
   - func: find-cmake-latest
@@ -16140,8 +16096,15 @@ task_groups:
 - name: testazurekms_task_group
   setup_group:
   - func: fetch-det
+  - command: ec2.assume_role
+    params:
+      role_arn: ${aws_test_secrets_role}
   - command: shell.exec
     params:
+      include_expansions_in_env:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
       shell: bash
       script: |-
         set -o errexit
@@ -16236,10 +16199,8 @@ buildvariants:
   - link-with-cmake
   - link-with-cmake-ssl
   - link-with-cmake-snappy
+  - verify-headers
   - name: link-with-cmake-mac
-    distros:
-    - macos-14-arm64
-  - name: link-with-cmake-mac-deprecated
     distros:
     - macos-14-arm64
   - name: link-with-cmake-windows
@@ -16272,17 +16233,10 @@ buildvariants:
     distros:
     - windows-vsCurrent-large
   - check-headers
-  - install-uninstall-check
-  - name: install-uninstall-check-mingw
-    distros:
-    - windows-vsCurrent-large
-  - name: install-uninstall-check-msvc
-    distros:
-    - windows-vsCurrent-large
   - debug-compile-with-warnings
   - name: build-and-test-with-toolchain
     distros:
-    - debian10-small
+    - debian11-small
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
@@ -16328,15 +16282,6 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-sasl-openssl
   - .authentication-tests .openssl
-  - .latest .nossl
-- name: gcc83
-  display_name: GCC 8.3 (Debian 10.0)
-  expansions:
-    CC: gcc
-  run_on: debian10-test
-  tasks:
-  - release-compile
-  - debug-compile-nosasl-nossl
   - .latest .nossl
 - name: gcc102
   display_name: GCC 10.2 (Debian 11.0)
@@ -16576,7 +16521,7 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian10-small
+  run_on: debian11-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task

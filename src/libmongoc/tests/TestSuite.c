@@ -14,36 +14,43 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/mongoc.h>
 
+#include <bson/bson.h>
+
 #include <fcntl.h>
-#include <stdarg.h>
 
-#include <mongoc/mongoc-thread-private.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <mongoc/mongoc-util-private.h>
 #if !defined(_WIN32)
+#include <sys/time.h>
 #include <sys/types.h>
-#include <inttypes.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <sys/time.h>
+
+#include <inttypes.h>
 
 #else
 #include <windows.h>
 #endif
 
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include <common-string-private.h>
 #include <common-json-private.h>
+#include <common-string-private.h>
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
+
+#include <signal.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SKIP_LINE_BUFFER_SIZE 1024
 
@@ -104,14 +111,12 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
 #endif
 }
 
-
 static BSON_ONCE_FUN (_test_suite_ensure_mutex_once)
 {
    bson_mutex_init (&gTestMutex);
 
    BSON_ONCE_RETURN;
 }
-
 
 void
 TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
@@ -136,9 +141,12 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if ((0 == strcmp ("-f", argv[i])) || (0 == strcmp ("--no-fork", argv[i]))) {
          suite->flags |= TEST_NOFORK;
       } else if ((0 == strcmp ("-t", argv[i])) || (0 == strcmp ("--trace", argv[i]))) {
+         mlib_diagnostic_push ();
+         mlib_disable_constant_conditional_expression_warnings ();
          if (!MONGOC_TRACE_ENABLED) {
             test_error ("-t requires mongoc compiled with -DENABLE_TRACING=ON.");
          }
+         mlib_diagnostic_pop ();
          suite->flags |= TEST_TRACE;
       } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {
@@ -333,7 +341,7 @@ _TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func,
    Test *test;
    va_list ap;
    TestFnCtx *ctx = bson_malloc (sizeof (TestFnCtx));
-   *ctx = (TestFnCtx){.test_fn = func, .dtor = NULL};
+   *ctx = (TestFnCtx) {.test_fn = func, .dtor = NULL};
 
    va_start (ap, func);
    test = _V_TestSuite_AddFull (suite, name, TestSuite_AddHelper, _TestSuite_TestFnCtxDtor, ctx, ap);
@@ -1228,7 +1236,7 @@ test_bulkwriteexception_str (const mongoc_bulkwriteexception_t *bwe)
 int32_t
 get_current_connection_count (const char *host_and_port)
 {
-   char *uri_str = bson_strdup_printf ("mongodb://%s\n", host_and_port);
+   char *uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
    char *uri_str_with_auth = test_framework_add_user_password_from_env (uri_str);
    mongoc_client_t *client = mongoc_client_new (uri_str_with_auth);
    test_framework_set_ssl_opts (client);

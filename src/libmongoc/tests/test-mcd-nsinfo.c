@@ -1,7 +1,7 @@
 #include <mongoc/mcd-nsinfo.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h" // ASSERT_MATCH
+#include <TestSuite.h>
+#include <test-conveniences.h> // ASSERT_MATCH
 
 static void
 test_nsinfo_works (void)

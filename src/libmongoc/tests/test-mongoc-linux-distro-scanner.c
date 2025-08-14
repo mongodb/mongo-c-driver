@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-handshake-os-private.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #ifdef MONGOC_OS_IS_LINUX
 static void
@@ -216,6 +217,8 @@ test_distro_scanner_reads (void)
 void
 test_linux_distro_scanner_install (TestSuite *suite)
 {
+   BSON_UNUSED (suite);
+
 #ifdef MONGOC_OS_IS_LINUX
    TestSuite_Add (suite, "/LinuxDistroScanner/test_read_generic_release_file", test_read_generic_release_file);
    TestSuite_Add (suite, "/LinuxDistroScanner/test_read_key_value_file", test_read_key_value_file);

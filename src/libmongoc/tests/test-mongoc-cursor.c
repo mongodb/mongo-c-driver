@@ -1,18 +1,20 @@
-#include <mongoc/mongoc.h>
+#include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
-
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "mock_server/mock-rs.h"
-#include "mock_server/future-functions.h"
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
-#include "test-conveniences.h"
-#include <common-string-private.h>
+
+#include <mongoc/mongoc.h>
+
 #include <mlib/cmp.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-rs.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);
@@ -416,7 +418,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_FIND(prefix, fn)                                                          \
    if (1) {                                                                                   \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                    \
-      *helper = (make_cursor_helper_t){.ctor = _make_find_cursor};                            \
+      *helper = (make_cursor_helper_t) {.ctor = _make_find_cursor};                           \
       TestSuite_AddFull (suite, prefix "/find", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                     \
       ((void) 0)
@@ -424,7 +426,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_CMD(prefix, fn)                                                          \
    if (1) {                                                                                  \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                   \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor};                            \
+      *helper = (make_cursor_helper_t) {.ctor = _make_cmd_cursor};                           \
       TestSuite_AddFull (suite, prefix "/cmd", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                    \
       ((void) 0)
@@ -433,7 +435,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_ARRAY(prefix, fn)                                                          \
    if (1) {                                                                                    \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                     \
-      *helper = (make_cursor_helper_t){.ctor = _make_array_cursor};                            \
+      *helper = (make_cursor_helper_t) {.ctor = _make_array_cursor};                           \
       TestSuite_AddFull (suite, prefix "/array", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                      \
       ((void) 0)
@@ -441,7 +443,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_AGG(prefix, fn)                                                          \
    if (1) {                                                                                  \
       make_cursor_helper_t *const helper = bson_malloc (sizeof (*helper));                   \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor_from_agg};                   \
+      *helper = (make_cursor_helper_t) {.ctor = _make_cmd_cursor_from_agg};                  \
       TestSuite_AddFull (suite, prefix "/agg", fn, &bson_free, helper, TestSuite_CheckLive); \
    } else                                                                                    \
       ((void) 0)

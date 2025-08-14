@@ -56,7 +56,6 @@ IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 
 configure_flags_append "-DCMAKE_INSTALL_PREFIX=$(native-path "${install_dir}")"
 configure_flags_append "-DCMAKE_PREFIX_PATH=$(native-path "${install_dir}")"
-configure_flags_append "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF"
 configure_flags_append "-DENABLE_MAINTAINER_FLAGS=ON"
 
 configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION:-}"
@@ -98,17 +97,15 @@ CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 declare build_dir
 build_dir="cmake-build"
 
-if [[ "${CC}" =~ mingw ]]; then
+if [[ "${CC}" =~ 'gcc' ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
   env \
-    "CC=gcc" \
-    "CXX=g++" \
     "${cmake_binary:?}" \
     -S . \
     -B "${build_dir:?}" \
-    -G "MinGW Makefiles" \
+    -G "Ninja" \
     "${configure_flags[@]}" \
     "${extra_configure_flags[@]}"
 

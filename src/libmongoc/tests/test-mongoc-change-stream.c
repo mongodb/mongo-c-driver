@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-client-private.h>
-#include "mock_server/mock-server.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
 #include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-cursor-private.h>
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "json-test.h"
-#include "json-test-operations.h"
+
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <json-test-operations.h>
+#include <json-test.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #define DESTROY_CHANGE_STREAM(cursor_id)                                                                              \
    do {                                                                                                               \
@@ -66,16 +68,6 @@ _setup_for_resume (mongoc_change_stream_t *stream)
    ret = mongoc_client_command_simple_with_server_id (
       client, "admin", tmp_bson (cmd), NULL /* read prefs */, stream->cursor->server_id, NULL /* reply */, &error);
    ASSERT_OR_PRINT (ret, error);
-}
-
-
-static int
-test_framework_skip_if_not_single_version_5 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (!test_framework_is_replset () && !test_framework_is_mongos ()) ? 1 : 0;
 }
 
 static mongoc_collection_t *
@@ -715,6 +707,11 @@ test_change_stream_resumable_error (void)
    reply_to_request_simple (request, not_primary_err);
    request_destroy (request);
 
+   /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{ 'killCursors' : 'coll', 'cursors' : [ { '$numberLong': '124' } ] }"));
+   reply_to_request_with_ok_and_destroy (request);
+
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
    reply_to_request_simple (request, "{'cursor': {'id': 125, 'ns': 'db.coll','firstBatch': []},'ok': 1}");
@@ -723,6 +720,11 @@ test_change_stream_resumable_error (void)
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 125));
    reply_to_request_simple (request, not_primary_err);
    request_destroy (request);
+
+   /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{ 'killCursors' : 'coll', 'cursors' : [ { '$numberLong': '125' } ] }"));
+   reply_to_request_with_ok_and_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
@@ -761,6 +763,11 @@ test_change_stream_resumable_error (void)
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson (expected_msg, 123));
    reply_to_request_simple (request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
    request_destroy (request);
+
+   /* The "not primary" error does not cause the client to close connection. Expect a killCursors. */
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{ 'killCursors' : 'coll', 'cursors' : [ { '$numberLong': '123' } ] }"));
+   reply_to_request_with_ok_and_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_msg (server, MONGOC_MSG_NONE, watch_cmd);
@@ -1165,91 +1172,7 @@ typedef struct {
    bson_t agg_reply;
 } resume_ctx_t;
 
-#define RESUME_INITIALIZER           \
-   {                                 \
-      false, false, BSON_INITIALIZER \
-   }
-
-static void
-_resume_at_optime_started (const mongoc_apm_command_started_t *event)
-{
-   resume_ctx_t *ctx;
-
-   ctx = (resume_ctx_t *) mongoc_apm_command_started_get_context (event);
-   if (0 != strcmp (mongoc_apm_command_started_get_command_name (event), "aggregate")) {
-      return;
-   }
-
-   if (!ctx->has_initiated) {
-      ctx->has_initiated = true;
-      return;
-   }
-
-   ctx->has_resumed = true;
-
-   /* postBatchResumeToken (MongoDB 4.0.7+) supersedes operationTime. Since
-    * test_change_stream_resume_at_optime runs for wire version 7+, decide
-    * whether to skip operationTime assertion based on the command reply. */
-   if (!bson_has_field (&ctx->agg_reply, "cursor.postBatchResumeToken")) {
-      bson_value_t replied_optime, sent_optime;
-      match_ctx_t match_ctx = {{0}};
-
-      /* it should re-use the same optime on resume. */
-      bson_lookup_value (&ctx->agg_reply, "operationTime", &replied_optime);
-      bson_lookup_value (
-         mongoc_apm_command_started_get_command (event), "pipeline.0.$changeStream.startAtOperationTime", &sent_optime);
-      BSON_ASSERT (replied_optime.value_type == BSON_TYPE_TIMESTAMP);
-      BSON_ASSERT (match_bson_value (&sent_optime, &replied_optime, &match_ctx));
-      bson_value_destroy (&sent_optime);
-      bson_value_destroy (&replied_optime);
-   }
-}
-
-static void
-_resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
-{
-   resume_ctx_t *ctx;
-
-   ctx = (resume_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
-   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event), "aggregate")) {
-      bson_destroy (&ctx->agg_reply);
-      bson_copy_to (mongoc_apm_command_succeeded_get_reply (event), &ctx->agg_reply);
-   }
-}
-
-/* Test that "operationTime" in aggregate reply is used on resume */
-static void
-test_change_stream_resume_at_optime (void *test_ctx)
-{
-   mongoc_client_t *client = test_framework_new_default_client ();
-   mongoc_collection_t *coll;
-   mongoc_change_stream_t *stream;
-   const bson_t *doc;
-   bson_error_t error;
-   mongoc_apm_callbacks_t *callbacks;
-   resume_ctx_t ctx = RESUME_INITIALIZER;
-
-   BSON_UNUSED (test_ctx);
-
-   callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_command_started_cb (callbacks, _resume_at_optime_started);
-   mongoc_apm_set_command_succeeded_cb (callbacks, _resume_at_optime_succeeded);
-   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
-   coll = mongoc_client_get_collection (client, "db", "coll");
-   stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
-
-   _setup_for_resume (stream);
-   (void) mongoc_change_stream_next (stream, &doc);
-   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL), error);
-   BSON_ASSERT (ctx.has_initiated);
-   BSON_ASSERT (ctx.has_resumed);
-
-   bson_destroy (&ctx.agg_reply);
-   mongoc_change_stream_destroy (stream);
-   mongoc_collection_destroy (coll);
-   mongoc_apm_callbacks_destroy (callbacks);
-   mongoc_client_destroy (client);
-}
+#define RESUME_INITIALIZER {false, false, BSON_INITIALIZER}
 
 static void
 _resume_with_post_batch_resume_token_started (const mongoc_apm_command_started_t *event)
@@ -1393,40 +1316,6 @@ test_change_stream_client_watch (void *test_ctx)
    mongoc_client_destroy (client);
 }
 
-
-static int
-_skip_if_rs_version_less_than (const char *version)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   if (!test_framework_skip_if_not_replset ()) {
-      return 0;
-   }
-   if (test_framework_get_server_version () >= test_framework_str_to_version (version)) {
-      return 1;
-   }
-   return 0;
-}
-
-static int
-_skip_if_no_client_watch (void)
-{
-   return _skip_if_rs_version_less_than ("3.8.0");
-}
-
-static int
-_skip_if_no_db_watch (void)
-{
-   return _skip_if_rs_version_less_than ("3.8.0");
-}
-
-static int
-_skip_if_no_start_at_optime (void)
-{
-   return _skip_if_rs_version_less_than ("3.8.0");
-}
-
 static void
 _test_resume (const char *opts,
               const char *expected_change_stream_opts,
@@ -1444,7 +1333,7 @@ _test_resume (const char *opts,
    char *msg;
    const bson_t *doc = NULL;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_4_0);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
@@ -1740,77 +1629,6 @@ prose_test_11 (void *ctx)
    ASSERT (!bson_empty0 (resume_token));
    ASSERT (bson_compare (resume_token, &post_batch_expected->post_batch_resume_token) == 0);
 
-   bson_destroy (&opts);
-   mongoc_write_concern_destroy (wc);
-   mongoc_change_stream_destroy (stream);
-   mongoc_client_destroy (client);
-   mongoc_collection_destroy (coll);
-}
-
-
-void
-prose_test_12 (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   mongoc_change_stream_t *stream;
-   bson_error_t error;
-   const bson_t *next_doc = NULL;
-   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
-   bson_t opts = BSON_INITIALIZER;
-   const bson_t *resume_token;
-   bson_iter_t iter, child;
-   bson_t expected_token;
-   bson_t expected_doc;
-
-   BSON_UNUSED (ctx);
-
-   client = test_framework_new_default_client ();
-   ASSERT (client);
-
-   coll = drop_and_get_coll (client, "db", "coll_resume");
-   ASSERT (coll);
-
-   /* Set the batch size to 1 so we only get one document per call to next. */
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
-   ASSERT (stream);
-   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL), error);
-
-   mongoc_write_concern_set_wmajority (wc, 30000);
-   mongoc_write_concern_append (wc, &opts);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one (coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error), error);
-
-   /* Checking that a resume token is returned */
-   ASSERT (mongoc_change_stream_next (stream, &next_doc));
-   ASSERT (next_doc);
-   resume_token = mongoc_change_stream_get_resume_token (stream);
-   ASSERT (!bson_empty0 (resume_token));
-
-   /* Need to now check that we are getting back the _id of the last inserted
-    * document when we iterate to the last document */
-   bson_copy_to (next_doc, &expected_doc);
-   _check_doc_resume_token (&expected_doc, resume_token);
-
-   ASSERT (bson_iter_init_find (&iter, next_doc, "documentKey"));
-   ASSERT (bson_iter_recurse (&iter, &child));
-   ASSERT (bson_iter_find (&child, "_id") && bson_iter_int32 (&child) == 0);
-
-   /* Must check that getResumeToken returns resumeAfter correctly when
-    * specified. */
-   bson_copy_to (resume_token, &expected_token);
-   mongoc_change_stream_destroy (stream);
-   bson_destroy (&opts);
-   bson_init (&opts);
-   BSON_APPEND_DOCUMENT (&opts, "resumeAfter", &expected_token);
-
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
-   ASSERT (stream);
-
-   resume_token = mongoc_change_stream_get_resume_token (stream);
-   ASSERT (bson_equal (resume_token, &expected_token));
-
-   bson_destroy (&expected_doc);
-   bson_destroy (&expected_token);
    bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_change_stream_destroy (stream);
@@ -2257,7 +2075,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_single_server,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_single_version_5);
+                      test_framework_skip_if_not_single);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/track_resume_token",
@@ -2304,7 +2122,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      _skip_if_no_start_at_optime,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_failpoint);
 
    TestSuite_Add (suite, "/change_stream/server_selection_fails", test_change_stream_server_selection_fails);
@@ -2328,65 +2146,42 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_start_at_operation_time,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7,
-                      test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime);
-   TestSuite_AddFull (suite,
-                      "/change_stream/resume_at_optime",
-                      test_change_stream_resume_at_optime,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_rs_version_7,
-                      test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime,
-                      test_framework_skip_if_no_failpoint);
+                      test_framework_skip_if_not_replset,
+                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/change_stream/resume_with_post_batch_resume_token",
                       test_change_stream_resume_with_post_batch_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime,
                       test_framework_skip_if_no_failpoint);
+   TestSuite_AddFull (suite,
+                      "/change_stream/database",
+                      test_change_stream_database_watch,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset);
    TestSuite_AddFull (
-      suite, "/change_stream/database", test_change_stream_database_watch, NULL, NULL, _skip_if_no_db_watch);
-   TestSuite_AddFull (
-      suite, "/change_stream/client", test_change_stream_client_watch, NULL, NULL, _skip_if_no_client_watch);
+      suite, "/change_stream/client", test_change_stream_client_watch, NULL, NULL, test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite, "/change_stream/resume_with_first_doc", test_resume_cases);
    TestSuite_AddMockServerTest (suite,
                                 "/change_stream/resume_with_first_doc/post_batch_resume_token",
                                 test_resume_cases_with_post_batch_resume_token);
    TestSuite_AddFull (
-      suite, "/change_stream/error_null_doc", test_error_null_doc, NULL, NULL, _skip_if_no_client_watch);
-   TestSuite_AddFull (suite,
-                      "/change_stream/live/prose_test_11",
-                      prose_test_11,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset,
-                      test_framework_skip_if_max_wire_version_less_than_8);
-   TestSuite_AddFull (suite,
-                      "/change_stream/live/prose_test_12",
-                      prose_test_12,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset,
-                      test_framework_skip_if_max_wire_version_more_than_7);
-   TestSuite_AddFull (suite,
-                      "/change_stream/live/prose_test_13",
-                      prose_test_13,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset,
-                      _skip_if_no_start_at_optime);
+      suite, "/change_stream/error_null_doc", test_error_null_doc, NULL, NULL, test_framework_skip_if_not_replset);
+   TestSuite_AddFull (
+      suite, "/change_stream/live/prose_test_11", prose_test_11, NULL, NULL, test_framework_skip_if_not_replset);
+   // Prose test 12 is removed. C driver does not support server 4.0.7.
+   TestSuite_AddFull (
+      suite, "/change_stream/live/prose_test_13", prose_test_13, NULL, NULL, test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/change_stream/live/prose_test_14",
                       prose_test_14,
                       NULL,
                       NULL,
                       test_framework_skip_if_mongos,
-                      test_framework_skip_if_not_rs_version_7);
+                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest (suite, "/change_streams/prose_test_18", prose_test_18);
    TestSuite_AddFull (suite,

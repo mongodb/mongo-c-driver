@@ -15,23 +15,25 @@
  */
 
 
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-host-list-private.h>
+#include <test-libmongoc.h>
 
-#include <mongoc/mongoc-server-description.h>
+#include <common-atomic-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
-#include <common-string-private.h>
-#include <common-atomic-private.h>
+#include <mongoc/mongoc-server-description.h>
+#include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
@@ -1072,8 +1074,8 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       bson_free (compressors);
    }
 
-   // Required by test-atlas-executor. Not required by normal unified test
-   // runner, but make tests a little more resilient to transient errors.
+   // Setting this by default makes tests a little more resilient to transient errors and more consistent with other
+   // non-single-threaded Drivers which implicitly set this by default.
    add_option_to_uri_str (&uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
    return mcommon_string_from_append_destroy_with_steal (&uri_string);
@@ -1099,17 +1101,9 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 char *
 test_framework_get_uri_str (void)
 {
-   char *uri_str_no_auth;
-   char *uri_str;
-
-   if (test_framework_getenv_bool ("MONGOC_TEST_ATLAS")) {
-      // User and password is already embedded in URI.
-      return test_framework_get_uri_str_no_auth (NULL);
-   } else {
-      /* no_auth also contains compressors. */
-      uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
-      uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
-   }
+   /* no_auth also contains compressors. */
+   char *const uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
+   char *const uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
 
    bson_free (uri_str_no_auth);
 
@@ -1984,12 +1978,14 @@ int
 test_framework_skip_if_no_txns (void)
 {
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_replset () && test_framework_skip_if_max_wire_version_less_than_7 ()) {
+       test_framework_skip_if_not_replset ()) {
+      // Have crypto, sessions, and replica set. Proceed.
       return 1;
    }
 
    if (test_framework_skip_if_no_crypto () && test_framework_skip_if_no_sessions () &&
-       test_framework_skip_if_not_mongos () && test_framework_skip_if_max_wire_version_less_than_8 ()) {
+       test_framework_skip_if_not_mongos ()) {
+      // Have crypto, sessions, and sharded cluster. Proceed.
       return 1;
    }
 
@@ -2252,8 +2248,9 @@ test_framework_skip_if_not_replset (void)
       return (test_framework_max_wire_version_at_least (wv) && test_framework_is_replset ()) ? 0 : 1; \
    }
 
-WIRE_VERSION_CHECKS (7)
+/* wire version 8 begins with the 4.2 release. */
 WIRE_VERSION_CHECKS (8)
+/* wire version 9 begins with the 4.4 release. */
 WIRE_VERSION_CHECKS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECKS (13)
@@ -2550,7 +2547,7 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
 
 
 void
-test_libmongoc_init (TestSuite *suite, BSON_MAYBE_UNUSED const char *name, int argc, char **argv)
+test_libmongoc_init (TestSuite *suite, int argc, char **argv)
 {
 #if defined(_MSC_VER) && defined(_WIN64)
    SetUnhandledExceptionFilter (windows_exception_handler);

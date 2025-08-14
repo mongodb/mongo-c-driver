@@ -33,7 +33,7 @@ class CheckABICompliance(Function):
             display_name='ABI Compliance Check: ',
             local_files_include_filter='abi-compliance/compat_reports/**/compat_report.html',
             permissions='public-read',
-            remote_file='mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/',
+            remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/',
         ),
         s3_put(
             command_type=EvgCommandType.SYSTEM,
@@ -44,13 +44,9 @@ class CheckABICompliance(Function):
             display_name='ABI Compliance Check: ',
             local_files_include_filter='abi-compliance/logs/**/log.txt',
             permissions='public-read',
-            remote_file='mongo-c-driver/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/',
+            remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${task_id}/${execution}/abi-compliance-check/',
         ),
     ]
-
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
 
 
 def functions():

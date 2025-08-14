@@ -1,18 +1,19 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-bulk-operation-private.h>
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
 
-#include "test-libmongoc.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "test-conveniences.h"
-#include "mock_server/mock-rs.h"
 #include <mlib/cmp.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 typedef void (*update_fn) (mongoc_bulk_operation_t *bulk, const bson_t *selector, const bson_t *document, bool upsert);
@@ -4113,9 +4114,9 @@ _test_bulk_collation (bool w, bulkop op)
    request_t *request;
    future_t *future;
    bson_t *opts;
-   const char *expect_msg;
-   const char *expect_doc;
-   bool r;
+   const char *expect_msg = NULL;
+   const char *expect_doc = NULL;
+   bool r = false;
 
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
@@ -4467,9 +4468,9 @@ _test_bulk_let (bulkop op)
    bson_error_t error;
    request_t *request;
    future_t *future;
-   const char *expect_msg;
-   const char *expect_doc;
-   bool r;
+   const char *expect_msg = NULL;
+   const char *expect_doc = NULL;
+   bool r = false;
 
    mock_server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
@@ -4978,9 +4979,7 @@ test_bulk_install (TestSuite *suite)
                       test_bulk_write_multiple_errors,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_failpoint,
-                      /* Require server 4.2 for failCommand appName */
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddLive (suite, "/BulkOperation/set_client_after_operation", test_bulk_write_set_client_after_operation);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/set_client_updates_operation_id_when_client_changes",

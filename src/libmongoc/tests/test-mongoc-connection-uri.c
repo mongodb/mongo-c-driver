@@ -2,15 +2,14 @@
 
 //
 
-#include <bson/bson.h>
-
+#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <common-bson-dsl-private.h>
+#include <bson/bson.h>
 
-#include "json-test.h"
-#include "test-libmongoc.h"
-#include <mongoc/mongoc-read-concern-private.h>
+#include <json-test.h>
+#include <test-libmongoc.h>
 
 
 /*
@@ -92,7 +91,7 @@ run_uri_test (const char *uri_string,
          if (strchr (bson_iter_utf8 (&iter, NULL), '.')) {
             BSON_ASSERT (!uri);
             ASSERT_ERROR_CONTAINS (
-               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database name in URI");
+               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database specifier \"admin.");
             clear_captured_logs ();
             return;
          }
@@ -419,16 +418,12 @@ test_connection_uri_cb (void *scenario_vp)
       {.description = "replicaset, host and non-default port present",
        .reason = "libmongoc does not support proxies (CDRIVER-4187)"},
       {.description = "all options present", .reason = "libmongoc does not support proxies (CDRIVER-4187)"},
-      {.description = "(MONGODB-OIDC)",
-       .reason = "libmongoc does not-yet implement MONGODB-OIDC (CDRIVER-4489)",
-       .check_substring = true},
-      {.description = "Colon in a key value pair",
-       .reason = "libmongoc does not-yet implement MONGODB-OIDC (CDRIVER-4489)",
-       .check_substring = true},
       {.description = "Valid connection pool options are parsed correctly",
        .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
       {.description = "minPoolSize=0 does not error",
        .reason = "libmongoc does not support minPoolSize (CDRIVER-2390)"},
+      {.description = "should throw an exception if neither environment nor callbacks specified (MONGODB-OIDC)",
+       .reason = "libmongoc OIDC callbacks attach to MongoClient, which is not involved by this test"},
       {.description = NULL},
    };
 

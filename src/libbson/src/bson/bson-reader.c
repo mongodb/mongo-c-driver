@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-#include <mlib/intencode.h>
 #include <bson/bson.h>
 
-#include <errno.h>
+#include <mlib/intencode.h>
+
 #include <fcntl.h>
+
+#include <errno.h>
 #ifdef BSON_OS_WIN32
 #include <io.h>
 #include <share.h>
 #endif
-#include <stdlib.h>
-#include <string.h>
+#include <bson/bson-reader.h>
+#include <bson/memory.h>
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <bson/bson-reader.h>
-#include <bson/bson-memory.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 typedef enum {

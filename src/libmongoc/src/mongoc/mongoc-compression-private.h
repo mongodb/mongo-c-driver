@@ -22,6 +22,8 @@
 
 #include <bson/bson.h>
 
+#include <mlib/str.h>
+
 /* Compressor IDs */
 #define MONGOC_COMPRESSOR_NOOP_ID 0
 #define MONGOC_COMPRESSOR_NOOP_STR "noop"
@@ -43,7 +45,7 @@ size_t
 mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t size);
 
 bool
-mongoc_compressor_supported (const char *compressor);
+mongoc_compressor_supported (mstr_view compressor);
 
 const char *
 mongoc_compressor_id_to_name (int32_t compressor_id);

@@ -19,30 +19,31 @@
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-buffer-private.h>
-#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
-#include <mongoc/mongoc-read-prefs.h>
-#include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-opcode.h>
+#include <mongoc/mongoc-read-prefs.h>
+
+#include <bson/bson.h>
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl.h>
 #endif
 
-#include <mongoc/mongoc-stream.h>
-#include <mongoc/mongoc-topology-private.h>
-#include <mongoc/mongoc-write-concern.h>
 #include <mongoc/mongoc-crypt-private.h>
+#include <mongoc/mongoc-shared-private.h>
+#include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc-stream.h>
+#include <mongoc/mongoc-write-concern.h>
 
 BSON_BEGIN_DECLS
 
-/* version corresponding to server 4.0 release */
-#define WIRE_VERSION_4_0 7
 /* first version to support hint for "update" command */
 #define WIRE_VERSION_UPDATE_HINT 8
 /* version corresponding to server 4.2 release */
@@ -83,7 +84,7 @@ BSON_BEGIN_DECLS
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
-#define WIRE_VERSION_MIN WIRE_VERSION_4_0 /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
 struct _mongoc_collection_t;
@@ -168,7 +169,6 @@ void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t server_id,
                             int64_t cursor_id,
-                            int64_t operation_id,
                             const char *db,
                             const char *collection,
                             mongoc_client_session_t *cs);
@@ -209,12 +209,12 @@ mongoc_stream_t *
 mongoc_client_connect_tcp (int32_t connecttimeoutms, const mongoc_host_list_t *host, bson_error_t *error);
 
 mongoc_stream_t *
-mongoc_client_connect (bool buffered,
-                       bool use_ssl,
+mongoc_client_connect (bool use_ssl,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        void *openssl_ctx_void,
+                       mongoc_shared_ptr secure_channel_cred_ptr,
                        bson_error_t *error);
 
 

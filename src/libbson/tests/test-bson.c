@@ -15,21 +15,23 @@
  */
 
 
-#include <bson/bson.h>
-#include <bson/bcon.h>
 #include <bson/bson-private.h>
 #include <bson/validate-private.h>
-#include <fcntl.h>
-#include <time.h>
-
 #include <common-bson-dsl-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <bson/bson-bcon.h>
+#include <bson/bson.h>
 
 #include <mlib/ckdint.h>
-#include <mlib/test.h>
 #include <mlib/intencode.h>
+#include <mlib/test.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+
+#include <fcntl.h>
+
+#include <time.h>
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);
@@ -1950,8 +1952,8 @@ test_bson_regex_lengths (void)
       &new, "0_________1_________2_________3___4", -1, "0_________1_________2_________3_________4_________5___4", "i");
 
    ASSERT (new.len == 121);
-   ASSERT (new.flags &BSON_FLAG_STATIC);
-   ASSERT (!(new.flags &BSON_FLAG_INLINE));
+   ASSERT (new.flags & BSON_FLAG_STATIC);
+   ASSERT (!(new.flags & BSON_FLAG_INLINE));
 
    bson_destroy (&new);
 }
@@ -2292,6 +2294,8 @@ test_bson_dsl_visit (void)
    bson_free (path);
 }
 
+mlib_diagnostic_push ();
+mlib_msvc_warning (disable : 4702); // do (abort())
 static void
 test_bson_dsl_predicate (void)
 {
@@ -2324,12 +2328,12 @@ test_bson_dsl_predicate (void)
       require (key ("string"), //
                require (type (utf8)),
                require (strEqual ("hello")),
-               require (not(strEqual ("goodbye"))),
+               require (not (strEqual ("goodbye"))),
                require (iStrEqual ("HELLO")),
-               require (not(iStrEqual ("GOODBYE")))),
+               require (not (iStrEqual ("GOODBYE")))),
       require (key ("doc"),
                require (type (doc)),
-               require (not(empty)),
+               require (not (empty)),
                visitEach (require (key ("hello")), require (type (null)))),
       require (key ("null"), require (type (null))),
       require (key ("empty_string"), require (type (utf8))),
@@ -2353,6 +2357,7 @@ test_bson_dsl_predicate (void)
       visitOthers (if (key ("unhandled"), then (do (saw_other = true)), else (do (abort ())))));
    BSON_ASSERT (saw_other);
 }
+mlib_diagnostic_pop ();
 
 static void
 do_assert_bson_equal (const bson_t *actual, const bson_t *expected, const char *file, int line)
@@ -2775,9 +2780,9 @@ test_bson_array_builder (void)
          bson_t b;
          bson_array_builder_t *bab = bson_array_builder_new ();
          {
-            bson_t *b = TMP_BSON_FROM_JSON ({"A" : 1});
+            bson_t *bb = TMP_BSON_FROM_JSON ({"A" : 1});
             bson_iter_t iter;
-            ASSERT (bson_iter_init_find (&iter, b, "A"));
+            ASSERT (bson_iter_init_find (&iter, bb, "A"));
             ASSERT (bson_array_builder_append_iter (bab, &iter));
          }
          ASSERT (bson_array_builder_build (bab, &b));

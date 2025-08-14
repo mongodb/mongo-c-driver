@@ -1,21 +1,22 @@
-#include <bson/bcon.h>
 #include <common-bson-dsl-private.h>
-#include <mongoc/mongoc.h>
+#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
 
-#include "TestSuite.h"
+#include <mongoc/mongoc.h>
 
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
+#include <bson/bson-bcon.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 #include <inttypes.h>
 
@@ -4003,19 +4004,11 @@ _test_update_and_replace (bool is_replace, bool is_multi)
       ret =
          fn (coll, tmp_bson ("{'_id': 6}"), update, tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"), &reply, &err);
 
-      if (test_framework_max_wire_version_at_least (6)) {
-         ASSERT_OR_PRINT (ret, err);
-         ASSERT_MATCH (&reply,
-                       "{'modifiedCount': 1, 'matchedCount': 1, "
-                       "'upsertedId': {'$exists': false}}");
-         _test_docs_in_coll_matches (coll, tmp_bson ("{'_id':6}"), "{'a': [{'x':1},{'x':3}]}", 1);
-      } else {
-         BSON_ASSERT (!ret);
-         ASSERT_ERROR_CONTAINS (err,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                                "The selected server does not support array filters");
-      }
+      ASSERT_OR_PRINT (ret, err);
+      ASSERT_MATCH (&reply,
+                    "{'modifiedCount': 1, 'matchedCount': 1, "
+                    "'upsertedId': {'$exists': false}}");
+      _test_docs_in_coll_matches (coll, tmp_bson ("{'_id':6}"), "{'a': [{'x':1},{'x':3}]}", 1);
 
       bson_destroy (&reply);
 
@@ -4931,12 +4924,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/regex", test_regex);
    TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
-   TestSuite_AddFull (suite,
-                      "/Collection/update_pipeline",
-                      test_update_pipeline,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite, "/Collection/update_pipeline", test_update_pipeline, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
    TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (

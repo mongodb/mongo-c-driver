@@ -18,28 +18,31 @@
 
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
+#include <unistd.h>
 #endif
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
-#include <mongoc/mongoc-linux-distro-scanner-private.h>
-#include <mongoc/mongoc-handshake.h>
+#include <common-bson-dsl-private.h>
+#include <common-string-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-compiler-private.h>
 #include <mongoc/mongoc-handshake-os-private.h>
 #include <mongoc/mongoc-handshake-private.h>
-#include <mongoc/mongoc-client.h>
-#include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-error.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mongoc/mongoc-version.h>
+#include <mongoc/mongoc-linux-distro-scanner-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <common-bson-dsl-private.h>
-#include <common-string-private.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-handshake.h>
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-version.h>
+
 #include <mlib/cmp.h>
+#include <mlib/config.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
@@ -178,9 +181,12 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS);
 #endif
 
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (MONGOC_TRACE_ENABLED) {
       _set_bit (bf, byte_count, MONGOC_MD_FLAG_TRACE);
    }
+   mlib_diagnostic_pop ();
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION);
@@ -190,9 +196,12 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH);
 #endif
 
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (MONGOC_SRV_ENABLED) {
       _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SRV);
    }
+   mlib_diagnostic_pop ();
 
    mcommon_string_append_t append;
    mcommon_string_set_append (mcommon_string_new_with_capacity ("0x", 2, 2 + byte_count * 2), &append);
@@ -275,9 +284,10 @@ _get_os_name (void)
       return bson_strndup (system_info.sysname, HANDSHAKE_OS_NAME_MAX);
    }
 
-#endif
-
    return NULL;
+#else
+   return NULL;
+#endif
 }
 
 static char *
@@ -348,26 +358,10 @@ _get_system_info (mongoc_handshake_t *handshake)
 }
 
 static void
-_free_system_info (mongoc_handshake_t *handshake)
-{
-   bson_free (handshake->os_type);
-   bson_free (handshake->os_name);
-   bson_free (handshake->os_version);
-   bson_free (handshake->os_architecture);
-}
-
-static void
 _get_driver_info (mongoc_handshake_t *handshake)
 {
    handshake->driver_name = bson_strndup ("mongoc", HANDSHAKE_DRIVER_NAME_MAX);
    handshake->driver_version = bson_strndup (MONGOC_VERSION_S, HANDSHAKE_DRIVER_VERSION_MAX);
-}
-
-static void
-_free_driver_info (mongoc_handshake_t *handshake)
-{
-   bson_free (handshake->driver_name);
-   bson_free (handshake->driver_version);
 }
 
 static void
@@ -377,9 +371,19 @@ _set_platform_string (mongoc_handshake_t *handshake)
 }
 
 static void
-_free_env_info (mongoc_handshake_t *handshake)
+_get_container_info (mongoc_handshake_t *handshake)
 {
-   bson_free (handshake->env_region);
+   char *kubernetes_env = _mongoc_getenv ("KUBERNETES_SERVICE_HOST");
+   handshake->kubernetes = kubernetes_env;
+
+   handshake->docker = false;
+#ifdef _WIN32
+   handshake->docker = (_access_s ("C:\\.dockerenv", 0) == 0);
+#else
+   handshake->docker = (access ("/.dockerenv", F_OK) == 0);
+#endif
+
+   bson_free (kubernetes_env);
 }
 
 static void
@@ -505,14 +509,6 @@ _set_flags (mongoc_handshake_t *handshake)
    handshake->flags = mcommon_string_from_append_destroy_with_steal (&append);
 }
 
-static void
-_free_platform_string (mongoc_handshake_t *handshake)
-{
-   bson_free (handshake->platform);
-   bson_free (handshake->compiler_info);
-   bson_free (handshake->flags);
-}
-
 void
 _mongoc_handshake_init (void)
 {
@@ -520,6 +516,7 @@ _mongoc_handshake_init (void)
    _get_driver_info (_mongoc_handshake_get ());
    _set_platform_string (_mongoc_handshake_get ());
    _get_env_info (_mongoc_handshake_get ());
+   _get_container_info (_mongoc_handshake_get ());
    _set_compiler_info (_mongoc_handshake_get ());
    _set_flags (_mongoc_handshake_get ());
 
@@ -531,11 +528,17 @@ void
 _mongoc_handshake_cleanup (void)
 {
    mongoc_handshake_t *h = _mongoc_handshake_get ();
-   _free_system_info (h);
-   _free_driver_info (h);
-   _free_platform_string (h);
-   _free_env_info (h);
-   *h = (mongoc_handshake_t){0};
+   bson_free (h->os_type);
+   bson_free (h->os_name);
+   bson_free (h->os_version);
+   bson_free (h->os_architecture);
+   bson_free (h->driver_name);
+   bson_free (h->driver_version);
+   bson_free (h->platform);
+   bson_free (h->compiler_info);
+   bson_free (h->flags);
+   bson_free (h->env_region);
+   *h = (mongoc_handshake_t) {0};
 
    bson_mutex_destroy (&gHandshakeLock);
 }
@@ -692,7 +695,11 @@ _mongoc_handshake_build_doc_with_application (const char *appname)
                     doc (kv ("name", cstr (env_name)),
                          if (md->env_timeout_sec.set, then (kv ("timeout_sec", int32 (md->env_timeout_sec.value)))),
                          if (md->env_memory_mb.set, then (kv ("memory_mb", int32 (md->env_memory_mb.value)))),
-                         if (md->env_region, then (kv ("region", cstr (md->env_region)))))))));
+                         if (md->env_region, then (kv ("region", cstr (md->env_region)))))))),
+      if (md->kubernetes || md->docker,
+          then (kv ("container",
+                    doc (if (md->docker, then (kv ("runtime", cstr ("docker")))),
+                         if (md->kubernetes, then (kv ("orchestrator", cstr ("kubernetes")))))))));
 
    if (md->platform) {
       _append_platform_field (doc, md->platform, false);

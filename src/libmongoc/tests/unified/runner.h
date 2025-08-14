@@ -17,12 +17,15 @@
 #ifndef UNIFIED_RUNNER_H
 #define UNIFIED_RUNNER_H
 
-#include <bson/bson.h>
-#include "bsonutil/bson-parser.h"
-#include "entity-map.h"
+#include "./entity-map.h"
+
 #include <mongoc/mongoc-array-private.h>
-#include "test-conveniences.h"
-#include "TestSuite.h"
+
+#include <bson/bson.h>
+#include <bsonutil/bson-parser.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 /* test_runner_t, test_file_t, and test_t model the types described in the "Test
  * Runner Implementation" section of the Unified Test Format specification. */
@@ -63,6 +66,7 @@ typedef struct {
    entity_map_t *entity_map;
    failpoint_t *failpoints;
    bool loop_operation_executed;
+   bson_t *cluster_time_after_initial_data;
 } test_t;
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */

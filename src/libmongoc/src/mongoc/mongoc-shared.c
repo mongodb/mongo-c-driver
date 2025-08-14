@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#include <common-atomic-private.h>
+#include <common-thread-private.h>
 #include <mongoc/mongoc-shared-private.h>
 
-#include <common-thread-private.h>
 #include <bson/bson.h>
-#include <common-atomic-private.h>
+
+#include <mlib/config.h>
 
 typedef struct _mongoc_shared_ptr_aux {
    int refcount;

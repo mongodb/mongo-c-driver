@@ -1,8 +1,11 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include "TestSuite.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 
 static void
@@ -64,12 +67,15 @@ test_lowercase_utf8 (void)
 static void
 test_wire_server_versions (void)
 {
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    /* Ensure valid inclusive range. */
    ASSERT_WITH_MSG (WIRE_VERSION_MIN <= WIRE_VERSION_MAX,
                     "WIRE_VERSION_MAX (%d) must be greater than or equal to "
                     "WIRE_VERSION_MIN (%d)",
                     WIRE_VERSION_MAX,
                     WIRE_VERSION_MIN);
+   mlib_diagnostic_pop ();
 
    /* Bumping WIRE_VERSION_MAX must be accompanied by an update to
     * `_mongoc_wire_version_to_server_version`. */
@@ -89,9 +95,8 @@ static void
 test_bin_to_hex (void)
 {
    const char *bin = "foobar";
-   const char *expect = "666f6f626172";
-
-   char *got = bin_to_hex ((const uint8_t *) bin, (uint32_t) strlen (bin));
+   const char *expect = "666F6F626172";
+   char *got = bin_to_hex ((const uint8_t *) bin, strlen (bin));
    ASSERT_CMPSTR (got, expect);
    bson_free (got);
 }
@@ -99,14 +104,30 @@ test_bin_to_hex (void)
 static void
 test_hex_to_bin (void)
 {
-   const char *hexstr = "666f6f62617200";
    const char *expect = "foobar";
+   size_t len;
 
-   uint32_t len;
-   uint8_t *got = hex_to_bin (hexstr, &len);
-   ASSERT_CMPSTR ((const char *) got, expect);
-   ASSERT_CMPUINT32 (len, ==, 7);
-   bson_free (got);
+   // Test lowercase:
+   {
+      const char *hexstr = "666f6f62617200";
+      uint8_t *got = hex_to_bin (hexstr, &len);
+      ASSERT_CMPSTR ((const char *) got, expect);
+      ASSERT_CMPSIZE_T (len, ==, 7);
+      bson_free (got);
+   }
+
+   // Test uppercase:
+   {
+      const char *hexstr = "666F6F62617200";
+      uint8_t *got = hex_to_bin (hexstr, &len);
+      ASSERT_CMPSTR ((const char *) got, expect);
+      ASSERT_CMPSIZE_T (len, ==, 7);
+      bson_free (got);
+   }
+
+   ASSERT_WITH_MSG (!hex_to_bin ("  66", &len), "whitespace is an error");
+   ASSERT_WITH_MSG (!hex_to_bin ("666", &len), "non-even number of digits is an error");
+   ASSERT_WITH_MSG (!hex_to_bin ("ZZ", &len), "non-hex digits is an error");
 }
 
 void

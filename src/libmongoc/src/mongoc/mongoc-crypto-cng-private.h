@@ -16,14 +16,20 @@
 
 #include <mongoc/mongoc-prelude.h>
 
+#include <mongoc/mongoc-crypto-private.h>
+
+#include <bson/bson.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
+
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
 
 #ifndef MONGOC_CRYPTO_CNG_PRIVATE_H
 #define MONGOC_CRYPTO_CNG_PRIVATE_H
 
-
 #include <mongoc/mongoc-config.h>
-
 
 BSON_BEGIN_DECLS
 
@@ -42,7 +48,6 @@ mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
                                     uint32_t iterations,
                                     size_t output_len,
                                     unsigned char *output);
-
 
 void
 mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
@@ -81,7 +86,6 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
                           const unsigned char *input,
                           const size_t input_len,
                           unsigned char *hash_out);
-
 
 BSON_END_DECLS
 

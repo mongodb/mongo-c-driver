@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
-#include <bson/bson.h>
 #include <mongoc/mongoc.h>
+
+#include <bson/bson.h>
+
+#include <stdint.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
 #endif
 
 #include <mongoc/mongoc-client-private.h>
-#include <mongoc/mongoc-handshake.h>
 #include <mongoc/mongoc-handshake-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
+#include <mongoc/mongoc-handshake.h>
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 /*
  * Call this before any test which uses mongoc_handshake_data_append, to
@@ -394,6 +399,7 @@ clear_faas_env (void)
    ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", ""));
    ASSERT (_mongoc_setenv ("FUNCTIONS_WORKER_RUNTIME", ""));
    ASSERT (_mongoc_setenv ("K_SERVICE", ""));
+   ASSERT (_mongoc_setenv ("KUBERNETES_SERVICE_HOST", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_MEMORY_MB", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_TIMEOUT_SEC", ""));
    ASSERT (_mongoc_setenv ("FUNCTION_REGION", ""));
@@ -635,6 +641,28 @@ test_aws_not_lambda (void *test_ctx)
    _handshake_check_required_fields (doc);
 
    ASSERT (!bson_has_field (doc, "env"));
+
+   bson_destroy (doc);
+   clear_faas_env ();
+   _reset_handshake ();
+}
+
+static void
+test_aws_and_container (void *test_ctx)
+{
+   BSON_UNUSED (test_ctx);
+   ASSERT (_mongoc_setenv ("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT (_mongoc_setenv ("AWS_REGION", "us-east-2"));
+   ASSERT (_mongoc_setenv ("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "1024"));
+   ASSERT (_mongoc_setenv ("KUBERNETES_SERVICE_HOST", "1"));
+
+   _override_host_platform_os ();
+   bson_t *doc = _get_handshake_document (true);
+   _handshake_check_required_fields (doc);
+
+   ASSERT_CMPSTR (bson_lookup_utf8 (doc, "container.orchestrator"), "kubernetes");
+   ASSERT_CMPSTR (bson_lookup_utf8 (doc, "env.name"), "aws.lambda");
+   _handshake_check_env (doc, default_memory_mb, 0, "us-east-2");
 
    bson_destroy (doc);
    clear_faas_env ();
@@ -1257,9 +1285,12 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
 #endif
 
+   mlib_diagnostic_push ();
+   mlib_disable_constant_conditional_expression_warnings ();
    if (MONGOC_TRACE_ENABLED) {
       BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
    }
+   mlib_diagnostic_pop ();
 
    // Check that `MONGOC_MD_FLAG_ENABLE_ICU` is always unset. libicu dependency
    // was removed in CDRIVER-4680.
@@ -1388,6 +1419,12 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/MongoDB/handshake/faas/aws_not_lambda",
                       test_aws_not_lambda,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/MongoDB/handshake/faas/aws_and_container",
+                      test_aws_and_container,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_setenv);

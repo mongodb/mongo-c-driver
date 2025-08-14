@@ -279,51 +279,6 @@ all_tasks = [
             shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
         ],
     ),
-    NamedTask(
-        "install-uninstall-check-mingw",
-        commands=[
-            func("find-cmake-latest"),
-            shell_mongoc(
-                r"""
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(find_cmake_latest)"
-                export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd""",
-                include_expansions_in_env=["distro_id"],
-            )
-        ],
-    ),
-    NamedTask(
-        "install-uninstall-check-msvc",
-        commands=[
-            func("find-cmake-latest"),
-            shell_mongoc(
-                r"""
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(find_cmake_latest)"
-                export CC="Visual Studio 14 2015 Win64"
-                BSON_ONLY=1 cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd
-                cmd.exe /c .\\.evergreen\\scripts\\install-uninstall-check-windows.cmd""",
-                include_expansions_in_env=["distro_id"],
-            )
-        ],
-    ),
-    NamedTask(
-        "install-uninstall-check",
-        commands=[
-            func("find-cmake-latest"),
-            shell_mongoc(
-                r"""
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(find_cmake_latest)"
-                DESTDIR="$(pwd)/dest" .evergreen/scripts/install-uninstall-check.sh
-                BSON_ONLY=1 .evergreen/scripts/install-uninstall-check.sh
-                .evergreen/scripts/install-uninstall-check.sh""",
-                include_expansions_in_env=["distro_id"],
-            )
-        ],
-    ),
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
     CompileTask(
         "debug-compile-nosasl-openssl-1.0.1",

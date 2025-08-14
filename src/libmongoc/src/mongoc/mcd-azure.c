@@ -18,6 +18,7 @@
 
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-util-private.h>
+
 #include <mlib/cmp.h>
 
 #define AZURE_API_VERSION "2018-02-01"
@@ -80,7 +81,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
    }
 
    // Zero the output
-   *out = (mcd_azure_access_token){0};
+   *out = (mcd_azure_access_token) {0};
 
    // Parse the JSON data
    bson_t bson;
@@ -112,7 +113,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
                          json);
    } else {
       // Set the output, duplicate each string
-      *out = (mcd_azure_access_token){
+      *out = (mcd_azure_access_token) {
          .access_token = bson_strdup (access_token),
          .resource = bson_strdup (resource),
          .token_type = bson_strdup (token_type),
@@ -165,7 +166,7 @@ mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
    bool okay = false;
 
    // Clear the output
-   *out = (mcd_azure_access_token){0};
+   *out = (mcd_azure_access_token) {0};
 
    mongoc_http_response_t resp;
    _mongoc_http_response_init (&resp);

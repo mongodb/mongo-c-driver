@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-uri-private.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static void
 add_multiple_mongoses (mongoc_uri_t *uri)
@@ -174,7 +175,6 @@ test_mongos_pinning_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
 
    TestSuite_AddFull (suite,
@@ -184,6 +184,5 @@ test_mongos_pinning_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
 }

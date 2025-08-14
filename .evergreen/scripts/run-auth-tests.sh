@@ -7,7 +7,7 @@ set +o xtrace # Don't echo commands
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
-. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
+. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" platform paths
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -24,12 +24,20 @@ secrets_dir="$(to_absolute "${mongoc_dir}/../secrets")"
 mkdir -p "${secrets_dir}"
 chmod 700 "${secrets_dir}"
 
-# Create certificate to test X509 auth with Atlas:
+# Create certificate to test X509 auth with Atlas on cloud-prod:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
 echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
 # Fix path on Windows:
 if $IS_WINDOWS; then
-    atlas_x509_path="$(cygpath -m "${secrets_dir:?}/atlas_x509.pem")"
+    atlas_x509_path="$(cygpath -m "${atlas_x509_path}")"
+fi
+
+# Create certificate to test X509 auth with Atlas on cloud-dev
+atlas_x509_dev_path="${secrets_dir:?}/atlas_x509_dev.pem"
+echo "${atlas_x509_dev_cert_base64:?}" | base64 --decode > "${atlas_x509_dev_path:?}"
+# Fix path on Windows:
+if $IS_WINDOWS; then
+    atlas_x509_dev_path="$(cygpath -m "${atlas_x509_dev_path}")"
 fi
 
 # Create Kerberos config and keytab files.
@@ -127,11 +135,27 @@ elif command -v otool >/dev/null; then
   LD_LIBRARY_PATH="${openssl_lib_prefix}" otool -L "${test_gssapi}" | grep "libssl" || true
 fi
 
+maybe_skip() {
+  if true; then
+    # TODO: Remove if-block when resolving CDRIVER-5995.
+    echo "Skipping test until DEVPROD-9029 is resolved."
+    return 
+  fi
+
+  if $IS_ZSERIES; then
+    # TODO: Remove if-block when resolving CDRIVER-5990.
+    echo "Skipping test until DEVPROD-16954 is resolved."
+    return
+  fi
+  # Run the test command:
+  "$@"
+}
+
 if [[ "${ssl}" != "OFF" ]]; then
   # FIXME: CDRIVER-2008 for the cygwin check
   if [[ "${OSTYPE}" != "cygwin" ]]; then
     echo "Authenticating using X.509"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout}"
   fi
   echo "Connecting to Atlas Free Tier"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_free:?}&${c_timeout}"
@@ -171,24 +195,27 @@ if [[ "${ssl}" != "OFF" ]]; then
     LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_serverless:?}&${c_timeout}"
   fi
 
-  echo "Connecting to Atlas with X509"
+  echo "Connecting to Atlas (cloud-prod) with X509"
   LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_x509:?}&tlsCertificateKeyFile=${atlas_x509_path}&${c_timeout}"
+
+  echo "Connecting to Atlas (cloud-dev) with X509"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "${atlas_x509_dev:?}&tlsCertificateKeyFile=${atlas_x509_dev_path}&${c_timeout}"
 
 fi
 
 echo "Authenticating using PLAIN"
-LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_plain:?}@${auth_host}/?authMechanism=PLAIN&${c_timeout}"
+LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_plain:?}@${auth_host}/?authMechanism=PLAIN&${c_timeout}"
 
 echo "Authenticating using default auth mechanism"
 # Though the auth source is named "mongodb-cr", authentication uses the default mechanism (currently SCRAM-SHA-1).
-LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_mongodbcr:?}@${auth_host}/mongodb-cr?${c_timeout}"
+LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_mongodbcr:?}@${auth_host}/mongodb-cr?${c_timeout}"
 
 if [[ "${sasl}" != "OFF" ]]; then
   echo "Authenticating using GSSAPI"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_gssapi:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_gssapi:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
 
   echo "Authenticating with CANONICALIZE_HOST_NAME"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout}"
 
   declare ld_preload="${LD_PRELOAD:-}"
   if [[ "${ASAN:-}" == "on" ]]; then
@@ -196,13 +223,13 @@ if [[ "${sasl}" != "OFF" ]]; then
   fi
 
   echo "Test threaded GSSAPI auth"
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" MONGOC_TEST_GSSAPI_HOST="${auth_host}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi}" LD_PRELOAD="${ld_preload:-}" "${test_gssapi}"
+  LD_LIBRARY_PATH="${openssl_lib_prefix}" MONGOC_TEST_GSSAPI_HOST="${auth_host}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi}" LD_PRELOAD="${ld_preload:-}" maybe_skip "${test_gssapi}"
   echo "Threaded GSSAPI auth OK"
 
   if [[ "${OSTYPE}" == "cygwin" ]]; then
     echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_crossrealm:?}@${auth_host}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_crossrealm:?}@${auth_host}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout}"
     echo "Authenticating using GSSAPI (UTF-8 credentials)"
-    LD_LIBRARY_PATH="${openssl_lib_prefix}" "${ping}" "mongodb://${auth_gssapi_utf8:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" maybe_skip "${ping}" "mongodb://${auth_gssapi_utf8:?}@${auth_host}/?authMechanism=GSSAPI&${c_timeout}"
   fi
 fi

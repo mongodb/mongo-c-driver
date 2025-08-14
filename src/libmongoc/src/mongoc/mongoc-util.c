@@ -18,22 +18,25 @@
 #define _CRT_RAND_S
 #endif
 
-#include <string.h>
+#include <common-md5-private.h>
+#include <common-thread-private.h>
+#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
+#include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-rand-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-sleep.h>
 
 #include <bson/bson.h>
 
-#include <common-md5-private.h>
-#include <common-thread-private.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-rand-private.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-client.h>
-#include <mongoc/mongoc-client-private.h> // WIRE_VERSION_* macros.
-#include <mongoc/mongoc-client-session-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-sleep.h>
 #include <mlib/cmp.h>
+#include <mlib/intencode.h>
 #include <mlib/loop.h>
+
+#include <string.h>
 
 /**
  * ! NOTE
@@ -54,6 +57,8 @@ _mongoc_rand_simple (unsigned int *seed)
 {
 #ifdef _WIN32
    /* ignore the seed */
+   BSON_UNUSED (seed);
+
    unsigned int ret = 0;
    errno_t err;
 
@@ -290,7 +295,7 @@ _mongoc_wire_version_to_server_version (int32_t version)
       return "3.4";
    case 6:
       return "3.6";
-   case WIRE_VERSION_4_0:
+   case 7:
       return "4.0";
    case WIRE_VERSION_4_2:
       return "4.2";
@@ -531,22 +536,52 @@ mongoc_lowercase (const char *src, char *buf /* OUT */)
    }
 }
 
-bool
-mongoc_parse_port (uint16_t *port, const char *str)
+void
+mongoc_lowercase_inplace (char *src)
 {
-   unsigned long ul_port;
+   for (; *src; ++src) {
+      /* UTF8 non-ascii characters have a 1 at the leftmost bit. If this is the
+       * case, just leave as-is */
+      if ((*src & (0x1 << 7)) == 0) {
+         *src = (char) tolower (*src);
+      }
+   }
+}
 
-   ul_port = strtoul (str, NULL, 10);
+bool
+_mongoc_parse_port (mstr_view spelling, uint16_t *out, bson_error_t *error)
+{
+   bson_error_reset (error);
+   // Parse a strict natural number
+   uint64_t u = 0;
+   int ec = mlib_nat64_parse (spelling, 10, &u);
 
-   if (ul_port == 0 || ul_port > UINT16_MAX) {
-      /* Parse error or port number out of range. mongod prohibits port 0. */
+   if (!ec && u == 0) {
+      // Successful parse, but the value is zero
+      bson_set_error (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port number cannot be zero");
       return false;
    }
 
-   *port = (uint16_t) ul_port;
+   if (ec == EINVAL) {
+      // The given string is just not a valid integer
+      bson_set_error (
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Port string is not a valid integer");
+      return false;
+   }
+
+   if (ec == ERANGE || mlib_narrow (out, u)) {
+      // The value is out-of range for u64, or out-of range for u16
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Port number is out-of-range for a 16-bit integer");
+      return false;
+   }
+
+   // No other errors are possible from nat64_parse
+   mlib_check (ec, eq, 0);
    return true;
 }
-
 
 /*--------------------------------------------------------------------------
  *
@@ -819,44 +854,51 @@ _mongoc_crypto_rand_size_t (void)
 
 #endif /* defined(MONGOC_ENABLE_CRYPTO) */
 
-static BSON_ONCE_FUN (_mongoc_simple_rand_init)
+#define _mongoc_thread_local BSON_IF_GNU_LIKE (__thread) BSON_IF_MSVC (__declspec (thread))
+
+// Use a thread-local random seed for calls to `rand_r`:
+static _mongoc_thread_local unsigned int _mongoc_simple_rand_seed = 0;
+static _mongoc_thread_local bool _mongoc_simple_rand_seed_initialized = false;
+
+static void
+_mongoc_simple_rand_init (void)
 {
+   if (_mongoc_simple_rand_seed_initialized) {
+      return;
+   }
+   _mongoc_simple_rand_seed_initialized = true;
    struct timeval tv;
-   unsigned int seed = 0;
 
    bson_gettimeofday (&tv);
 
-   seed ^= (unsigned int) tv.tv_sec;
-   seed ^= (unsigned int) tv.tv_usec;
-
-   srand (seed);
-
-   BSON_ONCE_RETURN;
+   _mongoc_simple_rand_seed ^= (unsigned int) tv.tv_sec;
+   _mongoc_simple_rand_seed ^= (unsigned int) tv.tv_usec;
 }
-
-static bson_once_t _mongoc_simple_rand_init_once = BSON_ONCE_INIT;
 
 uint32_t
 _mongoc_simple_rand_uint32_t (void)
 {
-   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   _mongoc_simple_rand_init ();
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint32_t) rand () & 0x7FFFu) << 0u) | (((uint32_t) rand () & 0x7FFFu) << 15u) |
-          (((uint32_t) rand () & 0x0003u) << 30u);
+   return (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 0u) |
+          (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint32_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x0003u) << 30u);
 }
 
 uint64_t
 _mongoc_simple_rand_uint64_t (void)
 {
-   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+   _mongoc_simple_rand_init ();
 
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
-   return (((uint64_t) rand () & 0x7FFFu) << 0u) | (((uint64_t) rand () & 0x7FFFu) << 15u) |
-          (((uint64_t) rand () & 0x7FFFu) << 30u) | (((uint64_t) rand () & 0x7FFFu) << 45u) |
-          (((uint64_t) rand () & 0x0003u) << 60u);
+   return (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 0u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 15u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 30u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x7FFFu) << 45u) |
+          (((uint64_t) _mongoc_rand_simple (&_mongoc_simple_rand_seed) & 0x0003u) << 60u);
 }
 
 uint32_t
@@ -950,8 +992,11 @@ _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error
 }
 
 uint8_t *
-hex_to_bin (const char *hex, uint32_t *len)
+hex_to_bin (const char *hex, size_t *bin_len)
 {
+   BSON_ASSERT_PARAM (hex);
+   BSON_ASSERT_PARAM (bin_len);
+
    uint8_t *out;
 
    const size_t hex_len = strlen (hex);
@@ -959,33 +1004,39 @@ hex_to_bin (const char *hex, uint32_t *len)
       return NULL;
    }
 
-   BSON_ASSERT (mlib_in_range (uint32_t, hex_len / 2u));
+   *bin_len = hex_len / 2u;
+   out = bson_malloc0 (*bin_len);
 
-   *len = (uint32_t) (hex_len / 2u);
-   out = bson_malloc0 (*len);
+   for (size_t i = 0; i < hex_len; i += 2u) {
+      uint64_t byte_value;
 
-   for (uint32_t i = 0; i < hex_len; i += 2u) {
-      uint32_t hex_char;
-
-      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+      if (mlib_nat64_parse (mstr_view_data (hex + i, 2), 16, &byte_value)) {
          bson_free (out);
          return NULL;
       }
 
-      BSON_ASSERT (mlib_in_range (uint8_t, hex_char));
-      out[i / 2u] = (uint8_t) hex_char;
+      BSON_ASSERT (mlib_in_range (uint8_t, byte_value));
+      out[i / 2u] = (uint8_t) byte_value;
    }
    return out;
 }
 
 char *
-bin_to_hex (const uint8_t *bin, uint32_t len)
+bin_to_hex (const uint8_t *bin, size_t bin_len)
 {
-   char *out = bson_malloc0 (2u * len + 1u);
+   BSON_ASSERT_PARAM (bin);
+   size_t hex_len = bin_len;
 
-   for (uint32_t i = 0u; i < len; i++) {
+   if (mlib_mul (&hex_len, 2u) || mlib_add (&hex_len, 1u)) {
+      // Overflow
+      return NULL;
+   }
+
+   char *out = bson_malloc0 (hex_len);
+
+   for (size_t i = 0u; i < bin_len; i++) {
+      int req = bson_snprintf (out + (2u * i), 3, "%02X", bin[i]);
       // Expect no truncation.
-      int req = bson_snprintf (out + (2u * i), 3, "%02x", bin[i]);
       BSON_ASSERT (req < 3);
    }
 

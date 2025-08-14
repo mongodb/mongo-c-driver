@@ -19,10 +19,12 @@
 #ifndef MONGOC_CLUSTER_AWS_PRIVATE_H
 #define MONGOC_CLUSTER_AWS_PRIVATE_H
 
-#include <bson/bson.h>
-#include <mongoc/mcd-time.h>
-#include <mongoc/mongoc-cluster-private.h>
 #include <common-thread-private.h> // bson_mutex_t
+#include <mongoc/mongoc-cluster-private.h>
+
+#include <mongoc/mcd-time.h>
+
+#include <bson/bson.h>
 
 bool
 _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,

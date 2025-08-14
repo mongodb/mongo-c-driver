@@ -20,21 +20,13 @@
 
 #define BSON_INSIDE
 
-#include <bson/bson-compat.h>
-
-#include <string.h>
-#include <time.h>
-
-#include <bson/bson-macros.h>
-#include <bson/bson-config.h>
-#include <bson/bson-context.h>
+#include <bson/bson-bcon.h>
 #include <bson/bson-clock.h>
+#include <bson/bson-context.h>
 #include <bson/bson-decimal128.h>
-#include <bson/bson-error.h>
 #include <bson/bson-iter.h>
 #include <bson/bson-json.h>
 #include <bson/bson-keys.h>
-#include <bson/bson-memory.h>
 #include <bson/bson-oid.h>
 #include <bson/bson-reader.h>
 #include <bson/bson-string.h>
@@ -42,10 +34,16 @@
 #include <bson/bson-utf8.h>
 #include <bson/bson-value.h>
 #include <bson/bson-vector.h>
-#include <bson/bson-version.h>
 #include <bson/bson-version-functions.h>
 #include <bson/bson-writer.h>
-#include <bson/bcon.h>
+#include <bson/compat.h>
+#include <bson/config.h>
+#include <bson/macros.h>
+#include <bson/memory.h>
+#include <bson/version.h>
+
+#include <string.h>
+#include <time.h>
 
 #undef BSON_INSIDE
 
@@ -161,8 +159,7 @@ BSON_BEGIN_DECLS
  *
  * Returns: A newly allocated bson_t that should be freed with bson_destroy().
  */
-BSON_EXPORT (bson_t *)
-bson_new (void);
+BSON_EXPORT (bson_t *) bson_new (void);
 
 
 BSON_EXPORT (bson_t *)

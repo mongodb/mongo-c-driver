@@ -19,8 +19,9 @@
 #ifndef MONGOC_CLIENT_SESSION_PRIVATE_H
 #define MONGOC_CLIENT_SESSION_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-client-session.h>
+
+#include <bson/bson.h>
 
 /* error labels: see Transactions Spec */
 #define TRANSIENT_TXN_ERR "TransientTransactionError"

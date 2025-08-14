@@ -15,10 +15,12 @@
  */
 
 
-#include <mlib/cmp.h>
 #include <bson/bson.h>
 
+#include <mlib/cmp.h>
+
 #include <fcntl.h>
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,9 +34,10 @@
 #include <windows.h>
 #endif
 
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-log.h>
 #include <common-atomic-private.h>
+#include <mongoc/mongoc-counters-private.h>
+
+#include <mongoc/mongoc-log.h>
 
 
 #pragma pack(1)
@@ -116,6 +119,7 @@ mongoc_counters_calc_size (void)
    if (mlib_cmp (size, >, pg_sz)) {
       return size;
    } else {
+      BSON_ASSERT (pg_sz > 0);
       return (size_t) pg_sz;
    }
 #else

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include "util.h"
+#include "./util.h"
 
-#include "test-conveniences.h"
-#include "TestSuite.h"
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 static int
 cmp_key (const void *a, const void *b)
@@ -160,4 +161,34 @@ usecs_since_epoch (void)
    BSON_ASSERT (INT64_MAX - (factor * secs) >= usecs);
 
    return secs * factor + usecs;
+}
+
+const char *
+mongoc_strcasestr (const char *haystack, const char *needle)
+{
+   BSON_ASSERT_PARAM (haystack);
+   BSON_ASSERT_PARAM (needle);
+
+   if (!*needle) {
+      return haystack;
+   }
+
+   const char *h = haystack;
+   while (*h) {
+      const char *h_start = h;
+      const char *n = needle;
+
+      while (*n && *h && tolower (*h) == tolower (*n)) {
+         h++;
+         n++;
+      }
+
+      if (!*n) {
+         return h_start; // Match found
+      }
+
+      h = h_start + 1; // Move to the next starting position in haystack
+   }
+
+   return NULL; // No match found
 }

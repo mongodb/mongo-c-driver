@@ -1,14 +1,14 @@
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-collection-private.h>
 
-#include "json-test.h"
-#include "test-libmongoc.h"
-#include "mock_server/mock-rs.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "json-test-operations.h"
-#include "test-mongoc-retryability-helpers.h"
+#include <mongoc/mongoc.h>
+
+#include <json-test-operations.h>
+#include <json-test.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <test-libmongoc.h>
+#include <test-mongoc-retryability-helpers.h>
 
 static bool
 retryable_reads_test_run_operation (json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
@@ -563,13 +563,11 @@ void
 test_retryable_reads_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   /* Since we need failpoints, require wire version 7 */
    TestSuite_AddFull (suite,
                       "/retryable_reads/cmd_helpers",
                       test_cmd_helpers,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_7,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
@@ -577,7 +575,6 @@ test_retryable_reads_install (TestSuite *suite)
                       test_retry_reads_off,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_7,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
@@ -586,16 +583,12 @@ test_retryable_reads_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
-                      test_framework_skip_if_no_failpoint,
-                      // `retryReads=true` is a 4.2+ feature.
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/retryable_reads/sharded/on_same_mongos",
                       test_retry_reads_sharded_on_same_mongos,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_mongos,
-                      test_framework_skip_if_no_failpoint,
-                      // `retryReads=true` is a 4.2+ feature.
-                      test_framework_skip_if_max_wire_version_less_than_8);
+                      test_framework_skip_if_no_failpoint);
 }

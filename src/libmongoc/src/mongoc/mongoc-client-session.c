@@ -15,17 +15,16 @@
  */
 
 
+#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-cluster-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-rand-private.h>
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-error-private.h>
-
-#include <common-bson-dsl-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
@@ -241,7 +240,7 @@ retry:
        * actually apply the error label due to reply being NULL */
       _mongoc_client_session_unpin (session);
       if (reply) {
-         bsonBuildAppend (*reply, insert (reply_local, not(key ("errorLabels"))));
+         bsonBuildAppend (*reply, insert (reply_local, not (key ("errorLabels"))));
          _mongoc_error_copy_labels_and_upsert (&reply_local, reply, UNKNOWN_COMMIT_RESULT);
       }
    } else if (reply) {
@@ -886,7 +885,9 @@ _max_time_ms_failure (bson_t *reply)
       return true;
    }
 
-   bson_iter_init (&iter, reply);
+   if (!bson_iter_init (&iter, reply)) {
+      return false;
+   }
    if (bson_iter_find_descendant (&iter, "writeConcernError.codeName", &descendant) &&
        BSON_ITER_HOLDS_UTF8 (&descendant) && 0 == strcmp (bson_iter_utf8 (&descendant, NULL), MAX_TIME_MS_EXPIRED)) {
       return true;
@@ -1049,17 +1050,6 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                          MONGOC_ERROR_TRANSACTION,
                          MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                          "Transactions are not supported in snapshot sessions");
-      ret = false;
-      GOTO (done);
-   }
-
-   if (server_stream->sd->max_wire_version < 7 ||
-       (server_stream->sd->max_wire_version < 8 && server_stream->sd->type == MONGOC_SERVER_MONGOS)) {
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_TRANSACTION,
-                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                         "Multi-document transactions are not supported by this "
-                         "server version");
       ret = false;
       GOTO (done);
    }

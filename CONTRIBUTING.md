@@ -111,27 +111,17 @@ a block comment like the following:
 Public functions do not need these comment blocks, since they are documented in
 the .rst files.
 
-To build the documentation, it is recommended to use the Poetry-managed Python
-project to ensure that the exact tooling versions match. If you do not have
-Poetry installed, you can use the `poetry.sh` or `poetry.ps1` scripts in the
-`tools/` directory. First, install dependencies:
+To build the documentation, it is recommended to run Sphinx commands through `uv`:
 
-```sh
-./tools/poetry.sh install --with=docs
-```
-
-Then, execute `sphinx-build` in the Python environment, using the paths to the
-documentation to be generated:
-
-```sh
-./tools/poetry.sh run sphinx-build -WEn -bhtml src/libmongoc/doc/ src/libmongoc/doc/html
+```bash
+uv run --frozen sphinx-build -WEn -bhtml src/libmongoc/doc/ src/libmongoc/doc/html
 ```
 
 `sphinx-autobuild` can be used to serve docs locally. This can be convenient when editing. Files are rebuilt
 when changes are detected:
 
-```sh
-./tools/poetry.sh run sphinx-autobuild -b html src/libmongoc/doc/ src/libmongoc/doc/html --re-ignore ".*.pickle" --re-ignore ".*.doctree" -j auto
+```bash
+uv run --frozen --with 'sphinx-autobuild' sphinx-autobuild -b html src/libmongoc/doc/ src/libmongoc/doc/html --re-ignore ".*.pickle" --re-ignore ".*.doctree" -j auto
 ```
 
 ### Testing
@@ -189,6 +179,13 @@ If you start `mongod` with SSL, set these variables to configure how
 * `MONGOC_TEST_SSL_CRL_FILE`: path to a certificate revocation list.
 * `MONGOC_TEST_SSL_WEAK_CERT_VALIDATION`: set to `on` to relax the client's
   validation of the server's certificate.
+* `MONGOC_TEST_SCHANNEL_CRL=on`: set to `on` to enable Windows Secure Channel tests loading CRL files.
+  * If CRL tests abort before deleting the CRL file, this may cause later test errors like `The certificate is revoked`. Manually remove the CRL file with:
+    ```powershell
+    $crl = ".\src\libmongoc\tests\x509gen\crl.pem"
+    $fingerprint = (openssl crl -in ".\src\libmongoc\tests\x509gen\crl.pem" -noout -fingerprint) -replace 'SHA1 Fingerprint=', '' -replace ':', ''
+    certutil -delstore Root $fingerprint
+    ```
 
 The SASL / GSSAPI / Kerberos tests are skipped by default. To run them, set up a
 separate `mongod` with Kerberos and set its host and Kerberos principal name

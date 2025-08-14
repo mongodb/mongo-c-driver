@@ -19,9 +19,11 @@
 #if defined(__linux__)
 
 #include <mongoc/mongoc.h>
-#include <stdio.h>
+
+#include <TestSuite.h>
+
 #include <signal.h>
-#include "TestSuite.h"
+#include <stdio.h>
 
 #ifndef SIGSTOP
 #define SIGSTOP 19
@@ -68,6 +70,9 @@ ping (void)
 int
 main (int argc, char *argv[])
 {
+   (void) argc;
+   (void) argv;
+
 #if defined(__linux__)
    if (argc != 2) {
       fprintf (stderr, "usage: %s CA_FILE_PATH\n", argv[0]);

@@ -37,7 +37,7 @@ Each defined flag aside from ``BSON_VALIDATE_NONE`` describes an optional valida
 
 * ``BSON_VALIDATE_NONE`` Minimum level of validation; in ``libbson``, validates element headers.
 * ``BSON_VALIDATE_UTF8`` All keys and string values are checked for invalid UTF-8.
-* ``BSON_VALIDATE_UTF8_ALLOW_NULL`` String values are allowed to have embedded NULL bytes.
+* ``BSON_VALIDATE_UTF8_ALLOW_NULL`` String values are allowed to have embedded NULL bytes. This has no effect unless ``BSON_VALIDATE_UTF8`` is also passed.
 * ``BSON_VALIDATE_DOLLAR_KEYS`` Prohibit keys that start with ``$`` outside of a "DBRef" subdocument.
 * ``BSON_VALIDATE_DOT_KEYS`` Prohibit keys that contain ``.`` anywhere in the string.
 * ``BSON_VALIDATE_EMPTY_KEYS`` Prohibit zero-length keys.

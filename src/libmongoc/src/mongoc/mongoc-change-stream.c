@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-change-stream-private.h>
-#include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
+#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-error-private.h>
+
+#include <bson/bson.h>
 
 #define CHANGE_STREAM_ERR(_str) \
    _mongoc_set_error (&stream->err, MONGOC_ERROR_CURSOR, MONGOC_ERROR_BSON, "Could not set " _str)
@@ -140,7 +141,7 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
             /* The driver MUST set resumeAfter to the cached resumeToken */
             BSON_APPEND_DOCUMENT (&change_stream_doc, "resumeAfter", &stream->resume_token);
          }
-      } else if (!_mongoc_timestamp_empty (&stream->operation_time) && stream->max_wire_version >= WIRE_VERSION_4_0) {
+      } else if (!_mongoc_timestamp_empty (&stream->operation_time)) {
          /* Else if there is no cached resumeToken and the ChangeStream
             has a saved operation time and the max wire version is >= 7,
             the driver MUST set startAtOperationTime */
@@ -330,8 +331,7 @@ _make_cursor (mongoc_change_stream_t *stream)
 
    /* Change stream spec: startAtOperationTime */
    if (bson_empty (&stream->opts.resumeAfter) && bson_empty (&stream->opts.startAfter) &&
-       _mongoc_timestamp_empty (&stream->operation_time) && stream->max_wire_version >= WIRE_VERSION_4_0 &&
-       bson_empty (&stream->resume_token) &&
+       _mongoc_timestamp_empty (&stream->operation_time) && bson_empty (&stream->resume_token) &&
        bson_iter_init_find (&iter, _mongoc_cursor_change_stream_get_reply (stream->cursor), "operationTime") &&
        BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
       _mongoc_timestamp_set_from_bson (&stream->operation_time, &iter);

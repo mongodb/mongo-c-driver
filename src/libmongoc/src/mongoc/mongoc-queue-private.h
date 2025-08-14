@@ -19,18 +19,15 @@
 #ifndef MONGOC_QUEUE_PRIVATE_H
 #define MONGOC_QUEUE_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-list-private.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_QUEUE_INITIALIZER \
-   {                             \
-      NULL, NULL                 \
-   }
+#define MONGOC_QUEUE_INITIALIZER {NULL, NULL}
 
 
 typedef struct _mongoc_queue_t mongoc_queue_t;

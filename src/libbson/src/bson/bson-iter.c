@@ -15,12 +15,14 @@
  */
 
 
-#include <mlib/intencode.h>
-#include <mlib/cmp.h>
 #include <bson/bson-iter.h>
-#include <bson/bson-config.h>
+
 #include <bson/bson-decimal128.h>
 #include <bson/bson-types.h>
+#include <bson/config.h>
+
+#include <mlib/cmp.h>
+#include <mlib/intencode.h>
 
 #define ITER_TYPE(i) ((bson_type_t) * ((i)->raw + (i)->type))
 
@@ -64,7 +66,7 @@ bson_iter_init (bson_iter_t *iter,  /* OUT */
    iter->d4 = 0;
    iter->next_off = 4;
    iter->err_off = 0;
-   iter->value = (bson_value_t){0};
+   iter->value = (bson_value_t) {0};
 
    return true;
 }

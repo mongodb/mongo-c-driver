@@ -19,10 +19,11 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-cluster-private.h>
+
 #include <mongoc/mongoc-read-prefs.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
@@ -42,10 +43,7 @@ typedef struct _mongoc_assemble_query_result_t {
 } mongoc_assemble_query_result_t;
 
 
-#define ASSEMBLE_QUERY_RESULT_INIT   \
-   {                                 \
-      NULL, false, MONGOC_QUERY_NONE \
-   }
+#define ASSEMBLE_QUERY_RESULT_INIT {NULL, false, MONGOC_QUERY_NONE}
 
 const char *
 _mongoc_read_mode_as_str (mongoc_read_mode_t mode);

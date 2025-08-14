@@ -15,25 +15,29 @@
  */
 
 
-#include <bson/validate-private.h>
-#include <mlib/intencode.h>
 #include <bson/bson.h>
-#include <bson/bson-config.h>
-#include <bson/bson-private.h>
+
+#include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
-#include <common-string-private.h>
+#include <bson/bson-private.h>
+#include <bson/validate-private.h>
 #include <common-json-private.h>
 #include <common-macros-private.h>
-#include <bson/bson-iso8601-private.h>
+#include <common-string-private.h>
 
-#include <string.h>
+#include <bson/config.h>
+
+#include <mlib/config.h>
+#include <mlib/intencode.h>
+
 #include <math.h>
+#include <string.h>
 
 
 /*
  * Globals.
  */
-static const uint8_t gZero;
+static const uint8_t gZero = 0;
 
 /*
  *--------------------------------------------------------------------------
@@ -291,10 +295,13 @@ BSON_STATIC_ASSERT2 (max_alloc_grow_fits_min_sizet, (uint64_t) BSON_MAX_SIZE * 2
 // Add a bytes+length pair only if `_length > 0`.
 // Append failure if `n_bytes` will exceed BSON max size.
 #define BSON_APPEND_BYTES_ADD_ARGUMENT(_list, _bytes, _length)        \
+   mlib_diagnostic_push ();                                           \
+   mlib_disable_constant_conditional_expression_warnings ();          \
    if (BSON_UNLIKELY ((_length) > BSON_MAX_SIZE - (_list).n_bytes)) { \
+      mlib_diagnostic_pop ();                                         \
       goto append_failure;                                            \
    } else if ((_length) > 0) {                                        \
-      *(_list).current++ = (_bson_append_bytes_arg){                  \
+      *(_list).current++ = (_bson_append_bytes_arg) {                 \
          .bytes = (const uint8_t *) (_bytes),                         \
          .length = (_length),                                         \
       };                                                              \

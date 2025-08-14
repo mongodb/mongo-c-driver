@@ -9,10 +9,13 @@
  * See included LICENSE file for license details.
  */
 
-#include <bson/bson-prelude.h>
-
 #ifndef JSONSL_H_
 #define JSONSL_H_
+
+#include <bson/config.h>
+#include <bson/compat.h>
+
+#include <mlib/config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -548,12 +551,21 @@ struct jsonsl_st {
     size_t *jpr_root;
     /*@}*/
 
+#if defined(_MSC_VER)
+#pragma warning (push)
+#pragma warning (disable : 4200)
+#endif // defined(_MSC_VER)
+
     /**
      * This is the stack. Its upper bound is levels_max, or the
      * nlevels argument passed to jsonsl_new. If you modify this structure,
      * make sure that this member is last.
      */
     struct jsonsl_state_st stack[];
+
+#if defined(_MSC_VER)
+#pragma warning (pop)
+#endif // defined(_MSC_VER)
 };
 
 

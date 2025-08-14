@@ -15,20 +15,23 @@
  */
 
 
-#include <mongoc/mongoc.h>
+#include <json-test.h>
+
+#include <common-oid-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-collection-private.h>
-#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-uri-private.h>
+#include <mongoc/mongoc-util-private.h>
+
 #include <mongoc/mongoc-client-side-encryption.h>
-#include <common-oid-private.h>
+#include <mongoc/mongoc.h>
+
 #include <mlib/loop.h>
 
-#include "json-test.h"
-#include "json-test-operations.h"
-#include "json-test-monitoring.h"
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include <TestSuite.h>
+#include <json-test-monitoring.h>
+#include <json-test-operations.h>
+#include <test-libmongoc.h>
 
 #ifdef _MSC_VER
 #include <io.h>
@@ -240,7 +243,6 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
       while (bson_iter_next (&app_error_iter)) {
          uint32_t generation = 0;
-         uint32_t max_wire_version = 0;
          const char *when_str;
          bool handshake_complete = false;
          const char *type_str;
@@ -273,7 +275,6 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "maxWireVersion"));
          BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
-         max_wire_version = bson_iter_int32 (&app_error_field_iter);
 
          BSON_ASSERT (bson_iter_init_find (&app_error_field_iter, &app_error, "when"));
          BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
@@ -307,7 +308,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          memset (&err, 0, sizeof (bson_error_t));
          _mongoc_topology_handle_app_error (
-            topology, sd->id, handshake_complete, type, &response, &err, max_wire_version, generation, &kZeroObjectId);
+            topology, sd->id, handshake_complete, type, &response, &err, generation, &kZeroObjectId);
          mc_tpld_drop_ref (&td);
       }
    }

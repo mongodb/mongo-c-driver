@@ -1,13 +1,16 @@
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-uri-private.h>
 
-#include "TestSuite.h"
-#include "mock_server/future.h"
-#include "mock_server/future-functions.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/mock-rs.h"
-#include "test-conveniences.h"
-#include "test-libmongoc.h"
+#include <mongoc/mongoc.h>
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-rs.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 static bool
 _can_be_command (const char *query)
@@ -482,21 +485,21 @@ test_read_prefs_mongos_max_staleness (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
 
-   /* exhaust cursor is required per CDRIVER-3633 so the driver downgrades the
-    * OP_QUERY find command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "test.test",
-                                         MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-                                         0,
-                                         0,
-                                         "{'$query': {'a': 1},"
-                                         " '$readPreference': {'mode': 'secondaryPreferred',"
-                                         "                     'maxStalenessSeconds': 120}}",
-                                         "{}");
 
-   reply_to_find_request (request, MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK, 0, 1, "test.test", "{}", false);
+   // Expect find command with exhaust flag and read preference. Reply with one document.
+   {
+      const bson_t *cmd = tmp_bson (BSON_STR ({
+         "find" : "test",
+         "filter" : {"a" : 1},
+         "$readPreference" : {"mode" : "secondaryPreferred", "maxStalenessSeconds" : {"$numberLong" : "120"}}
+      }));
+      request = mock_server_receives_msg (server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, cmd);
+      const bson_t *reply = tmp_bson (
+         BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "test.test", "firstBatch" : [ {} ]}}));
+      reply_to_op_msg_request (request, MONGOC_OP_MSG_FLAG_NONE, reply);
+   }
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
@@ -532,7 +535,10 @@ test_read_prefs_mongos_hedged_reads (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    bson_append_bool (&hedge_doc, "enabled", 7, true);
 
+   mlib_diagnostic_push ();
+   mlib_disable_deprecation_warnings ();
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
+   mlib_diagnostic_pop ();
 
    cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);

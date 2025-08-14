@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc.h>
-
 #include <mongoc/mongoc-client-private.h>
 
-#include "TestSuite.h"
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
-#include "test-libmongoc.h"
-#include "test-conveniences.h"
+#include <mongoc/mongoc.h>
+
+#include <mlib/config.h>
+
+#include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
+#include <test-libmongoc.h>
 
 
 static void
@@ -65,7 +67,12 @@ test_mongos_hedged_reads_read_pref (void)
     * with readPreference mode secondaryPreferred and hedge set, readPreference
     * MUST be sent. */
    bson_append_bool (&hedge_doc, "enabled", 7, true);
+
+   mlib_diagnostic_push ();
+   mlib_disable_deprecation_warnings ();
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
+   mlib_diagnostic_pop ();
+
    mongoc_collection_set_read_prefs (collection, prefs);
 
    future = future_collection_estimated_document_count (collection, NULL, prefs, NULL, &error);

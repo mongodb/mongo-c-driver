@@ -4,7 +4,7 @@ from shrub.v3.evg_command import expansions_update
 from shrub.v3.evg_command import KeyValueParam
 from shrub.v3.evg_task import EvgTask, EvgTaskDependency
 
-from config_generator.etc.distros import find_small_distro
+from config_generator.etc.distros import find_large_distro, find_small_distro
 from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import compiler_to_vars
 
@@ -26,7 +26,10 @@ def generate_test_tasks(SSL, TAG, MATRIX):
 
     for distro_name, compiler, arch, sasl, auths, topologies, server_vers in MATRIX:
         tags = [TAG, 'test', distro_name, compiler]
-        test_distro = find_small_distro(distro_name)
+        if distro_name == 'rhel8-latest':
+            test_distro = find_large_distro(distro_name) # DEVPROD-18763
+        else:
+            test_distro = find_small_distro(distro_name)
 
         compile_vars = []
         compile_vars = [KeyValueParam(key=key, value=value) for key, value in compiler_to_vars(compiler).items()]
