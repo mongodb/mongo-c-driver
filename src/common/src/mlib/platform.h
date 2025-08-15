@@ -36,7 +36,6 @@
         // Request a new-enough version of the Win32 API (required for MinGW)
         #define _WIN32_WINNT 0x601
     #endif
-    #define NOMINMAX
     // Winsock must be included before windows.h
     #include <winsock2.h>
     #include <windows.h>
