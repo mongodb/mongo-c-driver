@@ -25,7 +25,7 @@
  * Helper function to return the runtime major version of the library.
  */
 int
-mongoc_get_major_version (void)
+mongoc_get_major_version(void)
 {
    return MONGOC_MAJOR_VERSION;
 }
@@ -37,7 +37,7 @@ mongoc_get_major_version (void)
  * Helper function to return the runtime minor version of the library.
  */
 int
-mongoc_get_minor_version (void)
+mongoc_get_minor_version(void)
 {
    return MONGOC_MINOR_VERSION;
 }
@@ -48,7 +48,7 @@ mongoc_get_minor_version (void)
  * Helper function to return the runtime micro version of the library.
  */
 int
-mongoc_get_micro_version (void)
+mongoc_get_micro_version(void)
 {
    return MONGOC_MICRO_VERSION;
 }
@@ -59,7 +59,7 @@ mongoc_get_micro_version (void)
  * Helper function to return the runtime string version of the library.
  */
 const char *
-mongoc_get_version (void)
+mongoc_get_version(void)
 {
    return MONGOC_VERSION_S;
 }
@@ -71,7 +71,7 @@ mongoc_get_version (void)
  * version.
  */
 bool
-mongoc_check_version (int required_major, int required_minor, int required_micro)
+mongoc_check_version(int required_major, int required_minor, int required_micro)
 {
-   return MONGOC_CHECK_VERSION (required_major, required_minor, required_micro);
+   return MONGOC_CHECK_VERSION(required_major, required_minor, required_micro);
 }

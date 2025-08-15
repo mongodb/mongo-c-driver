@@ -64,24 +64,24 @@
  */
 
 void
-bson_set_error (bson_error_t *error, /* OUT */
-                uint32_t domain,     /* IN */
-                uint32_t code,       /* IN */
-                const char *format,  /* IN */
-                ...)                 /* IN */
+bson_set_error(bson_error_t *error, /* OUT */
+               uint32_t domain,     /* IN */
+               uint32_t code,       /* IN */
+               const char *format,  /* IN */
+               ...)                 /* IN */
 {
    va_list args;
 
    if (error) {
       error->domain = domain;
       error->code = code;
-      bson_set_error_category (error, BSON_ERROR_CATEGORY);
+      bson_set_error_category(error, BSON_ERROR_CATEGORY);
 
-      va_start (args, format);
+      va_start(args, format);
       char buffer[sizeof error->message];
-      bson_vsnprintf (buffer, sizeof error->message, format, args);
-      memcpy (error->message, buffer, sizeof buffer);
-      va_end (args);
+      bson_vsnprintf(buffer, sizeof error->message, format, args);
+      memcpy(error->message, buffer, sizeof buffer);
+      va_end(args);
    }
 }
 
@@ -105,9 +105,9 @@ bson_set_error (bson_error_t *error, /* OUT */
  */
 
 char *
-bson_strerror_r (int err_code,                    /* IN */
-                 char *buf BSON_MAYBE_UNUSED,     /* IN */
-                 size_t buflen BSON_MAYBE_UNUSED) /* IN */
+bson_strerror_r(int err_code,                    /* IN */
+                char *buf BSON_MAYBE_UNUSED,     /* IN */
+                size_t buflen BSON_MAYBE_UNUSED) /* IN */
 {
    static const char *unknown_msg = "Unknown error";
    char *ret = NULL;
@@ -115,13 +115,13 @@ bson_strerror_r (int err_code,                    /* IN */
 #if defined(_WIN32)
    // Windows does not provide `strerror_l` or `strerror_r`, but it does
    // unconditionally provide `strerror_s`.
-   if (strerror_s (buf, buflen, err_code) == 0) {
+   if (strerror_s(buf, buflen, err_code) == 0) {
       ret = buf;
    }
 #elif defined(_AIX)
    // AIX does not provide strerror_l, and its strerror_r isn't glibc's.
    // But it does provide a glibc compatible one called __linux_strerror_r
-   ret = __linux_strerror_r (err_code, buf, buflen);
+   ret = __linux_strerror_r(err_code, buf, buflen);
 #elif defined(__APPLE__)
    // Apple does not provide `strerror_l`, but it does unconditionally provide
    // the XSI-compliant `strerror_r`, but only when compiling with Apple Clang.
@@ -131,21 +131,21 @@ bson_strerror_r (int err_code,                    /* IN */
    // error message string even when `strerror_r` fails, as encouraged (but not
    // required) by the POSIX spec (see:
    // https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html#tag_16_574_08).
-   (void) strerror_r (err_code, buf, buflen);
+   (void)strerror_r(err_code, buf, buflen);
    ret = buf;
 #elif defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700
    // The behavior (of `strerror_l`) is undefined if the locale argument to
    // `strerror_l()` is the special locale object LC_GLOBAL_LOCALE or is not a
    // valid locale object handle.
-   locale_t locale = uselocale ((locale_t) 0);
+   locale_t locale = uselocale((locale_t)0);
    // No need to test for error (it can only be [EINVAL]).
    if (locale == LC_GLOBAL_LOCALE) {
       // Only use our own locale if a thread-local locale was not already set.
       // This is just to satisfy `strerror_l`. We do NOT want to unconditionally
       // set a thread-local locale.
-      locale = newlocale (LC_MESSAGES_MASK, "C", (locale_t) 0);
+      locale = newlocale(LC_MESSAGES_MASK, "C", (locale_t)0);
    }
-   BSON_ASSERT (locale != LC_GLOBAL_LOCALE);
+   BSON_ASSERT(locale != LC_GLOBAL_LOCALE);
 
    // Avoid `strerror_r` compatibility headaches with GNU extensions and the
    // musl library by using `strerror_l` instead. Furthermore, `strerror_r` is
@@ -156,15 +156,15 @@ bson_strerror_r (int err_code,                    /* IN */
    // POSIX Spec: since strerror_l() is required to return a string for some
    // errors, an application wishing to check for all error situations should
    // set errno to 0, then call strerror_l(), then check errno.
-   if (locale != (locale_t) 0) {
+   if (locale != (locale_t)0) {
       errno = 0;
-      ret = strerror_l (err_code, locale);
+      ret = strerror_l(err_code, locale);
 
       if (errno != 0) {
          ret = NULL;
       }
 
-      freelocale (locale);
+      freelocale(locale);
    } else {
       // Could not obtain a valid `locale_t` object to satisfy `strerror_l`.
       // Fallback to `bson_strncpy` below.
@@ -172,13 +172,13 @@ bson_strerror_r (int err_code,                    /* IN */
 #elif defined(_GNU_SOURCE)
    // Unlikely, but continue supporting use of GNU extension in cases where the
    // C Driver is being built without _XOPEN_SOURCE=700.
-   ret = strerror_r (err_code, buf, buflen);
+   ret = strerror_r(err_code, buf, buflen);
 #else
 #error "Unable to find a supported strerror_r candidate"
 #endif
 
    if (!ret) {
-      bson_strncpy (buf, unknown_msg, buflen);
+      bson_strncpy(buf, unknown_msg, buflen);
       ret = buf;
    }
 

@@ -43,13 +43,13 @@ typedef struct {
 } mongoc_http_response_t;
 
 void
-_mongoc_http_request_init (mongoc_http_request_t *request);
+_mongoc_http_request_init(mongoc_http_request_t *request);
 
 void
-_mongoc_http_response_init (mongoc_http_response_t *response);
+_mongoc_http_response_init(mongoc_http_response_t *response);
 
 void
-_mongoc_http_response_cleanup (mongoc_http_response_t *response);
+_mongoc_http_response_cleanup(mongoc_http_response_t *response);
 
 /**
  * @brief Render the HTTP request head based on the given HTTP parameters.
@@ -62,7 +62,7 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response);
  * string.
  */
 void
-_mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_http_request_t *req);
+_mongoc_http_render_request_head(mcommon_string_append_t *append, const mongoc_http_request_t *req);
 
 
 /**
@@ -90,11 +90,11 @@ _mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_
  * rendered using @ref _mongo_http_render_request_head.
  */
 bool
-_mongoc_http_send (mongoc_http_request_t const *req,
-                   int timeout_ms,
-                   bool use_tls,
-                   mongoc_ssl_opt_t *ssl_opts,
-                   mongoc_http_response_t *res,
-                   bson_error_t *error);
+_mongoc_http_send(mongoc_http_request_t const *req,
+                  int timeout_ms,
+                  bool use_tls,
+                  mongoc_ssl_opt_t *ssl_opts,
+                  mongoc_http_response_t *res,
+                  bson_error_t *error);
 
 #endif /* MONGOC_HTTP_PRIVATE */

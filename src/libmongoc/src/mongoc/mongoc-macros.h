@@ -35,9 +35,9 @@
 #ifdef MONGOC_STATIC
 #define MONGOC_API
 #elif defined(MONGOC_COMPILATION)
-#define MONGOC_API __declspec (dllexport)
+#define MONGOC_API __declspec(dllexport)
 #else
-#define MONGOC_API __declspec (dllimport)
+#define MONGOC_API __declspec(dllimport)
 #endif
 #define MONGOC_CALL __cdecl
 
@@ -48,7 +48,7 @@
 #ifdef MONGOC_STATIC
 #define MONGOC_API
 #elif defined(MONGOC_COMPILATION)
-#define MONGOC_API __attribute__ ((visibility ("default")))
+#define MONGOC_API __attribute__((visibility("default")))
 #else
 #define MONGOC_API
 #endif

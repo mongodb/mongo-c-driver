@@ -32,49 +32,49 @@
 
 #define STACK_ELE(_delta, _name) (ctx->stack[(_delta) + ctx->n]._name)
 
-#define STACK_BSON(_delta) (((_delta) + ctx->n) == 0 ? bson : &STACK_ELE (_delta, bson))
+#define STACK_BSON(_delta) (((_delta) + ctx->n) == 0 ? bson : &STACK_ELE(_delta, bson))
 
-#define STACK_ITER(_delta) (((_delta) + ctx->n) == 0 ? &root_iter : &STACK_ELE (_delta, iter))
+#define STACK_ITER(_delta) (((_delta) + ctx->n) == 0 ? &root_iter : &STACK_ELE(_delta, iter))
 
-#define STACK_BSON_PARENT STACK_BSON (-1)
-#define STACK_BSON_CHILD STACK_BSON (0)
+#define STACK_BSON_PARENT STACK_BSON(-1)
+#define STACK_BSON_CHILD STACK_BSON(0)
 
-#define STACK_ITER_CHILD STACK_ITER (0)
+#define STACK_ITER_CHILD STACK_ITER(0)
 
-#define STACK_I STACK_ELE (0, i)
-#define STACK_IS_ARRAY STACK_ELE (0, is_array)
+#define STACK_I STACK_ELE(0, i)
+#define STACK_IS_ARRAY STACK_ELE(0, is_array)
 
-#define STACK_PUSH_ARRAY(statement)                \
-   do {                                            \
-      BSON_ASSERT (ctx->n < (BCON_STACK_MAX - 1)); \
-      ctx->n++;                                    \
-      STACK_I = 0;                                 \
-      STACK_IS_ARRAY = 1;                          \
-      statement;                                   \
+#define STACK_PUSH_ARRAY(statement)               \
+   do {                                           \
+      BSON_ASSERT(ctx->n < (BCON_STACK_MAX - 1)); \
+      ctx->n++;                                   \
+      STACK_I = 0;                                \
+      STACK_IS_ARRAY = 1;                         \
+      statement;                                  \
    } while (0)
 
-#define STACK_PUSH_DOC(statement)                  \
-   do {                                            \
-      BSON_ASSERT (ctx->n < (BCON_STACK_MAX - 1)); \
-      ctx->n++;                                    \
-      STACK_IS_ARRAY = 0;                          \
-      statement;                                   \
+#define STACK_PUSH_DOC(statement)                 \
+   do {                                           \
+      BSON_ASSERT(ctx->n < (BCON_STACK_MAX - 1)); \
+      ctx->n++;                                   \
+      STACK_IS_ARRAY = 0;                         \
+      statement;                                  \
    } while (0)
 
-#define STACK_POP_ARRAY(statement)  \
+#define STACK_POP_ARRAY(statement) \
+   do {                            \
+      BSON_ASSERT(STACK_IS_ARRAY); \
+      BSON_ASSERT(ctx->n != 0);    \
+      statement;                   \
+      ctx->n--;                    \
+   } while (0)
+
+#define STACK_POP_DOC(statement)    \
    do {                             \
-      BSON_ASSERT (STACK_IS_ARRAY); \
-      BSON_ASSERT (ctx->n != 0);    \
+      BSON_ASSERT(!STACK_IS_ARRAY); \
+      BSON_ASSERT(ctx->n != 0);     \
       statement;                    \
       ctx->n--;                     \
-   } while (0)
-
-#define STACK_POP_DOC(statement)     \
-   do {                              \
-      BSON_ASSERT (!STACK_IS_ARRAY); \
-      BSON_ASSERT (ctx->n != 0);     \
-      statement;                     \
-      ctx->n--;                      \
    } while (0)
 
 /* This is a landing pad union for all of the types we can process with bcon.
@@ -183,112 +183,112 @@ static const char *gBconMagic = "BCON_MAGIC";
 static const char *gBconeMagic = "BCONE_MAGIC";
 
 const char *
-bson_bcon_magic (void)
+bson_bcon_magic(void)
 {
    return gBconMagic;
 }
 
 
 const char *
-bson_bcone_magic (void)
+bson_bcone_magic(void)
 {
    return gBconeMagic;
 }
 
 static void
-_noop (void)
+_noop(void)
 {
 }
 
 /* appends val to the passed bson object.  Meant to be a super simple dispatch
  * table */
 static void
-_bcon_append_single (bson_t *bson, bcon_type_t type, const char *key, bcon_append_t *val)
+_bcon_append_single(bson_t *bson, bcon_type_t type, const char *key, bcon_append_t *val)
 {
-   switch ((int) type) {
+   switch ((int)type) {
    case BCON_TYPE_UTF8:
-      BSON_ASSERT (bson_append_utf8 (bson, key, -1, val->UTF8, -1));
+      BSON_ASSERT(bson_append_utf8(bson, key, -1, val->UTF8, -1));
       break;
    case BCON_TYPE_DOUBLE:
-      BSON_ASSERT (bson_append_double (bson, key, -1, val->DOUBLE));
+      BSON_ASSERT(bson_append_double(bson, key, -1, val->DOUBLE));
       break;
    case BCON_TYPE_BIN: {
-      BSON_ASSERT (bson_append_binary (bson, key, -1, val->BIN.subtype, val->BIN.binary, val->BIN.length));
+      BSON_ASSERT(bson_append_binary(bson, key, -1, val->BIN.subtype, val->BIN.binary, val->BIN.length));
       break;
    }
    case BCON_TYPE_UNDEFINED:
-      BSON_ASSERT (bson_append_undefined (bson, key, -1));
+      BSON_ASSERT(bson_append_undefined(bson, key, -1));
       break;
    case BCON_TYPE_OID:
-      BSON_ASSERT (bson_append_oid (bson, key, -1, val->OID));
+      BSON_ASSERT(bson_append_oid(bson, key, -1, val->OID));
       break;
    case BCON_TYPE_BOOL:
-      BSON_ASSERT (bson_append_bool (bson, key, -1, (bool) val->BOOL));
+      BSON_ASSERT(bson_append_bool(bson, key, -1, (bool)val->BOOL));
       break;
    case BCON_TYPE_DATE_TIME:
-      BSON_ASSERT (bson_append_date_time (bson, key, -1, val->DATE_TIME));
+      BSON_ASSERT(bson_append_date_time(bson, key, -1, val->DATE_TIME));
       break;
    case BCON_TYPE_NULL:
-      BSON_ASSERT (bson_append_null (bson, key, -1));
+      BSON_ASSERT(bson_append_null(bson, key, -1));
       break;
    case BCON_TYPE_REGEX: {
-      BSON_ASSERT (bson_append_regex (bson, key, -1, val->REGEX.regex, val->REGEX.flags));
+      BSON_ASSERT(bson_append_regex(bson, key, -1, val->REGEX.regex, val->REGEX.flags));
       break;
    }
    case BCON_TYPE_DBPOINTER: {
-      BSON_ASSERT (bson_append_dbpointer (bson, key, -1, val->DBPOINTER.collection, val->DBPOINTER.oid));
+      BSON_ASSERT(bson_append_dbpointer(bson, key, -1, val->DBPOINTER.collection, val->DBPOINTER.oid));
       break;
    }
    case BCON_TYPE_CODE:
-      BSON_ASSERT (bson_append_code (bson, key, -1, val->CODE));
+      BSON_ASSERT(bson_append_code(bson, key, -1, val->CODE));
       break;
    case BCON_TYPE_SYMBOL:
-      BSON_ASSERT (bson_append_symbol (bson, key, -1, val->SYMBOL, -1));
+      BSON_ASSERT(bson_append_symbol(bson, key, -1, val->SYMBOL, -1));
       break;
    case BCON_TYPE_CODEWSCOPE:
-      BSON_ASSERT (bson_append_code_with_scope (bson, key, -1, val->CODEWSCOPE.js, val->CODEWSCOPE.scope));
+      BSON_ASSERT(bson_append_code_with_scope(bson, key, -1, val->CODEWSCOPE.js, val->CODEWSCOPE.scope));
       break;
    case BCON_TYPE_INT32:
-      BSON_ASSERT (bson_append_int32 (bson, key, -1, val->INT32));
+      BSON_ASSERT(bson_append_int32(bson, key, -1, val->INT32));
       break;
    case BCON_TYPE_TIMESTAMP: {
-      BSON_ASSERT (bson_append_timestamp (bson, key, -1, val->TIMESTAMP.timestamp, val->TIMESTAMP.increment));
+      BSON_ASSERT(bson_append_timestamp(bson, key, -1, val->TIMESTAMP.timestamp, val->TIMESTAMP.increment));
       break;
    }
    case BCON_TYPE_INT64:
-      BSON_ASSERT (bson_append_int64 (bson, key, -1, val->INT64));
+      BSON_ASSERT(bson_append_int64(bson, key, -1, val->INT64));
       break;
    case BCON_TYPE_DECIMAL128:
-      BSON_ASSERT (bson_append_decimal128 (bson, key, -1, val->DECIMAL128));
+      BSON_ASSERT(bson_append_decimal128(bson, key, -1, val->DECIMAL128));
       break;
    case BCON_TYPE_MAXKEY:
-      BSON_ASSERT (bson_append_maxkey (bson, key, -1));
+      BSON_ASSERT(bson_append_maxkey(bson, key, -1));
       break;
    case BCON_TYPE_MINKEY:
-      BSON_ASSERT (bson_append_minkey (bson, key, -1));
+      BSON_ASSERT(bson_append_minkey(bson, key, -1));
       break;
    case BCON_TYPE_ARRAY: {
-      BSON_ASSERT (bson_append_array (bson, key, -1, val->ARRAY));
+      BSON_ASSERT(bson_append_array(bson, key, -1, val->ARRAY));
       break;
    }
    case BCON_TYPE_DOCUMENT: {
-      BSON_ASSERT (bson_append_document (bson, key, -1, val->DOCUMENT));
+      BSON_ASSERT(bson_append_document(bson, key, -1, val->DOCUMENT));
       break;
    }
    case BCON_TYPE_ITER:
-      BSON_ASSERT (bson_append_iter (bson, key, -1, val->ITER));
+      BSON_ASSERT(bson_append_iter(bson, key, -1, val->ITER));
       break;
    default:
-      BSON_ASSERT (0);
+      BSON_ASSERT(0);
       break;
    }
 }
 
-#define CHECK_TYPE(_type)                     \
-   do {                                       \
-      if (bson_iter_type (iter) != (_type)) { \
-         return false;                        \
-      }                                       \
+#define CHECK_TYPE(_type)                    \
+   do {                                      \
+      if (bson_iter_type(iter) != (_type)) { \
+         return false;                       \
+      }                                      \
    } while (0)
 
 /* extracts the value under the iterator and writes it to val.  returns false
@@ -305,119 +305,119 @@ _bcon_append_single (bson_t *bson, bcon_type_t type, const char *key, bcon_appen
  *    procedural verification (if a parameter could have multiple types).
  * */
 static bool
-_bcon_extract_single (const bson_iter_t *iter, bcon_type_t type, bcon_extract_t *val)
+_bcon_extract_single(const bson_iter_t *iter, bcon_type_t type, bcon_extract_t *val)
 {
-   switch ((int) type) {
+   switch ((int)type) {
    case BCON_TYPE_UTF8:
-      CHECK_TYPE (BSON_TYPE_UTF8);
-      *val->UTF8 = bson_iter_utf8 (iter, NULL);
+      CHECK_TYPE(BSON_TYPE_UTF8);
+      *val->UTF8 = bson_iter_utf8(iter, NULL);
       break;
    case BCON_TYPE_DOUBLE:
-      CHECK_TYPE (BSON_TYPE_DOUBLE);
-      *val->DOUBLE = bson_iter_double (iter);
+      CHECK_TYPE(BSON_TYPE_DOUBLE);
+      *val->DOUBLE = bson_iter_double(iter);
       break;
    case BCON_TYPE_BIN:
-      CHECK_TYPE (BSON_TYPE_BINARY);
-      bson_iter_binary (iter, val->BIN.subtype, val->BIN.length, val->BIN.binary);
+      CHECK_TYPE(BSON_TYPE_BINARY);
+      bson_iter_binary(iter, val->BIN.subtype, val->BIN.length, val->BIN.binary);
       break;
    case BCON_TYPE_UNDEFINED:
-      CHECK_TYPE (BSON_TYPE_UNDEFINED);
+      CHECK_TYPE(BSON_TYPE_UNDEFINED);
       break;
    case BCON_TYPE_OID:
-      CHECK_TYPE (BSON_TYPE_OID);
-      *val->OID = bson_iter_oid (iter);
+      CHECK_TYPE(BSON_TYPE_OID);
+      *val->OID = bson_iter_oid(iter);
       break;
    case BCON_TYPE_BOOL:
-      CHECK_TYPE (BSON_TYPE_BOOL);
-      *val->BOOL = bson_iter_bool (iter);
+      CHECK_TYPE(BSON_TYPE_BOOL);
+      *val->BOOL = bson_iter_bool(iter);
       break;
    case BCON_TYPE_DATE_TIME:
-      CHECK_TYPE (BSON_TYPE_DATE_TIME);
-      *val->DATE_TIME = bson_iter_date_time (iter);
+      CHECK_TYPE(BSON_TYPE_DATE_TIME);
+      *val->DATE_TIME = bson_iter_date_time(iter);
       break;
    case BCON_TYPE_NULL:
-      CHECK_TYPE (BSON_TYPE_NULL);
+      CHECK_TYPE(BSON_TYPE_NULL);
       break;
    case BCON_TYPE_REGEX:
-      CHECK_TYPE (BSON_TYPE_REGEX);
-      *val->REGEX.regex = bson_iter_regex (iter, val->REGEX.flags);
+      CHECK_TYPE(BSON_TYPE_REGEX);
+      *val->REGEX.regex = bson_iter_regex(iter, val->REGEX.flags);
 
       break;
    case BCON_TYPE_DBPOINTER:
-      CHECK_TYPE (BSON_TYPE_DBPOINTER);
-      bson_iter_dbpointer (iter, NULL, val->DBPOINTER.collection, val->DBPOINTER.oid);
+      CHECK_TYPE(BSON_TYPE_DBPOINTER);
+      bson_iter_dbpointer(iter, NULL, val->DBPOINTER.collection, val->DBPOINTER.oid);
       break;
    case BCON_TYPE_CODE:
-      CHECK_TYPE (BSON_TYPE_CODE);
-      *val->CODE = bson_iter_code (iter, NULL);
+      CHECK_TYPE(BSON_TYPE_CODE);
+      *val->CODE = bson_iter_code(iter, NULL);
       break;
    case BCON_TYPE_SYMBOL:
-      CHECK_TYPE (BSON_TYPE_SYMBOL);
-      *val->SYMBOL = bson_iter_symbol (iter, NULL);
+      CHECK_TYPE(BSON_TYPE_SYMBOL);
+      *val->SYMBOL = bson_iter_symbol(iter, NULL);
       break;
    case BCON_TYPE_CODEWSCOPE: {
       const uint8_t *buf;
       uint32_t len;
 
-      CHECK_TYPE (BSON_TYPE_CODEWSCOPE);
+      CHECK_TYPE(BSON_TYPE_CODEWSCOPE);
 
-      *val->CODEWSCOPE.js = bson_iter_codewscope (iter, NULL, &len, &buf);
+      *val->CODEWSCOPE.js = bson_iter_codewscope(iter, NULL, &len, &buf);
 
-      BSON_ASSERT (bson_init_static (val->CODEWSCOPE.scope, buf, len));
+      BSON_ASSERT(bson_init_static(val->CODEWSCOPE.scope, buf, len));
       break;
    }
    case BCON_TYPE_INT32:
-      CHECK_TYPE (BSON_TYPE_INT32);
-      *val->INT32 = bson_iter_int32 (iter);
+      CHECK_TYPE(BSON_TYPE_INT32);
+      *val->INT32 = bson_iter_int32(iter);
       break;
    case BCON_TYPE_TIMESTAMP:
-      CHECK_TYPE (BSON_TYPE_TIMESTAMP);
-      bson_iter_timestamp (iter, val->TIMESTAMP.timestamp, val->TIMESTAMP.increment);
+      CHECK_TYPE(BSON_TYPE_TIMESTAMP);
+      bson_iter_timestamp(iter, val->TIMESTAMP.timestamp, val->TIMESTAMP.increment);
       break;
    case BCON_TYPE_INT64:
-      CHECK_TYPE (BSON_TYPE_INT64);
-      *val->INT64 = bson_iter_int64 (iter);
+      CHECK_TYPE(BSON_TYPE_INT64);
+      *val->INT64 = bson_iter_int64(iter);
       break;
    case BCON_TYPE_DECIMAL128:
-      CHECK_TYPE (BSON_TYPE_DECIMAL128);
-      BSON_ASSERT (bson_iter_decimal128 (iter, val->DECIMAL128));
+      CHECK_TYPE(BSON_TYPE_DECIMAL128);
+      BSON_ASSERT(bson_iter_decimal128(iter, val->DECIMAL128));
       break;
    case BCON_TYPE_MAXKEY:
-      CHECK_TYPE (BSON_TYPE_MAXKEY);
+      CHECK_TYPE(BSON_TYPE_MAXKEY);
       break;
    case BCON_TYPE_MINKEY:
-      CHECK_TYPE (BSON_TYPE_MINKEY);
+      CHECK_TYPE(BSON_TYPE_MINKEY);
       break;
    case BCON_TYPE_ARRAY: {
       const uint8_t *buf;
       uint32_t len;
 
-      CHECK_TYPE (BSON_TYPE_ARRAY);
+      CHECK_TYPE(BSON_TYPE_ARRAY);
 
-      bson_iter_array (iter, &len, &buf);
+      bson_iter_array(iter, &len, &buf);
 
-      BSON_ASSERT (bson_init_static (val->ARRAY, buf, len));
+      BSON_ASSERT(bson_init_static(val->ARRAY, buf, len));
       break;
    }
    case BCON_TYPE_DOCUMENT: {
       const uint8_t *buf;
       uint32_t len;
 
-      CHECK_TYPE (BSON_TYPE_DOCUMENT);
+      CHECK_TYPE(BSON_TYPE_DOCUMENT);
 
-      bson_iter_document (iter, &len, &buf);
+      bson_iter_document(iter, &len, &buf);
 
-      BSON_ASSERT (bson_init_static (val->DOCUMENT, buf, len));
+      BSON_ASSERT(bson_init_static(val->DOCUMENT, buf, len));
       break;
    }
    case BCON_TYPE_SKIP:
-      CHECK_TYPE (val->TYPE);
+      CHECK_TYPE(val->TYPE);
       break;
    case BCON_TYPE_ITER:
-      memcpy (val->ITER, iter, sizeof *iter);
+      memcpy(val->ITER, iter, sizeof *iter);
       break;
    default:
-      BSON_ASSERT (0);
+      BSON_ASSERT(0);
       break;
    }
 
@@ -440,94 +440,94 @@ _bcon_extract_single (const bson_iter_t *iter, bcon_type_t type, bcon_extract_t 
  *       II. If not, just call it a UTF8 token and pass that back
  */
 static bcon_type_t
-_bcon_append_tokenize (va_list *ap, bcon_append_t *u)
+_bcon_append_tokenize(va_list *ap, bcon_append_t *u)
 {
    char *mark;
    bcon_type_t type;
 
-   mark = va_arg (*ap, char *);
+   mark = va_arg(*ap, char *);
 
-   BSON_ASSERT (mark != BCONE_MAGIC);
+   BSON_ASSERT(mark != BCONE_MAGIC);
 
    if (mark == NULL) {
       type = BCON_TYPE_END;
    } else if (mark == BCON_MAGIC) {
-      type = va_arg (*ap, bcon_type_t);
+      type = va_arg(*ap, bcon_type_t);
 
-      switch ((int) type) {
+      switch ((int)type) {
       case BCON_TYPE_UTF8:
-         u->UTF8 = va_arg (*ap, char *);
+         u->UTF8 = va_arg(*ap, char *);
          break;
       case BCON_TYPE_DOUBLE:
-         u->DOUBLE = va_arg (*ap, double);
+         u->DOUBLE = va_arg(*ap, double);
          break;
       case BCON_TYPE_DOCUMENT:
-         u->DOCUMENT = va_arg (*ap, bson_t *);
+         u->DOCUMENT = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_ARRAY:
-         u->ARRAY = va_arg (*ap, bson_t *);
+         u->ARRAY = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_BIN:
-         u->BIN.subtype = va_arg (*ap, bson_subtype_t);
-         u->BIN.binary = va_arg (*ap, uint8_t *);
-         u->BIN.length = va_arg (*ap, uint32_t);
+         u->BIN.subtype = va_arg(*ap, bson_subtype_t);
+         u->BIN.binary = va_arg(*ap, uint8_t *);
+         u->BIN.length = va_arg(*ap, uint32_t);
          break;
       case BCON_TYPE_UNDEFINED:
          break;
       case BCON_TYPE_OID:
-         u->OID = va_arg (*ap, bson_oid_t *);
+         u->OID = va_arg(*ap, bson_oid_t *);
          break;
       case BCON_TYPE_BOOL:
-         u->BOOL = va_arg (*ap, int);
+         u->BOOL = va_arg(*ap, int);
          break;
       case BCON_TYPE_DATE_TIME:
-         u->DATE_TIME = va_arg (*ap, int64_t);
+         u->DATE_TIME = va_arg(*ap, int64_t);
          break;
       case BCON_TYPE_NULL:
          break;
       case BCON_TYPE_REGEX:
-         u->REGEX.regex = va_arg (*ap, char *);
-         u->REGEX.flags = va_arg (*ap, char *);
+         u->REGEX.regex = va_arg(*ap, char *);
+         u->REGEX.flags = va_arg(*ap, char *);
          break;
       case BCON_TYPE_DBPOINTER:
-         u->DBPOINTER.collection = va_arg (*ap, char *);
-         u->DBPOINTER.oid = va_arg (*ap, bson_oid_t *);
+         u->DBPOINTER.collection = va_arg(*ap, char *);
+         u->DBPOINTER.oid = va_arg(*ap, bson_oid_t *);
          break;
       case BCON_TYPE_CODE:
-         u->CODE = va_arg (*ap, char *);
+         u->CODE = va_arg(*ap, char *);
          break;
       case BCON_TYPE_SYMBOL:
-         u->SYMBOL = va_arg (*ap, char *);
+         u->SYMBOL = va_arg(*ap, char *);
          break;
       case BCON_TYPE_CODEWSCOPE:
-         u->CODEWSCOPE.js = va_arg (*ap, char *);
-         u->CODEWSCOPE.scope = va_arg (*ap, bson_t *);
+         u->CODEWSCOPE.js = va_arg(*ap, char *);
+         u->CODEWSCOPE.scope = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_INT32:
-         u->INT32 = va_arg (*ap, int32_t);
+         u->INT32 = va_arg(*ap, int32_t);
          break;
       case BCON_TYPE_TIMESTAMP:
-         u->TIMESTAMP.timestamp = va_arg (*ap, uint32_t);
-         u->TIMESTAMP.increment = va_arg (*ap, uint32_t);
+         u->TIMESTAMP.timestamp = va_arg(*ap, uint32_t);
+         u->TIMESTAMP.increment = va_arg(*ap, uint32_t);
          break;
       case BCON_TYPE_INT64:
-         u->INT64 = va_arg (*ap, int64_t);
+         u->INT64 = va_arg(*ap, int64_t);
          break;
       case BCON_TYPE_DECIMAL128:
-         u->DECIMAL128 = va_arg (*ap, bson_decimal128_t *);
+         u->DECIMAL128 = va_arg(*ap, bson_decimal128_t *);
          break;
       case BCON_TYPE_MAXKEY:
          break;
       case BCON_TYPE_MINKEY:
          break;
       case BCON_TYPE_BCON:
-         u->BCON = va_arg (*ap, bson_t *);
+         u->BCON = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_ITER:
-         u->ITER = va_arg (*ap, const bson_iter_t *);
+         u->ITER = va_arg(*ap, const bson_iter_t *);
          break;
       default:
-         BSON_ASSERT (0);
+         BSON_ASSERT(0);
          break;
       }
    } else {
@@ -572,94 +572,94 @@ _bcon_append_tokenize (va_list *ap, bcon_append_t *u)
  *       II. If not, just call it a UTF8 token and pass that back
  */
 static bcon_type_t
-_bcon_extract_tokenize (va_list *ap, bcon_extract_t *u)
+_bcon_extract_tokenize(va_list *ap, bcon_extract_t *u)
 {
    char *mark;
    bcon_type_t type;
 
-   mark = va_arg (*ap, char *);
+   mark = va_arg(*ap, char *);
 
-   BSON_ASSERT (mark != BCON_MAGIC);
+   BSON_ASSERT(mark != BCON_MAGIC);
 
    if (mark == NULL) {
       type = BCON_TYPE_END;
    } else if (mark == BCONE_MAGIC) {
-      type = va_arg (*ap, bcon_type_t);
+      type = va_arg(*ap, bcon_type_t);
 
-      switch ((int) type) {
+      switch ((int)type) {
       case BCON_TYPE_UTF8:
-         u->UTF8 = va_arg (*ap, const char **);
+         u->UTF8 = va_arg(*ap, const char **);
          break;
       case BCON_TYPE_DOUBLE:
-         u->DOUBLE = va_arg (*ap, double *);
+         u->DOUBLE = va_arg(*ap, double *);
          break;
       case BCON_TYPE_DOCUMENT:
-         u->DOCUMENT = va_arg (*ap, bson_t *);
+         u->DOCUMENT = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_ARRAY:
-         u->ARRAY = va_arg (*ap, bson_t *);
+         u->ARRAY = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_BIN:
-         u->BIN.subtype = va_arg (*ap, bson_subtype_t *);
-         u->BIN.binary = va_arg (*ap, const uint8_t **);
-         u->BIN.length = va_arg (*ap, uint32_t *);
+         u->BIN.subtype = va_arg(*ap, bson_subtype_t *);
+         u->BIN.binary = va_arg(*ap, const uint8_t **);
+         u->BIN.length = va_arg(*ap, uint32_t *);
          break;
       case BCON_TYPE_UNDEFINED:
          break;
       case BCON_TYPE_OID:
-         u->OID = va_arg (*ap, const bson_oid_t **);
+         u->OID = va_arg(*ap, const bson_oid_t **);
          break;
       case BCON_TYPE_BOOL:
-         u->BOOL = va_arg (*ap, bool *);
+         u->BOOL = va_arg(*ap, bool *);
          break;
       case BCON_TYPE_DATE_TIME:
-         u->DATE_TIME = va_arg (*ap, int64_t *);
+         u->DATE_TIME = va_arg(*ap, int64_t *);
          break;
       case BCON_TYPE_NULL:
          break;
       case BCON_TYPE_REGEX:
-         u->REGEX.regex = va_arg (*ap, const char **);
-         u->REGEX.flags = va_arg (*ap, const char **);
+         u->REGEX.regex = va_arg(*ap, const char **);
+         u->REGEX.flags = va_arg(*ap, const char **);
          break;
       case BCON_TYPE_DBPOINTER:
-         u->DBPOINTER.collection = va_arg (*ap, const char **);
-         u->DBPOINTER.oid = va_arg (*ap, const bson_oid_t **);
+         u->DBPOINTER.collection = va_arg(*ap, const char **);
+         u->DBPOINTER.oid = va_arg(*ap, const bson_oid_t **);
          break;
       case BCON_TYPE_CODE:
-         u->CODE = va_arg (*ap, const char **);
+         u->CODE = va_arg(*ap, const char **);
          break;
       case BCON_TYPE_SYMBOL:
-         u->SYMBOL = va_arg (*ap, const char **);
+         u->SYMBOL = va_arg(*ap, const char **);
          break;
       case BCON_TYPE_CODEWSCOPE:
-         u->CODEWSCOPE.js = va_arg (*ap, const char **);
-         u->CODEWSCOPE.scope = va_arg (*ap, bson_t *);
+         u->CODEWSCOPE.js = va_arg(*ap, const char **);
+         u->CODEWSCOPE.scope = va_arg(*ap, bson_t *);
          break;
       case BCON_TYPE_INT32:
-         u->INT32 = va_arg (*ap, int32_t *);
+         u->INT32 = va_arg(*ap, int32_t *);
          break;
       case BCON_TYPE_TIMESTAMP:
-         u->TIMESTAMP.timestamp = va_arg (*ap, uint32_t *);
-         u->TIMESTAMP.increment = va_arg (*ap, uint32_t *);
+         u->TIMESTAMP.timestamp = va_arg(*ap, uint32_t *);
+         u->TIMESTAMP.increment = va_arg(*ap, uint32_t *);
          break;
       case BCON_TYPE_INT64:
-         u->INT64 = va_arg (*ap, int64_t *);
+         u->INT64 = va_arg(*ap, int64_t *);
          break;
       case BCON_TYPE_DECIMAL128:
-         u->DECIMAL128 = va_arg (*ap, bson_decimal128_t *);
+         u->DECIMAL128 = va_arg(*ap, bson_decimal128_t *);
          break;
       case BCON_TYPE_MAXKEY:
          break;
       case BCON_TYPE_MINKEY:
          break;
       case BCON_TYPE_SKIP:
-         u->TYPE = va_arg (*ap, bson_type_t);
+         u->TYPE = va_arg(*ap, bson_type_t);
          break;
       case BCON_TYPE_ITER:
-         u->ITER = va_arg (*ap, bson_iter_t *);
+         u->ITER = va_arg(*ap, bson_iter_t *);
          break;
       default:
-         BSON_ASSERT (0);
+         BSON_ASSERT(0);
          break;
       }
    } else {
@@ -693,27 +693,27 @@ _bcon_extract_tokenize (va_list *ap, bcon_extract_t *u)
  * continuing to use and increment the keys from the source.  It's only useful
  * when called from bcon_append_ctx_va */
 static void
-_bson_concat_array (bson_t *dest, const bson_t *src, bcon_append_ctx_t *ctx)
+_bson_concat_array(bson_t *dest, const bson_t *src, bcon_append_ctx_t *ctx)
 {
    bson_iter_t iter;
    const char *key;
    char i_str[16];
    bool r;
 
-   r = bson_iter_init (&iter, src);
+   r = bson_iter_init(&iter, src);
 
    if (!r) {
-      fprintf (stderr, "Invalid BSON document, possible memory coruption.\n");
+      fprintf(stderr, "Invalid BSON document, possible memory coruption.\n");
       return;
    }
 
    STACK_I--;
 
-   while (bson_iter_next (&iter)) {
-      bson_uint32_to_string (STACK_I, &key, i_str, sizeof i_str);
+   while (bson_iter_next(&iter)) {
+      bson_uint32_to_string(STACK_I, &key, i_str, sizeof i_str);
       STACK_I++;
 
-      BSON_ASSERT (bson_append_iter (dest, key, -1, &iter));
+      BSON_ASSERT(bson_append_iter(dest, key, -1, &iter));
    }
 }
 
@@ -737,7 +737,7 @@ _bson_concat_array (bson_t *dest, const bson_t *src, bcon_append_ctx_t *ctx)
  * defined up top.
  * */
 void
-bcon_append_ctx_va (bson_t *bson, bcon_append_ctx_t *ctx, va_list *ap)
+bcon_append_ctx_va(bson_t *bson, bcon_append_ctx_t *ctx, va_list *ap)
 {
    bcon_type_t type;
    const char *key;
@@ -747,53 +747,53 @@ bcon_append_ctx_va (bson_t *bson, bcon_append_ctx_t *ctx, va_list *ap)
 
    while (1) {
       if (STACK_IS_ARRAY) {
-         bson_uint32_to_string (STACK_I, &key, i_str, sizeof i_str);
+         bson_uint32_to_string(STACK_I, &key, i_str, sizeof i_str);
          STACK_I++;
       } else {
-         type = _bcon_append_tokenize (ap, &u);
+         type = _bcon_append_tokenize(ap, &u);
 
          if (type == BCON_TYPE_END) {
             return;
          }
 
          if (type == BCON_TYPE_DOC_END) {
-            STACK_POP_DOC (bson_append_document_end (STACK_BSON_PARENT, STACK_BSON_CHILD));
+            STACK_POP_DOC(bson_append_document_end(STACK_BSON_PARENT, STACK_BSON_CHILD));
             continue;
          }
 
          if (type == BCON_TYPE_BCON) {
-            bson_concat (STACK_BSON_CHILD, u.BCON);
+            bson_concat(STACK_BSON_CHILD, u.BCON);
             continue;
          }
 
-         BSON_ASSERT (type == BCON_TYPE_UTF8);
+         BSON_ASSERT(type == BCON_TYPE_UTF8);
 
          key = u.UTF8;
       }
 
-      type = _bcon_append_tokenize (ap, &u);
-      BSON_ASSERT (type != BCON_TYPE_END);
+      type = _bcon_append_tokenize(ap, &u);
+      BSON_ASSERT(type != BCON_TYPE_END);
 
-      switch ((int) type) {
+      switch ((int)type) {
       case BCON_TYPE_BCON:
-         BSON_ASSERT (STACK_IS_ARRAY);
-         _bson_concat_array (STACK_BSON_CHILD, u.BCON, ctx);
+         BSON_ASSERT(STACK_IS_ARRAY);
+         _bson_concat_array(STACK_BSON_CHILD, u.BCON, ctx);
 
          break;
       case BCON_TYPE_DOC_START:
-         STACK_PUSH_DOC (bson_append_document_begin (STACK_BSON_PARENT, key, -1, STACK_BSON_CHILD));
+         STACK_PUSH_DOC(bson_append_document_begin(STACK_BSON_PARENT, key, -1, STACK_BSON_CHILD));
          break;
       case BCON_TYPE_DOC_END:
-         STACK_POP_DOC (bson_append_document_end (STACK_BSON_PARENT, STACK_BSON_CHILD));
+         STACK_POP_DOC(bson_append_document_end(STACK_BSON_PARENT, STACK_BSON_CHILD));
          break;
       case BCON_TYPE_ARRAY_START:
-         STACK_PUSH_ARRAY (bson_append_array_begin (STACK_BSON_PARENT, key, -1, STACK_BSON_CHILD));
+         STACK_PUSH_ARRAY(bson_append_array_begin(STACK_BSON_PARENT, key, -1, STACK_BSON_CHILD));
          break;
       case BCON_TYPE_ARRAY_END:
-         STACK_POP_ARRAY (bson_append_array_end (STACK_BSON_PARENT, STACK_BSON_CHILD));
+         STACK_POP_ARRAY(bson_append_array_end(STACK_BSON_PARENT, STACK_BSON_CHILD));
          break;
       default:
-         _bcon_append_single (STACK_BSON_CHILD, type, key, &u);
+         _bcon_append_single(STACK_BSON_CHILD, type, key, &u);
 
          break;
       }
@@ -823,7 +823,7 @@ bcon_append_ctx_va (bson_t *bson, bcon_append_ctx_t *ctx, va_list *ap)
  * otherwise.
  * */
 bool
-bcon_extract_ctx_va (bson_t *bson, bcon_extract_ctx_t *ctx, va_list *ap)
+bcon_extract_ctx_va(bson_t *bson, bcon_extract_ctx_t *ctx, va_list *ap)
 {
    bcon_type_t type;
    const char *key;
@@ -833,63 +833,63 @@ bcon_extract_ctx_va (bson_t *bson, bcon_extract_ctx_t *ctx, va_list *ap)
 
    bcon_extract_t u = {0};
 
-   BSON_ASSERT (bson_iter_init (&root_iter, bson));
+   BSON_ASSERT(bson_iter_init(&root_iter, bson));
 
    while (1) {
       if (STACK_IS_ARRAY) {
-         bson_uint32_to_string (STACK_I, &key, i_str, sizeof i_str);
+         bson_uint32_to_string(STACK_I, &key, i_str, sizeof i_str);
          STACK_I++;
       } else {
-         type = _bcon_extract_tokenize (ap, &u);
+         type = _bcon_extract_tokenize(ap, &u);
 
          if (type == BCON_TYPE_END) {
             return true;
          }
 
          if (type == BCON_TYPE_DOC_END) {
-            STACK_POP_DOC (_noop ());
+            STACK_POP_DOC(_noop());
             continue;
          }
 
-         BSON_ASSERT (type == BCON_TYPE_RAW);
+         BSON_ASSERT(type == BCON_TYPE_RAW);
 
          key = u.key;
       }
 
-      type = _bcon_extract_tokenize (ap, &u);
-      BSON_ASSERT (type != BCON_TYPE_END);
+      type = _bcon_extract_tokenize(ap, &u);
+      BSON_ASSERT(type != BCON_TYPE_END);
 
       if (type == BCON_TYPE_DOC_END) {
-         STACK_POP_DOC (_noop ());
+         STACK_POP_DOC(_noop());
       } else if (type == BCON_TYPE_ARRAY_END) {
-         STACK_POP_ARRAY (_noop ());
+         STACK_POP_ARRAY(_noop());
       } else {
-         memcpy (&current_iter, STACK_ITER_CHILD, sizeof current_iter);
+         memcpy(&current_iter, STACK_ITER_CHILD, sizeof current_iter);
 
-         if (!bson_iter_find (&current_iter, key)) {
+         if (!bson_iter_find(&current_iter, key)) {
             return false;
          }
 
-         switch ((int) type) {
+         switch ((int)type) {
          case BCON_TYPE_DOC_START:
 
-            if (bson_iter_type (&current_iter) != BSON_TYPE_DOCUMENT) {
+            if (bson_iter_type(&current_iter) != BSON_TYPE_DOCUMENT) {
                return false;
             }
 
-            STACK_PUSH_DOC (bson_iter_recurse (&current_iter, STACK_ITER_CHILD));
+            STACK_PUSH_DOC(bson_iter_recurse(&current_iter, STACK_ITER_CHILD));
             break;
          case BCON_TYPE_ARRAY_START:
 
-            if (bson_iter_type (&current_iter) != BSON_TYPE_ARRAY) {
+            if (bson_iter_type(&current_iter) != BSON_TYPE_ARRAY) {
                return false;
             }
 
-            STACK_PUSH_ARRAY (bson_iter_recurse (&current_iter, STACK_ITER_CHILD));
+            STACK_PUSH_ARRAY(bson_iter_recurse(&current_iter, STACK_ITER_CHILD));
             break;
          default:
 
-            if (!_bcon_extract_single (&current_iter, type, &u)) {
+            if (!_bcon_extract_single(&current_iter, type, &u)) {
                return false;
             }
 
@@ -900,74 +900,74 @@ bcon_extract_ctx_va (bson_t *bson, bcon_extract_ctx_t *ctx, va_list *ap)
 }
 
 void
-bcon_extract_ctx_init (bcon_extract_ctx_t *ctx)
+bcon_extract_ctx_init(bcon_extract_ctx_t *ctx)
 {
    ctx->n = 0;
    ctx->stack[0].is_array = false;
 }
 
 bool
-bcon_extract (bson_t *bson, ...)
+bcon_extract(bson_t *bson, ...)
 {
    va_list ap;
    bcon_extract_ctx_t ctx;
    bool r;
 
-   bcon_extract_ctx_init (&ctx);
+   bcon_extract_ctx_init(&ctx);
 
-   va_start (ap, bson);
+   va_start(ap, bson);
 
-   r = bcon_extract_ctx_va (bson, &ctx, &ap);
+   r = bcon_extract_ctx_va(bson, &ctx, &ap);
 
-   va_end (ap);
+   va_end(ap);
 
    return r;
 }
 
 
 void
-bcon_append (bson_t *bson, ...)
+bcon_append(bson_t *bson, ...)
 {
    va_list ap;
    bcon_append_ctx_t ctx;
 
-   bcon_append_ctx_init (&ctx);
+   bcon_append_ctx_init(&ctx);
 
-   va_start (ap, bson);
+   va_start(ap, bson);
 
-   bcon_append_ctx_va (bson, &ctx, &ap);
+   bcon_append_ctx_va(bson, &ctx, &ap);
 
-   va_end (ap);
+   va_end(ap);
 }
 
 
 void
-bcon_append_ctx (bson_t *bson, bcon_append_ctx_t *ctx, ...)
+bcon_append_ctx(bson_t *bson, bcon_append_ctx_t *ctx, ...)
 {
    va_list ap;
 
-   va_start (ap, ctx);
+   va_start(ap, ctx);
 
-   bcon_append_ctx_va (bson, ctx, &ap);
+   bcon_append_ctx_va(bson, ctx, &ap);
 
-   va_end (ap);
+   va_end(ap);
 }
 
 
 void
-bcon_extract_ctx (bson_t *bson, bcon_extract_ctx_t *ctx, ...)
+bcon_extract_ctx(bson_t *bson, bcon_extract_ctx_t *ctx, ...)
 {
    va_list ap;
 
-   va_start (ap, ctx);
+   va_start(ap, ctx);
 
-   bcon_extract_ctx_va (bson, ctx, &ap);
+   bcon_extract_ctx_va(bson, ctx, &ap);
 
-   va_end (ap);
+   va_end(ap);
 }
 
 void
-bcon_append_ctx_init (bcon_append_ctx_t *ctx)
+bcon_append_ctx_init(bcon_append_ctx_t *ctx)
 {
    ctx->n = 0;
    ctx->stack[0].is_array = 0;
@@ -975,21 +975,21 @@ bcon_append_ctx_init (bcon_append_ctx_t *ctx)
 
 
 bson_t *
-bcon_new (void *unused, ...)
+bcon_new(void *unused, ...)
 {
    va_list ap;
    bcon_append_ctx_t ctx;
    bson_t *bson;
 
-   bcon_append_ctx_init (&ctx);
+   bcon_append_ctx_init(&ctx);
 
-   bson = bson_new ();
+   bson = bson_new();
 
-   va_start (ap, unused);
+   va_start(ap, unused);
 
-   bcon_append_ctx_va (bson, &ctx, &ap);
+   bcon_append_ctx_va(bson, &ctx, &ap);
 
-   va_end (ap);
+   va_end(ap);
 
    return bson;
 }

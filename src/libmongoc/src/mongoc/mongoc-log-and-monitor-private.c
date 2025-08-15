@@ -27,11 +27,11 @@
  * Captures default structured log options from the environment
  */
 void
-mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_instance)
+mongoc_log_and_monitor_instance_init(mongoc_log_and_monitor_instance_t *new_instance)
 {
-   BSON_ASSERT_PARAM (new_instance);
+   BSON_ASSERT_PARAM(new_instance);
 
-   mongoc_log_and_monitor_instance_set_apm_callbacks (new_instance, NULL, NULL);
+   mongoc_log_and_monitor_instance_set_apm_callbacks(new_instance, NULL, NULL);
 
    /* This apm_mutex currently only provides explicit exclusion for heartbeat events. It was introduced along with
     * background monitoring threads, to retain compatibility with existing code and with the SDAM spec guarantee:
@@ -44,11 +44,11 @@ mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_ins
     * rather than per-server) and it's unclear that this always provides the necessary exclusion between different event
     * types on the same server.
     */
-   bson_mutex_init (&new_instance->apm_mutex);
+   bson_mutex_init(&new_instance->apm_mutex);
 
-   mongoc_structured_log_opts_t *structured_log_opts = mongoc_structured_log_opts_new ();
-   new_instance->structured_log = mongoc_structured_log_instance_new (structured_log_opts);
-   mongoc_structured_log_opts_destroy (structured_log_opts);
+   mongoc_structured_log_opts_t *structured_log_opts = mongoc_structured_log_opts_new();
+   new_instance->structured_log = mongoc_structured_log_instance_new(structured_log_opts);
+   mongoc_structured_log_opts_destroy(structured_log_opts);
 }
 
 /**
@@ -58,15 +58,15 @@ mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_ins
  * There must not be any other threads using the instance concurrently.
  */
 void
-mongoc_log_and_monitor_instance_destroy_contents (mongoc_log_and_monitor_instance_t *instance)
+mongoc_log_and_monitor_instance_destroy_contents(mongoc_log_and_monitor_instance_t *instance)
 {
-   BSON_ASSERT_PARAM (instance);
+   BSON_ASSERT_PARAM(instance);
 
-   BSON_ASSERT (instance->structured_log);
-   mongoc_structured_log_instance_destroy (instance->structured_log);
+   BSON_ASSERT(instance->structured_log);
+   mongoc_structured_log_instance_destroy(instance->structured_log);
    instance->structured_log = NULL;
 
-   bson_mutex_destroy (&instance->apm_mutex);
+   bson_mutex_destroy(&instance->apm_mutex);
 }
 
 /**
@@ -77,12 +77,12 @@ mongoc_log_and_monitor_instance_destroy_contents (mongoc_log_and_monitor_instanc
  * client. In pooled mode, it's only valid prior to the first client init.
  */
 void
-mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instance_t *instance,
-                                                   const mongoc_apm_callbacks_t *callbacks,
-                                                   void *context)
+mongoc_log_and_monitor_instance_set_apm_callbacks(mongoc_log_and_monitor_instance_t *instance,
+                                                  const mongoc_apm_callbacks_t *callbacks,
+                                                  void *context)
 {
-   BSON_ASSERT_PARAM (instance);
-   instance->apm_callbacks = callbacks ? *callbacks : (mongoc_apm_callbacks_t) {0};
+   BSON_ASSERT_PARAM(instance);
+   instance->apm_callbacks = callbacks ? *callbacks : (mongoc_apm_callbacks_t){0};
    instance->apm_context = context;
 }
 
@@ -96,10 +96,10 @@ mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instan
  * client. In pooled mode, it's only valid prior to the first client init.
  */
 void
-mongoc_log_and_monitor_instance_set_structured_log_opts (mongoc_log_and_monitor_instance_t *instance,
-                                                         const mongoc_structured_log_opts_t *opts)
+mongoc_log_and_monitor_instance_set_structured_log_opts(mongoc_log_and_monitor_instance_t *instance,
+                                                        const mongoc_structured_log_opts_t *opts)
 {
-   BSON_ASSERT_PARAM (instance);
-   mongoc_structured_log_instance_destroy (instance->structured_log);
-   instance->structured_log = mongoc_structured_log_instance_new (opts);
+   BSON_ASSERT_PARAM(instance);
+   mongoc_structured_log_instance_destroy(instance->structured_log);
+   instance->structured_log = mongoc_structured_log_instance_new(opts);
 }

@@ -46,45 +46,45 @@ typedef struct _request_t {
 } request_t;
 
 request_t *
-request_new (const mongoc_buffer_t *buffer,
-             int32_t msg_len,
-             struct _mock_server_t *server,
-             mongoc_stream_t *client,
-             uint16_t client_port,
-             sync_queue_t *replies);
+request_new(const mongoc_buffer_t *buffer,
+            int32_t msg_len,
+            struct _mock_server_t *server,
+            mongoc_stream_t *client,
+            uint16_t client_port,
+            sync_queue_t *replies);
 
 const bson_t *
-request_get_doc (const request_t *request, size_t n);
+request_get_doc(const request_t *request, size_t n);
 
 void
-assert_request_matches_flags (const request_t *request, uint32_t flags);
+assert_request_matches_flags(const request_t *request, uint32_t flags);
 
 bool
-request_matches_query (const request_t *request,
-                       const char *ns,
-                       uint32_t flags,
-                       uint32_t skip,
-                       int32_t n_return,
-                       const char *query_json,
-                       const char *fields_json,
-                       bool is_command);
+request_matches_query(const request_t *request,
+                      const char *ns,
+                      uint32_t flags,
+                      uint32_t skip,
+                      int32_t n_return,
+                      const char *query_json,
+                      const char *fields_json,
+                      bool is_command);
 
 bool
-request_matches_kill_cursors (const request_t *request, int64_t cursor_id);
+request_matches_kill_cursors(const request_t *request, int64_t cursor_id);
 
 bool
-request_matches_msg (const request_t *request, uint32_t flags, const bson_t **docs, size_t n_docs);
+request_matches_msg(const request_t *request, uint32_t flags, const bson_t **docs, size_t n_docs);
 
 bool
-request_matches_msgv (const request_t *request, uint32_t flags, va_list *args);
+request_matches_msgv(const request_t *request, uint32_t flags, va_list *args);
 
 uint16_t
-request_get_server_port (request_t *request);
+request_get_server_port(request_t *request);
 
 uint16_t
-request_get_client_port (request_t *request);
+request_get_client_port(request_t *request);
 
 void
-request_destroy (request_t *request);
+request_destroy(request_t *request);
 
 #endif /* REQUEST_H */

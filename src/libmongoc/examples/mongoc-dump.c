@@ -23,15 +23,15 @@
 
 
 static bool
-mongoc_dump_mkdir_p (const char *path, int mode)
+mongoc_dump_mkdir_p(const char *path, int mode)
 {
    int r;
 
 #ifdef _WIN32
-   (void) mode;
-   r = _mkdir (path);
+   (void)mode;
+   r = _mkdir(path);
 #else
-   r = mkdir (path, mode);
+   r = mkdir(path, mode);
 #endif
 
    return (r == 0 || errno == EEXIST);
@@ -39,7 +39,7 @@ mongoc_dump_mkdir_p (const char *path, int mode)
 
 
 static int
-mongoc_dump_collection (mongoc_client_t *client, const char *database, const char *collection)
+mongoc_dump_collection(mongoc_client_t *client, const char *database, const char *collection)
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
@@ -50,47 +50,47 @@ mongoc_dump_collection (mongoc_client_t *client, const char *database, const cha
    char *path;
    int ret = EXIT_SUCCESS;
 
-   path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
+   path = bson_strdup_printf("dump/%s/%s.bson", database, collection);
 #ifdef _WIN32
-   _unlink (path);
+   _unlink(path);
 #else
-   unlink (path);
+   unlink(path);
 #endif
 
-   stream = fopen (path, "w");
+   stream = fopen(path, "w");
    if (!stream) {
-      fprintf (stderr, "Failed to open \"%s\", aborting.\n", path);
-      exit (EXIT_FAILURE);
+      fprintf(stderr, "Failed to open \"%s\", aborting.\n", path);
+      exit(EXIT_FAILURE);
    }
 
-   col = mongoc_client_get_collection (client, database, collection);
-   cursor = mongoc_collection_find_with_opts (col, &query, NULL, NULL);
+   col = mongoc_client_get_collection(client, database, collection);
+   cursor = mongoc_collection_find_with_opts(col, &query, NULL, NULL);
 
-   while (mongoc_cursor_next (cursor, &doc)) {
-      if (BSON_UNLIKELY (doc->len != fwrite (bson_get_data (doc), 1, doc->len, stream))) {
-         fprintf (stderr, "Failed to write %u bytes to %s\n", doc->len, path);
+   while (mongoc_cursor_next(cursor, &doc)) {
+      if (BSON_UNLIKELY(doc->len != fwrite(bson_get_data(doc), 1, doc->len, stream))) {
+         fprintf(stderr, "Failed to write %u bytes to %s\n", doc->len, path);
          ret = EXIT_FAILURE;
          goto cleanup;
       }
    }
 
-   if (mongoc_cursor_error (cursor, &error)) {
-      fprintf (stderr, "ERROR: %s\n", error.message);
+   if (mongoc_cursor_error(cursor, &error)) {
+      fprintf(stderr, "ERROR: %s\n", error.message);
       ret = EXIT_FAILURE;
    }
 
 cleanup:
-   bson_free (path);
-   fclose (stream);
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (col);
+   bson_free(path);
+   fclose(stream);
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(col);
 
    return ret;
 }
 
 
 static int
-mongoc_dump_database (mongoc_client_t *client, const char *database, const char *collection)
+mongoc_dump_database(mongoc_client_t *client, const char *database, const char *collection)
 {
    mongoc_database_t *db;
    bson_error_t error;
@@ -99,94 +99,94 @@ mongoc_dump_database (mongoc_client_t *client, const char *database, const char 
    int ret = EXIT_SUCCESS;
    int i;
 
-   BSON_ASSERT_PARAM (client);
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM(client);
+   BSON_ASSERT(database);
 
-   path = bson_strdup_printf ("dump/%s", database);
-   if (!mongoc_dump_mkdir_p (path, 0750)) {
-      fprintf (stderr, "failed to create directory \"%s\"", path);
-      bson_free (path);
+   path = bson_strdup_printf("dump/%s", database);
+   if (!mongoc_dump_mkdir_p(path, 0750)) {
+      fprintf(stderr, "failed to create directory \"%s\"", path);
+      bson_free(path);
       return EXIT_FAILURE;
    }
 
-   bson_free (path);
+   bson_free(path);
 
    if (collection) {
-      return mongoc_dump_collection (client, database, collection);
+      return mongoc_dump_collection(client, database, collection);
    }
 
-   db = mongoc_client_get_database (client, database);
-   str = mongoc_database_get_collection_names_with_opts (db, NULL, &error);
+   db = mongoc_client_get_database(client, database);
+   str = mongoc_database_get_collection_names_with_opts(db, NULL, &error);
    for (i = 0; str[i]; i++) {
-      if (EXIT_SUCCESS != mongoc_dump_collection (client, database, str[i])) {
+      if (EXIT_SUCCESS != mongoc_dump_collection(client, database, str[i])) {
          ret = EXIT_FAILURE;
          goto cleanup;
       }
    }
 
 cleanup:
-   mongoc_database_destroy (db);
-   bson_strfreev (str);
+   mongoc_database_destroy(db);
+   bson_strfreev(str);
 
    return ret;
 }
 
 
 static int
-mongoc_dump (mongoc_client_t *client, const char *database, const char *collection)
+mongoc_dump(mongoc_client_t *client, const char *database, const char *collection)
 {
    bson_error_t error;
    char **str;
    int i;
 
-   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM(client);
 
-   if (!mongoc_dump_mkdir_p ("dump", 0750)) {
-      perror ("Failed to create directory \"dump\"");
+   if (!mongoc_dump_mkdir_p("dump", 0750)) {
+      perror("Failed to create directory \"dump\"");
       return EXIT_FAILURE;
    }
 
    if (database) {
-      return mongoc_dump_database (client, database, collection);
+      return mongoc_dump_database(client, database, collection);
    }
 
-   if (!(str = mongoc_client_get_database_names_with_opts (client, NULL, &error))) {
-      fprintf (stderr, "Failed to fetch database names: %s\n", error.message);
+   if (!(str = mongoc_client_get_database_names_with_opts(client, NULL, &error))) {
+      fprintf(stderr, "Failed to fetch database names: %s\n", error.message);
       return EXIT_FAILURE;
    }
 
    for (i = 0; str[i]; i++) {
-      if (EXIT_SUCCESS != mongoc_dump_database (client, str[i], NULL)) {
-         bson_strfreev (str);
+      if (EXIT_SUCCESS != mongoc_dump_database(client, str[i], NULL)) {
+         bson_strfreev(str);
          return EXIT_FAILURE;
       }
    }
 
-   bson_strfreev (str);
+   bson_strfreev(str);
 
    return EXIT_SUCCESS;
 }
 
 
 static void
-usage (FILE *stream)
+usage(FILE *stream)
 {
-   fprintf (stream,
-            "Usage: mongoc-dump [OPTIONS]\n"
-            "\n"
-            "Options:\n"
-            "\n"
-            "  -h HOST      Optional hostname to connect to [127.0.0.1].\n"
-            "  -p PORT      Optional port to connect to [27017].\n"
-            "  -d DBNAME    Optional database name to dump.\n"
-            "  -c COLNAME   Optional collection name to dump.\n"
-            "  --ssl        Use SSL when connecting to server.\n"
-            "\n");
+   fprintf(stream,
+           "Usage: mongoc-dump [OPTIONS]\n"
+           "\n"
+           "Options:\n"
+           "\n"
+           "  -h HOST      Optional hostname to connect to [127.0.0.1].\n"
+           "  -p PORT      Optional port to connect to [27017].\n"
+           "  -d DBNAME    Optional database name to dump.\n"
+           "  -c COLNAME   Optional collection name to dump.\n"
+           "  --ssl        Use SSL when connecting to server.\n"
+           "\n");
 }
 
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    mongoc_client_t *client;
    const char *collection = NULL;
@@ -200,55 +200,55 @@ main (int argc, char *argv[])
    int ret;
    int i;
 
-   mongoc_init ();
+   mongoc_init();
 
    for (i = 1; i < argc; i++) {
-      if (0 == strcmp (argv[i], "-c") && ((i + 1) < argc)) {
+      if (0 == strcmp(argv[i], "-c") && ((i + 1) < argc)) {
          collection = argv[++i];
-      } else if (0 == strcmp (argv[i], "-d") && ((i + 1) < argc)) {
+      } else if (0 == strcmp(argv[i], "-d") && ((i + 1) < argc)) {
          database = argv[++i];
-      } else if (0 == strcmp (argv[i], "--help")) {
-         usage (stdout);
+      } else if (0 == strcmp(argv[i], "--help")) {
+         usage(stdout);
          return EXIT_SUCCESS;
-      } else if (0 == strcmp (argv[i], "-h") && ((i + 1) < argc)) {
+      } else if (0 == strcmp(argv[i], "-h") && ((i + 1) < argc)) {
          host = argv[++i];
-      } else if (0 == strcmp (argv[i], "--ssl")) {
+      } else if (0 == strcmp(argv[i], "--ssl")) {
          ssl = true;
-      } else if (0 == strcmp (argv[i], "-p") && ((i + 1) < argc)) {
-         port = atoi (argv[++i]);
+      } else if (0 == strcmp(argv[i], "-p") && ((i + 1) < argc)) {
+         port = atoi(argv[++i]);
          if (!port) {
-            fprintf (stderr, "Invalid port \"%s\"", argv[i]);
+            fprintf(stderr, "Invalid port \"%s\"", argv[i]);
             return EXIT_FAILURE;
          }
       } else {
-         fprintf (stderr, "Unknown argument \"%s\"\n", argv[i]);
+         fprintf(stderr, "Unknown argument \"%s\"\n", argv[i]);
          return EXIT_FAILURE;
       }
    }
 
-   uri_string = bson_strdup_printf (
+   uri_string = bson_strdup_printf(
       "mongodb://%s:%hu/%s?appname=dump-example&ssl=%s", host, port, database ? database : "", ssl ? "true" : "false");
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               uri_string,
-               error.message);
+      fprintf(stderr,
+              "failed to parse URI: %s\n"
+              "error message:       %s\n",
+              uri_string,
+              error.message);
       return EXIT_FAILURE;
    }
 
-   if (!(client = mongoc_client_new_from_uri (uri))) {
+   if (!(client = mongoc_client_new_from_uri(uri))) {
       return EXIT_FAILURE;
    }
 
-   mongoc_client_set_error_api (client, 2);
+   mongoc_client_set_error_api(client, 2);
 
-   ret = mongoc_dump (client, database, collection);
+   ret = mongoc_dump(client, database, collection);
 
-   mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
+   mongoc_uri_destroy(uri);
+   mongoc_client_destroy(client);
 
    return ret;
 }

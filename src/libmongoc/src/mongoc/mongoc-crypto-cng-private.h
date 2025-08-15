@@ -34,58 +34,58 @@
 BSON_BEGIN_DECLS
 
 void
-mongoc_crypto_cng_init (void);
+mongoc_crypto_cng_init(void);
 
 void
-mongoc_crypto_cng_cleanup (void);
+mongoc_crypto_cng_cleanup(void);
 
 bool
-mongoc_crypto_cng_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
-                                    const char *password,
-                                    size_t password_len,
-                                    const uint8_t *salt,
-                                    size_t salt_len,
-                                    uint32_t iterations,
-                                    size_t output_len,
-                                    unsigned char *output);
+mongoc_crypto_cng_pbkdf2_hmac_sha1(mongoc_crypto_t *crypto,
+                                   const char *password,
+                                   size_t password_len,
+                                   const uint8_t *salt,
+                                   size_t salt_len,
+                                   uint32_t iterations,
+                                   size_t output_len,
+                                   unsigned char *output);
 
 void
-mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
-                             const void *key,
-                             int key_len,
-                             const unsigned char *data,
-                             int data_len,
-                             unsigned char *hmac_out);
+mongoc_crypto_cng_hmac_sha1(mongoc_crypto_t *crypto,
+                            const void *key,
+                            int key_len,
+                            const unsigned char *data,
+                            int data_len,
+                            unsigned char *hmac_out);
 
 bool
-mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
-                        const unsigned char *input,
-                        const size_t input_len,
-                        unsigned char *hash_out);
+mongoc_crypto_cng_sha1(mongoc_crypto_t *crypto,
+                       const unsigned char *input,
+                       const size_t input_len,
+                       unsigned char *hash_out);
 
 bool
-mongoc_crypto_cng_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
-                                      const char *password,
-                                      size_t password_len,
-                                      const uint8_t *salt,
-                                      size_t salt_len,
-                                      uint32_t iterations,
-                                      size_t output_len,
-                                      unsigned char *output);
+mongoc_crypto_cng_pbkdf2_hmac_sha256(mongoc_crypto_t *crypto,
+                                     const char *password,
+                                     size_t password_len,
+                                     const uint8_t *salt,
+                                     size_t salt_len,
+                                     uint32_t iterations,
+                                     size_t output_len,
+                                     unsigned char *output);
 
 void
-mongoc_crypto_cng_hmac_sha256 (mongoc_crypto_t *crypto,
-                               const void *key,
-                               int key_len,
-                               const unsigned char *data,
-                               int data_len,
-                               unsigned char *hmac_out);
+mongoc_crypto_cng_hmac_sha256(mongoc_crypto_t *crypto,
+                              const void *key,
+                              int key_len,
+                              const unsigned char *data,
+                              int data_len,
+                              unsigned char *hmac_out);
 
 bool
-mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
-                          const unsigned char *input,
-                          const size_t input_len,
-                          unsigned char *hash_out);
+mongoc_crypto_cng_sha256(mongoc_crypto_t *crypto,
+                         const unsigned char *input,
+                         const size_t input_len,
+                         unsigned char *hash_out);
 
 BSON_END_DECLS
 

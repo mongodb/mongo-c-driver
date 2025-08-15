@@ -59,7 +59,7 @@
 #include <stdint.h>
 #include <string.h>
 
-mlib_extern_c_begin ();
+mlib_extern_c_begin();
 
 /**
  * @brief Perform integer addition
@@ -74,7 +74,7 @@ mlib_extern_c_begin ();
  *
  * If the argument `B` is omitted, computes `*Out + A` (performs in-place addition).
  */
-#define mlib_add(...) MLIB_ARGC_PICK (_mlib_ckdint, mlib_add, __VA_ARGS__)
+#define mlib_add(...) MLIB_ARGC_PICK(_mlib_ckdint, mlib_add, __VA_ARGS__)
 /**
  * @brief Perform integer subtraction
  *
@@ -88,7 +88,7 @@ mlib_extern_c_begin ();
  *
  * If the argument `B` is omitted, computes `*Out - A` (performs in-place subtraction)
  */
-#define mlib_sub(...) MLIB_ARGC_PICK (_mlib_ckdint, mlib_sub, __VA_ARGS__)
+#define mlib_sub(...) MLIB_ARGC_PICK(_mlib_ckdint, mlib_sub, __VA_ARGS__)
 /**
  * @brief Perform integer multiplication
  *
@@ -102,7 +102,7 @@ mlib_extern_c_begin ();
  *
  * If the argument `B` is omitted, computes `Out × A` (performs in-place multiplication)
  */
-#define mlib_mul(...) MLIB_ARGC_PICK (_mlib_ckdint, mlib_mul, __VA_ARGS__)
+#define mlib_mul(...) MLIB_ARGC_PICK(_mlib_ckdint, mlib_mul, __VA_ARGS__)
 /**
  * @brief Perform narrowing assignment from one integer value to another.
  *
@@ -111,7 +111,7 @@ mlib_extern_c_begin ();
  * @retval `true` if the value written to `Out` is not equivalent to the value of `A`
  * @retval `false` otherwise
  */
-#define mlib_narrow(O, A) mlib_add ((O), (A), 0)
+#define mlib_narrow(O, A) mlib_add((O), (A), 0)
 
 /**
  * @brief Perform an asserting addition, yielding the result
@@ -124,7 +124,7 @@ mlib_extern_c_begin ();
  * If the true arithmetic sum is not representable in `T`, the program terminates.
  */
 #define mlib_assert_add(T, A, B) \
-   _mlib_assert_ckdint (T, A, B, &mlib_add, "mlib_assert_add", #T, #A, #B, mlib_this_source_location ())
+   _mlib_assert_ckdint(T, A, B, &mlib_add, "mlib_assert_add", #T, #A, #B, mlib_this_source_location())
 /**
  * @brief Perform an asserting subtraction, yielding the result
  *
@@ -136,7 +136,7 @@ mlib_extern_c_begin ();
  * If the true arithmetic difference is not representable in `T`, the program terminates.
  */
 #define mlib_assert_sub(T, A, B) \
-   _mlib_assert_ckdint (T, A, B, &mlib_sub, "mlib_assert_sub", #T, #A, #B, mlib_this_source_location ())
+   _mlib_assert_ckdint(T, A, B, &mlib_sub, "mlib_assert_sub", #T, #A, #B, mlib_this_source_location())
 /**
  * @brief Perform an asserting multiplication, yielding the result
  *
@@ -148,7 +148,7 @@ mlib_extern_c_begin ();
  * If the true arithmetic product is not representable in `T`, the program terminates.
  */
 #define mlib_assert_mul(T, A, B) \
-   _mlib_assert_ckdint (T, A, B, &mlib_mul, "mlib_assert_mul", #T, #A, #B, mlib_this_source_location ())
+   _mlib_assert_ckdint(T, A, B, &mlib_mul, "mlib_assert_mul", #T, #A, #B, mlib_this_source_location())
 
 /**
  * @brief Perform a runtime-checked cast of an integral value to another type.
@@ -160,32 +160,32 @@ mlib_extern_c_begin ();
  * terminated with a diagnostic.
  */
 #define mlib_assert_narrow(T, Operand) \
-   (T) _mlib_checked_cast (            \
-      mlib_minof (T), mlib_maxof (T), mlib_upsize_integer (Operand), #T, #Operand, mlib_this_source_location ())
+   (T) _mlib_checked_cast(             \
+      mlib_minof(T), mlib_maxof(T), mlib_upsize_integer(Operand), #T, #Operand, mlib_this_source_location())
 
-#define _mlib_ckdint_argc_3(Fn, Out, Arg) _mlib_ckdint_argc_4 (Fn, Out, *(Out), Arg)
-#define _mlib_ckdint_argc_4(Fn, O, A, B)                                                                          \
-   _mlib_ckdint (O,                                                                                               \
-                 sizeof (*(O)),                                                                                   \
-                 _mlibClobberIsSigned (*(O), 0) ? (intmax_t) _mlibMinofSigned (*(O)) : _mlibMinofUnsigned (*(O)), \
-                 _mlibClobberIsSigned (*(O), 1) ? _mlibMaxofSigned (*(O)) : _mlibMaxofUnsigned (*(O)),            \
-                 mlib_upsize_integer (A),                                                                         \
-                 mlib_upsize_integer (B),                                                                         \
-                 &Fn)
+#define _mlib_ckdint_argc_3(Fn, Out, Arg) _mlib_ckdint_argc_4(Fn, Out, *(Out), Arg)
+#define _mlib_ckdint_argc_4(Fn, O, A, B)                                                                     \
+   _mlib_ckdint(O,                                                                                           \
+                sizeof(*(O)),                                                                                \
+                _mlibClobberIsSigned(*(O), 0) ? (intmax_t)_mlibMinofSigned(*(O)) : _mlibMinofUnsigned(*(O)), \
+                _mlibClobberIsSigned(*(O), 1) ? _mlibMaxofSigned(*(O)) : _mlibMaxofUnsigned(*(O)),           \
+                mlib_upsize_integer(A),                                                                      \
+                mlib_upsize_integer(B),                                                                      \
+                &Fn)
 
 // Impl macro for the asserting checked arithmetic functions
 #define _mlib_assert_ckdint(T, A, B, Fn, F_str, T_str, A_str, B_str, Here) \
-   ((T) _mlib_assert_ckdint (sizeof (T),                                   \
-                             mlib_minof (T),                               \
-                             mlib_maxof (T),                               \
-                             mlib_upsize_integer (A),                      \
-                             mlib_upsize_integer (B),                      \
-                             Fn,                                           \
-                             F_str,                                        \
-                             T_str,                                        \
-                             A_str,                                        \
-                             B_str,                                        \
-                             Here))
+   ((T)_mlib_assert_ckdint(sizeof(T),                                      \
+                           mlib_minof(T),                                  \
+                           mlib_maxof(T),                                  \
+                           mlib_upsize_integer(A),                         \
+                           mlib_upsize_integer(B),                         \
+                           Fn,                                             \
+                           F_str,                                          \
+                           T_str,                                          \
+                           A_str,                                          \
+                           B_str,                                          \
+                           Here))
 
 // clang-format off
 // Generates an 0b11111 bit pattern for appropriate size:
@@ -231,9 +231,9 @@ static mlib_maybe_unused mlib_thread_local bool _mlibSignCheckResult[2];
 // clang-format on
 
 // Compile-time assert that the compiler's integer conversions obey two's complement encoding
-mlib_static_assert ((intmax_t) UINTMAX_MAX == -1 //
-                       && (intmax_t) (UINTMAX_MAX - 5) == -6,
-                    "This file requires two's complement signed integers");
+mlib_static_assert((intmax_t)UINTMAX_MAX == -1 //
+                      && (intmax_t)(UINTMAX_MAX - 5) == -6,
+                   "This file requires two's complement signed integers");
 
 /**
  * @brief Function signature for checked arithmetic support functions
@@ -253,17 +253,17 @@ mlib_static_assert ((intmax_t) UINTMAX_MAX == -1 //
  * pointer with this signature. GCC and Clang handle this fine, but for MSVC performance
  * the more verbose signature is used.
  */
-typedef bool (*_mlib_ckdint_arith_fn) (
+typedef bool (*_mlib_ckdint_arith_fn)(
    uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b);
 
 // Support function for the `mlib_add` macro
-static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b)
+static inline bool(mlib_add)(uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b)
    mlib_noexcept
 {
    // Perform regular wrapping arithmetic on the unsigned value. The bit pattern
    // is equivalent if there is two's complement signed arithmetic.
    const uintmax_t sum = *dst = a + b;
-   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
+   const uintmax_t signbit = mlib_bits(1, mlib_bitsizeof(uintmax_t) - 1u);
    // Now we check whether that overflowed according to the sign configuration.
    // We use some bit fiddling magic that treat the signbit as a boolean for
    // "is this number negative?" or "is this number “large” (i.e. bigger than signed-max)?"
@@ -352,12 +352,12 @@ static inline bool (mlib_add) (uintmax_t *dst, bool dst_signed, bool a_signed, u
 }
 
 // Support for the `mlib_sub` macro
-static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b)
+static inline bool(mlib_sub)(uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b)
    mlib_noexcept
 {
    // Perform the subtraction using regular wrapping arithmetic
    const uintmax_t diff = *dst = a - b;
-   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
+   const uintmax_t signbit = mlib_bits(1, mlib_bitsizeof(uintmax_t) - 1u);
    // Test whether the operation overflowed for the given sign configuration
    // (See mlib_add for more details on why we do this bit fiddling)
    if (dst_signed) {
@@ -454,22 +454,21 @@ static inline bool (mlib_sub) (uintmax_t *dst, bool dst_signed, bool a_signed, u
 }
 
 // Support for the `mlib_mul` macro
-static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b)
+static inline bool(mlib_mul)(uintmax_t *dst, bool dst_signed, bool a_signed, uintmax_t a, bool b_signed, uintmax_t b)
    mlib_noexcept
 {
    // Multiplication is a lot more subtle
-   const uintmax_t signbit = mlib_bits (1, mlib_bitsizeof (uintmax_t) - 1u);
+   const uintmax_t signbit = mlib_bits(1, mlib_bitsizeof(uintmax_t) - 1u);
    if (dst_signed) {
       if (a_signed) {
          if (b_signed) {
             // S = S × S
             *dst = a * b;
-            if (((intmax_t) b == -1 && (intmax_t) a == INTMAX_MIN) ||
-                ((intmax_t) a == -1 && (intmax_t) b == INTMAX_MIN)) {
+            if (((intmax_t)b == -1 && (intmax_t)a == INTMAX_MIN) || ((intmax_t)a == -1 && (intmax_t)b == INTMAX_MIN)) {
                // MIN × -1 is undefined
                return true;
             }
-            if (a && (intmax_t) *dst / (intmax_t) a != (intmax_t) b) {
+            if (a && (intmax_t)*dst / (intmax_t)a != (intmax_t)b) {
                // Mult did not preserve the arithmetic identity
                return true;
             }
@@ -484,7 +483,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
             if (did_overflow) {
                return true;
             }
-            if (positive_prod > (uintmax_t) INTMAX_MAX + (unsigned) a_is_negative) {
+            if (positive_prod > (uintmax_t)INTMAX_MAX + (unsigned)a_is_negative) {
                return true;
             }
             return false;
@@ -493,7 +492,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) {
             // S = U × S
             // Swap args: [S = S × U]
-            return (mlib_mul) (dst, dst_signed, b_signed, b, a_signed, a);
+            return (mlib_mul)(dst, dst_signed, b_signed, b, a_signed, a);
          } else {
             // S = U × U
             *dst = a * b;
@@ -519,7 +518,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
                a = 0 - a;
                b = 0 - b;
                // MIN is pathological: 0 - MIN = MIN, so we need to check that:
-               either_min = (intmax_t) a == INTMAX_MIN || (intmax_t) b == INTMAX_MIN;
+               either_min = (intmax_t)a == INTMAX_MIN || (intmax_t)b == INTMAX_MIN;
             }
             // Check if the product would be a negative number
             const bool neg_prod = (signbit & (a ^ b)) && a && b && !either_min;
@@ -539,7 +538,7 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
          if (b_signed) {
             // U = U × S
             // Swap to [U = S × U]
-            return (mlib_mul) (dst, dst_signed, b_signed, b, a_signed, a);
+            return (mlib_mul)(dst, dst_signed, b_signed, b, a_signed, a);
          } else {
             // U = U × U: Simple:
             *dst = a * b;
@@ -564,23 +563,23 @@ static inline bool (mlib_mul) (uintmax_t *dst, bool dst_signed, bool a_signed, u
  * @return false If the resulting value represents the true arithmetic results
  */
 static inline bool
-_mlib_ckdint (void *dst,
-              int dst_sz,
-              intmax_t minval,
-              uintmax_t maxval,
-              struct mlib_upsized_integer a,
-              struct mlib_upsized_integer b,
-              _mlib_ckdint_arith_fn fn) mlib_noexcept
+_mlib_ckdint(void *dst,
+             int dst_sz,
+             intmax_t minval,
+             uintmax_t maxval,
+             struct mlib_upsized_integer a,
+             struct mlib_upsized_integer b,
+             _mlib_ckdint_arith_fn fn) mlib_noexcept
 {
    // Perform the arithmetic on uintmax_t, for wrapping behavior
    uintmax_t tmp;
-   bool ovr = fn (&tmp, minval < 0, a.is_signed, a.bits.as_unsigned, b.is_signed, b.bits.as_unsigned);
+   bool ovr = fn(&tmp, minval < 0, a.is_signed, a.bits.as_unsigned, b.is_signed, b.bits.as_unsigned);
    // Endian-adjusting for writing the result
-   const char *copy_from = (const char *) &tmp;
-   if (!mlib_is_little_endian ()) {
+   const char *copy_from = (const char *)&tmp;
+   if (!mlib_is_little_endian()) {
       // We need to adjust the copy src in order to truncate the integer for big-endian encoding.
       // Number of high bytes that we need to drop:
-      const int n_drop = (int) sizeof (tmp) - dst_sz;
+      const int n_drop = (int)sizeof(tmp) - dst_sz;
       // Adjust the copy pointer to so that we copy from the most significant byte that
       // we wish to keep
       copy_from += n_drop;
@@ -589,12 +588,12 @@ _mlib_ckdint (void *dst,
       // truncate using the memcpy()
    }
    // Send the result to the destination
-   memcpy (dst, copy_from, (size_t) dst_sz);
+   memcpy(dst, copy_from, (size_t)dst_sz);
    // Final range check:
    if (minval < 0) {
       // Treat the target as signed:
-      intmax_t idst = (intmax_t) tmp;
-      return ovr || idst < minval || (idst > 0 && (uintmax_t) idst > maxval);
+      intmax_t idst = (intmax_t)tmp;
+      return ovr || idst < minval || (idst > 0 && (uintmax_t)idst > maxval);
    } else {
       return ovr || tmp > maxval;
    }
@@ -604,70 +603,70 @@ _mlib_ckdint (void *dst,
  * @internal
  * @brief Implementation function for the asserting arithmetic functions
  */
-static inline uintmax_t (_mlib_assert_ckdint) (size_t dst_sz,
-                                               intmax_t minval,
-                                               uintmax_t maxval,
-                                               struct mlib_upsized_integer a,
-                                               struct mlib_upsized_integer b,
-                                               _mlib_ckdint_arith_fn arith,
-                                               const char *fn_str,
-                                               const char *type_str,
-                                               const char *a_str,
-                                               const char *b_str,
-                                               struct mlib_source_location here) mlib_noexcept
+static inline uintmax_t(_mlib_assert_ckdint)(size_t dst_sz,
+                                             intmax_t minval,
+                                             uintmax_t maxval,
+                                             struct mlib_upsized_integer a,
+                                             struct mlib_upsized_integer b,
+                                             _mlib_ckdint_arith_fn arith,
+                                             const char *fn_str,
+                                             const char *type_str,
+                                             const char *a_str,
+                                             const char *b_str,
+                                             struct mlib_source_location here) mlib_noexcept
 {
    uintmax_t tmp;
-   bool did_overflow = _mlib_ckdint (&tmp, dst_sz, minval, maxval, a, b, arith);
+   bool did_overflow = _mlib_ckdint(&tmp, dst_sz, minval, maxval, a, b, arith);
    if (did_overflow) {
-      fprintf (stderr,
-               "%s:%d: [in %s]: Call of %s(%s, %s, %s) resulted in arithmetic overflow\n",
-               here.file,
-               here.lineno,
-               here.func,
-               fn_str,
-               type_str,
-               a_str,
-               b_str);
-      abort ();
+      fprintf(stderr,
+              "%s:%d: [in %s]: Call of %s(%s, %s, %s) resulted in arithmetic overflow\n",
+              here.file,
+              here.lineno,
+              here.func,
+              fn_str,
+              type_str,
+              a_str,
+              b_str);
+      abort();
    }
    return tmp;
 }
 
 static inline uintmax_t
-_mlib_checked_cast (intmax_t min_,
-                    uintmax_t max_,
-                    struct mlib_upsized_integer val,
-                    const char *typename_,
-                    const char *expr,
-                    struct mlib_source_location here) mlib_noexcept
+_mlib_checked_cast(intmax_t min_,
+                   uintmax_t max_,
+                   struct mlib_upsized_integer val,
+                   const char *typename_,
+                   const char *expr,
+                   struct mlib_source_location here) mlib_noexcept
 {
-   if (!(mlib_in_range) (min_, max_, val)) {
+   if (!(mlib_in_range)(min_, max_, val)) {
       if (val.is_signed) {
-         fprintf (stderr,
-                  "%s:%d: in [%s]: Checked integer cast of “%s” (value = %lld) to “%s” loses information\n",
-                  here.file,
-                  here.lineno,
-                  here.func,
-                  expr,
-                  (long long) val.bits.as_signed,
-                  typename_);
+         fprintf(stderr,
+                 "%s:%d: in [%s]: Checked integer cast of “%s” (value = %lld) to “%s” loses information\n",
+                 here.file,
+                 here.lineno,
+                 here.func,
+                 expr,
+                 (long long)val.bits.as_signed,
+                 typename_);
       } else {
-         fprintf (stderr,
-                  "%s:%d: in [%s]: Checked integer cast of “%s” (value = %llu) to “%s” loses information\n",
-                  here.file,
-                  here.lineno,
-                  here.func,
-                  expr,
-                  (unsigned long long) val.bits.as_unsigned,
-                  typename_);
+         fprintf(stderr,
+                 "%s:%d: in [%s]: Checked integer cast of “%s” (value = %llu) to “%s” loses information\n",
+                 here.file,
+                 here.lineno,
+                 here.func,
+                 expr,
+                 (unsigned long long)val.bits.as_unsigned,
+                 typename_);
       }
-      fflush (stderr);
-      abort ();
+      fflush(stderr);
+      abort();
    }
    if (val.is_signed) {
-      return (uintmax_t) val.bits.as_signed;
+      return (uintmax_t)val.bits.as_signed;
    }
    return val.bits.as_unsigned;
 }
 
-mlib_extern_c_end ();
+mlib_extern_c_end();

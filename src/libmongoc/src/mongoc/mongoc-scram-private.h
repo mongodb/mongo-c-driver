@@ -36,7 +36,7 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_SCRAM_B64_ENCODED_SIZE(n) (2 * n)
 
-#define MONGOC_SCRAM_B64_HASH_MAX_SIZE MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_MAX_SIZE)
+#define MONGOC_SCRAM_B64_HASH_MAX_SIZE MONGOC_SCRAM_B64_ENCODED_SIZE(MONGOC_SCRAM_HASH_MAX_SIZE)
 
 enum {
    /* It is unlikely that there will be more than 64 different user accounts
@@ -66,59 +66,59 @@ typedef struct _mongoc_scram_t {
 
 #ifdef MONGOC_ENABLE_CRYPTO
 void
-_mongoc_scram_init (mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
+_mongoc_scram_init(mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
 #endif
 
 void
-_mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass);
+_mongoc_scram_set_pass(mongoc_scram_t *scram, const char *pass);
 
 void
-_mongoc_scram_set_user (mongoc_scram_t *scram, const char *user);
+_mongoc_scram_set_user(mongoc_scram_t *scram, const char *user);
 
 void
-_mongoc_scram_set_server_key (mongoc_scram_t *scram, const uint8_t *server_key, size_t len);
+_mongoc_scram_set_server_key(mongoc_scram_t *scram, const uint8_t *server_key, size_t len);
 
 void
-_mongoc_scram_set_salted_password (mongoc_scram_t *scram, const uint8_t *salted_password, size_t len);
+_mongoc_scram_set_salted_password(mongoc_scram_t *scram, const uint8_t *salted_password, size_t len);
 
 void
-_mongoc_scram_destroy (mongoc_scram_t *scram);
+_mongoc_scram_destroy(mongoc_scram_t *scram);
 
 bool
-_mongoc_scram_step (mongoc_scram_t *scram,
-                    const uint8_t *inbuf,
-                    uint32_t inbuflen,
-                    uint8_t *outbuf,
-                    uint32_t outbufmax,
-                    uint32_t *outbuflen,
-                    bson_error_t *error);
+_mongoc_scram_step(mongoc_scram_t *scram,
+                   const uint8_t *inbuf,
+                   uint32_t inbuflen,
+                   uint8_t *outbuf,
+                   uint32_t outbufmax,
+                   uint32_t *outbuflen,
+                   bson_error_t *error);
 
 /* returns false if this string does not need SASLPrep. It returns true
  * conservatively, if str might need to be SASLPrep'ed. */
 bool
-_mongoc_sasl_prep_required (const char *str);
+_mongoc_sasl_prep_required(const char *str);
 
 /* returns the output of SASLPrep as a new string which must be freed. Returns
  * null on error and sets err. */
 char *
-_mongoc_sasl_prep (const char *in_utf8, bson_error_t *err);
+_mongoc_sasl_prep(const char *in_utf8, bson_error_t *err);
 
 /* returns the byte length of the first UTF-8 code point in `s`.
  * _mongoc_utf8_char_length is exposed for testing */
 size_t
-_mongoc_utf8_char_length (const char *s);
+_mongoc_utf8_char_length(const char *s);
 
 /* returns the byte length of the UTF-8 string. Returns -1 if `s` is not a valid
  * UTF-8 string.
  * _mongoc_utf8_string_length is exposed for testing. */
 ssize_t
-_mongoc_utf8_string_length (const char *s);
+_mongoc_utf8_string_length(const char *s);
 
 /* returns the first Unicode code point in `c`. Returns 0 if length is 0.
  * `c` must be a valid UTF-8 string.
  * _mongoc_utf8_get_first_code_point is exposed for testing. */
 uint32_t
-_mongoc_utf8_get_first_code_point (const char *c, size_t length);
+_mongoc_utf8_get_first_code_point(const char *c, size_t length);
 
 /* the tables below all come from RFC 3454. They are all range tables, with
  * value 2*n being the lower bound, and value 2*n + 1 being the upper bound.
