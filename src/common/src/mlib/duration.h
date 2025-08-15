@@ -166,8 +166,9 @@ static inline mlib_duration
 _mlibDurationMultiply (const mlib_duration dur, mlib_upsized_integer fac) mlib_noexcept
 {
    mlib_duration ret = {0};
-   uintmax_t bits;
-   if ((mlib_mul) (&bits, true, true, (uintmax_t) dur._rep, fac.is_signed, fac.bits.as_unsigned)) {
+   const bool overflowed = fac.is_signed ? mlib_mul (&ret._rep, dur._rep, fac.bits.as_signed)
+                                         : mlib_mul (&ret._rep, dur._rep, fac.bits.as_unsigned);
+   if (overflowed) {
       if ((dur._rep < 0) != (fac.is_signed && fac.bits.as_signed < 0)) {
          // Different signs:  Neg × Pos = Neg
          ret = mlib_duration_min ();
@@ -176,8 +177,6 @@ _mlibDurationMultiply (const mlib_duration dur, mlib_upsized_integer fac) mlib_n
          //             Neg × Neg = Pos
          ret = mlib_duration_max ();
       }
-   } else {
-      ret._rep = (intmax_t) bits;
    }
    return ret;
 }
