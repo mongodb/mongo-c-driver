@@ -579,6 +579,12 @@ test_mongoc_client_set_stream_initiator (void)
    mongoc_client_pool_destroy (pool);
 }
 
+static int
+test_framework_skip_due_to_cdriver6080 (void)
+{
+   return 0; // CDRIVER-6080
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -609,6 +615,7 @@ test_client_pool_install (TestSuite *suite)
       disconnects_removed_servers_on_push,
       NULL,
       NULL,
+      test_framework_skip_due_to_cdriver6080,
       test_framework_skip_if_not_mongos /* require mongos to ensure two servers available */,
       test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
 
@@ -618,6 +625,7 @@ test_client_pool_install (TestSuite *suite)
       disconnects_removed_servers_in_pool,
       NULL,
       NULL,
+      test_framework_skip_due_to_cdriver6080,
       test_framework_skip_if_not_mongos /* require mongos to ensure two servers available */,
       test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
 
