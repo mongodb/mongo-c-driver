@@ -383,10 +383,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
    list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DARWIN_C_SOURCE)
 endif ()
 
-# The windows.h `min` and `max` macros should never be defined. Suppress them
-# globally rather than trying to do it in-source, which is error-prone.
-add_compile_definitions ($<$<PLATFORM_ID:Windows>:NOMINMAX>)
-
 # Convenience targets to build all tests or all examples.
 add_custom_target(mongo_c_driver_tests)
 add_custom_target(mongo_c_driver_examples)

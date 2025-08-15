@@ -17,6 +17,7 @@
 #include <strings.h>
 #endif
 
+#undef min // Used as a time unit suffix
 
 static void
 _topology_has_description (const mongoc_topology_description_t *topology, bson_t *server, const char *address)

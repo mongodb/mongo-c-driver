@@ -14,6 +14,8 @@
 
 #include <stddef.h>
 
+#undef min // Used as a time unit suffix
+
 mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make sure it compiles
 
 // Not relevant, we just want to test that it compiles:
