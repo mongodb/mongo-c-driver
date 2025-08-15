@@ -5,6 +5,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <test-libmongoc.h>
 
@@ -304,7 +306,7 @@ static BSON_THREAD_FUN (worker, arg)
    pool_timeout_args_t *args = arg;
    mongoc_client_t *client = mongoc_client_pool_pop (args->pool);
    BSON_ASSERT (client);
-   _mongoc_usleep (10);
+   mlib_sleep_for (10, us);
    mongoc_client_pool_push (args->pool, client);
    bson_mutex_lock (&args->mutex);
    /* notify main thread that current thread has terminated */

@@ -8,6 +8,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
@@ -389,7 +391,8 @@ _test_server_selection (bool try_once)
    BSON_ASSERT (client->topology->stale);
    future_destroy (future);
 
-   _mongoc_usleep (510 * 1000); /* one heartbeat, plus a few milliseconds */
+   /* one heartbeat, plus a few milliseconds */
+   mlib_sleep_for (510, ms);
 
    /* second selection, now we try hello again */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -713,7 +716,7 @@ test_cooldown_standalone (void)
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                           "No servers yet eligible for rescan");
 
-   _mongoc_usleep (1000 * 1000); /* 1 second */
+   mlib_sleep_for (1, s);
 
    /* third selection doesn't try to call hello: we're still in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -726,7 +729,8 @@ test_cooldown_standalone (void)
    future_destroy (future);
    mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
 
-   _mongoc_usleep (5100 * 1000); /* 5.1 seconds */
+   // 5.1 seconds
+   mlib_sleep_for (5100, ms);
 
    /* cooldown ends, now we try hello again, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -830,7 +834,7 @@ test_cooldown_rs (void)
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   _mongoc_usleep (1000 * 1000); /* 1 second */
+   mlib_sleep_for (1, s);
 
    /* second selection doesn't try hello on server 1: it's in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -848,7 +852,8 @@ test_cooldown_rs (void)
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   _mongoc_usleep (5100 * 1000); /* 5.1 seconds. longer than 5 sec cooldown. */
+   // 5.1 seconds, longer than the 5sec cooldown
+   mlib_sleep_for (5100, ms);
 
    /* cooldown ends, now we try hello on server 1, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, primary_pref, NULL, &error);
@@ -1230,7 +1235,7 @@ test_rtt (void *ctx)
    future = future_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    request = mock_server_receives_any_hello (server);
-   _mongoc_usleep (1000 * 1000); /* one second */
+   mlib_sleep_for (1, s);
    reply_to_request (
       request,
       MONGOC_REPLY_NONE,
@@ -1410,7 +1415,7 @@ _test_hello_retry_single (bool hangup, size_t n_failures)
    receives_command (server, future);
 
    /* wait for the next server check */
-   _mongoc_usleep (600 * 1000);
+   mlib_sleep_for (600, ms);
 
    /* start a {foo: 1} command, server check fails and retries immediately */
    future = future_command (client, &error);
@@ -1661,7 +1666,7 @@ test_incompatible_error (void)
                            WIRE_VERSION_MAX + 1);
 
    /* wait until it's time for next heartbeat */
-   _mongoc_usleep (600 * 1000);
+   mlib_sleep_for (600, ms);
    ASSERT (!mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, NULL, &error));
 
@@ -1940,7 +1945,7 @@ _test_request_scan_on_error (
          /* a scan is requested immediately. wait for the scan to finish. */
          WAIT_UNTIL (checks_cmp (&checks, "n_started", '=', 4));
       } else {
-         _mongoc_usleep (minHBMS * 2);
+         mlib_sleep_for ((minHBMS, us), mul, 2);
          BSON_ASSERT (checks_cmp (&checks, "n_started", '=', 2));
       }
    } else {
@@ -2341,7 +2346,7 @@ _test_hello_ok (bool pooled)
 
       /* Send off another ping for non-pooled clients, making sure to wait long
        * enough to require another heartbeat. */
-      _mongoc_usleep (600 * 1000);
+      mlib_sleep_for (600, ms);
       future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    }
 
@@ -2369,7 +2374,7 @@ _test_hello_ok (bool pooled)
 
       /* Send off another ping for non-pooled clients, making sure to wait long
        * enough to require another heartbeat. */
-      _mongoc_usleep (600 * 1000);
+      mlib_sleep_for (600, ms);
       future = future_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    }
 
@@ -2483,7 +2488,7 @@ test_failure_to_setup_after_retry (void)
    }
 
    // Wait until ready for next topology scan.
-   _mongoc_usleep (overridden_heartbeat_ms * 1000);
+   mlib_sleep_for (overridden_heartbeat_ms, ms);
 
    // Send another command.
    future = future_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);

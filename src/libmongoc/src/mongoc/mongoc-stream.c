@@ -33,6 +33,8 @@
 #include <bson/bson.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -326,7 +328,13 @@ mongoc_stream_get_tls_stream (mongoc_stream_t *stream) /* IN */
 }
 
 ssize_t
-mongoc_stream_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout)
+mongoc_stream_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout_ms)
+{
+   return _mongoc_stream_poll_internal (streams, nstreams, mlib_expires_after (mlib_duration (timeout_ms, ms)));
+}
+
+ssize_t
+_mongoc_stream_poll_internal (mongoc_stream_poll_t *streams, size_t nstreams, mlib_timer until)
 {
    mongoc_stream_poll_t *poller = (mongoc_stream_poll_t *) bson_malloc (sizeof (*poller) * nstreams);
 
@@ -353,7 +361,12 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t time
       goto CLEANUP;
    }
 
-   rval = poller[0].stream->poll (poller, nstreams, timeout);
+   int32_t time_remain_ms = 0;
+   if (mlib_narrow (&time_remain_ms, mlib_milliseconds_count (mlib_timer_remaining (until)))) {
+      // Too many ms, just use the max
+      time_remain_ms = INT32_MAX;
+   }
+   rval = poller[0].stream->poll (poller, nstreams, time_remain_ms);
 
    if (rval > 0) {
       for (size_t i = 0u; i < nstreams; i++) {

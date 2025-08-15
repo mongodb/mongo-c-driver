@@ -92,7 +92,34 @@
    MLIB_JUST(_mlibPickSixteenth \
                MLIB_NOTHING("MSVC workaround") \
             (__VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~))
+// Expands to a single comma if invoked as a function-like macro
 #define _mlibCommaIfParens(...) ,
+
+/**
+ * @brief Expands to `1` if the given macro argument is a parenthesized group of
+ *    tokens, otherwise `0`
+ */
+#define MLIB_IS_PARENTHESIZED(X) \
+   _mlibHasComma(_mlibCommaIfParens X)
+
+/**
+ * @brief Pass a function-like macro name, inhibiting its expansion until the
+ * next pass:
+ *
+ *      #define func_macro(x) x
+ *
+ *      MLIB_DEFERRED(func_macro)(foo)  // Expands to "func_macro(foo)", not "foo"
+ */
+#define MLIB_DEFERRED(MacroName) \
+    /* Expand to the macro name: */ \
+    MacroName \
+    /*-
+     * Place a separator between the function macro name and whatever comes next
+     * in the file. Presumably, the next token will be the parens to invoke "MacroName",
+     * but this separator inhibits its expansion unless something else comes
+     * along to do another expansion pass
+     */ \
+    MLIB_NOTHING("[separator]")
 
 /**
  * A helper for isEmpty(): If given (0, 0, 0, 1), expands as:
@@ -130,9 +157,8 @@
  * is not expanded and is discarded.
  */
 #define MLIB_IF_ELSE(...) MLIB_PASTE (_mlibIfElseBranch_, MLIB_BOOLEAN (__VA_ARGS__))
-#define _mlibIfElseBranch_1(...) __VA_ARGS__ _mlibNoExpandNothing
-#define _mlibIfElseBranch_0(...) MLIB_NOTHING (#__VA_ARGS__) MLIB_JUST
-#define _mlibNoExpandNothing(...) MLIB_NOTHING (#__VA_ARGS__)
+#define _mlibIfElseBranch_1(...) __VA_ARGS__ MLIB_NOTHING
+#define _mlibIfElseBranch_0(...) MLIB_JUST
 
 /**
  * @brief Expands to an integer literal corresponding to the number of macro
@@ -146,9 +172,12 @@
 /**
  * @brief Expand to a call expression `Prefix##_argc_N(...)`, where `N` is the
  * number of macro arguments.
+ *
+ * XXX: The `MLIB_JUST` forces an additional expansion pass that works around a
+ * bug in the old MSVC preprocessor, but is not required in a conforming preprocessor.
  */
-#define MLIB_ARGC_PICK(Prefix, ...) \
-   MLIB_JUST (MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__)) (__VA_ARGS__))
+#define MLIB_ARGC_PICK(Prefix, ...) MLIB_JUST (MLIB_ARGC_PASTE (Prefix, __VA_ARGS__) (__VA_ARGS__))
+#define MLIB_ARGC_PASTE(Prefix, ...) MLIB_PASTE_3 (Prefix, _argc_, MLIB_ARG_COUNT (__VA_ARGS__))
 
 #ifdef __cplusplus
 #define mlib_is_cxx() 1

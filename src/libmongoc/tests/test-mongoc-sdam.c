@@ -7,6 +7,9 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
+
 #include <json-test.h>
 #include <test-libmongoc.h>
 
@@ -14,6 +17,7 @@
 #include <strings.h>
 #endif
 
+#undef min // Used as a time unit suffix
 
 static void
 _topology_has_description (const mongoc_topology_description_t *topology, bson_t *server, const char *address)
@@ -751,9 +755,9 @@ heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
 #endif
 }
 
-#define RTT_TEST_TIMEOUT_SEC 60
-#define RTT_TEST_INITIAL_SLEEP_SEC 2
-#define RTT_TEST_TICK_MS 10
+#define RTT_TEST_TIMEOUT mlib_duration (1, min)
+#define RTT_TEST_INITIAL_SLEEP mlib_duration (2, s)
+#define RTT_TEST_TICK mlib_duration (10, ms)
 
 static void
 test_prose_rtt (void *unused)
@@ -771,7 +775,6 @@ test_prose_rtt (void *unused)
    prose_test_ctx_t ctx;
    bson_t cmd;
    bool ret;
-   int64_t start_us;
    bool satisfied;
    int64_t rtt = 0;
 
@@ -796,7 +799,7 @@ test_prose_rtt (void *unused)
 
    /* Sleep for RTT_TEST_INITIAL_SLEEP_SEC seconds to allow multiple heartbeats
     * to succeed. */
-   _mongoc_usleep (RTT_TEST_INITIAL_SLEEP_SEC * 1000 * 1000);
+   mlib_sleep_for (RTT_TEST_INITIAL_SLEEP);
 
    /* Set a failpoint to make hello commands take longer. */
    bson_init (&cmd);
@@ -823,8 +826,8 @@ test_prose_rtt (void *unused)
    /* Wait for the server's RTT to exceed 250ms. If this does not happen for
     * RTT_TEST_TIMEOUT_SEC seconds, consider it a failure. */
    satisfied = false;
-   start_us = bson_get_monotonic_time ();
-   while (!satisfied && bson_get_monotonic_time () < start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
+   mlib_timer deadline = mlib_expires_after (RTT_TEST_TIMEOUT);
+   while (!satisfied && !mlib_timer_is_expired (deadline)) {
       mongoc_server_description_t *sd;
 
       sd = mongoc_client_select_server (client, true, NULL /* read prefs */, &error);
@@ -834,11 +837,13 @@ test_prose_rtt (void *unused)
          satisfied = true;
       }
       mongoc_server_description_destroy (sd);
-      _mongoc_usleep (RTT_TEST_TICK_MS * 1000);
+      mlib_sleep_for (RTT_TEST_TICK);
    }
 
    if (!satisfied) {
-      test_error ("After %d seconds, the latest observed RTT was only %" PRId64, RTT_TEST_TIMEOUT_SEC, rtt);
+      test_error ("After %d seconds, the latest observed RTT was only %" PRId64,
+                  (int) mlib_seconds_count (RTT_TEST_TIMEOUT),
+                  rtt);
    }
 
    /* Disable the failpoint. */

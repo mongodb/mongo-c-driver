@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-prelude.h>
 
 #ifndef MONGOC_ASYNC_PRIVATE_H
 #define MONGOC_ASYNC_PRIVATE_H
 
+#include <mongoc/mongoc-prelude.h>
+
 #include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
+
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 BSON_BEGIN_DECLS
 
@@ -32,25 +36,6 @@ typedef struct _mongoc_async {
    size_t ncmds;
    uint32_t request_id;
 } mongoc_async_t;
-
-typedef enum {
-   MONGOC_ASYNC_CMD_CONNECTED,
-   MONGOC_ASYNC_CMD_IN_PROGRESS,
-   MONGOC_ASYNC_CMD_SUCCESS,
-   MONGOC_ASYNC_CMD_ERROR,
-   MONGOC_ASYNC_CMD_TIMEOUT,
-} mongoc_async_cmd_result_t;
-
-typedef void (*mongoc_async_cmd_cb_t) (struct _mongoc_async_cmd *acmd,
-                                       mongoc_async_cmd_result_t result,
-                                       const bson_t *bson,
-                                       int64_t duration_usec);
-
-typedef mongoc_stream_t *(*mongoc_async_cmd_initiate_t) (struct _mongoc_async_cmd *);
-
-typedef int (*mongoc_async_cmd_setup_t) (
-   mongoc_stream_t *stream, int *events, void *ctx, int32_t timeout_msec, bson_error_t *error);
-
 
 mongoc_async_t *
 mongoc_async_new (void);

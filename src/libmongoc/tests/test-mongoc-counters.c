@@ -19,6 +19,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
+#include <mlib/time_point.h>
 
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
@@ -456,7 +457,7 @@ test_counters_streams_timeout (void)
    reset_all_counters ();
    future = future_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &err);
    request = mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
-   _mongoc_usleep (350);
+   mlib_sleep_for (350, us);
    request_destroy (request);
    ret = future_get_bool (future);
    BSON_ASSERT (!ret);
@@ -1221,7 +1222,7 @@ wait_for_background_threads (rpc_op_egress_counters expected)
          return;
       }
 
-      _mongoc_usleep (100000); // 100 ms.
+      mlib_sleep_for (100, ms);
 
       current = rpc_op_egress_counters_current ();
    }

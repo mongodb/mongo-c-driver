@@ -83,8 +83,17 @@ MONGOC_EXPORT (bool)
 mongoc_stream_timed_out (mongoc_stream_t *stream);
 MONGOC_EXPORT (bool)
 mongoc_stream_should_retry (mongoc_stream_t *stream);
+
+/**
+ * @brief Poll a set of streams
+ *
+ * @param streams Pointer to an array of streams to be polled
+ * @param nstreams The number of streams in the array pointed-to by `streams`
+ * @param timeout_ms The maximum number of milliseconds to poll
+ *
+ */
 MONGOC_EXPORT (ssize_t)
-mongoc_stream_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout);
+mongoc_stream_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout_ms);
 
 
 BSON_END_DECLS

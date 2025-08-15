@@ -19,12 +19,17 @@
 #include <mongoc/mongoc-async-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
 #include <bson/bson.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 
 mongoc_async_t *
@@ -54,20 +59,13 @@ mongoc_async_run (mongoc_async_t *async)
    mongoc_async_cmd_t *acmd, *tmp;
    mongoc_async_cmd_t **acmds_polled = NULL;
    mongoc_stream_poll_t *poller = NULL;
-   int nstreams, i;
    ssize_t nactive = 0;
-   int64_t now;
-   int64_t expire_at;
-   int64_t poll_timeout_msec;
-   size_t poll_size;
+   size_t poll_size = 0;
 
-   now = bson_get_monotonic_time ();
-   poll_size = 0;
-
-   /* CDRIVER-1571 reset start times in case a stream initiator was slow */
    DL_FOREACH (async->cmds, acmd)
    {
-      acmd->connect_started = now;
+      // CDRIVER-1571: See _acmd_reset_elapsed doc comment to explain this hack
+      _acmd_reset_elapsed (acmd);
    }
 
    while (async->ncmds) {
@@ -78,25 +76,32 @@ mongoc_async_run (mongoc_async_t *async)
          poll_size = async->ncmds;
       }
 
-      expire_at = INT64_MAX;
-      nstreams = 0;
+      // Number of streams in the poller object
+      unsigned nstreams = 0;
+
+      // The timer to wake up the poll()
+      mlib_timer poll_timer = mlib_expires_never ();
 
       /* check if any cmds are ready to be initiated. */
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
-         if (acmd->state == MONGOC_ASYNC_CMD_INITIATE) {
+         if (acmd->state == MONGOC_ASYNC_CMD_PENDING_CONNECT) {
+            // Command is waiting to be initiated.
+            // Timer for when the command should be initiated:
+            // Should not yet have an associated stream
             BSON_ASSERT (!acmd->stream);
-            if (now >= acmd->initiate_delay_ms * 1000 + acmd->connect_started) {
+            if (mlib_timer_is_expired (acmd->_connect_delay_timer)) {
                /* time to initiate. */
                if (mongoc_async_cmd_run (acmd)) {
+                  // We should now have an associated stream
                   BSON_ASSERT (acmd->stream);
                } else {
                   /* this command was removed. */
                   continue;
                }
             } else {
-               /* don't poll longer than the earliest cmd ready to init. */
-               expire_at = BSON_MIN (expire_at, acmd->connect_started + acmd->initiate_delay_ms);
+               // Wake up poll() when the initiation timeout is hit
+               poll_timer = mlib_soonest_timer (poll_timer, acmd->_connect_delay_timer);
             }
          }
 
@@ -105,7 +110,8 @@ mongoc_async_run (mongoc_async_t *async)
             poller[nstreams].stream = acmd->stream;
             poller[nstreams].events = acmd->events;
             poller[nstreams].revents = 0;
-            expire_at = BSON_MIN (expire_at, acmd->connect_started + acmd->timeout_msec * 1000);
+            // Wake up poll() if the object's overall timeout is hit
+            poll_timer = mlib_soonest_timer (poll_timer, _acmd_deadline (acmd));
             ++nstreams;
          }
       }
@@ -115,21 +121,18 @@ mongoc_async_run (mongoc_async_t *async)
          break;
       }
 
-      poll_timeout_msec = BSON_MAX (0, (expire_at - now) / 1000);
-      BSON_ASSERT (poll_timeout_msec < INT32_MAX);
-
       if (nstreams > 0) {
          /* we need at least one stream to poll. */
-         nactive = mongoc_stream_poll (poller, nstreams, (int32_t) poll_timeout_msec);
+         nactive = _mongoc_stream_poll_internal (poller, nstreams, poll_timer);
       } else {
          /* currently this does not get hit. we always have at least one command
           * initialized with a stream. */
-         _mongoc_usleep (poll_timeout_msec * 1000);
+         mlib_sleep_until (poll_timer.expires_at);
       }
 
       if (nactive > 0) {
-         for (i = 0; i < nstreams; i++) {
-            mongoc_async_cmd_t *iter = acmds_polled[i];
+         mlib_foreach_urange (i, nstreams) {
+            mongoc_async_cmd_t *const iter = acmds_polled[i];
             if (poller[i].revents & (POLLERR | POLLHUP)) {
                int hup = poller[i].revents & POLLHUP;
                if (iter->state == MONGOC_ASYNC_CMD_SEND) {
@@ -161,25 +164,23 @@ mongoc_async_run (mongoc_async_t *async)
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
          /* check if an initiated cmd has passed the connection timeout.  */
-         if (acmd->state != MONGOC_ASYNC_CMD_INITIATE && now > acmd->connect_started + acmd->timeout_msec * 1000) {
+         if (acmd->state != MONGOC_ASYNC_CMD_PENDING_CONNECT && _acmd_has_timed_out (acmd)) {
             _mongoc_set_error (&acmd->error,
                                MONGOC_ERROR_STREAM,
                                MONGOC_ERROR_STREAM_CONNECT,
                                acmd->state == MONGOC_ASYNC_CMD_SEND ? "connection timeout" : "socket timeout");
 
-            acmd->cb (acmd, MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->connect_started) / 1000);
+            acmd->_event_callback (acmd, MONGOC_ASYNC_CMD_TIMEOUT, NULL, _acmd_elapsed (acmd));
 
             /* Remove acmd from the async->cmds doubly-linked list */
             mongoc_async_cmd_destroy (acmd);
-         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELED_STATE) {
-            acmd->cb (acmd, MONGOC_ASYNC_CMD_ERROR, NULL, (now - acmd->connect_started) / 1000);
+         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELLED_STATE) {
+            acmd->_event_callback (acmd, MONGOC_ASYNC_CMD_ERROR, NULL, _acmd_elapsed (acmd));
 
             /* Remove acmd from the async->cmds doubly-linked list */
             mongoc_async_cmd_destroy (acmd);
          }
       }
-
-      now = bson_get_monotonic_time ();
    }
 
    bson_free (poller);

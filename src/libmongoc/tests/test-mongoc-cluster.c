@@ -7,6 +7,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
@@ -500,7 +502,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
       client = mongoc_client_pool_pop (pool);
       /* CDRIVER-3596 - prevent client discovery of the pool interfering with
        * the test operations. */
-      _mongoc_usleep (5000 * 1000); /* 5 s */
+      mlib_sleep_for (5, s);
    } else {
       client = test_framework_new_default_client ();
       mongoc_client_set_apm_callbacks (client, callbacks, &cluster_time_test);
@@ -862,7 +864,7 @@ _test_cluster_time_comparison (bool pooled)
       mongoc_client_pool_destroy (pool);
    } else {
       /* trigger next heartbeat, it should contain newest cluster time */
-      _mongoc_usleep (750 * 1000); /* 750 ms */
+      mlib_sleep_for (750, ms);
       future = future_ping (client, &error);
       request = mock_server_receives_any_hello_with_match (server,
                                                            "{'$clusterTime': "

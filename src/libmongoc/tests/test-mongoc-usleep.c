@@ -11,26 +11,12 @@
 
 
 static void
-test_mongoc_usleep_basic (void)
-{
-   int64_t start;
-   int64_t duration;
-
-   start = bson_get_monotonic_time ();
-   _mongoc_usleep (50 * 1000); /* 50 ms */
-   duration = bson_get_monotonic_time () - start;
-   ASSERT_CMPINT ((int) duration, >, 0);
-   ASSERT_CMPTIME ((int) duration, 200 * 1000);
-}
-
-static void
 custom_usleep_impl (int64_t usec, void *user_data)
 {
    if (user_data) {
       *(int64_t *) user_data = usec;
    }
 }
-
 
 // `test_mongoc_usleep_custom` tests a custom sleep function set in
 // `mongoc_client_set_usleep_impl` is applied when topology scanning sleeps.
@@ -104,6 +90,5 @@ test_mongoc_usleep_custom (void)
 void
 test_usleep_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Sleep/basic", test_mongoc_usleep_basic);
    TestSuite_AddMockServerTest (suite, "/Sleep/custom", test_mongoc_usleep_custom);
 }

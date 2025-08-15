@@ -33,6 +33,10 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
+
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl-private.h>
 #endif
@@ -312,18 +316,17 @@ mongoc_client_t *
 mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 {
    mongoc_client_t *client;
-   int32_t wait_queue_timeout_ms;
-   int64_t expire_at_ms = -1;
-   int64_t now_ms;
    int r;
 
    ENTRY;
 
    BSON_ASSERT_PARAM (pool);
 
-   wait_queue_timeout_ms = mongoc_uri_get_option_as_int32 (pool->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1);
+   mlib_timer expires_at = mlib_expires_never ();
+
+   const int32_t wait_queue_timeout_ms = mongoc_uri_get_option_as_int32 (pool->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1);
    if (wait_queue_timeout_ms > 0) {
-      expire_at_ms = (bson_get_monotonic_time () / 1000) + wait_queue_timeout_ms;
+      expires_at = mlib_expires_after (wait_queue_timeout_ms, ms);
    }
    bson_mutex_lock (&pool->mutex);
 
@@ -336,9 +339,9 @@ again:
          pool->size++;
       } else {
          if (wait_queue_timeout_ms > 0) {
-            now_ms = bson_get_monotonic_time () / 1000;
-            if (now_ms < expire_at_ms) {
-               r = mongoc_cond_timedwait (&pool->cond, &pool->mutex, expire_at_ms - now_ms);
+            if (!mlib_timer_is_expired (expires_at)) {
+               const mlib_duration remain = mlib_timer_remaining (expires_at);
+               r = mongoc_cond_timedwait (&pool->cond, &pool->mutex, mlib_milliseconds_count (remain));
                if (mongo_cond_ret_is_timedout (r)) {
                   GOTO (done);
                }

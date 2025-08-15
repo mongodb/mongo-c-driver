@@ -9,6 +9,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <json-test.h>
 #include <test-conveniences.h>
@@ -124,7 +126,7 @@ _run_test_single_or_pooled (_test_fn_t test, bool use_pooled)
       _setup_test_with_client (client);
       /* Wait one second to be assured that the RTT connection has been
        * established as well. */
-      _mongoc_usleep (1000 * 1000);
+      mlib_sleep_for (1, s);
       test (client);
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);

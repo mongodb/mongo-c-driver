@@ -6,6 +6,8 @@
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
+#include <mlib/time_point.h>
+
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/future.h>
@@ -248,7 +250,7 @@ _test_topology_reconcile_sharded (bool pooled)
    request_destroy (request);
 
    /* make sure the mongos response is processed first */
-   _mongoc_usleep (1000 * 1000);
+   mlib_sleep_for (1, s);
 
    /* replica set secondary - topology removes it */
    request = mock_server_receives_any_hello (secondary);

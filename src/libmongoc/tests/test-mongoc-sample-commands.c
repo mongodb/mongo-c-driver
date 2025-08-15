@@ -23,17 +23,21 @@
  * These are the C examples for that page.
  */
 
-/* clang-format off */
-#include <assert.h>
-#include <mongoc/mongoc.h>
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-database-private.h>
+#include "./TestSuite.h"
+#include "./test-conveniences.h"
+#include "./test-libmongoc.h"
+
 #include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include <TestSuite.h>
-#include <test-libmongoc.h>
-#include <test-conveniences.h>
+#include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
+#include <assert.h>
+
+/* clang-format off */
 
 typedef void (*sample_command_fn_t) (mongoc_database_t *db);
 typedef void (*sample_txn_command_fn_t) (mongoc_client_t *client);
@@ -816,7 +820,7 @@ test_example_20 (mongoc_database_t *db)
    }
    /* End Example 20 */
 
-done:   
+done:
    /* Start Example 20 Post */
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -2889,7 +2893,7 @@ BSON_THREAD_FUN (insert_docs, p)
       }
 
       bson_mutex_unlock (&ctx->lock);
-      _mongoc_usleep (100 * 1000);  /* 100 ms */
+      mlib_sleep_for  (100, ms);
    }
 }
 
@@ -3050,7 +3054,7 @@ test_sample_causal_consistency (mongoc_client_t *client)
    uint32_t increment;
    bson_error_t error;
    bool res;
-   
+
    ASSERT (client);
 
    if (!test_framework_skip_if_no_txns ()) {
@@ -3441,12 +3445,12 @@ test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
    opts = BCON_NEW ("projection", "{",
                      "_id", BCON_INT32(0),
                      "item", BCON_INT32(1),
-                     "status", "{", 
-                           "$switch", "{", 
-                              "branches", "[", 
+                     "status", "{",
+                           "$switch", "{",
+                              "branches", "[",
                                  "{",
                                        "case", "{",
-                                          "$eq", "[", 
+                                          "$eq", "[",
                                              "$status", BCON_UTF8("A"),
                                           "]",
                                        "}",
@@ -3454,7 +3458,7 @@ test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
                                  "}",
                                  "{",
                                        "case", "{",
-                                          "$eq", "[", 
+                                          "$eq", "[",
                                              "$status", BCON_UTF8("D"),
                                           "]",
                                        "}",
@@ -3464,11 +3468,11 @@ test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
                               "default", BCON_UTF8("No status found"),
                            "}",
                      "}",
-                     "area", "{", 
-                           "$concat", "[", 
-                              "{", 
-                                 "$toString", "{", 
-                                       "$multiply", "[", 
+                     "area", "{",
+                           "$concat", "[",
+                              "{",
+                                 "$toString", "{",
+                                       "$multiply", "[",
                                           BCON_UTF8("$size.h"),
                                           BCON_UTF8("$size.w"),
                                        "]",
@@ -3478,7 +3482,7 @@ test_sample_projection_with_aggregation_expressions (mongoc_database_t *db)
                               BCON_UTF8("$size.uom"),
                            "]",
                      "}",
-                     "reportNumber", "{", 
+                     "reportNumber", "{",
                            "$literal", BCON_INT32(1),
                      "}",
                   "}");
@@ -3635,7 +3639,7 @@ insert_employee (mongoc_client_t *client, int employee)
    mongoc_collection_t *events;
    bson_error_t error;
    bool r;
-   
+
    ASSERT (client);
 
    employees = mongoc_client_get_collection (client, "hr", "employees");

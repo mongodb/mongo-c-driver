@@ -1,15 +1,20 @@
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
 #include <mlib/config.h>
+#include <mlib/duration.h>
 #include <mlib/intencode.h>
 #include <mlib/intutil.h>
 #include <mlib/loop.h>
 #include <mlib/str.h>
 #include <mlib/test.h>
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #include <TestSuite.h>
 
 #include <stddef.h>
+
+#undef min // Used as a time unit suffix
 
 mlib_diagnostic_push (); // We don't set any diagnostics, we just want to make sure it compiles
 
@@ -49,6 +54,26 @@ _test_checks (void)
    mlib_check (true, because, "just true");
    mlib_assert_aborts () {
       mlib_check (false, because, "this will fail");
+   }
+   // lt
+   mlib_check (1, lt, 4);
+   mlib_assert_aborts () {
+      mlib_check (4, lt, 1);
+   }
+   mlib_check (1, lte, 4);
+   mlib_check (1, lte, 1);
+   mlib_assert_aborts () {
+      mlib_check (4, lte, 3);
+   }
+   // gt
+   mlib_check (4, gt, 2);
+   mlib_assert_aborts () {
+      mlib_check (3, gt, 5);
+   }
+   mlib_check (3, gte, 2);
+   mlib_check (3, gte, 3);
+   mlib_assert_aborts () {
+      mlib_check (3, gte, 5);
    }
 }
 
@@ -887,6 +912,197 @@ _test_str_view (void)
    }
 }
 
+static void
+_test_duration (void)
+{
+   mlib_duration d = mlib_duration ();
+   mlib_check (mlib_microseconds_count (d), eq, 0);
+
+   // Creating durations with the macro name
+   d = mlib_duration ();
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration ()));
+   d = mlib_duration (d);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration ()));
+
+   d = mlib_duration (10, ms);
+   mlib_check (mlib_duration_cmp (d, ==, (10, ms)));
+   d = mlib_duration (10, us);
+   mlib_check (mlib_duration_cmp (d, ==, (10, us)));
+   d = mlib_duration (10, s);
+   mlib_check (mlib_duration_cmp (d, ==, (10, s)));
+
+   d = mlib_duration ((10, s), mul, 3);
+   mlib_check (mlib_duration_cmp (d, ==, (30, s)));
+
+   d = mlib_duration ((10, s), plus, (40, ms));
+   mlib_check (mlib_duration_cmp (d, ==, (10040, ms)));
+
+   d = mlib_duration ((10, s), div, 20);
+   mlib_check (mlib_duration_cmp (d, ==, (500, ms)));
+
+   d = mlib_duration ((4, s), min, (400, ms));
+   mlib_check (mlib_duration_cmp (d, ==, (400, ms)));
+
+   d = mlib_duration (10, min);
+   mlib_check (mlib_duration_cmp (d, ==, (600, s)));
+
+   d = mlib_duration (4, h);
+   mlib_check (mlib_duration_cmp (d, ==, (240, min)));
+
+   d = mlib_duration ((10, s), div, 20);
+   d = mlib_duration (
+      // At least 5 seconds:
+      (d, max, (5, s)),
+      // At most 90 seconds:
+      min,
+      (90, s));
+   mlib_check (mlib_duration_cmp (d, ==, (5, s)));
+
+   // Comparison
+   mlib_check (mlib_duration_cmp (mlib_duration (4, s), mlib_duration (4, s)) == 0);
+   mlib_check (mlib_duration_cmp (mlib_duration (4, s), mlib_duration (5, s)) < 0);
+   mlib_check (mlib_duration_cmp (mlib_duration (4, s), mlib_duration (-5, s)) > 0);
+   mlib_check (mlib_duration_cmp ((4, s), ==, (4, s)));
+   mlib_check (mlib_duration_cmp ((4, s), <, (5, s)));
+   mlib_check (mlib_duration_cmp ((4, s), >, (-5, s)));
+
+   // Overflow saturates:
+   d = mlib_duration (mlib_maxof (mlib_duration_rep_t), s);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+
+   d = mlib_duration (d, mul, 16);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+
+   // Rounds toward zero
+   d = mlib_duration (1050, ms);
+   mlib_check (mlib_seconds_count (d), eq, 1);
+   d = mlib_duration (-1050, ms);
+   mlib_check (mlib_seconds_count (d), eq, -1);
+   d = mlib_duration (1729, us);
+   mlib_check (mlib_milliseconds_count (d), eq, 1);
+   d = mlib_duration (-1729, us);
+   mlib_check (mlib_milliseconds_count (d), eq, -1);
+
+   d = mlib_duration ((-3, s), plus, mlib_duration_min ());
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
+   d = mlib_duration ((4, s), plus, mlib_duration_max ());
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+
+   d = mlib_duration ((4, s), minus, (2271, ms));
+   mlib_check (mlib_milliseconds_count (d), eq, 1729);
+   // Overflow saturates:
+   d = mlib_duration ((-4, ms), minus, mlib_duration_max ());
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
+   d = mlib_duration ((4, ms), minus, mlib_duration_min ());
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+
+   d = mlib_duration ((4, s), mul, 5);
+   mlib_check (mlib_duration_cmp (d, ==, (20, s)));
+   d = mlib_duration (mlib_duration_max (), mul, 2);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+   d = mlib_duration (mlib_duration_max (), mul, -2);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
+   d = mlib_duration (mlib_duration_min (), mul, 2);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_min ()));
+   d = mlib_duration (mlib_duration_min (), mul, -2);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+
+   d = mlib_duration (mlib_duration_max (), div, -1);
+   mlib_check (mlib_duration_cmp (d, mlib_duration ()) < 0);
+   d = mlib_duration (mlib_duration_min (), div, -1);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration_max ()));
+   mlib_assert_aborts () {
+      // Division by zero
+      d = mlib_duration (d, div, 0);
+   }
+
+   // To/from timespec
+   struct timespec ts;
+   ts.tv_sec = 4;
+   ts.tv_nsec = 0;
+   d = mlib_duration_from_timespec (ts);
+   mlib_check (mlib_duration_cmp (d, ==, (4, s)));
+   //
+   ts.tv_sec = -3;
+   ts.tv_nsec = -4000;
+   d = mlib_duration_from_timespec (ts);
+   mlib_check (mlib_duration_cmp (d, ==, mlib_duration ((-3000004, us), plus, (0, us))));
+   //
+   ts = mlib_duration_to_timespec (mlib_duration (-5000908, us));
+   mlib_check (ts.tv_sec, eq, -5);
+   mlib_check (ts.tv_nsec, eq, -908000);
+}
+
+static void
+_test_time_point (void)
+{
+   mlib_time_point t = mlib_now ();
+
+   // Offset the time point
+   mlib_time_point later = mlib_time_add (t, (1, s));
+   mlib_check (mlib_time_cmp (t, <, later));
+
+   // Difference between two time points is a duration:
+   mlib_duration diff = mlib_time_difference (later, t);
+   mlib_check (mlib_milliseconds_count (diff), eq, 1000);
+
+   // The time is only ever monotonically increasing
+   mlib_foreach_urange (i, 10000) {
+      (void) i;
+      mlib_check (mlib_time_cmp (t, <=, mlib_now ()));
+      t = mlib_now ();
+   }
+}
+
+static void
+_test_sleep (void)
+{
+   mlib_time_point start = mlib_now ();
+   int rc = mlib_sleep_for (mlib_duration (50, ms));
+   mlib_check (rc, eq, 0);
+   mlib_duration t = mlib_time_difference (mlib_now (), start);
+   mlib_check (mlib_milliseconds_count (t), gte, 45);
+   mlib_check (mlib_milliseconds_count (t), lt, 200);
+
+   // Sleeping for a negative duration returns immediately with success
+   start = mlib_now ();
+   mlib_check (mlib_sleep_for (-10, s), eq, 0);
+   mlib_check (mlib_duration_cmp (mlib_elapsed_since (start), <, (100, ms)));
+
+   // Sleeping until a point in the past returns immediately as well
+   mlib_check (mlib_sleep_until (start), eq, 0);
+   mlib_check (mlib_duration_cmp (mlib_elapsed_since (start), <, (100, ms)));
+}
+
+static void
+_test_timer (void)
+{
+   mlib_timer tm = mlib_expires_after (200, ms);
+   mlib_check (!mlib_timer_is_expired (tm));
+   mlib_sleep_for (250, ms);
+   mlib_check (mlib_timer_is_expired (tm));
+
+   // Test the once-var condition
+   bool cond = false;
+   // Says not expired on the first call
+   mlib_check (!mlib_timer_is_expired (tm, &cond));
+   mlib_check (cond); // Was set to `true`
+   // Says it was expired on this call:
+   mlib_check (mlib_timer_is_expired (tm, &cond));
+
+   // Try with a not-yet-expired timer
+   cond = false;
+   tm = mlib_expires_after (10, s);
+   mlib_check (!mlib_timer_is_expired (tm));
+   mlib_check (!mlib_timer_is_expired (tm, &cond));
+   // cond was set to `true`, even though we are not yet expired
+   mlib_check (cond);
+
+   // Create a timer that expired in the past
+   tm = mlib_expires_at (mlib_time_add (mlib_now (), (-10, s)));
+   mlib_check (mlib_timer_is_expired (tm));
+}
+
 void
 test_mlib_install (TestSuite *suite)
 {
@@ -903,6 +1119,10 @@ test_mlib_install (TestSuite *suite)
    TestSuite_Add (suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add (suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add (suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add (suite, "/mlib/duration", _test_duration);
+   TestSuite_Add (suite, "/mlib/time_point", _test_time_point);
+   TestSuite_Add (suite, "/mlib/sleep", _test_sleep);
+   TestSuite_Add (suite, "/mlib/timer", _test_timer);
 }
 
 mlib_diagnostic_pop ();

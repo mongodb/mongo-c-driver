@@ -4,6 +4,8 @@
 #include <mongoc/mongoc-stream-tls.h>
 #include <mongoc/mongoc.h>
 
+#include <mlib/time_point.h>
+
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/err.h>
 #endif
@@ -77,7 +79,7 @@ static BSON_THREAD_FUN (ssl_error_server, ptr)
 
    switch (data->behavior) {
    case SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE:
-      _mongoc_usleep (data->handshake_stall_ms * 1000);
+      mlib_sleep_for (data->handshake_stall_ms, ms);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
       r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
