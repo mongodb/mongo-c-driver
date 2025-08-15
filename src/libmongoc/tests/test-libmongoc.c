@@ -2446,18 +2446,6 @@ test_framework_skip_if_serverless (void)
    return 1; // proceed.
 }
 
-int
-test_framework_skip_due_to_cdriver3708 (void)
-{
-   if (0 == test_framework_skip_if_auth () && 0 == test_framework_skip_if_replset () &&
-       test_framework_get_server_version () > test_framework_str_to_version ("4.4.0")) {
-      /* If auth is enabled, we're using a replica set, and using a > 4.4
-       * server, skip test. */
-      return 0;
-   }
-   return 1;
-}
-
 static char MONGOC_TEST_UNIQUE[32];
 
 #if defined(_MSC_VER) && defined(_WIN64)
