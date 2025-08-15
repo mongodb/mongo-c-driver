@@ -27,9 +27,9 @@
 
 
 static BSON_INLINE void
-bson_set_error_category (bson_error_t *error, uint8_t category)
+bson_set_error_category(bson_error_t *error, uint8_t category)
 {
-   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT_PARAM(error);
    error->reserved = category;
 }
 

@@ -29,16 +29,16 @@
 #include <string.h>
 
 // Ensure size of exported structs are stable.
-BSON_STATIC_ASSERT2 (bson_mem_vtable_t, sizeof (bson_mem_vtable_t) == sizeof (void *) * 8u);
+BSON_STATIC_ASSERT2(bson_mem_vtable_t, sizeof(bson_mem_vtable_t) == sizeof(void *) * 8u);
 
 
 // For compatibility with C standards prior to C11.
 static void *
-_aligned_alloc_impl (size_t alignment, size_t num_bytes)
+_aligned_alloc_impl(size_t alignment, size_t num_bytes)
 #if defined(BSON_HAVE_ALIGNED_ALLOC)
 {
    MC_DISABLE_IMPLICIT_WARNING_BEGIN
-   return aligned_alloc (alignment, num_bytes);
+   return aligned_alloc(alignment, num_bytes);
    MC_DISABLE_IMPLICIT_WARNING_END
 }
 #elif defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L
@@ -46,7 +46,7 @@ _aligned_alloc_impl (size_t alignment, size_t num_bytes)
    void *mem = NULL;
 
    // Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66425.
-   BSON_MAYBE_UNUSED int ret = posix_memalign (&mem, alignment, num_bytes);
+   BSON_MAYBE_UNUSED int ret = posix_memalign(&mem, alignment, num_bytes);
 
    return mem;
 }
@@ -56,20 +56,20 @@ _aligned_alloc_impl (size_t alignment, size_t num_bytes)
    // requirements. Note: Visual C++ _aligned_malloc requires using
    // _aligned_free instead of free and modifies errno on failure, both of which
    // breaks symmetry with C11 aligned_alloc, so it is deliberately not used.
-   BSON_UNUSED (alignment);
-   return malloc (num_bytes);
+   BSON_UNUSED(alignment);
+   return malloc(num_bytes);
 }
 #endif
 
-mlib_diagnostic_push ();
-mlib_msvc_warning (disable : 4232);
+mlib_diagnostic_push();
+mlib_msvc_warning(disable : 4232);
 static bson_mem_vtable_t gMemVtable = {.malloc = malloc,
                                        .calloc = calloc,
                                        .realloc = realloc,
                                        .free = free,
                                        .aligned_alloc = _aligned_alloc_impl,
                                        .padding = {0}};
-mlib_diagnostic_pop ();
+mlib_diagnostic_pop();
 
 
 /*
@@ -97,14 +97,14 @@ mlib_diagnostic_pop ();
  */
 
 void *
-bson_malloc (size_t num_bytes) /* IN */
+bson_malloc(size_t num_bytes) /* IN */
 {
    void *mem = NULL;
 
-   if (BSON_LIKELY (num_bytes)) {
-      if (BSON_UNLIKELY (!(mem = gMemVtable.malloc (num_bytes)))) {
-         fprintf (stderr, "Failure to allocate memory in bson_malloc(). errno: %d.\n", errno);
-         abort ();
+   if (BSON_LIKELY(num_bytes)) {
+      if (BSON_UNLIKELY(!(mem = gMemVtable.malloc(num_bytes)))) {
+         fprintf(stderr, "Failure to allocate memory in bson_malloc(). errno: %d.\n", errno);
+         abort();
       }
    }
 
@@ -135,14 +135,14 @@ bson_malloc (size_t num_bytes) /* IN */
  */
 
 void *
-bson_malloc0 (size_t num_bytes) /* IN */
+bson_malloc0(size_t num_bytes) /* IN */
 {
    void *mem = NULL;
 
-   if (BSON_LIKELY (num_bytes)) {
-      if (BSON_UNLIKELY (!(mem = gMemVtable.calloc (1, num_bytes)))) {
-         fprintf (stderr, "Failure to allocate memory in bson_malloc0(). errno: %d.\n", errno);
-         abort ();
+   if (BSON_LIKELY(num_bytes)) {
+      if (BSON_UNLIKELY(!(mem = gMemVtable.calloc(1, num_bytes)))) {
+         fprintf(stderr, "Failure to allocate memory in bson_malloc0(). errno: %d.\n", errno);
+         abort();
       }
    }
 
@@ -177,14 +177,14 @@ bson_malloc0 (size_t num_bytes) /* IN */
  */
 
 void *
-bson_aligned_alloc (size_t alignment /* IN */, size_t num_bytes /* IN */)
+bson_aligned_alloc(size_t alignment /* IN */, size_t num_bytes /* IN */)
 {
    void *mem = NULL;
 
-   if (BSON_LIKELY (num_bytes)) {
-      if (BSON_UNLIKELY (!(mem = gMemVtable.aligned_alloc (alignment, num_bytes)))) {
-         fprintf (stderr, "Failure to allocate memory in bson_aligned_alloc()\n");
-         abort ();
+   if (BSON_LIKELY(num_bytes)) {
+      if (BSON_UNLIKELY(!(mem = gMemVtable.aligned_alloc(alignment, num_bytes)))) {
+         fprintf(stderr, "Failure to allocate memory in bson_aligned_alloc()\n");
+         abort();
       }
    }
 
@@ -215,16 +215,16 @@ bson_aligned_alloc (size_t alignment /* IN */, size_t num_bytes /* IN */)
  */
 
 void *
-bson_aligned_alloc0 (size_t alignment /* IN */, size_t num_bytes /* IN */)
+bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
 {
    void *mem = NULL;
 
-   if (BSON_LIKELY (num_bytes)) {
-      if (BSON_UNLIKELY (!(mem = gMemVtable.aligned_alloc (alignment, num_bytes)))) {
-         fprintf (stderr, "Failure to allocate memory in bson_aligned_alloc0()\n");
-         abort ();
+   if (BSON_LIKELY(num_bytes)) {
+      if (BSON_UNLIKELY(!(mem = gMemVtable.aligned_alloc(alignment, num_bytes)))) {
+         fprintf(stderr, "Failure to allocate memory in bson_aligned_alloc0()\n");
+         abort();
       }
-      memset (mem, 0, num_bytes);
+      memset(mem, 0, num_bytes);
    }
 
    return mem;
@@ -254,24 +254,24 @@ bson_aligned_alloc0 (size_t alignment /* IN */, size_t num_bytes /* IN */)
  */
 
 void *
-bson_realloc (void *mem,        /* IN */
-              size_t num_bytes) /* IN */
+bson_realloc(void *mem,        /* IN */
+             size_t num_bytes) /* IN */
 {
    /*
     * Not all platforms are guaranteed to free() the memory if a call to
     * realloc() with a size of zero occurs. Windows, Linux, and FreeBSD do,
     * however, OS X does not.
     */
-   if (BSON_UNLIKELY (num_bytes == 0)) {
-      gMemVtable.free (mem);
+   if (BSON_UNLIKELY(num_bytes == 0)) {
+      gMemVtable.free(mem);
       return NULL;
    }
 
-   mem = gMemVtable.realloc (mem, num_bytes);
+   mem = gMemVtable.realloc(mem, num_bytes);
 
-   if (BSON_UNLIKELY (!mem)) {
-      fprintf (stderr, "Failure to re-allocate memory in bson_realloc(). errno: %d.\n", errno);
-      abort ();
+   if (BSON_UNLIKELY(!mem)) {
+      fprintf(stderr, "Failure to re-allocate memory in bson_realloc(). errno: %d.\n", errno);
+      abort();
    }
 
    return mem;
@@ -303,13 +303,13 @@ bson_realloc (void *mem,        /* IN */
 
 
 void *
-bson_realloc_ctx (void *mem,        /* IN */
-                  size_t num_bytes, /* IN */
-                  void *ctx)        /* IN */
+bson_realloc_ctx(void *mem,        /* IN */
+                 size_t num_bytes, /* IN */
+                 void *ctx)        /* IN */
 {
-   BSON_UNUSED (ctx);
+   BSON_UNUSED(ctx);
 
-   return bson_realloc (mem, num_bytes);
+   return bson_realloc(mem, num_bytes);
 }
 
 
@@ -336,9 +336,9 @@ bson_realloc_ctx (void *mem,        /* IN */
  */
 
 void
-bson_free (void *mem) /* IN */
+bson_free(void *mem) /* IN */
 {
-   gMemVtable.free (mem);
+   gMemVtable.free(mem);
 }
 
 
@@ -365,22 +365,22 @@ bson_free (void *mem) /* IN */
  */
 
 void
-bson_zero_free (void *mem,   /* IN */
-                size_t size) /* IN */
+bson_zero_free(void *mem,   /* IN */
+               size_t size) /* IN */
 {
-   if (BSON_LIKELY (mem)) {
-      memset (mem, 0, size);
-      gMemVtable.free (mem);
+   if (BSON_LIKELY(mem)) {
+      memset(mem, 0, size);
+      gMemVtable.free(mem);
    }
 }
 
 
 static void *
-_aligned_alloc_as_malloc (size_t alignment, size_t num_bytes)
+_aligned_alloc_as_malloc(size_t alignment, size_t num_bytes)
 {
-   BSON_UNUSED (alignment);
+   BSON_UNUSED(alignment);
 
-   return gMemVtable.malloc (num_bytes);
+   return gMemVtable.malloc(num_bytes);
 }
 
 
@@ -405,14 +405,14 @@ _aligned_alloc_as_malloc (size_t alignment, size_t num_bytes)
  */
 
 void
-bson_mem_set_vtable (const bson_mem_vtable_t *vtable)
+bson_mem_set_vtable(const bson_mem_vtable_t *vtable)
 {
-   BSON_ASSERT (vtable);
+   BSON_ASSERT(vtable);
 
    if (!vtable->malloc || !vtable->calloc || !vtable->realloc || !vtable->free) {
-      fprintf (stderr,
-               "Failure to install BSON vtable, "
-               "missing functions.\n");
+      fprintf(stderr,
+              "Failure to install BSON vtable, "
+              "missing functions.\n");
       return;
    }
 
@@ -425,7 +425,7 @@ bson_mem_set_vtable (const bson_mem_vtable_t *vtable)
 }
 
 void
-bson_mem_restore_vtable (void)
+bson_mem_restore_vtable(void)
 {
    bson_mem_vtable_t vtable = {.malloc = malloc,
                                .calloc = calloc,
@@ -434,5 +434,5 @@ bson_mem_restore_vtable (void)
                                .aligned_alloc = _aligned_alloc_impl,
                                .padding = {0}};
 
-   bson_mem_set_vtable (&vtable);
+   bson_mem_set_vtable(&vtable);
 }

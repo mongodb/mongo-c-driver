@@ -30,7 +30,7 @@ distinct: { "values" : [ 1, 2 ], "ok" : 1 }
 #include <stdlib.h>
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    mongoc_client_t *client;
    const char *uri_string = "mongodb://127.0.0.1/?appname=client-example";
@@ -44,96 +44,96 @@ main (int argc, char *argv[])
    bson_error_t error;
    char *json;
 
-   mongoc_init ();
+   mongoc_init();
 
    if (argc > 1) {
       uri_string = argv[1];
    }
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               uri_string,
-               error.message);
+      fprintf(stderr,
+              "failed to parse URI: %s\n"
+              "error message:       %s\n",
+              uri_string,
+              error.message);
       return EXIT_FAILURE;
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri(uri);
    if (!client) {
       return EXIT_FAILURE;
    }
 
-   mongoc_client_set_error_api (client, 2);
+   mongoc_client_set_error_api(client, 2);
 
-   cmd = BCON_NEW ("cloneCollectionAsCapped",
-                   BCON_UTF8 ("my_collection"),
-                   "toCollection",
-                   BCON_UTF8 ("my_capped_collection"),
-                   "size",
-                   BCON_INT64 (1024 * 1024));
+   cmd = BCON_NEW("cloneCollectionAsCapped",
+                  BCON_UTF8("my_collection"),
+                  "toCollection",
+                  BCON_UTF8("my_capped_collection"),
+                  "size",
+                  BCON_INT64(1024 * 1024));
 
    /* include write concern "majority" in command options */
-   write_concern = mongoc_write_concern_new ();
-   mongoc_write_concern_set_wmajority (write_concern, 10000 /* wtimeoutMS */);
-   opts = bson_new ();
-   mongoc_write_concern_append (write_concern, opts);
+   write_concern = mongoc_write_concern_new();
+   mongoc_write_concern_set_wmajority(write_concern, 10000 /* wtimeoutMS */);
+   opts = bson_new();
+   mongoc_write_concern_append(write_concern, opts);
 
-   if (mongoc_client_write_command_with_opts (client, "test", cmd, opts, &reply, &error)) {
-      json = bson_as_canonical_extended_json (&reply, NULL);
-      printf ("cloneCollectionAsCapped: %s\n", json);
-      bson_free (json);
+   if (mongoc_client_write_command_with_opts(client, "test", cmd, opts, &reply, &error)) {
+      json = bson_as_canonical_extended_json(&reply, NULL);
+      printf("cloneCollectionAsCapped: %s\n", json);
+      bson_free(json);
    } else {
-      fprintf (stderr, "cloneCollectionAsCapped: %s\n", error.message);
+      fprintf(stderr, "cloneCollectionAsCapped: %s\n", error.message);
    }
 
-   bson_free (cmd);
-   bson_free (opts);
+   bson_free(cmd);
+   bson_free(opts);
 
    /* distinct values of "x" in "my_collection" where "y" sorts after "one" */
-   cmd = BCON_NEW ("distinct",
-                   BCON_UTF8 ("my_collection"),
-                   "key",
-                   BCON_UTF8 ("x"),
-                   "query",
-                   "{",
-                   "y",
-                   "{",
-                   "$gt",
-                   BCON_UTF8 ("one"),
-                   "}",
-                   "}");
+   cmd = BCON_NEW("distinct",
+                  BCON_UTF8("my_collection"),
+                  "key",
+                  BCON_UTF8("x"),
+                  "query",
+                  "{",
+                  "y",
+                  "{",
+                  "$gt",
+                  BCON_UTF8("one"),
+                  "}",
+                  "}");
 
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   read_prefs = mongoc_read_prefs_new(MONGOC_READ_SECONDARY);
 
    /* "One" normally sorts before "one"; make "One" sort after "one" */
-   opts = BCON_NEW ("collation", "{", "locale", BCON_UTF8 ("en_US"), "caseFirst", BCON_UTF8 ("lower"), "}");
+   opts = BCON_NEW("collation", "{", "locale", BCON_UTF8("en_US"), "caseFirst", BCON_UTF8("lower"), "}");
 
    /* add a read concern to "opts" */
-   read_concern = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (read_concern, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   read_concern = mongoc_read_concern_new();
+   mongoc_read_concern_set_level(read_concern, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
 
-   mongoc_read_concern_append (read_concern, opts);
+   mongoc_read_concern_append(read_concern, opts);
 
-   if (mongoc_client_read_command_with_opts (client, "test", cmd, read_prefs, opts, &reply, &error)) {
-      json = bson_as_canonical_extended_json (&reply, NULL);
-      printf ("distinct: %s\n", json);
-      bson_free (json);
+   if (mongoc_client_read_command_with_opts(client, "test", cmd, read_prefs, opts, &reply, &error)) {
+      json = bson_as_canonical_extended_json(&reply, NULL);
+      printf("distinct: %s\n", json);
+      bson_free(json);
    } else {
-      fprintf (stderr, "distinct: %s\n", error.message);
+      fprintf(stderr, "distinct: %s\n", error.message);
    }
 
-   bson_destroy (cmd);
-   bson_destroy (opts);
-   bson_destroy (&reply);
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_read_concern_destroy (read_concern);
-   mongoc_write_concern_destroy (write_concern);
-   mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
+   bson_destroy(cmd);
+   bson_destroy(opts);
+   bson_destroy(&reply);
+   mongoc_read_prefs_destroy(read_prefs);
+   mongoc_read_concern_destroy(read_concern);
+   mongoc_write_concern_destroy(write_concern);
+   mongoc_uri_destroy(uri);
+   mongoc_client_destroy(client);
 
-   mongoc_cleanup ();
+   mongoc_cleanup();
 
    return EXIT_SUCCESS;
 }

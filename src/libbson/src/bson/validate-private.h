@@ -32,6 +32,6 @@ enum {
  * @return false Otherwise
  */
 bool
-_bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t *offset, bson_error_t *error);
+_bson_validate_impl_v2(const bson_t *bson, bson_validate_flags_t flags, size_t *offset, bson_error_t *error);
 
 #endif // BSON_VALIDATE_PRIVATE_H_INCLUDED

@@ -37,9 +37,9 @@ typedef struct mcd_time_point {
 } mcd_time_point;
 
 /// The latest representable future point-in-time
-#define MCD_TIME_POINT_MAX ((mcd_time_point) {._rep = INT64_MAX})
+#define MCD_TIME_POINT_MAX ((mcd_time_point){._rep = INT64_MAX})
 /// The oldest representable past point-in-time
-#define MCD_TIME_POINT_MIN ((mcd_time_point) {._rep = INT64_MIN})
+#define MCD_TIME_POINT_MIN ((mcd_time_point){._rep = INT64_MIN})
 
 /**
  * @brief Represents a (possibly negative) duration of time.
@@ -56,11 +56,11 @@ typedef struct mcd_duration {
 } mcd_duration;
 
 /// The maximum representable duration
-#define MCD_DURATION_MAX ((mcd_duration) {._rep = INT64_MAX})
+#define MCD_DURATION_MAX ((mcd_duration){._rep = INT64_MAX})
 /// The minimal representable (negative) duration
-#define MCD_DURATION_MIN ((mcd_duration) {._rep = INT64_MIN})
+#define MCD_DURATION_MIN ((mcd_duration){._rep = INT64_MIN})
 /// A duration representing zero amount of time
-#define MCD_DURATION_ZERO ((mcd_duration) {._rep = 0})
+#define MCD_DURATION_ZERO ((mcd_duration){._rep = 0})
 
 /**
  * @brief Obtain the current time point. This is only an abstract
@@ -68,10 +68,10 @@ typedef struct mcd_duration {
  * any real-world clock.
  */
 static BSON_INLINE mcd_time_point
-mcd_now (void)
+mcd_now(void)
 {
    // Create a time point representing the current time.
-   return (mcd_time_point) {._rep = bson_get_monotonic_time ()};
+   return (mcd_time_point){._rep = bson_get_monotonic_time()};
 }
 
 /**
@@ -84,11 +84,11 @@ mcd_now (void)
  * magnitude.
  */
 static BSON_INLINE mcd_duration
-mcd_microseconds (int64_t s)
+mcd_microseconds(int64_t s)
 {
    // 'mcd_duration' is encoded in a number of microseconds, so we don't need to
    // do bounds checking here.
-   return (mcd_duration) {._rep = s};
+   return (mcd_duration){._rep = s};
 }
 
 /**
@@ -101,13 +101,13 @@ mcd_microseconds (int64_t s)
  * magnitude.
  */
 static BSON_INLINE mcd_duration
-mcd_milliseconds (int64_t s)
+mcd_milliseconds(int64_t s)
 {
    // 1'000 microseconds per millisecond:
-   if (_mcd_i64_mul_would_overflow (s, 1000)) {
+   if (_mcd_i64_mul_would_overflow(s, 1000)) {
       return s < 0 ? MCD_DURATION_MIN : MCD_DURATION_MAX;
    }
-   return mcd_microseconds (s * 1000);
+   return mcd_microseconds(s * 1000);
 }
 
 /**
@@ -120,13 +120,13 @@ mcd_milliseconds (int64_t s)
  * magnitude.
  */
 static BSON_INLINE mcd_duration
-mcd_seconds (int64_t s)
+mcd_seconds(int64_t s)
 {
    // 1'000 milliseconds per second:
-   if (_mcd_i64_mul_would_overflow (s, 1000)) {
+   if (_mcd_i64_mul_would_overflow(s, 1000)) {
       return s < 0 ? MCD_DURATION_MIN : MCD_DURATION_MAX;
    }
-   return mcd_milliseconds (s * 1000);
+   return mcd_milliseconds(s * 1000);
 }
 
 /**
@@ -139,13 +139,13 @@ mcd_seconds (int64_t s)
  * magnitude.
  */
 static BSON_INLINE mcd_duration
-mcd_minutes (int64_t m)
+mcd_minutes(int64_t m)
 {
    // Sixty seconds per minute:
-   if (_mcd_i64_mul_would_overflow (m, 60)) {
+   if (_mcd_i64_mul_would_overflow(m, 60)) {
       return m < 0 ? MCD_DURATION_MIN : MCD_DURATION_MAX;
    }
-   return mcd_seconds (m * 60);
+   return mcd_seconds(m * 60);
 }
 
 /**
@@ -158,7 +158,7 @@ mcd_minutes (int64_t m)
  * unrepresentable in the duration type. This only occurs in extreme durations
  */
 static BSON_INLINE int64_t
-mcd_get_milliseconds (mcd_duration d)
+mcd_get_milliseconds(mcd_duration d)
 {
    return d._rep / 1000;
 }
@@ -177,9 +177,9 @@ mcd_get_milliseconds (mcd_duration d)
  * will be clamped to MCD_TIME_POINT_MIN or MCD_TIME_POINT_MAX.
  */
 static BSON_INLINE mcd_time_point
-mcd_later (mcd_time_point from, mcd_duration delta)
+mcd_later(mcd_time_point from, mcd_duration delta)
 {
-   if (_mcd_i64_add_would_overflow (from._rep, delta._rep)) {
+   if (_mcd_i64_add_would_overflow(from._rep, delta._rep)) {
       return delta._rep < 0 ? MCD_TIME_POINT_MIN : MCD_TIME_POINT_MAX;
    } else {
       from._rep += delta._rep;
@@ -203,9 +203,9 @@ mcd_later (mcd_time_point from, mcd_duration delta)
  * the amount of time needed to time-travel backwards to reach "then."
  */
 static BSON_INLINE mcd_duration
-mcd_time_difference (mcd_time_point then, mcd_time_point from)
+mcd_time_difference(mcd_time_point then, mcd_time_point from)
 {
-   if (_mcd_i64_sub_would_overflow (then._rep, from._rep)) {
+   if (_mcd_i64_sub_would_overflow(then._rep, from._rep)) {
       if (from._rep < 0) {
          // Would overflow past the max
          return MCD_DURATION_MAX;
@@ -216,7 +216,7 @@ mcd_time_difference (mcd_time_point then, mcd_time_point from)
    } else {
       int64_t diff = then._rep - from._rep;
       // Our time_point encodes the time using a microsecond counter.
-      return mcd_microseconds (diff);
+      return mcd_microseconds(diff);
    }
 }
 
@@ -230,11 +230,11 @@ mcd_time_difference (mcd_time_point then, mcd_time_point from)
  * @retval  0 If 'left' and 'right' are equivalent
  */
 static BSON_INLINE int
-mcd_time_compare (mcd_time_point left, mcd_time_point right)
+mcd_time_compare(mcd_time_point left, mcd_time_point right)
 {
    // Obtain the amount of time needed to wait from 'right' to reach
    // 'left'
-   int64_t diff = mcd_time_difference (left, right)._rep;
+   int64_t diff = mcd_time_difference(left, right)._rep;
    if (diff < 0) {
       // A negative duration indicates that 'left' is "before" 'right'
       return -1;
@@ -258,7 +258,7 @@ mcd_time_compare (mcd_time_point left, mcd_time_point right)
  * @retval  0 If left and right are equivalent
  */
 static BSON_INLINE int
-mcd_duration_compare (mcd_duration left, mcd_duration right)
+mcd_duration_compare(mcd_duration left, mcd_duration right)
 {
    if (left._rep < right._rep) {
       return -1;
@@ -280,13 +280,13 @@ mcd_duration_compare (mcd_duration left, mcd_duration right)
  * @retval dur Otherwise
  */
 static BSON_INLINE mcd_duration
-mcd_duration_clamp (mcd_duration dur, mcd_duration min, mcd_duration max)
+mcd_duration_clamp(mcd_duration dur, mcd_duration min, mcd_duration max)
 {
-   BSON_ASSERT (mcd_duration_compare (min, max) <= 0 && "Invalid min-max range given to mcd_duration_clamp()");
-   if (mcd_duration_compare (dur, min) < 0) {
+   BSON_ASSERT(mcd_duration_compare(min, max) <= 0 && "Invalid min-max range given to mcd_duration_clamp()");
+   if (mcd_duration_compare(dur, min) < 0) {
       // The duration is less than the minimum
       return min;
-   } else if (mcd_duration_compare (dur, max) > 0) {
+   } else if (mcd_duration_compare(dur, max) > 0) {
       // The duration is greater than the maximum
       return max;
    } else {
@@ -303,9 +303,9 @@ typedef struct mcd_timer {
 
 /// Create a time that will expire at the given time
 static BSON_INLINE mcd_timer
-mcd_timer_expire_at (mcd_time_point time)
+mcd_timer_expire_at(mcd_time_point time)
 {
-   return (mcd_timer) {time};
+   return (mcd_timer){time};
 }
 
 /**
@@ -316,9 +316,9 @@ mcd_timer_expire_at (mcd_time_point time)
  * have expired
  */
 static BSON_INLINE mcd_timer
-mcd_timer_expire_after (mcd_duration after)
+mcd_timer_expire_after(mcd_duration after)
 {
-   return mcd_timer_expire_at (mcd_later (mcd_now (), after));
+   return mcd_timer_expire_at(mcd_later(mcd_now(), after));
 }
 
 /**
@@ -331,15 +331,15 @@ mcd_timer_expire_after (mcd_duration after)
  * return a negative duration.
  */
 static BSON_INLINE mcd_duration
-mcd_timer_remaining (mcd_timer timer)
+mcd_timer_remaining(mcd_timer timer)
 {
    // Compute the distance until the expiry time relative to now
-   mcd_duration remain = mcd_time_difference (timer.expire_at, mcd_now ());
+   mcd_duration remain = mcd_time_difference(timer.expire_at, mcd_now());
    // Compare that duration with a zero duration
-   if (mcd_duration_compare (remain, mcd_microseconds (0)) < 0) {
+   if (mcd_duration_compare(remain, mcd_microseconds(0)) < 0) {
       // The "remaining" time is less-than zero, which means the timer is
       // already expired, so we only need to wait for zero time:
-      return mcd_microseconds (0);
+      return mcd_microseconds(0);
    }
    // There is a positive amount of time remaining
    return remain;

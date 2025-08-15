@@ -50,81 +50,81 @@
 typedef struct _bson_parser_t bson_parser_t;
 
 bson_parser_t *
-bson_parser_new (void);
+bson_parser_new(void);
 
 /* Permits extra fields to be ignored when parsing. */
 void
-bson_parser_allow_extra (bson_parser_t *bp, bool val);
+bson_parser_allow_extra(bson_parser_t *bp, bool val);
 
 /* Return extra fields a read-only bson_t. */
 const bson_t *
-bson_parser_get_extra (const bson_parser_t *bp);
+bson_parser_get_extra(const bson_parser_t *bp);
 
 void
-bson_parser_destroy (bson_parser_t *bp);
+bson_parser_destroy(bson_parser_t *bp);
 
 /* bson_parser_destroy also destroys the outputs of all parsed fields. */
 void
-bson_parser_destroy_with_parsed_fields (bson_parser_t *parser);
+bson_parser_destroy_with_parsed_fields(bson_parser_t *parser);
 
 void
-bson_parser_utf8 (bson_parser_t *bp, const char *key, char **out);
+bson_parser_utf8(bson_parser_t *bp, const char *key, char **out);
 void
-bson_parser_utf8_optional (bson_parser_t *bp, const char *key, char **out);
+bson_parser_utf8_optional(bson_parser_t *bp, const char *key, char **out);
 
 void
-bson_parser_doc (bson_parser_t *bp, const char *key, bson_t **out);
+bson_parser_doc(bson_parser_t *bp, const char *key, bson_t **out);
 void
-bson_parser_doc_optional (bson_parser_t *bp, const char *key, bson_t **out);
+bson_parser_doc_optional(bson_parser_t *bp, const char *key, bson_t **out);
 
 void
-bson_parser_array (bson_parser_t *bp, const char *key, bson_t **out);
+bson_parser_array(bson_parser_t *bp, const char *key, bson_t **out);
 void
-bson_parser_array_optional (bson_parser_t *bp, const char *key, bson_t **out);
+bson_parser_array_optional(bson_parser_t *bp, const char *key, bson_t **out);
 
 void
-bson_parser_array_or_doc (bson_parser_t *bp, const char *key, bson_t **out);
+bson_parser_array_or_doc(bson_parser_t *bp, const char *key, bson_t **out);
 void
-bson_parser_array_or_doc_optional (bson_parser_t *bp, const char *key, bson_t **out);
+bson_parser_array_or_doc_optional(bson_parser_t *bp, const char *key, bson_t **out);
 
 void
-bson_parser_bool (bson_parser_t *bp, const char *key, bool **out);
+bson_parser_bool(bson_parser_t *bp, const char *key, bool **out);
 void
-bson_parser_bool_optional (bson_parser_t *bp, const char *key, bool **out);
+bson_parser_bool_optional(bson_parser_t *bp, const char *key, bool **out);
 
 /* Accepts either int32 or int64 */
 void
-bson_parser_int (bson_parser_t *bp, const char *key, int64_t **out);
+bson_parser_int(bson_parser_t *bp, const char *key, int64_t **out);
 void
-bson_parser_int_optional (bson_parser_t *bp, const char *key, int64_t **out);
+bson_parser_int_optional(bson_parser_t *bp, const char *key, int64_t **out);
 
 void
-bson_parser_any (bson_parser_t *bp, const char *key, bson_val_t **out);
+bson_parser_any(bson_parser_t *bp, const char *key, bson_val_t **out);
 void
-bson_parser_any_optional (bson_parser_t *bp, const char *key, bson_val_t **out);
+bson_parser_any_optional(bson_parser_t *bp, const char *key, bson_val_t **out);
 
 void
-bson_parser_write_concern (bson_parser_t *bp, mongoc_write_concern_t **out);
+bson_parser_write_concern(bson_parser_t *bp, mongoc_write_concern_t **out);
 void
-bson_parser_write_concern_optional (bson_parser_t *bp, mongoc_write_concern_t **out);
+bson_parser_write_concern_optional(bson_parser_t *bp, mongoc_write_concern_t **out);
 
 void
-bson_parser_read_concern (bson_parser_t *bp, mongoc_read_concern_t **out);
+bson_parser_read_concern(bson_parser_t *bp, mongoc_read_concern_t **out);
 void
-bson_parser_read_concern_optional (bson_parser_t *bp, mongoc_read_concern_t **out);
+bson_parser_read_concern_optional(bson_parser_t *bp, mongoc_read_concern_t **out);
 
 void
-bson_parser_read_prefs (bson_parser_t *bp, mongoc_read_prefs_t **out);
+bson_parser_read_prefs(bson_parser_t *bp, mongoc_read_prefs_t **out);
 void
-bson_parser_read_prefs_optional (bson_parser_t *bp, mongoc_read_prefs_t **out);
+bson_parser_read_prefs_optional(bson_parser_t *bp, mongoc_read_prefs_t **out);
 
 /* Attempt to parse @in into the fields that were registered. If parsing fails,
  * returns false and sets @error. */
 bool
-bson_parser_parse (bson_parser_t *bp, bson_t *in, bson_error_t *error);
+bson_parser_parse(bson_parser_t *bp, bson_t *in, bson_error_t *error);
 
 /* Attempt to parse @in. If parsing fails, print an error and abort. */
 void
-bson_parser_parse_or_assert (bson_parser_t *bp, bson_t *in);
+bson_parser_parse_or_assert(bson_parser_t *bp, bson_t *in);
 
 #endif /* BSONUTIL_BSON_PARSER_H */

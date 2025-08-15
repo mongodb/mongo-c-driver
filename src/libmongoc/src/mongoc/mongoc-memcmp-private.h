@@ -29,6 +29,6 @@
  * This function is not designed for lexicographical comparisons.
  */
 int
-mongoc_memcmp (const void *const b1, const void *const b2, size_t len);
+mongoc_memcmp(const void *const b1, const void *const b2, size_t len);
 
 #endif /* MONGOC_MEMCMP_PRIVATE_H */

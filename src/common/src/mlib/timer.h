@@ -27,7 +27,7 @@
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
 
-mlib_extern_c_begin ();
+mlib_extern_c_begin();
 
 /**
  * @brief Represents an expiry timer. The timer stores some point-in-time
@@ -50,7 +50,7 @@ typedef struct mlib_timer {
  * @return mlib_timer
  */
 static inline mlib_timer
-mlib_expires_at (const mlib_time_point t) mlib_noexcept
+mlib_expires_at(const mlib_time_point t) mlib_noexcept
 {
    mlib_timer ret;
    ret.expires_at = t;
@@ -62,13 +62,13 @@ mlib_expires_at (const mlib_time_point t) mlib_noexcept
  * elapsed from the point-in-time at which this function is called
  */
 static inline mlib_timer
-mlib_expires_after (const mlib_duration dur) mlib_noexcept
+mlib_expires_after(const mlib_duration dur) mlib_noexcept
 {
-   const mlib_time_point later = mlib_time_add (mlib_now (), dur);
-   return mlib_expires_at (later);
+   const mlib_time_point later = mlib_time_add(mlib_now(), dur);
+   return mlib_expires_at(later);
 }
 
-#define mlib_expires_after(...) mlib_expires_after (mlib_duration (__VA_ARGS__))
+#define mlib_expires_after(...) mlib_expires_after(mlib_duration(__VA_ARGS__))
 
 /**
  * @brief Obtain a timer that will "never" expire
@@ -78,10 +78,10 @@ mlib_expires_after (const mlib_duration dur) mlib_noexcept
  * that point is reached it will be some other civilization's problem.
  */
 static inline mlib_timer
-mlib_expires_never (void) mlib_noexcept
+mlib_expires_never(void) mlib_noexcept
 {
    mlib_timer t;
-   t.expires_at.time_since_monotonic_start = mlib_duration_max ();
+   t.expires_at.time_since_monotonic_start = mlib_duration_max();
    return t;
 }
 
@@ -89,9 +89,9 @@ mlib_expires_never (void) mlib_noexcept
  * @brief Between two timers, return the timer that will expire the soonest
  */
 static inline mlib_timer
-mlib_soonest_timer (mlib_timer l, mlib_timer r) mlib_noexcept
+mlib_soonest_timer(mlib_timer l, mlib_timer r) mlib_noexcept
 {
-   l.expires_at = mlib_earliest (l.expires_at, r.expires_at);
+   l.expires_at = mlib_earliest(l.expires_at, r.expires_at);
    return l;
 }
 
@@ -101,13 +101,13 @@ mlib_soonest_timer (mlib_timer l, mlib_timer r) mlib_noexcept
  * negative)
  */
 static inline mlib_duration
-mlib_timer_remaining (const mlib_timer timer) mlib_noexcept
+mlib_timer_remaining(const mlib_timer timer) mlib_noexcept
 {
    // The duration until the expiry time of the timer
-   const mlib_duration remain = mlib_time_difference (timer.expires_at, mlib_now ());
-   if (mlib_duration_cmp (remain, <, mlib_duration ())) {
+   const mlib_duration remain = mlib_time_difference(timer.expires_at, mlib_now());
+   if (mlib_duration_cmp(remain, <, mlib_duration())) {
       // No time remaining. Return a zero duration (not a negative duration)
-      return mlib_duration ();
+      return mlib_duration();
    }
    return remain;
 }
@@ -144,10 +144,10 @@ mlib_timer_remaining (const mlib_timer timer) mlib_noexcept
  * is already expired.
  */
 static inline bool
-mlib_timer_is_expired (const mlib_timer timer, bool *once) mlib_noexcept
+mlib_timer_is_expired(const mlib_timer timer, bool *once) mlib_noexcept
 {
    // Is the timer already expired?
-   const bool no_time_remaining = mlib_time_cmp (timer.expires_at, <=, mlib_now ());
+   const bool no_time_remaining = mlib_time_cmp(timer.expires_at, <=, mlib_now());
    if (!once) {
       // Just return `true` if there is zero time remaining
       return no_time_remaining;
@@ -164,10 +164,10 @@ mlib_timer_is_expired (const mlib_timer timer, bool *once) mlib_noexcept
    }
 }
 
-mlib_extern_c_end ();
+mlib_extern_c_end();
 
-#define mlib_timer_is_expired(...) MLIB_ARGC_PICK (_mlibTimerIsExpired, __VA_ARGS__)
-#define _mlibTimerIsExpired_argc_1(Timer) mlib_timer_is_expired ((Timer), NULL)
-#define _mlibTimerIsExpired_argc_2(Timer, OncePtr) mlib_timer_is_expired ((Timer), (OncePtr))
+#define mlib_timer_is_expired(...) MLIB_ARGC_PICK(_mlibTimerIsExpired, __VA_ARGS__)
+#define _mlibTimerIsExpired_argc_1(Timer) mlib_timer_is_expired((Timer), NULL)
+#define _mlibTimerIsExpired_argc_2(Timer, OncePtr) mlib_timer_is_expired((Timer), (OncePtr))
 
 #endif // MLIB_TIMER_H_INCLUDED

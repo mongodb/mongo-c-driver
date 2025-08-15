@@ -46,7 +46,7 @@
  */
 
 int
-bson_gettimeofday (struct timeval *tv) /* OUT */
+bson_gettimeofday(struct timeval *tv) /* OUT */
 {
 #if defined(_WIN32)
 #if defined(_MSC_VER)
@@ -68,7 +68,7 @@ bson_gettimeofday (struct timeval *tv) /* OUT */
     */
 
    if (tv) {
-      GetSystemTimeAsFileTime (&ft);
+      GetSystemTimeAsFileTime(&ft);
 
       /* pull out of the filetime into a 64 bit uint */
       tmp |= ft.dwHighDateTime;
@@ -81,13 +81,13 @@ bson_gettimeofday (struct timeval *tv) /* OUT */
       /* adjust to unix epoch */
       tmp -= DELTA_EPOCH_IN_MICROSEC;
 
-      tv->tv_sec = (long) (tmp / 1000000UL);
-      tv->tv_usec = (long) (tmp % 1000000UL);
+      tv->tv_sec = (long)(tmp / 1000000UL);
+      tv->tv_usec = (long)(tmp % 1000000UL);
    }
 
    return 0;
 #else
-   return gettimeofday (tv, NULL);
+   return gettimeofday(tv, NULL);
 #endif
 }
 
@@ -111,8 +111,8 @@ bson_gettimeofday (struct timeval *tv) /* OUT */
  */
 
 int64_t
-bson_get_monotonic_time (void)
+bson_get_monotonic_time(void)
 {
-   mlib_time_point now = mlib_now ();
-   return mlib_microseconds_count (now.time_since_monotonic_start);
+   mlib_time_point now = mlib_now();
+   return mlib_microseconds_count(now.time_since_monotonic_start);
 }

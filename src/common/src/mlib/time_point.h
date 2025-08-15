@@ -42,7 +42,7 @@
 #include <limits.h>
 #include <time.h>
 
-mlib_extern_c_begin ();
+mlib_extern_c_begin();
 
 /**
  * @brief An abstract point-in-time type
@@ -78,9 +78,9 @@ typedef struct mlib_time_point {
  * @brief Given two time points, selects the time point that occurs earliest
  */
 static inline mlib_time_point
-mlib_earliest (mlib_time_point l, mlib_time_point r)
+mlib_earliest(mlib_time_point l, mlib_time_point r)
 {
-   l.time_since_monotonic_start = mlib_duration (l.time_since_monotonic_start, min, r.time_since_monotonic_start);
+   l.time_since_monotonic_start = mlib_duration(l.time_since_monotonic_start, min, r.time_since_monotonic_start);
    return l;
 }
 
@@ -88,9 +88,9 @@ mlib_earliest (mlib_time_point l, mlib_time_point r)
  * @brief Given two time points, selects the time point that occurs later
  */
 static inline mlib_time_point
-mlib_latest (mlib_time_point l, mlib_time_point r)
+mlib_latest(mlib_time_point l, mlib_time_point r)
 {
-   l.time_since_monotonic_start = mlib_duration (l.time_since_monotonic_start, max, r.time_since_monotonic_start);
+   l.time_since_monotonic_start = mlib_duration(l.time_since_monotonic_start, max, r.time_since_monotonic_start);
    return l;
 }
 
@@ -103,7 +103,7 @@ mlib_latest (mlib_time_point l, mlib_time_point r)
  *    object macro.
  */
 static inline int
-mlib_now_clockid (void) mlib_noexcept
+mlib_now_clockid(void) mlib_noexcept
 {
 #ifdef CLOCK_MONOTONIC_RAW
    // Linux had a bad definition of CLOCK_MONOTONIC, which would jump based on NTP adjustments.
@@ -120,24 +120,24 @@ mlib_now_clockid (void) mlib_noexcept
  * @brief Obtain a point-in-time corresponding to the current time
  */
 static inline mlib_time_point
-mlib_now (void) mlib_noexcept
+mlib_now(void) mlib_noexcept
 {
 #if mlib_have_posix_clocks()
    // Use POSIX clock_gettime
    struct timespec ts;
-   int rc = clock_gettime (mlib_now_clockid (), &ts);
+   int rc = clock_gettime(mlib_now_clockid(), &ts);
    // The above call must never fail:
-   mlib_check (rc, eq, 0);
+   mlib_check(rc, eq, 0);
    // Encode the time point:
    mlib_time_point ret;
-   ret.time_since_monotonic_start = mlib_duration_from_timespec (ts);
+   ret.time_since_monotonic_start = mlib_duration_from_timespec(ts);
    return ret;
 #elif mlib_is_win32()
    // Win32 APIs for the high-performance monotonic counter. These APIs never fail after Windows XP
    LARGE_INTEGER freq;
-   QueryPerformanceFrequency (&freq);
+   QueryPerformanceFrequency(&freq);
    LARGE_INTEGER lits;
-   QueryPerformanceCounter (&lits);
+   QueryPerformanceCounter(&lits);
    // Number of ticks of the perf counter
    const int64_t ticks = lits.QuadPart;
    // Number of ticks that the counter emits in one second
@@ -150,7 +150,7 @@ mlib_now (void) mlib_noexcept
    // Number of microseconds beyond the last whole second:
    const int64_t subsecond_us = ((ticks % ticks_per_second) * one_million) / ticks_per_second;
    mlib_time_point ret;
-   ret.time_since_monotonic_start = mlib_duration ((whole_seconds, s), plus, (subsecond_us, us));
+   ret.time_since_monotonic_start = mlib_duration((whole_seconds, s), plus, (subsecond_us, us));
    return ret;
 #else
 #error We do not know how to get the current time on this platform
@@ -168,14 +168,14 @@ mlib_now (void) mlib_noexcept
  * is a point-in-time *before* 'from'.
  */
 static inline mlib_time_point
-mlib_time_add (mlib_time_point from, mlib_duration delta) mlib_noexcept
+mlib_time_add(mlib_time_point from, mlib_duration delta) mlib_noexcept
 {
    mlib_time_point ret;
-   ret.time_since_monotonic_start = mlib_duration (from.time_since_monotonic_start, plus, delta);
+   ret.time_since_monotonic_start = mlib_duration(from.time_since_monotonic_start, plus, delta);
    return ret;
 }
 
-#define mlib_time_add(From, Delta) mlib_time_add (From, mlib_duration_arg (Delta))
+#define mlib_time_add(From, Delta) mlib_time_add(From, mlib_duration_arg(Delta))
 
 /**
  * @brief Obtain the duration between two points in time.
@@ -193,9 +193,9 @@ mlib_time_add (mlib_time_point from, mlib_duration delta) mlib_noexcept
  * the amount of time needed to time-travel backwards to reach "stop."
  */
 static inline mlib_duration
-mlib_time_difference (mlib_time_point stop, mlib_time_point start)
+mlib_time_difference(mlib_time_point stop, mlib_time_point start)
 {
-   return mlib_duration (stop.time_since_monotonic_start, minus, start.time_since_monotonic_start);
+   return mlib_duration(stop.time_since_monotonic_start, minus, start.time_since_monotonic_start);
 }
 
 /**
@@ -209,9 +209,9 @@ mlib_time_difference (mlib_time_point stop, mlib_time_point start)
  * reach `t`.
  */
 static inline mlib_duration
-mlib_elapsed_since (mlib_time_point t)
+mlib_elapsed_since(mlib_time_point t)
 {
-   return mlib_time_difference (mlib_now (), t);
+   return mlib_time_difference(mlib_now(), t);
 }
 
 /**
@@ -231,14 +231,14 @@ mlib_elapsed_since (mlib_time_point t)
  * ```
  */
 static inline enum mlib_cmp_result
-mlib_time_cmp (mlib_time_point a, mlib_time_point b) mlib_noexcept
+mlib_time_cmp(mlib_time_point a, mlib_time_point b) mlib_noexcept
 {
-   return mlib_duration_cmp (a.time_since_monotonic_start, b.time_since_monotonic_start);
+   return mlib_duration_cmp(a.time_since_monotonic_start, b.time_since_monotonic_start);
 }
 
-#define mlib_time_cmp(...) MLIB_ARGC_PICK (_mlib_time_cmp, __VA_ARGS__)
+#define mlib_time_cmp(...) MLIB_ARGC_PICK(_mlib_time_cmp, __VA_ARGS__)
 #define _mlib_time_cmp_argc_2 mlib_time_cmp
-#define _mlib_time_cmp_argc_3(L, Op, R) (mlib_time_cmp ((L), (R)) Op 0)
+#define _mlib_time_cmp_argc_3(L, Op, R) (mlib_time_cmp((L), (R)) Op 0)
 
 /**
  * @brief Pause the calling thread until at least the specified duration has elapsed.
@@ -250,9 +250,9 @@ mlib_time_cmp (mlib_time_point a, mlib_time_point b) mlib_noexcept
  * Windows)
  */
 static inline int
-mlib_sleep_for (const mlib_duration d) mlib_noexcept
+mlib_sleep_for(const mlib_duration d) mlib_noexcept
 {
-   mlib_duration_rep_t duration_usec = mlib_microseconds_count (d);
+   mlib_duration_rep_t duration_usec = mlib_microseconds_count(d);
    if (duration_usec <= 0) {
       // Don't sleep any time
       return 0;
@@ -262,12 +262,12 @@ mlib_sleep_for (const mlib_duration d) mlib_noexcept
    // know the precise integer type that `usleep` expects, so do a checked-narrow
    // to handle too-large values.
    useconds_t i = 0;
-   if (mlib_narrow (&i, duration_usec)) {
+   if (mlib_narrow(&i, duration_usec)) {
       // Too many microseconds. Sleep for the max. This will only be reached
       // for positive durations because of the above check against `<= 0`
-      i = mlib_maxof (useconds_t);
+      i = mlib_maxof(useconds_t);
    }
-   int rc = usleep (i);
+   int rc = usleep(i);
    if (rc != 0) {
       return errno;
    }
@@ -275,48 +275,48 @@ mlib_sleep_for (const mlib_duration d) mlib_noexcept
 #elif defined(_WIN32)
    DWORD retc = 0;
    // Use WaitableTimer
-   const HANDLE timer = CreateWaitableTimerW (/* no attributes */ NULL,
-                                              /* Manual reset */ true,
-                                              /* Unnamed */ NULL);
+   const HANDLE timer = CreateWaitableTimerW(/* no attributes */ NULL,
+                                             /* Manual reset */ true,
+                                             /* Unnamed */ NULL);
    // Check that we actually succeeded in creating a timer.
    if (!timer) {
-      retc = GetLastError ();
+      retc = GetLastError();
       goto done;
    }
    // Convert the number of microseconds into a count of 100ns intervals. Use
    // a negative value to request a relative sleep time.
    LONGLONG negative_n_100ns_units = 0;
-   if (mlib_mul (&negative_n_100ns_units, duration_usec, -10)) {
+   if (mlib_mul(&negative_n_100ns_units, duration_usec, -10)) {
       // Too many units. Clamp to the max duration (negative for a relative
       // sleep):
-      negative_n_100ns_units = mlib_minof (LONGLONG);
+      negative_n_100ns_units = mlib_minof(LONGLONG);
    }
    LARGE_INTEGER due_time;
    due_time.QuadPart = negative_n_100ns_units;
-   BOOL okay = SetWaitableTimer (/* The timer to modify */ timer,
-                                 /* The time after which it will fire */ &due_time,
-                                 /* Interval period 0 = only fire once */ 0,
-                                 /* No completion routine */ NULL,
-                                 /* No arg for no completion routine */ NULL,
-                                 /* Wake up the system if it goes to sleep */ true);
+   BOOL okay = SetWaitableTimer(/* The timer to modify */ timer,
+                                /* The time after which it will fire */ &due_time,
+                                /* Interval period 0 = only fire once */ 0,
+                                /* No completion routine */ NULL,
+                                /* No arg for no completion routine */ NULL,
+                                /* Wake up the system if it goes to sleep */ true);
    if (!okay) {
       // Failed to set the timer. Hmm?
-      retc = GetLastError ();
+      retc = GetLastError();
       goto done;
    }
    // Do the actual wait
-   DWORD rc = WaitForSingleObject (timer, INFINITE);
+   DWORD rc = WaitForSingleObject(timer, INFINITE);
    if (rc == WAIT_FAILED) {
       // Executing the wait operation failed.
-      retc = GetLastError ();
+      retc = GetLastError();
       goto done;
    }
    // Check for success:
-   mlib_check (rc, eq, WAIT_OBJECT_0);
+   mlib_check(rc, eq, WAIT_OBJECT_0);
 done:
    // Done with the timer.
    if (timer) {
-      CloseHandle (timer);
+      CloseHandle(timer);
    }
    return retc;
 #else
@@ -324,7 +324,7 @@ done:
 #endif
 }
 
-#define mlib_sleep_for(...) mlib_sleep_for (mlib_duration (__VA_ARGS__))
+#define mlib_sleep_for(...) mlib_sleep_for(mlib_duration(__VA_ARGS__))
 
 /**
  * @brief Pause the calling thread until the given time point has been reached
@@ -335,12 +335,12 @@ done:
  * The `when` is the *soonest* successful wake time. The thread may wake at a later time.
  */
 static inline int
-mlib_sleep_until (const mlib_time_point when) mlib_noexcept
+mlib_sleep_until(const mlib_time_point when) mlib_noexcept
 {
-   const mlib_duration time_until = mlib_time_difference (when, mlib_now ());
-   return mlib_sleep_for (time_until);
+   const mlib_duration time_until = mlib_time_difference(when, mlib_now());
+   return mlib_sleep_for(time_until);
 }
 
-mlib_extern_c_end ();
+mlib_extern_c_end();
 
 #endif // MLIB_TIME_POINT_H_INCLUDED

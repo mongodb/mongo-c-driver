@@ -57,7 +57,7 @@ typedef struct gcp_request {
  * @note the request must later be destroyed with gcp_request_destroy
  */
 void
-gcp_request_init (gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers);
+gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers);
 
 
 /**
@@ -66,7 +66,7 @@ gcp_request_init (gcp_request *req, const char *const opt_host, int opt_port, co
  * @param req
  */
 void
-gcp_request_destroy (gcp_request *req);
+gcp_request_destroy(gcp_request *req);
 
 /**
  * @brief Destroy and zero-fill GCP service account token
@@ -74,7 +74,7 @@ gcp_request_destroy (gcp_request *req);
  * @param token The service account token to destory
  */
 void
-gcp_access_token_destroy (gcp_service_account_token *token);
+gcp_access_token_destroy(gcp_service_account_token *token);
 
 
 /**
@@ -91,7 +91,7 @@ gcp_access_token_destroy (gcp_service_account_token *token);
  * @note The 'out' token must later be given to gcp_access_token_destroy
  */
 bool
-gcp_access_token_try_parse_from_json (gcp_service_account_token *out, const char *json, int len, bson_error_t *error);
+gcp_access_token_try_parse_from_json(gcp_service_account_token *out, const char *json, int len, bson_error_t *error);
 
 /**
  * @brief Attempt to obtain a new GCP service account token from a GCP metadata
@@ -111,10 +111,10 @@ gcp_access_token_try_parse_from_json (gcp_service_account_token *out, const char
  *
  */
 bool
-gcp_access_token_from_gcp_server (gcp_service_account_token *out,
-                                  const char *opt_host,
-                                  int opt_port,
-                                  const char *opt_extra_headers,
-                                  bson_error_t *error);
+gcp_access_token_from_gcp_server(gcp_service_account_token *out,
+                                 const char *opt_host,
+                                 int opt_port,
+                                 const char *opt_extra_headers,
+                                 bson_error_t *error);
 
 #endif /* SERVICE_GCP_H */

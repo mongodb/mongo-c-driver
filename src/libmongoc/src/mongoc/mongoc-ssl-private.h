@@ -35,18 +35,18 @@ typedef struct {
 } _mongoc_internal_tls_opts_t;
 
 void
-_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, _mongoc_internal_tls_opts_t *internal, mongoc_uri_t *uri);
+_mongoc_ssl_opts_from_uri(mongoc_ssl_opt_t *ssl_opt, _mongoc_internal_tls_opts_t *internal, mongoc_uri_t *uri);
 void
-_mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src, mongoc_ssl_opt_t *dst, bool copy_internal);
+_mongoc_ssl_opts_copy_to(const mongoc_ssl_opt_t *src, mongoc_ssl_opt_t *dst, bool copy_internal);
 
 bool
-_mongoc_ssl_opts_disable_certificate_revocation_check (const mongoc_ssl_opt_t *ssl_opt);
+_mongoc_ssl_opts_disable_certificate_revocation_check(const mongoc_ssl_opt_t *ssl_opt);
 
 bool
-_mongoc_ssl_opts_disable_ocsp_endpoint_check (const mongoc_ssl_opt_t *ssl_opt);
+_mongoc_ssl_opts_disable_ocsp_endpoint_check(const mongoc_ssl_opt_t *ssl_opt);
 
 void
-_mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt, bool free_internal);
+_mongoc_ssl_opts_cleanup(mongoc_ssl_opt_t *opt, bool free_internal);
 
 /* _mongoc_ssl_opts_from_bson is an internal helper for constructing an ssl_opt
  * from a BSON document. It is used to parse TLS options for the KMIP KMS
@@ -55,7 +55,7 @@ _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt, bool free_internal);
  * - errmsg must be an initialized mcommon_string_append_t.
  * - Returns false on error and appends to errmsg. */
 bool
-_mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcommon_string_append_t *errmsg);
+_mongoc_ssl_opts_from_bson(mongoc_ssl_opt_t *ssl_opt, const bson_t *bson, mcommon_string_append_t *errmsg);
 
 BSON_END_DECLS
 

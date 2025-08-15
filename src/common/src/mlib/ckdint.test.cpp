@@ -37,35 +37,35 @@ using integer_types = typelist<char,
  */
 template <typename T, typename F>
 void
-with_interesting_values (F &&fn)
+with_interesting_values(F &&fn)
 {
    using lim = std::numeric_limits<T>;
    // A list of the values of T that are potentially problematic
    // when combined in various ways.
    const T interesting_values[] = {
       0,
-      (T) (-1),
-      (T) (-2),
-      (T) (-10),
+      (T)(-1),
+      (T)(-2),
+      (T)(-10),
       1,
       2,
       10,
       // Min value
-      lim::min (),
+      lim::min(),
       // Half min
-      (T) (lim::min () / 2),
-      (T) (lim::min () / 2 + 1),
-      (T) (lim::min () / 2 - 1),
+      (T)(lim::min() / 2),
+      (T)(lim::min() / 2 + 1),
+      (T)(lim::min() / 2 - 1),
       // Max value
-      lim::max (),
+      lim::max(),
       // Half max
-      (T) (lim::max () / 2),
-      (T) (lim::max () / 2 + 1),
-      (T) (lim::max () / 2 - 1),
+      (T)(lim::max() / 2),
+      (T)(lim::max() / 2 + 1),
+      (T)(lim::max() / 2 - 1),
    };
    // Call with each value:
    for (T v : interesting_values) {
-      fn (v);
+      fn(v);
    }
 }
 
@@ -84,39 +84,39 @@ with_interesting_values (F &&fn)
  */
 template <typename Dst, typename L, typename R>
 void
-test_case (L lhs, R rhs)
+test_case(L lhs, R rhs)
 {
-   (void) lhs;
-   (void) rhs;
+   (void)lhs;
+   (void)rhs;
 #if have_ckdint_builtins()
    Dst mres, gres;
    // Test addition:
-   mlib_check (mlib_add (&mres, lhs, rhs), eq, __builtin_add_overflow (lhs, rhs, &gres));
-   mlib_check (mres, eq, gres);
+   mlib_check(mlib_add(&mres, lhs, rhs), eq, __builtin_add_overflow(lhs, rhs, &gres));
+   mlib_check(mres, eq, gres);
 
    // Test subtraction:
-   mlib_check (mlib_sub (&mres, lhs, rhs), eq, __builtin_sub_overflow (lhs, rhs, &gres));
-   mlib_check (mres, eq, gres);
+   mlib_check(mlib_sub(&mres, lhs, rhs), eq, __builtin_sub_overflow(lhs, rhs, &gres));
+   mlib_check(mres, eq, gres);
 
    // Test multiplication
-   mlib_check (mlib_mul (&mres, lhs, rhs), eq, __builtin_mul_overflow (lhs, rhs, &gres));
-   mlib_check (mres, eq, gres);
+   mlib_check(mlib_mul(&mres, lhs, rhs), eq, __builtin_mul_overflow(lhs, rhs, &gres));
+   mlib_check(mres, eq, gres);
 
    // Test narrowing (both operands)
-   mlib_check (mlib_narrow (&mres, lhs), eq, __builtin_add_overflow (lhs, 0, &gres));
-   mlib_check (mres, eq, gres);
-   mlib_check (mlib_narrow (&mres, rhs), eq, __builtin_add_overflow (rhs, 0, &gres));
-   mlib_check (mres, eq, gres);
+   mlib_check(mlib_narrow(&mres, lhs), eq, __builtin_add_overflow(lhs, 0, &gres));
+   mlib_check(mres, eq, gres);
+   mlib_check(mlib_narrow(&mres, rhs), eq, __builtin_add_overflow(rhs, 0, &gres));
+   mlib_check(mres, eq, gres);
 #endif
 }
 
 template <typename Dst, typename L, typename R>
 int
-test_arithmetic ()
+test_arithmetic()
 {
-   with_interesting_values<L> ([&] (L lhs) {    //
-      with_interesting_values<R> ([&] (R rhs) { //
-         test_case<Dst> (lhs, rhs);
+   with_interesting_values<L>([&](L lhs) {    //
+      with_interesting_values<R>([&](R rhs) { //
+         test_case<Dst>(lhs, rhs);
       });
    });
    return 0;
@@ -124,55 +124,55 @@ test_arithmetic ()
 
 template <typename Dst, typename Lhs, typename... Rhs>
 int
-test_rhs (typelist<Rhs...>)
+test_rhs(typelist<Rhs...>)
 {
    // Call with every Rhs type
-   auto arr = {test_arithmetic<Dst, Lhs, Rhs> ()...};
-   (void) arr;
+   auto arr = {test_arithmetic<Dst, Lhs, Rhs>()...};
+   (void)arr;
    return 0;
 }
 
 template <typename Dest, typename... Lhs>
 int
-test_lhs (typelist<Lhs...>)
+test_lhs(typelist<Lhs...>)
 {
    // Expand to a call of test_rhs for every Lhs type
-   auto arr = {test_rhs<Dest, Lhs> (integer_types{})...};
-   (void) arr;
+   auto arr = {test_rhs<Dest, Lhs>(integer_types{})...};
+   (void)arr;
    return 0;
 }
 
 template <typename... Dst>
 void
-test_dst_types (typelist<Dst...>)
+test_dst_types(typelist<Dst...>)
 {
    // Expand to a call of test_lhs for each Dst type
-   auto arr = {test_lhs<Dst> (integer_types{})...};
-   (void) arr;
+   auto arr = {test_lhs<Dst>(integer_types{})...};
+   (void)arr;
 }
 
 int
-main ()
+main()
 {
    // Test that the dest can be used as an operand simultaneously:
    int a = 42;
-   mlib_add (&a, a, 5);    // `a` is both an addend and the dst
-   mlib_check (a, eq, 47); // Check that the addition respected the `42`
+   mlib_add(&a, a, 5);    // `a` is both an addend and the dst
+   mlib_check(a, eq, 47); // Check that the addition respected the `42`
 
    // The `check` arithmetic functions should abort the process immediately
    mlib_assert_aborts () {
-      mlib_assert_add (size_t, 41, -42);
+      mlib_assert_add(size_t, 41, -42);
    }
    mlib_assert_aborts () {
-      mlib_assert_add (ptrdiff_t, 41, SIZE_MAX);
+      mlib_assert_add(ptrdiff_t, 41, SIZE_MAX);
    }
    // Does not abort:
-   const size_t sum = mlib_assert_add (size_t, -32, 33);
-   mlib_check (sum, eq, 1);
+   const size_t sum = mlib_assert_add(size_t, -32, 33);
+   mlib_check(sum, eq, 1);
 
    // Test all integer types:
-   test_dst_types (integer_types{});
-   if (!have_ckdint_builtins ()) {
-      puts ("@@ctest-skipped@@ - No __builtin_<op>_overflow builtins to test against");
+   test_dst_types(integer_types{});
+   if (!have_ckdint_builtins()) {
+      puts("@@ctest-skipped@@ - No __builtin_<op>_overflow builtins to test against");
    }
 }

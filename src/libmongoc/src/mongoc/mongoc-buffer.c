@@ -35,11 +35,11 @@
 
 
 static void
-make_space_for (mongoc_buffer_t *buffer, size_t data_size)
+make_space_for(mongoc_buffer_t *buffer, size_t data_size)
 {
    if (buffer->len + data_size > buffer->datalen) {
-      buffer->datalen = bson_next_power_of_two (buffer->len + data_size);
-      buffer->data = (uint8_t *) buffer->realloc_func (buffer->data, buffer->datalen, buffer->realloc_data);
+      buffer->datalen = bson_next_power_of_two(buffer->len + data_size);
+      buffer->data = (uint8_t *)buffer->realloc_func(buffer->data, buffer->datalen, buffer->realloc_data);
    }
 }
 
@@ -58,11 +58,11 @@ make_space_for (mongoc_buffer_t *buffer, size_t data_size)
  * cleaning up the data structure.
  */
 void
-_mongoc_buffer_init (
+_mongoc_buffer_init(
    mongoc_buffer_t *buffer, uint8_t *buf, size_t buflen, bson_realloc_func realloc_func, void *realloc_data)
 {
-   BSON_ASSERT_PARAM (buffer);
-   BSON_ASSERT (buflen || !buf);
+   BSON_ASSERT_PARAM(buffer);
+   BSON_ASSERT(buflen || !buf);
 
    if (!realloc_func) {
       realloc_func = bson_realloc_ctx;
@@ -73,10 +73,10 @@ _mongoc_buffer_init (
    }
 
    if (!buf) {
-      buf = (uint8_t *) realloc_func (NULL, buflen, NULL);
+      buf = (uint8_t *)realloc_func(NULL, buflen, NULL);
    }
 
-   memset (buffer, 0, sizeof *buffer);
+   memset(buffer, 0, sizeof *buffer);
 
    buffer->data = buf;
    buffer->datalen = buflen;
@@ -93,15 +93,15 @@ _mongoc_buffer_init (
  * Cleanup after @buffer and release any allocated resources.
  */
 void
-_mongoc_buffer_destroy (mongoc_buffer_t *buffer)
+_mongoc_buffer_destroy(mongoc_buffer_t *buffer)
 {
-   BSON_ASSERT_PARAM (buffer);
+   BSON_ASSERT_PARAM(buffer);
 
    if (buffer->data && buffer->realloc_func) {
-      buffer->realloc_func (buffer->data, 0, buffer->realloc_data);
+      buffer->realloc_func(buffer->data, 0, buffer->realloc_data);
    }
 
-   memset (buffer, 0, sizeof *buffer);
+   memset(buffer, 0, sizeof *buffer);
 }
 
 
@@ -115,12 +115,12 @@ _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
  * contain security related information.
  */
 void
-_mongoc_buffer_clear (mongoc_buffer_t *buffer, bool zero)
+_mongoc_buffer_clear(mongoc_buffer_t *buffer, bool zero)
 {
-   BSON_ASSERT_PARAM (buffer);
+   BSON_ASSERT_PARAM(buffer);
 
    if (zero) {
-      memset (buffer->data, 0, buffer->datalen);
+      memset(buffer->data, 0, buffer->datalen);
    }
 
    buffer->len = 0;
@@ -128,28 +128,28 @@ _mongoc_buffer_clear (mongoc_buffer_t *buffer, bool zero)
 
 
 bool
-_mongoc_buffer_append (mongoc_buffer_t *buffer, const uint8_t *data, size_t data_size)
+_mongoc_buffer_append(mongoc_buffer_t *buffer, const uint8_t *data, size_t data_size)
 {
    uint8_t *buf;
 
    ENTRY;
 
-   BSON_ASSERT_PARAM (buffer);
-   BSON_ASSERT (data_size);
+   BSON_ASSERT_PARAM(buffer);
+   BSON_ASSERT(data_size);
 
-   BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT(buffer->datalen);
 
-   make_space_for (buffer, data_size);
+   make_space_for(buffer, data_size);
 
    buf = &buffer->data[buffer->len];
 
-   BSON_ASSERT ((buffer->len + data_size) <= buffer->datalen);
+   BSON_ASSERT((buffer->len + data_size) <= buffer->datalen);
 
-   memcpy (buf, data, data_size);
+   memcpy(buf, data, data_size);
 
    buffer->len += data_size;
 
-   RETURN (true);
+   RETURN(true);
 }
 
 
@@ -168,7 +168,7 @@ _mongoc_buffer_append (mongoc_buffer_t *buffer, const uint8_t *data, size_t data
  * Returns: true if successful; otherwise false and @error is set.
  */
 bool
-_mongoc_buffer_append_from_stream (
+_mongoc_buffer_append_from_stream(
    mongoc_buffer_t *buffer, mongoc_stream_t *stream, size_t size, int64_t timeout_msec, bson_error_t *error)
 {
    uint8_t *buf;
@@ -176,41 +176,41 @@ _mongoc_buffer_append_from_stream (
 
    ENTRY;
 
-   BSON_ASSERT_PARAM (buffer);
-   BSON_ASSERT_PARAM (stream);
-   BSON_ASSERT (size);
+   BSON_ASSERT_PARAM(buffer);
+   BSON_ASSERT_PARAM(stream);
+   BSON_ASSERT(size);
 
-   BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT(buffer->datalen);
 
-   make_space_for (buffer, size);
+   make_space_for(buffer, size);
 
    buf = &buffer->data[buffer->len];
 
-   BSON_ASSERT ((buffer->len + size) <= buffer->datalen);
+   BSON_ASSERT((buffer->len + size) <= buffer->datalen);
 
-   if (BSON_UNLIKELY (!mlib_in_range (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY(!mlib_in_range(int32_t, timeout_msec))) {
       // CDRIVER-4589
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
-                         timeout_msec);
-      RETURN (false);
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_SOCKET,
+                        "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
+                        timeout_msec);
+      RETURN(false);
    }
 
-   ret = mongoc_stream_read (stream, buf, size, size, (int32_t) timeout_msec);
-   if (mlib_cmp (ret, !=, size)) {
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Failed to read %zu bytes: socket error or timeout",
-                         size);
-      RETURN (false);
+   ret = mongoc_stream_read(stream, buf, size, size, (int32_t)timeout_msec);
+   if (mlib_cmp(ret, !=, size)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_SOCKET,
+                        "Failed to read %zu bytes: socket error or timeout",
+                        size);
+      RETURN(false);
    }
 
-   buffer->len += (size_t) ret;
+   buffer->len += (size_t)ret;
 
-   RETURN (true);
+   RETURN(true);
 }
 
 
@@ -226,7 +226,7 @@ _mongoc_buffer_append_from_stream (
  * Returns: The number of buffered bytes, or -1 on failure.
  */
 ssize_t
-_mongoc_buffer_fill (
+_mongoc_buffer_fill(
    mongoc_buffer_t *buffer, mongoc_stream_t *stream, size_t min_bytes, int64_t timeout_msec, bson_error_t *error)
 {
    ssize_t ret;
@@ -234,55 +234,55 @@ _mongoc_buffer_fill (
 
    ENTRY;
 
-   BSON_ASSERT_PARAM (buffer);
-   BSON_ASSERT_PARAM (stream);
+   BSON_ASSERT_PARAM(buffer);
+   BSON_ASSERT_PARAM(stream);
 
-   BSON_ASSERT (buffer->data);
-   BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT(buffer->data);
+   BSON_ASSERT(buffer->datalen);
 
    if (min_bytes <= buffer->len) {
-      BSON_ASSERT (mlib_in_range (ssize_t, buffer->len));
-      RETURN ((ssize_t) buffer->len);
+      BSON_ASSERT(mlib_in_range(ssize_t, buffer->len));
+      RETURN((ssize_t)buffer->len);
    }
 
    min_bytes -= buffer->len;
 
-   make_space_for (buffer, min_bytes);
+   make_space_for(buffer, min_bytes);
 
    avail_bytes = buffer->datalen - buffer->len;
 
-   if (BSON_UNLIKELY (!mlib_in_range (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY(!mlib_in_range(int32_t, timeout_msec))) {
       // CDRIVER-4589
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
-                         timeout_msec);
-      RETURN (false);
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_SOCKET,
+                        "timeout_msec value %" PRId64 " exceeds supported 32-bit range",
+                        timeout_msec);
+      RETURN(false);
    }
 
-   ret = mongoc_stream_read (stream, &buffer->data[buffer->len], avail_bytes, min_bytes, (int32_t) timeout_msec);
+   ret = mongoc_stream_read(stream, &buffer->data[buffer->len], avail_bytes, min_bytes, (int32_t)timeout_msec);
 
    if (ret < 0) {
-      _mongoc_set_error (
+      _mongoc_set_error(
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to buffer %zu bytes", min_bytes);
-      RETURN (-1);
+      RETURN(-1);
    }
 
-   buffer->len += (size_t) ret;
+   buffer->len += (size_t)ret;
 
    if (buffer->len < min_bytes) {
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Could only buffer %zu of %zu bytes",
-                         buffer->len,
-                         min_bytes);
-      RETURN (-1);
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_SOCKET,
+                        "Could only buffer %zu of %zu bytes",
+                        buffer->len,
+                        min_bytes);
+      RETURN(-1);
    }
 
-   BSON_ASSERT (mlib_in_range (ssize_t, buffer->len));
-   RETURN ((ssize_t) buffer->len);
+   BSON_ASSERT(mlib_in_range(ssize_t, buffer->len));
+   RETURN((ssize_t)buffer->len);
 }
 
 
@@ -300,39 +300,39 @@ _mongoc_buffer_fill (
  * Returns: bytes read if successful; otherwise 0 or -1.
  */
 ssize_t
-_mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
-                                       mongoc_stream_t *stream,
-                                       size_t size,
-                                       int64_t timeout_msec)
+_mongoc_buffer_try_append_from_stream(mongoc_buffer_t *buffer,
+                                      mongoc_stream_t *stream,
+                                      size_t size,
+                                      int64_t timeout_msec)
 {
    uint8_t *buf;
    ssize_t ret;
 
    ENTRY;
 
-   BSON_ASSERT_PARAM (buffer);
-   BSON_ASSERT_PARAM (stream);
-   BSON_ASSERT (size);
+   BSON_ASSERT_PARAM(buffer);
+   BSON_ASSERT_PARAM(stream);
+   BSON_ASSERT(size);
 
-   BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT(buffer->datalen);
 
-   make_space_for (buffer, size);
+   make_space_for(buffer, size);
 
    buf = &buffer->data[buffer->len];
 
-   BSON_ASSERT ((buffer->len + size) <= buffer->datalen);
+   BSON_ASSERT((buffer->len + size) <= buffer->datalen);
 
-   if (BSON_UNLIKELY (!mlib_in_range (int32_t, timeout_msec))) {
+   if (BSON_UNLIKELY(!mlib_in_range(int32_t, timeout_msec))) {
       // CDRIVER-4589
-      MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", timeout_msec);
-      RETURN (-1);
+      MONGOC_ERROR("timeout_msec value %" PRId64 " exceeds supported 32-bit range", timeout_msec);
+      RETURN(-1);
    }
 
-   ret = mongoc_stream_read (stream, buf, size, 0, (int32_t) timeout_msec);
+   ret = mongoc_stream_read(stream, buf, size, 0, (int32_t)timeout_msec);
 
    if (ret > 0) {
-      buffer->len += (size_t) ret;
+      buffer->len += (size_t)ret;
    }
 
-   RETURN (ret);
+   RETURN(ret);
 }
