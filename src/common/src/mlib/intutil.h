@@ -30,12 +30,12 @@
  * @brief Given an integral type, evaluates to `true` if that type is signed,
  * otherwise `false`
  */
-#define mlib_is_signed(T) (!((T) (-1) > 0))
+#define mlib_is_signed(T) (!((T)(-1) > 0))
 
 /**
  * @brief Like `sizeof`, but returns the number of bits in the object representation
  */
-#define mlib_bitsizeof(T) ((sizeof (T)) * ((size_t) CHAR_BIT))
+#define mlib_bitsizeof(T) ((sizeof(T)) * ((size_t)CHAR_BIT))
 
 // clang-format off
 /**

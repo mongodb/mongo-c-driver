@@ -60,9 +60,9 @@ struct _mongoc_gridfs_file_t {
 
 
 mongoc_gridfs_file_t *
-_mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs, const bson_t *data);
+_mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data);
 mongoc_gridfs_file_t *
-_mongoc_gridfs_file_new (mongoc_gridfs_t *gridfs, mongoc_gridfs_file_opt_t *opt);
+_mongoc_gridfs_file_new(mongoc_gridfs_t *gridfs, mongoc_gridfs_file_opt_t *opt);
 
 
 BSON_END_DECLS

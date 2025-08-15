@@ -38,13 +38,13 @@ typedef struct _mongoc_async {
 } mongoc_async_t;
 
 mongoc_async_t *
-mongoc_async_new (void);
+mongoc_async_new(void);
 
 void
-mongoc_async_destroy (mongoc_async_t *async);
+mongoc_async_destroy(mongoc_async_t *async);
 
 void
-mongoc_async_run (mongoc_async_t *async);
+mongoc_async_run(mongoc_async_t *async);
 
 BSON_END_DECLS
 

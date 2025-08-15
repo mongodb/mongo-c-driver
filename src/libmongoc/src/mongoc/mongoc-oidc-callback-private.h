@@ -31,30 +31,30 @@
 #define MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION 1
 
 mongoc_oidc_callback_params_t *
-mongoc_oidc_callback_params_new (void);
+mongoc_oidc_callback_params_new(void);
 
 void
-mongoc_oidc_callback_params_destroy (mongoc_oidc_callback_params_t *params);
+mongoc_oidc_callback_params_destroy(mongoc_oidc_callback_params_t *params);
 
 void
-mongoc_oidc_callback_params_set_version (mongoc_oidc_callback_params_t *params, int32_t version);
+mongoc_oidc_callback_params_set_version(mongoc_oidc_callback_params_t *params, int32_t version);
 
 void
-mongoc_oidc_callback_params_set_user_data (mongoc_oidc_callback_params_t *params, void *user_data);
+mongoc_oidc_callback_params_set_user_data(mongoc_oidc_callback_params_t *params, void *user_data);
 
 void
-mongoc_oidc_callback_params_set_timeout (mongoc_oidc_callback_params_t *params, int64_t timeout);
+mongoc_oidc_callback_params_set_timeout(mongoc_oidc_callback_params_t *params, int64_t timeout);
 
 void
-mongoc_oidc_callback_params_unset_timeout (mongoc_oidc_callback_params_t *params);
+mongoc_oidc_callback_params_unset_timeout(mongoc_oidc_callback_params_t *params);
 
 void
-mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params, const char *username);
+mongoc_oidc_callback_params_set_username(mongoc_oidc_callback_params_t *params, const char *username);
 
 bool
-mongoc_oidc_callback_params_get_cancelled_with_timeout (const mongoc_oidc_callback_params_t *params);
+mongoc_oidc_callback_params_get_cancelled_with_timeout(const mongoc_oidc_callback_params_t *params);
 
 void
-mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_params_t *params, bool value);
+mongoc_oidc_callback_params_set_cancelled_with_timeout(mongoc_oidc_callback_params_t *params, bool value);
 
 #endif // MONGOC_OIDC_CALLBACK_PRIVATE_H

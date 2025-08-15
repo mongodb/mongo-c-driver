@@ -77,17 +77,17 @@ typedef enum {
  * @param duration The elapsed duration that the command object has been running.
  * This will be zero when the CONNECTED state is invoked.
  */
-typedef void (*mongoc_async_cmd_event_cb) (struct _mongoc_async_cmd *acmd,
-                                           mongoc_async_cmd_result_t result,
-                                           const bson_t *bson,
-                                           mlib_duration duration);
+typedef void (*mongoc_async_cmd_event_cb)(struct _mongoc_async_cmd *acmd,
+                                          mongoc_async_cmd_result_t result,
+                                          const bson_t *bson,
+                                          mlib_duration duration);
 
 /**
  * @brief Callback that is used to open a new stream for a command object.
  *
  * If the function returns a null pointer, it is considered to have failed.
  */
-typedef mongoc_stream_t *(*mongoc_async_cmd_connect_cb) (struct _mongoc_async_cmd *);
+typedef mongoc_stream_t *(*mongoc_async_cmd_connect_cb)(struct _mongoc_async_cmd *);
 
 /**
  * @brief Stream setup callback for asynchronous commands
@@ -104,7 +104,7 @@ typedef mongoc_stream_t *(*mongoc_async_cmd_connect_cb) (struct _mongoc_async_cm
  * @return int The function should return -1 on failure, 1 if the stream
  * immediately has data to send, or 0 for generic success.
  */
-typedef int (*mongoc_async_cmd_stream_setup_cb) (
+typedef int (*mongoc_async_cmd_stream_setup_cb)(
    mongoc_stream_t *stream, int *events, void *ctx, mlib_timer timeout, bson_error_t *error);
 
 
@@ -220,20 +220,20 @@ typedef struct _mongoc_async_cmd {
  * @return mongoc_async_cmd_t* A newly created asynchronous command object
  */
 mongoc_async_cmd_t *
-mongoc_async_cmd_new (mongoc_async_t *async,
-                      mongoc_stream_t *stream,
-                      bool is_setup_done,
-                      struct addrinfo *dns_result,
-                      mongoc_async_cmd_connect_cb connect_callback,
-                      mlib_duration connect_delay,
-                      mongoc_async_cmd_stream_setup_cb setup,
-                      void *setup_ctx,
-                      const char *dbname,
-                      const bson_t *cmd,
-                      const int32_t cmd_opcode,
-                      mongoc_async_cmd_event_cb cb,
-                      void *userdata,
-                      mlib_duration timeout);
+mongoc_async_cmd_new(mongoc_async_t *async,
+                     mongoc_stream_t *stream,
+                     bool is_setup_done,
+                     struct addrinfo *dns_result,
+                     mongoc_async_cmd_connect_cb connect_callback,
+                     mlib_duration connect_delay,
+                     mongoc_async_cmd_stream_setup_cb setup,
+                     void *setup_ctx,
+                     const char *dbname,
+                     const bson_t *cmd,
+                     const int32_t cmd_opcode,
+                     mongoc_async_cmd_event_cb cb,
+                     void *userdata,
+                     mlib_duration timeout);
 
 /**
  * @brief Obtain a deadline timer that will expire when the given async command
@@ -243,19 +243,19 @@ mongoc_async_cmd_new (mongoc_async_t *async,
  * adjust the point-in-time at which it expires.
  */
 static inline mlib_timer
-_acmd_deadline (const mongoc_async_cmd_t *self)
+_acmd_deadline(const mongoc_async_cmd_t *self)
 {
-   BSON_ASSERT_PARAM (self);
-   return mlib_expires_at (mlib_time_add (self->_start_time, self->_timeout));
+   BSON_ASSERT_PARAM(self);
+   return mlib_expires_at(mlib_time_add(self->_start_time, self->_timeout));
 }
 
 /**
  * @brief Determine whether the given async command object has timed out
  */
 static inline bool
-_acmd_has_timed_out (const mongoc_async_cmd_t *self)
+_acmd_has_timed_out(const mongoc_async_cmd_t *self)
 {
-   return mlib_timer_is_expired (_acmd_deadline (self));
+   return mlib_timer_is_expired(_acmd_deadline(self));
 }
 
 /**
@@ -265,9 +265,9 @@ _acmd_has_timed_out (const mongoc_async_cmd_t *self)
  * the command to abort the next time it is polled.
  */
 static inline void
-_acmd_cancel (mongoc_async_cmd_t *self)
+_acmd_cancel(mongoc_async_cmd_t *self)
 {
-   BSON_ASSERT_PARAM (self);
+   BSON_ASSERT_PARAM(self);
 
    // Don't attempt to cancel a command in the error state, as it already has a
    // completion state waiting to be delivered.
@@ -286,10 +286,10 @@ _acmd_cancel (mongoc_async_cmd_t *self)
  * will attempt to connect the next time it is polled.
  */
 static inline void
-_acmd_adjust_connect_delay (mongoc_async_cmd_t *self, const mlib_duration d)
+_acmd_adjust_connect_delay(mongoc_async_cmd_t *self, const mlib_duration d)
 {
-   BSON_ASSERT_PARAM (self);
-   self->_connect_delay_timer.expires_at = mlib_time_add (self->_connect_delay_timer.expires_at, d);
+   BSON_ASSERT_PARAM(self);
+   self->_connect_delay_timer.expires_at = mlib_time_add(self->_connect_delay_timer.expires_at, d);
 }
 
 /**
@@ -308,18 +308,18 @@ _acmd_adjust_connect_delay (mongoc_async_cmd_t *self, const mlib_duration d)
  * non-blocking, and the reference start time for the command can remain fixed.
  */
 static inline void
-_acmd_reset_elapsed (mongoc_async_cmd_t *self)
+_acmd_reset_elapsed(mongoc_async_cmd_t *self)
 {
-   self->_start_time = mlib_now ();
+   self->_start_time = mlib_now();
 }
 
 /**
  * @brief Obtain the amount of time that the command has been running
  */
 static inline mlib_duration
-_acmd_elapsed (mongoc_async_cmd_t const *self)
+_acmd_elapsed(mongoc_async_cmd_t const *self)
 {
-   return mlib_elapsed_since (self->_start_time);
+   return mlib_elapsed_since(self->_start_time);
 }
 
 /**
@@ -329,10 +329,10 @@ _acmd_elapsed (mongoc_async_cmd_t const *self)
  * @param T The type to read from the pointer
  * @param Command Pointer to a command object
  */
-#define _acmd_userdata(T, Command) ((T *) ((Command)->_userdata))
+#define _acmd_userdata(T, Command) ((T *)((Command)->_userdata))
 
 void
-mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd);
+mongoc_async_cmd_destroy(mongoc_async_cmd_t *acmd);
 
 /**
  * @brief Pump the asynchronous command object state machine.
@@ -341,7 +341,7 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd);
  * object and return `false`. Otherwise, it will return `true`.
  */
 bool
-mongoc_async_cmd_run (mongoc_async_cmd_t *acmd);
+mongoc_async_cmd_run(mongoc_async_cmd_t *acmd);
 
 #ifdef MONGOC_ENABLE_SSL
 /**
@@ -352,7 +352,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd);
  * Refer to `mongoc_async_cmd_stream_setup_cb` for signature details
  */
 int
-mongoc_async_cmd_tls_setup (mongoc_stream_t *stream, int *events, void *ctx, mlib_timer deadline, bson_error_t *error);
+mongoc_async_cmd_tls_setup(mongoc_stream_t *stream, int *events, void *ctx, mlib_timer deadline, bson_error_t *error);
 #endif
 
 BSON_END_DECLS

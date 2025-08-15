@@ -33,25 +33,25 @@
 typedef struct _mongoc_interrupt_t mongoc_interrupt_t;
 
 mongoc_interrupt_t *
-_mongoc_interrupt_new (uint32_t timeout_ms);
+_mongoc_interrupt_new(uint32_t timeout_ms);
 
 /* Interrupt the stream. An in progress poll for POLLIN should return. */
 bool
-_mongoc_interrupt_interrupt (mongoc_interrupt_t *interrupt);
+_mongoc_interrupt_interrupt(mongoc_interrupt_t *interrupt);
 
 /* Returns a socket stream, that can be polled alongside other
  * socket streams. */
 mongoc_stream_t *
-_mongoc_interrupt_get_stream (mongoc_interrupt_t *interrupt);
+_mongoc_interrupt_get_stream(mongoc_interrupt_t *interrupt);
 
 /* Flushes queued data on an interrupt.
  *
  * This is not guaranteed to flush all data, but it does not block.
  */
 bool
-_mongoc_interrupt_flush (mongoc_interrupt_t *interrupt);
+_mongoc_interrupt_flush(mongoc_interrupt_t *interrupt);
 
 void
-_mongoc_interrupt_destroy (mongoc_interrupt_t *interrupt);
+_mongoc_interrupt_destroy(mongoc_interrupt_t *interrupt);
 
 #endif /* MONGOC_STREAM_INTERRUPTIBLE_PRIVATE_H */

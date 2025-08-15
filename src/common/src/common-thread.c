@@ -20,53 +20,53 @@
 
 #if defined(BSON_OS_UNIX)
 int
-mcommon_thread_create (bson_thread_t *thread, BSON_THREAD_FUN_TYPE (func), void *arg)
+mcommon_thread_create(bson_thread_t *thread, BSON_THREAD_FUN_TYPE(func), void *arg)
 {
-   BSON_ASSERT_PARAM (thread);
-   BSON_ASSERT_PARAM (func);
-   BSON_OPTIONAL_PARAM (arg); // optional.
-   return pthread_create (thread, NULL, func, arg);
+   BSON_ASSERT_PARAM(thread);
+   BSON_ASSERT_PARAM(func);
+   BSON_OPTIONAL_PARAM(arg); // optional.
+   return pthread_create(thread, NULL, func, arg);
 }
 int
-mcommon_thread_join (bson_thread_t thread)
+mcommon_thread_join(bson_thread_t thread)
 {
-   return pthread_join (thread, NULL);
+   return pthread_join(thread, NULL);
 }
 
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
 bool
-mcommon_mutex_is_locked (bson_mutex_t *mutex)
+mcommon_mutex_is_locked(bson_mutex_t *mutex)
 {
-   return mutex->valid_tid && pthread_equal (pthread_self (), mutex->lock_owner);
+   return mutex->valid_tid && pthread_equal(pthread_self(), mutex->lock_owner);
 }
 #endif
 
 #else
 int
-mcommon_thread_create (bson_thread_t *thread, BSON_THREAD_FUN_TYPE (func), void *arg)
+mcommon_thread_create(bson_thread_t *thread, BSON_THREAD_FUN_TYPE(func), void *arg)
 {
-   BSON_ASSERT_PARAM (thread);
-   BSON_ASSERT_PARAM (func);
-   BSON_OPTIONAL_PARAM (arg); // optional.
+   BSON_ASSERT_PARAM(thread);
+   BSON_ASSERT_PARAM(func);
+   BSON_OPTIONAL_PARAM(arg); // optional.
 
-   *thread = (HANDLE) _beginthreadex (NULL, 0, func, arg, 0, NULL);
+   *thread = (HANDLE)_beginthreadex(NULL, 0, func, arg, 0, NULL);
    if (0 == *thread) {
       return errno;
    }
    return 0;
 }
 int
-mcommon_thread_join (bson_thread_t thread)
+mcommon_thread_join(bson_thread_t thread)
 {
    int ret;
 
    /* zero indicates success for WaitForSingleObject. */
-   ret = WaitForSingleObject (thread, INFINITE);
+   ret = WaitForSingleObject(thread, INFINITE);
    if (WAIT_OBJECT_0 != ret) {
       return ret;
    }
    /* zero indicates failure for CloseHandle. */
-   ret = CloseHandle (thread);
+   ret = CloseHandle(thread);
    if (0 == ret) {
       return 1;
    }

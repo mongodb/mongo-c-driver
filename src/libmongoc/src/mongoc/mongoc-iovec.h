@@ -38,9 +38,9 @@ typedef struct {
    char *iov_base;
 } mongoc_iovec_t;
 
-BSON_STATIC_ASSERT2 (sizeof_iovect_t, sizeof (mongoc_iovec_t) == sizeof (WSABUF));
-BSON_STATIC_ASSERT2 (offsetof_iovec_base, offsetof (mongoc_iovec_t, iov_base) == offsetof (WSABUF, buf));
-BSON_STATIC_ASSERT2 (offsetof_iovec_len, offsetof (mongoc_iovec_t, iov_len) == offsetof (WSABUF, len));
+BSON_STATIC_ASSERT2(sizeof_iovect_t, sizeof(mongoc_iovec_t) == sizeof(WSABUF));
+BSON_STATIC_ASSERT2(offsetof_iovec_base, offsetof(mongoc_iovec_t, iov_base) == offsetof(WSABUF, buf));
+BSON_STATIC_ASSERT2(offsetof_iovec_len, offsetof(mongoc_iovec_t, iov_len) == offsetof(WSABUF, len));
 
 #else
 typedef struct iovec mongoc_iovec_t;

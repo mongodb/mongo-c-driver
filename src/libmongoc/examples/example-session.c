@@ -9,7 +9,7 @@
 
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    int exit_code = EXIT_FAILURE;
 
@@ -29,59 +29,59 @@ main (int argc, char *argv[])
    char *str;
    bool r;
 
-   mongoc_init ();
+   mongoc_init();
 
    if (argc > 1) {
       uri_string = argv[1];
    }
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               uri_string,
-               error.message);
+      fprintf(stderr,
+              "failed to parse URI: %s\n"
+              "error message:       %s\n",
+              uri_string,
+              error.message);
       goto done;
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri(uri);
    if (!client) {
       goto done;
    }
 
-   mongoc_client_set_error_api (client, 2);
+   mongoc_client_set_error_api(client, 2);
 
    /* pass NULL for options - by default the session is causally consistent */
-   client_session = mongoc_client_start_session (client, NULL, &error);
+   client_session = mongoc_client_start_session(client, NULL, &error);
    if (!client_session) {
-      fprintf (stderr, "Failed to start session: %s\n", error.message);
+      fprintf(stderr, "Failed to start session: %s\n", error.message);
       goto done;
    }
 
-   collection = mongoc_client_get_collection (client, "test", "collection");
-   selector = BCON_NEW ("_id", BCON_INT32 (1));
-   update = BCON_NEW ("$inc", "{", "x", BCON_INT32 (1), "}");
-   update_opts = bson_new ();
-   if (!mongoc_client_session_append (client_session, update_opts, &error)) {
-      fprintf (stderr, "Could not add session to opts: %s\n", error.message);
+   collection = mongoc_client_get_collection(client, "test", "collection");
+   selector = BCON_NEW("_id", BCON_INT32(1));
+   update = BCON_NEW("$inc", "{", "x", BCON_INT32(1), "}");
+   update_opts = bson_new();
+   if (!mongoc_client_session_append(client_session, update_opts, &error)) {
+      fprintf(stderr, "Could not add session to opts: %s\n", error.message);
       goto done;
    }
 
-   r = mongoc_collection_update_one (collection, selector, update, update_opts, NULL /* reply */, &error);
+   r = mongoc_collection_update_one(collection, selector, update, update_opts, NULL /* reply */, &error);
 
    if (!r) {
-      fprintf (stderr, "Update failed: %s\n", error.message);
+      fprintf(stderr, "Update failed: %s\n", error.message);
       goto done;
    }
 
-   bson_destroy (selector);
-   selector = BCON_NEW ("_id", BCON_INT32 (1));
-   secondary = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   bson_destroy(selector);
+   selector = BCON_NEW("_id", BCON_INT32(1));
+   secondary = mongoc_read_prefs_new(MONGOC_READ_SECONDARY);
 
-   find_opts = BCON_NEW ("maxTimeMS", BCON_INT32 (2000));
-   if (!mongoc_client_session_append (client_session, find_opts, &error)) {
-      fprintf (stderr, "Could not add session to opts: %s\n", error.message);
+   find_opts = BCON_NEW("maxTimeMS", BCON_INT32(2000));
+   if (!mongoc_client_session_append(client_session, find_opts, &error)) {
+      fprintf(stderr, "Could not add session to opts: %s\n", error.message);
       goto done;
    }
 
@@ -90,16 +90,16 @@ main (int argc, char *argv[])
     * blocks waiting for the secondary to catch up, if necessary, or times out
     * and fails after 2000 ms.
     */
-   cursor = mongoc_collection_find_with_opts (collection, selector, find_opts, secondary);
+   cursor = mongoc_collection_find_with_opts(collection, selector, find_opts, secondary);
 
-   while (mongoc_cursor_next (cursor, &doc)) {
-      str = bson_as_relaxed_extended_json (doc, NULL);
-      fprintf (stdout, "%s\n", str);
-      bson_free (str);
+   while (mongoc_cursor_next(cursor, &doc)) {
+      str = bson_as_relaxed_extended_json(doc, NULL);
+      fprintf(stdout, "%s\n", str);
+      bson_free(str);
    }
 
-   if (mongoc_cursor_error (cursor, &error)) {
-      fprintf (stderr, "Cursor Failure: %s\n", error.message);
+   if (mongoc_cursor_error(cursor, &error)) {
+      fprintf(stderr, "Cursor Failure: %s\n", error.message);
       goto done;
    }
 
@@ -107,38 +107,38 @@ main (int argc, char *argv[])
 
 done:
    if (find_opts) {
-      bson_destroy (find_opts);
+      bson_destroy(find_opts);
    }
    if (update) {
-      bson_destroy (update);
+      bson_destroy(update);
    }
    if (selector) {
-      bson_destroy (selector);
+      bson_destroy(selector);
    }
    if (update_opts) {
-      bson_destroy (update_opts);
+      bson_destroy(update_opts);
    }
    if (secondary) {
-      mongoc_read_prefs_destroy (secondary);
+      mongoc_read_prefs_destroy(secondary);
    }
    /* destroy cursor, collection, session before the client they came from */
    if (cursor) {
-      mongoc_cursor_destroy (cursor);
+      mongoc_cursor_destroy(cursor);
    }
    if (collection) {
-      mongoc_collection_destroy (collection);
+      mongoc_collection_destroy(collection);
    }
    if (client_session) {
-      mongoc_client_session_destroy (client_session);
+      mongoc_client_session_destroy(client_session);
    }
    if (uri) {
-      mongoc_uri_destroy (uri);
+      mongoc_uri_destroy(uri);
    }
    if (client) {
-      mongoc_client_destroy (client);
+      mongoc_client_destroy(client);
    }
 
-   mongoc_cleanup ();
+   mongoc_cleanup();
 
    return exit_code;
 }

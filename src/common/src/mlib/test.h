@@ -48,38 +48,38 @@
  * If the token `debug` is passed as a macro argument, then the forking behavior
  * is suppressed, allowing for easier debugging of the statement.
  */
-#define mlib_assert_aborts(...) MLIB_PASTE_3 (_mlibAssertAbortsStmt, _, __VA_ARGS__) ()
+#define mlib_assert_aborts(...) MLIB_PASTE_3(_mlibAssertAbortsStmt, _, __VA_ARGS__)()
 
 #ifndef _WIN32
 #include <sys/wait.h>
 #include <unistd.h>
-#define _mlibAssertAbortsStmt_()                                                                  \
-   for (int once = 1, other_pid = fork (); once; once = 0)                                        \
-      for (; once; once = 0)                                                                      \
-         if (other_pid != 0) {                                                                    \
-            /* We are the parent */                                                               \
-            int wstatus;                                                                          \
-            waitpid (other_pid, &wstatus, 0);                                                     \
-            if (WIFEXITED (wstatus)) {                                                            \
-               /* Normal exit! */                                                                 \
-               _mlib_stmt_did_not_abort (__FILE__, MLIB_FUNC, __LINE__, WEXITSTATUS (wstatus));   \
-            } else if (WIFSIGNALED (wstatus)) {                                                   \
-               /* Signalled */                                                                    \
-               if (WTERMSIG (wstatus) != SIGABRT) {                                               \
-                  fprintf (stderr,                                                                \
-                           "%s:%d: [%s]: Child process did not exit with SIGABRT! (Exited %d)\n", \
-                           __FILE__,                                                              \
-                           __LINE__,                                                              \
-                           MLIB_FUNC,                                                             \
-                           WTERMSIG (wstatus));                                                   \
-                  fflush (stderr);                                                                \
-                  abort ();                                                                       \
-               }                                                                                  \
-            }                                                                                     \
-         } else /* We are the child */                                                            \
-            if ((fclose (stderr), 1))                                                             \
-               for (;; _Exit (71))                                                                \
-                  for (;; _Exit (71)) /* Double loop to prevent the block from `break`ing out */
+#define _mlibAssertAbortsStmt_()                                                                 \
+   for (int once = 1, other_pid = fork(); once; once = 0)                                        \
+      for (; once; once = 0)                                                                     \
+         if (other_pid != 0) {                                                                   \
+            /* We are the parent */                                                              \
+            int wstatus;                                                                         \
+            waitpid(other_pid, &wstatus, 0);                                                     \
+            if (WIFEXITED(wstatus)) {                                                            \
+               /* Normal exit! */                                                                \
+               _mlib_stmt_did_not_abort(__FILE__, MLIB_FUNC, __LINE__, WEXITSTATUS(wstatus));    \
+            } else if (WIFSIGNALED(wstatus)) {                                                   \
+               /* Signalled */                                                                   \
+               if (WTERMSIG(wstatus) != SIGABRT) {                                               \
+                  fprintf(stderr,                                                                \
+                          "%s:%d: [%s]: Child process did not exit with SIGABRT! (Exited %d)\n", \
+                          __FILE__,                                                              \
+                          __LINE__,                                                              \
+                          MLIB_FUNC,                                                             \
+                          WTERMSIG(wstatus));                                                    \
+                  fflush(stderr);                                                                \
+                  abort();                                                                       \
+               }                                                                                 \
+            }                                                                                    \
+         } else /* We are the child */                                                           \
+            if ((fclose(stderr), 1))                                                             \
+               for (;; _Exit(71))                                                                \
+                  for (;; _Exit(71)) /* Double loop to prevent the block from `break`ing out */
 
 #else
 #define _mlibAssertAbortsStmt_() \
@@ -89,21 +89,21 @@
 
 // Called when an assert-aborts statement does not terminate
 static inline void
-_mlib_stmt_did_not_abort (const char *file, const char *func, int line, int rc)
+_mlib_stmt_did_not_abort(const char *file, const char *func, int line, int rc)
 {
    /* Normal exit! */
    if (rc == 71) {
-      fprintf (stderr, "%s:%d: [%s]: Test case did not abort. The statement completed normally.\n", file, line, func);
+      fprintf(stderr, "%s:%d: [%s]: Test case did not abort. The statement completed normally.\n", file, line, func);
    } else {
-      fprintf (stderr, "%s:%d: [%s]: Test case did not abort (Exited %d)\n", file, line, func, rc);
+      fprintf(stderr, "%s:%d: [%s]: Test case did not abort (Exited %d)\n", file, line, func, rc);
    }
-   fflush (stderr);
-   abort ();
+   fflush(stderr);
+   abort();
 }
 
-#define _mlibAssertAbortsStmt_debug()                                    \
-   for (;; _mlib_stmt_did_not_abort (__FILE__, MLIB_FUNC, __LINE__, -1)) \
-      for (;; _mlib_stmt_did_not_abort (__FILE__, MLIB_FUNC, __LINE__, -1))
+#define _mlibAssertAbortsStmt_debug()                                   \
+   for (;; _mlib_stmt_did_not_abort(__FILE__, MLIB_FUNC, __LINE__, -1)) \
+      for (;; _mlib_stmt_did_not_abort(__FILE__, MLIB_FUNC, __LINE__, -1))
 
 /**
  * @brief Aggregate type that holds information about a source location
@@ -117,7 +117,7 @@ typedef struct mlib_source_location {
 /**
  * @brief Expands to an `mlib_source_location` for the location in which the macro is expanded
  */
-#define mlib_this_source_location() (mlib_init (mlib_source_location){(__FILE__), (__LINE__), (MLIB_FUNC)})
+#define mlib_this_source_location() (mlib_init(mlib_source_location){(__FILE__), (__LINE__), (MLIB_FUNC)})
 // ↑ The paren wrapping is required on VS2017 to prevent it from deleting the preceding comma (?!)
 
 /**
@@ -126,156 +126,149 @@ typedef struct mlib_source_location {
  * Can be called with one argument to test a single boolean condition, or three
  * arguments for more useful diagnostics with an infix operator.
  */
-#define mlib_check(...) MLIB_ARGC_PICK (_mlib_check, #__VA_ARGS__, __VA_ARGS__)
+#define mlib_check(...) MLIB_ARGC_PICK(_mlib_check, #__VA_ARGS__, __VA_ARGS__)
 // One arg:
 #define _mlib_check_argc_2(ArgString, Condition) \
-   _mlibCheckConditionSimple (Condition, ArgString, mlib_this_source_location ())
+   _mlibCheckConditionSimple(Condition, ArgString, mlib_this_source_location())
 // Three args:
 #define _mlib_check_argc_4(ArgString, A, Operator, B) \
-   MLIB_NOTHING (#A, #B) MLIB_PASTE (_mlibCheckCondition_, Operator) (A, B)
+   MLIB_NOTHING(#A, #B) MLIB_PASTE(_mlibCheckCondition_, Operator)(A, B)
 // String-compare:
-#define _mlibCheckCondition_str_eq(A, B) _mlibCheckStrEq (A, B, #A, #B, mlib_this_source_location ())
+#define _mlibCheckCondition_str_eq(A, B) _mlibCheckStrEq(A, B, #A, #B, mlib_this_source_location())
 // Pointer-compare:
-#define _mlibCheckCondition_ptr_eq(A, B) _mlibCheckPtrEq (A, B, #A, #B, mlib_this_source_location ())
+#define _mlibCheckCondition_ptr_eq(A, B) _mlibCheckPtrEq(A, B, #A, #B, mlib_this_source_location())
 // Integer-equal:
 #define _mlibCheckCondition_eq(A, B) \
-   _mlibCheckIntCmp (                \
-      mlib_equal, true, "==", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+   _mlibCheckIntCmp(                 \
+      mlib_equal, true, "==", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
 // Integer not-equal:
 #define _mlibCheckCondition_neq(A, B) \
-   _mlibCheckIntCmp (                 \
-      mlib_equal, false, "≠", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+   _mlibCheckIntCmp(                  \
+      mlib_equal, false, "≠", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
 // Simple assertion with an explanatory string
-#define _mlibCheckCondition_because(Cond, Msg) \
-   _mlibCheckConditionBecause (Cond, #Cond, Msg, mlib_this_source_location ())
+#define _mlibCheckCondition_because(Cond, Msg) _mlibCheckConditionBecause(Cond, #Cond, Msg, mlib_this_source_location())
 // Integer comparisons:
 #define _mlibCheckCondition_lt(A, B) \
-   _mlibCheckIntCmp (                \
-      mlib_less, true, "<", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
-#define _mlibCheckCondition_lte(A, B)         \
-   _mlibCheckIntCmp (mlib_greater,            \
-                     false,                   \
-                     "≤",                     \
-                     mlib_upsize_integer (A), \
-                     mlib_upsize_integer (B), \
-                     #A,                      \
-                     #B,                      \
-                     mlib_this_source_location ())
+   _mlibCheckIntCmp(                 \
+      mlib_less, true, "<", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
+#define _mlibCheckCondition_lte(A, B) \
+   _mlibCheckIntCmp(                  \
+      mlib_greater, false, "≤", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
 #define _mlibCheckCondition_gt(A, B) \
-   _mlibCheckIntCmp (                \
-      mlib_greater, true, ">", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+   _mlibCheckIntCmp(                 \
+      mlib_greater, true, ">", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
 #define _mlibCheckCondition_gte(A, B) \
-   _mlibCheckIntCmp (                 \
-      mlib_less, false, "≥", mlib_upsize_integer (A), mlib_upsize_integer (B), #A, #B, mlib_this_source_location ())
+   _mlibCheckIntCmp(                  \
+      mlib_less, false, "≥", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
 
 
 /// Check evaluator when given a single boolean
 static inline void
-_mlibCheckConditionSimple (bool c, const char *expr, struct mlib_source_location here)
+_mlibCheckConditionSimple(bool c, const char *expr, struct mlib_source_location here)
 {
    if (!c) {
-      fprintf (stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed\n", here.file, here.lineno, here.func, expr);
-      fflush (stderr);
-      abort ();
+      fprintf(stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed\n", here.file, here.lineno, here.func, expr);
+      fflush(stderr);
+      abort();
    }
 }
 
 static inline void
-_mlibCheckConditionBecause (bool cond, const char *expr, const char *reason, mlib_source_location here)
+_mlibCheckConditionBecause(bool cond, const char *expr, const char *reason, mlib_source_location here)
 {
    if (!cond) {
-      fprintf (
+      fprintf(
          stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed (%s)\n", here.file, here.lineno, here.func, expr, reason);
-      fflush (stderr);
-      abort ();
+      fflush(stderr);
+      abort();
    }
 }
 
 // Implement integer comparison checks
 static inline void
-_mlibCheckIntCmp (enum mlib_cmp_result cres, // The cmp result to check
-                  bool cond,                 // Whether we expect the cmp result to match `cres`
-                  const char *operator_str,
-                  struct mlib_upsized_integer left,
-                  struct mlib_upsized_integer right,
-                  const char *left_expr,
-                  const char *right_expr,
-                  struct mlib_source_location here)
+_mlibCheckIntCmp(enum mlib_cmp_result cres, // The cmp result to check
+                 bool cond,                 // Whether we expect the cmp result to match `cres`
+                 const char *operator_str,
+                 struct mlib_upsized_integer left,
+                 struct mlib_upsized_integer right,
+                 const char *left_expr,
+                 const char *right_expr,
+                 struct mlib_source_location here)
 {
-   if (((mlib_cmp) (left, right, 0) == cres) != cond) {
-      fprintf (stderr,
-               "%s:%d: in [%s]: Check [⟨%s⟩ %s ⟨%s⟩] failed:\n",
-               here.file,
-               here.lineno,
-               here.func,
-               left_expr,
-               operator_str,
-               right_expr);
-      fprintf (stderr, "    ");
+   if (((mlib_cmp)(left, right, 0) == cres) != cond) {
+      fprintf(stderr,
+              "%s:%d: in [%s]: Check [⟨%s⟩ %s ⟨%s⟩] failed:\n",
+              here.file,
+              here.lineno,
+              here.func,
+              left_expr,
+              operator_str,
+              right_expr);
+      fprintf(stderr, "    ");
       if (left.is_signed) {
-         fprintf (stderr, "%lld", (long long) left.bits.as_signed);
+         fprintf(stderr, "%lld", (long long)left.bits.as_signed);
       } else {
-         fprintf (stderr, "%llu", (unsigned long long) left.bits.as_unsigned);
+         fprintf(stderr, "%llu", (unsigned long long)left.bits.as_unsigned);
       }
-      fprintf (stderr, " ⟨%s⟩\n", left_expr);
-      fprintf (stderr, "    ");
+      fprintf(stderr, " ⟨%s⟩\n", left_expr);
+      fprintf(stderr, "    ");
       if (right.is_signed) {
-         fprintf (stderr, "%lld", (long long) right.bits.as_signed);
+         fprintf(stderr, "%lld", (long long)right.bits.as_signed);
       } else {
-         fprintf (stderr, "%llu", (unsigned long long) right.bits.as_unsigned);
+         fprintf(stderr, "%llu", (unsigned long long)right.bits.as_unsigned);
       }
-      fprintf (stderr, " ⟨%s⟩\n", right_expr);
-      fflush (stderr);
-      abort ();
+      fprintf(stderr, " ⟨%s⟩\n", right_expr);
+      fflush(stderr);
+      abort();
    }
 }
 
 // Pointer-comparison
 static inline void
-_mlibCheckPtrEq (
+_mlibCheckPtrEq(
    const void *left, const void *right, const char *left_expr, const char *right_expr, struct mlib_source_location here)
 {
    if (left != right) {
-      fprintf (stderr,
-               "%s:%d: in [%s]: Check [⟨%s⟩ pointer-equal ⟨%s⟩] failed:\n",
-               here.file,
-               here.lineno,
-               here.func,
-               left_expr,
-               right_expr);
-      fprintf (stderr,
-               "    %p ⟨%s⟩\n"
-               "  ≠ %p ⟨%s⟩\n",
-               left,
-               left_expr,
-               right,
-               right_expr);
-      fflush (stderr);
-      abort ();
+      fprintf(stderr,
+              "%s:%d: in [%s]: Check [⟨%s⟩ pointer-equal ⟨%s⟩] failed:\n",
+              here.file,
+              here.lineno,
+              here.func,
+              left_expr,
+              right_expr);
+      fprintf(stderr,
+              "    %p ⟨%s⟩\n"
+              "  ≠ %p ⟨%s⟩\n",
+              left,
+              left_expr,
+              right,
+              right_expr);
+      fflush(stderr);
+      abort();
    }
 }
 
 // String-comparison
 static inline void
-_mlibCheckStrEq (
+_mlibCheckStrEq(
    const char *left, const char *right, const char *left_expr, const char *right_expr, struct mlib_source_location here)
 {
-   if (strcmp (left, right)) {
-      fprintf (stderr,
-               "%s:%d: in [%s]: Check [⟨%s⟩ str-equal ⟨%s⟩] failed:\n",
-               here.file,
-               here.lineno,
-               here.func,
-               left_expr,
-               right_expr);
-      fprintf (stderr,
-               "    “%s” ⟨%s⟩\n"
-               "  ≠ “%s” ⟨%s⟩\n",
-               left,
-               left_expr,
-               right,
-               right_expr);
-      fflush (stderr);
-      abort ();
+   if (strcmp(left, right)) {
+      fprintf(stderr,
+              "%s:%d: in [%s]: Check [⟨%s⟩ str-equal ⟨%s⟩] failed:\n",
+              here.file,
+              here.lineno,
+              here.func,
+              left_expr,
+              right_expr);
+      fprintf(stderr,
+              "    “%s” ⟨%s⟩\n"
+              "  ≠ “%s” ⟨%s⟩\n",
+              left,
+              left_expr,
+              right,
+              right_expr);
+      fflush(stderr);
+      abort();
    }
 }

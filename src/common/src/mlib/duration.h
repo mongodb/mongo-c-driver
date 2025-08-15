@@ -37,7 +37,7 @@
 #include <stdint.h>
 #include <time.h>
 
-mlib_extern_c_begin ();
+mlib_extern_c_begin();
 
 /**
  * @brief The integral type used to represent a count of units of time.
@@ -65,18 +65,18 @@ typedef struct mlib_duration {
 /**
  * @brief A macro that expands to the maximum positive duration
  */
-#define mlib_duration_max() (mlib_init (mlib_duration){mlib_maxof (mlib_duration_rep_t)})
+#define mlib_duration_max() (mlib_init(mlib_duration){mlib_maxof(mlib_duration_rep_t)})
 /**
  * @brief A macro that expands to the minimum duration (a negative duration)
  */
-#define mlib_duration_min() (mlib_init (mlib_duration){mlib_minof (mlib_duration_rep_t)})
+#define mlib_duration_min() (mlib_init(mlib_duration){mlib_minof(mlib_duration_rep_t)})
 
 /**
  * @brief Obtain the count of microseconds represented by the duration (round
  * toward zero)
  */
 static inline mlib_duration_rep_t
-mlib_microseconds_count (const mlib_duration dur) mlib_noexcept
+mlib_microseconds_count(const mlib_duration dur) mlib_noexcept
 {
    return dur._rep;
 }
@@ -86,9 +86,9 @@ mlib_microseconds_count (const mlib_duration dur) mlib_noexcept
  * toward zero)
  */
 static inline mlib_duration_rep_t
-mlib_milliseconds_count (const mlib_duration dur) mlib_noexcept
+mlib_milliseconds_count(const mlib_duration dur) mlib_noexcept
 {
-   return mlib_microseconds_count (dur) / 1000;
+   return mlib_microseconds_count(dur) / 1000;
 }
 
 /**
@@ -96,9 +96,9 @@ mlib_milliseconds_count (const mlib_duration dur) mlib_noexcept
  * toward zero)
  */
 static inline mlib_duration_rep_t
-mlib_seconds_count (const mlib_duration dur) mlib_noexcept
+mlib_seconds_count(const mlib_duration dur) mlib_noexcept
 {
-   return mlib_milliseconds_count (dur) / 1000;
+   return mlib_milliseconds_count(dur) / 1000;
 }
 
 /**
@@ -128,54 +128,54 @@ mlib_seconds_count (const mlib_duration dur) mlib_noexcept
  * All duration arithmetic/conversion operations use well-defined saturating
  * arithmetic, and never wrap or trap.
  */
-#define mlib_duration(...) MLIB_EVAL_16 (_mlibDurationMagic (__VA_ARGS__))
-#define _mlibDurationMagic(...)                                  \
-   MLIB_DEFERRED (MLIB_ARGC_PASTE (_mlib_duration, __VA_ARGS__)) \
+#define mlib_duration(...) MLIB_EVAL_16(_mlibDurationMagic(__VA_ARGS__))
+#define _mlibDurationMagic(...)                                \
+   MLIB_DEFERRED(MLIB_ARGC_PASTE(_mlib_duration, __VA_ARGS__)) \
    (__VA_ARGS__)
 // Wraps a `<dur>` argument, and expands to the magic only if it is parenthesized
 #define _mlibDurationArgument(X)                                                       \
    /* If given a parenthesized expression, act as an invocation of `mlib_duration() */ \
-   MLIB_IF_ELSE (MLIB_IS_PARENTHESIZED (X))                                            \
+   MLIB_IF_ELSE(MLIB_IS_PARENTHESIZED(X))                                              \
    /* then: */ (_mlibDurationMagic X) /* else: */ (X)
 
 // Wrap a macro argument that should support the duration DSL
-#define mlib_duration_arg(X) MLIB_EVAL_16 (_mlibDurationArgument (X))
+#define mlib_duration_arg(X) MLIB_EVAL_16(_mlibDurationArgument(X))
 
 // Zero arguments, just return a zero duration:
-#define _mlib_duration_argc_0() (mlib_init (mlib_duration){0})
+#define _mlib_duration_argc_0() (mlib_init(mlib_duration){0})
 // One argument, just copy the duration. Passing through a function forces the type to be correct
-#define _mlib_duration_argc_1(D) _mlibDurationCopy (D)
+#define _mlib_duration_argc_1(D) _mlibDurationCopy(D)
 // Two arguments, the second arg is a unit suffix:
-#define _mlib_duration_argc_2(Count, Unit) mlib_duration_with_unit (Count, Unit)
+#define _mlib_duration_argc_2(Count, Unit) mlib_duration_with_unit(Count, Unit)
 // Three arguments, an infix operation:
-#define _mlib_duration_argc_3(Duration, Operator, Operand)            \
-   MLIB_DEFERRED (MLIB_PASTE (_mlibDurationInfixOperator_, Operator)) \
+#define _mlib_duration_argc_3(Duration, Operator, Operand)          \
+   MLIB_DEFERRED(MLIB_PASTE(_mlibDurationInfixOperator_, Operator)) \
    (Duration, Operand)
 
 // By-value copy a duration
 static inline mlib_duration
-_mlibDurationCopy (mlib_duration d)
+_mlibDurationCopy(mlib_duration d)
 {
    return d;
 }
 
 // Duration scalar multiply
 #define _mlibDurationInfixOperator_mul(LHS, Fac) \
-   _mlibDurationMultiply (_mlibDurationArgument (LHS), mlib_upsize_integer (Fac))
+   _mlibDurationMultiply(_mlibDurationArgument(LHS), mlib_upsize_integer(Fac))
 static inline mlib_duration
-_mlibDurationMultiply (const mlib_duration dur, mlib_upsized_integer fac) mlib_noexcept
+_mlibDurationMultiply(const mlib_duration dur, mlib_upsized_integer fac) mlib_noexcept
 {
    mlib_duration ret = {0};
-   const bool overflowed = fac.is_signed ? mlib_mul (&ret._rep, dur._rep, fac.bits.as_signed)
-                                         : mlib_mul (&ret._rep, dur._rep, fac.bits.as_unsigned);
+   const bool overflowed = fac.is_signed ? mlib_mul(&ret._rep, dur._rep, fac.bits.as_signed)
+                                         : mlib_mul(&ret._rep, dur._rep, fac.bits.as_unsigned);
    if (overflowed) {
       if ((dur._rep < 0) != (fac.is_signed && fac.bits.as_signed < 0)) {
          // Different signs:  Neg × Pos = Neg
-         ret = mlib_duration_min ();
+         ret = mlib_duration_min();
       } else {
          // Same signs: Pos × Pos = Pos
          //             Neg × Neg = Pos
-         ret = mlib_duration_max ();
+         ret = mlib_duration_max();
       }
    }
    return ret;
@@ -183,20 +183,20 @@ _mlibDurationMultiply (const mlib_duration dur, mlib_upsized_integer fac) mlib_n
 
 // Duration scalar divide
 #define _mlibDurationInfixOperator_div(LHS, Div) \
-   _mlibDurationDivide (_mlibDurationArgument (LHS), mlib_upsize_integer (Div))
+   _mlibDurationDivide(_mlibDurationArgument(LHS), mlib_upsize_integer(Div))
 static inline mlib_duration
-_mlibDurationDivide (mlib_duration a, mlib_upsized_integer div) mlib_noexcept
+_mlibDurationDivide(mlib_duration a, mlib_upsized_integer div) mlib_noexcept
 {
-   mlib_check (div.bits.as_unsigned, neq, 0);
+   mlib_check(div.bits.as_unsigned, neq, 0);
    if ((div.is_signed && div.bits.as_signed == -1) //
-       && a._rep == mlib_minof (mlib_duration_rep_t)) {
+       && a._rep == mlib_minof(mlib_duration_rep_t)) {
       // MIN / -1 is UB, but the saturating result is the max
-      a = mlib_duration_max ();
+      a = mlib_duration_max();
    } else {
       if (div.is_signed) {
          a._rep /= div.bits.as_signed;
       } else {
-         a._rep = (mlib_duration_rep_t) ((uintmax_t) a._rep / div.bits.as_unsigned);
+         a._rep = (mlib_duration_rep_t)((uintmax_t)a._rep / div.bits.as_unsigned);
       }
    }
    return a;
@@ -204,16 +204,16 @@ _mlibDurationDivide (mlib_duration a, mlib_upsized_integer div) mlib_noexcept
 
 // Duration addition
 #define _mlibDurationInfixOperator_plus(LHS, RHS) \
-   _mlibDurationAdd (_mlibDurationArgument (LHS), _mlibDurationArgument (RHS))
+   _mlibDurationAdd(_mlibDurationArgument(LHS), _mlibDurationArgument(RHS))
 static inline mlib_duration
-_mlibDurationAdd (const mlib_duration a, const mlib_duration b) mlib_noexcept
+_mlibDurationAdd(const mlib_duration a, const mlib_duration b) mlib_noexcept
 {
    mlib_duration ret = {0};
-   if (mlib_add (&ret._rep, a._rep, b._rep)) {
+   if (mlib_add(&ret._rep, a._rep, b._rep)) {
       if (a._rep > 0) {
-         ret = mlib_duration_max ();
+         ret = mlib_duration_max();
       } else {
-         ret = mlib_duration_min ();
+         ret = mlib_duration_min();
       }
    }
    return ret;
@@ -221,25 +221,25 @@ _mlibDurationAdd (const mlib_duration a, const mlib_duration b) mlib_noexcept
 
 // Duration subtraction
 #define _mlibDurationInfixOperator_minus(LHS, RHS) \
-   _mlibDurationSubtract (_mlibDurationArgument (LHS), _mlibDurationArgument (RHS))
+   _mlibDurationSubtract(_mlibDurationArgument(LHS), _mlibDurationArgument(RHS))
 static inline mlib_duration
-_mlibDurationSubtract (const mlib_duration a, const mlib_duration b) mlib_noexcept
+_mlibDurationSubtract(const mlib_duration a, const mlib_duration b) mlib_noexcept
 {
    mlib_duration ret = {0};
-   if (mlib_sub (&ret._rep, a._rep, b._rep)) {
+   if (mlib_sub(&ret._rep, a._rep, b._rep)) {
       if (a._rep < 0) {
-         ret = mlib_duration_min ();
+         ret = mlib_duration_min();
       } else {
-         ret = mlib_duration_max ();
+         ret = mlib_duration_max();
       }
    }
    return ret;
 }
 
 #define _mlibDurationInfixOperator_min(Duration, RHS) \
-   _mlibDurationMinBetween (_mlibDurationArgument (Duration), _mlibDurationArgument (RHS))
+   _mlibDurationMinBetween(_mlibDurationArgument(Duration), _mlibDurationArgument(RHS))
 static inline mlib_duration
-_mlibDurationMinBetween (mlib_duration lhs, mlib_duration rhs)
+_mlibDurationMinBetween(mlib_duration lhs, mlib_duration rhs)
 {
    if (lhs._rep < rhs._rep) {
       return lhs;
@@ -248,9 +248,9 @@ _mlibDurationMinBetween (mlib_duration lhs, mlib_duration rhs)
 }
 
 #define _mlibDurationInfixOperator_max(Duration, RHS) \
-   _mlibDurationMaxBetween (_mlibDurationArgument (Duration), _mlibDurationArgument (RHS))
+   _mlibDurationMaxBetween(_mlibDurationArgument(Duration), _mlibDurationArgument(RHS))
 static inline mlib_duration
-_mlibDurationMaxBetween (mlib_duration lhs, mlib_duration rhs)
+_mlibDurationMaxBetween(mlib_duration lhs, mlib_duration rhs)
 {
    if (lhs._rep > rhs._rep) {
       return lhs;
@@ -274,28 +274,28 @@ _mlibDurationMaxBetween (mlib_duration lhs, mlib_duration rhs)
  * Other unit suffixes will generate a compile-time error
  */
 #define mlib_duration_with_unit(Count, Unit) \
-   MLIB_PASTE (_mlibCreateDurationFromUnitCount_, Unit) (mlib_upsize_integer (Count))
+   MLIB_PASTE(_mlibCreateDurationFromUnitCount_, Unit)(mlib_upsize_integer(Count))
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_us (const mlib_upsized_integer n) mlib_noexcept
+_mlibCreateDurationFromUnitCount_us(const mlib_upsized_integer n) mlib_noexcept
 {
-   mlib_duration ret = mlib_duration ();
+   mlib_duration ret = mlib_duration();
    if (n.is_signed) {
       // The duration rep is the same as the signed max type, so we don't need to do any
       // special arithmetic to encode it
-      mlib_static_assert (sizeof (mlib_duration_rep_t) == sizeof (n.bits.as_signed));
-      ret._rep = mlib_assert_narrow (mlib_duration_rep_t, n.bits.as_signed);
+      mlib_static_assert(sizeof(mlib_duration_rep_t) == sizeof(n.bits.as_signed));
+      ret._rep = mlib_assert_narrow(mlib_duration_rep_t, n.bits.as_signed);
    } else {
-      if (mlib_narrow (&ret._rep, n.bits.as_unsigned)) {
+      if (mlib_narrow(&ret._rep, n.bits.as_unsigned)) {
          // Unsigned value is too large to fit in our signed repr, so just use the max repr
-         ret = mlib_duration_max ();
+         ret = mlib_duration_max();
       }
    }
    return ret;
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_ns (mlib_upsized_integer n) mlib_noexcept
+_mlibCreateDurationFromUnitCount_ns(mlib_upsized_integer n) mlib_noexcept
 {
    // We encode as a count of microseconds, so we lose precision here.
    if (n.is_signed) {
@@ -303,31 +303,31 @@ _mlibCreateDurationFromUnitCount_ns (mlib_upsized_integer n) mlib_noexcept
    } else {
       n.bits.as_unsigned /= 1000;
    }
-   return _mlibCreateDurationFromUnitCount_us (n);
+   return _mlibCreateDurationFromUnitCount_us(n);
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_ms (const mlib_upsized_integer n) mlib_noexcept
+_mlibCreateDurationFromUnitCount_ms(const mlib_upsized_integer n) mlib_noexcept
 {
-   return mlib_duration (_mlibCreateDurationFromUnitCount_us (n), mul, 1000);
+   return mlib_duration(_mlibCreateDurationFromUnitCount_us(n), mul, 1000);
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_s (const mlib_upsized_integer n)
+_mlibCreateDurationFromUnitCount_s(const mlib_upsized_integer n)
 {
-   return mlib_duration (_mlibCreateDurationFromUnitCount_us (n), mul, 1000 * 1000);
+   return mlib_duration(_mlibCreateDurationFromUnitCount_us(n), mul, 1000 * 1000);
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_min (const mlib_upsized_integer n)
+_mlibCreateDurationFromUnitCount_min(const mlib_upsized_integer n)
 {
-   return mlib_duration (_mlibCreateDurationFromUnitCount_us (n), mul, 60 * 1000 * 1000);
+   return mlib_duration(_mlibCreateDurationFromUnitCount_us(n), mul, 60 * 1000 * 1000);
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_h (const mlib_upsized_integer n)
+_mlibCreateDurationFromUnitCount_h(const mlib_upsized_integer n)
 {
-   return mlib_duration (_mlibCreateDurationFromUnitCount_min (n), mul, 60);
+   return mlib_duration(_mlibCreateDurationFromUnitCount_min(n), mul, 60);
 }
 
 /**
@@ -347,15 +347,15 @@ _mlibCreateDurationFromUnitCount_h (const mlib_upsized_integer n)
  * Where each `<dur>` should be an arglist for @see mlib_duration
  */
 static inline enum mlib_cmp_result
-mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
+mlib_duration_cmp(const mlib_duration a, const mlib_duration b) mlib_noexcept
 {
-   return mlib_cmp (a._rep, b._rep);
+   return mlib_cmp(a._rep, b._rep);
 }
 
-#define mlib_duration_cmp(...) MLIB_ARGC_PICK (_mlibDurationCmp, __VA_ARGS__)
+#define mlib_duration_cmp(...) MLIB_ARGC_PICK(_mlibDurationCmp, __VA_ARGS__)
 #define _mlibDurationCmp_argc_2 mlib_duration_cmp
 #define _mlibDurationCmp_argc_3(Left, Op, Right) \
-   (mlib_duration_cmp (mlib_duration_arg (Left), mlib_duration_arg (Right)) Op 0)
+   (mlib_duration_cmp(mlib_duration_arg(Left), mlib_duration_arg(Right)) Op 0)
 
 /**
  * @brief Obtain an mlib_duration that corresponds to a `timespec` value
@@ -366,9 +366,9 @@ mlib_duration_cmp (const mlib_duration a, const mlib_duration b) mlib_noexcept
  * toward zero.
  */
 static inline mlib_duration
-mlib_duration_from_timespec (const struct timespec ts) mlib_noexcept
+mlib_duration_from_timespec(const struct timespec ts) mlib_noexcept
 {
-   return mlib_duration ((ts.tv_sec, s), plus, (ts.tv_nsec, ns));
+   return mlib_duration((ts.tv_sec, s), plus, (ts.tv_nsec, ns));
 }
 
 /**
@@ -378,22 +378,22 @@ mlib_duration_from_timespec (const struct timespec ts) mlib_noexcept
  * @return struct timespec A timespec that represents the same durations
  */
 static inline struct timespec
-mlib_duration_to_timespec (const mlib_duration d) mlib_noexcept
+mlib_duration_to_timespec(const mlib_duration d) mlib_noexcept
 {
    // Number of full seconds in the duration
-   const mlib_duration_rep_t n_full_seconds = mlib_seconds_count (d);
+   const mlib_duration_rep_t n_full_seconds = mlib_seconds_count(d);
    // Duration with full seconds removed
-   const mlib_duration usec_part = mlib_duration (d, minus, (n_full_seconds, s));
+   const mlib_duration usec_part = mlib_duration(d, minus, (n_full_seconds, s));
    // Number of microseconds in the duration, minus all full seconds
-   const mlib_duration_rep_t n_remaining_microseconds = mlib_microseconds_count (usec_part);
+   const mlib_duration_rep_t n_remaining_microseconds = mlib_microseconds_count(usec_part);
    // Compute the number of nanoseconds:
-   const int32_t n_nsec = mlib_assert_mul (int32_t, n_remaining_microseconds, 1000);
+   const int32_t n_nsec = mlib_assert_mul(int32_t, n_remaining_microseconds, 1000);
    struct timespec ret;
    ret.tv_sec = n_full_seconds;
    ret.tv_nsec = n_nsec;
    return ret;
 }
 
-mlib_extern_c_end ();
+mlib_extern_c_end();
 
 #endif // MLIB_DURATION_H_INCLUDED

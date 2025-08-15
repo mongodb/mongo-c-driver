@@ -53,29 +53,29 @@ typedef struct {
 } mongoc_sspi_client_state_t;
 
 void
-_mongoc_sspi_set_gsserror (DWORD errCode, const SEC_CHAR *msg);
+_mongoc_sspi_set_gsserror(DWORD errCode, const SEC_CHAR *msg);
 
 void
-_mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state);
+_mongoc_sspi_destroy_sspi_client_state(mongoc_sspi_client_state_t *state);
 
 int
-_mongoc_sspi_auth_sspi_client_init (WCHAR *service,
-                                    ULONG flags,
-                                    WCHAR *user,
-                                    ULONG ulen,
-                                    WCHAR *domain,
-                                    ULONG dlen,
-                                    WCHAR *password,
-                                    ULONG plen,
-                                    mongoc_sspi_client_state_t *state);
+_mongoc_sspi_auth_sspi_client_init(WCHAR *service,
+                                   ULONG flags,
+                                   WCHAR *user,
+                                   ULONG ulen,
+                                   WCHAR *domain,
+                                   ULONG dlen,
+                                   WCHAR *password,
+                                   ULONG plen,
+                                   mongoc_sspi_client_state_t *state);
 int
-_mongoc_sspi_auth_sspi_client_step (mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
+_mongoc_sspi_auth_sspi_client_step(mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
 
 int
-_mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
+_mongoc_sspi_auth_sspi_client_unwrap(mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
 
 int
-_mongoc_sspi_auth_sspi_client_wrap (
+_mongoc_sspi_auth_sspi_client_wrap(
    mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, ULONG ulen, INT protect);
 
 

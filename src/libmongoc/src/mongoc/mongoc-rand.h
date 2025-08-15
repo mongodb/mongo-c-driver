@@ -27,12 +27,12 @@
 
 BSON_BEGIN_DECLS
 
-MONGOC_EXPORT (void)
-mongoc_rand_seed (const void *buf, int num);
-MONGOC_EXPORT (void)
-mongoc_rand_add (const void *buf, int num, double entropy);
-MONGOC_EXPORT (int)
-mongoc_rand_status (void);
+MONGOC_EXPORT(void)
+mongoc_rand_seed(const void *buf, int num);
+MONGOC_EXPORT(void)
+mongoc_rand_add(const void *buf, int num, double entropy);
+MONGOC_EXPORT(int)
+mongoc_rand_status(void);
 
 BSON_END_DECLS
 

@@ -36,8 +36,8 @@ typedef struct ssl_test_data {
 } ssl_test_data_t;
 
 void
-ssl_test (mongoc_ssl_opt_t *client,
-          mongoc_ssl_opt_t *server,
-          const char *host,
-          ssl_test_result_t *client_result,
-          ssl_test_result_t *server_result);
+ssl_test(mongoc_ssl_opt_t *client,
+         mongoc_ssl_opt_t *server,
+         const char *host,
+         ssl_test_result_t *client_result,
+         ssl_test_result_t *server_result);
