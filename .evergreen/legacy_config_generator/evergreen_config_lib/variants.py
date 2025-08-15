@@ -219,7 +219,7 @@ all_variants = [
         "MinGW-W64 (Windows Server 2016)",
         "windows-vsCurrent-large",
         ["debug-compile-nosasl-nossl", ".latest .nossl .nosasl .server"],
-        {"CC": "mingw"},
+        {"CC": "gcc"},
     ),
     Variant(
         "rhel8-power",

@@ -10273,7 +10273,7 @@ buildvariants:
 - name: mingw-windows2016
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:
-    CC: mingw
+    CC: gcc
   run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-nosasl-nossl
