@@ -15,17 +15,15 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('macos-14', 'clang', None, ['cyrus']),
-
-    ('macos-11-arm64', 'clang', None, ['cyrus']),
     ('macos-14-arm64', 'clang', None, ['cyrus']),
+    ('macos-14',       'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('macos-14', 'clang', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
+    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['replica'], ['6.0', '7.0', '8.0', 'latest']),
 
-    ('macos-11-arm64', 'clang', None, 'cyrus', ['auth'], ['server'], ['6.0', '7.0',                ]),
-    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['server'], ['6.0', '7.0', '8.0', 'latest']),
+    # Resource-limited: use sparingly.
+    ('macos-14', 'clang', None, 'cyrus', ['auth'], ['replica'], ['4.2', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
