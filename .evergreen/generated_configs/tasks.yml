@@ -1769,9 +1769,9 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-latest-replica-auth
+  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.4-replica-auth
     run_on: macos-14
-    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, replica, latest, darwinssl]
+    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, replica, "4.4", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile }]
     commands:
       - func: fetch-build
@@ -1783,7 +1783,28 @@ tasks:
             - { key: CC, value: clang }
             - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: latest }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-5.0-replica-auth
+    run_on: macos-14
+    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, replica, "5.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
             - { key: SSL, value: darwinssl }
       - func: fetch-det
@@ -3870,9 +3891,9 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-darwinssl-macos-14-clang-test-latest-replica-auth
+  - name: sasl-cyrus-darwinssl-macos-14-clang-test-4.4-replica-auth
     run_on: macos-14
-    tags: [sasl-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, auth, replica, latest, darwinssl]
+    tags: [sasl-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, auth, replica, "4.4", darwinssl]
     depends_on: [{ name: sasl-cyrus-darwinssl-macos-14-clang-compile }]
     commands:
       - func: fetch-build
@@ -3884,7 +3905,28 @@ tasks:
             - { key: CC, value: clang }
             - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: latest }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-cyrus-darwinssl-macos-14-clang-test-5.0-replica-auth
+    run_on: macos-14
+    tags: [sasl-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, auth, replica, "5.0", darwinssl]
+    depends_on: [{ name: sasl-cyrus-darwinssl-macos-14-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-cyrus-darwinssl-macos-14-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: replica_set }
             - { key: SSL, value: darwinssl }
       - func: fetch-det
