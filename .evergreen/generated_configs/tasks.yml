@@ -1675,6 +1675,48 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-server-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, "6.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-sharded-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, "6.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-replica-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, replica, "7.0", darwinssl]
@@ -1691,6 +1733,48 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-server-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, "7.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-sharded-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, "7.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -1717,6 +1801,48 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-server-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, "8.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-sharded-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, "8.0", darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-replica-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, replica, latest, darwinssl]
@@ -1738,6 +1864,48 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-server-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, latest, darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-sharded-auth
+    run_on: macos-14-arm64
+    tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, latest, darwinssl]
+    depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: CXX, value: clang++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: darwinssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile
     run_on: macos-14
     tags: [cse-matrix-darwinssl, compile, macos-14, clang, cse, sasl-cyrus]
@@ -1748,9 +1916,9 @@ tasks:
           CC: clang
           CXX: clang++
       - func: upload-build
-  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.2-replica-auth
+  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.2-sharded-auth
     run_on: macos-14
-    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, replica, "4.2", darwinssl]
+    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, sharded, "4.2", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile }]
     commands:
       - func: fetch-build
@@ -1763,15 +1931,15 @@ tasks:
             - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: replica_set }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.4-replica-auth
+  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.4-sharded-auth
     run_on: macos-14
-    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, replica, "4.4", darwinssl]
+    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, sharded, "4.4", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile }]
     commands:
       - func: fetch-build
@@ -1784,15 +1952,15 @@ tasks:
             - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
-            - { key: TOPOLOGY, value: replica_set }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-5.0-replica-auth
+  - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-5.0-sharded-auth
     run_on: macos-14
-    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, replica, "5.0", darwinssl]
+    tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, sharded, "5.0", darwinssl]
     depends_on: [{ name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile }]
     commands:
       - func: fetch-build
@@ -1805,7 +1973,7 @@ tasks:
             - { key: CXX, value: clang++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: replica_set }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -1903,6 +2071,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "4.2", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "4.4", openssl]
@@ -1940,6 +2129,27 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -1987,6 +2197,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
@@ -2024,6 +2255,27 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2071,6 +2323,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
@@ -2108,6 +2381,27 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2155,6 +2449,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
+    run_on: rhel8-latest-large
+    tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
     run_on: rhel8-zseries-large
     tags: [cse-matrix-openssl, compile, rhel8-zseries, gcc, cse, sasl-cyrus]
@@ -2166,9 +2481,9 @@ tasks:
           CC: gcc
           CXX: g++
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-replica-auth
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-sharded-auth
     run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, sharded, "5.0", openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
@@ -2182,169 +2497,15 @@ tasks:
             - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: replica_set }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
+  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
     run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "5.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-6.0-replica-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-6.0-server-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "6.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-replica-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "7.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-server-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "7.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-replica-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "8.0" }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "8.0" }
-            - { key: TOPOLOGY, value: server }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-replica-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
+    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, sharded, latest, openssl]
     depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
     patchable: false
     commands:
@@ -2358,29 +2519,7 @@ tasks:
             - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: replica_set }
-            - { key: SSL, value: openssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
-    run_on: rhel8-zseries-small
-    tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile }]
-    patchable: false
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CC, value: gcc }
-            - { key: CXX, value: g++ }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: server }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2448,6 +2587,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-sharded-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, sharded, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-replica-auth
     run_on: ubuntu2004-arm64-small
     tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
@@ -2485,6 +2645,27 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-sharded-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, sharded, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2532,6 +2713,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-sharded-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, sharded, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
     run_on: ubuntu2004-arm64-small
     tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
@@ -2569,6 +2771,27 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-sharded-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, sharded, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2616,6 +2839,27 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-sharded-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, sharded, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
   - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
     run_on: ubuntu2004-arm64-small
     tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
@@ -2653,6 +2897,27 @@ tasks:
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-sharded-auth
+    run_on: ubuntu2004-arm64-small
+    tags: [cse-matrix-openssl, test, ubuntu2004-arm64, gcc, sasl-cyrus, cse, auth, sharded, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: gcc }
+            - { key: CXX, value: g++ }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -2718,28 +2983,28 @@ tasks:
           CC: gcc
           CXX: g++
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
     run_on: windows-vsCurrent-large
-    tags: [cse-matrix-openssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
+    tags: [cse-matrix-openssl, compile, windows-vsCurrent, vs2022x64, cse, sasl-cyrus]
     commands:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-openssl-compile
         vars:
-          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR: Visual Studio 17 2022
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-replica-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "4.2", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "4.2", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
@@ -2749,18 +3014,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.2", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "4.2", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
@@ -2770,18 +3035,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.4-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "4.4", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "4.2", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
@@ -2791,18 +3077,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.4-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.4", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
@@ -2812,18 +3098,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-5.0-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "5.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "4.4", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
@@ -2833,18 +3140,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-5.0-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "5.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
@@ -2854,18 +3161,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "6.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "5.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
@@ -2875,18 +3203,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "6.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
@@ -2896,18 +3224,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "7.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "6.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
@@ -2917,18 +3266,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "7.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
@@ -2938,18 +3287,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "8.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "7.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
@@ -2959,18 +3329,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "8.0", openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
@@ -2980,18 +3350,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-replica-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, latest, openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "8.0", openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
@@ -3001,18 +3392,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, latest, openssl]
-    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
@@ -3022,28 +3413,122 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+  - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-sharded-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, latest, openssl]
+    depends_on: [{ name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: openssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
     run_on: windows-vsCurrent-large
-    tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2017x64, cse, sasl-cyrus]
+    tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2015x64, cse, sasl-cyrus]
     commands:
       - func: find-cmake-latest
       - func: cse-sasl-cyrus-winssl-compile
         vars:
-          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR: Visual Studio 14 2015
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.2-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.2", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2015x64, sasl-cyrus, cse, auth, sharded, "4.2", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 14 2015 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-test-latest-sharded-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2015x64, sasl-cyrus, cse, auth, sharded, latest, winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 14 2015 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2022x64, cse, sasl-cyrus]
+    commands:
+      - func: find-cmake-latest
+      - func: cse-sasl-cyrus-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.2-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "4.2", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.2-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "4.2", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
@@ -3053,18 +3538,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-4.4-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "4.4", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "4.2", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.4-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "4.4", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.4-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "4.4", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
@@ -3074,18 +3601,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-5.0-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "5.0", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "4.4", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-5.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "5.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-5.0-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "5.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
@@ -3095,18 +3664,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-6.0-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "6.0", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "5.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-6.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "6.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-6.0-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "6.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
@@ -3116,18 +3727,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-7.0-replica-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "7.0", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "6.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-7.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "7.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
@@ -3137,18 +3769,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-7.0-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "7.0", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "7.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
@@ -3158,18 +3790,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-8.0-replica-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, "8.0", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "7.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-8.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, "8.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
@@ -3179,18 +3832,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-8.0-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-8.0-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, "8.0", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, "8.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
@@ -3200,18 +3853,39 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-latest-replica-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, replica, latest, winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, "8.0", winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-latest-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, replica, latest, winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
@@ -3221,22 +3895,43 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-test-latest-server-auth
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-latest-server-auth
     run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-cyrus, cse, auth, server, latest, winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, server, latest, winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-mock-kms-servers
+      - func: run-tests
+  - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-test-latest-sharded-auth
+    run_on: windows-vsCurrent-small
+    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-cyrus, cse, auth, sharded, latest, winssl]
+    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
@@ -5177,6 +5872,16 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
+  - name: sasl-off-winssl-windows-2019-vs2015-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2015x64, sasl-off]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-off-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
   - name: sasl-off-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-off]
@@ -5187,14 +5892,34 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
-  - name: sasl-off-winssl-windows-2019-vs2017-x86-compile
+  - name: sasl-off-winssl-windows-2019-vs2019-x64-compile
     run_on: windows-vsCurrent-large
-    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x86, sasl-off]
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2019x64, sasl-off]
     commands:
       - func: find-cmake-latest
       - func: sasl-off-winssl-compile
         vars:
-          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
+  - name: sasl-off-winssl-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x64, sasl-off]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-off-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
+  - name: sasl-off-winssl-windows-2019-vs2022-x86-compile
+    run_on: windows-vsCurrent-large
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x86, sasl-off]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-off-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
           CMAKE_GENERATOR_PLATFORM: Win32
       - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-mingw-compile
@@ -5207,9 +5932,9 @@ tasks:
           CC: gcc
           CXX: g++
       - func: upload-build
-  - name: sasl-sspi-winssl-windows-2019-mingw-test-8.0-server-auth
+  - name: sasl-sspi-winssl-windows-2019-mingw-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, mingw, sasl-sspi, auth, server, "8.0", winssl]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, mingw, sasl-sspi, auth, sharded, "4.2", winssl]
     depends_on: [{ name: sasl-sspi-winssl-windows-2019-mingw-compile }]
     commands:
       - func: fetch-build
@@ -5221,16 +5946,16 @@ tasks:
             - { key: CC, value: gcc }
             - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "8.0" }
-            - { key: TOPOLOGY, value: server }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-mingw-test-latest-server-auth
+  - name: sasl-sspi-winssl-windows-2019-mingw-test-latest-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, mingw, sasl-sspi, auth, server, latest, winssl]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, mingw, sasl-sspi, auth, sharded, latest, winssl]
     depends_on: [{ name: sasl-sspi-winssl-windows-2019-mingw-compile }]
     commands:
       - func: fetch-build
@@ -5243,12 +5968,22 @@ tasks:
             - { key: CXX, value: g++ }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: server }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2015-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2015x64, sasl-sspi]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-sspi-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 14 2015
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-sspi]
@@ -5259,18 +5994,59 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-4.2-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2019-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2019x64, sasl-sspi]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-sspi-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 16 2019
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+    run_on: windows-vsCurrent-large
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x64, sasl-sspi]
+    commands:
+      - func: find-cmake-latest
+      - func: sasl-sspi-winssl-compile
+        vars:
+          CMAKE_GENERATOR: Visual Studio 17 2022
+          CMAKE_GENERATOR_PLATFORM: x64
+      - func: upload-build
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-replica-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "4.2", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, "4.2", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, "4.2", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.2" }
@@ -5280,18 +6056,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-4.4-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "4.4", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, "4.2", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, "4.4", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, "4.4", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "4.4" }
@@ -5301,18 +6119,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-5.0-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "5.0", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, "4.4", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "4.4" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, "5.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, "5.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "5.0" }
@@ -5322,18 +6182,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-6.0-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "6.0", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, "5.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "5.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, "6.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, "6.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "6.0" }
@@ -5343,18 +6245,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-7.0-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "7.0", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, "6.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "6.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, "7.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, "7.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "7.0" }
@@ -5364,18 +6308,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-8.0-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, "8.0", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, "7.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "7.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-8.0-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, "8.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-8.0-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, "8.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: "8.0" }
@@ -5385,18 +6371,60 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x64-test-latest-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x64, sasl-sspi, auth, server, latest, winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, "8.0", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: "8.0" }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-latest-replica-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, replica, latest, winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: replica_set }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-latest-server-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, server, latest, winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
@@ -5406,53 +6434,74 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x86-compile
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x64-test-latest-sharded-auth
+    run_on: windows-vsCurrent-small
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, auth, sharded, latest, winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x64-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x64-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
+            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
+            - { key: AUTH, value: auth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: sharded_cluster }
+            - { key: SSL, value: winssl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
+      - func: run-simple-http-server
+      - func: run-tests
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x86-compile
     run_on: windows-vsCurrent-large
-    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x86, sasl-sspi]
+    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2022x86, sasl-sspi]
     commands:
       - func: find-cmake-latest
       - func: sasl-sspi-winssl-compile
         vars:
-          CMAKE_GENERATOR: Visual Studio 15 2017
+          CMAKE_GENERATOR: Visual Studio 17 2022
           CMAKE_GENERATOR_PLATFORM: Win32
       - func: upload-build
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x86-test-8.0-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x86-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x86, sasl-sspi, auth, server, "8.0", winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x86-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x86, sasl-sspi, auth, sharded, "4.2", winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x86-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x86-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x86-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: Win32 }
             - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "8.0" }
-            - { key: TOPOLOGY, value: server }
+            - { key: MONGODB_VERSION, value: "4.2" }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2017-x86-test-latest-server-auth
+  - name: sasl-sspi-winssl-windows-2019-vs2022-x86-test-latest-sharded-auth
     run_on: windows-vsCurrent-small
-    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2017x86, sasl-sspi, auth, server, latest, winssl]
-    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2017-x86-compile }]
+    tags: [sasl-matrix-winssl, test, windows-vsCurrent, vs2022x86, sasl-sspi, auth, sharded, latest, winssl]
+    depends_on: [{ name: sasl-sspi-winssl-windows-2019-vs2022-x86-compile }]
     commands:
       - func: fetch-build
         vars:
-          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2017-x86-compile
+          BUILD_NAME: sasl-sspi-winssl-windows-2019-vs2022-x86-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 15 2017 }
+            - { key: CMAKE_GENERATOR, value: Visual Studio 17 2022 }
             - { key: CMAKE_GENERATOR_PLATFORM, value: Win32 }
             - { key: AUTH, value: auth }
             - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: server }
+            - { key: TOPOLOGY, value: sharded_cluster }
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
