@@ -634,7 +634,7 @@ static inline uintmax_t(_mlib_assert_ckdint)(size_t dst_sz,
       // the lower place values to be in the later bytes. If the target int is
       // smaller than intmax, we must shift all the bits over to their proper
       // position. This expression is trivially constant-folded by an optimizer.
-      tmp >>= (CHAR_BIT * ((sizeof tmp) - dst_sz));
+      tmp >>= ((size_t)CHAR_BIT * ((sizeof tmp) - dst_sz));
    }
    return tmp;
 }
