@@ -20,6 +20,8 @@
 #include <json-test.h>
 #include <test-libmongoc.h>
 
+#include <stream-tracker.h>
+
 static void
 _assert_options_match(const bson_t *test, mongoc_uri_t *uri)
 {
@@ -1285,6 +1287,7 @@ test_removing_servers_closes_connections(void *unused)
    bson_error_t error;
    bool ok;
    bson_t *ping = BCON_NEW("ping", BCON_INT32(1));
+   stream_tracker_t *st = stream_tracker_new();
 
    // Create a client pool to mongodb+srv://test1.test.build.10gen.cc. The URI resolves to two SRV records:
    // - localhost.test.build.10gen.cc:27017
@@ -1310,9 +1313,10 @@ test_removing_servers_closes_connections(void *unused)
       mongoc_uri_destroy(uri);
    }
 
-   // Count connections to both servers.
-   int32_t conns_27017_before = get_current_connection_count("localhost:27017");
-   int32_t conns_27018_before = get_current_connection_count("localhost:27018");
+   stream_tracker_track_pool(st, pool);
+   // Expect no streams created yet:
+   stream_tracker_assert_count(st, "localhost.test.build.10gen.cc:27017", 0u);
+   stream_tracker_assert_count(st, "localhost.test.build.10gen.cc:27018", 0u);
 
    // Pop (and push) a client to start background monitoring.
    {
@@ -1320,8 +1324,8 @@ test_removing_servers_closes_connections(void *unused)
       mongoc_client_pool_push(pool, client);
       // Wait for monitoring connections to be created.
       // Expect two monitoring connections per server to be created in background.
-      ASSERT_EVENTUAL_CONN_COUNT("localhost:27017", conns_27017_before + 2);
-      ASSERT_EVENTUAL_CONN_COUNT("localhost:27018", conns_27018_before + 2);
+      stream_tracker_assert_eventual_count(st, "localhost.test.build.10gen.cc:27017", 2u);
+      stream_tracker_assert_eventual_count(st, "localhost.test.build.10gen.cc:27018", 2u);
    }
 
    // Send 'ping' commands on a client to each server to create operation connections.
@@ -1333,8 +1337,8 @@ test_removing_servers_closes_connections(void *unused)
       ASSERT_OR_PRINT(ok, error);
       mongoc_client_pool_push(pool, client);
       // Expect an operation connection is created.
-      ASSERT_CONN_COUNT("localhost:27017", conns_27017_before + 2 + 1);
-      ASSERT_CONN_COUNT("localhost:27018", conns_27018_before + 2 + 1);
+      stream_tracker_assert_count(st, "localhost.test.build.10gen.cc:27017", 2u + 1u);
+      stream_tracker_assert_count(st, "localhost.test.build.10gen.cc:27018", 2u + 1u);
    }
 
    // Mock removal of localhost:27018.
@@ -1348,18 +1352,19 @@ test_removing_servers_closes_connections(void *unused)
    // Expect connections are closed to removed server.
    {
       // Expect monitoring connections to be closed in background.
-      ASSERT_EVENTUAL_CONN_COUNT("localhost:27017", conns_27017_before + 2 + 1);
-      ASSERT_EVENTUAL_CONN_COUNT("localhost:27018", conns_27018_before + 1);
+      stream_tracker_assert_eventual_count(st, "localhost.test.build.10gen.cc:27017", 2u + 1u);
+      stream_tracker_assert_eventual_count(st, "localhost.test.build.10gen.cc:27018", 1u);
 
       // Pop and push the client to "prune" the stale operation connections.
       mongoc_client_t *client = mongoc_client_pool_pop(pool);
       mongoc_client_pool_push(pool, client);
-      ASSERT_CONN_COUNT("localhost:27017", conns_27017_before + 2 + 1);
-      ASSERT_CONN_COUNT("localhost:27018", conns_27018_before);
+      stream_tracker_assert_count(st, "localhost.test.build.10gen.cc:27017", 2u + 1u);
+      stream_tracker_assert_count(st, "localhost.test.build.10gen.cc:27018", 0u);
    }
 
    mongoc_client_pool_destroy(pool);
    bson_mutex_destroy(&rr_override.lock);
+   stream_tracker_destroy(st);
    bson_destroy(ping);
 }
 
