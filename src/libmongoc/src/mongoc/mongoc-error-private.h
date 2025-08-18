@@ -59,44 +59,44 @@ typedef enum {
 } mongoc_server_err_t;
 
 mongoc_read_err_type_t
-_mongoc_read_error_get_type (bool cmd_ret, const bson_error_t *cmd_err, const bson_t *reply);
+_mongoc_read_error_get_type(bool cmd_ret, const bson_error_t *cmd_err, const bson_t *reply);
 
 void
-_mongoc_error_copy_labels_and_upsert (const bson_t *src, bson_t *dst, char *label);
+_mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, char *label);
 
 void
-_mongoc_write_error_append_retryable_label (bson_t *reply);
+_mongoc_write_error_append_retryable_label(bson_t *reply);
 
 void
-_mongoc_write_error_handle_labels (bool cmd_ret,
-                                   const bson_error_t *cmd_err,
-                                   bson_t *reply,
-                                   const mongoc_server_description_t *sd);
+_mongoc_write_error_handle_labels(bool cmd_ret,
+                                  const bson_error_t *cmd_err,
+                                  bson_t *reply,
+                                  const mongoc_server_description_t *sd);
 
 bool
-_mongoc_error_is_shutdown (bson_error_t *error);
+_mongoc_error_is_shutdown(bson_error_t *error);
 
 bool
-_mongoc_error_is_recovering (bson_error_t *error);
+_mongoc_error_is_recovering(bson_error_t *error);
 
 bool
-_mongoc_error_is_not_primary (bson_error_t *error);
+_mongoc_error_is_not_primary(bson_error_t *error);
 
 bool
-_mongoc_error_is_state_change (bson_error_t *error);
+_mongoc_error_is_state_change(bson_error_t *error);
 
 bool
-_mongoc_error_is_network (const bson_error_t *error);
+_mongoc_error_is_network(const bson_error_t *error);
 
 bool
-_mongoc_error_is_server (const bson_error_t *error);
+_mongoc_error_is_server(const bson_error_t *error);
 
 bool
-_mongoc_error_is_auth (const bson_error_t *error);
+_mongoc_error_is_auth(const bson_error_t *error);
 
 /* Try to append `s` to `error`. Truncates `s` if `error` is out of space. */
 void
-_mongoc_error_append (bson_error_t *error, const char *s);
+_mongoc_error_append(bson_error_t *error, const char *s);
 
 typedef enum {
    MONGOC_ERROR_CONTENT_FLAG_CODE = (1 << 0),
@@ -105,16 +105,15 @@ typedef enum {
 } mongoc_error_content_flags_t;
 
 bool
-mongoc_error_append_contents_to_bson (const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags);
+mongoc_error_append_contents_to_bson(const bson_error_t *error, bson_t *bson, mongoc_error_content_flags_t flags);
 
 void
-_mongoc_set_error (bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...)
-   BSON_GNUC_PRINTF (4, 5);
+_mongoc_set_error(bson_error_t *error, uint32_t domain, uint32_t code, const char *format, ...) BSON_GNUC_PRINTF(4, 5);
 
 void
-_mongoc_set_error_with_category (
+_mongoc_set_error_with_category(
    bson_error_t *error, uint8_t category, uint32_t domain, uint32_t code, const char *format, ...)
-   BSON_GNUC_PRINTF (5, 6);
+   BSON_GNUC_PRINTF(5, 6);
 
 #define MONGOC_ERROR_CATEGORY_BSON 1 // BSON_ERROR_CATEGORY
 #define MONGOC_ERROR_CATEGORY 2
@@ -123,16 +122,16 @@ _mongoc_set_error_with_category (
 #define MONGOC_ERROR_CATEGORY_SASL 5
 
 static BSON_INLINE void
-_mongoc_set_error_category (bson_error_t *error, uint8_t category)
+_mongoc_set_error_category(bson_error_t *error, uint8_t category)
 {
-   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT_PARAM(error);
    error->reserved = category;
 }
 
 #ifdef _WIN32
 // Call `mongoc_winerr_to_string` on a Windows error code (e.g. a return from GetLastError()).
 char *
-mongoc_winerr_to_string (DWORD err_code);
+mongoc_winerr_to_string(DWORD err_code);
 #endif
 
 BSON_END_DECLS

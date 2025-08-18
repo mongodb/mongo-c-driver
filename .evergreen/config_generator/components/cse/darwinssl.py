@@ -14,21 +14,18 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('macos-14', 'clang', None, ['cyrus']),
-
-    ('macos-11-arm64', 'clang', None, ['cyrus']),
     ('macos-14-arm64', 'clang', None, ['cyrus']),
+    ('macos-14',       'clang', None, ['cyrus']),
 ]
 
 # TODO (CDRIVER-3789): test cse with the 'sharded' topology.
 TEST_MATRIX = [
-    ('macos-14', 'clang', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0']),
-
-    ('macos-11-arm64', 'clang', None, 'cyrus', ['auth'], ['server'], ['6.0']),
-    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['server'], ['6.0']),
-
+    # Prefer macos-14-arm64 which is less resource-limited than macos-14. Provides 6.0+.
     # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
-    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['server', 'replica' ], ['7.0', '8.0', 'latest']),
+    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['replica'], ['6.0', '7.0', '8.0', 'latest']),
+
+    # Pre-6.0 coverage. Resource-limited: use sparingly.
+    ('macos-14', 'clang', None, 'cyrus', ['auth'], ['replica'], ['4.2', '4.4', '5.0']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

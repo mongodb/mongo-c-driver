@@ -17,36 +17,36 @@
 #include <mongoc/mongoc-optional.h>
 
 void
-mongoc_optional_init (mongoc_optional_t *opt)
+mongoc_optional_init(mongoc_optional_t *opt)
 {
    opt->is_set = false;
    opt->value = false;
 }
 
 bool
-mongoc_optional_is_set (const mongoc_optional_t *opt)
+mongoc_optional_is_set(const mongoc_optional_t *opt)
 {
-   BSON_ASSERT (opt);
+   BSON_ASSERT(opt);
    return opt->is_set;
 }
 
 bool
-mongoc_optional_value (const mongoc_optional_t *opt)
+mongoc_optional_value(const mongoc_optional_t *opt)
 {
-   BSON_ASSERT (opt);
+   BSON_ASSERT(opt);
    return opt->value;
 }
 
 void
-mongoc_optional_set_value (mongoc_optional_t *opt, bool val)
+mongoc_optional_set_value(mongoc_optional_t *opt, bool val)
 {
-   BSON_ASSERT (opt);
+   BSON_ASSERT(opt);
    opt->value = val;
    opt->is_set = true;
 }
 
 void
-mongoc_optional_copy (const mongoc_optional_t *source, mongoc_optional_t *copy)
+mongoc_optional_copy(const mongoc_optional_t *source, mongoc_optional_t *copy)
 {
    copy->value = source->value;
    copy->is_set = source->is_set;

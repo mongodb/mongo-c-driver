@@ -29,6 +29,6 @@ typedef struct {
 } mongoc_gridfs_upload_stream_t;
 
 mongoc_stream_t *
-_mongoc_upload_stream_gridfs_new (mongoc_gridfs_bucket_file_t *file);
+_mongoc_upload_stream_gridfs_new(mongoc_gridfs_bucket_file_t *file);
 
 #endif /* MONGOC_STREAM_GRIDFS_UPLOAD_PRIVATE_H */

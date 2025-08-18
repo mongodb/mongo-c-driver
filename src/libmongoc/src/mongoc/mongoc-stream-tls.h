@@ -30,18 +30,15 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_stream_tls_t mongoc_stream_tls_t;
 
-MONGOC_EXPORT (bool)
-mongoc_stream_tls_handshake (
+MONGOC_EXPORT(bool)
+mongoc_stream_tls_handshake(
    mongoc_stream_t *stream, const char *host, int32_t timeout_msec, int *events, bson_error_t *error);
 
-MONGOC_EXPORT (bool)
-mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
-                                   const char *host,
-                                   int32_t timeout_msec,
-                                   bson_error_t *error);
+MONGOC_EXPORT(bool)
+mongoc_stream_tls_handshake_block(mongoc_stream_t *stream, const char *host, int32_t timeout_msec, bson_error_t *error);
 
-MONGOC_EXPORT (mongoc_stream_t *)
-mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
+MONGOC_EXPORT(mongoc_stream_t *)
+mongoc_stream_tls_new_with_hostname(mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 

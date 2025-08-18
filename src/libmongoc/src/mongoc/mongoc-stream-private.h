@@ -22,6 +22,8 @@
 #include <mongoc/mongoc-iovec.h>
 #include <mongoc/mongoc-stream.h>
 
+#include <mlib/timer.h>
+
 
 BSON_BEGIN_DECLS
 
@@ -35,14 +37,24 @@ BSON_BEGIN_DECLS
 #define MONGOC_STREAM_GRIDFS_DOWNLOAD 7
 
 bool
-mongoc_stream_wait (mongoc_stream_t *stream, int64_t expire_at);
+mongoc_stream_wait(mongoc_stream_t *stream, int64_t expire_at);
 
 bool
-_mongoc_stream_writev_full (
+_mongoc_stream_writev_full(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error);
 
 mongoc_stream_t *
-mongoc_stream_get_root_stream (mongoc_stream_t *stream);
+mongoc_stream_get_root_stream(mongoc_stream_t *stream);
+
+/**
+ * @brief Poll the given set of streams
+ *
+ * @param streams Pointer to an array of stream polling parameters
+ * @param nstreams The number of streams in the array
+ * @param until A timer that will wake up `poll()` from blocking
+ */
+ssize_t
+_mongoc_stream_poll_internal(mongoc_stream_poll_t *streams, size_t nstreams, mlib_timer until);
 
 BSON_END_DECLS
 

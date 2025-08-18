@@ -63,25 +63,25 @@ typedef struct mcommon_string_append_t {
    bool _max_len_exceeded;
 } mcommon_string_append_t;
 
-#define mcommon_string_new_with_capacity COMMON_NAME (string_new_with_capacity)
-#define mcommon_string_new_with_buffer COMMON_NAME (string_new_with_buffer)
-#define mcommon_string_destroy COMMON_NAME (string_destroy)
-#define mcommon_string_destroy_with_steal COMMON_NAME (string_destroy_with_steal)
-#define mcommon_string_grow_to_capacity COMMON_NAME (string_grow_to_capacity)
-#define mcommon_string_append_selected_chars COMMON_NAME (string_append_selected_chars)
-#define mcommon_string_append_bytes_internal COMMON_NAME (string_append_bytes_internal)
-#define mcommon_string_append_bytes_all_or_none COMMON_NAME (string_append_bytes_all_or_none)
-#define mcommon_string_append_unichar_internal COMMON_NAME (string_append_unichar_internal)
-#define mcommon_string_append_base64_encode COMMON_NAME (string_append_base64_encode)
-#define mcommon_string_append_oid_as_hex COMMON_NAME (string_append_oid_as_hex)
-#define mcommon_string_append_printf COMMON_NAME (string_append_printf)
-#define mcommon_string_append_vprintf COMMON_NAME (string_append_vprintf)
+#define mcommon_string_new_with_capacity COMMON_NAME(string_new_with_capacity)
+#define mcommon_string_new_with_buffer COMMON_NAME(string_new_with_buffer)
+#define mcommon_string_destroy COMMON_NAME(string_destroy)
+#define mcommon_string_destroy_with_steal COMMON_NAME(string_destroy_with_steal)
+#define mcommon_string_grow_to_capacity COMMON_NAME(string_grow_to_capacity)
+#define mcommon_string_append_selected_chars COMMON_NAME(string_append_selected_chars)
+#define mcommon_string_append_bytes_internal COMMON_NAME(string_append_bytes_internal)
+#define mcommon_string_append_bytes_all_or_none COMMON_NAME(string_append_bytes_all_or_none)
+#define mcommon_string_append_unichar_internal COMMON_NAME(string_append_unichar_internal)
+#define mcommon_string_append_base64_encode COMMON_NAME(string_append_base64_encode)
+#define mcommon_string_append_oid_as_hex COMMON_NAME(string_append_oid_as_hex)
+#define mcommon_string_append_printf COMMON_NAME(string_append_printf)
+#define mcommon_string_append_vprintf COMMON_NAME(string_append_vprintf)
 
 bool
-mcommon_string_append_bytes_internal (mcommon_string_append_t *append, const char *str, uint32_t len);
+mcommon_string_append_bytes_internal(mcommon_string_append_t *append, const char *str, uint32_t len);
 
 bool
-mcommon_string_append_unichar_internal (mcommon_string_append_t *append, bson_unichar_t unichar);
+mcommon_string_append_unichar_internal(mcommon_string_append_t *append, bson_unichar_t unichar);
 
 /**
  * @brief Allocate a new mcommon_string_t with a copy of the supplied initializer string and an explicit buffer
@@ -96,7 +96,7 @@ mcommon_string_append_unichar_internal (mcommon_string_append_t *append, bson_un
  * min_capacity was smaller.
  */
 mcommon_string_t *
-mcommon_string_new_with_capacity (const char *str, uint32_t length, uint32_t min_capacity);
+mcommon_string_new_with_capacity(const char *str, uint32_t length, uint32_t min_capacity);
 
 /**
  * @brief Allocate a new mcommon_string_t with a copy of the supplied initializer string and a minimum-capacity buffer
@@ -107,12 +107,12 @@ mcommon_string_new_with_capacity (const char *str, uint32_t length, uint32_t min
  * mcommon_string_destroy_with_steal() and bson_free().
  */
 static BSON_INLINE mcommon_string_t *
-mcommon_string_new (const char *str)
+mcommon_string_new(const char *str)
 {
-   BSON_ASSERT_PARAM (str);
-   size_t length = strlen (str);
-   BSON_ASSERT (mlib_in_range (uint32_t, length) && (uint32_t) length < UINT32_MAX);
-   return mcommon_string_new_with_capacity (str, (uint32_t) length, 0);
+   BSON_ASSERT_PARAM(str);
+   size_t length = strlen(str);
+   BSON_ASSERT(mlib_in_range(uint32_t, length) && (uint32_t)length < UINT32_MAX);
+   return mcommon_string_new_with_capacity(str, (uint32_t)length, 0);
 }
 
 /**
@@ -126,14 +126,14 @@ mcommon_string_new (const char *str)
  * mcommon_string_destroy_with_steal() and bson_free().
  */
 mcommon_string_t *
-mcommon_string_new_with_buffer (char *buffer, uint32_t length, uint32_t alloc);
+mcommon_string_new_with_buffer(char *buffer, uint32_t length, uint32_t alloc);
 
 /**
  * @brief Deallocate a mcommon_string_t and its internal buffer
  * @param string String allocated with mcommon_string_new, or NULL.
  */
 void
-mcommon_string_destroy (mcommon_string_t *string);
+mcommon_string_destroy(mcommon_string_t *string);
 
 /**
  * @brief Deallocate a mcommon_string_t and return its internal buffer as a NUL-terminated C string.
@@ -142,16 +142,16 @@ mcommon_string_destroy (mcommon_string_t *string);
  * was NULL.
  */
 char *
-mcommon_string_destroy_with_steal (mcommon_string_t *string);
+mcommon_string_destroy_with_steal(mcommon_string_t *string);
 
 /**
  * @brief Truncate the string to zero length without deallocating the buffer
  * @param string String to clear
  */
 static BSON_INLINE void
-mcommon_string_clear (mcommon_string_t *string)
+mcommon_string_clear(mcommon_string_t *string)
 {
-   BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM(string);
    string->len = 0;
    string->str[0] = '\0';
 }
@@ -161,9 +161,9 @@ mcommon_string_clear (mcommon_string_t *string)
  * @param string String to test
  */
 static BSON_INLINE bool
-mcommon_string_is_empty (const mcommon_string_t *string)
+mcommon_string_is_empty(const mcommon_string_t *string)
 {
-   BSON_ASSERT_PARAM (string);
+   BSON_ASSERT_PARAM(string);
    return string->len == 0;
 }
 
@@ -173,16 +173,16 @@ mcommon_string_is_empty (const mcommon_string_t *string)
  * @param substring prefix to match, as a NUL terminated C string.
  */
 static BSON_INLINE bool
-mcommon_string_starts_with_str (const mcommon_string_t *string, const char *substring)
+mcommon_string_starts_with_str(const mcommon_string_t *string, const char *substring)
 {
-   BSON_ASSERT_PARAM (string);
-   BSON_ASSERT_PARAM (substring);
+   BSON_ASSERT_PARAM(string);
+   BSON_ASSERT_PARAM(substring);
 
-   size_t substring_len = strlen (substring);
+   size_t substring_len = strlen(substring);
    uint32_t string_len = string->len;
 
-   if (mlib_in_range (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
-      return 0 == memcmp (string->str, substring, substring_len);
+   if (mlib_in_range(uint32_t, substring_len) && (uint32_t)substring_len <= string_len) {
+      return 0 == memcmp(string->str, substring, substring_len);
    } else {
       return false;
    }
@@ -194,17 +194,17 @@ mcommon_string_starts_with_str (const mcommon_string_t *string, const char *subs
  * @param substring suffix to match, as a NUL terminated C string.
  */
 static BSON_INLINE bool
-mcommon_string_ends_with_str (const mcommon_string_t *string, const char *substring)
+mcommon_string_ends_with_str(const mcommon_string_t *string, const char *substring)
 {
-   BSON_ASSERT_PARAM (string);
-   BSON_ASSERT_PARAM (substring);
+   BSON_ASSERT_PARAM(string);
+   BSON_ASSERT_PARAM(substring);
 
-   size_t substring_len = strlen (substring);
+   size_t substring_len = strlen(substring);
    uint32_t string_len = string->len;
 
-   if (mlib_in_range (uint32_t, substring_len) && (uint32_t) substring_len <= string_len) {
-      uint32_t offset = string_len - (uint32_t) substring_len;
-      return 0 == memcmp (string->str + offset, substring, substring_len);
+   if (mlib_in_range(uint32_t, substring_len) && (uint32_t)substring_len <= string_len) {
+      uint32_t offset = string_len - (uint32_t)substring_len;
+      return 0 == memcmp(string->str + offset, substring, substring_len);
    } else {
       return false;
    }
@@ -221,7 +221,7 @@ mcommon_string_ends_with_str (const mcommon_string_t *string, const char *substr
  * minimum needed to store 'capacity' as well as the NUL terminator.
  */
 void
-mcommon_string_grow_to_capacity (mcommon_string_t *string, uint32_t capacity);
+mcommon_string_grow_to_capacity(mcommon_string_t *string, uint32_t capacity);
 
 /**
  * @brief Set an append operation for this string, with an explicit length limit
@@ -236,11 +236,11 @@ mcommon_string_grow_to_capacity (mcommon_string_t *string, uint32_t capacity);
  * lengthen the string beyond max_len. Truncations are guaranteed to happen at UTF-8 code point boundaries.
  */
 static BSON_INLINE void
-mcommon_string_set_append_with_limit (mcommon_string_t *string, mcommon_string_append_t *new_append, uint32_t max_len)
+mcommon_string_set_append_with_limit(mcommon_string_t *string, mcommon_string_append_t *new_append, uint32_t max_len)
 {
-   BSON_ASSERT_PARAM (string);
-   BSON_ASSERT_PARAM (new_append);
-   BSON_ASSERT (max_len < UINT32_MAX);
+   BSON_ASSERT_PARAM(string);
+   BSON_ASSERT_PARAM(new_append);
+   BSON_ASSERT(max_len < UINT32_MAX);
 
    new_append->_string = string;
    new_append->_max_len = max_len;
@@ -258,12 +258,12 @@ mcommon_string_set_append_with_limit (mcommon_string_t *string, mcommon_string_a
  * The maximum string length will be set to the largest representable by the data type, UINT32_MAX - 1.
  */
 static BSON_INLINE void
-mcommon_string_set_append (mcommon_string_t *string, mcommon_string_append_t *new_append)
+mcommon_string_set_append(mcommon_string_t *string, mcommon_string_append_t *new_append)
 {
-   BSON_ASSERT_PARAM (string);
-   BSON_ASSERT_PARAM (new_append);
+   BSON_ASSERT_PARAM(string);
+   BSON_ASSERT_PARAM(new_append);
 
-   mcommon_string_set_append_with_limit (string, new_append, UINT32_MAX - 1u);
+   mcommon_string_set_append_with_limit(string, new_append, UINT32_MAX - 1u);
 }
 
 /**
@@ -282,11 +282,11 @@ mcommon_string_set_append (mcommon_string_t *string, mcommon_string_append_t *ne
  * This is a shortcut for mcommon_string_new_with_capacity() combined with mcommon_string_set_append().
  */
 static BSON_INLINE void
-mcommon_string_new_with_capacity_as_append (mcommon_string_append_t *new_append, uint32_t capacity)
+mcommon_string_new_with_capacity_as_append(mcommon_string_append_t *new_append, uint32_t capacity)
 {
-   BSON_ASSERT_PARAM (new_append);
+   BSON_ASSERT_PARAM(new_append);
 
-   mcommon_string_set_append (mcommon_string_new_with_capacity ("", 0, capacity), new_append);
+   mcommon_string_set_append(mcommon_string_new_with_capacity("", 0, capacity), new_append);
 }
 
 /**
@@ -305,11 +305,11 @@ mcommon_string_new_with_capacity_as_append (mcommon_string_append_t *new_append,
  * or mcommon_string_new_with_capacity() and mcommon_string_set_append().
  */
 static BSON_INLINE void
-mcommon_string_new_as_append (mcommon_string_append_t *new_append)
+mcommon_string_new_as_append(mcommon_string_append_t *new_append)
 {
-   BSON_ASSERT_PARAM (new_append);
+   BSON_ASSERT_PARAM(new_append);
 
-   mcommon_string_new_with_capacity_as_append (new_append, 32);
+   mcommon_string_new_with_capacity_as_append(new_append, 32);
 }
 
 /**
@@ -322,11 +322,11 @@ mcommon_string_new_as_append (mcommon_string_append_t *new_append)
  * The string buffer will not need to resize for operations performed through the resulting mcommon_string_append_t.
  */
 static BSON_INLINE void
-mcommon_string_new_as_fixed_capacity_append (mcommon_string_append_t *new_append, uint32_t capacity)
+mcommon_string_new_as_fixed_capacity_append(mcommon_string_append_t *new_append, uint32_t capacity)
 {
-   BSON_ASSERT_PARAM (new_append);
+   BSON_ASSERT_PARAM(new_append);
 
-   mcommon_string_set_append_with_limit (mcommon_string_new_with_capacity ("", 0, capacity), new_append, capacity);
+   mcommon_string_set_append_with_limit(mcommon_string_new_with_capacity("", 0, capacity), new_append, capacity);
 }
 
 /**
@@ -335,9 +335,9 @@ mcommon_string_new_as_fixed_capacity_append (mcommon_string_append_t *new_append
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  */
 static BSON_INLINE bool
-mcommon_string_status_from_append (const mcommon_string_append_t *append)
+mcommon_string_status_from_append(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
    return !append->_max_len_exceeded;
 }
@@ -351,9 +351,9 @@ mcommon_string_status_from_append (const mcommon_string_append_t *append)
  * Depending on usage, it may be a string with borrowed ownership or the append operation may be its primary owner.
  */
 static BSON_INLINE mcommon_string_t *
-mcommon_string_from_append (const mcommon_string_append_t *append)
+mcommon_string_from_append(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
    return append->_string;
 }
@@ -367,11 +367,11 @@ mcommon_string_from_append (const mcommon_string_append_t *append)
  * Shortcut for mcommon_string_from_append(append)->str
  */
 static BSON_INLINE char *
-mcommon_str_from_append (const mcommon_string_append_t *append)
+mcommon_str_from_append(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   return mcommon_string_from_append (append)->str;
+   return mcommon_string_from_append(append)->str;
 }
 
 /**
@@ -382,11 +382,11 @@ mcommon_str_from_append (const mcommon_string_append_t *append)
  * Shortcut for mcommon_string_from_append(append)->len
  */
 static BSON_INLINE uint32_t
-mcommon_strlen_from_append (const mcommon_string_append_t *append)
+mcommon_strlen_from_append(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   return mcommon_string_from_append (append)->len;
+   return mcommon_string_from_append(append)->len;
 }
 
 /**
@@ -395,11 +395,11 @@ mcommon_strlen_from_append (const mcommon_string_append_t *append)
  * The append operation will no longer be usable after this call.
  */
 static BSON_INLINE void
-mcommon_string_from_append_destroy (const mcommon_string_append_t *append)
+mcommon_string_from_append_destroy(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   mcommon_string_destroy (mcommon_string_from_append (append));
+   mcommon_string_destroy(mcommon_string_from_append(append));
 }
 
 /**
@@ -408,11 +408,11 @@ mcommon_string_from_append_destroy (const mcommon_string_append_t *append)
  * This is equivalent to mcommon_string_clear() combined with mcommon_string_from_append().
  */
 static BSON_INLINE void
-mcommon_string_from_append_clear (const mcommon_string_append_t *append)
+mcommon_string_from_append_clear(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   mcommon_string_clear (mcommon_string_from_append (append));
+   mcommon_string_clear(mcommon_string_from_append(append));
 }
 
 /**
@@ -423,11 +423,11 @@ mcommon_string_from_append_clear (const mcommon_string_append_t *append)
  * The append operation will no longer be usable after this call.
  */
 static BSON_INLINE char *
-mcommon_string_from_append_destroy_with_steal (const mcommon_string_append_t *append)
+mcommon_string_from_append_destroy_with_steal(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   return mcommon_string_destroy_with_steal (mcommon_string_from_append (append));
+   return mcommon_string_destroy_with_steal(mcommon_string_from_append(append));
 }
 
 /**
@@ -436,12 +436,12 @@ mcommon_string_from_append_destroy_with_steal (const mcommon_string_append_t *ap
  * @param substring suffix to match, as a NUL terminated C string.
  */
 static BSON_INLINE bool
-mcommon_string_from_append_ends_with_str (const mcommon_string_append_t *append, const char *substring)
+mcommon_string_from_append_ends_with_str(const mcommon_string_append_t *append, const char *substring)
 {
-   BSON_ASSERT_PARAM (append);
-   BSON_ASSERT_PARAM (substring);
+   BSON_ASSERT_PARAM(append);
+   BSON_ASSERT_PARAM(substring);
 
-   return mcommon_string_ends_with_str (mcommon_string_from_append (append), substring);
+   return mcommon_string_ends_with_str(mcommon_string_from_append(append), substring);
 }
 
 /**
@@ -449,11 +449,11 @@ mcommon_string_from_append_ends_with_str (const mcommon_string_append_t *append,
  * @param string mcommon_string_append_t with the string to test
  */
 static BSON_INLINE bool
-mcommon_string_from_append_is_empty (const mcommon_string_append_t *append)
+mcommon_string_from_append_is_empty(const mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   return mcommon_string_is_empty (mcommon_string_from_append (append));
+   return mcommon_string_is_empty(mcommon_string_from_append(append));
 }
 
 /**
@@ -465,9 +465,9 @@ mcommon_string_from_append_is_empty (const mcommon_string_append_t *append)
  * actual append was attempted.
  */
 static BSON_INLINE void
-mcommon_string_append_overflow (mcommon_string_append_t *append)
+mcommon_string_append_overflow(mcommon_string_append_t *append)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
    append->_max_len_exceeded = true;
 }
@@ -484,10 +484,10 @@ mcommon_string_append_overflow (mcommon_string_append_t *append)
  * '\x7f'. Selectors may contain untrusted data, template should not.
  */
 bool
-mcommon_string_append_selected_chars (mcommon_string_append_t *append,
-                                      const char *template_,
-                                      const char *selector,
-                                      size_t selector_len);
+mcommon_string_append_selected_chars(mcommon_string_append_t *append,
+                                     const char *template_,
+                                     const char *selector,
+                                     size_t selector_len);
 
 /**
  * @brief Append a string with known length to the mcommon_string_t
@@ -500,33 +500,33 @@ mcommon_string_append_selected_chars (mcommon_string_append_t *append,
  * split in-between UTF-8 code points.
  */
 static BSON_INLINE bool
-mcommon_string_append_bytes (mcommon_string_append_t *append, const char *str, uint32_t len)
+mcommon_string_append_bytes(mcommon_string_append_t *append, const char *str, uint32_t len)
 {
-   BSON_ASSERT_PARAM (append);
-   BSON_ASSERT_PARAM (str);
+   BSON_ASSERT_PARAM(append);
+   BSON_ASSERT_PARAM(str);
 
-   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
+   if (BSON_UNLIKELY(!mcommon_string_status_from_append(append))) {
       return false;
    }
 
    mcommon_string_t *string = append->_string;
    char *buffer = string->str;
-   uint64_t alloc = (uint64_t) string->alloc;
-   uint64_t old_len = (uint64_t) string->len;
-   uint64_t max_len = (uint64_t) append->_max_len;
-   uint64_t new_len = old_len + (uint64_t) len;
+   uint64_t alloc = (uint64_t)string->alloc;
+   uint64_t old_len = (uint64_t)string->len;
+   uint64_t max_len = (uint64_t)append->_max_len;
+   uint64_t new_len = old_len + (uint64_t)len;
    uint64_t new_len_with_nul = new_len + 1;
 
    // Fast path: no truncation, no buffer growing
-   if (BSON_LIKELY (new_len <= max_len && new_len_with_nul <= alloc)) {
-      memcpy (buffer + old_len, str, len);
+   if (BSON_LIKELY(new_len <= max_len && new_len_with_nul <= alloc)) {
+      memcpy(buffer + old_len, str, len);
       buffer[new_len] = '\0';
-      string->len = (uint32_t) new_len;
+      string->len = (uint32_t)new_len;
       return true;
    }
 
    // Other cases are not inlined
-   return mcommon_string_append_bytes_internal (append, str, len);
+   return mcommon_string_append_bytes_internal(append, str, len);
 }
 
 /**
@@ -539,12 +539,12 @@ mcommon_string_append_bytes (mcommon_string_append_t *append, const char *str, u
  * split in-between UTF-8 code points.
  */
 static BSON_INLINE bool
-mcommon_string_append (mcommon_string_append_t *append, const char *str)
+mcommon_string_append(mcommon_string_append_t *append, const char *str)
 {
-   BSON_ASSERT_PARAM (append);
-   BSON_ASSERT_PARAM (str);
+   BSON_ASSERT_PARAM(append);
+   BSON_ASSERT_PARAM(str);
 
-   return mcommon_string_append_bytes (append, str, strlen (str));
+   return mcommon_string_append_bytes(append, str, strlen(str));
 }
 
 /**
@@ -558,7 +558,7 @@ mcommon_string_append (mcommon_string_append_t *append, const char *str)
  * The destination string is only modified if the entire append operation can be completed.
  */
 bool
-mcommon_string_append_bytes_all_or_none (mcommon_string_append_t *append, const char *str, uint32_t len);
+mcommon_string_append_bytes_all_or_none(mcommon_string_append_t *append, const char *str, uint32_t len);
 
 /**
  * @brief Append an entire NUL-terminated UTF-8 string to the mcommon_string_t or fail, without truncating.
@@ -570,12 +570,12 @@ mcommon_string_append_bytes_all_or_none (mcommon_string_append_t *append, const 
  * The destination string is only modified if the entire append operation can be completed.
  */
 static BSON_INLINE bool
-mcommon_string_append_all_or_none (mcommon_string_append_t *append, const char *str)
+mcommon_string_append_all_or_none(mcommon_string_append_t *append, const char *str)
 {
-   BSON_ASSERT_PARAM (append);
-   BSON_ASSERT_PARAM (str);
+   BSON_ASSERT_PARAM(append);
+   BSON_ASSERT_PARAM(str);
 
-   return mcommon_string_append_bytes_all_or_none (append, str, strlen (str));
+   return mcommon_string_append_bytes_all_or_none(append, str, strlen(str));
 }
 
 /**
@@ -586,7 +586,7 @@ mcommon_string_append_all_or_none (mcommon_string_append_t *append, const char *
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  */
 bool
-mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint8_t *bytes, uint32_t len);
+mcommon_string_append_base64_encode(mcommon_string_append_t *append, const uint8_t *bytes, uint32_t len);
 
 /**
  * @brief Append an ObjectId as a hex string
@@ -595,7 +595,7 @@ mcommon_string_append_base64_encode (mcommon_string_append_t *append, const uint
  * @returns true if the append operation has no permanent error status. false if the max length has been exceeded.
  */
 bool
-mcommon_string_append_oid_as_hex (mcommon_string_append_t *append, const bson_oid_t *value);
+mcommon_string_append_oid_as_hex(mcommon_string_append_t *append, const bson_oid_t *value);
 
 /**
  * @brief Append printf() formatted text to a mcommon_string_t
@@ -611,7 +611,7 @@ mcommon_string_append_oid_as_hex (mcommon_string_append_t *append, const bson_oi
  * split in-between UTF-8 code points.
  */
 bool
-mcommon_string_append_printf (mcommon_string_append_t *append, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
+mcommon_string_append_printf(mcommon_string_append_t *append, const char *format, ...) BSON_GNUC_PRINTF(2, 3);
 
 /**
  * @brief Variant of mcommon_string_append_printf() that takes a va_list
@@ -627,8 +627,7 @@ mcommon_string_append_printf (mcommon_string_append_t *append, const char *forma
  * split in-between UTF-8 code points.
  */
 bool
-mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *format, va_list args)
-   BSON_GNUC_PRINTF (2, 0);
+mcommon_string_append_vprintf(mcommon_string_append_t *append, const char *format, va_list args) BSON_GNUC_PRINTF(2, 0);
 
 /**
  * @brief Append one code point to a mcommon_string_t
@@ -639,27 +638,27 @@ mcommon_string_append_vprintf (mcommon_string_append_t *append, const char *form
  * Guaranteed not to truncate. The character will fully append or no change will be made.
  */
 static BSON_INLINE bool
-mcommon_string_append_unichar (mcommon_string_append_t *append, bson_unichar_t unichar)
+mcommon_string_append_unichar(mcommon_string_append_t *append, bson_unichar_t unichar)
 {
-   BSON_ASSERT_PARAM (append);
+   BSON_ASSERT_PARAM(append);
 
-   if (BSON_UNLIKELY (!mcommon_string_status_from_append (append))) {
+   if (BSON_UNLIKELY(!mcommon_string_status_from_append(append))) {
       return false;
    }
 
    mcommon_string_t *string = append->_string;
-   BSON_ASSERT (string);
+   BSON_ASSERT(string);
    char *buffer = string->str;
-   uint64_t alloc = (uint64_t) string->alloc;
-   uint64_t old_len = (uint64_t) string->len;
-   uint64_t max_len = (uint64_t) append->_max_len;
+   uint64_t alloc = (uint64_t)string->alloc;
+   uint64_t old_len = (uint64_t)string->len;
+   uint64_t max_len = (uint64_t)append->_max_len;
 
    // Fast path: single-byte character, no truncation, no buffer growing
-   if (BSON_LIKELY (unichar <= 0x7f)) {
+   if (BSON_LIKELY(unichar <= 0x7f)) {
       uint64_t new_len = old_len + 1;
       uint64_t new_len_with_nul = new_len + 1;
-      if (BSON_LIKELY (new_len <= max_len && new_len_with_nul <= alloc)) {
-         buffer[old_len] = (char) unichar;
+      if (BSON_LIKELY(new_len <= max_len && new_len_with_nul <= alloc)) {
+         buffer[old_len] = (char)unichar;
          buffer[new_len] = '\0';
          string->len = new_len;
          return true;
@@ -667,7 +666,7 @@ mcommon_string_append_unichar (mcommon_string_append_t *append, bson_unichar_t u
    }
 
    // Other cases are not inlined
-   return mcommon_string_append_unichar_internal (append, unichar);
+   return mcommon_string_append_unichar_internal(append, unichar);
 }
 
 

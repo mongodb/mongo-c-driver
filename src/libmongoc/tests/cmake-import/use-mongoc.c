@@ -8,13 +8,13 @@
 #endif
 
 int
-main (void)
+main(void)
 {
-   if (strcmp (MONGOC_VERSION_S, EXPECT_MONGOC_VERSION)) {
-      fprintf (stderr,
-               "Wrong MONGOC_MAJOR_VERSION found (Expected “%s”, but got “%s”)",
-               EXPECT_MONGOC_VERSION,
-               MONGOC_VERSION_S);
+   if (strcmp(MONGOC_VERSION_S, EXPECT_MONGOC_VERSION)) {
+      fprintf(stderr,
+              "Wrong MONGOC_MAJOR_VERSION found (Expected “%s”, but got “%s”)",
+              EXPECT_MONGOC_VERSION,
+              MONGOC_VERSION_S);
       return 2;
    }
    return 0;

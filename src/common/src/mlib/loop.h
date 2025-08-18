@@ -35,26 +35,26 @@
  * variable cannot be modified within the loop. The loop variable is declared as the maximum
  * precision type for the requested signedness.
  */
-#define mlib_foreach_urange(...) MLIB_ARGC_PICK (_mlib_foreach_urange, __VA_ARGS__)
-#define mlib_foreach_irange(...) MLIB_ARGC_PICK (_mlib_foreach_irange, __VA_ARGS__)
-#define _mlib_foreach_urange_argc_2(VarName, Stop) _mlib_foreach_urange_argc_3 (VarName, 0, Stop)
+#define mlib_foreach_urange(...) MLIB_ARGC_PICK(_mlib_foreach_urange, __VA_ARGS__)
+#define mlib_foreach_irange(...) MLIB_ARGC_PICK(_mlib_foreach_irange, __VA_ARGS__)
+#define _mlib_foreach_urange_argc_2(VarName, Stop) _mlib_foreach_urange_argc_3(VarName, 0, Stop)
 #define _mlib_foreach_urange_argc_3(VarName, Start, Stop) \
-   _mlibForeachRange (uintmax_t,                          \
-                      VarName,                            \
-                      Start,                              \
-                      Stop,                               \
-                      MLIB_PASTE (VarName, _start),       \
-                      MLIB_PASTE (VarName, _stop),        \
-                      MLIB_PASTE (VarName, _counter))
-#define _mlib_foreach_irange_argc_2(VarName, Stop) _mlib_foreach_irange_argc_3 (VarName, 0, Stop)
+   _mlibForeachRange(uintmax_t,                           \
+                     VarName,                             \
+                     Start,                               \
+                     Stop,                                \
+                     MLIB_PASTE(VarName, _start),         \
+                     MLIB_PASTE(VarName, _stop),          \
+                     MLIB_PASTE(VarName, _counter))
+#define _mlib_foreach_irange_argc_2(VarName, Stop) _mlib_foreach_irange_argc_3(VarName, 0, Stop)
 #define _mlib_foreach_irange_argc_3(VarName, Start, Stop) \
-   _mlibForeachRange (intmax_t,                           \
-                      VarName,                            \
-                      Start,                              \
-                      Stop,                               \
-                      MLIB_PASTE (VarName, _start),       \
-                      MLIB_PASTE (VarName, _stop),        \
-                      MLIB_PASTE (VarName, _counter))
+   _mlibForeachRange(intmax_t,                            \
+                     VarName,                             \
+                     Start,                               \
+                     Stop,                                \
+                     MLIB_PASTE(VarName, _start),         \
+                     MLIB_PASTE(VarName, _stop),          \
+                     MLIB_PASTE(VarName, _counter))
 
 /**
  * @brief Loop over a pointed-to array
@@ -65,7 +65,7 @@
  * @param Count The number of elements in the array
  */
 #define mlib_foreach(T, Var, ArrayPtr, Count) \
-   _mlibForeach (T, Var, ArrayPtr, Count, MLIB_PASTE (Var, _start), MLIB_PASTE (Var, _stop), MLIB_PASTE (Var, _iter))
+   _mlibForeach(T, Var, ArrayPtr, Count, MLIB_PASTE(Var, _start), MLIB_PASTE(Var, _stop), MLIB_PASTE(Var, _iter))
 /**
  * @brief Loop over the elements of a C array
  *

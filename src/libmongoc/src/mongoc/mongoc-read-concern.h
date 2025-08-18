@@ -35,20 +35,20 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_read_concern_t mongoc_read_concern_t;
 
 
-MONGOC_EXPORT (mongoc_read_concern_t *)
-mongoc_read_concern_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
-MONGOC_EXPORT (mongoc_read_concern_t *)
-mongoc_read_concern_copy (const mongoc_read_concern_t *read_concern) BSON_GNUC_WARN_UNUSED_RESULT;
-MONGOC_EXPORT (void)
-mongoc_read_concern_destroy (mongoc_read_concern_t *read_concern);
-MONGOC_EXPORT (const char *)
-mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern);
-MONGOC_EXPORT (bool)
-mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern, const char *level);
-MONGOC_EXPORT (bool)
-mongoc_read_concern_append (mongoc_read_concern_t *read_concern, bson_t *doc);
-MONGOC_EXPORT (bool)
-mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern);
+MONGOC_EXPORT(mongoc_read_concern_t *)
+mongoc_read_concern_new(void) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(mongoc_read_concern_t *)
+mongoc_read_concern_copy(const mongoc_read_concern_t *read_concern) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(void)
+mongoc_read_concern_destroy(mongoc_read_concern_t *read_concern);
+MONGOC_EXPORT(const char *)
+mongoc_read_concern_get_level(const mongoc_read_concern_t *read_concern);
+MONGOC_EXPORT(bool)
+mongoc_read_concern_set_level(mongoc_read_concern_t *read_concern, const char *level);
+MONGOC_EXPORT(bool)
+mongoc_read_concern_append(mongoc_read_concern_t *read_concern, bson_t *doc);
+MONGOC_EXPORT(bool)
+mongoc_read_concern_is_default(const mongoc_read_concern_t *read_concern);
 
 BSON_END_DECLS
 

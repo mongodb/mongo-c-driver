@@ -8,10 +8,10 @@
 #endif
 
 int
-main (void)
+main(void)
 {
-   if (strcmp (BSON_VERSION_S, EXPECT_BSON_VERSION)) {
-      fprintf (
+   if (strcmp(BSON_VERSION_S, EXPECT_BSON_VERSION)) {
+      fprintf(
          stderr, "Wrong BSON_MAJOR_VERSION found (Expected “%s”, but got “%s”)", EXPECT_BSON_VERSION, BSON_VERSION_S);
       return 2;
    }

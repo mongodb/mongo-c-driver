@@ -42,11 +42,11 @@
  */
 
 static BSON_INLINE void
-mcommon_utf8_get_sequence (const char *utf8,    /* IN */
-                           uint8_t *seq_length, /* OUT */
-                           uint8_t *first_mask) /* OUT */
+mcommon_utf8_get_sequence(const char *utf8,    /* IN */
+                          uint8_t *seq_length, /* OUT */
+                          uint8_t *first_mask) /* OUT */
 {
-   unsigned char c = *(const unsigned char *) utf8;
+   unsigned char c = *(const unsigned char *)utf8;
    uint8_t m;
    uint8_t n;
 
@@ -105,11 +105,11 @@ mcommon_utf8_get_sequence (const char *utf8,    /* IN */
  */
 
 static BSON_INLINE void
-mcommon_utf8_from_unichar (bson_unichar_t unichar,                      /* IN */
-                           char utf8[BSON_ENSURE_ARRAY_PARAM_SIZE (6)], /* OUT */
-                           uint32_t *len)                               /* OUT */
+mcommon_utf8_from_unichar(bson_unichar_t unichar,                     /* IN */
+                          char utf8[BSON_ENSURE_ARRAY_PARAM_SIZE(6)], /* OUT */
+                          uint32_t *len)                              /* OUT */
 {
-   BSON_ASSERT_PARAM (len);
+   BSON_ASSERT_PARAM(len);
 
    if (unichar <= 0x7F) {
       utf8[0] = unichar;
@@ -146,18 +146,18 @@ mcommon_utf8_from_unichar (bson_unichar_t unichar,                      /* IN */
  */
 
 static BSON_INLINE uint32_t
-mcommon_utf8_truncate_len (const char *str, uint32_t len)
+mcommon_utf8_truncate_len(const char *str, uint32_t len)
 {
    uint32_t resulting_len = len;
    while (resulting_len > 0) {
-      if (BSON_LIKELY ((uint8_t) str[resulting_len - 1u] <= 0x7f)) {
+      if (BSON_LIKELY((uint8_t)str[resulting_len - 1u] <= 0x7f)) {
          // Single-byte sequence, always a fine place to stop
          return resulting_len;
       }
 
       // Search for the last byte that could begin a UTF-8 sequence
       uint32_t seq_begin_at = resulting_len - 1u;
-      while (((uint8_t) str[seq_begin_at] & 0xc0) == 0x80) {
+      while (((uint8_t)str[seq_begin_at] & 0xc0) == 0x80) {
          if (seq_begin_at > 0) {
             seq_begin_at--;
          } else {
@@ -166,7 +166,7 @@ mcommon_utf8_truncate_len (const char *str, uint32_t len)
       }
 
       uint8_t seq_length, first_mask_unused;
-      mcommon_utf8_get_sequence (str + seq_begin_at, &seq_length, &first_mask_unused);
+      mcommon_utf8_get_sequence(str + seq_begin_at, &seq_length, &first_mask_unused);
       if (seq_begin_at + seq_length == resulting_len) {
          // Sequence is complete, we can truncate here.
          return resulting_len;

@@ -19,7 +19,7 @@
 #define QUERY(...) ELE_QUERY, __VA_ARGS__, NULL
 #define SORT(...) ELE_SORT, __VA_ARGS__, NULL
 #define LIMIT(var) ELE_LIMIT, (var)
-#define COL_VIEW_CREATE(...) col_view_create ("", __VA_ARGS__, ELE_END)
+#define COL_VIEW_CREATE(...) col_view_create("", __VA_ARGS__, ELE_END)
 
 typedef enum ele {
    ELE_SORT,
@@ -29,7 +29,7 @@ typedef enum ele {
 } ele_t;
 
 bson_t *
-col_view_create (const char *stub, ...)
+col_view_create(const char *stub, ...)
 {
    bson_t *bson;
    va_list ap;
@@ -37,58 +37,58 @@ col_view_create (const char *stub, ...)
    int keep_going = 1;
 
    bcon_append_ctx_t ctx;
-   bcon_append_ctx_init (&ctx);
+   bcon_append_ctx_init(&ctx);
 
-   va_start (ap, stub);
+   va_start(ap, stub);
 
-   bson = bson_new ();
+   bson = bson_new();
 
    while (keep_going) {
-      type = va_arg (ap, ele_t);
+      type = va_arg(ap, ele_t);
 
       switch (type) {
       case ELE_SORT:
-         BCON_APPEND_CTX (bson, &ctx, "sort", "{");
-         bcon_append_ctx_va (bson, &ctx, &ap);
-         BCON_APPEND_CTX (bson, &ctx, "}");
+         BCON_APPEND_CTX(bson, &ctx, "sort", "{");
+         bcon_append_ctx_va(bson, &ctx, &ap);
+         BCON_APPEND_CTX(bson, &ctx, "}");
          break;
       case ELE_LIMIT: {
-         int i = va_arg (ap, int);
-         BCON_APPEND_CTX (bson, &ctx, "limit", BCON_INT32 (i));
+         int i = va_arg(ap, int);
+         BCON_APPEND_CTX(bson, &ctx, "limit", BCON_INT32(i));
          break;
       }
       case ELE_QUERY:
-         BCON_APPEND_CTX (bson, &ctx, "query", "{");
-         bcon_append_ctx_va (bson, &ctx, &ap);
-         BCON_APPEND_CTX (bson, &ctx, "}");
+         BCON_APPEND_CTX(bson, &ctx, "query", "{");
+         bcon_append_ctx_va(bson, &ctx, &ap);
+         BCON_APPEND_CTX(bson, &ctx, "}");
          break;
       case ELE_END:
          keep_going = 0;
          break;
       default:
-         BSON_ASSERT (0);
+         BSON_ASSERT(0);
          break;
       }
    }
 
-   va_end (ap);
+   va_end(ap);
 
    return bson;
 }
 
 int
-main (void)
+main(void)
 {
    bson_t *bson;
    char *json;
 
-   bson = COL_VIEW_CREATE (SORT ("a", BCON_INT32 (1)), QUERY ("hello", "world"), LIMIT (10));
+   bson = COL_VIEW_CREATE(SORT("a", BCON_INT32(1)), QUERY("hello", "world"), LIMIT(10));
 
-   json = bson_as_canonical_extended_json (bson, NULL);
-   printf ("%s\n", json);
-   bson_free (json);
+   json = bson_as_canonical_extended_json(bson, NULL);
+   printf("%s\n", json);
+   bson_free(json);
 
-   bson_destroy (bson);
+   bson_destroy(bson);
 
    return 0;
 }

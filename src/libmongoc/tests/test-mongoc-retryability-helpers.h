@@ -20,6 +20,6 @@
 #include <mongoc/mongoc-array-private.h>
 
 mongoc_array_t
-_test_get_mongos_clients (const char **ports, size_t num_ports);
+_test_get_mongos_clients(const char **ports, size_t num_ports);
 
 #endif

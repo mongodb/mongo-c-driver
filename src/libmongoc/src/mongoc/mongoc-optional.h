@@ -30,20 +30,20 @@ typedef struct {
    bool is_set;
 } mongoc_optional_t;
 
-MONGOC_EXPORT (void)
-mongoc_optional_init (mongoc_optional_t *opt);
+MONGOC_EXPORT(void)
+mongoc_optional_init(mongoc_optional_t *opt);
 
-MONGOC_EXPORT (bool)
-mongoc_optional_is_set (const mongoc_optional_t *opt);
+MONGOC_EXPORT(bool)
+mongoc_optional_is_set(const mongoc_optional_t *opt);
 
-MONGOC_EXPORT (bool)
-mongoc_optional_value (const mongoc_optional_t *opt);
+MONGOC_EXPORT(bool)
+mongoc_optional_value(const mongoc_optional_t *opt);
 
-MONGOC_EXPORT (void)
-mongoc_optional_set_value (mongoc_optional_t *opt, bool val);
+MONGOC_EXPORT(void)
+mongoc_optional_set_value(mongoc_optional_t *opt, bool val);
 
-MONGOC_EXPORT (void)
-mongoc_optional_copy (const mongoc_optional_t *source, mongoc_optional_t *copy);
+MONGOC_EXPORT(void)
+mongoc_optional_copy(const mongoc_optional_t *source, mongoc_optional_t *copy);
 
 BSON_END_DECLS
 

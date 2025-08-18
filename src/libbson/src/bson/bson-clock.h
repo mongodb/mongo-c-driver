@@ -29,10 +29,10 @@
 BSON_BEGIN_DECLS
 
 
-BSON_EXPORT (int64_t)
-bson_get_monotonic_time (void);
-BSON_EXPORT (int)
-bson_gettimeofday (struct timeval *tv);
+BSON_EXPORT(int64_t)
+bson_get_monotonic_time(void);
+BSON_EXPORT(int)
+bson_gettimeofday(struct timeval *tv);
 
 
 BSON_END_DECLS

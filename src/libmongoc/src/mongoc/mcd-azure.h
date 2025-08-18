@@ -54,10 +54,10 @@ typedef struct mcd_azure_access_token {
  * mcd_azure_access_token_destroy
  */
 bool
-mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
-                                               const char *json,
-                                               int len,
-                                               bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
+                                              const char *json,
+                                              int len,
+                                              bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 /**
  * @brief Destroy and zero-fill an access token object
@@ -65,7 +65,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
  * @param token The access token to destroy
  */
 void
-mcd_azure_access_token_destroy (mcd_azure_access_token *token);
+mcd_azure_access_token_destroy(mcd_azure_access_token *token);
 
 /**
  * @brief An Azure IMDS HTTP request
@@ -96,10 +96,10 @@ typedef struct mcd_azure_imds_request {
  * @note Currently only supports the vault.azure.net resource
  */
 void
-mcd_azure_imds_request_init (mcd_azure_imds_request *req,
-                             const char *const opt_imds_host,
-                             int opt_port,
-                             const char *const opt_extra_headers);
+mcd_azure_imds_request_init(mcd_azure_imds_request *req,
+                            const char *const opt_imds_host,
+                            int opt_port,
+                            const char *const opt_extra_headers);
 
 /**
  * @brief Destroy an IMDS request created with mcd_azure_imds_request_init()
@@ -107,7 +107,7 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *req,
  * @param req
  */
 void
-mcd_azure_imds_request_destroy (mcd_azure_imds_request *req);
+mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
 
 /**
  * @brief Attempt to obtain a new OAuth2 access token from an Azure IMDS HTTP
@@ -125,10 +125,10 @@ mcd_azure_imds_request_destroy (mcd_azure_imds_request *req);
  * @note Currently only supports the vault.azure.net resource
  */
 bool
-mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
-                                  const char *const opt_imds_host,
-                                  int opt_port,
-                                  const char *opt_extra_headers,
-                                  bson_error_t *error);
+mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
+                                 const char *const opt_imds_host,
+                                 int opt_port,
+                                 const char *opt_extra_headers,
+                                 bson_error_t *error);
 
 #endif // MCD_AZURE_H_INCLUDED

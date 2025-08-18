@@ -39,6 +39,8 @@ MATRIX = [
     ('rhel95',       'gcc',    None, [99, 11, 17, 23]), # GCC 11.5 (max: C2x)
     ('ubuntu2404',   'gcc-13', None, [99, 11, 17, 23]), # GCC 13.3 (max: C2x)
 
+    ('macos-14-arm64', 'clang', None, [99, 11, 17, 23]), # Apple Clang
+
     ('windows-vsCurrent', 'vs2015x64', None, [99, 11,   ]), # Max: C11
     ('windows-vsCurrent', 'vs2017x64', None, [99, 11,   ]), # Max: C11
     ('windows-vsCurrent', 'vs2019x64', None, [99, 11, 17]), # Max: C17

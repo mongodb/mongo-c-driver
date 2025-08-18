@@ -52,7 +52,7 @@
  */
 
 char *
-bson_strdup (const char *str) /* IN */
+bson_strdup(const char *str) /* IN */
 {
    long len;
    char *out;
@@ -61,14 +61,14 @@ bson_strdup (const char *str) /* IN */
       return NULL;
    }
 
-   len = (long) strlen (str);
-   out = bson_malloc (len + 1);
+   len = (long)strlen(str);
+   out = bson_malloc(len + 1);
 
    if (!out) {
       return NULL;
    }
 
-   memcpy (out, str, len + 1);
+   memcpy(out, str, len + 1);
 
    return out;
 }
@@ -91,22 +91,22 @@ bson_strdup (const char *str) /* IN */
  */
 
 char *
-bson_strdupv_printf (const char *format, /* IN */
-                     va_list args)       /* IN */
+bson_strdupv_printf(const char *format, /* IN */
+                    va_list args)       /* IN */
 {
    va_list my_args;
    char *buf;
    int len = 32;
    int n;
 
-   BSON_ASSERT (format);
+   BSON_ASSERT(format);
 
-   buf = bson_malloc0 (len);
+   buf = bson_malloc0(len);
 
    while (true) {
-      va_copy (my_args, args);
-      n = bson_vsnprintf (buf, len, format, my_args);
-      va_end (my_args);
+      va_copy(my_args, args);
+      n = bson_vsnprintf(buf, len, format, my_args);
+      va_end(my_args);
 
       if (n > -1 && n < len) {
          return buf;
@@ -118,7 +118,7 @@ bson_strdupv_printf (const char *format, /* IN */
          len *= 2;
       }
 
-      buf = bson_realloc (buf, len);
+      buf = bson_realloc(buf, len);
    }
 }
 
@@ -141,17 +141,17 @@ bson_strdupv_printf (const char *format, /* IN */
  */
 
 char *
-bson_strdup_printf (const char *format, /* IN */
-                    ...)                /* IN */
+bson_strdup_printf(const char *format, /* IN */
+                   ...)                /* IN */
 {
    va_list args;
    char *ret;
 
-   BSON_ASSERT (format);
+   BSON_ASSERT(format);
 
-   va_start (args, format);
-   ret = bson_strdupv_printf (format, args);
-   va_end (args);
+   va_start(args, format);
+   ret = bson_strdupv_printf(format, args);
+   va_end(args);
 
    return ret;
 }
@@ -174,15 +174,15 @@ bson_strdup_printf (const char *format, /* IN */
  */
 
 char *
-bson_strndup (const char *str, /* IN */
-              size_t n_bytes)  /* IN */
+bson_strndup(const char *str, /* IN */
+             size_t n_bytes)  /* IN */
 {
    char *ret;
 
-   BSON_ASSERT (str);
+   BSON_ASSERT(str);
 
-   ret = bson_malloc (n_bytes + 1);
-   bson_strncpy (ret, str, n_bytes + 1);
+   ret = bson_malloc(n_bytes + 1);
+   bson_strncpy(ret, str, n_bytes + 1);
 
    return ret;
 }
@@ -206,14 +206,14 @@ bson_strndup (const char *str, /* IN */
  */
 
 void
-bson_strfreev (char **str) /* IN */
+bson_strfreev(char **str) /* IN */
 {
    if (str) {
       for (char **ptr = str; *ptr != NULL; ++ptr) {
-         bson_free (*ptr);
+         bson_free(*ptr);
       }
 
-      bson_free (str);
+      bson_free(str);
    }
 }
 
@@ -235,11 +235,11 @@ bson_strfreev (char **str) /* IN */
  */
 
 size_t
-bson_strnlen (const char *s, /* IN */
-              size_t maxlen) /* IN */
+bson_strnlen(const char *s, /* IN */
+             size_t maxlen) /* IN */
 {
 #ifdef BSON_HAVE_STRNLEN
-   return strnlen (s, maxlen);
+   return strnlen(s, maxlen);
 #else
    size_t i;
 
@@ -274,9 +274,9 @@ bson_strnlen (const char *s, /* IN */
  */
 
 void
-bson_strncpy (char *dst,       /* IN */
-              const char *src, /* IN */
-              size_t size)     /* IN */
+bson_strncpy(char *dst,       /* IN */
+             const char *src, /* IN */
+             size_t size)     /* IN */
 {
    if (size == 0) {
       return;
@@ -285,11 +285,11 @@ bson_strncpy (char *dst,       /* IN */
 /* Prefer strncpy_s for MSVC, or strlcpy, which has additional checks and only
  * adds one trailing \0 */
 #ifdef _MSC_VER
-   strncpy_s (dst, size, src, _TRUNCATE);
+   strncpy_s(dst, size, src, _TRUNCATE);
 #elif defined(BSON_HAVE_STRLCPY)
-   strlcpy (dst, src, size);
+   strlcpy(dst, src, size);
 #else
-   strncpy (dst, src, size);
+   strncpy(dst, src, size);
    dst[size - 1] = '\0';
 #endif
 }
@@ -318,23 +318,23 @@ bson_strncpy (char *dst,       /* IN */
  */
 
 int
-bson_vsnprintf (char *str,          /* IN */
-                size_t size,        /* IN */
-                const char *format, /* IN */
-                va_list ap)         /* IN */
+bson_vsnprintf(char *str,          /* IN */
+               size_t size,        /* IN */
+               const char *format, /* IN */
+               va_list ap)         /* IN */
 {
 #ifdef _MSC_VER
    int r = -1;
 
-   BSON_ASSERT (str);
+   BSON_ASSERT(str);
 
    if (size == 0) {
       return 0;
    }
 
-   r = _vsnprintf_s (str, size, _TRUNCATE, format, ap);
+   r = _vsnprintf_s(str, size, _TRUNCATE, format, ap);
    if (r == -1) {
-      r = _vscprintf (format, ap);
+      r = _vscprintf(format, ap);
    }
 
    str[size - 1] = '\0';
@@ -343,13 +343,13 @@ bson_vsnprintf (char *str,          /* IN */
 #else
    int r;
 
-   BSON_ASSERT (str);
+   BSON_ASSERT(str);
 
    if (size == 0) {
       return 0;
    }
 
-   r = vsnprintf (str, size, format, ap);
+   r = vsnprintf(str, size, format, ap);
    str[size - 1] = '\0';
    return r;
 #endif
@@ -379,19 +379,19 @@ bson_vsnprintf (char *str,          /* IN */
  */
 
 int
-bson_snprintf (char *str,          /* IN */
-               size_t size,        /* IN */
-               const char *format, /* IN */
-               ...)
+bson_snprintf(char *str,          /* IN */
+              size_t size,        /* IN */
+              const char *format, /* IN */
+              ...)
 {
    int r;
    va_list ap;
 
-   BSON_ASSERT (str);
+   BSON_ASSERT(str);
 
-   va_start (ap, format);
-   r = bson_vsnprintf (str, size, format, ap);
-   va_end (ap);
+   va_start(ap, format);
+   r = bson_vsnprintf(str, size, format, ap);
+   va_end(ap);
 
    return r;
 }
@@ -429,9 +429,9 @@ bson_snprintf (char *str,          /* IN */
  */
 
 int64_t
-bson_ascii_strtoll (const char *s, char **e, int base)
+bson_ascii_strtoll(const char *s, char **e, int base)
 {
-   char *tok = (char *) s;
+   char *tok = (char *)s;
    char *digits_start;
    char c;
    int64_t number = 0;
@@ -448,7 +448,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
 
    c = *tok;
 
-   while (bson_isspace (c)) {
+   while (bson_isspace(c)) {
       c = *++tok;
    }
 
@@ -457,7 +457,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
       c = *++tok;
    } else if (c == '+') {
       c = *++tok;
-   } else if (!isdigit (c)) {
+   } else if (!isdigit(c)) {
       errno = EINVAL;
       return 0;
    }
@@ -479,7 +479,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
     * than cutlim, otherwise fail.
     */
    cutoff = sign == -1 ? INT64_MIN : INT64_MAX;
-   cutlim = (int) (cutoff % base);
+   cutlim = (int)(cutoff % base);
    cutoff /= base;
    if (sign == -1) {
       if (cutlim > 0) {
@@ -492,10 +492,10 @@ bson_ascii_strtoll (const char *s, char **e, int base)
    digits_start = tok;
 
    while ((c = *tok)) {
-      if (isdigit (c)) {
+      if (isdigit(c)) {
          c -= '0';
-      } else if (isalpha (c)) {
-         c -= isupper (c) ? 'A' - 10 : 'a' - 10;
+      } else if (isalpha(c)) {
+         c -= isupper(c) ? 'A' - 10 : 'a' - 10;
       } else {
          /* end of number string */
          break;
@@ -538,18 +538,18 @@ bson_ascii_strtoll (const char *s, char **e, int base)
 
 
 int
-bson_strcasecmp (const char *s1, const char *s2)
+bson_strcasecmp(const char *s1, const char *s2)
 {
 #ifdef BSON_OS_WIN32
-   return _stricmp (s1, s2);
+   return _stricmp(s1, s2);
 #else
-   return strcasecmp (s1, s2);
+   return strcasecmp(s1, s2);
 #endif
 }
 
 
 bool
-bson_isspace (int c)
+bson_isspace(int c)
 {
-   return c >= -1 && c <= 255 && isspace (c);
+   return c >= -1 && c <= 255 && isspace(c);
 }
