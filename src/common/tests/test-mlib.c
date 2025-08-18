@@ -768,6 +768,13 @@ _test_ckdint_partial(void)
       mlib_check(mlib_mul(&a, 3, INTMAX_MAX));
       mlib_check(a, eq, INTMAX_MAX - 2);
    }
+
+   {
+      // Check asserting form with a dest type smaller than intmax, which triggers
+      // a special branch on big-endian systems.
+      int32_t const i = mlib_assert_mul(int32_t, -908, 1000);
+      mlib_check(i, eq, -908000);
+   }
 }
 
 static void
