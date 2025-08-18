@@ -629,6 +629,13 @@ static inline uintmax_t(_mlib_assert_ckdint)(size_t dst_sz,
               b_str);
       abort();
    }
+   if (!mlib_is_little_endian()) {
+      // We unconditionally set the leading bytes of `tmp`, but big-endian expects
+      // the lower place values to be in the later bytes. If the target int is
+      // smaller than intmax, we must shift all the bits over to their proper
+      // position. This expression is trivially constant-folded by an optimizer.
+      tmp >>= ((size_t)CHAR_BIT * ((sizeof tmp) - dst_sz));
+   }
    return tmp;
 }
 
