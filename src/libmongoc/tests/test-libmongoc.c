@@ -1951,7 +1951,7 @@ test_framework_skip_if_windows(void)
 
 
 int
-test_framework_skip_if_macos (void)
+test_framework_skip_if_macos(void)
 {
 #ifdef __APPLE__
    return 0;
