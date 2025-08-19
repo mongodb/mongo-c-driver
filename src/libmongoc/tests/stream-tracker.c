@@ -332,6 +332,9 @@ stream_tracker_initiator(const mongoc_uri_t *uri, const mongoc_host_list_t *host
 static void
 test_stream_tracker(void)
 {
+   // Get first host+port from test environment. Example: "localhost:27017" or "[::1]:27017"
+   const char *first_host_and_port = test_framework_get_host_and_port();
+
    // Test single-threaded client:
    {
       stream_tracker_t *st = stream_tracker_new();
@@ -339,22 +342,22 @@ test_stream_tracker(void)
       stream_tracker_track_client(st, client);
 
       // Expect initial count is 0:
-      stream_tracker_assert_count(st, "localhost:27017", 0u);
+      stream_tracker_assert_count(st, first_host_and_port, 0u);
 
-      // Do operation requiring a stream. Target localhost:27017 (server ID 1):
+      // Do operation requiring a stream. Target first host:
       bson_error_t error;
       ASSERT_OR_PRINT(mongoc_client_command_simple_with_server_id(
                          client, "admin", tmp_bson("{'ping': 1}"), NULL, 1 /* server ID */, NULL, &error),
                       error);
 
       // Expect count incremented:
-      stream_tracker_assert_count(st, "localhost:27017", 1u);
+      stream_tracker_assert_count(st, first_host_and_port, 1u);
 
       // Destroy stream:
       mongoc_client_destroy(client);
 
       // Expect count decremented:
-      stream_tracker_assert_count(st, "localhost:27017", 0u);
+      stream_tracker_assert_count(st, first_host_and_port, 0u);
 
       stream_tracker_destroy(st);
    }
@@ -366,30 +369,30 @@ test_stream_tracker(void)
       stream_tracker_track_pool(st, pool);
 
       // Expect initial count is 0:
-      stream_tracker_assert_count(st, "localhost:27017", 0u);
+      stream_tracker_assert_count(st, first_host_and_port, 0u);
 
       // Pop a client, triggering background connections to be created:
       mongoc_client_t *client = mongoc_client_pool_pop(pool);
 
       // Server 4.4 added support for streaming monitoring and has 2 monitoring connections.
       unsigned monitor_count = test_framework_get_server_version() >= test_framework_str_to_version("4.4") ? 2u : 1u;
-      stream_tracker_assert_eventual_count(st, "localhost:27017", monitor_count);
+      stream_tracker_assert_eventual_count(st, first_host_and_port, monitor_count);
 
-      // Do operation requiring a stream. Target localhost:27017 (server ID 1):
+      // Do operation requiring a stream. Target first host:
       bson_error_t error;
       ASSERT_OR_PRINT(mongoc_client_command_simple_with_server_id(
                          client, "admin", tmp_bson("{'ping': 1}"), NULL, 1 /* server ID */, NULL, &error),
                       error);
 
       // Expect count incremented:
-      stream_tracker_assert_count(st, "localhost:27017", monitor_count + 1u);
+      stream_tracker_assert_count(st, first_host_and_port, monitor_count + 1u);
 
       // Destroy pool.
       mongoc_client_pool_push(pool, client);
       mongoc_client_pool_destroy(pool);
 
       // Expect count decremented:
-      stream_tracker_assert_count(st, "localhost:27017", 0u);
+      stream_tracker_assert_count(st, first_host_and_port, 0u);
 
       stream_tracker_destroy(st);
    }
