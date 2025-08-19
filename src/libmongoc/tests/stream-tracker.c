@@ -341,9 +341,10 @@ test_stream_tracker(void)
       // Expect initial count is 0:
       stream_tracker_assert_count(st, "localhost:27017", 0u);
 
-      // Do operation requiring a stream:
+      // Do operation requiring a stream. Target localhost:27017 (server ID 1):
       bson_error_t error;
-      ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error),
+      ASSERT_OR_PRINT(mongoc_client_command_simple_with_server_id(
+                         client, "admin", tmp_bson("{'ping': 1}"), NULL, 1 /* server ID */, NULL, &error),
                       error);
 
       // Expect count incremented:
@@ -374,9 +375,10 @@ test_stream_tracker(void)
       unsigned monitor_count = test_framework_get_server_version() >= test_framework_str_to_version("4.4") ? 2u : 1u;
       stream_tracker_assert_eventual_count(st, "localhost:27017", monitor_count);
 
-      // Do operation requiring a stream:
+      // Do operation requiring a stream. Target localhost:27017 (server ID 1):
       bson_error_t error;
-      ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error),
+      ASSERT_OR_PRINT(mongoc_client_command_simple_with_server_id(
+                         client, "admin", tmp_bson("{'ping': 1}"), NULL, 1 /* server ID */, NULL, &error),
                       error);
 
       // Expect count incremented:
