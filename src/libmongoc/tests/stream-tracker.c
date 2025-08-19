@@ -333,7 +333,7 @@ static void
 test_stream_tracker(void)
 {
    // Get first host+port from test environment. Example: "localhost:27017" or "[::1]:27017"
-   const char *first_host_and_port = test_framework_get_host_and_port();
+   char *first_host_and_port = test_framework_get_host_and_port();
 
    // Test single-threaded client:
    {
@@ -396,6 +396,8 @@ test_stream_tracker(void)
 
       stream_tracker_destroy(st);
    }
+
+   bson_free(first_host_and_port);
 }
 
 void
