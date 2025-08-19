@@ -55,7 +55,7 @@ stream_tracker_destroy(stream_tracker_t *st);
                     _got);                                 \
       }                                                    \
    } else                                                  \
-      (void)0
+      ((void)0)
 
 #define stream_tracker_assert_eventual_count(st, host, expect)                \
    if (1) {                                                                   \
@@ -75,6 +75,6 @@ stream_tracker_destroy(stream_tracker_t *st);
          mlib_sleep_for(10, ms);                                              \
       }                                                                       \
    } else                                                                     \
-      (void)0
+      ((void)0)
 
 #endif // STREAM_TRACKER_H
