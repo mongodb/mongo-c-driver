@@ -331,12 +331,12 @@ test_shutdown_reset_pool(mongoc_client_t *client, stream_tracker_t *st)
    ASSERT_CMPINT(error.code, ==, 91);
    ASSERT_CONTAINS(error.message, "failpoint");
 
-   /* Verify that the pool has been cleared */
-   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, st, primary_id));
-
    /* Execute an insert into the test collection and verify it succeeds */
    res = mongoc_collection_insert_one(coll, tmp_bson("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT(res, error);
+
+   /* Expect the insert created a new connection. The error cleared the connection pool. */
+   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, st, primary_id));
 
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_collection_destroy(coll);
@@ -397,12 +397,12 @@ test_interrupted_shutdown_reset_pool(mongoc_client_t *client, stream_tracker_t *
    ASSERT_CMPINT(error.code, ==, 11600);
    ASSERT_CONTAINS(error.message, "failpoint");
 
-   /* Verify that the pool has been cleared */
-   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, st, primary_id));
-
    /* Execute an insert into the test collection and verify it succeeds */
    res = mongoc_collection_insert_one(coll, tmp_bson("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT(res, error);
+
+   /* Expect the insert created a new connection. The error cleared the connection pool. */
+   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, st, primary_id));
 
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_collection_destroy(coll);
