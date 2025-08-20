@@ -141,8 +141,7 @@ test_getmore_iteration(mongoc_client_t *client, stream_tracker_t *st)
 
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -230,8 +229,7 @@ test_not_primary_keep_pool(mongoc_client_t *client, stream_tracker_t *st)
    /* Configure fail points */
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -303,8 +301,7 @@ test_shutdown_reset_pool(mongoc_client_t *client, stream_tracker_t *st)
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -369,8 +366,7 @@ test_interrupted_shutdown_reset_pool(mongoc_client_t *client, stream_tracker_t *
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
