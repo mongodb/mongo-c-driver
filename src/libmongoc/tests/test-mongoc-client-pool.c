@@ -389,24 +389,28 @@ disconnects_removed_servers_on_push(void *unused)
    bool ok;
    bson_t *ping = BCON_NEW("ping", BCON_INT32(1));
 
+   const char *host0 = "localhost:27017";
+   const char *host1 = "localhost:27018";
    stream_tracker_t *st = stream_tracker_new();
 
    // Create a client pool to two servers.
    mongoc_client_pool_t *pool;
    {
-      mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost:27017,localhost:27018");
+      char *uristr = bson_strdup_printf("mongodb://%s,%s", host0, host1);
+      mongoc_uri_t *uri = mongoc_uri_new(uristr);
       // Set a short heartbeat so server monitors get quick responses.
       mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
       pool = mongoc_client_pool_new(uri);
       test_framework_set_pool_ssl_opts(pool);
       mongoc_uri_destroy(uri);
+      bson_free(uristr);
    }
 
    stream_tracker_track_pool(st, pool);
 
    // Expect no streams created yet:
-   stream_tracker_assert_count(st, "localhost:27017", 0);
-   stream_tracker_assert_count(st, "localhost:27018", 0);
+   stream_tracker_assert_count(st, host0, 0);
+   stream_tracker_assert_count(st, host1, 0);
 
    // Pop (and push) a client to start background monitoring.
    {
@@ -414,8 +418,8 @@ disconnects_removed_servers_on_push(void *unused)
       mongoc_client_pool_push(pool, client);
       // Wait for monitoring connections to be created.
       // Expect two monitoring connections per server to be created in background.
-      stream_tracker_assert_eventual_count(st, "localhost:27017", 2);
-      stream_tracker_assert_eventual_count(st, "localhost:27018", 2);
+      stream_tracker_assert_eventual_count(st, host0, 2);
+      stream_tracker_assert_eventual_count(st, host1, 2);
    }
 
    // Send 'ping' commands on a client to each server to create operation connections.
@@ -427,8 +431,8 @@ disconnects_removed_servers_on_push(void *unused)
       ASSERT_OR_PRINT(ok, error);
       mongoc_client_pool_push(pool, client);
       // Expect an operation connection is created.
-      stream_tracker_assert_count(st, "localhost:27017", 2 + 1);
-      stream_tracker_assert_count(st, "localhost:27018", 2 + 1);
+      stream_tracker_assert_count(st, host0, 2 + 1);
+      stream_tracker_assert_count(st, host1, 2 + 1);
    }
 
    // Mock removal of server 27018 from topology.
@@ -442,14 +446,14 @@ disconnects_removed_servers_on_push(void *unused)
    // Expect connections are closed to removed server.
    {
       // Expect monitoring connections to be closed in background.
-      stream_tracker_assert_eventual_count(st, "localhost:27017", 2 + 1);
-      stream_tracker_assert_eventual_count(st, "localhost:27018", 1);
+      stream_tracker_assert_eventual_count(st, host0, 2 + 1);
+      stream_tracker_assert_eventual_count(st, host1, 1);
 
       // Pop and push the client to "prune" the stale operation connections.
       mongoc_client_t *client = mongoc_client_pool_pop(pool);
       mongoc_client_pool_push(pool, client);
-      stream_tracker_assert_count(st, "localhost:27017", 2 + 1);
-      stream_tracker_assert_count(st, "localhost:27018", 0);
+      stream_tracker_assert_count(st, host0, 2 + 1);
+      stream_tracker_assert_count(st, host1, 0);
    }
 
    mongoc_client_pool_destroy(pool);
@@ -466,24 +470,28 @@ disconnects_removed_servers_in_pool(void *unused)
    bool ok;
    bson_t *ping = BCON_NEW("ping", BCON_INT32(1));
 
+   const char *host0 = "localhost:27017";
+   const char *host1 = "localhost:27018";
    stream_tracker_t *st = stream_tracker_new();
 
    // Create a client pool to two servers.
    mongoc_client_pool_t *pool;
    {
-      mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost:27017,localhost:27018");
+      char *uristr = bson_strdup_printf("mongodb://%s,%s", host0, host1);
+      mongoc_uri_t *uri = mongoc_uri_new(uristr);
       // Set a short heartbeat so server monitors get quick responses.
       mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
       pool = mongoc_client_pool_new(uri);
       test_framework_set_pool_ssl_opts(pool);
       mongoc_uri_destroy(uri);
+      bson_free(uristr);
    }
 
    stream_tracker_track_pool(st, pool);
 
    // Expect no streams created yet:
-   stream_tracker_assert_count(st, "localhost:27017", 0);
-   stream_tracker_assert_count(st, "localhost:27018", 0);
+   stream_tracker_assert_count(st, host0, 0);
+   stream_tracker_assert_count(st, host1, 0);
 
    // Pop (and push) a client to start background monitoring.
    {
@@ -491,8 +499,8 @@ disconnects_removed_servers_in_pool(void *unused)
       mongoc_client_pool_push(pool, client);
       // Wait for monitoring connections to be created.
       // Expect two monitoring connections per server to be created in background.
-      stream_tracker_assert_eventual_count(st, "localhost:27017", 2);
-      stream_tracker_assert_eventual_count(st, "localhost:27018", 2);
+      stream_tracker_assert_eventual_count(st, host0, 2);
+      stream_tracker_assert_eventual_count(st, host1, 2);
    }
 
    // Send 'ping' commands on two clients to each server to create operation connections.
@@ -514,8 +522,8 @@ disconnects_removed_servers_in_pool(void *unused)
       mongoc_client_pool_push(pool, client1);
 
       // Expect an operation connection is created per client.
-      stream_tracker_assert_count(st, "localhost:27017", 2 + 2);
-      stream_tracker_assert_count(st, "localhost:27018", 2 + 2);
+      stream_tracker_assert_count(st, host0, 2 + 2);
+      stream_tracker_assert_count(st, host1, 2 + 2);
    }
 
    // Mock removal of server 27018 from topology.
@@ -529,14 +537,14 @@ disconnects_removed_servers_in_pool(void *unused)
    // Expect connections are closed to removed server.
    {
       // Expect monitoring connections to be closed in background.
-      stream_tracker_assert_eventual_count(st, "localhost:27017", 2 + 2);
-      stream_tracker_assert_eventual_count(st, "localhost:27018", 2);
+      stream_tracker_assert_eventual_count(st, host0, 2 + 2);
+      stream_tracker_assert_eventual_count(st, host1, 2);
 
       // Pop and push one client to "prune" the stale operation connections for both clients.
       mongoc_client_t *client = mongoc_client_pool_pop(pool);
       mongoc_client_pool_push(pool, client);
-      stream_tracker_assert_count(st, "localhost:27017", 2 + 2);
-      stream_tracker_assert_count(st, "localhost:27018", 0);
+      stream_tracker_assert_count(st, host0, 2 + 2);
+      stream_tracker_assert_count(st, host1, 0);
    }
 
    mongoc_client_pool_destroy(pool);
