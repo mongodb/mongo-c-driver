@@ -301,7 +301,7 @@ tracked_stream_get_base_stream(mongoc_stream_t *stream)
 }
 
 
-mongoc_stream_t *
+static mongoc_stream_t *
 tracked_stream_new(mongoc_stream_t *stream, stream_tracker_t *st, const mongoc_host_list_t *host)
 {
    BSON_ASSERT_PARAM(stream);
