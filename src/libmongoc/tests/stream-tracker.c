@@ -145,6 +145,7 @@ stream_tracker_increment(stream_tracker_t *st, const mongoc_host_list_t *host)
          // No matching entry. Create one.
          st->entries[i].host = *host;
          st->entries[i].count = 1;
+         st->entries[i].count_cumulative = 1;
          bson_mutex_unlock(&st->lock);
          return;
       }
