@@ -108,7 +108,7 @@ test_exhaust_cursor(bool pooled)
    bson_error_t error;
    bson_oid_t oid;
    int64_t generation1;
-   uint32_t connection_count1;
+   int connection_count1;
    stream_tracker_t *st = stream_tracker_new();
 
    if (pooled) {
@@ -199,7 +199,7 @@ test_exhaust_cursor(bool pooled)
       /* But a new connection was made. */
       mongoc_host_list_t host;
       mongoc_cursor_get_host(cursor2, &host);
-      ASSERT_CMPINT32(connection_count1 + 1, ==, stream_tracker_count_cumulative(st, host.host_and_port));
+      ASSERT_CMPINT(connection_count1 + 1, ==, stream_tracker_count_cumulative(st, host.host_and_port));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next(cursor2, &doc);

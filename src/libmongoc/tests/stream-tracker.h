@@ -39,11 +39,11 @@ void
 stream_tracker_track_pool(stream_tracker_t *st, mongoc_client_pool_t *pool);
 
 // stream_tracker_count returns a count of active streams.
-unsigned
+int
 stream_tracker_count(stream_tracker_t *st, const char *host);
 
 // stream_tracker_count_cumulative returns a cumulative count of streams.
-unsigned
+int
 stream_tracker_count_cumulative(stream_tracker_t *st, const char *host);
 
 
@@ -52,10 +52,10 @@ stream_tracker_destroy(stream_tracker_t *st);
 
 #define stream_tracker_assert_count(st, host, expect)      \
    if (1) {                                                \
-      unsigned _got = stream_tracker_count(st, host);      \
+      int _got = stream_tracker_count(st, host);           \
       if (_got != expect) {                                \
          test_error("Got unexpected stream count to %s:\n" \
-                    "  Expected %u, got %u",               \
+                    "  Expected %d, got %d",               \
                     host,                                  \
                     expect,                                \
                     _got);                                 \
@@ -67,13 +67,13 @@ stream_tracker_destroy(stream_tracker_t *st);
    if (1) {                                                                   \
       mlib_timer _timer = mlib_expires_after(5, s);                           \
       while (true) {                                                          \
-         unsigned _got = stream_tracker_count(st, host);                      \
+         int _got = stream_tracker_count(st, host);                           \
          if (_got == expect) {                                                \
             break;                                                            \
          }                                                                    \
          if (mlib_timer_is_expired(_timer)) {                                 \
             test_error("Timed out waiting for expected stream count to %s:\n" \
-                       "  Expected %u, got %u",                               \
+                       "  Expected %d, got %d",                               \
                        host,                                                  \
                        expect,                                                \
                        _got);                                                 \

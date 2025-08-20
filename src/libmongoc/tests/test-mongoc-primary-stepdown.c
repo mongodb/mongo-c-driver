@@ -79,7 +79,7 @@ static int
 _connection_count(mongoc_client_t *client, stream_tracker_t *st, uint32_t server_id)
 {
    mongoc_server_description_t *sd = mongoc_client_get_server_description(client, server_id);
-   int conns = (int)stream_tracker_count_cumulative(st, sd->host.host_and_port);
+   int conns = stream_tracker_count_cumulative(st, sd->host.host_and_port);
    mongoc_server_description_destroy(sd);
    return conns;
 }
