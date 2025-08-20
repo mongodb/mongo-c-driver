@@ -28,6 +28,7 @@
 typedef struct {
    mongoc_host_list_t host;
    unsigned count;
+   unsigned count_cumulative;
 } stream_tracker_entry;
 
 struct stream_tracker_t {
@@ -104,6 +105,33 @@ stream_tracker_count(stream_tracker_t *st, const char *host_)
    return count;
 }
 
+unsigned
+stream_tracker_count_cumulative(stream_tracker_t *st, const char *host_)
+{
+   BSON_ASSERT_PARAM(st);
+   BSON_ASSERT_PARAM(host_);
+
+   bson_error_t error;
+   mongoc_host_list_t host;
+   ASSERT_OR_PRINT(_mongoc_host_list_from_string_with_err(&host, host_, &error), error);
+
+   unsigned count = 0;
+
+   // Find matching entry (if present):
+   {
+      bson_mutex_lock(&st->lock);
+      for (size_t i = 0; i < STREAM_TRACKER_MAX_ENTRIES; i++) {
+         if (_mongoc_host_list_compare_one(&st->entries[i].host, &host)) {
+            count = st->entries[i].count_cumulative;
+            break;
+         }
+      }
+      bson_mutex_unlock(&st->lock);
+   }
+
+   return count;
+}
+
 static void
 stream_tracker_increment(stream_tracker_t *st, const mongoc_host_list_t *host)
 {
@@ -122,6 +150,7 @@ stream_tracker_increment(stream_tracker_t *st, const mongoc_host_list_t *host)
       }
       if (_mongoc_host_list_compare_one(&st->entries[i].host, host)) {
          st->entries[i].count++;
+         st->entries[i].count_cumulative++;
          bson_mutex_unlock(&st->lock);
          return;
       }

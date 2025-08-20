@@ -38,8 +38,14 @@ stream_tracker_track_client(stream_tracker_t *st, mongoc_client_t *client);
 void
 stream_tracker_track_pool(stream_tracker_t *st, mongoc_client_pool_t *pool);
 
+// stream_tracker_count returns a count of active streams.
 unsigned
 stream_tracker_count(stream_tracker_t *st, const char *host);
+
+// stream_tracker_count_cumulative returns a cumulative count of streams.
+unsigned
+stream_tracker_count_cumulative(stream_tracker_t *st, const char *host);
+
 
 void
 stream_tracker_destroy(stream_tracker_t *st);
