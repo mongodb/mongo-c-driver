@@ -78,7 +78,7 @@ stream_tracker_destroy(stream_tracker_t *st);
                        expect,                                                \
                        _got);                                                 \
          }                                                                    \
-         mlib_sleep_for(10, ms);                                              \
+         mlib_sleep_for(100, ms);                                             \
       }                                                                       \
    } else                                                                     \
       ((void)0)
