@@ -27,7 +27,7 @@
 
 typedef struct {
    mongoc_host_list_t host;
-   int count;
+   int count_active;
    int count_cumulative;
 } stream_tracker_entry;
 
@@ -79,7 +79,7 @@ stream_tracker_track_pool(stream_tracker_t *st, mongoc_client_pool_t *pool)
 }
 
 int
-stream_tracker_count(stream_tracker_t *st, const char *host_)
+stream_tracker_count_active(stream_tracker_t *st, const char *host_)
 {
    BSON_ASSERT_PARAM(st);
    BSON_ASSERT_PARAM(host_);
@@ -95,7 +95,7 @@ stream_tracker_count(stream_tracker_t *st, const char *host_)
       bson_mutex_lock(&st->lock);
       for (size_t i = 0; i < STREAM_TRACKER_MAX_ENTRIES; i++) {
          if (_mongoc_host_list_compare_one(&st->entries[i].host, &host)) {
-            count = st->entries[i].count;
+            count = st->entries[i].count_active;
             break;
          }
       }
@@ -144,13 +144,13 @@ stream_tracker_increment(stream_tracker_t *st, const mongoc_host_list_t *host)
       if (0 == strlen(st->entries[i].host.host_and_port)) {
          // No matching entry. Create one.
          st->entries[i].host = *host;
-         st->entries[i].count = 1;
+         st->entries[i].count_active = 1;
          st->entries[i].count_cumulative = 1;
          bson_mutex_unlock(&st->lock);
          return;
       }
       if (_mongoc_host_list_compare_one(&st->entries[i].host, host)) {
-         st->entries[i].count++;
+         st->entries[i].count_active++;
          st->entries[i].count_cumulative++;
          bson_mutex_unlock(&st->lock);
          return;
@@ -173,8 +173,8 @@ stream_tracker_decrement(stream_tracker_t *st, const mongoc_host_list_t *host)
          test_error("Unexpected: no matching entry for %s", st->entries[i].host.host_and_port);
       }
       if (_mongoc_host_list_compare_one(&st->entries[i].host, host)) {
-         ASSERT(st->entries[i].count > 0);
-         st->entries[i].count--;
+         ASSERT(st->entries[i].count_active > 0);
+         st->entries[i].count_active--;
          bson_mutex_unlock(&st->lock);
          return;
       }
