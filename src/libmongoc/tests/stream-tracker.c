@@ -383,14 +383,17 @@ test_stream_tracker(void)
                          client, "admin", tmp_bson("{'ping': 1}"), NULL, 1 /* server ID */, NULL, &error),
                       error);
 
-      // Expect count incremented:
+      // Expect active and total count incremented:
       stream_tracker_assert_active_count(st, first_host_and_port, 1);
+      stream_tracker_assert_total_count(st, first_host_and_port, 1);
 
       // Destroy stream:
       mongoc_client_destroy(client);
 
-      // Expect count decremented:
+      // Expect active count decremented:
       stream_tracker_assert_active_count(st, first_host_and_port, 0);
+      // Expect total count unchanged:
+      stream_tracker_assert_total_count(st, first_host_and_port, 1);
 
       stream_tracker_destroy(st);
    }
@@ -417,15 +420,18 @@ test_stream_tracker(void)
                          client, "admin", tmp_bson("{'ping': 1}"), NULL, 1 /* server ID */, NULL, &error),
                       error);
 
-      // Expect count incremented:
+      // Expect active and total count incremented:
       stream_tracker_assert_active_count(st, first_host_and_port, monitor_count + 1);
+      stream_tracker_assert_total_count(st, first_host_and_port, monitor_count + 1);
 
       // Destroy pool.
       mongoc_client_pool_push(pool, client);
       mongoc_client_pool_destroy(pool);
 
-      // Expect count decremented:
+      // Expect active count decremented:
       stream_tracker_assert_active_count(st, first_host_and_port, 0);
+      // Expect total count unchanged:
+      stream_tracker_assert_total_count(st, first_host_and_port, monitor_count + 1);
 
       stream_tracker_destroy(st);
    }
