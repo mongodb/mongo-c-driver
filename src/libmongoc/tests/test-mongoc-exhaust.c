@@ -176,7 +176,7 @@ test_exhaust_cursor(bool pooled)
       generation1 = get_generation(client, cursor);
       mongoc_host_list_t host;
       mongoc_cursor_get_host(cursor, &host);
-      connection_count1 = stream_tracker_count_cumulative(st, host.host_and_port);
+      connection_count1 = stream_tracker_count_total(st, host.host_and_port);
       mongoc_cursor_destroy(cursor);
       BSON_ASSERT(!client->in_exhaust);
    }
@@ -199,7 +199,7 @@ test_exhaust_cursor(bool pooled)
       /* But a new connection was made. */
       mongoc_host_list_t host;
       mongoc_cursor_get_host(cursor2, &host);
-      ASSERT_CMPINT(connection_count1 + 1, ==, stream_tracker_count_cumulative(st, host.host_and_port));
+      ASSERT_CMPINT(connection_count1 + 1, ==, stream_tracker_count_total(st, host.host_and_port));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next(cursor2, &doc);

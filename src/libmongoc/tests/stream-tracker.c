@@ -28,7 +28,7 @@
 typedef struct {
    mongoc_host_list_t host;
    int count_active;
-   int count_cumulative;
+   int count_total;
 } stream_tracker_entry;
 
 struct stream_tracker_t {
@@ -106,7 +106,7 @@ stream_tracker_count_active(stream_tracker_t *st, const char *host_)
 }
 
 int
-stream_tracker_count_cumulative(stream_tracker_t *st, const char *host_)
+stream_tracker_count_total(stream_tracker_t *st, const char *host_)
 {
    BSON_ASSERT_PARAM(st);
    BSON_ASSERT_PARAM(host_);
@@ -122,7 +122,7 @@ stream_tracker_count_cumulative(stream_tracker_t *st, const char *host_)
       bson_mutex_lock(&st->lock);
       for (size_t i = 0; i < STREAM_TRACKER_MAX_ENTRIES; i++) {
          if (_mongoc_host_list_compare_one(&st->entries[i].host, &host)) {
-            count = st->entries[i].count_cumulative;
+            count = st->entries[i].count_total;
             break;
          }
       }
@@ -145,13 +145,13 @@ stream_tracker_increment(stream_tracker_t *st, const mongoc_host_list_t *host)
          // No matching entry. Create one.
          st->entries[i].host = *host;
          st->entries[i].count_active = 1;
-         st->entries[i].count_cumulative = 1;
+         st->entries[i].count_total = 1;
          bson_mutex_unlock(&st->lock);
          return;
       }
       if (_mongoc_host_list_compare_one(&st->entries[i].host, host)) {
          st->entries[i].count_active++;
-         st->entries[i].count_cumulative++;
+         st->entries[i].count_total++;
          bson_mutex_unlock(&st->lock);
          return;
       }
