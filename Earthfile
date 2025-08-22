@@ -496,8 +496,8 @@ ALPINE_ENV:
     IF test "$version" = "3.19" -o "$version" = "3.20"
         # uv is not yet available. Install via pipx.
         RUN __install pipx
-        RUN pipx install uv
-        ENV PATH="/root/.local/bin:$PATH"
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
     ELSE
         RUN __install uv
     END
@@ -533,8 +533,8 @@ UBUNTU_ENV:
 
     # uv is not available via apt. Avoid snapd (systemd) by using pipx instead.
     RUN __install python3-venv pipx
-    RUN pipx install uv
-    ENV PATH="/root/.local/bin:$PATH"
+    ENV PATH="/opt/uv/bin:$PATH"
+    RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
 
     IF test "$purpose" = build
         RUN __install ninja-build gcc ccache libsnappy-dev zlib1g-dev
@@ -562,8 +562,8 @@ CENTOS_ENV:
     ARG --required purpose
 
     # uv is not available via yum. Avoid snapd (systemd) by using pipx instead.
-    RUN pipx install uv
-    ENV PATH="/root/.local/bin:$PATH"
+    ENV PATH="/opt/uv/bin:$PATH"
+    RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
 
     IF test "$purpose" = build
         RUN yum -y --enablerepo=crb install ninja-build ccache snappy-devel zlib-devel
