@@ -354,6 +354,7 @@ stream_tracker_initiator(const mongoc_uri_t *uri, const mongoc_host_list_t *host
    ASSERT(client);
 
    mongoc_stream_t *base_stream = mongoc_client_default_stream_initiator(uri, host, client, error);
+   ASSERT_OR_PRINT(base_stream, (*error));
 
    if (st->pool) {
       mongoc_client_pool_push(st->pool, client);
