@@ -17,9 +17,9 @@ TAG = f'cse-matrix-{SSL}'
 COMPILE_MATRIX = [
     # For test matrix.
     ('rhel8-latest',      'gcc',       None, ['cyrus']),
-    ('rhel8-zseries',     'gcc',       None, ['cyrus']),
+    ('rhel8-zseries',     'gcc',       None, ['cyrus']), # Big Endian.
     ('ubuntu2004-arm64',  'gcc',       None, ['cyrus']),
-    ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2022x64', None, ['cyrus']),
 
     # For compile only.
     ('debian11',   'clang',    None, ['cyrus']),
@@ -35,20 +35,17 @@ COMPILE_MATRIX = [
     ('ubuntu2404', 'clang-14', None, ['cyrus']),
 ]
 
-# TODO (CDRIVER-3789): test cse with the 'sharded' topology.
-# CSFLE requires 4.2+. QE requires 7.0+ and are skipped on "server" tasks.
+# QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.
 TEST_MATRIX = [
-    # rhel8-latest provides 4.2+.
-    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # windows-vsCurrent provides 4.2+.
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # ubuntu2004-arm64 provides 4.4+.
-    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    # ubuntu2004-arm64 only provides 4.4+.
+    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # rhel8-zseries provides 5.0+.
-    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['5.0', '6.0', '7.0', '8.0', 'latest']),
+    # rhel8-zseries only provides 5.0+. Resource-limited: use sparingly.
+    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['sharded'], ['5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

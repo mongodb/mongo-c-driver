@@ -19,17 +19,17 @@
 #ifndef BSON_ERROR_PRIVATE_H
 #define BSON_ERROR_PRIVATE_H
 
-#include <bson/bson-error.h>
-#include <bson/bson-macros.h>
+#include <bson/error.h>
+#include <bson/macros.h>
 
 
 #define BSON_ERROR_CATEGORY 1
 
 
 static BSON_INLINE void
-bson_set_error_category (bson_error_t *error, uint8_t category)
+bson_set_error_category(bson_error_t *error, uint8_t category)
 {
-   BSON_ASSERT_PARAM (error);
+   BSON_ASSERT_PARAM(error);
    error->reserved = category;
 }
 

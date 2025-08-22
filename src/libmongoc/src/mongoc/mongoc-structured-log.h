@@ -48,67 +48,67 @@ typedef struct mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 
 typedef struct mongoc_structured_log_opts_t mongoc_structured_log_opts_t;
 
-typedef void (BSON_CALL *mongoc_structured_log_func_t) (const mongoc_structured_log_entry_t *entry, void *user_data);
+typedef void(BSON_CALL *mongoc_structured_log_func_t)(const mongoc_structured_log_entry_t *entry, void *user_data);
 
-MONGOC_EXPORT (mongoc_structured_log_opts_t *)
-mongoc_structured_log_opts_new (void);
+MONGOC_EXPORT(mongoc_structured_log_opts_t *)
+mongoc_structured_log_opts_new(void);
 
-MONGOC_EXPORT (void)
-mongoc_structured_log_opts_destroy (mongoc_structured_log_opts_t *opts);
+MONGOC_EXPORT(void)
+mongoc_structured_log_opts_destroy(mongoc_structured_log_opts_t *opts);
 
-MONGOC_EXPORT (void)
-mongoc_structured_log_opts_set_handler (mongoc_structured_log_opts_t *opts,
-                                        mongoc_structured_log_func_t log_func,
-                                        void *user_data);
+MONGOC_EXPORT(void)
+mongoc_structured_log_opts_set_handler(mongoc_structured_log_opts_t *opts,
+                                       mongoc_structured_log_func_t log_func,
+                                       void *user_data);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_opts_set_max_level_for_component (mongoc_structured_log_opts_t *opts,
-                                                        mongoc_structured_log_component_t component,
-                                                        mongoc_structured_log_level_t level);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_opts_set_max_level_for_component(mongoc_structured_log_opts_t *opts,
+                                                       mongoc_structured_log_component_t component,
+                                                       mongoc_structured_log_level_t level);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_opts_set_max_level_for_all_components (mongoc_structured_log_opts_t *opts,
-                                                             mongoc_structured_log_level_t level);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_opts_set_max_level_for_all_components(mongoc_structured_log_opts_t *opts,
+                                                            mongoc_structured_log_level_t level);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_opts_set_max_levels_from_env (mongoc_structured_log_opts_t *opts);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_opts_set_max_levels_from_env(mongoc_structured_log_opts_t *opts);
 
-MONGOC_EXPORT (mongoc_structured_log_level_t)
-mongoc_structured_log_opts_get_max_level_for_component (const mongoc_structured_log_opts_t *opts,
-                                                        mongoc_structured_log_component_t component);
+MONGOC_EXPORT(mongoc_structured_log_level_t)
+mongoc_structured_log_opts_get_max_level_for_component(const mongoc_structured_log_opts_t *opts,
+                                                       mongoc_structured_log_component_t component);
 
-MONGOC_EXPORT (size_t)
-mongoc_structured_log_opts_get_max_document_length (const mongoc_structured_log_opts_t *opts);
+MONGOC_EXPORT(size_t)
+mongoc_structured_log_opts_get_max_document_length(const mongoc_structured_log_opts_t *opts);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_opts_set_max_document_length_from_env (mongoc_structured_log_opts_t *opts);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_opts_set_max_document_length_from_env(mongoc_structured_log_opts_t *opts);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_opts_set_max_document_length (mongoc_structured_log_opts_t *opts, size_t max_document_length);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_opts_set_max_document_length(mongoc_structured_log_opts_t *opts, size_t max_document_length);
 
-MONGOC_EXPORT (bson_t *)
-mongoc_structured_log_entry_message_as_bson (const mongoc_structured_log_entry_t *entry);
+MONGOC_EXPORT(bson_t *)
+mongoc_structured_log_entry_message_as_bson(const mongoc_structured_log_entry_t *entry);
 
-MONGOC_EXPORT (mongoc_structured_log_level_t)
-mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry);
+MONGOC_EXPORT(mongoc_structured_log_level_t)
+mongoc_structured_log_entry_get_level(const mongoc_structured_log_entry_t *entry);
 
-MONGOC_EXPORT (mongoc_structured_log_component_t)
-mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
+MONGOC_EXPORT(mongoc_structured_log_component_t)
+mongoc_structured_log_entry_get_component(const mongoc_structured_log_entry_t *entry);
 
-MONGOC_EXPORT (const char *)
-mongoc_structured_log_entry_get_message_string (const mongoc_structured_log_entry_t *entry);
+MONGOC_EXPORT(const char *)
+mongoc_structured_log_entry_get_message_string(const mongoc_structured_log_entry_t *entry);
 
-MONGOC_EXPORT (const char *)
-mongoc_structured_log_get_level_name (mongoc_structured_log_level_t level);
+MONGOC_EXPORT(const char *)
+mongoc_structured_log_get_level_name(mongoc_structured_log_level_t level);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_get_named_level (const char *name, mongoc_structured_log_level_t *out);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_get_named_level(const char *name, mongoc_structured_log_level_t *out);
 
-MONGOC_EXPORT (const char *)
-mongoc_structured_log_get_component_name (mongoc_structured_log_component_t component);
+MONGOC_EXPORT(const char *)
+mongoc_structured_log_get_component_name(mongoc_structured_log_component_t component);
 
-MONGOC_EXPORT (bool)
-mongoc_structured_log_get_named_component (const char *name, mongoc_structured_log_component_t *out);
+MONGOC_EXPORT(bool)
+mongoc_structured_log_get_named_component(const char *name, mongoc_structured_log_component_t *out);
 
 BSON_END_DECLS
 

@@ -29,58 +29,58 @@
  * The buffer should stick around for the life of the page
  */
 mongoc_gridfs_file_page_t *
-_mongoc_gridfs_file_page_new (const uint8_t *data, uint32_t len, uint32_t chunk_size)
+_mongoc_gridfs_file_page_new(const uint8_t *data, uint32_t len, uint32_t chunk_size)
 {
    mongoc_gridfs_file_page_t *page;
 
    ENTRY;
 
-   BSON_ASSERT (data);
-   BSON_ASSERT (len <= chunk_size);
+   BSON_ASSERT(data);
+   BSON_ASSERT(len <= chunk_size);
 
-   page = (mongoc_gridfs_file_page_t *) bson_malloc0 (sizeof *page);
+   page = (mongoc_gridfs_file_page_t *)bson_malloc0(sizeof *page);
 
    page->chunk_size = chunk_size;
    page->read_buf = data;
    page->len = len;
 
-   RETURN (page);
+   RETURN(page);
 }
 
 
 bool
-_mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page, uint32_t offset)
+_mongoc_gridfs_file_page_seek(mongoc_gridfs_file_page_t *page, uint32_t offset)
 {
    ENTRY;
 
-   BSON_ASSERT (page);
+   BSON_ASSERT(page);
 
    page->offset = offset;
 
-   RETURN (1);
+   RETURN(1);
 }
 
 
 int32_t
-_mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page, void *dst, uint32_t len)
+_mongoc_gridfs_file_page_read(mongoc_gridfs_file_page_t *page, void *dst, uint32_t len)
 {
    int bytes_read;
    const uint8_t *src;
 
    ENTRY;
 
-   BSON_ASSERT (page);
-   BSON_ASSERT (dst);
+   BSON_ASSERT(page);
+   BSON_ASSERT(dst);
 
-   bytes_read = BSON_MIN (len, page->len - page->offset);
+   bytes_read = BSON_MIN(len, page->len - page->offset);
 
    src = page->read_buf ? page->read_buf : page->buf;
 
-   memcpy (dst, src + page->offset, bytes_read);
+   memcpy(dst, src + page->offset, bytes_read);
 
    page->offset += bytes_read;
 
-   RETURN (bytes_read);
+   RETURN(bytes_read);
 }
 
 
@@ -97,31 +97,31 @@ _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page, void *dst, uint3
  * A write of zero bytes will trigger the copy-on-write mechanism.
  */
 int32_t
-_mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page, const void *src, uint32_t len)
+_mongoc_gridfs_file_page_write(mongoc_gridfs_file_page_t *page, const void *src, uint32_t len)
 {
    int bytes_written;
 
    ENTRY;
 
-   BSON_ASSERT (page);
-   BSON_ASSERT (src);
+   BSON_ASSERT(page);
+   BSON_ASSERT(src);
 
-   bytes_written = BSON_MIN (len, page->chunk_size - page->offset);
+   bytes_written = BSON_MIN(len, page->chunk_size - page->offset);
 
    if (!page->buf) {
-      page->buf = (uint8_t *) bson_malloc (page->chunk_size);
-      memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
+      page->buf = (uint8_t *)bson_malloc(page->chunk_size);
+      memcpy(page->buf, page->read_buf, BSON_MIN(page->chunk_size, page->len));
    }
 
    /* Copy bytes and adjust the page position */
-   memcpy (page->buf + page->offset, src, bytes_written);
+   memcpy(page->buf + page->offset, src, bytes_written);
    page->offset += bytes_written;
-   page->len = BSON_MAX (page->offset, page->len);
+   page->len = BSON_MAX(page->offset, page->len);
 
    /* Don't use the old read buffer, which is no longer current */
    page->read_buf = page->buf;
 
-   RETURN (bytes_written);
+   RETURN(bytes_written);
 }
 
 
@@ -139,87 +139,87 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page, const void *src
  *      Number of bytes set.
  */
 uint32_t
-_mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page, uint32_t len)
+_mongoc_gridfs_file_page_memset0(mongoc_gridfs_file_page_t *page, uint32_t len)
 {
    uint32_t bytes_set;
 
    ENTRY;
 
-   BSON_ASSERT (page);
+   BSON_ASSERT(page);
 
-   bytes_set = BSON_MIN (page->chunk_size - page->offset, len);
+   bytes_set = BSON_MIN(page->chunk_size - page->offset, len);
 
    if (!page->buf) {
-      page->buf = (uint8_t *) bson_malloc0 (page->chunk_size);
-      memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
+      page->buf = (uint8_t *)bson_malloc0(page->chunk_size);
+      memcpy(page->buf, page->read_buf, BSON_MIN(page->chunk_size, page->len));
    }
 
    /* Set bytes and adjust the page position */
-   memset (page->buf + page->offset, '\0', bytes_set);
+   memset(page->buf + page->offset, '\0', bytes_set);
    page->offset += bytes_set;
-   page->len = BSON_MAX (page->offset, page->len);
+   page->len = BSON_MAX(page->offset, page->len);
 
    /* Don't use the old read buffer, which is no longer current */
    page->read_buf = page->buf;
 
-   RETURN (bytes_set);
+   RETURN(bytes_set);
 }
 
 
 const uint8_t *
-_mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_get_data(mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
-   BSON_ASSERT (page);
+   BSON_ASSERT(page);
 
-   RETURN (page->buf ? page->buf : page->read_buf);
+   RETURN(page->buf ? page->buf : page->read_buf);
 }
 
 
 uint32_t
-_mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_get_len(mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
-   BSON_ASSERT (page);
+   BSON_ASSERT(page);
 
-   RETURN (page->len);
+   RETURN(page->len);
 }
 
 
 uint32_t
-_mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_tell(mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
-   BSON_ASSERT (page);
+   BSON_ASSERT(page);
 
-   RETURN (page->offset);
+   RETURN(page->offset);
 }
 
 
 bool
-_mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_is_dirty(mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
-   BSON_ASSERT (page);
+   BSON_ASSERT(page);
 
-   RETURN (page->buf ? 1 : 0);
+   RETURN(page->buf ? 1 : 0);
 }
 
 
 void
-_mongoc_gridfs_file_page_destroy (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_destroy(mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
    if (page->buf) {
-      bson_free (page->buf);
+      bson_free(page->buf);
    }
 
-   bson_free (page);
+   bson_free(page);
 
    EXIT;
 }

@@ -13,7 +13,7 @@ static pthread_mutex_t mutex;
 static bool in_shutdown = false;
 
 static void *
-worker (void *data)
+worker(void *data)
 {
    mongoc_client_pool_t *pool = data;
    mongoc_client_t *client;
@@ -21,37 +21,37 @@ worker (void *data)
    bson_error_t error;
    bool r;
 
-   BSON_APPEND_INT32 (&ping, "ping", 1);
+   BSON_APPEND_INT32(&ping, "ping", 1);
 
    while (true) {
-      client = mongoc_client_pool_pop (pool);
+      client = mongoc_client_pool_pop(pool);
       /* Do something with client. If you are writing an HTTP server, you
        * probably only want to hold onto the client for the portion of the
        * request performing database queries.
        */
-      r = mongoc_client_command_simple (client, "admin", &ping, NULL, NULL, &error);
+      r = mongoc_client_command_simple(client, "admin", &ping, NULL, NULL, &error);
 
       if (!r) {
-         fprintf (stderr, "%s\n", error.message);
+         fprintf(stderr, "%s\n", error.message);
       }
 
-      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_push(pool, client);
 
-      pthread_mutex_lock (&mutex);
+      pthread_mutex_lock(&mutex);
       if (in_shutdown || !r) {
-         pthread_mutex_unlock (&mutex);
+         pthread_mutex_unlock(&mutex);
          break;
       }
 
-      pthread_mutex_unlock (&mutex);
+      pthread_mutex_unlock(&mutex);
    }
 
-   bson_destroy (&ping);
+   bson_destroy(&ping);
    return NULL;
 }
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    const char *uri_string = "mongodb://127.0.0.1/?appname=pool-example";
    mongoc_uri_t *uri;
@@ -61,43 +61,43 @@ main (int argc, char *argv[])
    unsigned i;
    void *ret;
 
-   pthread_mutex_init (&mutex, NULL);
-   mongoc_init ();
+   pthread_mutex_init(&mutex, NULL);
+   mongoc_init();
 
    if (argc > 1) {
       uri_string = argv[1];
    }
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               uri_string,
-               error.message);
+      fprintf(stderr,
+              "failed to parse URI: %s\n"
+              "error message:       %s\n",
+              uri_string,
+              error.message);
       return EXIT_FAILURE;
    }
 
-   pool = mongoc_client_pool_new (uri);
-   mongoc_client_pool_set_error_api (pool, 2);
+   pool = mongoc_client_pool_new(uri);
+   mongoc_client_pool_set_error_api(pool, 2);
 
    for (i = 0; i < 10; i++) {
-      pthread_create (&threads[i], NULL, worker, pool);
+      pthread_create(&threads[i], NULL, worker, pool);
    }
 
-   sleep (10);
-   pthread_mutex_lock (&mutex);
+   sleep(10);
+   pthread_mutex_lock(&mutex);
    in_shutdown = true;
-   pthread_mutex_unlock (&mutex);
+   pthread_mutex_unlock(&mutex);
 
    for (i = 0; i < 10; i++) {
-      pthread_join (threads[i], &ret);
+      pthread_join(threads[i], &ret);
    }
 
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
 
-   mongoc_cleanup ();
+   mongoc_cleanup();
 
    return EXIT_SUCCESS;
 }

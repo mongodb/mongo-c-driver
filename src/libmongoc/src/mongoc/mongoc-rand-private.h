@@ -27,7 +27,7 @@
 BSON_BEGIN_DECLS
 
 int
-_mongoc_rand_bytes (uint8_t *buf, int num);
+_mongoc_rand_bytes(uint8_t *buf, int num);
 
 BSON_END_DECLS
 

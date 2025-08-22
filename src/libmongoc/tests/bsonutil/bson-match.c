@@ -37,29 +37,29 @@ struct _bson_matcher_t {
    special_functor_t *specials;
 };
 
-#define MATCH_ERR(format, ...) test_set_error (error, "match error at path: '%s': " format, context->path, __VA_ARGS__)
+#define MATCH_ERR(format, ...) test_set_error(error, "match error at path: '%s': " format, context->path, __VA_ARGS__)
 
 static char *
-get_first_key (const bson_t *bson)
+get_first_key(const bson_t *bson)
 {
    bson_iter_t iter;
 
-   bson_iter_init (&iter, bson);
-   if (!bson_iter_next (&iter)) {
+   bson_iter_init(&iter, bson);
+   if (!bson_iter_next(&iter)) {
       return "";
    }
 
-   return (char *) bson_iter_key (&iter);
+   return (char *)bson_iter_key(&iter);
 }
 
 static bool
-is_special_match (const bson_t *bson)
+is_special_match(const bson_t *bson)
 {
-   char *first_key = get_first_key (bson);
-   if (strstr (first_key, "$$") != first_key) {
+   char *first_key = get_first_key(bson);
+   if (strstr(first_key, "$$") != first_key) {
       return false;
    }
-   if (bson_count_keys (bson) != 1) {
+   if (bson_count_keys(bson) != 1) {
       return false;
    }
    return true;
@@ -67,17 +67,17 @@ is_special_match (const bson_t *bson)
 
 /* implements $$placeholder */
 static bool
-special_placeholder (const bson_matcher_context_t *context,
-                     const bson_t *assertion,
-                     const bson_val_t *actual,
-                     void *user_data,
-                     bson_error_t *error)
+special_placeholder(const bson_matcher_context_t *context,
+                    const bson_t *assertion,
+                    const bson_val_t *actual,
+                    void *user_data,
+                    bson_error_t *error)
 {
-   BSON_UNUSED (context);
-   BSON_UNUSED (assertion);
-   BSON_UNUSED (actual);
-   BSON_UNUSED (user_data);
-   BSON_UNUSED (error);
+   BSON_UNUSED(context);
+   BSON_UNUSED(assertion);
+   BSON_UNUSED(actual);
+   BSON_UNUSED(user_data);
+   BSON_UNUSED(error);
 
    /* Nothing to do (not an operator, just a reserved key value). The meaning
     * and corresponding behavior of $$placeholder depends on context. */
@@ -86,34 +86,34 @@ special_placeholder (const bson_matcher_context_t *context,
 
 /* implements $$exists */
 static bool
-special_exists (const bson_matcher_context_t *context,
-                const bson_t *assertion,
-                const bson_val_t *actual,
-                void *user_data,
-                bson_error_t *error)
+special_exists(const bson_matcher_context_t *context,
+               const bson_t *assertion,
+               const bson_val_t *actual,
+               void *user_data,
+               bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
    bool should_exist;
 
-   BSON_UNUSED (context);
-   BSON_UNUSED (user_data);
+   BSON_UNUSED(context);
+   BSON_UNUSED(user_data);
 
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
 
-   if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-      MATCH_ERR ("%s", "unexpected non-bool $$exists assertion");
+   if (!BSON_ITER_HOLDS_BOOL(&iter)) {
+      MATCH_ERR("%s", "unexpected non-bool $$exists assertion");
    }
-   should_exist = bson_iter_bool (&iter);
+   should_exist = bson_iter_bool(&iter);
 
    if (should_exist && NULL == actual) {
-      MATCH_ERR ("%s", "should exist but does not");
+      MATCH_ERR("%s", "should exist but does not");
       goto done;
    }
 
    if (!should_exist && NULL != actual) {
-      MATCH_ERR ("%s", "should not exist but does");
+      MATCH_ERR("%s", "should not exist but does");
       goto done;
    }
 
@@ -124,59 +124,59 @@ done:
 
 /* implements $$type */
 static bool
-special_type (const bson_matcher_context_t *context,
-              const bson_t *assertion,
-              const bson_val_t *actual,
-              void *user_data,
-              bson_error_t *error)
+special_type(const bson_matcher_context_t *context,
+             const bson_t *assertion,
+             const bson_val_t *actual,
+             void *user_data,
+             bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
 
-   BSON_UNUSED (context);
-   BSON_UNUSED (user_data);
+   BSON_UNUSED(context);
+   BSON_UNUSED(user_data);
 
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
 
    if (!actual) {
-      MATCH_ERR ("%s", "does not exist but should");
+      MATCH_ERR("%s", "does not exist but should");
       goto done;
    }
 
-   if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-      bson_type_t expected_type = bson_type_from_string (bson_iter_utf8 (&iter, NULL));
-      if (expected_type != bson_val_type (actual)) {
-         MATCH_ERR ("expected type: %s, got: %s",
-                    bson_type_to_string (expected_type),
-                    bson_type_to_string (bson_val_type (actual)));
+   if (BSON_ITER_HOLDS_UTF8(&iter)) {
+      bson_type_t expected_type = bson_type_from_string(bson_iter_utf8(&iter, NULL));
+      if (expected_type != bson_val_type(actual)) {
+         MATCH_ERR("expected type: %s, got: %s",
+                   bson_type_to_string(expected_type),
+                   bson_type_to_string(bson_val_type(actual)));
          goto done;
       }
    }
 
-   if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+   if (BSON_ITER_HOLDS_ARRAY(&iter)) {
       bson_t arr;
       bson_iter_t arriter;
       bool found = false;
 
-      bson_iter_bson (&iter, &arr);
-      BSON_FOREACH (&arr, arriter)
+      bson_iter_bson(&iter, &arr);
+      BSON_FOREACH(&arr, arriter)
       {
          bson_type_t expected_type;
 
-         if (!BSON_ITER_HOLDS_UTF8 (&arriter)) {
-            MATCH_ERR ("%s", "unexpected non-UTF8 $$type assertion");
+         if (!BSON_ITER_HOLDS_UTF8(&arriter)) {
+            MATCH_ERR("%s", "unexpected non-UTF8 $$type assertion");
             goto done;
          }
 
-         expected_type = bson_type_from_string (bson_iter_utf8 (&arriter, NULL));
-         if (expected_type == bson_val_type (actual)) {
+         expected_type = bson_type_from_string(bson_iter_utf8(&arriter, NULL));
+         if (expected_type == bson_val_type(actual)) {
             found = true;
             break;
          }
       }
       if (!found) {
-         MATCH_ERR ("expected one of type: %s, got %s", tmp_json (&arr), bson_type_to_string (bson_val_type (actual)));
+         MATCH_ERR("expected one of type: %s, got %s", tmp_json(&arr), bson_type_to_string(bson_val_type(actual)));
          goto done;
       }
    }
@@ -188,103 +188,105 @@ done:
 
 /* implements $$unsetOrMatches */
 static bool
-special_unset_or_matches (const bson_matcher_context_t *context,
-                          const bson_t *assertion,
-                          const bson_val_t *actual,
-                          void *user_data,
-                          bson_error_t *error)
+special_unset_or_matches(const bson_matcher_context_t *context,
+                         const bson_t *assertion,
+                         const bson_val_t *actual,
+                         void *user_data,
+                         bson_error_t *error)
 {
    bool ret = false;
    bson_iter_t iter;
    bson_val_t *expected = NULL;
 
-   BSON_UNUSED (user_data);
+   BSON_UNUSED(user_data);
 
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
-   expected = bson_val_from_iter (&iter);
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
+   expected = bson_val_from_iter(&iter);
 
    if (actual == NULL) {
       ret = true;
       goto done;
    }
 
-   if (!bson_matcher_match (context, expected, actual, error)) {
+   if (!bson_matcher_match(context, expected, actual, error)) {
       goto done;
    }
 
    ret = true;
 done:
-   bson_val_destroy (expected);
+   bson_val_destroy(expected);
    return ret;
 }
 
 /* implements $$matchesHexBytes */
 static bool
-special_matches_hex_bytes (const bson_matcher_context_t *context,
-                           const bson_t *assertion,
-                           const bson_val_t *actual,
-                           void *user_data,
-                           bson_error_t *error)
+special_matches_hex_bytes(const bson_matcher_context_t *context,
+                          const bson_t *assertion,
+                          const bson_val_t *actual,
+                          void *user_data,
+                          bson_error_t *error)
 {
    bool ret = false;
    uint8_t *expected_bytes;
-   uint32_t expected_bytes_len;
+   size_t expected_bytes_len;
    const uint8_t *actual_bytes;
-   uint32_t actual_bytes_len;
+   size_t actual_bytes_len;
+   uint32_t actual_bytes_len_u32;
    char *expected_bytes_string = NULL;
    char *actual_bytes_string = NULL;
    bson_iter_t iter;
 
-   BSON_UNUSED (context);
-   BSON_UNUSED (user_data);
+   BSON_UNUSED(context);
+   BSON_UNUSED(user_data);
 
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
 
    if (!actual) {
-      MATCH_ERR ("%s", "does not exist but should");
+      MATCH_ERR("%s", "does not exist but should");
       goto done;
    }
 
-   if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-      MATCH_ERR ("%s", "$$matchesHexBytes does not contain utf8");
+   if (!BSON_ITER_HOLDS_UTF8(&iter)) {
+      MATCH_ERR("%s", "$$matchesHexBytes does not contain utf8");
       goto done;
    }
 
-   if (bson_val_type (actual) != BSON_TYPE_BINARY) {
-      MATCH_ERR ("%s", "value does not contain binary");
+   if (bson_val_type(actual) != BSON_TYPE_BINARY) {
+      MATCH_ERR("%s", "value does not contain binary");
       goto done;
    }
 
-   expected_bytes = hex_to_bin (bson_iter_utf8 (&iter, NULL), &expected_bytes_len);
-   actual_bytes = bson_val_to_binary (actual, &actual_bytes_len);
-   expected_bytes_string = bin_to_hex (expected_bytes, expected_bytes_len);
-   actual_bytes_string = bin_to_hex (actual_bytes, actual_bytes_len);
+   expected_bytes = hex_to_bin(bson_iter_utf8(&iter, NULL), &expected_bytes_len);
+   actual_bytes = bson_val_to_binary(actual, &actual_bytes_len_u32);
+   actual_bytes_len = actual_bytes_len_u32;
+   expected_bytes_string = bin_to_hex(expected_bytes, expected_bytes_len);
+   actual_bytes_string = bin_to_hex(actual_bytes, actual_bytes_len);
 
    if (expected_bytes_len != actual_bytes_len) {
-      MATCH_ERR ("expected %" PRIu32 " (%s) but got %" PRIu32 " (%s) bytes",
-                 expected_bytes_len,
-                 expected_bytes_string,
-                 actual_bytes_len,
-                 actual_bytes_string);
-      bson_free (expected_bytes);
-      bson_free (expected_bytes_string);
-      bson_free (actual_bytes_string);
+      MATCH_ERR("expected %zu (%s) but got %zu (%s) bytes",
+                expected_bytes_len,
+                expected_bytes_string,
+                actual_bytes_len,
+                actual_bytes_string);
+      bson_free(expected_bytes);
+      bson_free(expected_bytes_string);
+      bson_free(actual_bytes_string);
       goto done;
    }
 
-   if (0 != memcmp (expected_bytes, actual_bytes, expected_bytes_len)) {
-      MATCH_ERR ("expected %s, but got %s", expected_bytes_string, actual_bytes_string);
-      bson_free (expected_bytes);
-      bson_free (expected_bytes_string);
-      bson_free (actual_bytes_string);
+   if (0 != memcmp(expected_bytes, actual_bytes, expected_bytes_len)) {
+      MATCH_ERR("expected %s, but got %s", expected_bytes_string, actual_bytes_string);
+      bson_free(expected_bytes);
+      bson_free(expected_bytes_string);
+      bson_free(actual_bytes_string);
       goto done;
    }
 
-   bson_free (expected_bytes);
-   bson_free (expected_bytes_string);
-   bson_free (actual_bytes_string);
+   bson_free(expected_bytes);
+   bson_free(expected_bytes_string);
+   bson_free(actual_bytes_string);
 
    ret = true;
 done:
@@ -293,45 +295,45 @@ done:
 
 /* implements $$matchAsDocument */
 static bool
-special_match_as_document (const bson_matcher_context_t *context,
-                           const bson_t *assertion,
-                           const bson_val_t *actual,
-                           void *user_data,
-                           bson_error_t *error)
+special_match_as_document(const bson_matcher_context_t *context,
+                          const bson_t *assertion,
+                          const bson_val_t *actual,
+                          void *user_data,
+                          bson_error_t *error)
 {
    bool ret = false;
    bson_t actual_as_bson = BSON_INITIALIZER;
-   BSON_UNUSED (user_data);
+   BSON_UNUSED(user_data);
 
    bson_iter_t iter;
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
-   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      MATCH_ERR ("%s", "$$matchAsDocument does not contain a document");
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
+   if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      MATCH_ERR("%s", "$$matchAsDocument does not contain a document");
       goto done;
    }
 
    if (!actual) {
-      MATCH_ERR ("%s", "does not exist but should");
+      MATCH_ERR("%s", "does not exist but should");
       goto done;
    }
 
-   if (bson_val_type (actual) != BSON_TYPE_UTF8) {
-      MATCH_ERR ("%s", "value type is not utf8");
+   if (bson_val_type(actual) != BSON_TYPE_UTF8) {
+      MATCH_ERR("%s", "value type is not utf8");
       goto done;
    }
-   const char *actual_json = bson_val_to_utf8 (actual);
-   if (!bson_init_from_json (&actual_as_bson, actual_json, -1, error)) {
-      MATCH_ERR ("%s", "value can't be parsed as JSON");
+   const char *actual_json = bson_val_to_utf8(actual);
+   if (!bson_init_from_json(&actual_as_bson, actual_json, -1, error)) {
+      MATCH_ERR("%s", "value can't be parsed as JSON");
       goto done;
    }
 
-   bson_val_t *expected_val = bson_val_from_iter (&iter);
-   bson_val_t *actual_val = bson_val_from_bson (&actual_as_bson);
-   ret = bson_matcher_match (context, expected_val, actual_val, error);
-   bson_val_destroy (actual_val);
-   bson_val_destroy (expected_val);
-   bson_destroy (&actual_as_bson);
+   bson_val_t *expected_val = bson_val_from_iter(&iter);
+   bson_val_t *actual_val = bson_val_from_bson(&actual_as_bson);
+   ret = bson_matcher_match(context, expected_val, actual_val, error);
+   bson_val_destroy(actual_val);
+   bson_val_destroy(expected_val);
+   bson_destroy(&actual_as_bson);
 
 done:
 
@@ -340,104 +342,104 @@ done:
 
 /* implements $$matchAsRoot */
 static bool
-special_match_as_root (const bson_matcher_context_t *context,
-                       const bson_t *assertion,
-                       const bson_val_t *actual,
-                       void *user_data,
-                       bson_error_t *error)
+special_match_as_root(const bson_matcher_context_t *context,
+                      const bson_t *assertion,
+                      const bson_val_t *actual,
+                      void *user_data,
+                      bson_error_t *error)
 {
    bool ret = false;
-   BSON_UNUSED (user_data);
+   BSON_UNUSED(user_data);
 
    bson_iter_t iter;
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
-   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      MATCH_ERR ("%s", "$$matchAsRoot does not contain a document");
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
+   if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      MATCH_ERR("%s", "$$matchAsRoot does not contain a document");
       goto done;
    }
 
    if (!actual) {
-      MATCH_ERR ("%s", "does not exist but should");
+      MATCH_ERR("%s", "does not exist but should");
       goto done;
    }
 
-   if (bson_val_type (actual) != BSON_TYPE_DOCUMENT) {
-      MATCH_ERR ("%s", "value is not a document");
+   if (bson_val_type(actual) != BSON_TYPE_DOCUMENT) {
+      MATCH_ERR("%s", "value is not a document");
       goto done;
    }
 
    bson_matcher_context_t as_root_context = *context;
    as_root_context.is_root = true;
 
-   bson_val_t *expected_val = bson_val_from_iter (&iter);
-   ret = bson_matcher_match (&as_root_context, expected_val, actual, error);
-   bson_val_destroy (expected_val);
+   bson_val_t *expected_val = bson_val_from_iter(&iter);
+   ret = bson_matcher_match(&as_root_context, expected_val, actual, error);
+   bson_val_destroy(expected_val);
 
 done:
    return ret;
 }
 
 static bool
-evaluate_special (const bson_matcher_context_t *context,
-                  const bson_t *assertion,
-                  const bson_val_t *actual,
-                  bson_error_t *error)
+evaluate_special(const bson_matcher_context_t *context,
+                 const bson_t *assertion,
+                 const bson_val_t *actual,
+                 bson_error_t *error)
 {
    bson_iter_t iter;
    const char *assertion_key;
    special_functor_t *special_iter;
 
-   bson_iter_init (&iter, assertion);
-   BSON_ASSERT (bson_iter_next (&iter));
-   assertion_key = bson_iter_key (&iter);
+   bson_iter_init(&iter, assertion);
+   BSON_ASSERT(bson_iter_next(&iter));
+   assertion_key = bson_iter_key(&iter);
 
-   LL_FOREACH (context->matcher->specials, special_iter)
+   LL_FOREACH(context->matcher->specials, special_iter)
    {
-      if (0 == strcmp (assertion_key, special_iter->keyword)) {
-         return special_iter->fn (context, assertion, actual, special_iter->user_data, error);
+      if (0 == strcmp(assertion_key, special_iter->keyword)) {
+         return special_iter->fn(context, assertion, actual, special_iter->user_data, error);
       }
    }
 
-   MATCH_ERR ("unrecognized special operator: %s", assertion_key);
+   MATCH_ERR("unrecognized special operator: %s", assertion_key);
    return false;
 }
 
 
 bson_matcher_t *
-bson_matcher_new (void)
+bson_matcher_new(void)
 {
-   bson_matcher_t *matcher = bson_malloc0 (sizeof (bson_matcher_t));
+   bson_matcher_t *matcher = bson_malloc0(sizeof(bson_matcher_t));
    /* Add default special functions. */
-   bson_matcher_add_special (matcher, "$$placeholder", special_placeholder, NULL);
-   bson_matcher_add_special (matcher, "$$exists", special_exists, NULL);
-   bson_matcher_add_special (matcher, "$$type", special_type, NULL);
-   bson_matcher_add_special (matcher, "$$unsetOrMatches", special_unset_or_matches, NULL);
-   bson_matcher_add_special (matcher, "$$matchesHexBytes", special_matches_hex_bytes, NULL);
-   bson_matcher_add_special (matcher, "$$matchAsDocument", special_match_as_document, NULL);
-   bson_matcher_add_special (matcher, "$$matchAsRoot", special_match_as_root, NULL);
+   bson_matcher_add_special(matcher, "$$placeholder", special_placeholder, NULL);
+   bson_matcher_add_special(matcher, "$$exists", special_exists, NULL);
+   bson_matcher_add_special(matcher, "$$type", special_type, NULL);
+   bson_matcher_add_special(matcher, "$$unsetOrMatches", special_unset_or_matches, NULL);
+   bson_matcher_add_special(matcher, "$$matchesHexBytes", special_matches_hex_bytes, NULL);
+   bson_matcher_add_special(matcher, "$$matchAsDocument", special_match_as_document, NULL);
+   bson_matcher_add_special(matcher, "$$matchAsRoot", special_match_as_root, NULL);
    return matcher;
 }
 
 /* Add a hook function for matching a special $$ operator */
 void
-bson_matcher_add_special (bson_matcher_t *matcher, const char *keyword, special_fn special, void *user_data)
+bson_matcher_add_special(bson_matcher_t *matcher, const char *keyword, special_fn special, void *user_data)
 {
    special_functor_t *functor;
 
-   if (strstr (keyword, "$$") != keyword) {
-      test_error ("unexpected special match keyword: %s. Should start with '$$'", keyword);
+   if (strstr(keyword, "$$") != keyword) {
+      test_error("unexpected special match keyword: %s. Should start with '$$'", keyword);
    }
 
-   functor = bson_malloc (sizeof (special_functor_t));
-   functor->keyword = bson_strdup (keyword);
+   functor = bson_malloc(sizeof(special_functor_t));
+   functor->keyword = bson_strdup(keyword);
    functor->fn = special;
    functor->user_data = user_data;
-   LL_PREPEND (matcher->specials, functor);
+   LL_PREPEND(matcher->specials, functor);
 }
 
 void
-bson_matcher_destroy (bson_matcher_t *matcher)
+bson_matcher_destroy(bson_matcher_t *matcher)
 {
    special_functor_t *special_iter, *tmp;
 
@@ -445,65 +447,65 @@ bson_matcher_destroy (bson_matcher_t *matcher)
       return;
    }
 
-   LL_FOREACH_SAFE (matcher->specials, special_iter, tmp)
+   LL_FOREACH_SAFE(matcher->specials, special_iter, tmp)
    {
-      bson_free (special_iter->keyword);
-      bson_free (special_iter);
+      bson_free(special_iter->keyword);
+      bson_free(special_iter);
    }
-   bson_free (matcher);
+   bson_free(matcher);
 }
 
 bool
-bson_matcher_match (const bson_matcher_context_t *context,
-                    const bson_val_t *expected,
-                    const bson_val_t *actual,
-                    bson_error_t *error)
+bson_matcher_match(const bson_matcher_context_t *context,
+                   const bson_val_t *expected,
+                   const bson_val_t *actual,
+                   bson_error_t *error)
 {
    bool ret = false;
 
-   if (bson_val_type (expected) == BSON_TYPE_DOCUMENT) {
+   if (bson_val_type(expected) == BSON_TYPE_DOCUMENT) {
       bson_iter_t expected_iter;
-      const bson_t *expected_bson = bson_val_to_document (expected);
+      const bson_t *expected_bson = bson_val_to_document(expected);
       const bson_t *actual_bson = NULL;
       uint32_t expected_keys;
       uint32_t actual_keys;
 
       /* handle special operators (e.g. $$type) */
-      if (is_special_match (expected_bson)) {
-         ret = evaluate_special (context, expected_bson, actual, error);
+      if (is_special_match(expected_bson)) {
+         ret = evaluate_special(context, expected_bson, actual, error);
          goto done;
       }
 
-      if (bson_val_type (actual) != BSON_TYPE_DOCUMENT) {
-         MATCH_ERR ("expected type document, got %s", bson_type_to_string (bson_val_type (actual)));
+      if (bson_val_type(actual) != BSON_TYPE_DOCUMENT) {
+         MATCH_ERR("expected type document, got %s", bson_type_to_string(bson_val_type(actual)));
          goto done;
       }
 
-      actual_bson = bson_val_to_document (actual);
+      actual_bson = bson_val_to_document(actual);
 
-      BSON_FOREACH (expected_bson, expected_iter)
+      BSON_FOREACH(expected_bson, expected_iter)
       {
          const char *key;
          bson_val_t *expected_val = NULL;
          bson_val_t *actual_val = NULL;
          bson_iter_t actual_iter;
 
-         key = bson_iter_key (&expected_iter);
-         expected_val = bson_val_from_iter (&expected_iter);
+         key = bson_iter_key(&expected_iter);
+         expected_val = bson_val_from_iter(&expected_iter);
 
-         if (bson_iter_init_find (&actual_iter, actual_bson, key)) {
-            actual_val = bson_val_from_iter (&actual_iter);
+         if (bson_iter_init_find(&actual_iter, actual_bson, key)) {
+            actual_val = bson_val_from_iter(&actual_iter);
          }
 
-         if (bson_val_type (expected_val) == BSON_TYPE_DOCUMENT &&
-             is_special_match (bson_val_to_document (expected_val))) {
-            char *path_child = bson_strdup_printf ("%s.%s", context->path, key);
+         if (bson_val_type(expected_val) == BSON_TYPE_DOCUMENT &&
+             is_special_match(bson_val_to_document(expected_val))) {
+            char *path_child = bson_strdup_printf("%s.%s", context->path, key);
             bson_matcher_context_t special_context = {.matcher = context->matcher, .path = path_child};
             bool special_ret =
-               evaluate_special (&special_context, bson_val_to_document (expected_val), actual_val, error);
-            bson_free (path_child);
-            bson_val_destroy (expected_val);
-            bson_val_destroy (actual_val);
+               evaluate_special(&special_context, bson_val_to_document(expected_val), actual_val, error);
+            bson_free(path_child);
+            bson_val_destroy(expected_val);
+            bson_val_destroy(actual_val);
             if (!special_ret) {
                goto done;
             }
@@ -511,28 +513,28 @@ bson_matcher_match (const bson_matcher_context_t *context,
          }
 
          if (NULL == actual_val) {
-            MATCH_ERR ("key '%s' is not present", key);
-            bson_val_destroy (expected_val);
-            bson_val_destroy (actual_val);
+            MATCH_ERR("key '%s' is not present", key);
+            bson_val_destroy(expected_val);
+            bson_val_destroy(actual_val);
             goto done;
          }
 
-         char *path_child = bson_strdup_printf ("%s.%s", context->path, key);
+         char *path_child = bson_strdup_printf("%s.%s", context->path, key);
          bson_matcher_context_t document_child_context = {
             .matcher = context->matcher,
             .path = path_child,
          };
-         bool document_child_ret = bson_matcher_match (&document_child_context, expected_val, actual_val, error);
-         bson_val_destroy (expected_val);
-         bson_val_destroy (actual_val);
-         bson_free (path_child);
+         bool document_child_ret = bson_matcher_match(&document_child_context, expected_val, actual_val, error);
+         bson_val_destroy(expected_val);
+         bson_val_destroy(actual_val);
+         bson_free(path_child);
          if (!document_child_ret) {
             goto done;
          }
       }
 
-      expected_keys = bson_count_keys (expected_bson);
-      actual_keys = bson_count_keys (actual_bson);
+      expected_keys = bson_count_keys(expected_bson);
+      actual_keys = bson_count_keys(actual_bson);
 
       /* Unified test format spec: "When matching root-level documents, test
        * runners MUST permit the actual document to contain additional fields
@@ -542,7 +544,7 @@ bson_matcher_match (const bson_matcher_context_t *context,
        * number of root documents within an array (i.e. cursor result); see
        * array_child_context below. */
       if (!context->is_root && expected_keys < actual_keys) {
-         MATCH_ERR ("expected %" PRIu32 " keys in document, got: %" PRIu32, expected_keys, actual_keys);
+         MATCH_ERR("expected %" PRIu32 " keys in document, got: %" PRIu32, expected_keys, actual_keys);
          goto done;
       }
 
@@ -550,53 +552,53 @@ bson_matcher_match (const bson_matcher_context_t *context,
       goto done;
    }
 
-   if (bson_val_type (expected) == BSON_TYPE_ARRAY) {
+   if (bson_val_type(expected) == BSON_TYPE_ARRAY) {
       bson_iter_t expected_iter;
-      const bson_t *expected_bson = bson_val_to_array (expected);
+      const bson_t *expected_bson = bson_val_to_array(expected);
       const bson_t *actual_bson = NULL;
-      uint32_t expected_keys = bson_count_keys (expected_bson);
+      uint32_t expected_keys = bson_count_keys(expected_bson);
       uint32_t actual_keys;
 
-      if (bson_val_type (actual) != BSON_TYPE_ARRAY) {
-         MATCH_ERR ("expected array, but got: %s", bson_type_to_string (bson_val_type (actual)));
+      if (bson_val_type(actual) != BSON_TYPE_ARRAY) {
+         MATCH_ERR("expected array, but got: %s", bson_type_to_string(bson_val_type(actual)));
          goto done;
       }
 
-      actual_bson = bson_val_to_array (actual);
-      actual_keys = bson_count_keys (actual_bson);
+      actual_bson = bson_val_to_array(actual);
+      actual_keys = bson_count_keys(actual_bson);
 
       if (expected_keys != actual_keys) {
-         MATCH_ERR ("expected array of size %" PRIu32 ", but got array of size: %" PRIu32, expected_keys, actual_keys);
+         MATCH_ERR("expected array of size %" PRIu32 ", but got array of size: %" PRIu32, expected_keys, actual_keys);
          goto done;
       }
 
-      BSON_FOREACH (expected_bson, expected_iter)
+      BSON_FOREACH(expected_bson, expected_iter)
       {
-         bson_val_t *expected_val = bson_val_from_iter (&expected_iter);
+         bson_val_t *expected_val = bson_val_from_iter(&expected_iter);
          bson_val_t *actual_val = NULL;
          bson_iter_t actual_iter;
          const char *key;
 
-         key = bson_iter_key (&expected_iter);
-         if (!bson_iter_init_find (&actual_iter, actual_bson, key)) {
-            MATCH_ERR ("expected array index: %s, but did not exist", key);
-            bson_val_destroy (expected_val);
-            bson_val_destroy (actual_val);
+         key = bson_iter_key(&expected_iter);
+         if (!bson_iter_init_find(&actual_iter, actual_bson, key)) {
+            MATCH_ERR("expected array index: %s, but did not exist", key);
+            bson_val_destroy(expected_val);
+            bson_val_destroy(actual_val);
             goto done;
          }
 
-         actual_val = bson_val_from_iter (&actual_iter);
+         actual_val = bson_val_from_iter(&actual_iter);
 
-         char *path_child = bson_strdup_printf ("%s.%s", context->path, key);
+         char *path_child = bson_strdup_printf("%s.%s", context->path, key);
          bson_matcher_context_t array_child_context = {
             .matcher = context->matcher,
             .path = path_child,
             .is_root = context->is_root && context->array_of_root_docs,
          };
-         bool array_child_ret = bson_matcher_match (&array_child_context, expected_val, actual_val, error);
-         bson_val_destroy (expected_val);
-         bson_val_destroy (actual_val);
-         bson_free (path_child);
+         bool array_child_ret = bson_matcher_match(&array_child_context, expected_val, actual_val, error);
+         bson_val_destroy(expected_val);
+         bson_val_destroy(actual_val);
+         bson_free(path_child);
          if (!array_child_ret) {
             goto done;
          }
@@ -605,8 +607,8 @@ bson_matcher_match (const bson_matcher_context_t *context,
       goto done;
    }
 
-   if (!bson_val_eq (expected, actual, BSON_VAL_FLEXIBLE_NUMERICS)) {
-      MATCH_ERR ("value %s != %s", bson_val_to_json (expected), bson_val_to_json (actual));
+   if (!bson_val_eq(expected, actual, BSON_VAL_FLEXIBLE_NUMERICS)) {
+      MATCH_ERR("value %s != %s", bson_val_to_json(expected), bson_val_to_json(actual));
       goto done;
    }
 
@@ -616,29 +618,29 @@ done:
       /* Append the error with more context at the root match. */
       bson_error_t tmp_error;
 
-      memcpy (&tmp_error, error, sizeof (bson_error_t));
-      test_set_error (error,
-                      "BSON match failed: %s\n"
-                      "Expected: %s\n"
-                      "Actual:   %s",
-                      tmp_error.message,
-                      bson_val_to_json (expected),
-                      bson_val_to_json (actual));
+      memcpy(&tmp_error, error, sizeof(bson_error_t));
+      test_set_error(error,
+                     "BSON match failed: %s\n"
+                     "Expected: %s\n"
+                     "Actual:   %s",
+                     tmp_error.message,
+                     bson_val_to_json(expected),
+                     bson_val_to_json(actual));
    }
    return ret;
 }
 
 bool
-bson_match (const bson_val_t *expected, const bson_val_t *actual, bool array_of_root_docs, bson_error_t *error)
+bson_match(const bson_val_t *expected, const bson_val_t *actual, bool array_of_root_docs, bson_error_t *error)
 {
    bson_matcher_context_t root_context = {
-      .matcher = bson_matcher_new (),
+      .matcher = bson_matcher_new(),
       .path = "",
       .is_root = true,
       .array_of_root_docs = array_of_root_docs,
    };
-   bool matched = bson_matcher_match (&root_context, expected, actual, error);
-   bson_matcher_destroy (root_context.matcher);
+   bool matched = bson_matcher_match(&root_context, expected, actual, error);
+   bson_matcher_destroy(root_context.matcher);
    return matched;
 }
 
@@ -650,7 +652,7 @@ typedef struct {
 } testcase_t;
 
 static void
-test_match (void)
+test_match(void)
 {
    testcase_t tests[] = {
       {"int32 ==", "{'a': 1}", "{'a': 1}", true},
@@ -694,27 +696,27 @@ test_match (void)
 
    mlib_foreach_arr (testcase_t, test, tests) {
       bson_error_t error;
-      bson_val_t *expected = bson_val_from_json (test->expected);
-      bson_val_t *actual = bson_val_from_json (test->actual);
+      bson_val_t *expected = bson_val_from_json(test->expected);
+      bson_val_t *actual = bson_val_from_json(test->actual);
       bool ret;
 
-      ret = bson_match (expected, actual, false, &error);
+      ret = bson_match(expected, actual, false, &error);
       if (test->expect_match) {
          if (!ret) {
-            test_error ("%s: did not match with error: %s, but should have", test->desc, error.message);
+            test_error("%s: did not match with error: %s, but should have", test->desc, error.message);
          }
       } else {
          if (ret) {
-            test_error ("%s: matched, but should not have", test->desc);
+            test_error("%s: matched, but should not have", test->desc);
          }
       }
-      bson_val_destroy (expected);
-      bson_val_destroy (actual);
+      bson_val_destroy(expected);
+      bson_val_destroy(actual);
    }
 }
 
 void
-test_bson_match_install (TestSuite *suite)
+test_bson_match_install(TestSuite *suite)
 {
-   TestSuite_Add (suite, "/unified/selftest/bson/match", test_match);
+   TestSuite_Add(suite, "/unified/selftest/bson/match", test_match);
 }

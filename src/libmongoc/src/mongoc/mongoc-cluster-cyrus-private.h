@@ -26,8 +26,8 @@
 #include <bson/bson.h>
 
 bool
-_mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
-                                 mongoc_stream_t *stream,
-                                 mongoc_server_description_t *sd,
-                                 bson_error_t *error);
+_mongoc_cluster_auth_node_cyrus(mongoc_cluster_t *cluster,
+                                mongoc_stream_t *stream,
+                                mongoc_server_description_t *sd,
+                                bson_error_t *error);
 #endif /* MONGOC_CLUSTER_CYRUS_PRIVATE_H */

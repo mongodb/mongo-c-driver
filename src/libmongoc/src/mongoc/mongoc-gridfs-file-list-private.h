@@ -37,9 +37,9 @@ struct _mongoc_gridfs_file_list_t {
 
 
 mongoc_gridfs_file_list_t *
-_mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs, const bson_t *query, uint32_t limit);
+_mongoc_gridfs_file_list_new(mongoc_gridfs_t *gridfs, const bson_t *query, uint32_t limit);
 mongoc_gridfs_file_list_t *
-_mongoc_gridfs_file_list_new_with_opts (mongoc_gridfs_t *gridfs, const bson_t *filter, const bson_t *opts);
+_mongoc_gridfs_file_list_new_with_opts(mongoc_gridfs_t *gridfs, const bson_t *filter, const bson_t *opts);
 
 
 BSON_END_DECLS

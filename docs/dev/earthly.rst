@@ -149,8 +149,8 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 .. earthly-target:: +sign-file
 
    Signs a file using Garasign. Use of this target requires authenticating
-   against the MongoDB Artifactory installation! (Refer to:
-   `earthly.artifactory-auth`)
+   against the DevProd-provided Amazon ECR instance! (Refer to:
+   `earthly.amazon-ecr`)
 
    .. earthly-artifact:: +sign-file/signature.asc
 
@@ -175,23 +175,36 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
       .. seealso:: `earthly.secrets`
 
-   .. _earthly.artifactory-auth:
+   .. _earthly.amazon-ecr:
 
-   Authenticating with Artifactory
-   ===============================
+   Authenticating with Amazon ECR
+   ==============================
 
    In order to run `+sign-file` or any target that depends upon it, the
    container engine client\ [#oci]_ will need to be authenticated with the
-   MongoDB Artifactory instance.
+   DevProd-provided Amazon ECR instance using AWS CLI v2::
 
-   Authenticating can be done using the container engine's command-line
-   interface. For example, with Podman::
+      # Forward the short-term AWS credentials to the container engine client.
+      $ aws ecr get-login-password --profile <profile> | podman login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com
 
-      $ podman login "artifactory.corp.mongodb.com"
+   Configure the AWS profile using ``aws configure sso`` or modifying the
+   ``$HOME/.aws/config`` file such that:
 
-   Which will prompt you for a username and password if you are not already
-   authenticated with the host.\ [#creds]_ If you are already authenticated, this
-   command will have no effect.
+   - The SSO start URL is ``https://d-9067613a84.awsapps.com/start#/``.
+   - The SSO and client region are ``us-east-1``.
+   - The SSO registration scope is ``sso:account:access`` (default).
+   - The SSO account ID is ``901841024863`` (aka ``devprod-platforms-ecr``).
+   - The SSO role name is ``ECRScopedAccess`` (default).
+
+   To refresh short-term credentials when they have expired, run
+   ``aws sso login --profile <profile>`` followed by the same
+   ``aws ecr get-login-password ... | podman login ...`` command described
+   above.
+
+   .. seealso:: `"DevProd Platforms Container Registry"
+      <https://docs.devprod.prod.corp.mongodb.com/devprod-platforms-ecr>`_ and
+      `"Configuring IAM Identity Center authentication with the AWS CLI"
+      <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html>`_.
 
 .. earthly-target:: +sbom-generate
 
@@ -203,6 +216,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
 
    .. seealso:: `sbom-lite` and `sbom-lite-updating`
 
+.. program:: +sbom-generate-new-serial-number
 .. earthly-target:: +sbom-generate-new-serial-number
 
    Equivalent to `+sbom-generate` but uses the ``--generate-new-serial-number``
@@ -282,6 +296,21 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       :noindex:
 
       See: `SNYK_TOKEN`
+
+
+.. program:: +verify-headers
+.. earthly-target:: +verify-headers
+
+   This runs `CMake's header verification`__ on the library sources, to ensure
+   that the public API headers can be ``#include``\ 'd directly in a C++
+   compiler.
+
+   __ https://cmake.org/cmake/help/latest/prop_tgt/VERIFY_INTERFACE_HEADER_SETS.html
+
+   This target does not produce any output artifacts. This only checks that our
+   public API headers are valid. This checks against a variety of environments
+   to test that we are including the necessary standard library headers in our
+   public API headers.
 
 
 .. _earthly.secrets:

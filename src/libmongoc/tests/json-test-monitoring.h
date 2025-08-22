@@ -25,15 +25,15 @@
 #include <json-test-operations.h>
 #include <test-conveniences.h>
 
-typedef void (*json_test_events_check_cb_t) (const bson_t *events);
+typedef void (*json_test_events_check_cb_t)(const bson_t *events);
 
 void
-set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client);
+set_apm_callbacks(json_test_ctx_t *ctx, mongoc_client_t *client);
 
 void
-set_apm_callbacks_pooled (json_test_ctx_t *ctx, mongoc_client_pool_t *pool);
+set_apm_callbacks_pooled(json_test_ctx_t *ctx, mongoc_client_pool_t *pool);
 
 void
-check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations);
+check_json_apm_events(json_test_ctx_t *ctx, const bson_t *expectations);
 
 #endif

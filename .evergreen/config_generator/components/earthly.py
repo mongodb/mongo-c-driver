@@ -5,8 +5,17 @@ import re
 from typing import Iterable, Literal, Mapping, NamedTuple, TypeVar
 
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
+from shrub.v3.evg_command import (
+    BuiltInCommand,
+    EvgCommandType,
+    KeyValueParam,
+    ec2_assume_role,
+    expansions_update,
+    subprocess_exec,
+)
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
+
+from config_generator.etc.function import Function
 
 from ..etc.utils import all_possible
 
@@ -18,16 +27,18 @@ _CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
 
 
 EnvKey = Literal[
-    "u16",
-    "u18",
     "u20",
     "u22",
-    "alpine3.16",
-    "alpine3.17",
-    "alpine3.18",
+    "almalinux8",
+    "almalinux9",
+    "almalinux10",
     "alpine3.19",
+    "alpine3.20",
+    "alpine3.21",
+    "alpine3.22",
     "archlinux",
-    "centos7",
+    "centos9",
+    "centos10",
 ]
 "Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
 CompilerName = Literal["gcc", "clang"]
@@ -38,7 +49,7 @@ SASLOption = Literal["Cyrus", "off"]
 "Valid options for the SASL configuration parameter"
 TLSOption = Literal["OpenSSL", "off"]
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["none"] # TODO: Once CXX-3103 is released, add latest C++ release tag.
+CxxVersion = Literal["master", "r4.1.0", "none"]
 "C++ driver refs that are under CI test"
 
 # A separator character, since we cannot use whitespace
@@ -48,7 +59,7 @@ _SEPARATOR = "\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}"
 def os_split(env: EnvKey) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
-        # match 'alpine3.18' 'alpine53.123' etc.
+        # Match 'alpine3.18' 'alpine53.123' etc.
         case alp if mat := re.match(r"alpine(\d+\.\d+)", alp):
             return ("Alpine", mat[1])
         case "archlinux":
@@ -56,8 +67,12 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         # Match 'u22', 'u20', 'u71' etc.
         case ubu if mat := re.match(r"u(\d\d)", ubu):
             return "Ubuntu", f"{mat[1]}.04"
-        case "centos7":
-            return "CentOS", "7.0"
+        # Match 'centos9', 'centos10', etc.
+        case cent if mat := re.match(r"centos(\d+)", cent):
+            return "CentOS", f"{mat[1]}"
+        # Match 'almalinux8', 'almalinux10', etc.
+        case alm if mat := re.match(r"almalinux(\d+)", alm):
+            return "AlmaLinux", f"{mat[1]}"
         case _:
             raise ValueError(f"Failed to split OS env key {env=} into a name+version pair (unrecognized)")
 
@@ -136,16 +151,36 @@ class Configuration(NamedTuple):
         return _SEPARATOR.join(f"{k}={v}" for k, v in self._asdict().items())
 
 
+# Authenticate with DevProd-provided Amazon ECR instance to use as pull-through cache for DockerHub.
+class DockerLoginAmazonECR(Function):
+    name = "docker-login-amazon-ecr"
+    commands = [
+        # Avoid inadvertently using a pre-existing and potentially conflicting Docker config.
+        expansions_update(updates=[KeyValueParam(key="DOCKER_CONFIG", value="${workdir}/.docker")]),
+        ec2_assume_role(role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"),
+        subprocess_exec(
+            binary="bash",
+            command_type=EvgCommandType.SETUP,
+            include_expansions_in_env=[
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "AWS_SESSION_TOKEN",
+                "DOCKER_CONFIG",
+            ],
+            args=[
+                "-c",
+                "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com",
+            ],
+        ),
+    ]
+
+
 def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     """
     Control which tasks are actually defined by matching on the platform and
     configuration values.
     """
     match env, conf:
-        # u16/centos7 are not capable of building mongocxx
-        case e, (_sasl, _tls, cxx) if re.match(r"^Ubuntu 16|^CentOS 7", e.display_name):
-            # Only build if C++ driver is test is disabled
-            return cxx == "none"
         # Anything else: Allow it to run:
         case _:
             return True
@@ -170,11 +205,16 @@ def earthly_exec(
     return subprocess_exec(
         "./tools/earthly.sh",
         args=[
+            # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
+            "--buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3",
             *(f"--secret={k}" for k in (secrets or ())),
             f"+{target}",
+            # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
+            "--default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub",
             *(f"--{arg}={val}" for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),
+        include_expansions_in_env=["DOCKER_CONFIG"],
         env=env if env else None,
         working_dir="mongoc",
     )
@@ -209,15 +249,7 @@ def earthly_task(
     return EvgTask(
         name=name,
         commands=[
-            # Ensure subsequent Docker commands are authenticated.
-            subprocess_exec(
-                binary="bash",
-                command_type=EvgCommandType.SETUP,
-                args=[
-                    "-c",
-                    r'docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"',
-                ],
-            ),
+            DockerLoginAmazonECR.call(),
             # First, just build the "env-warmup" which will prepare the build environment.
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
@@ -249,6 +281,10 @@ CONTAINER_RUN_DISTROS = [
 ]
 
 
+def functions():
+    return DockerLoginAmazonECR.defn()
+
+
 def tasks() -> Iterable[EvgTask]:
     for conf in all_possible(Configuration):
         # test-example is a target in all configurations
@@ -265,6 +301,16 @@ def tasks() -> Iterable[EvgTask]:
         )
         if task is not None:
             yield task
+
+    yield EvgTask(
+        name="verify-headers",
+        commands=[
+            DockerLoginAmazonECR.call(),
+            earthly_exec(kind="test", target="verify-headers"),
+        ],
+        tags=["pr-merge-gate"],
+        run_on=CONTAINER_RUN_DISTROS,
+    )
 
 
 def variants() -> Iterable[BuildVariant]:

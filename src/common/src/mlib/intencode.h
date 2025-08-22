@@ -32,15 +32,15 @@
  * @brief Decode an unsigned 32-bit little-endian integer from a memory buffer
  */
 static inline uint32_t
-mlib_read_u32le (const void *buf)
+mlib_read_u32le(const void *buf)
 {
    uint32_t ret = 0;
-   if (mlib_is_little_endian ()) {
+   if (mlib_is_little_endian()) {
       // Optimize: The platform uses a LE encoding already
-      memcpy (&ret, buf, sizeof ret);
+      memcpy(&ret, buf, sizeof ret);
    } else {
       // Portable decode of an LE integer
-      const uint8_t *cptr = (const uint8_t *) buf;
+      const uint8_t *cptr = (const uint8_t *)buf;
       mlib_foreach_urange (i, sizeof ret) {
          ret <<= 8;
          ret |= cptr[(sizeof ret) - i - 1];
@@ -53,11 +53,11 @@ mlib_read_u32le (const void *buf)
  * @brief Decode an signed 32-bit little-endian integer from a memory buffer
  */
 static inline int32_t
-mlib_read_i32le (const void *buf)
+mlib_read_i32le(const void *buf)
 {
-   const uint32_t u = mlib_read_u32le (buf);
+   const uint32_t u = mlib_read_u32le(buf);
    int32_t r;
-   memcpy (&r, &u, sizeof r);
+   memcpy(&r, &u, sizeof r);
    return r;
 }
 
@@ -65,15 +65,15 @@ mlib_read_i32le (const void *buf)
  * @brief Decode an unsigned 64-bit little-endian integer from a memory buffer
  */
 static inline uint64_t
-mlib_read_u64le (const void *buf)
+mlib_read_u64le(const void *buf)
 {
    uint64_t ret = 0;
-   if (mlib_is_little_endian ()) {
+   if (mlib_is_little_endian()) {
       // Optimize: The platform uses a LE encoding already
-      memcpy (&ret, buf, sizeof ret);
+      memcpy(&ret, buf, sizeof ret);
    } else {
       // Portable decode of an LE integer
-      const uint8_t *cptr = (const uint8_t *) buf;
+      const uint8_t *cptr = (const uint8_t *)buf;
       mlib_foreach_urange (i, sizeof ret) {
          ret <<= 8;
          ret |= cptr[(sizeof ret) - i - 1];
@@ -86,11 +86,11 @@ mlib_read_u64le (const void *buf)
  * @brief Decode an signed 64-bit little-endian integer from a memory buffer
  */
 static inline int64_t
-mlib_read_i64le (const void *buf)
+mlib_read_i64le(const void *buf)
 {
-   const uint64_t u = mlib_read_u64le (buf);
+   const uint64_t u = mlib_read_u64le(buf);
    int64_t r;
-   memcpy (&r, &u, sizeof r);
+   memcpy(&r, &u, sizeof r);
    return r;
 }
 
@@ -100,11 +100,11 @@ mlib_read_i64le (const void *buf)
  * @return void* The address after the written value
  */
 static inline void *
-mlib_write_u32le (void *out, const uint32_t value)
+mlib_write_u32le(void *out, const uint32_t value)
 {
-   uint8_t *o = (uint8_t *) out;
-   if (mlib_is_little_endian ()) {
-      memcpy (o, &value, sizeof value);
+   uint8_t *o = (uint8_t *)out;
+   if (mlib_is_little_endian()) {
+      memcpy(o, &value, sizeof value);
       return o + sizeof value;
    }
    mlib_foreach_urange (i, sizeof value) {
@@ -119,9 +119,9 @@ mlib_write_u32le (void *out, const uint32_t value)
  * @return void* The address after the written value
  */
 static inline void *
-mlib_write_i32le (void *out, int32_t value)
+mlib_write_i32le(void *out, int32_t value)
 {
-   return mlib_write_u32le (out, (uint32_t) value);
+   return mlib_write_u32le(out, (uint32_t)value);
 }
 
 /**
@@ -130,11 +130,11 @@ mlib_write_i32le (void *out, int32_t value)
  * @return void* The address after the written value
  */
 static inline void *
-mlib_write_u64le (void *out, const uint64_t value)
+mlib_write_u64le(void *out, const uint64_t value)
 {
-   uint8_t *o = (uint8_t *) out;
-   if (mlib_is_little_endian ()) {
-      memcpy (o, &value, sizeof value);
+   uint8_t *o = (uint8_t *)out;
+   if (mlib_is_little_endian()) {
+      memcpy(o, &value, sizeof value);
       return o + sizeof value;
    }
    mlib_foreach_urange (i, sizeof value) {
@@ -149,9 +149,9 @@ mlib_write_u64le (void *out, const uint64_t value)
  * @return void* The address after the written value
  */
 static inline void *
-mlib_write_i64le (void *out, int64_t value)
+mlib_write_i64le(void *out, int64_t value)
 {
-   return mlib_write_u64le (out, (uint64_t) value);
+   return mlib_write_u64le(out, (uint64_t)value);
 }
 
 /**
@@ -161,12 +161,12 @@ mlib_write_i64le (void *out, int64_t value)
  * @return void* The address after the written value.
  */
 static inline void *
-mlib_write_f64le (void *out, double d)
+mlib_write_f64le(void *out, double d)
 {
-   mlib_static_assert (sizeof (double) == sizeof (uint64_t));
+   mlib_static_assert(sizeof(double) == sizeof(uint64_t));
    uint64_t bits;
-   memcpy (&bits, &d, sizeof d);
-   return mlib_write_u64le (out, bits);
+   memcpy(&bits, &d, sizeof d);
+   return mlib_write_u64le(out, bits);
 }
 
 /**
@@ -180,7 +180,7 @@ mlib_write_f64le (void *out, double d)
  * See `mlib_i64_parse` for more details.
  */
 static inline int
-mlib_nat64_parse (mstr_view in, unsigned base, uint64_t *out)
+mlib_nat64_parse(mstr_view in, unsigned base, uint64_t *out)
 {
    if (in.len == 0) {
       // Empty string is not valid
@@ -194,17 +194,17 @@ mlib_nat64_parse (mstr_view in, unsigned base, uint64_t *out)
    // Loop until we have consumed the full string, or encounter an invalid digit
    while (in.len) {
       // Shift place value for another digit
-      did_overflow = mlib_mul (&value, base) || did_overflow;
+      did_overflow = mlib_mul(&value, base) || did_overflow;
       // Case-fold for alpha digits
-      int32_t digit = mlib_latin_tolower (in.data[0]);
+      int32_t digit = mlib_latin_tolower(in.data[0]);
       unsigned digit_value = 0;
       // Only standard digits
       if (digit >= '0' && digit <= '9') {
          // Normal digit
-         digit_value = (unsigned) (digit - '0');
+         digit_value = (unsigned)(digit - '0');
       } else if (digit >= 'a' && digit <= 'z') {
          // Letter digits
-         digit_value = (unsigned) (digit - 'a') + 10;
+         digit_value = (unsigned)(digit - 'a') + 10;
       } else {
          // Not a valid alnum digit
          return EINVAL;
@@ -214,16 +214,16 @@ mlib_nat64_parse (mstr_view in, unsigned base, uint64_t *out)
          return EINVAL;
       }
       // Accumulate the new digit value
-      did_overflow = mlib_add (&value, digit_value) || did_overflow;
+      did_overflow = mlib_add(&value, digit_value) || did_overflow;
       // Jump to the next digit in the string
-      in = mstr_substr (in, 1);
+      in = mstr_substr(in, 1);
    }
 
    if (did_overflow) {
       return ERANGE;
    }
 
-   (void) (out && (*out = value));
+   (void)(out && (*out = value));
    return 0;
 }
 
@@ -248,7 +248,7 @@ mlib_nat64_parse (mstr_view in, unsigned base, uint64_t *out)
  * an error of EINVAL.
  */
 static inline int
-mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
+mlib_i64_parse(mstr_view in, unsigned base, int64_t *out)
 {
    if (in.len == 0) {
       // Empty string is not a valid integer
@@ -259,12 +259,12 @@ mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
    // Check for a "+"
    if (in.data[0] == '+') {
       // Just a plus. Drop it and do nothing with it.
-      in = mstr_substr (in, 1);
+      in = mstr_substr(in, 1);
    }
    // Check for a negative prefix
    else if (in.data[0] == '-') {
       // Negative sign. We'll negate the value later.
-      in = mstr_substr (in, 1);
+      in = mstr_substr(in, 1);
       sign = -1;
    }
 
@@ -272,18 +272,18 @@ mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
    if (base == 0) {
       if (in.len && in.data[0] == '0') {
          if (in.len > 1) {
-            if (mlib_latin_tolower (in.data[1]) == 'x') {
+            if (mlib_latin_tolower(in.data[1]) == 'x') {
                // Hexadecimal
                base = 16;
-               in = mstr_substr (in, 2);
-            } else if (mlib_latin_tolower (in.data[1]) == 'o') {
+               in = mstr_substr(in, 2);
+            } else if (mlib_latin_tolower(in.data[1]) == 'o') {
                // Octal
                base = 8;
-               in = mstr_substr (in, 2);
-            } else if (mlib_latin_tolower (in.data[1]) == 'b') {
+               in = mstr_substr(in, 2);
+            } else if (mlib_latin_tolower(in.data[1]) == 'b') {
                // Binary
                base = 2;
-               in = mstr_substr (in, 2);
+               in = mstr_substr(in, 2);
             }
          }
          if (base == 0) {
@@ -300,7 +300,7 @@ mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
    // Try to parse the natural number now that we have removed all prefixes and
    // have a non-zero base.
    uint64_t nat;
-   int rc = mlib_nat64_parse (in, base, &nat);
+   int rc = mlib_nat64_parse(in, base, &nat);
    if (rc) {
       return rc;
    }
@@ -308,17 +308,17 @@ mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
    // Try to narrow from the u64 to i64 and apply the sign. This must be done as
    // one operation because of the pathological case of parsing INT64_MIN
    int64_t i64 = 0;
-   if (mlib_mul (&i64, nat, sign)) {
+   if (mlib_mul(&i64, nat, sign)) {
       return ERANGE;
    }
 
-   (void) (out && (*out = i64));
+   (void)(out && (*out = i64));
    return 0;
 }
 
-#define mlib_i64_parse(...) MLIB_ARGC_PICK (_mlib_i64_parse, __VA_ARGS__)
-#define _mlib_i64_parse_argc_2(S, Ptr) _mlib_i64_parse_argc_3 ((S), 0, (Ptr))
-#define _mlib_i64_parse_argc_3(S, Base, Ptr) mlib_i64_parse (mstr_view_from ((S)), Base, Ptr)
+#define mlib_i64_parse(...) MLIB_ARGC_PICK(_mlib_i64_parse, __VA_ARGS__)
+#define _mlib_i64_parse_argc_2(S, Ptr) _mlib_i64_parse_argc_3((S), 0, (Ptr))
+#define _mlib_i64_parse_argc_3(S, Base, Ptr) mlib_i64_parse(mstr_view_from((S)), Base, Ptr)
 
 /**
  * @brief Parse a 32-bit integer from a string.
@@ -326,25 +326,25 @@ mlib_i64_parse (mstr_view in, unsigned base, int64_t *out)
  * See `mlib_i64_parse` for more details.
  */
 static inline int
-mlib_i32_parse (mstr_view in, unsigned base, int32_t *out)
+mlib_i32_parse(mstr_view in, unsigned base, int32_t *out)
 {
    int64_t tmp;
-   int ec = mlib_i64_parse (in, base, &tmp);
+   int ec = mlib_i64_parse(in, base, &tmp);
    if (ec) {
       // Failed to parse the int64 value.
       return ec;
    }
    // Attempt to narrow to a 32-bit value
    int32_t i32 = 0;
-   if (mlib_narrow (&i32, tmp)) {
+   if (mlib_narrow(&i32, tmp)) {
       // Value is out-of-range
       return ERANGE;
    }
    // Success
-   (void) (out && (*out = i32));
+   (void)(out && (*out = i32));
    return 0;
 }
 
-#define mlib_i32_parse(...) MLIB_ARGC_PICK (_mlib_i32_parse, __VA_ARGS__)
-#define _mlib_i32_parse_argc_2(S, Ptr) _mlib_i32_parse_argc_3 ((S), 0, (Ptr))
-#define _mlib_i32_parse_argc_3(S, Base, Ptr) mlib_i32_parse (mstr_view_from ((S)), Base, Ptr)
+#define mlib_i32_parse(...) MLIB_ARGC_PICK(_mlib_i32_parse, __VA_ARGS__)
+#define _mlib_i32_parse_argc_2(S, Ptr) _mlib_i32_parse_argc_3((S), 0, (Ptr))
+#define _mlib_i32_parse_argc_3(S, Base, Ptr) mlib_i32_parse(mstr_view_from((S)), Base, Ptr)

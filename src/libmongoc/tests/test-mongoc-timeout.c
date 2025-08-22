@@ -20,140 +20,140 @@
 #include <test-libmongoc.h>
 
 void
-_test_mongoc_timeout_new_success (int64_t expected)
+_test_mongoc_timeout_new_success(int64_t expected)
 {
    mongoc_timeout_t *timeout;
 
-   timeout = mongoc_timeout_new_timeout_int64 (expected);
-   BSON_ASSERT (mongoc_timeout_is_set (timeout));
-   BSON_ASSERT (expected == mongoc_timeout_get_timeout_ms (timeout));
-   mongoc_timeout_destroy (timeout);
+   timeout = mongoc_timeout_new_timeout_int64(expected);
+   BSON_ASSERT(mongoc_timeout_is_set(timeout));
+   BSON_ASSERT(expected == mongoc_timeout_get_timeout_ms(timeout));
+   mongoc_timeout_destroy(timeout);
 }
 
 void
-_test_mongoc_timeout_new_failure (int64_t try, const char *err_msg)
+_test_mongoc_timeout_new_failure(int64_t try, const char *err_msg)
 {
-   capture_logs (true);
-   BSON_ASSERT (!mongoc_timeout_new_timeout_int64 (try));
-   ASSERT_CAPTURED_LOG ("mongoc", MONGOC_LOG_LEVEL_ERROR, err_msg);
-   clear_captured_logs ();
+   capture_logs(true);
+   BSON_ASSERT(!mongoc_timeout_new_timeout_int64(try));
+   ASSERT_CAPTURED_LOG("mongoc", MONGOC_LOG_LEVEL_ERROR, err_msg);
+   clear_captured_logs();
 }
 
 void
-test_mongoc_timeout_new (void)
-{
-   mongoc_timeout_t *timeout = NULL;
-
-   BSON_ASSERT (!mongoc_timeout_is_set (timeout));
-
-   BSON_ASSERT (timeout = mongoc_timeout_new ());
-   BSON_ASSERT (!mongoc_timeout_is_set (timeout));
-   mongoc_timeout_destroy (timeout);
-
-   _test_mongoc_timeout_new_failure (-1, "timeout must not be negative");
-   _test_mongoc_timeout_new_failure (INT64_MIN, "timeout must not be negative");
-
-   _test_mongoc_timeout_new_success (0);
-   _test_mongoc_timeout_new_success (1);
-   _test_mongoc_timeout_new_success (INT64_MAX);
-}
-
-void
-_test_mongoc_timeout_set_failure (mongoc_timeout_t *timeout, int64_t try, const char *err_msg)
-{
-   capture_logs (true);
-   BSON_ASSERT (!mongoc_timeout_set_timeout_ms (timeout, try));
-   ASSERT_CAPTURED_LOG ("mongoc", MONGOC_LOG_LEVEL_ERROR, err_msg);
-   clear_captured_logs ();
-
-   BSON_ASSERT (!mongoc_timeout_is_set (timeout));
-}
-
-void
-_test_mongoc_timeout_set_success (mongoc_timeout_t *timeout, int64_t expected)
-{
-   BSON_ASSERT (mongoc_timeout_set_timeout_ms (timeout, expected));
-   BSON_ASSERT (mongoc_timeout_is_set (timeout));
-   BSON_ASSERT (expected == mongoc_timeout_get_timeout_ms (timeout));
-}
-
-void
-test_mongoc_timeout_set (void)
+test_mongoc_timeout_new(void)
 {
    mongoc_timeout_t *timeout = NULL;
 
-   timeout = mongoc_timeout_new ();
-   BSON_ASSERT (!mongoc_timeout_is_set (timeout));
+   BSON_ASSERT(!mongoc_timeout_is_set(timeout));
 
-   _test_mongoc_timeout_set_failure (timeout, -1, "timeout must not be negative");
-   _test_mongoc_timeout_set_failure (timeout, INT64_MIN, "timeout must not be negative");
+   BSON_ASSERT(timeout = mongoc_timeout_new());
+   BSON_ASSERT(!mongoc_timeout_is_set(timeout));
+   mongoc_timeout_destroy(timeout);
 
-   _test_mongoc_timeout_set_success (timeout, 0);
-   _test_mongoc_timeout_set_success (timeout, 1);
-   _test_mongoc_timeout_set_success (timeout, INT64_MAX);
+   _test_mongoc_timeout_new_failure(-1, "timeout must not be negative");
+   _test_mongoc_timeout_new_failure(INT64_MIN, "timeout must not be negative");
 
-   mongoc_timeout_destroy (timeout);
+   _test_mongoc_timeout_new_success(0);
+   _test_mongoc_timeout_new_success(1);
+   _test_mongoc_timeout_new_success(INT64_MAX);
 }
 
 void
-test_mongoc_timeout_get (void)
+_test_mongoc_timeout_set_failure(mongoc_timeout_t *timeout, int64_t try, const char *err_msg)
+{
+   capture_logs(true);
+   BSON_ASSERT(!mongoc_timeout_set_timeout_ms(timeout, try));
+   ASSERT_CAPTURED_LOG("mongoc", MONGOC_LOG_LEVEL_ERROR, err_msg);
+   clear_captured_logs();
+
+   BSON_ASSERT(!mongoc_timeout_is_set(timeout));
+}
+
+void
+_test_mongoc_timeout_set_success(mongoc_timeout_t *timeout, int64_t expected)
+{
+   BSON_ASSERT(mongoc_timeout_set_timeout_ms(timeout, expected));
+   BSON_ASSERT(mongoc_timeout_is_set(timeout));
+   BSON_ASSERT(expected == mongoc_timeout_get_timeout_ms(timeout));
+}
+
+void
+test_mongoc_timeout_set(void)
+{
+   mongoc_timeout_t *timeout = NULL;
+
+   timeout = mongoc_timeout_new();
+   BSON_ASSERT(!mongoc_timeout_is_set(timeout));
+
+   _test_mongoc_timeout_set_failure(timeout, -1, "timeout must not be negative");
+   _test_mongoc_timeout_set_failure(timeout, INT64_MIN, "timeout must not be negative");
+
+   _test_mongoc_timeout_set_success(timeout, 0);
+   _test_mongoc_timeout_set_success(timeout, 1);
+   _test_mongoc_timeout_set_success(timeout, INT64_MAX);
+
+   mongoc_timeout_destroy(timeout);
+}
+
+void
+test_mongoc_timeout_get(void)
 {
    mongoc_timeout_t *timeout = NULL;
    int64_t expected;
 
-   BSON_ASSERT (timeout = mongoc_timeout_new ());
-   BSON_ASSERT (!mongoc_timeout_is_set (timeout));
+   BSON_ASSERT(timeout = mongoc_timeout_new());
+   BSON_ASSERT(!mongoc_timeout_is_set(timeout));
 
    expected = 1;
-   mongoc_timeout_set_timeout_ms (timeout, expected);
-   BSON_ASSERT (mongoc_timeout_is_set (timeout));
-   BSON_ASSERT (expected == mongoc_timeout_get_timeout_ms (timeout));
+   mongoc_timeout_set_timeout_ms(timeout, expected);
+   BSON_ASSERT(mongoc_timeout_is_set(timeout));
+   BSON_ASSERT(expected == mongoc_timeout_get_timeout_ms(timeout));
 
-   mongoc_timeout_destroy (timeout);
+   mongoc_timeout_destroy(timeout);
 }
 
 void
-_test_mongoc_timeout_copy (mongoc_timeout_t *expected)
+_test_mongoc_timeout_copy(mongoc_timeout_t *expected)
 {
-   mongoc_timeout_t *actual = mongoc_timeout_copy (expected);
+   mongoc_timeout_t *actual = mongoc_timeout_copy(expected);
 
    /* assert different memory addresses */
-   BSON_ASSERT (expected != actual);
+   BSON_ASSERT(expected != actual);
 
-   BSON_ASSERT (mongoc_timeout_is_set (actual) == mongoc_timeout_is_set (expected));
+   BSON_ASSERT(mongoc_timeout_is_set(actual) == mongoc_timeout_is_set(expected));
 
-   if (mongoc_timeout_is_set (actual)) {
-      BSON_ASSERT (mongoc_timeout_get_timeout_ms (actual) == mongoc_timeout_get_timeout_ms (expected));
+   if (mongoc_timeout_is_set(actual)) {
+      BSON_ASSERT(mongoc_timeout_get_timeout_ms(actual) == mongoc_timeout_get_timeout_ms(expected));
    }
 
-   mongoc_timeout_destroy (actual);
+   mongoc_timeout_destroy(actual);
 }
 void
-test_mongoc_timeout_copy (void)
+test_mongoc_timeout_copy(void)
 {
    mongoc_timeout_t *timeout = NULL;
 
-   timeout = mongoc_timeout_new ();
-   _test_mongoc_timeout_copy (timeout);
-   mongoc_timeout_destroy (timeout);
+   timeout = mongoc_timeout_new();
+   _test_mongoc_timeout_copy(timeout);
+   mongoc_timeout_destroy(timeout);
 
-   timeout = mongoc_timeout_new_timeout_int64 (1);
-   _test_mongoc_timeout_copy (timeout);
-   mongoc_timeout_destroy (timeout);
+   timeout = mongoc_timeout_new_timeout_int64(1);
+   _test_mongoc_timeout_copy(timeout);
+   mongoc_timeout_destroy(timeout);
 }
 
 void
-test_mongoc_timeout_destroy (void)
+test_mongoc_timeout_destroy(void)
 {
-   mongoc_timeout_destroy (NULL);
+   mongoc_timeout_destroy(NULL);
 }
 
 void
-test_timeout_install (TestSuite *suite)
+test_timeout_install(TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Timeout/new", test_mongoc_timeout_new);
-   TestSuite_Add (suite, "/Timeout/set", test_mongoc_timeout_set);
-   TestSuite_Add (suite, "/Timeout/get", test_mongoc_timeout_get);
-   TestSuite_Add (suite, "/Timeout/copy", test_mongoc_timeout_copy);
-   TestSuite_Add (suite, "/Timeout/destroy", test_mongoc_timeout_destroy);
+   TestSuite_Add(suite, "/Timeout/new", test_mongoc_timeout_new);
+   TestSuite_Add(suite, "/Timeout/set", test_mongoc_timeout_set);
+   TestSuite_Add(suite, "/Timeout/get", test_mongoc_timeout_get);
+   TestSuite_Add(suite, "/Timeout/copy", test_mongoc_timeout_copy);
+   TestSuite_Add(suite, "/Timeout/destroy", test_mongoc_timeout_destroy);
 }

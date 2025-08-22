@@ -55,7 +55,6 @@ MACOS_DISTROS = [
 ]
 
 MACOS_ARM64_DISTROS = [
-    Distro(name='macos-11-arm64', os='macos', os_type='macos', os_ver='11', arch='arm64'),
     Distro(name='macos-14-arm64', os='macos', os_type='macos', os_ver='14', arch='arm64'),
 ]
 
@@ -219,6 +218,12 @@ def compiler_to_vars(compiler):
             return {
                 'CMAKE_GENERATOR': to_cc(vs),
                 'CMAKE_GENERATOR_PLATFORM': to_platform(vs),
+            }
+
+        case _, ['mingw', *rest]:
+            return {
+                'CC': '-'.join(['gcc'] + rest),
+                'CXX': '-'.join(['g++'] + rest),
             }
 
         case compiler, _:

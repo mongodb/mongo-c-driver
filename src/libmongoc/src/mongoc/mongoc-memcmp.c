@@ -18,7 +18,7 @@
 #include <mongoc/mongoc-memcmp-private.h>
 
 int
-mongoc_memcmp (const void *const b1, const void *const b2, size_t len)
+mongoc_memcmp(const void *const b1, const void *const b2, size_t len)
 {
    const unsigned char *p1 = b1, *p2 = b2;
    int ret = 0;

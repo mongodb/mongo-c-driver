@@ -26,47 +26,47 @@
 #define MONGOC_LOG_DOMAIN "SASL"
 
 void
-_mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user)
+_mongoc_sasl_set_user(mongoc_sasl_t *sasl, const char *user)
 {
-   BSON_ASSERT (sasl);
+   BSON_ASSERT(sasl);
 
-   bson_free (sasl->user);
-   sasl->user = user ? bson_strdup (user) : NULL;
+   bson_free(sasl->user);
+   sasl->user = user ? bson_strdup(user) : NULL;
 }
 
 
 void
-_mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass)
+_mongoc_sasl_set_pass(mongoc_sasl_t *sasl, const char *pass)
 {
-   BSON_ASSERT (sasl);
+   BSON_ASSERT(sasl);
 
-   bson_free (sasl->pass);
-   sasl->pass = pass ? bson_strdup (pass) : NULL;
+   bson_free(sasl->pass);
+   sasl->pass = pass ? bson_strdup(pass) : NULL;
 }
 
 
 void
-_mongoc_sasl_set_service_host (mongoc_sasl_t *sasl, const char *service_host)
+_mongoc_sasl_set_service_host(mongoc_sasl_t *sasl, const char *service_host)
 {
-   BSON_ASSERT (sasl);
+   BSON_ASSERT(sasl);
 
-   bson_free (sasl->service_host);
-   sasl->service_host = service_host ? bson_strdup (service_host) : NULL;
+   bson_free(sasl->service_host);
+   sasl->service_host = service_host ? bson_strdup(service_host) : NULL;
 }
 
 
 void
-_mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name)
+_mongoc_sasl_set_service_name(mongoc_sasl_t *sasl, const char *service_name)
 {
-   BSON_ASSERT (sasl);
+   BSON_ASSERT(sasl);
 
-   bson_free (sasl->service_name);
-   sasl->service_name = service_name ? bson_strdup (service_name) : NULL;
+   bson_free(sasl->service_name);
+   sasl->service_name = service_name ? bson_strdup(service_name) : NULL;
 }
 
 
 void
-_mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
+_mongoc_sasl_set_properties(mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -74,25 +74,25 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
    const char *service_name = NULL;
    bool canonicalize = false;
 
-   _mongoc_sasl_set_pass (sasl, mongoc_uri_get_password (uri));
-   _mongoc_sasl_set_user (sasl, mongoc_uri_get_username (uri));
+   _mongoc_sasl_set_pass(sasl, mongoc_uri_get_password(uri));
+   _mongoc_sasl_set_user(sasl, mongoc_uri_get_username(uri));
 
-   options = mongoc_uri_get_options (uri);
+   options = mongoc_uri_get_options(uri);
 
-   if (!mongoc_uri_get_mechanism_properties (uri, &properties)) {
-      bson_init (&properties);
+   if (!mongoc_uri_get_mechanism_properties(uri, &properties)) {
+      bson_init(&properties);
    }
 
-   if (bson_iter_init_find_case (&iter, options, MONGOC_URI_GSSAPISERVICENAME) && BSON_ITER_HOLDS_UTF8 (&iter)) {
-      service_name = bson_iter_utf8 (&iter, NULL);
+   if (bson_iter_init_find_case(&iter, options, MONGOC_URI_GSSAPISERVICENAME) && BSON_ITER_HOLDS_UTF8(&iter)) {
+      service_name = bson_iter_utf8(&iter, NULL);
    }
 
-   if (bson_iter_init_find_case (&iter, &properties, "SERVICE_NAME") && BSON_ITER_HOLDS_UTF8 (&iter)) {
+   if (bson_iter_init_find_case(&iter, &properties, "SERVICE_NAME") && BSON_ITER_HOLDS_UTF8(&iter)) {
       /* newer "authMechanismProperties" URI syntax takes precedence */
-      service_name = bson_iter_utf8 (&iter, NULL);
+      service_name = bson_iter_utf8(&iter, NULL);
    }
 
-   _mongoc_sasl_set_service_name (sasl, service_name);
+   _mongoc_sasl_set_service_name(sasl, service_name);
 
    /*
     * Driver Authentication Spec: "Drivers MAY allow the user to request
@@ -105,19 +105,19 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
     *
     * See CDRIVER-323 for more information.
     */
-   if (bson_iter_init_find_case (&iter, options, MONGOC_URI_CANONICALIZEHOSTNAME) && BSON_ITER_HOLDS_BOOL (&iter)) {
-      canonicalize = bson_iter_bool (&iter);
+   if (bson_iter_init_find_case(&iter, options, MONGOC_URI_CANONICALIZEHOSTNAME) && BSON_ITER_HOLDS_BOOL(&iter)) {
+      canonicalize = bson_iter_bool(&iter);
    }
 
    /* newer "authMechanismProperties" URI syntax takes precedence */
-   if (bson_iter_init_find_case (&iter, &properties, "CANONICALIZE_HOST_NAME") && BSON_ITER_HOLDS_UTF8 (&iter)) {
-      const char *const value = bson_iter_utf8 (&iter, NULL);
+   if (bson_iter_init_find_case(&iter, &properties, "CANONICALIZE_HOST_NAME") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      const char *const value = bson_iter_utf8(&iter, NULL);
 
-      const bool is_true = strcasecmp (value, "true") == 0;
+      const bool is_true = strcasecmp(value, "true") == 0;
 
       // CDRIVER-4128: only legacy boolean values are currently supported.
-      if (!is_true && strcasecmp (value, "false") != 0) {
-         MONGOC_WARNING ("Unsupported value for \"CANONICALIZE_HOST_NAME\": \"%s\"", value);
+      if (!is_true && strcasecmp(value, "false") != 0) {
+         MONGOC_WARNING("Unsupported value for \"CANONICALIZE_HOST_NAME\": \"%s\"", value);
       } else {
          canonicalize = is_true;
       }
@@ -125,7 +125,7 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
 
    sasl->canonicalize_host_name = canonicalize;
 
-   bson_destroy (&properties);
+   bson_destroy(&properties);
 }
 
 
@@ -152,9 +152,9 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
  */
 
 bool
-_mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
-                                     char *name,                   /* OUT */
-                                     size_t namelen)               /* OUT */
+_mongoc_sasl_get_canonicalized_name(mongoc_stream_t *node_stream, /* IN */
+                                    char *name,                   /* OUT */
+                                    size_t namelen)               /* OUT */
 {
    mongoc_stream_t *stream;
    mongoc_socket_t *sock = NULL;
@@ -162,26 +162,26 @@ _mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
 
    ENTRY;
 
-   BSON_ASSERT (node_stream);
-   BSON_ASSERT (name);
+   BSON_ASSERT(node_stream);
+   BSON_ASSERT(name);
 
-   stream = mongoc_stream_get_root_stream (node_stream);
-   BSON_ASSERT (stream);
+   stream = mongoc_stream_get_root_stream(node_stream);
+   BSON_ASSERT(stream);
 
    if (stream->type == MONGOC_STREAM_SOCKET) {
-      sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *) stream);
+      sock = mongoc_stream_socket_get_socket((mongoc_stream_socket_t *)stream);
       if (sock) {
-         canonicalized = mongoc_socket_getnameinfo (sock);
+         canonicalized = mongoc_socket_getnameinfo(sock);
          if (canonicalized) {
             // Truncation is OK.
-            int req = bson_snprintf (name, namelen, "%s", canonicalized);
-            BSON_ASSERT (req > 0);
-            bson_free (canonicalized);
-            RETURN (true);
+            int req = bson_snprintf(name, namelen, "%s", canonicalized);
+            BSON_ASSERT(req > 0);
+            bson_free(canonicalized);
+            RETURN(true);
          }
       }
    }
 
-   RETURN (false);
+   RETURN(false);
 }
 #endif

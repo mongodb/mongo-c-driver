@@ -39,135 +39,135 @@ typedef struct {
 
 
 static void
-_mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
+_mongoc_stream_gridfs_destroy(mongoc_stream_t *stream)
 {
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT(stream);
 
-   mongoc_stream_close (stream);
+   mongoc_stream_close(stream);
 
-   bson_free (stream);
+   bson_free(stream);
 
-   mongoc_counter_streams_active_dec ();
-   mongoc_counter_streams_disposed_inc ();
+   mongoc_counter_streams_active_dec();
+   mongoc_counter_streams_disposed_inc();
 
    EXIT;
 }
 
 
 static void
-_mongoc_stream_gridfs_failed (mongoc_stream_t *stream)
+_mongoc_stream_gridfs_failed(mongoc_stream_t *stream)
 {
    ENTRY;
 
-   _mongoc_stream_gridfs_destroy (stream);
+   _mongoc_stream_gridfs_destroy(stream);
 
    EXIT;
 }
 
 
 static int
-_mongoc_stream_gridfs_close (mongoc_stream_t *stream)
+_mongoc_stream_gridfs_close(mongoc_stream_t *stream)
 {
-   mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *) stream;
+   mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *)stream;
    int ret = 0;
 
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT(stream);
 
-   ret = mongoc_gridfs_file_save (gridfs->file);
+   ret = mongoc_gridfs_file_save(gridfs->file);
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 static int
-_mongoc_stream_gridfs_flush (mongoc_stream_t *stream)
+_mongoc_stream_gridfs_flush(mongoc_stream_t *stream)
 {
-   mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *) stream;
+   mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *)stream;
    int ret = 0;
 
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT(stream);
 
-   ret = mongoc_gridfs_file_save (gridfs->file);
+   ret = mongoc_gridfs_file_save(gridfs->file);
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 
 static ssize_t
-_mongoc_stream_gridfs_readv (
+_mongoc_stream_gridfs_readv(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
-   mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *) stream;
+   mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *)stream;
    ssize_t ret = 0;
 
    ENTRY;
 
-   BSON_UNUSED (timeout_msec);
+   BSON_UNUSED(timeout_msec);
 
-   BSON_ASSERT (stream);
-   BSON_ASSERT (iov);
-   BSON_ASSERT (iovcnt);
+   BSON_ASSERT(stream);
+   BSON_ASSERT(iov);
+   BSON_ASSERT(iovcnt);
 
    /* timeout_msec is unused by mongoc_gridfs_file_readv */
-   ret = mongoc_gridfs_file_readv (file->file, iov, iovcnt, min_bytes, 0);
+   ret = mongoc_gridfs_file_readv(file->file, iov, iovcnt, min_bytes, 0);
 
-   mongoc_counter_streams_ingress_add (ret);
+   mongoc_counter_streams_ingress_add(ret);
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 
 static ssize_t
-_mongoc_stream_gridfs_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
+_mongoc_stream_gridfs_writev(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
-   mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *) stream;
+   mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *)stream;
    ssize_t ret = 0;
 
    ENTRY;
 
-   BSON_UNUSED (timeout_msec);
+   BSON_UNUSED(timeout_msec);
 
-   BSON_ASSERT (stream);
-   BSON_ASSERT (iov);
-   BSON_ASSERT (iovcnt);
+   BSON_ASSERT(stream);
+   BSON_ASSERT(iov);
+   BSON_ASSERT(iovcnt);
 
    /* timeout_msec is unused by mongoc_gridfs_file_writev */
-   ret = mongoc_gridfs_file_writev (file->file, iov, iovcnt, 0);
+   ret = mongoc_gridfs_file_writev(file->file, iov, iovcnt, 0);
 
    if (!ret) {
-      RETURN (ret);
+      RETURN(ret);
    }
 
-   mongoc_counter_streams_egress_add (ret);
+   mongoc_counter_streams_egress_add(ret);
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 
 static bool
-_mongoc_stream_gridfs_check_closed (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_gridfs_check_closed(mongoc_stream_t *stream) /* IN */
 {
-   BSON_UNUSED (stream);
+   BSON_UNUSED(stream);
 
    return false;
 }
 
 
 mongoc_stream_t *
-mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
+mongoc_stream_gridfs_new(mongoc_gridfs_file_t *file)
 {
    mongoc_stream_gridfs_t *stream;
 
    ENTRY;
 
-   BSON_ASSERT (file);
+   BSON_ASSERT(file);
 
-   stream = (mongoc_stream_gridfs_t *) bson_malloc0 (sizeof *stream);
+   stream = (mongoc_stream_gridfs_t *)bson_malloc0(sizeof *stream);
    stream->file = file;
    stream->stream.type = MONGOC_STREAM_GRIDFS;
    stream->stream.destroy = _mongoc_stream_gridfs_destroy;
@@ -178,7 +178,7 @@ mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
    stream->stream.readv = _mongoc_stream_gridfs_readv;
    stream->stream.check_closed = _mongoc_stream_gridfs_check_closed;
 
-   mongoc_counter_streams_active_inc ();
+   mongoc_counter_streams_active_inc();
 
-   RETURN ((mongoc_stream_t *) stream);
+   RETURN((mongoc_stream_t *)stream);
 }

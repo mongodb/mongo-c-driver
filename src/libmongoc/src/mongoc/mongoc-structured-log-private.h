@@ -46,7 +46,7 @@ typedef struct mongoc_structured_log_instance_t mongoc_structured_log_instance_t
  * Choose to leave a little more room, as it's more useful to truncate the huge document early
  * rather than fail in bson_append_utf8().
  */
-#define MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH ((uint32_t) BSON_MAX_SIZE - 4096u)
+#define MONGOC_STRUCTURED_LOG_MAXIMUM_MAX_DOCUMENT_LENGTH ((uint32_t)BSON_MAX_SIZE - 4096u)
 
 /**
  * @brief Allocate a new instance of the structured logging system
@@ -60,7 +60,7 @@ typedef struct mongoc_structured_log_instance_t mongoc_structured_log_instance_t
  * threads concurrently.
  */
 mongoc_structured_log_instance_t *
-mongoc_structured_log_instance_new (const mongoc_structured_log_opts_t *opts);
+mongoc_structured_log_instance_new(const mongoc_structured_log_opts_t *opts);
 
 /**
  * @brief Destroy an instance of the structured logging system.
@@ -69,7 +69,7 @@ mongoc_structured_log_instance_new (const mongoc_structured_log_opts_t *opts);
  * before it is destroyed.
  */
 void
-mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instance);
+mongoc_structured_log_instance_destroy(mongoc_structured_log_instance_t *instance);
 
 /**
  * @def mongoc_structured_log(instance, level, component, message, ...)
@@ -94,8 +94,8 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
  * once the table is built.
  */
 #define mongoc_structured_log(_structured_log_instance, _level, _component, ...) \
-   _bsonDSL_eval (_mongoc_structured_log_with_end_of_list (                      \
-      _structured_log_instance, _level, _component, __VA_ARGS__, end_of_list ()))
+   _bsonDSL_eval(_mongoc_structured_log_with_end_of_list(                        \
+      _structured_log_instance, _level, _component, __VA_ARGS__, end_of_list()))
 
 #define _mongoc_structured_log_with_end_of_list(_structured_log_instance, _level, _component, _message, ...) \
    do {                                                                                                      \
@@ -103,16 +103,16 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
                                               .envelope.level = (_level),                                    \
                                               .envelope.component = (_component),                            \
                                               .envelope.message = (_message)};                               \
-      if (_mongoc_structured_log_should_log (&_entry.envelope)) {                                            \
+      if (_mongoc_structured_log_should_log(&_entry.envelope)) {                                             \
          const mongoc_structured_log_builder_stage_t _builder[] = {                                          \
-            _mongoc_structured_log_items_to_stages (__VA_ARGS__)};                                           \
+            _mongoc_structured_log_items_to_stages(__VA_ARGS__)};                                            \
          _entry.builder = _builder;                                                                          \
-         _mongoc_structured_log_with_entry (&_entry);                                                        \
+         _mongoc_structured_log_with_entry(&_entry);                                                         \
       }                                                                                                      \
    } while (0)
 
 #define _mongoc_structured_log_items_to_stages(...) \
-   _bsonDSL_mapMacro (_mongoc_structured_log_item_to_stages, ~, __VA_ARGS__)
+   _bsonDSL_mapMacro(_mongoc_structured_log_item_to_stages, ~, __VA_ARGS__)
 
 #define _mongoc_structured_log_flag_expr(_action, _constant, _counter) | (_constant##_##_action)
 
@@ -139,7 +139,7 @@ mongoc_structured_log_instance_destroy (mongoc_structured_log_instance_t *instan
  * @param value_len UTF8 value length in bytes, as an int32_t expression.
  */
 #define _mongoc_structured_log_item_utf8_n(_key_literal, _value_utf8, _value_len) \
-   _mongoc_structured_log_item_utf8_nn (_key_literal, strlen (_key_literal), _value_utf8, _value_len)
+   _mongoc_structured_log_item_utf8_nn(_key_literal, strlen(_key_literal), _value_utf8, _value_len)
 
 /**
  * @def utf8_nn(key, key_len, value, value_len)
@@ -293,7 +293,7 @@ typedef enum {
    {.func = _mongoc_structured_log_append_cmd,     \
     .arg1.cmd = (_cmd),                            \
     .arg2.cmd_flags =                              \
-       (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG, __VA_ARGS__))},
+       (0 _bsonDSL_mapMacro(_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG, __VA_ARGS__))},
 
 /**
  * @def cmd_reply(cmd, reply)
@@ -365,7 +365,7 @@ typedef enum {
    {.func = _mongoc_structured_log_append_server_description,                    \
     .arg1.server_description = (_server_description),                            \
     .arg2.server_description_flags =                                             \
-       (0 _bsonDSL_mapMacro (_mongoc_structured_log_flag_expr, MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG, __VA_ARGS__))},
+       (0 _bsonDSL_mapMacro(_mongoc_structured_log_flag_expr, MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG, __VA_ARGS__))},
 
 /**
  * @def monotonic_time_duration(duration)
@@ -373,11 +373,11 @@ typedef enum {
  * @param duration Duration in microseconds, as an int64_t expression.
  */
 #define _mongoc_structured_log_item_monotonic_time_duration(_duration) \
-   _mongoc_structured_log_item_double ("durationMS", (_duration) * 1e-3)
+   _mongoc_structured_log_item_double("durationMS", (_duration) * 1e-3)
 
 typedef struct mongoc_structured_log_builder_stage_t mongoc_structured_log_builder_stage_t;
 
-typedef const mongoc_structured_log_builder_stage_t *(*mongoc_structured_log_builder_func_t) (
+typedef const mongoc_structured_log_builder_stage_t *(*mongoc_structured_log_builder_func_t)(
    bson_t *bson, const mongoc_structured_log_builder_stage_t *stage, const mongoc_structured_log_opts_t *opts);
 
 struct mongoc_structured_log_builder_stage_t {
@@ -426,125 +426,125 @@ struct mongoc_structured_log_entry_t {
 };
 
 void
-mongoc_structured_log_get_handler (const mongoc_structured_log_opts_t *opts,
-                                   mongoc_structured_log_func_t *log_func,
-                                   void **user_data);
+mongoc_structured_log_get_handler(const mongoc_structured_log_opts_t *opts,
+                                  mongoc_structured_log_func_t *log_func,
+                                  void **user_data);
 
 bool
-_mongoc_structured_log_should_log (const mongoc_structured_log_envelope_t *envelope);
+_mongoc_structured_log_should_log(const mongoc_structured_log_envelope_t *envelope);
 
 void
-_mongoc_structured_log_with_entry (const mongoc_structured_log_entry_t *entry);
+_mongoc_structured_log_with_entry(const mongoc_structured_log_entry_t *entry);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_utf8 (bson_t *bson,
-                                    const mongoc_structured_log_builder_stage_t *stage,
-                                    const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_utf8_n_stage0 (bson_t *bson,
-                                             const mongoc_structured_log_builder_stage_t *stage,
-                                             const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_utf8_n_stage1 (bson_t *bson,
-                                             const mongoc_structured_log_builder_stage_t *stage,
-                                             const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_int32 (bson_t *bson,
-                                     const mongoc_structured_log_builder_stage_t *stage,
-                                     const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_int64 (bson_t *bson,
-                                     const mongoc_structured_log_builder_stage_t *stage,
-                                     const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_double (bson_t *bson,
-                                      const mongoc_structured_log_builder_stage_t *stage,
-                                      const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_boolean (bson_t *bson,
-                                       const mongoc_structured_log_builder_stage_t *stage,
-                                       const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_error (bson_t *bson,
-                                     const mongoc_structured_log_builder_stage_t *stage,
-                                     const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_oid_as_hex (bson_t *bson,
-                                          const mongoc_structured_log_builder_stage_t *stage,
-                                          const mongoc_structured_log_opts_t *opts);
-
-const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_oid (bson_t *bson,
+_mongoc_structured_log_append_utf8(bson_t *bson,
                                    const mongoc_structured_log_builder_stage_t *stage,
                                    const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_bson_as_json (bson_t *bson,
+_mongoc_structured_log_append_utf8_n_stage0(bson_t *bson,
                                             const mongoc_structured_log_builder_stage_t *stage,
                                             const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd (bson_t *bson,
-                                   const mongoc_structured_log_builder_stage_t *stage,
-                                   const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_utf8_n_stage1(bson_t *bson,
+                                            const mongoc_structured_log_builder_stage_t *stage,
+                                            const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_reply (bson_t *bson,
+_mongoc_structured_log_append_int32(bson_t *bson,
+                                    const mongoc_structured_log_builder_stage_t *stage,
+                                    const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_int64(bson_t *bson,
+                                    const mongoc_structured_log_builder_stage_t *stage,
+                                    const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_double(bson_t *bson,
+                                     const mongoc_structured_log_builder_stage_t *stage,
+                                     const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_boolean(bson_t *bson,
+                                      const mongoc_structured_log_builder_stage_t *stage,
+                                      const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_error(bson_t *bson,
+                                    const mongoc_structured_log_builder_stage_t *stage,
+                                    const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_oid_as_hex(bson_t *bson,
                                          const mongoc_structured_log_builder_stage_t *stage,
                                          const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_name_reply (bson_t *bson,
-                                              const mongoc_structured_log_builder_stage_t *stage,
-                                              const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_oid(bson_t *bson,
+                                  const mongoc_structured_log_builder_stage_t *stage,
+                                  const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_failure_stage0 (bson_t *bson,
-                                                  const mongoc_structured_log_builder_stage_t *stage,
-                                                  const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_bson_as_json(bson_t *bson,
+                                           const mongoc_structured_log_builder_stage_t *stage,
+                                           const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_failure_stage1 (bson_t *bson,
-                                                  const mongoc_structured_log_builder_stage_t *stage,
-                                                  const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd(bson_t *bson,
+                                  const mongoc_structured_log_builder_stage_t *stage,
+                                  const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_name_failure_stage0 (bson_t *bson,
-                                                       const mongoc_structured_log_builder_stage_t *stage,
-                                                       const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd_reply(bson_t *bson,
+                                        const mongoc_structured_log_builder_stage_t *stage,
+                                        const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_cmd_name_failure_stage1 (bson_t *bson,
-                                                       const mongoc_structured_log_builder_stage_t *stage,
-                                                       const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd_name_reply(bson_t *bson,
+                                             const mongoc_structured_log_builder_stage_t *stage,
+                                             const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_server_description (bson_t *bson,
-                                                  const mongoc_structured_log_builder_stage_t *stage,
-                                                  const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd_failure_stage0(bson_t *bson,
+                                                 const mongoc_structured_log_builder_stage_t *stage,
+                                                 const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_topology_description_as_json (bson_t *bson,
-                                                            const mongoc_structured_log_builder_stage_t *stage,
-                                                            const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd_failure_stage1(bson_t *bson,
+                                                 const mongoc_structured_log_builder_stage_t *stage,
+                                                 const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_topology_as_description_json (bson_t *bson,
-                                                            const mongoc_structured_log_builder_stage_t *stage,
-                                                            const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd_name_failure_stage0(bson_t *bson,
+                                                      const mongoc_structured_log_builder_stage_t *stage,
+                                                      const mongoc_structured_log_opts_t *opts);
 
 const mongoc_structured_log_builder_stage_t *
-_mongoc_structured_log_append_read_prefs (bson_t *bson,
-                                          const mongoc_structured_log_builder_stage_t *stage,
-                                          const mongoc_structured_log_opts_t *opts);
+_mongoc_structured_log_append_cmd_name_failure_stage1(bson_t *bson,
+                                                      const mongoc_structured_log_builder_stage_t *stage,
+                                                      const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_server_description(bson_t *bson,
+                                                 const mongoc_structured_log_builder_stage_t *stage,
+                                                 const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_topology_description_as_json(bson_t *bson,
+                                                           const mongoc_structured_log_builder_stage_t *stage,
+                                                           const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_topology_as_description_json(bson_t *bson,
+                                                           const mongoc_structured_log_builder_stage_t *stage,
+                                                           const mongoc_structured_log_opts_t *opts);
+
+const mongoc_structured_log_builder_stage_t *
+_mongoc_structured_log_append_read_prefs(bson_t *bson,
+                                         const mongoc_structured_log_builder_stage_t *stage,
+                                         const mongoc_structured_log_opts_t *opts);
 
 BSON_END_DECLS
 

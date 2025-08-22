@@ -110,7 +110,12 @@ fi
 
 # Sanitizer environment variables.
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
-export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
+export ASAN_SYMBOLIZER_PATH
+if command -v "/opt/mongodbtoolchain/v4/bin/llvm-symbolizer" > /dev/null; then
+  ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v4/bin/llvm-symbolizer"
+elif command -v "/opt/mongodbtoolchain/v3/bin/llvm-symbolizer" > /dev/null; then
+  ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
+fi
 export TSAN_OPTIONS="suppressions=.tsan-suppressions"
 
 ubsan_opts=(
@@ -168,9 +173,9 @@ wait_for_server() {
   return 1
 }
 
-if [[ "${CC}" =~ mingw ]]; then
+if [[ "${OSTYPE:?}" == cygwin && "${CC}" =~ gcc ]]; then
   echo "Waiting for simple HTTP server to start..."
-  wait_for_server "simple HTTP" 8000
+  wait_for_server "simple HTTP" 18000
   echo "Waiting for simple HTTP server to start... done."
 
   chmod -f +x ./cmake-build/src/libmongoc/test-libmongoc.exe
@@ -214,6 +219,7 @@ if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
 
   # Limit tests executed to CSE tests.
   test_args+=("-l" "/client_side_encryption/*")
+  test_args+=("-l" "/unified/*") # Includes PoC tests for CSFLE/QE.
 fi
 
 if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
