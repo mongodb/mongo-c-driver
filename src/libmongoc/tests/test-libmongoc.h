@@ -220,9 +220,9 @@ WIRE_VERSION_CHECK_DECLS(24)
 /* wire version 25 begins with the 8.0 release. */
 WIRE_VERSION_CHECK_DECLS(25)
 /* wire version 26 begins with the 8.1 release. */
-WIRE_VERSION_CHECK_DECLS (26)
+WIRE_VERSION_CHECK_DECLS(26)
 /* wire version 27 begins with the 8.2 release. */
-WIRE_VERSION_CHECK_DECLS (27)
+WIRE_VERSION_CHECK_DECLS(27)
 
 #undef WIRE_VERSION_CHECK_DECLS
 

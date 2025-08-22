@@ -654,7 +654,7 @@ collect_tests_from_dir(char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
  *-----------------------------------------------------------------------
  */
 bson_t *
-get_bson_from_json_file (const char *filename)
+get_bson_from_json_file(const char *filename)
 {
    FILE *const file = fopen(filename, "rb");
    if (!file) {
