@@ -375,7 +375,7 @@ test_stream_tracker(void)
       stream_tracker_track_client(st, client);
 
       // Expect initial count is 0:
-      stream_tracker_assert_count(st, first_host_and_port, 0);
+      stream_tracker_assert_active_count(st, first_host_and_port, 0);
 
       // Do operation requiring a stream. Target first host:
       bson_error_t error;
@@ -384,13 +384,13 @@ test_stream_tracker(void)
                       error);
 
       // Expect count incremented:
-      stream_tracker_assert_count(st, first_host_and_port, 1);
+      stream_tracker_assert_active_count(st, first_host_and_port, 1);
 
       // Destroy stream:
       mongoc_client_destroy(client);
 
       // Expect count decremented:
-      stream_tracker_assert_count(st, first_host_and_port, 0);
+      stream_tracker_assert_active_count(st, first_host_and_port, 0);
 
       stream_tracker_destroy(st);
    }
@@ -402,14 +402,14 @@ test_stream_tracker(void)
       stream_tracker_track_pool(st, pool);
 
       // Expect initial count is 0:
-      stream_tracker_assert_count(st, first_host_and_port, 0);
+      stream_tracker_assert_active_count(st, first_host_and_port, 0);
 
       // Pop a client, triggering background connections to be created:
       mongoc_client_t *client = mongoc_client_pool_pop(pool);
 
       // Server 4.4 added support for streaming monitoring and has 2 monitoring connections.
       int monitor_count = test_framework_get_server_version() >= test_framework_str_to_version("4.4") ? 2 : 1;
-      stream_tracker_assert_eventual_count(st, first_host_and_port, monitor_count);
+      stream_tracker_assert_eventual_active_count(st, first_host_and_port, monitor_count);
 
       // Do operation requiring a stream. Target first host:
       bson_error_t error;
@@ -418,14 +418,14 @@ test_stream_tracker(void)
                       error);
 
       // Expect count incremented:
-      stream_tracker_assert_count(st, first_host_and_port, monitor_count + 1);
+      stream_tracker_assert_active_count(st, first_host_and_port, monitor_count + 1);
 
       // Destroy pool.
       mongoc_client_pool_push(pool, client);
       mongoc_client_pool_destroy(pool);
 
       // Expect count decremented:
-      stream_tracker_assert_count(st, first_host_and_port, 0);
+      stream_tracker_assert_active_count(st, first_host_and_port, 0);
 
       stream_tracker_destroy(st);
    }

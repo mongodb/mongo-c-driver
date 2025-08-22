@@ -49,37 +49,37 @@ stream_tracker_count_total(stream_tracker_t *st, const char *host);
 void
 stream_tracker_destroy(stream_tracker_t *st);
 
-#define stream_tracker_assert_count(st, host, expect)      \
-   if (1) {                                                \
-      int _got = stream_tracker_count_active(st, host);    \
-      if (_got != expect) {                                \
-         test_error("Got unexpected stream count to %s:\n" \
-                    "  Expected %d, got %d",               \
-                    host,                                  \
-                    expect,                                \
-                    _got);                                 \
-      }                                                    \
-   } else                                                  \
+#define stream_tracker_assert_active_count(st, host, expect)      \
+   if (1) {                                                       \
+      int _got = stream_tracker_count_active(st, host);           \
+      if (_got != expect) {                                       \
+         test_error("Got unexpected active stream count to %s:\n" \
+                    "  Expected %d, got %d",                      \
+                    host,                                         \
+                    expect,                                       \
+                    _got);                                        \
+      }                                                           \
+   } else                                                         \
       ((void)0)
 
-#define stream_tracker_assert_eventual_count(st, host, expect)                \
-   if (1) {                                                                   \
-      mlib_timer _timer = mlib_expires_after(5, s);                           \
-      while (true) {                                                          \
-         int _got = stream_tracker_count_active(st, host);                    \
-         if (_got == expect) {                                                \
-            break;                                                            \
-         }                                                                    \
-         if (mlib_timer_is_expired(_timer)) {                                 \
-            test_error("Timed out waiting for expected stream count to %s:\n" \
-                       "  Expected %d, got %d",                               \
-                       host,                                                  \
-                       expect,                                                \
-                       _got);                                                 \
-         }                                                                    \
-         mlib_sleep_for(100, ms);                                             \
-      }                                                                       \
-   } else                                                                     \
+#define stream_tracker_assert_eventual_active_count(st, host, expect)                \
+   if (1) {                                                                          \
+      mlib_timer _timer = mlib_expires_after(5, s);                                  \
+      while (true) {                                                                 \
+         int _got = stream_tracker_count_active(st, host);                           \
+         if (_got == expect) {                                                       \
+            break;                                                                   \
+         }                                                                           \
+         if (mlib_timer_is_expired(_timer)) {                                        \
+            test_error("Timed out waiting for expected active stream count to %s:\n" \
+                       "  Expected %d, got %d",                                      \
+                       host,                                                         \
+                       expect,                                                       \
+                       _got);                                                        \
+         }                                                                           \
+         mlib_sleep_for(100, ms);                                                    \
+      }                                                                              \
+   } else                                                                            \
       ((void)0)
 
 #endif // STREAM_TRACKER_H

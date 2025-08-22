@@ -1317,8 +1317,8 @@ test_removing_servers_closes_connections(void *unused)
 
    stream_tracker_track_pool(st, pool);
    // Expect no streams created yet:
-   stream_tracker_assert_count(st, host0, 0);
-   stream_tracker_assert_count(st, host1, 0);
+   stream_tracker_assert_active_count(st, host0, 0);
+   stream_tracker_assert_active_count(st, host1, 0);
 
    // Pop (and push) a client to start background monitoring.
    {
@@ -1326,8 +1326,8 @@ test_removing_servers_closes_connections(void *unused)
       mongoc_client_pool_push(pool, client);
       // Wait for monitoring connections to be created.
       // Expect two monitoring connections per server to be created in background.
-      stream_tracker_assert_eventual_count(st, host0, 2);
-      stream_tracker_assert_eventual_count(st, host1, 2);
+      stream_tracker_assert_eventual_active_count(st, host0, 2);
+      stream_tracker_assert_eventual_active_count(st, host1, 2);
    }
 
    // Send 'ping' commands on a client to each server to create operation connections.
@@ -1339,8 +1339,8 @@ test_removing_servers_closes_connections(void *unused)
       ASSERT_OR_PRINT(ok, error);
       mongoc_client_pool_push(pool, client);
       // Expect an operation connection is created.
-      stream_tracker_assert_count(st, host0, 2 + 1);
-      stream_tracker_assert_count(st, host1, 2 + 1);
+      stream_tracker_assert_active_count(st, host0, 2 + 1);
+      stream_tracker_assert_active_count(st, host1, 2 + 1);
    }
 
    // Mock removal of host1.
@@ -1354,14 +1354,14 @@ test_removing_servers_closes_connections(void *unused)
    // Expect connections are closed to removed server.
    {
       // Expect monitoring connections to be closed in background.
-      stream_tracker_assert_eventual_count(st, host0, 2 + 1);
-      stream_tracker_assert_eventual_count(st, host1, 1);
+      stream_tracker_assert_eventual_active_count(st, host0, 2 + 1);
+      stream_tracker_assert_eventual_active_count(st, host1, 1);
 
       // Pop and push the client to "prune" the stale operation connections.
       mongoc_client_t *client = mongoc_client_pool_pop(pool);
       mongoc_client_pool_push(pool, client);
-      stream_tracker_assert_count(st, host0, 2 + 1);
-      stream_tracker_assert_count(st, host1, 0);
+      stream_tracker_assert_active_count(st, host0, 2 + 1);
+      stream_tracker_assert_active_count(st, host1, 0);
    }
 
    mongoc_client_pool_destroy(pool);
