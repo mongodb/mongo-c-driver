@@ -151,6 +151,7 @@ multibuild:
         --env=alpine3.19 --env=alpine3.20 --env=alpine3.21 --env=alpine3.22 \
         --env=u20 --env=u22 --env=u24 \
         --env=centos9 --env=centos10 \
+        --env=almalinux8 --env=almalinux9 --env=almalinux10 \
         --env=archlinux \
         --tls=OpenSSL --tls=off \
         --sasl=Cyrus --sasl=off \
@@ -418,7 +419,8 @@ verify-headers:
     # many as possible.
     BUILD +do-verify-headers-impl \
         --from +env.alpine3.19 \
-        --from +env.u22 \
+        --from +env.almalinux8 \
+        --from +env.u20 \
         --from +env.centos10 \
         --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc
 
@@ -548,27 +550,57 @@ UBUNTU_ENV:
     DO +PREP_CMAKE
 
 env.centos9:
-    DO --pass-args +CENTOS_ENV --version=9
+    DO --pass-args +CENTOS_STREAM_ENV --version=9 --image=quay.io/centos/centos:stream9
 
 env.centos10:
-    DO --pass-args +CENTOS_ENV --version=10
+    DO --pass-args +CENTOS_STREAM_ENV --version=10 --image=quay.io/centos/centos:stream10
 
-CENTOS_ENV:
+env.almalinux8:
+    DO --pass-args +CENTOS_STREAM_ENV --version 8 --image=$default_search_registry/library/almalinux:8
+
+env.almalinux9:
+    DO --pass-args +CENTOS_STREAM_ENV --version 9 --image=$default_search_registry/library/almalinux:9
+
+env.almalinux10:
+    DO --pass-args +CENTOS_STREAM_ENV --version 10 --image=$default_search_registry/library/almalinux:10
+
+CENTOS_STREAM_ENV:
     FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from quay.io/centos/centos:stream$version
-    RUN yum -y install epel-release && yum -y update
-    RUN yum -y install gcc gcc-c++ make pipx
+    ARG --required image
+    FROM --pass-args tools+init-env --from "$image"
+
+    RUN yum -y install epel-release
+    RUN yum -y install "dnf-command(config-manager)"
+    IF test "$version" = "8"
+        RUN yum config-manager --enable powertools
+    ELSE
+        RUN yum config-manager --enable crb
+    END
+
+    RUN yum -y install gcc gcc-c++ make
+
     ARG --required purpose
-
-    # uv is not available via yum. Avoid snapd (systemd) by using pipx instead.
-    ENV PATH="/opt/uv/bin:$PATH"
-    RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
-
     IF test "$purpose" = build
-        RUN yum -y --enablerepo=crb install ninja-build ccache snappy-devel zlib-devel
+        RUN yum -y install ninja-build ccache snappy-devel zlib-devel
     ELSE IF test "$purpose" = test
-        RUN yum -y --enablerepo=crb install ninja-build snappy
+        RUN yum -y install ninja-build snappy
+    END
+
+    IF test "$version" = "8"
+        # Neither uv nor pipx is available via yum.
+        # uv requires Python 3.7+, but system default is Python 3.6. yum provides Python 3.8+.
+        RUN yum -y install python38
+        RUN python3 -m pip install --no-warn-script-location pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin python3 -m pipx install uv
+    ELSE IF test "$version" = "9"
+        # uv is not available via yum. Avoid snapd (systemd) by using pipx instead.
+        RUN yum -y install pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
+    ELSE
+        RUN yum -y install uv
     END
 
     DO --pass-args tools+ADD_SASL --cyrus_dev_pkg="cyrus-sasl-devel" --cyrus_rt_pkg="cyrus-sasl-lib"

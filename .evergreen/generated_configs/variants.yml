@@ -1,4 +1,46 @@
 buildvariants:
+  - name: almalinux10-clang
+    display_name: AlmaLinux 10 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: almalinux10
+    tasks:
+      - name: .almalinux10-clang
+  - name: almalinux10-gcc
+    display_name: AlmaLinux 10 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: almalinux10
+    tasks:
+      - name: .almalinux10-gcc
+  - name: almalinux8-clang
+    display_name: AlmaLinux 8 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: almalinux8
+    tasks:
+      - name: .almalinux8-clang
+  - name: almalinux8-gcc
+    display_name: AlmaLinux 8 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: almalinux8
+    tasks:
+      - name: .almalinux8-gcc
+  - name: almalinux9-clang
+    display_name: AlmaLinux 9 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: almalinux9
+    tasks:
+      - name: .almalinux9-clang
+  - name: almalinux9-gcc
+    display_name: AlmaLinux 9 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: almalinux9
+    tasks:
+      - name: .almalinux9-gcc
   - name: alpine3.19-clang
     display_name: Alpine 3.19 (LLVM/Clang)
     expansions:

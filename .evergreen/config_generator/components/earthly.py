@@ -29,6 +29,9 @@ _CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
 EnvKey = Literal[
     "u20",
     "u22",
+    "almalinux8",
+    "almalinux9",
+    "almalinux10",
     "alpine3.19",
     "alpine3.20",
     "alpine3.21",
@@ -56,7 +59,7 @@ _SEPARATOR = "\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}"
 def os_split(env: EnvKey) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
-        # match 'alpine3.18' 'alpine53.123' etc.
+        # Match 'alpine3.18' 'alpine53.123' etc.
         case alp if mat := re.match(r"alpine(\d+\.\d+)", alp):
             return ("Alpine", mat[1])
         case "archlinux":
@@ -67,6 +70,9 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         # Match 'centos9', 'centos10', etc.
         case cent if mat := re.match(r"centos(\d+)", cent):
             return "CentOS", f"{mat[1]}"
+        # Match 'almalinux8', 'almalinux10', etc.
+        case alm if mat := re.match(r"almalinux(\d+)", alm):
+            return "AlmaLinux", f"{mat[1]}"
         case _:
             raise ValueError(f"Failed to split OS env key {env=} into a name+version pair (unrecognized)")
 

@@ -1131,7 +1131,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1174,7 +1174,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1217,7 +1217,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1260,7 +1260,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1303,7 +1303,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1346,7 +1346,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1389,7 +1389,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1432,7 +1432,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1475,7 +1475,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1518,7 +1518,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1561,7 +1561,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1604,7 +1604,7 @@ tasks:
       - debian12-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
