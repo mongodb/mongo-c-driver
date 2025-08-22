@@ -143,8 +143,8 @@ typedef enum {
 
 } mongoc_error_code_t;
 
-MONGOC_EXPORT (bool)
-mongoc_error_has_label (const bson_t *reply, const char *label);
+MONGOC_EXPORT(bool)
+mongoc_error_has_label(const bson_t *reply, const char *label);
 
 BSON_END_DECLS
 

@@ -42,8 +42,8 @@ struct _mongoc_ssl_opt_t {
 };
 
 
-MONGOC_EXPORT (const mongoc_ssl_opt_t *)
-mongoc_ssl_opt_get_default (void) BSON_GNUC_PURE;
+MONGOC_EXPORT(const mongoc_ssl_opt_t *)
+mongoc_ssl_opt_get_default(void) BSON_GNUC_PURE;
 
 
 BSON_END_DECLS

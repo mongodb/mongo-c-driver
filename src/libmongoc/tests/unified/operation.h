@@ -22,6 +22,6 @@
 #include <signal.h>
 
 bool
-operation_run (test_t *test, bson_t *bson, bson_error_t *error);
+operation_run(test_t *test, bson_t *bson, bson_error_t *error);
 
 #endif /* UNIFIED_OPERATION_H */

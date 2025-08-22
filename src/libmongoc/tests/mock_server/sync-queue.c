@@ -26,36 +26,36 @@ struct _sync_queue_t {
 };
 
 sync_queue_t *
-q_new (void)
+q_new(void)
 {
-   sync_queue_t *q = (sync_queue_t *) bson_malloc (sizeof (sync_queue_t));
+   sync_queue_t *q = (sync_queue_t *)bson_malloc(sizeof(sync_queue_t));
 
-   _mongoc_array_init (&q->array, sizeof (void *));
-   mongoc_cond_init (&q->cond);
-   bson_mutex_init (&q->mutex);
+   _mongoc_array_init(&q->array, sizeof(void *));
+   mongoc_cond_init(&q->cond);
+   bson_mutex_init(&q->mutex);
 
    return q;
 }
 
 void
-q_put (sync_queue_t *q, void *item)
+q_put(sync_queue_t *q, void *item)
 {
-   bson_mutex_lock (&q->mutex);
-   _mongoc_array_append_val (&q->array, item);
-   mongoc_cond_signal (&q->cond);
-   bson_mutex_unlock (&q->mutex);
+   bson_mutex_lock(&q->mutex);
+   _mongoc_array_append_val(&q->array, item);
+   mongoc_cond_signal(&q->cond);
+   bson_mutex_unlock(&q->mutex);
 }
 
 /* call holding the lock */
 static void *
-_get (sync_queue_t *q)
+_get(sync_queue_t *q)
 {
    void **data;
    void *item = NULL;
    size_t i;
 
    if (q->array.len) {
-      data = (void **) q->array.data;
+      data = (void **)q->array.data;
       item = data[0];
 
       /* shift the queue left */
@@ -69,50 +69,50 @@ _get (sync_queue_t *q)
 }
 
 void *
-q_get (sync_queue_t *q, int64_t timeout_msec)
+q_get(sync_queue_t *q, int64_t timeout_msec)
 {
    void *item = NULL;
    int64_t remaining_usec = timeout_msec * 1000;
-   int64_t deadline = bson_get_monotonic_time () + timeout_msec * 1000;
+   int64_t deadline = bson_get_monotonic_time() + timeout_msec * 1000;
 
-   bson_mutex_lock (&q->mutex);
+   bson_mutex_lock(&q->mutex);
    if (timeout_msec) {
       while (!q->array.len && remaining_usec > 0) {
-         mongoc_cond_timedwait (&q->cond, &q->mutex, remaining_usec / 1000);
-         remaining_usec = deadline - bson_get_monotonic_time ();
+         mongoc_cond_timedwait(&q->cond, &q->mutex, remaining_usec / 1000);
+         remaining_usec = deadline - bson_get_monotonic_time();
       }
    } else {
       /* no deadline */
       while (!q->array.len) {
-         mongoc_cond_wait (&q->cond, &q->mutex);
+         mongoc_cond_wait(&q->cond, &q->mutex);
       }
    }
 
-   item = _get (q);
-   bson_mutex_unlock (&q->mutex);
+   item = _get(q);
+   bson_mutex_unlock(&q->mutex);
 
    return item;
 }
 
 
 void *
-q_get_nowait (sync_queue_t *q)
+q_get_nowait(sync_queue_t *q)
 {
    void *item;
 
-   bson_mutex_lock (&q->mutex);
-   item = _get (q);
-   bson_mutex_unlock (&q->mutex);
+   bson_mutex_lock(&q->mutex);
+   item = _get(q);
+   bson_mutex_unlock(&q->mutex);
 
    return item;
 }
 
 
 void
-q_destroy (sync_queue_t *q)
+q_destroy(sync_queue_t *q)
 {
-   _mongoc_array_destroy (&q->array);
-   mongoc_cond_destroy (&q->cond);
-   bson_mutex_destroy (&q->mutex);
-   bson_free (q);
+   _mongoc_array_destroy(&q->array);
+   mongoc_cond_destroy(&q->cond);
+   bson_mutex_destroy(&q->mutex);
+   bson_free(q);
 }

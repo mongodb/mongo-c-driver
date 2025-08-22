@@ -34,49 +34,49 @@
 
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    int i;
    int n;
    int bcon;
    bson_t bson, foo, bar, baz;
-   bson_init (&bson);
+   bson_init(&bson);
 
    if (argc != 3) {
-      fprintf (stderr,
-               "usage: bcon-speed NUM_ITERATIONS [y|n]\n"
-               "\n"
-               "  y = perform speed tests with bcon\n"
-               "  n = perform speed tests with bson_append\n"
-               "\n");
+      fprintf(stderr,
+              "usage: bcon-speed NUM_ITERATIONS [y|n]\n"
+              "\n"
+              "  y = perform speed tests with bcon\n"
+              "  n = perform speed tests with bson_append\n"
+              "\n");
       return EXIT_FAILURE;
    }
 
-   BSON_ASSERT (argc == 3);
+   BSON_ASSERT(argc == 3);
 
-   n = atoi (argv[1]);
+   n = atoi(argv[1]);
    bcon = (argv[2][0] == 'y') ? 1 : 0;
 
    for (i = 0; i < n; i++) {
       if (bcon) {
-         BCON_APPEND (
-            &bson, "foo", "{", "bar", "{", "baz", "[", BCON_INT32 (1), BCON_INT32 (2), BCON_INT32 (3), "]", "}", "}");
+         BCON_APPEND(
+            &bson, "foo", "{", "bar", "{", "baz", "[", BCON_INT32(1), BCON_INT32(2), BCON_INT32(3), "]", "}", "}");
       } else {
-         bson_append_document_begin (&bson, "foo", -1, &foo);
-         bson_append_document_begin (&foo, "bar", -1, &bar);
-         bson_append_array_begin (&bar, "baz", -1, &baz);
-         bson_append_int32 (&baz, "0", -1, 1);
-         bson_append_int32 (&baz, "1", -1, 2);
-         bson_append_int32 (&baz, "2", -1, 3);
-         bson_append_array_end (&bar, &baz);
-         bson_append_document_end (&foo, &bar);
-         bson_append_document_end (&bson, &foo);
+         bson_append_document_begin(&bson, "foo", -1, &foo);
+         bson_append_document_begin(&foo, "bar", -1, &bar);
+         bson_append_array_begin(&bar, "baz", -1, &baz);
+         bson_append_int32(&baz, "0", -1, 1);
+         bson_append_int32(&baz, "1", -1, 2);
+         bson_append_int32(&baz, "2", -1, 3);
+         bson_append_array_end(&bar, &baz);
+         bson_append_document_end(&foo, &bar);
+         bson_append_document_end(&bson, &foo);
       }
 
-      bson_reinit (&bson);
+      bson_reinit(&bson);
    }
 
-   bson_destroy (&bson);
+   bson_destroy(&bson);
 
    return 0;
 }

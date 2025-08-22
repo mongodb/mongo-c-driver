@@ -27,7 +27,7 @@
 #include <openssl/rand.h>
 
 int
-_mongoc_rand_bytes (uint8_t *buf, int num)
+_mongoc_rand_bytes(uint8_t *buf, int num)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10101000L
    /* Versions of OpenSSL before 1.1.1 can potentially produce the same random
@@ -37,29 +37,29 @@ _mongoc_rand_bytes (uint8_t *buf, int num)
     * See also: https://wiki.openssl.org/index.php/Random_fork-safety */
    struct timeval tv;
 
-   bson_gettimeofday (&tv);
-   RAND_add (&tv, sizeof (tv), 0.0);
+   bson_gettimeofday(&tv);
+   RAND_add(&tv, sizeof(tv), 0.0);
 #endif
 
-   return RAND_bytes (buf, num);
+   return RAND_bytes(buf, num);
 }
 
 void
-mongoc_rand_seed (const void *buf, int num)
+mongoc_rand_seed(const void *buf, int num)
 {
-   RAND_seed (buf, num);
+   RAND_seed(buf, num);
 }
 
 void
-mongoc_rand_add (const void *buf, int num, double entropy)
+mongoc_rand_add(const void *buf, int num, double entropy)
 {
-   RAND_add (buf, num, entropy);
+   RAND_add(buf, num, entropy);
 }
 
 int
-mongoc_rand_status (void)
+mongoc_rand_status(void)
 {
-   return RAND_status ();
+   return RAND_status();
 }
 
 #endif

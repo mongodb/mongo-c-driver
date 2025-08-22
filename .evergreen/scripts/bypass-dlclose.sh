@@ -30,20 +30,20 @@ bypass_dlclose() (
     fi
 
     echo "int dlclose (void *handle) {(void) handle; return 0; }" \
-      >|"${tmp}/bypass_dlclose.c" || return
+      >|"${tmp:?}/bypass_dlclose.c" || return
 
-    "${CC}" -o "${tmp}/bypass_dlclose.so" \
-      -shared "${tmp}/bypass_dlclose.c" || return
+    "${CC:?}" -o "${tmp:?}/bypass_dlclose.so" \
+      -shared "${tmp:?}/bypass_dlclose.c" || return
 
-    ld_preload="${tmp}/bypass_dlclose.so"
+    ld_preload="${tmp:?}/bypass_dlclose.so"
 
     # Clang uses its own libasan.so; do not preload it!
-    if [ "${CC}" != "clang" ]; then
+    if [[ ! "${CC:?}" =~ clang ]]; then
       declare asan_path
-      asan_path="$(${CC} -print-file-name=libasan.so)" || return
-      ld_preload="${asan_path}:${ld_preload}"
+      asan_path="$("${CC:?}" -print-file-name=libasan.so)" || return
+      ld_preload="${asan_path:?}:${ld_preload:?}"
     fi
   } 1>&2
 
-  printf "%s" "${ld_preload}"
+  printf "%s" "${ld_preload:?}"
 )

@@ -20,26 +20,26 @@
 #include <bson/bson.h>
 
 void
-_test_diagnostics_add (bool fail, const char *fmt, ...) BSON_GNUC_PRINTF (2, 3);
+_test_diagnostics_add(bool fail, const char *fmt, ...) BSON_GNUC_PRINTF(2, 3);
 
 #define test_diagnostics_test_info(fmt, ...) \
-   _test_diagnostics_add (false, "[%s:%d %s()]\n" fmt, __FILE__, (int) (__LINE__), BSON_FUNC, __VA_ARGS__)
+   _test_diagnostics_add(false, "[%s:%d %s()]\n" fmt, __FILE__, (int)(__LINE__), BSON_FUNC, __VA_ARGS__)
 
 /* Append additional information to an error after it has occurred (similar to
  * backtrace). */
 #define test_diagnostics_error_info(fmt, ...) \
-   _test_diagnostics_add (true, "[%s:%d %s()]\n" fmt, __FILE__, (int) (__LINE__), BSON_FUNC, __VA_ARGS__)
+   _test_diagnostics_add(true, "[%s:%d %s()]\n" fmt, __FILE__, (int)(__LINE__), BSON_FUNC, __VA_ARGS__)
 
 void
-test_diagnostics_init (void);
+test_diagnostics_init(void);
 
 void
-test_diagnostics_cleanup (void);
+test_diagnostics_cleanup(void);
 
 void
-test_diagnostics_reset (void);
+test_diagnostics_reset(void);
 
 void
-test_diagnostics_abort (bson_error_t *error);
+test_diagnostics_abort(bson_error_t *error);
 
 #endif /* UNIFIED_TEST_DIAGNOSTICS */

@@ -41,19 +41,19 @@ typedef struct {
 
 
 void
-_mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass);
+_mongoc_sasl_set_pass(mongoc_sasl_t *sasl, const char *pass);
 void
-_mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user);
+_mongoc_sasl_set_user(mongoc_sasl_t *sasl, const char *user);
 void
-_mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name);
+_mongoc_sasl_set_service_name(mongoc_sasl_t *sasl, const char *service_name);
 void
-_mongoc_sasl_set_service_host (mongoc_sasl_t *sasl, const char *service_host);
+_mongoc_sasl_set_service_host(mongoc_sasl_t *sasl, const char *service_host);
 void
-_mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri);
+_mongoc_sasl_set_properties(mongoc_sasl_t *sasl, const mongoc_uri_t *uri);
 bool
-_mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
-                                     char *name,                   /* OUT */
-                                     size_t namelen);              /* IN */
+_mongoc_sasl_get_canonicalized_name(mongoc_stream_t *node_stream, /* IN */
+                                    char *name,                   /* OUT */
+                                    size_t namelen);              /* IN */
 
 BSON_END_DECLS
 

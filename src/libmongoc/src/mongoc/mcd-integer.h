@@ -26,7 +26,7 @@
 
 /// Return 'true' iff (left * right) would overflow with int64
 static BSON_INLINE bool
-_mcd_i64_mul_would_overflow (int64_t left, int64_t right)
+_mcd_i64_mul_would_overflow(int64_t left, int64_t right)
 {
    if (right == -1) {
       // We will perform an integer division, and only (MIN / -1) is undefined
@@ -183,7 +183,7 @@ _mcd_i64_mul_would_overflow (int64_t left, int64_t right)
 
 /// Return 'true' iff (left + right) would overflow with int64
 static BSON_INLINE bool
-_mcd_i64_add_would_overflow (int64_t left, int64_t right)
+_mcd_i64_add_would_overflow(int64_t left, int64_t right)
 {
    /**
     * Context:
@@ -365,15 +365,15 @@ _mcd_i64_add_would_overflow (int64_t left, int64_t right)
 
 /// Return 'true' iff (left - right) would overflow with int64
 static BSON_INLINE bool
-_mcd_i64_sub_would_overflow (int64_t left, int64_t right)
+_mcd_i64_sub_would_overflow(int64_t left, int64_t right)
 {
    // Lemma: N - M = N + (-M), therefore (N - M) is bounded iff (N + -M)
    // is bounded.
    if (right > 0) {
-      return _mcd_i64_add_would_overflow (left, -right);
+      return _mcd_i64_add_would_overflow(left, -right);
    } else if (right < 0) {
       if (left > 0) {
-         return _mcd_i64_add_would_overflow (-left, right);
+         return _mcd_i64_add_would_overflow(-left, right);
       } else {
          // Both negative. Subtracting two negatives will never overflow
          return false;

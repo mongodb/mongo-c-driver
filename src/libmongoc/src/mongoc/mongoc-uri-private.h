@@ -31,11 +31,11 @@ BSON_BEGIN_DECLS
 
 
 bool
-mongoc_uri_upsert_host_and_port (mongoc_uri_t *uri, const char *host_and_port, bson_error_t *error);
+mongoc_uri_upsert_host_and_port(mongoc_uri_t *uri, const char *host_and_port, bson_error_t *error);
 bool
-mongoc_uri_upsert_host (mongoc_uri_t *uri, const char *host, uint16_t port, bson_error_t *error);
+mongoc_uri_upsert_host(mongoc_uri_t *uri, const char *host, uint16_t port, bson_error_t *error);
 void
-mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port);
+mongoc_uri_remove_host(mongoc_uri_t *uri, const char *host, uint16_t port);
 
 /**
  * @brief Update the settings on a URI based on a URI query string
@@ -48,33 +48,33 @@ mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port);
  * @return false Otherwise. The internal settings of the URI object are unspecified.
  */
 bool
-_mongoc_uri_apply_query_string (mongoc_uri_t *uri, mstr_view options, bool from_dns, bson_error_t *error);
+_mongoc_uri_apply_query_string(mongoc_uri_t *uri, mstr_view options, bool from_dns, bson_error_t *error);
 
 int32_t
-mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri);
+mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri);
 
 bool
-_mongoc_uri_requires_auth_negotiation (const mongoc_uri_t *uri);
+_mongoc_uri_requires_auth_negotiation(const mongoc_uri_t *uri);
 
 const char *
-mongoc_uri_canonicalize_option (const char *key);
+mongoc_uri_canonicalize_option(const char *key);
 
 mongoc_uri_t *
-_mongoc_uri_copy_and_replace_host_list (const mongoc_uri_t *original, const char *host);
+_mongoc_uri_copy_and_replace_host_list(const mongoc_uri_t *original, const char *host);
 
 bool
-mongoc_uri_init_with_srv_host_list (mongoc_uri_t *uri, mongoc_host_list_t *hosts, bson_error_t *error);
+mongoc_uri_init_with_srv_host_list(mongoc_uri_t *uri, mongoc_host_list_t *hosts, bson_error_t *error);
 
 bool
-mongoc_uri_validate_srv_result (const mongoc_uri_t *uri, const char *host, bson_error_t *error);
+mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_error_t *error);
 
 #ifdef MONGOC_ENABLE_CRYPTO
 void
-_mongoc_uri_init_scram (const mongoc_uri_t *uri, mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
+_mongoc_uri_init_scram(const mongoc_uri_t *uri, mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
 #endif
 
 bool
-mongoc_uri_finalize (mongoc_uri_t *uri, bson_error_t *error);
+mongoc_uri_finalize(mongoc_uri_t *uri, bson_error_t *error);
 
 BSON_END_DECLS
 

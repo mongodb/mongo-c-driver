@@ -20,22 +20,22 @@
 #include <mongoc/mongoc.h>
 
 bson_t *
-bson_copy_and_sort (const bson_t *in);
+bson_copy_and_sort(const bson_t *in);
 
 bson_type_t
-bson_type_from_string (const char *in);
+bson_type_from_string(const char *in);
 
 const char *
-bson_type_to_string (bson_type_t btype);
+bson_type_to_string(bson_type_t btype);
 
 /* Returns true if this is an event type (part of observeEvents or
  * expectedEvents) that is unsupported and not emitted by the C driver. */
 bool
-is_unsupported_event_type (const char *event_type);
+is_unsupported_event_type(const char *event_type);
 
 int64_t
-usecs_since_epoch (void);
+usecs_since_epoch(void);
 
 const char *
-mongoc_strcasestr (const char *haystack, const char *needle);
+mongoc_strcasestr(const char *haystack, const char *needle);
 #endif /* UNIFIED_UTIL_H */

@@ -40,19 +40,19 @@ typedef struct _mongoc_log_and_monitor_instance_t {
 } mongoc_log_and_monitor_instance_t;
 
 void
-mongoc_log_and_monitor_instance_init (mongoc_log_and_monitor_instance_t *new_instance);
+mongoc_log_and_monitor_instance_init(mongoc_log_and_monitor_instance_t *new_instance);
 
 void
-mongoc_log_and_monitor_instance_destroy_contents (mongoc_log_and_monitor_instance_t *instance);
+mongoc_log_and_monitor_instance_destroy_contents(mongoc_log_and_monitor_instance_t *instance);
 
 void
-mongoc_log_and_monitor_instance_set_apm_callbacks (mongoc_log_and_monitor_instance_t *instance,
-                                                   const mongoc_apm_callbacks_t *callbacks,
-                                                   void *context);
+mongoc_log_and_monitor_instance_set_apm_callbacks(mongoc_log_and_monitor_instance_t *instance,
+                                                  const mongoc_apm_callbacks_t *callbacks,
+                                                  void *context);
 
 void
-mongoc_log_and_monitor_instance_set_structured_log_opts (mongoc_log_and_monitor_instance_t *instance,
-                                                         const struct mongoc_structured_log_opts_t *opts);
+mongoc_log_and_monitor_instance_set_structured_log_opts(mongoc_log_and_monitor_instance_t *instance,
+                                                        const struct mongoc_structured_log_opts_t *opts);
 
 
 #endif /* MONGOC_LOG_AND_MONITOR_PRIVATE_H */

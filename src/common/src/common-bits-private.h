@@ -24,7 +24,7 @@
 
 // Round up to the next power of two uint32_t value. Saturates on overflow.
 static BSON_INLINE uint32_t
-mcommon_next_power_of_two_u32 (uint32_t v)
+mcommon_next_power_of_two_u32(uint32_t v)
 {
    if (v == 0) {
       return 1;

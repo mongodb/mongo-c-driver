@@ -15,16 +15,23 @@ TAG = f'sasl-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
+    # For test matrix.
     ('windows-vsCurrent', 'mingw',     None, [       'sspi']),
+    ('windows-vsCurrent', 'vs2022x64', None, ['off', 'sspi']),
+    ('windows-vsCurrent', 'vs2022x86', None, ['off', 'sspi']),
+
+    # For compile only.
+    ('windows-vsCurrent', 'vs2015x64', None, ['off', 'sspi']),
     ('windows-vsCurrent', 'vs2017x64', None, ['off', 'sspi']),
-    ('windows-vsCurrent', 'vs2017x86', None, ['off', 'sspi']),
+    ('windows-vsCurrent', 'vs2019x64', None, ['off', 'sspi']),
 ]
 
 TEST_MATRIX = [
-    ('windows-vsCurrent', 'vs2017x64', None, 'sspi', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    ('windows-vsCurrent', 'mingw',     None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x86', None, 'sspi',  ['auth'], ['server'], ['8.0', 'latest']),
+    # sharded + min + latest only.
+    ('windows-vsCurrent', 'mingw',     None, 'sspi',  ['auth'], ['sharded'], ['4.2', 'latest']),
+    ('windows-vsCurrent', 'vs2022x86', None, 'sspi',  ['auth'], ['sharded'], ['4.2', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
