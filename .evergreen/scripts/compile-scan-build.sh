@@ -16,6 +16,10 @@ mongoc_dir="$(to_absolute "${script_dir}/../..")"
 declare install_dir="${mongoc_dir}/install-dir"
 declare cmake_prefix_path="${install_dir}"
 
+. "${script_dir:?}/install-build-tools.sh"
+install_build_tools
+export CMAKE_GENERATOR="Ninja"
+
 declare -a configure_flags
 
 configure_flags_append() {
@@ -86,14 +90,6 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-# Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
-# to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake-latest.sh
-. "${script_dir}/find-cmake-latest.sh"
-cmake_binary="$(find_cmake_latest)"
-
-"${cmake_binary:?}" --version
-
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
@@ -102,7 +98,7 @@ PKG_CONFIG_PATH="${install_dir}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {
+"${script_dir}/compile-libmongocrypt.sh" "$(command -v cmake)" "${mongoc_dir}" "${install_dir}" &>output.txt || {
   cat output.txt 1>&2
   exit 1
 }
@@ -159,7 +155,7 @@ fi
 . "${script_dir:?}/find-ccache.sh"
 find_ccache_and_export_vars "$(pwd)" || true
 
-"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" "${cmake_binary}" "${configure_flags[@]}" .
+"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" cmake "${configure_flags[@]}" .
 
 if [[ "${OSTYPE}" == darwin* ]]; then
   # MacOS does not have nproc.
@@ -170,5 +166,5 @@ fi
 declare -r continue_command='{"status":"failed", "type":"test", "should_continue":true, "desc":"scan-build emitted one or more warnings or errors"}'
 
 # Put clang static analyzer results in scan/ and fail build if warnings found.
-"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs "${cmake_binary}" --build . -- -j "$(nproc)" ||
+"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs cmake --build . -- -j "$(nproc)" ||
   curl -sS -d "${continue_command}" -H "Content-Type: application/json" -X POST localhost:2285/task_status
