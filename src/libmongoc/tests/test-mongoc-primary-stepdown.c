@@ -108,12 +108,12 @@ _run_test_single_or_pooled(_test_fn_t test, bool use_pooled)
       /* Run in pooled mode */
       pool = test_framework_client_pool_new_from_uri(uri, NULL);
       test_framework_set_pool_ssl_opts(pool);
+      stream_tracker_track_pool(st, pool);
       client = mongoc_client_pool_pop(pool);
       _setup_test_with_client(client);
       /* Wait one second to be assured that the RTT connection has been
        * established as well. */
       mlib_sleep_for(1, s);
-      stream_tracker_track_pool(st, pool);
       test(client, st);
       mongoc_client_pool_push(pool, client);
       mongoc_client_pool_destroy(pool);
