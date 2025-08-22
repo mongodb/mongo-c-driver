@@ -135,19 +135,10 @@ test-cxx-driver:
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
     FUNCTION
-    LET scratch=/opt/mongoc-cmake
-    # Copy the minimal amount that we need, as to avoid cache invalidation
-    COPY tools/use.sh tools/platform.sh tools/paths.sh tools/base.sh tools/download.sh \
-        $scratch/tools/
-    COPY .evergreen/scripts/find-cmake-version.sh \
-        .evergreen/scripts/use-tools.sh \
-        .evergreen/scripts/find-cmake-latest.sh \
-        .evergreen/scripts/cmake.sh \
-        $scratch/.evergreen/scripts/
-    # "Install" a shim that runs our managed CMake executable:
-    RUN __alias cmake /opt/mongoc-cmake/.evergreen/scripts/cmake.sh
+    # Run all CMake commands using uvx:
+    RUN __alias cmake uvx cmake
     # Executing any CMake command will warm the cache:
-    RUN cmake --version
+    RUN cmake --version | head -n 1
 
 env-warmup:
     ARG --required env
@@ -157,8 +148,10 @@ env-warmup:
 # Simultaneously builds and tests multiple different platforms
 multibuild:
     BUILD +run --targets "test-example" \
-        --env=alpine3.16 --env=alpine3.17 --env=alpine3.18 --env=alpine3.19 \
-        --env=u16 --env=u18 --env=u20 --env=u22 --env=centos7 \
+        --env=alpine3.19 --env=alpine3.20 --env=alpine3.21 --env=alpine3.22 \
+        --env=u20 --env=u22 --env=u24 \
+        --env=centos9 --env=centos10 \
+        --env=almalinux8 --env=almalinux9 --env=almalinux10 \
         --env=archlinux \
         --tls=OpenSSL --tls=off \
         --sasl=Cyrus --sasl=off \
@@ -426,8 +419,9 @@ verify-headers:
     # many as possible.
     BUILD +do-verify-headers-impl \
         --from +env.alpine3.19 \
-        --from +env.u22 \
-        --from +env.centos7 \
+        --from +env.almalinux8 \
+        --from +env.u20 \
+        --from +env.centos10 \
         --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc
 
 do-verify-headers-impl:
@@ -466,36 +460,12 @@ run:
 # 88.     88  V888  `8bd8'    .88.   88 `88. `8b  d8' 88  V888 88  88  88 88.     88  V888    88    db   8D
 # Y88888P VP   V8P    YP    Y888888P 88   YD  `Y88P'  VP   V8P YP  YP  YP Y88888P VP   V8P    YP    `8888Y'
 
-env.u16:
-    DO --pass-args +UBUNTU_ENV --version=16.04
-
-env.u18:
-    DO --pass-args +UBUNTU_ENV --version=18.04
-
-env.u20:
-    DO --pass-args +UBUNTU_ENV --version=20.04
-
-env.u22:
-    DO --pass-args +UBUNTU_ENV --version=22.04
-
-env.alpine3.16:
-    DO --pass-args +ALPINE_ENV --version=3.16
-
-env.alpine3.17:
-    DO --pass-args +ALPINE_ENV --version=3.17
-
-env.alpine3.18:
-    DO --pass-args +ALPINE_ENV --version=3.18
-
-env.alpine3.19:
-    DO --pass-args +ALPINE_ENV --version=3.19
-
 env.archlinux:
     FROM --pass-args tools+init-env --from $default_search_registry/library/archlinux
     RUN pacman-key --init
     ARG --required purpose
 
-    RUN __install ninja snappy
+    RUN __install ninja snappy uv
 
     IF test "$purpose" = build
         RUN __install ccache
@@ -506,18 +476,33 @@ env.archlinux:
     DO --pass-args tools+ADD_C_COMPILER
     DO +PREP_CMAKE
 
-env.centos7:
-    DO --pass-args +CENTOS_ENV --version=7
+env.alpine3.19:
+    DO --pass-args +ALPINE_ENV --version=3.19
+
+env.alpine3.20:
+    DO --pass-args +ALPINE_ENV --version=3.20
+
+env.alpine3.21:
+    DO --pass-args +ALPINE_ENV --version=3.21
+
+env.alpine3.22:
+    DO --pass-args +ALPINE_ENV --version=3.22
 
 ALPINE_ENV:
     FUNCTION
     ARG --required version
     FROM --pass-args tools+init-env --from $default_search_registry/library/alpine:$version
-    # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
-    # very up-to-date and much faster than building our own from source (since
-    # Kitware does not (yet) provide libmuslc builds of CMake)
-    RUN __install bash curl cmake ninja musl-dev make
+    RUN __install bash curl ninja musl-dev make python3
     ARG --required purpose
+
+    IF test "$version" = "3.19" -o "$version" = "3.20"
+        # uv is not yet available. Install via pipx.
+        RUN __install pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
+    ELSE
+        RUN __install uv
+    END
 
     IF test "$purpose" = "build"
         RUN __install snappy-dev ccache
@@ -530,6 +515,16 @@ ALPINE_ENV:
     # Add "gcc" when installing Clang, since it pulls in a lot of runtime libraries and
     # utils that are needed for linking with Clang
     DO --pass-args tools+ADD_C_COMPILER --clang_pkg="gcc clang compiler-rt"
+    DO +PREP_CMAKE
+
+env.u20:
+    DO --pass-args +UBUNTU_ENV --version=20.04
+
+env.u22:
+    DO --pass-args +UBUNTU_ENV --version=22.04
+
+env.u24:
+    DO --pass-args +UBUNTU_ENV --version=24.04
 
 UBUNTU_ENV:
     FUNCTION
@@ -537,6 +532,11 @@ UBUNTU_ENV:
     FROM --pass-args tools+init-env --from $default_search_registry/library/ubuntu:$version
     RUN __install curl build-essential
     ARG --required purpose
+
+    # uv is not available via apt. Avoid snapd (systemd) by using pipx instead.
+    RUN __install python3-venv pipx
+    ENV PATH="/opt/uv/bin:$PATH"
+    RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
 
     IF test "$purpose" = build
         RUN __install ninja-build gcc ccache libsnappy-dev zlib1g-dev
@@ -549,21 +549,58 @@ UBUNTU_ENV:
     DO --pass-args tools+ADD_C_COMPILER
     DO +PREP_CMAKE
 
-CENTOS_ENV:
+env.centos9:
+    DO --pass-args +CENTOS_STREAM_ENV --version=9 --image=quay.io/centos/centos:stream9
+
+env.centos10:
+    DO --pass-args +CENTOS_STREAM_ENV --version=10 --image=quay.io/centos/centos:stream10
+
+env.almalinux8:
+    DO --pass-args +CENTOS_STREAM_ENV --version 8 --image=$default_search_registry/library/almalinux:8
+
+env.almalinux9:
+    DO --pass-args +CENTOS_STREAM_ENV --version 9 --image=$default_search_registry/library/almalinux:9
+
+env.almalinux10:
+    DO --pass-args +CENTOS_STREAM_ENV --version 10 --image=$default_search_registry/library/almalinux:10
+
+CENTOS_STREAM_ENV:
     FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from $default_search_registry/library/centos:$version
-    # Update repositories to use vault.centos.org
-    RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
-        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-    RUN yum -y --enablerepo=extras install epel-release && yum -y update
-    RUN yum -y install curl gcc gcc-c++ make
-    ARG --required purpose
+    ARG --required image
+    FROM --pass-args tools+init-env --from "$image"
 
+    RUN yum -y install epel-release
+    RUN yum -y install "dnf-command(config-manager)"
+    IF test "$version" = "8"
+        RUN yum config-manager --enable powertools
+    ELSE
+        RUN yum config-manager --enable crb
+    END
+
+    RUN yum -y install gcc gcc-c++ make
+
+    ARG --required purpose
     IF test "$purpose" = build
         RUN yum -y install ninja-build ccache snappy-devel zlib-devel
     ELSE IF test "$purpose" = test
         RUN yum -y install ninja-build snappy
+    END
+
+    IF test "$version" = "8"
+        # Neither uv nor pipx is available via yum.
+        # uv requires Python 3.7+, but system default is Python 3.6. yum provides Python 3.8+.
+        RUN yum -y install python38
+        RUN python3 -m pip install --no-warn-script-location pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin python3 -m pipx install uv
+    ELSE IF test "$version" = "9"
+        # uv is not available via yum. Avoid snapd (systemd) by using pipx instead.
+        RUN yum -y install pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
+    ELSE
+        RUN yum -y install uv
     END
 
     DO --pass-args tools+ADD_SASL --cyrus_dev_pkg="cyrus-sasl-devel" --cyrus_rt_pkg="cyrus-sasl-lib"
