@@ -179,6 +179,8 @@ stream_tracker_decrement(stream_tracker_t *st, const mongoc_host_list_t *host)
          return;
       }
    }
+
+   test_error("Unexpected. No matching entry to decrement!");
 }
 
 void
