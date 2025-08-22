@@ -16,6 +16,9 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
+#include <stream-tracker.h>
+
+
 typedef struct {
    // If `use_pooled` is true, a test is run with a `mongoc_client_t` obtained
    // from a `mongoc_client_pool_t`.
@@ -73,34 +76,15 @@ _setup_test_with_client(mongoc_client_t *client)
 }
 
 static int
-_connection_count(mongoc_client_t *client, uint32_t server_id)
+_connection_count(mongoc_client_t *client, stream_tracker_t *st, uint32_t server_id)
 {
-   bson_error_t error;
-   bson_iter_t iter;
-   bson_iter_t child;
-   bson_t cmd = BSON_INITIALIZER;
-   bson_t reply;
-   bool res;
-   int conns;
-
-   ASSERT(client);
-
-   BSON_APPEND_INT32(&cmd, "serverStatus", 1);
-
-   res = mongoc_client_command_simple_with_server_id(client, "admin", &cmd, NULL, server_id, &reply, &error);
-   ASSERT_OR_PRINT(res, error);
-
-   ASSERT(bson_iter_init(&iter, &reply));
-   ASSERT(bson_iter_find_descendant(&iter, "connections.totalCreated", &child));
-   conns = bson_iter_int32(&child);
-
-   bson_destroy(&cmd);
-   bson_destroy(&reply);
-
+   mongoc_server_description_t *sd = mongoc_client_get_server_description(client, server_id);
+   int conns = stream_tracker_count_total(st, sd->host.host_and_port);
+   mongoc_server_description_destroy(sd);
    return conns;
 }
 
-typedef void (*_test_fn_t)(mongoc_client_t *);
+typedef void (*_test_fn_t)(mongoc_client_t *, stream_tracker_t *);
 
 static void
 _run_test_single_or_pooled(_test_fn_t test, bool use_pooled)
@@ -108,6 +92,7 @@ _run_test_single_or_pooled(_test_fn_t test, bool use_pooled)
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
+   stream_tracker_t *st = stream_tracker_new();
 
    uri = _get_test_uri();
 
@@ -116,27 +101,29 @@ _run_test_single_or_pooled(_test_fn_t test, bool use_pooled)
       client = test_framework_client_new_from_uri(uri, NULL);
       test_framework_set_ssl_opts(client);
       _setup_test_with_client(client);
-      test(client);
+      stream_tracker_track_client(st, client);
+      test(client, st);
       mongoc_client_destroy(client);
    } else {
       /* Run in pooled mode */
       pool = test_framework_client_pool_new_from_uri(uri, NULL);
       test_framework_set_pool_ssl_opts(pool);
+      stream_tracker_track_pool(st, pool);
       client = mongoc_client_pool_pop(pool);
       _setup_test_with_client(client);
       /* Wait one second to be assured that the RTT connection has been
        * established as well. */
       mlib_sleep_for(1, s);
-      test(client);
+      test(client, st);
       mongoc_client_pool_push(pool, client);
       mongoc_client_pool_destroy(pool);
    }
-
+   stream_tracker_destroy(st);
    mongoc_uri_destroy(uri);
 }
 
 static void
-test_getmore_iteration(mongoc_client_t *client)
+test_getmore_iteration(mongoc_client_t *client, stream_tracker_t *st)
 {
    mongoc_database_t *db;
    mongoc_collection_t *coll;
@@ -148,13 +135,13 @@ test_getmore_iteration(mongoc_client_t *client)
    uint32_t primary_id;
 
    ASSERT(client);
+   ASSERT(st);
 
    coll = mongoc_client_get_collection(client, "step-down", "step-down");
 
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -163,7 +150,7 @@ test_getmore_iteration(mongoc_client_t *client)
                                                  NULL /* deprioritized servers */,
                                                  &error);
    ASSERT_OR_PRINT(primary_id, error);
-   conn_count = _connection_count(client, primary_id);
+   conn_count = _connection_count(client, st, primary_id);
 
    /* Insert 5 documents */
    {
@@ -206,7 +193,7 @@ test_getmore_iteration(mongoc_client_t *client)
    ASSERT(mongoc_cursor_next(cursor, &doc));
 
    /* Verify that no new connections have been created */
-   ASSERT_CMPINT(conn_count, ==, _connection_count(client, primary_id));
+   ASSERT_CMPINT(conn_count, ==, _connection_count(client, st, primary_id));
 
    mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(coll);
@@ -227,7 +214,7 @@ test_getmore_iteration_runner(void *ctx_void)
 }
 
 static void
-test_not_primary_keep_pool(mongoc_client_t *client)
+test_not_primary_keep_pool(mongoc_client_t *client, stream_tracker_t *st)
 {
    mongoc_database_t *db;
    mongoc_collection_t *coll;
@@ -237,12 +224,12 @@ test_not_primary_keep_pool(mongoc_client_t *client)
    uint32_t primary_id;
 
    ASSERT(client);
+   ASSERT(st);
 
    /* Configure fail points */
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -251,7 +238,7 @@ test_not_primary_keep_pool(mongoc_client_t *client)
                                                  NULL /* deprioritized servers */,
                                                  &error);
    ASSERT_OR_PRINT(primary_id, error);
-   conn_count = _connection_count(client, primary_id);
+   conn_count = _connection_count(client, st, primary_id);
    res = mongoc_database_command_simple(db,
                                         tmp_bson("{'configureFailPoint': 'failCommand', "
                                                  "'mode': {'times': 1}, "
@@ -277,7 +264,7 @@ test_not_primary_keep_pool(mongoc_client_t *client)
    ASSERT(res);
 
    /* Verify that the connection pool has not been cleared */
-   ASSERT_CMPINT(conn_count, ==, _connection_count(client, primary_id));
+   ASSERT_CMPINT(conn_count, ==, _connection_count(client, st, primary_id));
 
    mongoc_collection_destroy(coll);
    mongoc_database_destroy(db);
@@ -297,7 +284,7 @@ test_not_primary_keep_pool_runner(void *ctx_void)
 }
 
 static void
-test_shutdown_reset_pool(mongoc_client_t *client)
+test_shutdown_reset_pool(mongoc_client_t *client, stream_tracker_t *st)
 {
    mongoc_database_t *db;
    mongoc_collection_t *coll;
@@ -308,13 +295,13 @@ test_shutdown_reset_pool(mongoc_client_t *client)
    uint32_t primary_id;
 
    ASSERT(client);
+   ASSERT(st);
 
    /* Configure fail points */
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -323,7 +310,7 @@ test_shutdown_reset_pool(mongoc_client_t *client)
                                                  NULL /* deprioritized servers */,
                                                  &error);
    ASSERT_OR_PRINT(primary_id, error);
-   conn_count = _connection_count(client, primary_id);
+   conn_count = _connection_count(client, st, primary_id);
    res = mongoc_database_command_simple(db,
                                         tmp_bson("{'configureFailPoint': 'failCommand', "
                                                  "'mode': {'times': 1}, "
@@ -341,12 +328,12 @@ test_shutdown_reset_pool(mongoc_client_t *client)
    ASSERT_CMPINT(error.code, ==, 91);
    ASSERT_CONTAINS(error.message, "failpoint");
 
-   /* Verify that the pool has been cleared */
-   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, primary_id));
-
    /* Execute an insert into the test collection and verify it succeeds */
    res = mongoc_collection_insert_one(coll, tmp_bson("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT(res, error);
+
+   /* Expect the insert created a new connection. The error cleared the connection pool. */
+   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, st, primary_id));
 
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_collection_destroy(coll);
@@ -362,7 +349,7 @@ test_shutdown_reset_pool_runner(void *ctx_void)
 }
 
 static void
-test_interrupted_shutdown_reset_pool(mongoc_client_t *client)
+test_interrupted_shutdown_reset_pool(mongoc_client_t *client, stream_tracker_t *st)
 {
    mongoc_database_t *db;
    mongoc_collection_t *coll;
@@ -373,13 +360,13 @@ test_interrupted_shutdown_reset_pool(mongoc_client_t *client)
    uint32_t primary_id;
 
    ASSERT(client);
+   ASSERT(st);
 
    /* Configure fail points */
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    db = mongoc_client_get_database(client, "admin");
    /* Store the primary ID. After step down, the primary may be a different
-    * server. We must execute serverStatus against the same server to check
-    * connection counts. */
+    * server. Check connection counts on the same server. */
    primary_id = mongoc_topology_select_server_id(client->topology,
                                                  MONGOC_SS_WRITE,
                                                  TEST_SS_LOG_CONTEXT,
@@ -388,7 +375,7 @@ test_interrupted_shutdown_reset_pool(mongoc_client_t *client)
                                                  NULL /* deprioritized servers */,
                                                  &error);
    ASSERT_OR_PRINT(primary_id, error);
-   conn_count = _connection_count(client, primary_id);
+   conn_count = _connection_count(client, st, primary_id);
    res = mongoc_database_command_simple(db,
                                         tmp_bson("{'configureFailPoint': 'failCommand', "
                                                  "'mode': {'times': 1}, "
@@ -406,12 +393,12 @@ test_interrupted_shutdown_reset_pool(mongoc_client_t *client)
    ASSERT_CMPINT(error.code, ==, 11600);
    ASSERT_CONTAINS(error.message, "failpoint");
 
-   /* Verify that the pool has been cleared */
-   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, primary_id));
-
    /* Execute an insert into the test collection and verify it succeeds */
    res = mongoc_collection_insert_one(coll, tmp_bson("{'test': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT(res, error);
+
+   /* Expect the insert created a new connection. The error cleared the connection pool. */
+   ASSERT_CMPINT((conn_count + 1), ==, _connection_count(client, st, primary_id));
 
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_collection_destroy(coll);
