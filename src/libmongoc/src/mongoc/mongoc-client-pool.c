@@ -506,6 +506,9 @@ _mongoc_client_pool_set_stream_initiator(mongoc_client_pool_t *pool, mongoc_stre
 {
    BSON_ASSERT_PARAM(pool);
 
+   // Do not permit overriding initializer after calls to `mongoc_client_pool_pop`.
+   BSON_ASSERT(!pool->client_initialized);
+
    mongoc_topology_scanner_set_stream_initiator(pool->topology->scanner, si, context);
 }
 

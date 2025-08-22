@@ -34,7 +34,7 @@ stream_tracker_new(void);
 void
 stream_tracker_track_client(stream_tracker_t *st, mongoc_client_t *client);
 
-// stream_tracker_track_pool tracks streams in a pool.
+// stream_tracker_track_pool tracks streams in a pool. Call before calling mongoc_client_pool_pop.
 void
 stream_tracker_track_pool(stream_tracker_t *st, mongoc_client_pool_t *pool);
 
