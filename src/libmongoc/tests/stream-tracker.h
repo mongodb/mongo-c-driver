@@ -62,6 +62,19 @@ stream_tracker_destroy(stream_tracker_t *st);
    } else                                                         \
       ((void)0)
 
+#define stream_tracker_assert_total_count(st, host, expect)      \
+   if (1) {                                                      \
+      int _got = stream_tracker_count_total(st, host);           \
+      if (_got != expect) {                                      \
+         test_error("Got unexpected total stream count to %s:\n" \
+                    "  Expected %d, got %d",                     \
+                    host,                                        \
+                    expect,                                      \
+                    _got);                                       \
+      }                                                          \
+   } else                                                        \
+      ((void)0)
+
 #define stream_tracker_assert_eventual_active_count(st, host, expect)                \
    if (1) {                                                                          \
       mlib_timer _timer = mlib_expires_after(5, s);                                  \

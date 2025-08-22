@@ -199,7 +199,7 @@ test_exhaust_cursor(bool pooled)
       /* But a new connection was made. */
       mongoc_host_list_t host;
       mongoc_cursor_get_host(cursor2, &host);
-      ASSERT_CMPINT(connection_count1 + 1, ==, stream_tracker_count_total(st, host.host_and_port));
+      stream_tracker_assert_total_count(st, host.host_and_port, connection_count1 + 1);
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next(cursor2, &doc);
