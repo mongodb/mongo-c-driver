@@ -315,7 +315,7 @@ _state_machine_destroy(_state_machine_t *state_machine)
 
 /* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO{_WITH_DB} */
 static bool
-_state_need_mongo_collinfo (_state_machine_t *state_machine, const char *db_name, bson_error_t *error)
+_state_need_mongo_collinfo(_state_machine_t *state_machine, const char *db_name, bson_error_t *error)
 {
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -338,15 +338,15 @@ _state_need_mongo_collinfo (_state_machine_t *state_machine, const char *db_name
       goto fail;
    }
 
-   bson_append_document (&opts, "filter", -1, &filter_bson);
+   bson_append_document(&opts, "filter", -1, &filter_bson);
    if (!db_name) {
-      _ctx_check_error (state_machine->ctx, error, true);
+      _ctx_check_error(state_machine->ctx, error, true);
       goto fail;
    }
-   db = mongoc_client_get_database (state_machine->collinfo_client, db_name);
+   db = mongoc_client_get_database(state_machine->collinfo_client, db_name);
 
-   cursor = mongoc_database_find_collections_with_opts (db, &opts);
-   if (mongoc_cursor_error (cursor, error)) {
+   cursor = mongoc_database_find_collections_with_opts(db, &opts);
+   if (mongoc_cursor_error(cursor, error)) {
       goto fail;
    }
 
@@ -1084,7 +1084,7 @@ _state_machine_run(_state_machine_t *state_machine, bson_t *result, bson_error_t
          _ctx_check_error(state_machine->ctx, error, true);
          goto fail;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-         if (!_state_need_mongo_collinfo (state_machine, state_machine->db_name, error)) {
+         if (!_state_need_mongo_collinfo(state_machine, state_machine->db_name, error)) {
             goto fail;
          }
          break;
@@ -1118,12 +1118,12 @@ _state_machine_run(_state_machine_t *state_machine, bson_t *result, bson_error_t
          goto success;
          break;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: {
-         const char *db_name = mongocrypt_ctx_mongo_db (state_machine->ctx);
+         const char *db_name = mongocrypt_ctx_mongo_db(state_machine->ctx);
          if (!db_name) {
-            _ctx_check_error (state_machine->ctx, error, true);
+            _ctx_check_error(state_machine->ctx, error, true);
             goto fail;
          }
-         if (!_state_need_mongo_collinfo (state_machine, db_name, error)) {
+         if (!_state_need_mongo_collinfo(state_machine, db_name, error)) {
             goto fail;
          }
       } break;
@@ -1404,14 +1404,14 @@ _mongoc_crypt_new(const bson_t *kms_providers,
    bool success = false;
 
    /* Create the handle to libmongocrypt. */
-   crypt = bson_malloc0 (sizeof (*crypt));
-   crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new ();
-   crypt->handle = mongocrypt_new ();
-   mongocrypt_setopt_retry_kms (crypt->handle, true);
-   mongocrypt_setopt_use_need_mongo_collinfo_with_db_state (crypt->handle);
+   crypt = bson_malloc0(sizeof(*crypt));
+   crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new();
+   crypt->handle = mongocrypt_new();
+   mongocrypt_setopt_retry_kms(crypt->handle, true);
+   mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(crypt->handle);
 
-   if (!mongocrypt_setopt_enable_multiple_collinfo (crypt->handle)) {
-      _crypt_check_error (crypt->handle, error, true);
+   if (!mongocrypt_setopt_enable_multiple_collinfo(crypt->handle)) {
+      _crypt_check_error(crypt->handle, error, true);
       goto fail;
    }
 

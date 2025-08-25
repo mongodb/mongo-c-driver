@@ -1260,7 +1260,7 @@ prose_test_12(void *ctx)
 }
 
 static void
-prose_test_15 (void *ctx)
+prose_test_15(void *ctx)
 {
    /*
    15. `MongoClient.bulkWrite` with unacknowledged write concern uses `w:0` for all batches
@@ -1468,11 +1468,11 @@ test_crud_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
    );
 
-   TestSuite_AddFull (suite,
-                      "/crud/prose_test_15",
-                      prose_test_15,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
+   TestSuite_AddFull(suite,
+                     "/crud/prose_test_15",
+                     prose_test_15,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
    );
 }
