@@ -4432,10 +4432,16 @@ test_explicit_encryption_text(void *unused)
    plaintext.value.v_utf8.str = "foobarbaz";
    plaintext.value.v_utf8.len = (uint32_t)strlen(plaintext.value.v_utf8.str);
 
-   mongoc_client_encryption_encrypt_text_per_index_opts_t *iopts =
-      mongoc_client_encryption_encrypt_text_per_index_opts_new();
-   mongoc_client_encryption_encrypt_text_per_index_opts_set_str_max_query_length(iopts, 3);
-   mongoc_client_encryption_encrypt_text_per_index_opts_set_str_min_query_length(iopts, 1);
+   mongoc_encrypt_text_prefix_opts_t *popts = mongoc_encrypt_text_prefix_opts_new();
+   mongoc_encrypt_text_prefix_opts_set_str_max_query_length(popts, 10);
+   mongoc_encrypt_text_prefix_opts_set_str_max_query_length(popts, 2);
+   mongoc_encrypt_text_suffix_opts_t *sopts = mongoc_encrypt_text_suffix_opts_new();
+   mongoc_encrypt_text_suffix_opts_set_str_max_query_length(popts, 10);
+   mongoc_encrypt_text_suffix_opts_set_str_max_query_length(popts, 2);
+   mongoc_encrypt_text_substring_opts_t *ssopts = mongoc_encrypt_text_substring_opts_new();
+   mongoc_encrypt_text_substring_opts_set_str_max_length(ssopts, 10);
+   mongoc_encrypt_text_substring_opts_set_str_max_query_length(popts, 10);
+   mongoc_encrypt_text_substring_opts_set_str_max_query_length(popts, 2);
 
    /* Prefix and suffix tests */
    /* Insert 'foobarbaz' with both prefix and suffix indexing */
@@ -4447,9 +4453,9 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, iopts);
-      mongoc_client_encryption_encrypt_text_opts_set_suffix(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_prefix(topts, popts);
+      mongoc_encrypt_text_opts_set_suffix(topts, sopts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
@@ -4462,7 +4468,7 @@ test_explicit_encryption_text(void *unused)
 
       bson_value_destroy(&insertPayload);
       bson_destroy(&to_insert);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4475,8 +4481,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_prefix(topts, popts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "foo";
@@ -4501,7 +4507,7 @@ test_explicit_encryption_text(void *unused)
       bson_value_destroy(&findPayload);
       mongoc_cursor_destroy(cursor);
       bson_destroy(&expr);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4514,8 +4520,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_suffix(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_suffix(topts, sopts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "baz";
@@ -4540,7 +4546,7 @@ test_explicit_encryption_text(void *unused)
       bson_value_destroy(&findPayload);
       mongoc_cursor_destroy(cursor);
       bson_destroy(&expr);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4553,8 +4559,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_suffix(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_suffix(topts, sopts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "foo";
@@ -4577,7 +4583,7 @@ test_explicit_encryption_text(void *unused)
       bson_value_destroy(&findPayload);
       mongoc_cursor_destroy(cursor);
       bson_destroy(&expr);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4590,8 +4596,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_prefix(topts, popts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "baz";
@@ -4613,7 +4619,7 @@ test_explicit_encryption_text(void *unused)
       bson_value_destroy(&findPayload);
       mongoc_cursor_destroy(cursor);
       bson_destroy(&expr);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4633,9 +4639,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_per_index_opts_set_str_max_length(iopts, 10);
-      mongoc_client_encryption_encrypt_text_opts_set_substring(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_substring(topts, ssopts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "foobarbaz";
@@ -4650,7 +4655,7 @@ test_explicit_encryption_text(void *unused)
 
       bson_value_destroy(&insertPayload);
       bson_destroy(&to_insert);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4663,8 +4668,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_substring(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_substring(topts, ssopts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "bar";
@@ -4689,7 +4694,7 @@ test_explicit_encryption_text(void *unused)
       bson_value_destroy(&findPayload);
       mongoc_cursor_destroy(cursor);
       bson_destroy(&expr);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
@@ -4702,8 +4707,8 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
-      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
-      mongoc_client_encryption_encrypt_text_opts_set_substring(topts, iopts);
+      mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
+      mongoc_encrypt_text_opts_set_substring(topts, ssopts);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "qux";
@@ -4725,10 +4730,12 @@ test_explicit_encryption_text(void *unused)
       bson_value_destroy(&findPayload);
       mongoc_cursor_destroy(cursor);
       bson_destroy(&expr);
-      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
-   mongoc_client_encryption_encrypt_text_per_index_opts_destroy(iopts);
+   mongoc_encrypt_text_prefix_opts_destroy(popts);
+   mongoc_encrypt_text_suffix_opts_destroy(sopts);
+   mongoc_encrypt_text_substring_opts_destroy(ssopts);
    explicit_encryption_destroy(eef);
 }
 
