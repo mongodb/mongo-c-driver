@@ -27,7 +27,7 @@ mongoc_set_new(size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx)
    mongoc_set_t *set = (mongoc_set_t *)bson_malloc(sizeof(*set));
 
    set->items_allocated = BSON_MAX(nitems, 1);
-   set->items = (mongoc_set_item_t *)bson_malloc(sizeof(*set->items) * set->items_allocated);
+   set->items = (mongoc_set_item_t *)bson_array_alloc(sizeof(*set->items), set->items_allocated);
    set->items_len = 0;
 
    set->dtor = dtor;
@@ -208,7 +208,7 @@ mongoc_set_for_each_with_id(mongoc_set_t *set, mongoc_set_for_each_with_id_cb_t 
       return;
    }
 
-   mongoc_set_item_t *const old_set = bson_malloc(sizeof(*old_set) * items_len);
+   mongoc_set_item_t *const old_set = bson_array_alloc(sizeof(*old_set), items_len);
    memcpy(old_set, set->items, sizeof(*old_set) * items_len);
 
    for (uint32_t i = 0u; i < items_len; i++) {
@@ -237,7 +237,7 @@ mongoc_set_for_each_with_id_const(const mongoc_set_t *set, mongoc_set_for_each_w
       return;
    }
 
-   mongoc_set_item_t *const old_set = bson_malloc(sizeof(*old_set) * items_len);
+   mongoc_set_item_t *const old_set = bson_array_alloc(sizeof(*old_set), items_len);
    memcpy(old_set, set->items, sizeof(*old_set) * items_len);
 
    for (uint32_t i = 0u; i < items_len; i++) {

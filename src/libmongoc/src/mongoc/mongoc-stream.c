@@ -335,7 +335,7 @@ mongoc_stream_poll(mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeo
 ssize_t
 _mongoc_stream_poll_internal(mongoc_stream_poll_t *streams, size_t nstreams, mlib_timer until)
 {
-   mongoc_stream_poll_t *poller = (mongoc_stream_poll_t *)bson_malloc(sizeof(*poller) * nstreams);
+   mongoc_stream_poll_t *poller = (mongoc_stream_poll_t *)bson_array_alloc(sizeof(*poller), nstreams);
 
    int last_type = 0;
    ssize_t rval = -1;
