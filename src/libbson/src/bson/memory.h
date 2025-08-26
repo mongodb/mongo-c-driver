@@ -48,6 +48,8 @@ bson_aligned_alloc(size_t alignment, size_t num_bytes);
 BSON_EXPORT(void *)
 bson_aligned_alloc0(size_t alignment, size_t num_bytes);
 BSON_EXPORT(void *)
+bson_array_alloc(size_t type_size, size_t len);
+BSON_EXPORT(void *)
 bson_realloc(void *mem, size_t num_bytes);
 BSON_EXPORT(void *)
 bson_realloc_ctx(void *mem, size_t num_bytes, void *ctx);
