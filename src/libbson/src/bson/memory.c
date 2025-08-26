@@ -261,7 +261,7 @@ bson_array_alloc(size_t type_size /* IN */, size_t len /* IN */)
    size_t num_bytes = type_size * len;
 
    if (BSON_LIKELY(num_bytes) && BSON_LIKELY(type_size == num_bytes / len)) {
-      mem = bson_aligned_alloc0(BSON_ALIGN_OF(type_size), num_bytes);
+      mem = bson_aligned_alloc0(BSON_ALIGNOF(type_size), num_bytes);
    }
    return mem;
 }
