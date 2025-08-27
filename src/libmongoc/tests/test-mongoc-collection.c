@@ -4898,7 +4898,7 @@ test_create_indexes_acts_as_write_command(void *unused)
       // Set a non-default write concern on collection:
       {
          mongoc_write_concern_t *wc = mongoc_write_concern_new();
-         mongoc_write_concern_set_w(wc, 99); // Set a write concern that fails.
+         mongoc_write_concern_set_w(wc, -1); // Set a write concern that fails.
          mongoc_collection_set_write_concern(coll, wc);
          mongoc_write_concern_destroy(wc);
       }
@@ -4910,7 +4910,7 @@ test_create_indexes_acts_as_write_command(void *unused)
          bool ok =
             mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* options */, NULL /* reply */, &error);
          ASSERT(!ok);
-         ASSERT_ERROR_CONTAINS(error, 5, 9, "w has to be a non-negative number and not greater than 50");
+         ASSERT_ERROR_CONTAINS(error, 5, 9, "w has to be a non-negative number and not greater than 50; found: -1");
          mongoc_index_model_destroy(im);
       }
    }
