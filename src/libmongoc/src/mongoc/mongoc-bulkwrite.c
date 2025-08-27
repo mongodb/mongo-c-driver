@@ -157,6 +157,8 @@ struct _mongoc_bulkwrite_t {
    // `executed` is set to true once `mongoc_bulkwrite_execute` is called.
    // `mongoc_bulkwrite_t` may not be executed more than once.
    bool executed;
+   // `is_acknowledged` is set in `mongoc_bulkwrite_execute` based on the chosen write concern.
+   bool is_acknowledged;
    // `ops` is a document sequence.
    mongoc_buffer_t ops;
    size_t n_ops;
@@ -1514,6 +1516,14 @@ mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *
    self->session = session;
 }
 
+bool
+mongoc_bulkwrite_is_acknowledged(const mongoc_bulkwrite_t *self)
+{
+   BSON_ASSERT_PARAM(self);
+
+   return self->is_acknowledged;
+}
+
 mongoc_bulkwritereturn_t
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts)
 {
@@ -1533,7 +1543,6 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
       opts = &defaults;
    }
    bool is_ordered = mongoc_optional_is_set(&opts->ordered) ? mongoc_optional_value(&opts->ordered) : true; // default.
-   bool is_acknowledged = false;
    // Create empty result and exception to collect results/errors from batches.
    ret.res = _bulkwriteresult_new();
    ret.exc = _bulkwriteexception_new();
@@ -1668,10 +1677,10 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
             _bulkwriteexception_set_error(ret.exc, &error);
             goto fail;
          }
-         is_acknowledged = mongoc_write_concern_is_acknowledged(wc);
+         self->is_acknowledged = mongoc_write_concern_is_acknowledged(wc);
       }
 
-      if (verboseresults && !is_acknowledged) {
+      if (verboseresults && !self->is_acknowledged) {
          _mongoc_set_error(&error,
                            MONGOC_ERROR_COMMAND,
                            MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1680,7 +1689,7 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
          goto fail;
       }
 
-      if (is_ordered && !is_acknowledged) {
+      if (is_ordered && !self->is_acknowledged) {
          _mongoc_set_error(&error,
                            MONGOC_ERROR_COMMAND,
                            MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1868,7 +1877,7 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
          }
 
          // Add to result and/or exception.
-         if (is_acknowledged) {
+         if (self->is_acknowledged) {
             // Parse top-level fields.
             if (!_bulkwritereturn_apply_reply(&ret, &cmd_reply)) {
                goto batch_fail;
@@ -1965,7 +1974,7 @@ fail:
          }
       }
    }
-   if (!is_acknowledged || !has_successful_results) {
+   if (!self->is_acknowledged || !has_successful_results) {
       mongoc_bulkwriteresult_destroy(ret.res);
       ret.res = NULL;
    }
