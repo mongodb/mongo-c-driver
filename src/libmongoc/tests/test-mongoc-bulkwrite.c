@@ -728,9 +728,9 @@ test_bulkwrite_client_error_no_result(void *unused)
 }
 
 static void
-_test_bulkwrite_is_acknowledged_case(mongoc_client_t *client,
-                                     mongoc_bulkwriteopts_t *opts,
-                                     bool is_acknowledged_expected)
+_do_bulkwrite_is_acknowledged_test_case(mongoc_client_t *client,
+                                        mongoc_bulkwriteopts_t *opts,
+                                        bool is_acknowledged_expected)
 {
    // Drop prior data.
    {
@@ -778,7 +778,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_unacknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, NULL);
 
-      _test_bulkwrite_is_acknowledged_case(client, opts, false /* is_acknowledged_expected */);
+      _do_bulkwrite_is_acknowledged_test_case(client, opts, false /* is_acknowledged_expected */);
    }
 
    // Client w/ acknowledged write concern, no opts override
@@ -786,7 +786,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_acknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, NULL);
 
-      _test_bulkwrite_is_acknowledged_case(client, opts, true /* is_acknowledged_expected */);
+      _do_bulkwrite_is_acknowledged_test_case(client, opts, true /* is_acknowledged_expected */);
    }
 
    // Client w/ unacknowledged write concern, opts override w/ acknowledged write concern
@@ -794,7 +794,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_unacknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, wc_acknowledged);
 
-      _test_bulkwrite_is_acknowledged_case(client, opts, true /* is_acknowledged_expected */);
+      _do_bulkwrite_is_acknowledged_test_case(client, opts, true /* is_acknowledged_expected */);
    }
 
    // Client w/ acknowledged write concern, opts override w/ unacknowledged write concern
@@ -802,7 +802,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_acknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, wc_unacknowledged);
 
-      _test_bulkwrite_is_acknowledged_case(client, opts, false /* is_acknowledged_expected */);
+      _do_bulkwrite_is_acknowledged_test_case(client, opts, false /* is_acknowledged_expected */);
    }
 
    mongoc_write_concern_destroy(wc_unacknowledged);
