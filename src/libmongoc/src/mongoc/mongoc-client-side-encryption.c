@@ -476,7 +476,6 @@ struct _encrypt_text_per_index_opts_t {
 };
 
 struct _mongoc_encrypt_text_opts_t {
-   bool set;
    bool case_sensitive;
    bool diacritic_sensitive;
 
@@ -844,7 +843,6 @@ mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_enc
    BSON_ASSERT_PARAM(opts);
    opts->text_opts = mongoc_encrypt_text_opts_new();
    *opts->text_opts = *text_opts;
-   opts->text_opts->set = true;
 }
 
 void
@@ -2902,7 +2900,7 @@ mongoc_client_encryption_encrypt(mongoc_client_encryption_t *client_encryption,
       append_bson_range_opts(range_opts, opts);
    }
 
-   if (opts->text_opts->set) {
+   if (opts->text_opts) {
       text_opts = bson_new();
       append_bson_text_opts(text_opts, opts->text_opts);
    }
@@ -2954,7 +2952,7 @@ mongoc_client_encryption_encrypt_expression(mongoc_client_encryption_t *client_e
    }
 
    bson_t *text_opts = NULL;
-   if (opts->text_opts->set) {
+   if (opts->text_opts) {
       text_opts = bson_new();
       append_bson_text_opts(text_opts, opts->text_opts);
    }
