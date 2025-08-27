@@ -4942,11 +4942,10 @@ test_create_indexes_acts_as_write_command(void *unused)
       {
          const bson_t *keys = tmp_bson("{'x': 1}");
          mongoc_index_model_t *im = mongoc_index_model_new(keys, NULL);
-         bool ok = mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* opts */, &reply, &error);
+         bool ok = mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* opts */, NULL /* reply */, &error);
          ASSERT(!ok);
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_WRITE_CONCERN, 123, "foo");
          mongoc_index_model_destroy(im);
-         bson_destroy(&reply);
       }
    }
 
@@ -5094,5 +5093,7 @@ test_collection_install(TestSuite *suite)
                      NULL /* _dtor */,
                      NULL /* _ctx */,
                      // requires failpoint
-                     test_framework_skip_if_no_failpoint);
+                     test_framework_skip_if_no_failpoint,
+                     // Server Version 4.4 has Wire Version 9 - w < 0 does not error on earlier versions.
+                     test_framework_skip_if_max_wire_version_less_than_9);
 }
