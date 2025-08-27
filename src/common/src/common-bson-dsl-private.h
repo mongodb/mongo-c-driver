@@ -659,24 +659,24 @@ BSON_IF_GNU_LIKE(_Pragma("GCC diagnostic ignored \"-Wshadow\""))
       }                                      \
    } while (0);
 
-#define _bsonParseMarkVisited(Index)                                                                \
-   if (1) {                                                                                         \
-      const size_t nth_int = Index / 64u;                                                           \
-      const size_t nth_bit = Index % 64u;                                                           \
-      while (nth_int >= _bpNumVisitBitInts) {                                                       \
-         /* Say that five times, fast: */                                                           \
-         size_t new_num_visit_bit_ints = _bpNumVisitBitInts * 2u;                                   \
+#define _bsonParseMarkVisited(Index)                                                                 \
+   if (1) {                                                                                          \
+      const size_t nth_int = Index / 64u;                                                            \
+      const size_t nth_bit = Index % 64u;                                                            \
+      while (nth_int >= _bpNumVisitBitInts) {                                                        \
+         /* Say that five times, fast: */                                                            \
+         size_t new_num_visit_bit_ints = _bpNumVisitBitInts * 2u;                                    \
          uint64_t *new_visit_bit_ints = bson_array_alloc0(sizeof(uint64_t), new_num_visit_bit_ints); \
-         memcpy(new_visit_bit_ints, _bpVisitBits, sizeof(uint64_t) * _bpNumVisitBitInts);           \
-         if (_bpVisitBits != _bpVisitBits_static) {                                                 \
-            bson_free(_bpVisitBits);                                                                \
-         }                                                                                          \
-         _bpVisitBits = new_visit_bit_ints;                                                         \
-         _bpNumVisitBitInts = new_num_visit_bit_ints;                                               \
-      }                                                                                             \
-                                                                                                    \
-      _bpVisitBits[nth_int] |= (UINT64_C(1) << nth_bit);                                            \
-   } else                                                                                           \
+         memcpy(new_visit_bit_ints, _bpVisitBits, sizeof(uint64_t) * _bpNumVisitBitInts);            \
+         if (_bpVisitBits != _bpVisitBits_static) {                                                  \
+            bson_free(_bpVisitBits);                                                                 \
+         }                                                                                           \
+         _bpVisitBits = new_visit_bit_ints;                                                          \
+         _bpNumVisitBitInts = new_num_visit_bit_ints;                                                \
+      }                                                                                              \
+                                                                                                     \
+      _bpVisitBits[nth_int] |= (UINT64_C(1) << nth_bit);                                             \
+   } else                                                                                            \
       ((void)0)
 
 #define _bsonParseDidVisitNth(Index) _bsonParseDidVisitNth_1(Index / 64u, Index % 64u)
