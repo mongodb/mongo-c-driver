@@ -732,18 +732,9 @@ _do_bulkwrite_is_acknowledged_test_case(mongoc_client_t *client,
                                         mongoc_bulkwriteopts_t *opts,
                                         bool is_acknowledged_expected)
 {
-   // Drop prior data.
-   {
-      mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
-      mongoc_collection_drop(coll, NULL); // Ignore return.
-      mongoc_collection_destroy(coll);
-   }
-
-   bson_error_t error;
-   bool ok;
-
    mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
-   ok = mongoc_bulkwrite_append_insertone(bw, "db.coll", tmp_bson("{'_id': 123}"), NULL /* opts */, &error);
+   bson_error_t error;
+   bool const ok = mongoc_bulkwrite_append_insertone(bw, "db.coll", tmp_bson("{}"), NULL /* opts */, &error);
    ASSERT_OR_PRINT(ok, error);
 
    mongoc_bulkwritereturn_t const bwr = mongoc_bulkwrite_execute(bw, opts);
