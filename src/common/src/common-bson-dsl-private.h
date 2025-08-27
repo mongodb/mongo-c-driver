@@ -666,7 +666,7 @@ BSON_IF_GNU_LIKE(_Pragma("GCC diagnostic ignored \"-Wshadow\""))
       while (nth_int >= _bpNumVisitBitInts) {                                                       \
          /* Say that five times, fast: */                                                           \
          size_t new_num_visit_bit_ints = _bpNumVisitBitInts * 2u;                                   \
-         uint64_t *new_visit_bit_ints = bson_array_alloc(sizeof(uint64_t), new_num_visit_bit_ints); \
+         uint64_t *new_visit_bit_ints = bson_array_alloc0(sizeof(uint64_t), new_num_visit_bit_ints); \
          memcpy(new_visit_bit_ints, _bpVisitBits, sizeof(uint64_t) * _bpNumVisitBitInts);           \
          if (_bpVisitBits != _bpVisitBits_static) {                                                 \
             bson_free(_bpVisitBits);                                                                \

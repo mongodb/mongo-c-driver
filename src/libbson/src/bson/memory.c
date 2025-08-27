@@ -236,8 +236,8 @@ bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
  *
  * bson_array_alloc --
  *
- *       Allocates memory for an array of objects, checking for cases of 
- *       n = 0 and integer overflow in type_size * len, in which case NULL 
+ *       Allocates memory for an array of objects, checking for cases of
+ *       n = 0 and integer overflow in type_size * len, in which case NULL
  *       is returned.
  *
  * Parameters:
@@ -288,7 +288,7 @@ bson_array_alloc(size_t type_size /* IN */, size_t num_elems /* IN */)
  *--------------------------------------------------------------------------
  */
 
- void *
+void *
 bson_array_alloc0(size_t type_size /* IN */, size_t num_elems /* IN */)
 {
    void *mem = NULL;
