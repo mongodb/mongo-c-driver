@@ -1054,7 +1054,7 @@ void jsonsl_jpr_match_state_init(jsonsl_t jsn,
     }
     jsn->jprs = (jsonsl_jpr_t *) bson_array_alloc (sizeof (jsonsl_jpr_t), njprs);
     jsn->jpr_count = njprs;
-    jsn->jpr_root = (size_t *) bson_array_alloc (sizeof (size_t), njprs * jsn->levels_max);
+    jsn->jpr_root = (size_t *) bson_array_alloc0 (sizeof (size_t), njprs * jsn->levels_max);
     memcpy(jsn->jprs, jprs, sizeof(jsonsl_jpr_t) * njprs);
     /* Set the initial jump table values */
 

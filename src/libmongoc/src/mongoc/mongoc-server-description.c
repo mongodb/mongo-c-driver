@@ -987,7 +987,7 @@ mongoc_server_description_filter_tags(const mongoc_server_description_t **descri
       return;
    }
 
-   sd_matched = (bool *)bson_array_alloc(sizeof(bool), description_len);
+   sd_matched = (bool *)bson_array_alloc0(sizeof(bool), description_len);
 
    bson_iter_init(&rp_tagset_iter, rp_tags);
 

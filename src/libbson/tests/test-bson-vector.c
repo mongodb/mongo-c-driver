@@ -1392,7 +1392,7 @@ test_bson_vector_edge_cases_int8(void)
    // Test some read and write boundaries.
    {
       size_t values_size = 100;
-      int8_t *values = bson_array_alloc(sizeof *values, values_size);
+      int8_t *values = bson_array_alloc0(sizeof *values, values_size);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(
          view, max_alloc_elements, values, values_size, bson_vector_int8_view_read, bson_vector_int8_view_write);
       bson_free(values);
@@ -1439,7 +1439,7 @@ test_bson_vector_edge_cases_float32(void)
    // Test some read and write boundaries.
    {
       size_t values_size = 100;
-      float *values = bson_array_alloc(sizeof *values, values_size);
+      float *values = bson_array_alloc0(sizeof *values, values_size);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(
          view, max_alloc_elements, values, values_size, bson_vector_float32_view_read, bson_vector_float32_view_write);
       bson_free(values);
@@ -1506,7 +1506,7 @@ test_bson_vector_edge_cases_packed_bit(void)
    // Only tests one length, but it's chosen to be greater than 8 and not a multiple of 8.
    {
       size_t values_size = 190;
-      bool *values = bson_array_alloc(sizeof *values, values_size);
+      bool *values = bson_array_alloc0(sizeof *values, values_size);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(view,
                                             max_alloc_elements,
                                             values,

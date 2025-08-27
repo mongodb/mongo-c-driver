@@ -183,7 +183,7 @@ _remove_orphaned_server_monitors(mongoc_set_t *server_monitors, mongoc_set_t *se
 
    /* Signal shutdown to server monitors no longer in the topology description.
     */
-   server_monitor_ids_to_remove = bson_array_alloc(sizeof(uint32_t), server_monitors->items_len);
+   server_monitor_ids_to_remove = bson_array_alloc0(sizeof(uint32_t), server_monitors->items_len);
    for (size_t i = 0u; i < server_monitors->items_len; i++) {
       mongoc_server_monitor_t *server_monitor;
       uint32_t id;

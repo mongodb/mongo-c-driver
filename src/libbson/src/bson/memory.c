@@ -236,13 +236,13 @@ bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
  *
  * bson_array_alloc --
  *
- *       Allocates zero-filled, aligned memory for an array of objects,
- *       checking for cases of n = 0 and integer overflow in type_size * len,
- *       in which case NULL is returned.
+ *       Allocates memory for an array of objects, checking for cases of 
+ *       n = 0 and integer overflow in type_size * len, in which case NULL 
+ *       is returned.
  *
  * Parameters:
  *       @type_size: The size of each object's type in bytes.
- *       @len: The number of objects to allocate.
+ *       @num_elems: The number of objects to allocate.
  *
  * Returns:
  *       A pointer if successful; otherwise abort() is called and this
@@ -255,13 +255,47 @@ bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
  */
 
 void *
-bson_array_alloc(size_t type_size /* IN */, size_t len /* IN */)
+bson_array_alloc(size_t type_size /* IN */, size_t num_elems /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes = type_size * len;
+   size_t num_bytes = type_size * num_elems;
 
-   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(type_size == num_bytes / len)) {
-      mem = bson_aligned_alloc0(BSON_ALIGNOF(type_size), num_bytes);
+   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / type_size)) {
+      mem = bson_malloc(num_bytes);
+   }
+   return mem;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_array_alloc0 --
+ *
+ *       Like bson_array_alloc() except the memory is zeroed after allocation
+ *       for convenience.
+ *
+ * Parameters:
+ *       @type_size: The size of each object's type in bytes.
+ *       @num_elems: The number of objects to allocate.
+ *
+ * Returns:
+ *       A pointer if successful; otherwise abort() is called and this
+ *       function will never return.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+ void *
+bson_array_alloc0(size_t type_size /* IN */, size_t num_elems /* IN */)
+{
+   void *mem = NULL;
+   size_t num_bytes = type_size * num_elems;
+
+   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / type_size)) {
+      mem = bson_malloc0(num_bytes);
    }
    return mem;
 }
