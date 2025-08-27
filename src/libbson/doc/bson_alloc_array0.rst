@@ -1,7 +1,7 @@
 :man_page: bson_alloc_array0
 
 bson_alloc_array0()
-=============
+===================
 
 Synopsis
 --------
