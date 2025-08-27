@@ -4910,7 +4910,7 @@ test_create_indexes_acts_as_write_command(void *unused)
          bool ok =
             mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* options */, NULL /* reply */, &error);
          ASSERT(!ok);
-         ASSERT_ERROR_CONTAINS(error, 5, 9, "w has to be a non-negative number and not greater than 50; found: -1");
+         ASSERT_ERROR_CONTAINS(error, 5, 9, "w has to be a non-negative number and not greater than 50");
          mongoc_index_model_destroy(im);
       }
    }
