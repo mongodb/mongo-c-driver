@@ -1,7 +1,7 @@
-:man_page: bson_alloc_array
+:man_page: bson_array_alloc0
 
-bson_alloc_array()
-==================
+bson_array_alloc0()
+===================
 
 Synopsis
 --------
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   void *
-  bson_alloc_array (size_t type_size, size_t num_elems);
+  bson_array_alloc0 (size_t type_size, size_t num_elems);
 
 Parameters
 ----------
@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-This is a portable ``malloc()`` wrapper to allocate an array of objects.
+This is a portable ``malloc()`` wrapper to allocate an array of objects that also sets the memory to zero.
 
 In general, this function will return an allocation at least ``sizeof(void*)`` bytes or bigger.
 
@@ -33,4 +33,4 @@ If there was a failure to allocate ``type_size * num_elems`` bytes, the process 
 Returns
 -------
 
-A pointer to a memory region which *HAS NOT* been zeroed.
+A pointer to a memory region which *HAS* been zeroed.
