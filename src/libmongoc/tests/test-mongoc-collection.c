@@ -4936,6 +4936,7 @@ test_create_indexes_acts_as_write_command(void *unused)
          bool ok = mongoc_client_command_simple(client, "admin", failpoint_cmd, NULL /* read_prefs */, &reply, &error);
          ASSERT_OR_PRINT(ok, error);
          bson_destroy(failpoint_cmd);
+         bson_destroy(&reply);
       }
 
       {
@@ -4945,6 +4946,7 @@ test_create_indexes_acts_as_write_command(void *unused)
          ASSERT(!ok);
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_WRITE_CONCERN, 123, "foo");
          mongoc_index_model_destroy(im);
+         bson_destroy(&reply);
       }
    }
 
