@@ -469,7 +469,6 @@ typedef struct {
 } mc_optional_int32_t;
 
 struct _encrypt_text_per_index_opts_t {
-   bool set;
    mc_optional_int32_t str_max_length;
    mc_optional_int32_t str_max_query_length;
    mc_optional_int32_t str_min_query_length;
@@ -605,7 +604,6 @@ mongoc_encrypt_text_opts_set_prefix(mongoc_encrypt_text_opts_t *opts, mongoc_enc
    BSON_ASSERT_PARAM(popts);
    opts->prefix = mongoc_encrypt_text_prefix_opts_new();
    *opts->prefix = *popts;
-   opts->prefix->set = true;
 }
 
 void
@@ -615,7 +613,6 @@ mongoc_encrypt_text_opts_set_suffix(mongoc_encrypt_text_opts_t *opts, mongoc_enc
    BSON_ASSERT_PARAM(sopts);
    opts->suffix = mongoc_encrypt_text_suffix_opts_new();
    *opts->suffix = *sopts;
-   opts->suffix->set = true;
 }
 
 void
@@ -625,7 +622,6 @@ mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts, mongoc_
    BSON_ASSERT_PARAM(ssopts);
    opts->substring = mongoc_encrypt_text_substring_opts_new();
    *opts->substring = *ssopts;
-   opts->substring->set = true;
 }
 
 mongoc_encrypt_text_opts_t *
@@ -1251,19 +1247,19 @@ append_bson_text_opts(bson_t *bson_text_opts, const mongoc_encrypt_text_opts_t *
    BSON_ASSERT(BSON_APPEND_BOOL(bson_text_opts, "caseSensitive", opts->case_sensitive));
    BSON_ASSERT(BSON_APPEND_BOOL(bson_text_opts, "diacriticSensitive", opts->diacritic_sensitive));
 
-   if (opts->prefix->set) {
+   if (opts->prefix) {
       bson_t per_index_spec;
       BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(bson_text_opts, "prefix", &per_index_spec));
       append_bson_text_per_index_opts(&per_index_spec, opts->prefix);
       BSON_ASSERT(bson_append_document_end(bson_text_opts, &per_index_spec));
    }
-   if (opts->suffix->set) {
+   if (opts->suffix) {
       bson_t per_index_spec;
       BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(bson_text_opts, "suffix", &per_index_spec));
       append_bson_text_per_index_opts(&per_index_spec, opts->suffix);
       BSON_ASSERT(bson_append_document_end(bson_text_opts, &per_index_spec));
    }
-   if (opts->substring->set) {
+   if (opts->substring) {
       bson_t per_index_spec;
       BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(bson_text_opts, "substring", &per_index_spec));
       append_bson_text_per_index_opts(&per_index_spec, opts->substring);

@@ -4434,14 +4434,14 @@ test_explicit_encryption_text(void *unused)
 
    mongoc_encrypt_text_prefix_opts_t *popts = mongoc_encrypt_text_prefix_opts_new();
    mongoc_encrypt_text_prefix_opts_set_str_max_query_length(popts, 10);
-   mongoc_encrypt_text_prefix_opts_set_str_max_query_length(popts, 2);
+   mongoc_encrypt_text_prefix_opts_set_str_min_query_length(popts, 2);
    mongoc_encrypt_text_suffix_opts_t *sopts = mongoc_encrypt_text_suffix_opts_new();
-   mongoc_encrypt_text_suffix_opts_set_str_max_query_length(popts, 10);
-   mongoc_encrypt_text_suffix_opts_set_str_max_query_length(popts, 2);
+   mongoc_encrypt_text_suffix_opts_set_str_max_query_length(sopts, 10);
+   mongoc_encrypt_text_suffix_opts_set_str_min_query_length(sopts, 2);
    mongoc_encrypt_text_substring_opts_t *ssopts = mongoc_encrypt_text_substring_opts_new();
    mongoc_encrypt_text_substring_opts_set_str_max_length(ssopts, 10);
-   mongoc_encrypt_text_substring_opts_set_str_max_query_length(popts, 10);
-   mongoc_encrypt_text_substring_opts_set_str_max_query_length(popts, 2);
+   mongoc_encrypt_text_substring_opts_set_str_max_query_length(ssopts, 10);
+   mongoc_encrypt_text_substring_opts_set_str_min_query_length(ssopts, 2);
 
    /* Prefix and suffix tests */
    /* Insert 'foobarbaz' with both prefix and suffix indexing */
@@ -4452,6 +4452,7 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_prefix(topts, popts);
@@ -4638,6 +4639,7 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_substring(topts, ssopts);
