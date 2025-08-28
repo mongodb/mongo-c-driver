@@ -633,6 +633,9 @@ mongoc_encrypt_text_opts_new(void)
 void
 mongoc_encrypt_text_opts_destroy(mongoc_encrypt_text_opts_t *topts)
 {
+   mongoc_encrypt_text_prefix_opts_destroy(topts->prefix);
+   mongoc_encrypt_text_suffix_opts_destroy(topts->suffix);
+   mongoc_encrypt_text_substring_opts_destroy(topts->substring);
    bson_free(topts);
 }
 
