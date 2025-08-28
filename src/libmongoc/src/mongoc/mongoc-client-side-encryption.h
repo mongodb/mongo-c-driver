@@ -251,8 +251,6 @@ mongoc_encrypt_text_opts_new(void);
 MONGOC_EXPORT(void)
 mongoc_encrypt_text_opts_destroy(mongoc_encrypt_text_opts_t *topts);
 
-MONGOC_EXPORT(void)
-mongoc_client_encryption_encrypt_opts_destroy(mongoc_client_encryption_encrypt_opts_t *opts);
 MONGOC_EXPORT(struct _mongoc_cursor_t *)
 mongoc_client_encryption_get_keys(mongoc_client_encryption_t *client_encryption, bson_error_t *error);
 
@@ -318,9 +316,6 @@ MONGOC_EXPORT(void)
 mongoc_client_encryption_encrypt_opts_set_contention_factor(mongoc_client_encryption_encrypt_opts_t *opts,
                                                             int64_t contention_factor);
 
-MONGOC_EXPORT(void)
-mongoc_client_encryption_encrypt_opts_set_range_opts(mongoc_client_encryption_encrypt_opts_t *opts,
-                                                     const mongoc_client_encryption_encrypt_range_opts_t *range_opts);
 MONGOC_EXPORT(void)
 mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_encrypt_opts_t *opts,
                                                     const mongoc_encrypt_text_opts_t *text_opts);
