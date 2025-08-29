@@ -327,6 +327,7 @@ test_bulkwrite_serverid(void *ctx)
       // Expect the selected server is reported as used.
       uint32_t const used_serverid = mongoc_bulkwrite_serverid(bw);
       ASSERT_CMPUINT32(selected_serverid, ==, used_serverid);
+      // Expect both mongoc_bulkwrite_t and mongoc_bulkwriteresult_t report the same server ID
       uint32_t const used_serverid_res = mongoc_bulkwriteresult_serverid(bwr.res);
       ASSERT_CMPUINT32(used_serverid, ==, used_serverid_res);
       mongoc_bulkwriteresult_destroy(bwr.res);
@@ -449,6 +450,7 @@ test_bulkwrite_serverid_on_retry(void *ctx)
       // Expect a different server was used due to retry.
       uint32_t const used_serverid = mongoc_bulkwrite_serverid(bw);
       ASSERT_CMPUINT32(selected_serverid, !=, used_serverid);
+      // Expect both mongoc_bulkwrite_t and mongoc_bulkwriteresult_t report the same server ID
       uint32_t const used_serverid_res = mongoc_bulkwriteresult_serverid(bwr.res);
       ASSERT_CMPUINT32(used_serverid, ==, used_serverid_res);
       mongoc_bulkwriteresult_destroy(bwr.res);
