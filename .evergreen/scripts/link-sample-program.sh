@@ -11,10 +11,13 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
+: "${UV_INSTALL_DIR:?}"
+
 DIR=$(dirname $0)
-. $DIR/find-cmake-latest.sh
-CMAKE=$(find_cmake_latest)
-. $DIR/check-symlink.sh
+
+. "${DIR:?}/install-build-tools.sh"
+install_build_tools
+export CMAKE_GENERATOR="Ninja"
 
 # The major version of the project. Appears in certain install filenames.
 _full_version=$(cat "$DIR/../../VERSION_CURRENT")
@@ -49,6 +52,16 @@ mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
 
+# Use ccache if able.
+if [[ -f $DIR/find-ccache.sh ]]; then
+  . $DIR/find-ccache.sh
+  find_ccache_and_export_vars "$SCRATCH_DIR" || true
+  if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
+    configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
+    configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+  fi
+fi
+
 if [ "$ENABLE_SNAPPY" ]; then
   SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=ON"
 else
@@ -74,19 +87,9 @@ fi
 
 ZSTD="AUTO"
 
-# Use ccache if able.
-if [[ -f $DIR/find-ccache.sh ]]; then
-  . $DIR/find-ccache.sh
-  find_ccache_and_export_vars "$SCRATCH_DIR" || true
-  if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
-    configure_flags_append "-DCMAKE_POLICY_DEFAULT_CMP0141=NEW"
-    configure_flags_append "-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
-  fi
-fi
-
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake -DBUILD_TESTING=OFF $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
-$CMAKE --build . --parallel
-$CMAKE --build . --parallel --target install
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake -DBUILD_TESTING=OFF $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
+cmake --build . --parallel
+cmake --build . --parallel --target install
 
 # Revert ccache options, they no longer apply.
 unset CCACHE_BASEDIR CCACHE_NOHASHDIR
@@ -120,8 +123,8 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   fi
 
   cd $EXAMPLE_DIR
-  $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
-  $CMAKE --build .
+  cmake -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
+  cmake --build .
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig

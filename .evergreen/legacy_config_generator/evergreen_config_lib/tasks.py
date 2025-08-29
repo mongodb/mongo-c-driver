@@ -16,6 +16,8 @@ from collections import OrderedDict as OD
 from itertools import chain
 from typing import ClassVar, Iterable, Literal, Mapping, MutableMapping, MutableSequence, Optional, Sequence
 
+from config_generator.components.funcs.install_uv import InstallUV
+
 from evergreen_config_generator import Value, Scalar
 from evergreen_config_generator.functions import func, s3_put
 from evergreen_config_generator.tasks import (
@@ -122,7 +124,7 @@ class CompileTask(NamedTask):
 
         script += " .evergreen/scripts/compile.sh"
 
-        commands.append(func('find-cmake-latest'))
+        commands.append(func(InstallUV.name))
         commands.append(shell_mongoc(script, add_expansions_to_env=True))
         commands.append(func("upload-build"))
         commands.extend(self.suffix_commands)
@@ -168,6 +170,8 @@ class LinkTask(NamedTask):
             bootstrap_commands = [func("fetch-det"), func("bootstrap-mongo-orchestration")]
         else:
             bootstrap_commands = []
+
+        bootstrap_commands += [func(InstallUV.name)]
 
         super().__init__(
             task_name=task_name,
@@ -273,7 +277,13 @@ all_tasks = [
     CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
     NamedTask(
         "install-libmongoc-after-libbson",
-        commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
+        commands=[
+            func(InstallUV.name),
+            shell_mongoc(
+                ".evergreen/scripts/install-libmongoc-after-libbson.sh",
+                include_expansions_in_env=['distro_id', 'UV_INSTALL_DIR'],
+            ),
+        ],
     ),
 ]
 
@@ -310,6 +320,7 @@ class CoverageTask(MatrixTask):
         return bool(self.settings.cse)
 
     def post_commands(self) -> Iterable[Value]:
+        yield func(InstallUV.name)
         if self.cse:
             yield func(
                 "compile coverage",
@@ -451,6 +462,7 @@ class CompressionTask(MatrixTask):
         yield func("fetch-build", BUILD_NAME=self.build_task_name)
         yield func("fetch-det")
         yield func("bootstrap-mongo-orchestration", AUTH="noauth", SSL="nossl")
+        yield func(InstallUV.name)
         yield func("run-simple-http-server")
         yield func("run-tests", AUTH="noauth", SSL="nossl", COMPRESSORS=",".join(self._compressor_list()))
 
@@ -498,6 +510,7 @@ class SpecialIntegrationTask(NamedTask):
         yield func("fetch-build", BUILD_NAME=self._main_dep)
         yield func("fetch-det")
         yield func("bootstrap-mongo-orchestration", MONGODB_VERSION=self._version, TOPOLOGY=self._topo)
+        yield func(InstallUV.name)
         yield func("run-simple-http-server")
         yield func("run-tests", URI=self._uri)
 
@@ -572,7 +585,7 @@ all_tasks = chain(
             "authentication-tests-asan-memcheck",
             tags=["authentication-tests", "asan"],
             commands=[
-                func("find-cmake-latest"),
+                func(InstallUV.name),
                 shell_mongoc(
                     """
             env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
@@ -604,6 +617,7 @@ for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
                         MONGODB_VERSION=server_version,
                         REQUIRE_API_VERSION="true",
                     ),
+                    func(InstallUV.name),
                     func("run-simple-http-server"),
                     func("run-tests", MONGODB_API_VERSION=1, AUTH="auth", SSL="ssl"),
                 ],
@@ -622,6 +636,7 @@ for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
                         MONGODB_VERSION=server_version,
                         ORCHESTRATION_FILE="versioned-api-testing.json",
                     ),
+                    func(InstallUV.name),
                     func("run-simple-http-server"),
                     func("run-tests", MONGODB_API_VERSION=1, AUTH="noauth", SSL="nossl"),
                 ],
@@ -652,6 +667,7 @@ class IPTask(MatrixTask):
             func("fetch-build", BUILD_NAME="debug-compile-nosasl-nossl"),
             func("fetch-det"),
             func("bootstrap-mongo-orchestration"),
+            func(InstallUV.name),
             func("run-simple-http-server"),
             func(
                 "run-tests",
@@ -689,24 +705,23 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 aws_compile_task = NamedTask(
     "debug-compile-aws",
     commands=[
-        func('find-cmake-latest'),
+        func(InstallUV.name),
         shell_mongoc(
             """
             set -o errexit
             set -o pipefail
 
-            . .evergreen/scripts/find-cmake-latest.sh
-            cmake_binary="$(find_cmake_latest)"
+            PATH="${UV_INSTALL_DIR}:$PATH"
 
             # Use ccache if able.
             . .evergreen/scripts/find-ccache.sh
             find_ccache_and_export_vars "$(pwd)" || true
 
             # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
-            "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
-            "$cmake_binary" --build cmake-build --target test-awsauth
+            uvx cmake -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
+            uvx cmake --build cmake-build --target test-awsauth
             """,
-            include_expansions_in_env=['distro_id', 'CC'],
+            include_expansions_in_env=['CC'],
             redirect_standard_error_to_output=True,
         ),
         func("upload-build"),
