@@ -270,15 +270,6 @@ test_bulkwrite_double_execute(void *ctx)
    mongoc_client_destroy(client);
 }
 
-static void
-capture_last_bulkWrite_serverid(const mongoc_apm_command_started_t *event)
-{
-   if (0 == strcmp(mongoc_apm_command_started_get_command_name(event), "bulkWrite")) {
-      uint32_t *last_captured = mongoc_apm_command_started_get_context(event);
-      *last_captured = mongoc_apm_command_started_get_server_id(event);
-   }
-}
-
 static uint32_t
 _select_server_and_get_id(mongoc_client_t *client)
 {
@@ -294,10 +285,19 @@ _select_server_and_get_id(mongoc_client_t *client)
 }
 
 static void
+_capture_last_bulkWrite_serverid(const mongoc_apm_command_started_t *event)
+{
+   if (0 == strcmp(mongoc_apm_command_started_get_command_name(event), "bulkWrite")) {
+      uint32_t *last_captured = mongoc_apm_command_started_get_context(event);
+      *last_captured = mongoc_apm_command_started_get_server_id(event);
+   }
+}
+
+static void
 _setup_last_captured_serverid_callback(mongoc_client_t *client, uint32_t *id)
 {
    mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new();
-   mongoc_apm_set_command_started_cb(cbs, capture_last_bulkWrite_serverid);
+   mongoc_apm_set_command_started_cb(cbs, _capture_last_bulkWrite_serverid);
    mongoc_client_set_apm_callbacks(client, cbs, id);
    mongoc_apm_callbacks_destroy(cbs);
 }
