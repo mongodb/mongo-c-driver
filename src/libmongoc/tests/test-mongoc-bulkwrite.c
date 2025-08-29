@@ -346,6 +346,19 @@ test_bulkwrite_serverid(void *ctx)
 }
 
 static void
+_set_opts_for_unacknowledged_writes(mongoc_bulkwriteopts_t *opts)
+{
+   mongoc_bulkwriteopts_set_ordered(opts, false);
+
+   mongoc_write_concern_t *const wc = mongoc_write_concern_new();
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+
+   mongoc_bulkwriteopts_set_writeconcern(opts, wc);
+
+   mongoc_write_concern_destroy(wc);
+}
+
+static void
 test_bulkwrite_serverid_unacknowledged(void *ctx)
 {
    mongoc_client_t *client;
@@ -363,12 +376,8 @@ test_bulkwrite_serverid_unacknowledged(void *ctx)
    mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
    mongoc_bulkwriteopts_t *bwo = mongoc_bulkwriteopts_new();
    mongoc_bulkwriteopts_set_serverid(bwo, selected_serverid);
-   mongoc_bulkwriteopts_set_ordered(bwo, false);
 
-   mongoc_write_concern_t *wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
-
-   mongoc_bulkwriteopts_set_writeconcern(bwo, wc);
+   _set_opts_for_unacknowledged_writes(bwo);
 
    ok = mongoc_bulkwrite_append_insertone(bw, "db.coll", tmp_bson("{}"), NULL, &error);
    ASSERT_OR_PRINT(ok, error);
@@ -387,7 +396,6 @@ test_bulkwrite_serverid_unacknowledged(void *ctx)
    // Expect the selected server is reported as used in command monitoring.
    ASSERT_CMPUINT32(last_captured, ==, selected_serverid);
 
-   mongoc_write_concern_destroy(wc);
    mongoc_bulkwriteopts_destroy(bwo);
    mongoc_bulkwrite_destroy(bw);
    mongoc_client_destroy(client);
@@ -481,12 +489,8 @@ test_bulkwrite_serverid_on_retry_unacknowledged(void *ctx)
    mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
    mongoc_bulkwriteopts_t *bwo = mongoc_bulkwriteopts_new();
    mongoc_bulkwriteopts_set_serverid(bwo, selected_serverid);
-   mongoc_bulkwriteopts_set_ordered(bwo, false);
 
-   mongoc_write_concern_t *wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
-
-   mongoc_bulkwriteopts_set_writeconcern(bwo, wc);
+   _set_opts_for_unacknowledged_writes(bwo);
 
    ok = mongoc_bulkwrite_append_insertone(bw, "db.coll", tmp_bson("{}"), NULL, &error);
    ASSERT_OR_PRINT(ok, error);
@@ -504,7 +508,6 @@ test_bulkwrite_serverid_on_retry_unacknowledged(void *ctx)
       ASSERT_CMPUINT32(last_captured, ==, used_serverid);
    }
 
-   mongoc_write_concern_destroy(wc);
    mongoc_uri_destroy(uri);
    mongoc_bulkwriteopts_destroy(bwo);
    mongoc_bulkwrite_destroy(bw);
