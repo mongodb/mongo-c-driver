@@ -255,6 +255,8 @@ mongoc_bulkwrite_set_client(mongoc_bulkwrite_t *self, mongoc_client_t *client);
 // `*session` may be modified when `mongoc_bulkwrite_execute` is called.
 MONGOC_EXPORT(void)
 mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *session);
+MONGOC_EXPORT(bool)
+mongoc_bulkwrite_is_acknowledged(mongoc_bulkwrite_t const *self);
 // `mongoc_bulkwrite_execute` executes a bulk write operation.
 MONGOC_EXPORT(mongoc_bulkwritereturn_t)
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts);
