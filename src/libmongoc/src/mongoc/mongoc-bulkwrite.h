@@ -16,6 +16,8 @@
 
 #include <mongoc/mongoc-prelude.h>
 
+#include <stdint.h>
+
 #ifndef MONGOC_BULKWRITE_H
 #define MONGOC_BULKWRITE_H
 
@@ -255,6 +257,11 @@ mongoc_bulkwrite_set_client(mongoc_bulkwrite_t *self, mongoc_client_t *client);
 // `*session` may be modified when `mongoc_bulkwrite_execute` is called.
 MONGOC_EXPORT(void)
 mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *session);
+// `mongoc_bulkwrite_serverid` identifies the most recently selected server. This may differ from a previously set
+// serverid if a retry occurred. Unlike `mongoc_bulkwriteresult_serverid`, this can be used for unacknowledged writes.
+// For acknowledged writes, `mongoc_bulkwrite_serverid` and `mongoc_bulkwriteresult_serverid` return the same value.
+MONGOC_EXPORT(uint32_t)
+mongoc_bulkwrite_serverid(mongoc_bulkwrite_t const *self);
 // `mongoc_bulkwrite_execute` executes a bulk write operation.
 MONGOC_EXPORT(mongoc_bulkwritereturn_t)
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts);

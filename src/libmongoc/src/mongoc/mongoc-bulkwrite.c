@@ -33,6 +33,10 @@
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
 
+#include <stdint.h>
+
+#include "bson/macros.h"
+
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 
 struct _mongoc_bulkwriteopts_t {
@@ -157,6 +161,9 @@ struct _mongoc_bulkwrite_t {
    // `executed` is set to true once `mongoc_bulkwrite_execute` is called.
    // `mongoc_bulkwrite_t` may not be executed more than once.
    bool executed;
+   // `serverid` is set in `mongoc_bulkwrite_execute` to identify the last used serverid. For acknowledged writes, this
+   // will be the same as `mongoc_bulkwriteresult_serverid`.
+   uint32_t serverid;
    // `ops` is a document sequence.
    mongoc_buffer_t ops;
    size_t n_ops;
@@ -1514,6 +1521,13 @@ mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *
    self->session = session;
 }
 
+uint32_t
+mongoc_bulkwrite_serverid(const mongoc_bulkwrite_t *self)
+{
+   BSON_ASSERT_PARAM(self);
+   return self->serverid;
+}
+
 mongoc_bulkwritereturn_t
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts)
 {
@@ -1974,9 +1988,12 @@ fail:
       mongoc_cmd_parts_cleanup(&parts);
    }
    bson_destroy(&cmd);
-   if (ret.res && ss) {
-      // Set the returned server ID to the most recently selected server.
-      ret.res->serverid = ss->sd->id;
+   if (ss) {
+      self->serverid = ss->sd->id;
+
+      if (ret.res) {
+         ret.res->serverid = self->serverid;
+      }
    }
    mongoc_server_stream_cleanup(ss);
    if (!ret.exc->has_any_error) {
