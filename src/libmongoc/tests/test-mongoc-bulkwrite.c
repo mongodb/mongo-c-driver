@@ -24,10 +24,6 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
-#include <stdint.h>
-
-#include "mlib/ckdint.h"
-
 static void
 test_bulkwrite_insert(void *unused)
 {

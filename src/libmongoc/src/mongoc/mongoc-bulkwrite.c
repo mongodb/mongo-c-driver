@@ -33,10 +33,6 @@
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
 
-#include <stdint.h>
-
-#include "bson/macros.h"
-
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 
 struct _mongoc_bulkwriteopts_t {

@@ -16,8 +16,6 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <stdint.h>
-
 #ifndef MONGOC_BULKWRITE_H
 #define MONGOC_BULKWRITE_H
 
