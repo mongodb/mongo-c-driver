@@ -409,7 +409,7 @@ mongoc_client_encryption_datakey_opts_set_keyaltnames(mongoc_client_encryption_d
    BSON_ASSERT(!opts->keyaltnames);
 
    if (keyaltnames_count) {
-      opts->keyaltnames = bson_malloc(sizeof(char *) * keyaltnames_count);
+      opts->keyaltnames = bson_array_alloc(sizeof(char *), keyaltnames_count);
       for (uint32_t i = 0u; i < keyaltnames_count; i++) {
          opts->keyaltnames[i] = bson_strdup(keyaltnames[i]);
       }
@@ -1601,7 +1601,7 @@ _spawn_mongocryptd(const char *mongocryptd_spawn_path, const bson_t *mongocryptd
       num_args++;
    }
 
-   args = (char **)bson_malloc(sizeof(char *) * num_args);
+   args = (char **)bson_array_alloc(sizeof(char *), num_args);
    i = 0;
    args[i++] = "mongocryptd";
 

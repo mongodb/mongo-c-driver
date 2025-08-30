@@ -233,7 +233,7 @@ utf8_to_wide(const char *utf8)
    }
 
    // Since -1 was passed as the input length, the returned character count includes space for the null character.
-   WCHAR *wide_chars = bson_malloc(sizeof(WCHAR) * required_wide_chars);
+   WCHAR *wide_chars = bson_array_alloc(sizeof(WCHAR), required_wide_chars);
    if (0 == MultiByteToWideChar(CP_UTF8, 0, utf8, -1 /* NULL terminated */, wide_chars, required_wide_chars)) {
       bson_free(wide_chars);
       return NULL;
