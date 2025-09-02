@@ -305,15 +305,19 @@ Install the Python requirements for the driver tools::
    $ pip install -r $CDRIVER_TOOLS/requirements.txt
 
 
-**For Patch Releases**: Check Consistency with the Jira Release
-***************************************************************
+Check Consistency with the Jira Release
+***************************************
 
-**If we are releasing a patch version**, we must check that the Jira release
+We must check that the Jira release
 matches the content of the branch to be released. Open
-`the releases page on Jira <Jira releases_>`_ and open the release page for the new patch
-release. Verify that the changes for all tickets in the Jira release have been
-cherry-picked onto the release branch (not including the "Release x.y.z" ticket
-that is part of every Jira release).
+`the releases page on Jira <Jira releases_>`_ and open the release page for the new
+release.
+
+**If we are releasing a patch version**, verify that the changes for all tickets in the Jira release have been
+cherry-picked onto the release branch (not including the "Release x.y.z" ticket that is part of every Jira release).
+
+Check tickets referenced in commit messages (e.g. "CDRIVER-1234 fix foo") are in the expected state.
+Expect most tickets to be in the "Closed" state with the ``fixVersion`` of the upcoming release.
 
 .. _Jira releases:
 .. _jira-releases: https://jira.mongodb.org/projects/CDRIVER?selectedItem=com.atlassian.jira.jira-projects-plugin%3Arelease-page&status=unreleased
