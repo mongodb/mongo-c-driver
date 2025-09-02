@@ -1516,14 +1516,6 @@ mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *
    self->session = session;
 }
 
-bool
-mongoc_bulkwrite_is_acknowledged(const mongoc_bulkwrite_t *self)
-{
-   BSON_ASSERT_PARAM(self);
-
-   return self->is_acknowledged;
-}
-
 mongoc_bulkwritereturn_t
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts)
 {
@@ -1993,6 +1985,14 @@ fail:
       ret.exc = NULL;
    }
    return ret;
+}
+
+bool
+mongoc_bulkwrite_is_acknowledged(const mongoc_bulkwrite_t *self)
+{
+   BSON_ASSERT_PARAM(self);
+
+   return self->is_acknowledged;
 }
 
 MC_ENABLE_CONVERSION_WARNING_END
