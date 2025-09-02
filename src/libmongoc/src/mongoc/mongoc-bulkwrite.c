@@ -1991,7 +1991,6 @@ bool
 mongoc_bulkwrite_is_acknowledged(const mongoc_bulkwrite_t *self)
 {
    BSON_ASSERT_PARAM(self);
-
    return self->is_acknowledged;
 }
 
