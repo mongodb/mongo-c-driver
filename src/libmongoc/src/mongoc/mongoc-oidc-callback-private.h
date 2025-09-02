@@ -58,6 +58,6 @@ void
 mongoc_oidc_callback_params_set_cancelled_with_timeout(mongoc_oidc_callback_params_t *params, bool value);
 
 mongoc_oidc_callback_t *
-mongoc_oidc_callback_copy (const mongoc_oidc_callback_t *callback);
+mongoc_oidc_callback_copy(const mongoc_oidc_callback_t *callback);
 
 #endif // MONGOC_OIDC_CALLBACK_PRIVATE_H
