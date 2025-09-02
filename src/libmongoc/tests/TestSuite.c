@@ -87,6 +87,12 @@ _test_error(const char *format, ...)
    abort();
 }
 
+char const *
+_bool_to_str(bool b)
+{
+   return b ? "true" : "false";
+}
+
 static void
 TestSuite_SeedRand(TestSuite *suite, /* IN */
                    Test *test)       /* IN */

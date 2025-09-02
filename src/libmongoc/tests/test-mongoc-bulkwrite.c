@@ -740,7 +740,7 @@ _do_bulkwrite_is_acknowledged_test_case(mongoc_client_t *client,
    mongoc_bulkwritereturn_t const bwr = mongoc_bulkwrite_execute(bw, opts);
 
    ASSERT_NO_BULKWRITEEXCEPTION(bwr);
-   ASSERT(mongoc_bulkwrite_is_acknowledged(bw) == is_acknowledged_expected);
+   ASSERT_CMPBOOL(mongoc_bulkwrite_is_acknowledged(bw), ==, is_acknowledged_expected);
 
    mongoc_bulkwriteexception_destroy(bwr.exc);
    mongoc_bulkwriteresult_destroy(bwr.res);
