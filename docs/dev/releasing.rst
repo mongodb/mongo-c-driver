@@ -38,7 +38,7 @@ process.
    - [ ] Do the Release:
        - [ ] Start a Release Stopwatch (start time: HH:MM)
        - [ ] Clone the Driver Tools
-       - [ ] If patch release: Check consistency with [the Jira release](https://jira.mongodb.org/projects/CDRIVER/versions/XXXXXX)
+       - [ ] Check Consistency with [the Jira release](https://jira.mongodb.org/projects/CDRIVER/versions/XXXXXX)
        - [ ] Run the Release Script
        - [ ] Fixup the `NEWS` Pages
        - [ ] Signed & Upload the Release
