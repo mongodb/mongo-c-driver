@@ -21,8 +21,6 @@ Description
 
 This is a portable ``malloc()`` wrapper.
 
-In general, this function will return an allocation at least ``sizeof(void*)`` bytes or bigger.
-
 If there was a failure to allocate ``num_bytes`` bytes, the process will be aborted.
 
 .. warning::

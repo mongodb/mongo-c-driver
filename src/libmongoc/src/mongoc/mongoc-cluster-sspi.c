@@ -65,7 +65,7 @@ _mongoc_cluster_sspi_new(mongoc_uri_t *uri, mongoc_stream_t *stream, const char 
    service_ascii_len = strlen(service_ascii);
 
    /* this is donated to the sspi */
-   service = bson_malloc0((service_ascii_len + 1) * sizeof(WCHAR));
+   service = BSON_ARRAY_ALLOC0((service_ascii_len + 1), WCHAR);
    service_len =
       MultiByteToWideChar(CP_UTF8, 0, service_ascii, (int)service_ascii_len, service, (int)service_ascii_len);
    service[service_len] = L'\0';
@@ -75,7 +75,7 @@ _mongoc_cluster_sspi_new(mongoc_uri_t *uri, mongoc_stream_t *stream, const char 
       tmp_creds_len = strlen(state->sasl.pass);
 
       /* this is donated to the sspi */
-      pass = bson_malloc0((tmp_creds_len + 1) * sizeof(WCHAR));
+      pass = BSON_ARRAY_ALLOC0((tmp_creds_len + 1), WCHAR);
       pass_len = MultiByteToWideChar(CP_UTF8, 0, state->sasl.pass, (int)tmp_creds_len, pass, (int)tmp_creds_len);
       pass[pass_len] = L'\0';
    }
@@ -84,7 +84,7 @@ _mongoc_cluster_sspi_new(mongoc_uri_t *uri, mongoc_stream_t *stream, const char 
       tmp_creds_len = strlen(state->sasl.user);
 
       /* this is donated to the sspi */
-      user = bson_malloc0((tmp_creds_len + 1) * sizeof(WCHAR));
+      user = BSON_ARRAY_ALLOC0((tmp_creds_len + 1), WCHAR);
       user_len = MultiByteToWideChar(CP_UTF8, 0, state->sasl.user, (int)tmp_creds_len, user, (int)tmp_creds_len);
       user[user_len] = L'\0';
    }
@@ -222,7 +222,7 @@ _mongoc_cluster_auth_node_sspi(mongoc_cluster_t *cluster,
 
       tmpstr = bson_iter_utf8(&iter, &buflen);
       bson_free(buf);
-      buf = bson_malloc(sizeof(SEC_CHAR) * (buflen + 1));
+      buf = BSON_ARRAY_ALLOC((buflen + 1), SEC_CHAR);
       memcpy(buf, tmpstr, buflen);
       buf[buflen] = (SEC_CHAR)0;
 
