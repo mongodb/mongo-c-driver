@@ -25,7 +25,7 @@ Description
 
 This is a portable ``malloc()`` wrapper to allocate an array of objects.
 
-If there was a failure to allocate ``num_elems * elem_size`` bytes, the process will be aborted.
+If ``num_elems * elem_size`` cannot be represented in a size_t or there was a failure to allocate ``num_elems * elem_size`` bytes, the process will be aborted.
 
 .. warning::
 

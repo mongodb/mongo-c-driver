@@ -22,6 +22,7 @@
 #include <bson/config.h>
 
 #include <mlib/config.h>
+#include <mlib/timer.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -247,8 +248,7 @@ bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
  *
  * Returns:
  *       A pointer if successful; otherwise abort() is called and this
- *       function will never return. In the cases of num_elems = 0 or
- *       integer overflow in num_elems * elem_size, NULL is returned.
+ *       function will never return.
  *
  *--------------------------------------------------------------------------
  */
@@ -257,9 +257,10 @@ void *
 bson_array_alloc(size_t num_elems /* IN */, size_t elem_size /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes = num_elems * elem_size;
+   size_t num_bytes;
+   BSON_ASSERT(!mlib_mul(&num_bytes, num_elems, elem_size));
 
-   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / elem_size)) {
+   if (BSON_LIKELY(num_bytes)) {
       mem = bson_malloc(num_bytes);
    }
    return mem;
@@ -279,8 +280,7 @@ bson_array_alloc(size_t num_elems /* IN */, size_t elem_size /* IN */)
  *
  * Returns:
  *       A pointer if successful; otherwise abort() is called and this
- *       function will never return. In the cases of num_elems = 0 or
- *       integer overflow in num_elems * elem_size, NULL is returned.
+ *       function will never return.
  *
  * Side effects:
  *       None.
@@ -292,9 +292,10 @@ void *
 bson_array_alloc0(size_t num_elems /* IN */, size_t elem_size /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes = num_elems * elem_size;
+   size_t num_bytes;
+   BSON_ASSERT(!mlib_mul(&num_bytes, num_elems, elem_size));
 
-   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / elem_size)) {
+   if (BSON_LIKELY(num_bytes)) {
       if (BSON_UNLIKELY(!(mem = gMemVtable.calloc(num_elems, elem_size)))) {
          fprintf(stderr, "Failure to allocate memory in bson_array_alloc0(). errno: %d.\n", errno);
          abort();
