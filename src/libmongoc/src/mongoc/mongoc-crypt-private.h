@@ -36,7 +36,7 @@ typedef struct __mongoc_crypt_t _mongoc_crypt_t;
 
 // `_mongoc_crypt_libmongocrypt_version` returns the version of the loaded libmongocrypt.
 const char *
-_mongoc_crypt_get_libmongocrypt_version (void);
+_mongoc_crypt_get_libmongocrypt_version(void);
 
 /*
 Creates a new handle into libmongocrypt.

@@ -41,9 +41,9 @@
 #include <mongocrypt/mongocrypt.h>
 
 const char *
-_mongoc_crypt_get_libmongocrypt_version (void)
+_mongoc_crypt_get_libmongocrypt_version(void)
 {
-   return mongocrypt_version (NULL);
+   return mongocrypt_version(NULL);
 }
 
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
