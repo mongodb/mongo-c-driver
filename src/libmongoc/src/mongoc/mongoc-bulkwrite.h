@@ -258,10 +258,17 @@ mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *
 // `mongoc_bulkwrite_execute` executes a bulk write operation.
 MONGOC_EXPORT(mongoc_bulkwritereturn_t)
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts);
-// `mongoc_bulkwrite_is_acknowledged` returns true if the previous call to `mongoc_bulkwrite_execute` used an
+
+typedef struct {
+   bool is_ok;           // true if no error
+   bool is_acknowledged; // true if the previous call to `mongoc_bulkwrite_execute` used an acknowledged write concern
+} mongoc_bulkwrite_check_acknowledged_t;
+
+// `mongoc_bulkwrite_check_acknowledged` checks whether or not the previous call to `mongoc_bulkwrite_execute` used an
 // acknowledged write concern.
-MONGOC_EXPORT(bool)
-mongoc_bulkwrite_is_acknowledged(mongoc_bulkwrite_t const *self);
+MONGOC_EXPORT(mongoc_bulkwrite_check_acknowledged_t)
+mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t *error);
+
 MONGOC_EXPORT(void)
 mongoc_bulkwrite_destroy(mongoc_bulkwrite_t *self);
 

@@ -728,9 +728,9 @@ test_bulkwrite_client_error_no_result(void *unused)
 }
 
 static void
-_do_bulkwrite_is_acknowledged_test_case(mongoc_client_t *client,
-                                        mongoc_bulkwriteopts_t *opts,
-                                        bool is_acknowledged_expected)
+_do_bulkwrite_check_acknowledged_test_case(mongoc_client_t *client,
+                                           mongoc_bulkwriteopts_t *opts,
+                                           bool is_acknowledged_expected)
 {
    mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
    bson_error_t error;
@@ -740,7 +740,10 @@ _do_bulkwrite_is_acknowledged_test_case(mongoc_client_t *client,
    mongoc_bulkwritereturn_t const bwr = mongoc_bulkwrite_execute(bw, opts);
 
    ASSERT_NO_BULKWRITEEXCEPTION(bwr);
-   ASSERT_CMPBOOL(mongoc_bulkwrite_is_acknowledged(bw), ==, is_acknowledged_expected);
+
+   mongoc_bulkwrite_check_acknowledged_t const check_acknowledged = mongoc_bulkwrite_check_acknowledged(bw, &error);
+   ASSERT_OR_PRINT(check_acknowledged.is_ok, error);
+   ASSERT_CMPBOOL(check_acknowledged.is_acknowledged, ==, is_acknowledged_expected);
 
    mongoc_bulkwriteexception_destroy(bwr.exc);
    mongoc_bulkwriteresult_destroy(bwr.res);
@@ -748,7 +751,7 @@ _do_bulkwrite_is_acknowledged_test_case(mongoc_client_t *client,
 }
 
 static void
-test_bulkwrite_is_acknowledged(void *unused)
+test_bulkwrite_check_acknowledged(void *unused)
 {
    BSON_UNUSED(unused);
 
@@ -769,7 +772,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_unacknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, NULL);
 
-      _do_bulkwrite_is_acknowledged_test_case(client, opts, false /* is_acknowledged_expected */);
+      _do_bulkwrite_check_acknowledged_test_case(client, opts, false /* is_acknowledged_expected */);
    }
 
    // Client w/ acknowledged write concern, no opts override
@@ -777,7 +780,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_acknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, NULL);
 
-      _do_bulkwrite_is_acknowledged_test_case(client, opts, true /* is_acknowledged_expected */);
+      _do_bulkwrite_check_acknowledged_test_case(client, opts, true /* is_acknowledged_expected */);
    }
 
    // Client w/ unacknowledged write concern, opts override w/ acknowledged write concern
@@ -785,7 +788,7 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_unacknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, wc_acknowledged);
 
-      _do_bulkwrite_is_acknowledged_test_case(client, opts, true /* is_acknowledged_expected */);
+      _do_bulkwrite_check_acknowledged_test_case(client, opts, true /* is_acknowledged_expected */);
    }
 
    // Client w/ acknowledged write concern, opts override w/ unacknowledged write concern
@@ -793,7 +796,22 @@ test_bulkwrite_is_acknowledged(void *unused)
       mongoc_client_set_write_concern(client, wc_acknowledged);
       mongoc_bulkwriteopts_set_writeconcern(opts, wc_unacknowledged);
 
-      _do_bulkwrite_is_acknowledged_test_case(client, opts, false /* is_acknowledged_expected */);
+      _do_bulkwrite_check_acknowledged_test_case(client, opts, false /* is_acknowledged_expected */);
+   }
+
+   // Calling `mongoc_bulkwrite_check_acknowledged` before `mongoc_bulkwrite_execute` is an error
+   {
+      mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
+
+      bson_error_t error;
+      mongoc_bulkwrite_check_acknowledged_t const check_acknowledged = mongoc_bulkwrite_check_acknowledged(bw, &error);
+      ASSERT(!check_acknowledged.is_ok);
+      ASSERT_ERROR_CONTAINS(error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "bulk write has not been executed or execution failed");
+
+      mongoc_bulkwrite_destroy(bw);
    }
 
    mongoc_write_concern_destroy(wc_unacknowledged);
@@ -913,8 +931,8 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/is_acknowledged",
-                     test_bulkwrite_is_acknowledged,
+                     "/bulkwrite/check_acknowledged",
+                     test_bulkwrite_check_acknowledged,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0

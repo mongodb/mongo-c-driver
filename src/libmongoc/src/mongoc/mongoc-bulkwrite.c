@@ -33,6 +33,8 @@
 #include <mlib/cmp.h>
 #include <mlib/intencode.h>
 
+#include "bson/macros.h"
+
 MC_ENABLE_CONVERSION_WARNING_BEGIN
 
 struct _mongoc_bulkwriteopts_t {
@@ -158,7 +160,7 @@ struct _mongoc_bulkwrite_t {
    // `mongoc_bulkwrite_t` may not be executed more than once.
    bool executed;
    // `is_acknowledged` is set in `mongoc_bulkwrite_execute` based on the chosen write concern.
-   bool is_acknowledged;
+   mongoc_optional_t is_acknowledged;
    // `ops` is a document sequence.
    mongoc_buffer_t ops;
    size_t n_ops;
@@ -189,6 +191,7 @@ mongoc_bulkwrite_t *
 mongoc_bulkwrite_new(void)
 {
    mongoc_bulkwrite_t *bw = bson_malloc0(sizeof(mongoc_bulkwrite_t));
+   mongoc_optional_init(&bw->is_acknowledged);
    _mongoc_buffer_init(&bw->ops, NULL, 0, NULL, NULL);
    _mongoc_array_init(&bw->arrayof_modeldata, sizeof(modeldata_t));
    return bw;
@@ -1669,10 +1672,10 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
             _bulkwriteexception_set_error(ret.exc, &error);
             goto fail;
          }
-         self->is_acknowledged = mongoc_write_concern_is_acknowledged(wc);
+         mongoc_optional_set_value(&self->is_acknowledged, mongoc_write_concern_is_acknowledged(wc));
       }
 
-      if (verboseresults && !self->is_acknowledged) {
+      if (verboseresults && !mongoc_optional_value(&self->is_acknowledged)) {
          _mongoc_set_error(&error,
                            MONGOC_ERROR_COMMAND,
                            MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1681,7 +1684,7 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
          goto fail;
       }
 
-      if (is_ordered && !self->is_acknowledged) {
+      if (is_ordered && !mongoc_optional_value(&self->is_acknowledged)) {
          _mongoc_set_error(&error,
                            MONGOC_ERROR_COMMAND,
                            MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1869,7 +1872,7 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
          }
 
          // Add to result and/or exception.
-         if (self->is_acknowledged) {
+         if (mongoc_optional_value(&self->is_acknowledged)) {
             // Parse top-level fields.
             if (!_bulkwritereturn_apply_reply(&ret, &cmd_reply)) {
                goto batch_fail;
@@ -1966,7 +1969,8 @@ fail:
          }
       }
    }
-   if (!self->is_acknowledged || !has_successful_results) {
+   if (!(mongoc_optional_is_set(&self->is_acknowledged) && mongoc_optional_value(&self->is_acknowledged) &&
+         has_successful_results)) {
       mongoc_bulkwriteresult_destroy(ret.res);
       ret.res = NULL;
    }
@@ -1987,11 +1991,25 @@ fail:
    return ret;
 }
 
-bool
-mongoc_bulkwrite_is_acknowledged(const mongoc_bulkwrite_t *self)
+MONGOC_EXPORT(mongoc_bulkwrite_check_acknowledged_t)
+mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t *error)
 {
    BSON_ASSERT_PARAM(self);
-   return self->is_acknowledged;
+   BSON_OPTIONAL_PARAM(error);
+
+   mongoc_bulkwrite_check_acknowledged_t result = {.is_ok = mongoc_optional_is_set(&self->is_acknowledged),
+                                                   .is_acknowledged = false};
+
+   if (result.is_ok) {
+      result.is_acknowledged = mongoc_optional_value(&self->is_acknowledged);
+   } else {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_COMMAND,
+                        MONGOC_ERROR_COMMAND_INVALID_ARG,
+                        "bulk write has not been executed or execution failed");
+   }
+
+   return result;
 }
 
 MC_ENABLE_CONVERSION_WARNING_END
