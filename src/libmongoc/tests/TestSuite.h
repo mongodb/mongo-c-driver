@@ -276,8 +276,11 @@ _test_error(const char *format, ...) BSON_GNUC_PRINTF(1, 2);
 #define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "p", void *)
 
 // Returns "true" or "false". The result does _not_ need to be freed.
-char const *
-_bool_to_str(bool b);
+static inline char const *
+_bool_to_str(bool b)
+{
+   return b ? "true" : "false";
+}
 
 #define ASSERT_CMPBOOL(a, eq, b)                                                 \
    do {                                                                          \
