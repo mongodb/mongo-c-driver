@@ -35,7 +35,7 @@ struct _mongoc_socket_t {
 };
 
 mongoc_socket_t *
-mongoc_socket_accept_ex (mongoc_socket_t *sock, int64_t expire_at, uint16_t *port);
+mongoc_socket_accept_ex(mongoc_socket_t *sock, int64_t expire_at, uint16_t *port);
 
 BSON_END_DECLS
 

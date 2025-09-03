@@ -19,15 +19,15 @@
 const bson_oid_t kZeroObjectId = {{0}};
 
 void
-mcommon_oid_set_zero (bson_oid_t *oid)
+mcommon_oid_set_zero(bson_oid_t *oid)
 {
-   BSON_ASSERT (oid);
-   memset (oid, 0, sizeof *oid);
+   BSON_ASSERT(oid);
+   memset(oid, 0, sizeof *oid);
 }
 
 bool
-mcommon_oid_is_zero (const bson_oid_t *oid)
+mcommon_oid_is_zero(const bson_oid_t *oid)
 {
-   BSON_ASSERT (oid);
-   return bson_oid_equal_unsafe (oid, &kZeroObjectId);
+   BSON_ASSERT(oid);
+   return bson_oid_equal_unsafe(oid, &kZeroObjectId);
 }

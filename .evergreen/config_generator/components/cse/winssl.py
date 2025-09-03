@@ -14,15 +14,15 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2022x64', None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2015x64', None, ['cyrus']),
 ]
 
-# TODO (CDRIVER-3789): test cse with the 'sharded' topology.
+# QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.
 TEST_MATRIX = [
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0'                ]),
+    ('windows-vsCurrent', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica' ], [               '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2015x64', None, 'cyrus', ['auth'], ['sharded'], ['4.2', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

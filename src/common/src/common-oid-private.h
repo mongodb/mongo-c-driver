@@ -26,10 +26,10 @@ BSON_BEGIN_DECLS
 extern const bson_oid_t kZeroObjectId;
 
 void
-mcommon_oid_set_zero (bson_oid_t *oid);
+mcommon_oid_set_zero(bson_oid_t *oid);
 
 bool
-mcommon_oid_is_zero (const bson_oid_t *oid);
+mcommon_oid_is_zero(const bson_oid_t *oid);
 
 BSON_END_DECLS
 

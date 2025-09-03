@@ -15,7 +15,7 @@ BSON_BEGIN_DECLS
  * @usec: Number of microseconds to sleep for.
  * @user_data: User data provided to mongoc_client_set_usleep_impl().
  */
-typedef void (BSON_CALL *mongoc_usleep_func_t) (int64_t usec, void *user_data);
+typedef void(BSON_CALL *mongoc_usleep_func_t)(int64_t usec, void *user_data);
 
 /**
  * mongoc_client_set_usleep_impl:
@@ -28,11 +28,11 @@ typedef void (BSON_CALL *mongoc_usleep_func_t) (int64_t usec, void *user_data);
  * Providing a `usleep_func` that does not sleep (e.g. coroutine suspension) is
  * not supported. Doing so is at the user's own risk.
  */
-MONGOC_EXPORT (void)
-mongoc_client_set_usleep_impl (mongoc_client_t *client, mongoc_usleep_func_t usleep_func, void *user_data);
+MONGOC_EXPORT(void)
+mongoc_client_set_usleep_impl(mongoc_client_t *client, mongoc_usleep_func_t usleep_func, void *user_data);
 
-MONGOC_EXPORT (void)
-mongoc_usleep_default_impl (int64_t usec, void *user_data);
+MONGOC_EXPORT(void)
+mongoc_usleep_default_impl(int64_t usec, void *user_data);
 
 BSON_END_DECLS
 

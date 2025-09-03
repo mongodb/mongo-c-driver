@@ -5,6 +5,10 @@ libmongoc 2.2.0 (unreleased)
 
 * Raise required version of libmongocrypt from 1.13.0 to 1.15.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
 
+## Deprecated
+
+- Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
+
 libmongoc 2.1.0
 ===============
 

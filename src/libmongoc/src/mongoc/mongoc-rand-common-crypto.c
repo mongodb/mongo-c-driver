@@ -28,25 +28,25 @@
 #include <Security/SecRandom.h>
 
 int
-_mongoc_rand_bytes (uint8_t *buf, int num)
+_mongoc_rand_bytes(uint8_t *buf, int num)
 {
-   return !SecRandomCopyBytes (kSecRandomDefault, num, buf);
+   return !SecRandomCopyBytes(kSecRandomDefault, num, buf);
 }
 
 void
-mongoc_rand_seed (const void *buf, int num)
+mongoc_rand_seed(const void *buf, int num)
 {
    /* No such thing in Common Crypto */
 }
 
 void
-mongoc_rand_add (const void *buf, int num, double entropy)
+mongoc_rand_add(const void *buf, int num, double entropy)
 {
    /* No such thing in Common Crypto */
 }
 
 int
-mongoc_rand_status (void)
+mongoc_rand_status(void)
 {
    return 1;
 }

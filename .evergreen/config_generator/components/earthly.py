@@ -27,16 +27,18 @@ _CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
 
 
 EnvKey = Literal[
-    "u16",
-    "u18",
     "u20",
     "u22",
-    "alpine3.16",
-    "alpine3.17",
-    "alpine3.18",
+    "almalinux8",
+    "almalinux9",
+    "almalinux10",
     "alpine3.19",
+    "alpine3.20",
+    "alpine3.21",
+    "alpine3.22",
     "archlinux",
-    "centos7",
+    "centos9",
+    "centos10",
 ]
 "Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
 CompilerName = Literal["gcc", "clang"]
@@ -57,7 +59,7 @@ _SEPARATOR = "\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}"
 def os_split(env: EnvKey) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
-        # match 'alpine3.18' 'alpine53.123' etc.
+        # Match 'alpine3.18' 'alpine53.123' etc.
         case alp if mat := re.match(r"alpine(\d+\.\d+)", alp):
             return ("Alpine", mat[1])
         case "archlinux":
@@ -65,12 +67,14 @@ def os_split(env: EnvKey) -> tuple[str, None | str]:
         # Match 'u22', 'u20', 'u71' etc.
         case ubu if mat := re.match(r"u(\d\d)", ubu):
             return "Ubuntu", f"{mat[1]}.04"
-        case "centos7":
-            return "CentOS", "7.0"
+        # Match 'centos9', 'centos10', etc.
+        case cent if mat := re.match(r"centos(\d+)", cent):
+            return "CentOS", f"{mat[1]}"
+        # Match 'almalinux8', 'almalinux10', etc.
+        case alm if mat := re.match(r"almalinux(\d+)", alm):
+            return "AlmaLinux", f"{mat[1]}"
         case _:
-            raise ValueError(
-                f"Failed to split OS env key {env=} into a name+version pair (unrecognized)"
-            )
+            raise ValueError(f"Failed to split OS env key {env=} into a name+version pair (unrecognized)")
 
 
 class EarthlyVariant(NamedTuple):
@@ -152,12 +156,8 @@ class DockerLoginAmazonECR(Function):
     name = "docker-login-amazon-ecr"
     commands = [
         # Avoid inadvertently using a pre-existing and potentially conflicting Docker config.
-        expansions_update(
-            updates=[KeyValueParam(key="DOCKER_CONFIG", value="${workdir}/.docker")]
-        ),
-        ec2_assume_role(
-            role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"
-        ),
+        expansions_update(updates=[KeyValueParam(key="DOCKER_CONFIG", value="${workdir}/.docker")]),
+        ec2_assume_role(role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"),
         subprocess_exec(
             binary="bash",
             command_type=EvgCommandType.SETUP,
@@ -181,12 +181,6 @@ def task_filter(env: EarthlyVariant, conf: Configuration) -> bool:
     configuration values.
     """
     match env, conf:
-        # u16/u18/centos7 are not capable of building mongocxx
-        case e, (_sasl, _tls, cxx) if re.match(
-            r"^Ubuntu 16|^Ubuntu 18|^CentOS 7", e.display_name
-        ):
-            # Only build if C++ driver is test is disabled
-            return cxx == "none"
         # Anything else: Allow it to run:
         case _:
             return True

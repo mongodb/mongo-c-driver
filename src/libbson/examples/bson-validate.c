@@ -35,7 +35,7 @@
 
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    bson_reader_t *reader;
    const bson_t *b;
@@ -49,7 +49,7 @@ main (int argc, char *argv[])
     * Print program usage if no arguments are provided.
     */
    if (argc == 1) {
-      fprintf (stderr, "usage: %s FILE...\n", argv[0]);
+      fprintf(stderr, "usage: %s FILE...\n", argv[0]);
       return 1;
    }
 
@@ -63,19 +63,19 @@ main (int argc, char *argv[])
       /*
        * Initialize a new reader for this file descriptor.
        */
-      if (!(reader = bson_reader_new_from_file (filename, &error))) {
-         fprintf (stderr, "Failed to open \"%s\": %s\n", filename, error.message);
+      if (!(reader = bson_reader_new_from_file(filename, &error))) {
+         fprintf(stderr, "Failed to open \"%s\": %s\n", filename, error.message);
          continue;
       }
 
       /*
        * Convert each incoming document to JSON and print to stdout.
        */
-      while ((b = bson_reader_read (reader, NULL))) {
+      while ((b = bson_reader_read(reader, NULL))) {
          docnum++;
-         if (!bson_validate (b, (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL), &offset)) {
-            fprintf (stderr, "Document %d in \"%s\" is invalid at offset %zu.\n", docnum, filename, offset);
-            bson_reader_destroy (reader);
+         if (!bson_validate(b, (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL), &offset)) {
+            fprintf(stderr, "Document %d in \"%s\" is invalid at offset %zu.\n", docnum, filename, offset);
+            bson_reader_destroy(reader);
             return 1;
          }
       }
@@ -83,7 +83,7 @@ main (int argc, char *argv[])
       /*
        * Cleanup after our reader, which closes the file descriptor.
        */
-      bson_reader_destroy (reader);
+      bson_reader_destroy(reader);
    }
 
    return 0;

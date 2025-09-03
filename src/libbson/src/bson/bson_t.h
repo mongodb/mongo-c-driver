@@ -38,11 +38,11 @@
  *
  * This structure is meant to fit in two sequential 64-byte cachelines.
  */
-BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) typedef struct _bson_t {
+BSON_ALIGNED_BEGIN(BSON_ALIGN_OF_PTR) typedef struct _bson_t {
    uint32_t flags;       /* Internal flags for the bson_t. */
    uint32_t len;         /* Length of BSON data. */
    uint8_t padding[120]; /* Padding for stack allocation. */
-} bson_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
+} bson_t BSON_ALIGNED_END(BSON_ALIGN_OF_PTR);
 
 /**
  * BSON_INITIALIZER:
@@ -56,6 +56,6 @@ BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR) typedef struct _bson_t {
  */
 #define BSON_INITIALIZER {3, 5, {5}}
 
-BSON_STATIC_ASSERT2 (bson_t, sizeof (bson_t) == 128);
+BSON_STATIC_ASSERT2(bson_t, sizeof(bson_t) == 128);
 
 #endif // BSON_BSON_T_H_INCLUDED
