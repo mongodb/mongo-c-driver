@@ -339,7 +339,7 @@ _mongoc_async_cmd_phase_send(mongoc_async_cmd_t *acmd)
 
       /* create a new iovec with the remaining data to be written. */
       niovec = acmd->niovec - i;
-      iovec = bson_array_alloc(sizeof(mongoc_iovec_t), niovec);
+      iovec = BSON_ARRAY_ALLOC(niovec, mongoc_iovec_t);
       memcpy(iovec, acmd->iovec + i, niovec * sizeof(mongoc_iovec_t));
       iovec[0].iov_base = (char *)iovec[0].iov_base + offset;
       iovec[0].iov_len -= offset;

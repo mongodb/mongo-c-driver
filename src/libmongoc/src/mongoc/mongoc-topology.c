@@ -268,7 +268,7 @@ _mongoc_apply_srv_max_hosts(const mongoc_host_list_t *hl, size_t max_hosts, size
       return NULL;
    }
 
-   hl_array = bson_array_alloc(sizeof(mongoc_host_list_t *), hl_size);
+   hl_array = BSON_ARRAY_ALLOC(hl_size, const mongoc_host_list_t *);
 
    for (size_t idx = 0u; hl; hl = hl->next) {
       hl_array[idx++] = hl;

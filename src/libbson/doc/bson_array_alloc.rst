@@ -8,14 +8,17 @@ Synopsis
 
 .. code-block:: c
 
+  #define BSON_ARRAY_ALLOC(Count, Type) \
+     (Type*) bson_array_alloc (Count, sizeof (Type))
+
   void *
-  bson_array_alloc (size_t type_size, size_t num_elems);
+  bson_array_alloc (size_t num_elems, size_t elem_size);
 
 Parameters
 ----------
 
-* ``type_size``: A size_t containing the size in bytes of a single object in the array. 
-* ``num_elems``: A size_t containing the number of objects to be stored in the array.
+* ``num_elems``: A size_t containing the number of objects to allocate.
+* ``elem_size``: A size_t containing the size of each object in bytes.
 
 Description
 -----------
@@ -24,7 +27,7 @@ This is a portable ``malloc()`` wrapper to allocate an array of objects.
 
 In general, this function will return an allocation at least ``sizeof(void*)`` bytes or bigger.
 
-If there was a failure to allocate ``type_size * num_elems`` bytes, the process will be aborted.
+If there was a failure to allocate ``num_elems * elem_size`` bytes, the process will be aborted.
 
 .. warning::
 

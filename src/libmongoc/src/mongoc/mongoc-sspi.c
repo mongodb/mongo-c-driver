@@ -69,7 +69,7 @@ _mongoc_sspi_base64_encode(const SEC_CHAR *value, DWORD vlen)
    DWORD len;
    /* Get the correct size for the out buffer. */
    if (CryptBinaryToStringA((BYTE *)value, vlen, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &len)) {
-      out = (SEC_CHAR *)bson_array_alloc(sizeof(SEC_CHAR), len);
+      out = BSON_ARRAY_ALLOC(len, SEC_CHAR);
       if (out) {
          /* Encode to the out buffer. */
          if (CryptBinaryToStringA((BYTE *)value, vlen, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, out, &len)) {
@@ -89,7 +89,7 @@ _mongoc_sspi_base64_decode(const SEC_CHAR *value, DWORD *rlen)
    SEC_CHAR *out = NULL;
    /* Get the correct size for the out buffer. */
    if (CryptStringToBinaryA(value, 0, CRYPT_STRING_BASE64, NULL, rlen, NULL, NULL)) {
-      out = (SEC_CHAR *)bson_array_alloc(sizeof(SEC_CHAR), *rlen);
+      out = BSON_ARRAY_ALLOC(*rlen, SEC_CHAR);
       if (out) {
          /* Decode to the out buffer. */
          if (CryptStringToBinaryA(value, 0, CRYPT_STRING_BASE64, (BYTE *)out, rlen, NULL, NULL)) {
@@ -109,7 +109,7 @@ _mongoc_sspi_wide_to_utf8(WCHAR *value)
    CHAR *out;
    int len = WideCharToMultiByte(CP_UTF8, 0, value, -1, NULL, 0, NULL, NULL);
    if (len) {
-      out = (CHAR *)bson_array_alloc(sizeof(CHAR), len);
+      out = BSON_ARRAY_ALLOC(len, CHAR);
       if (WideCharToMultiByte(CP_UTF8, 0, value, -1, out, len, NULL, NULL)) {
          return out;
       } else {
@@ -438,7 +438,7 @@ _mongoc_sspi_auth_sspi_client_wrap(
    }
 
    outbufSize = wrapBufs[0].cbBuffer + wrapBufs[1].cbBuffer + wrapBufs[2].cbBuffer;
-   outbuf = (SEC_CHAR *)bson_array_alloc(sizeof(SEC_CHAR), outbufSize);
+   outbuf = BSON_ARRAY_ALLOC(outbufSize, SEC_CHAR);
    memcpy_s(outbuf, outbufSize, wrapBufs[0].pvBuffer, wrapBufs[0].cbBuffer);
    memcpy_s(
       outbuf + wrapBufs[0].cbBuffer, outbufSize - wrapBufs[0].cbBuffer, wrapBufs[1].pvBuffer, wrapBufs[1].cbBuffer);

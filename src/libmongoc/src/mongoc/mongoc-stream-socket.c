@@ -214,7 +214,7 @@ _mongoc_stream_socket_poll(mongoc_stream_poll_t *streams, size_t nstreams, int32
 
    ENTRY;
 
-   sds = (mongoc_socket_poll_t *)bson_array_alloc(sizeof(*sds), nstreams);
+   sds = BSON_ARRAY_ALLOC(nstreams, mongoc_socket_poll_t);
 
    for (size_t i = 0u; i < nstreams; i++) {
       ss = (mongoc_stream_socket_t *)streams[i].stream;

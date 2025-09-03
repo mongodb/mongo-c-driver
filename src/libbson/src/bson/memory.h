@@ -48,9 +48,9 @@ bson_aligned_alloc(size_t alignment, size_t num_bytes);
 BSON_EXPORT(void *)
 bson_aligned_alloc0(size_t alignment, size_t num_bytes);
 BSON_EXPORT(void *)
-bson_array_alloc(size_t type_size, size_t num_elems);
+bson_array_alloc(size_t num_elems, size_t elem_size);
 BSON_EXPORT(void *)
-bson_array_alloc0(size_t type_size, size_t num_elems);
+bson_array_alloc0(size_t num_elems, size_t elem_size);
 BSON_EXPORT(void *)
 bson_realloc(void *mem, size_t num_bytes);
 BSON_EXPORT(void *)
@@ -63,6 +63,8 @@ bson_zero_free(void *mem, size_t size);
 
 #define BSON_ALIGNED_ALLOC(T) ((T *)(bson_aligned_alloc(BSON_ALIGNOF(T), sizeof(T))))
 #define BSON_ALIGNED_ALLOC0(T) ((T *)(bson_aligned_alloc0(BSON_ALIGNOF(T), sizeof(T))))
+#define BSON_ARRAY_ALLOC(N, T) ((T *)(bson_array_alloc(N, sizeof(T))))
+#define BSON_ARRAY_ALLOC0(N, T) ((T *)(bson_array_alloc0(N, sizeof(T))))
 
 BSON_END_DECLS
 

@@ -236,31 +236,30 @@ bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
  *
  * bson_array_alloc --
  *
- *       Allocates memory for an array of objects, checking for cases of
- *       n = 0 and integer overflow in type_size * len, in which case NULL
- *       is returned.
+ *       Allocates memory for an array of objects.
+ *
+ *       Libbson does not try to handle OOM conditions as it is beyond the
+ *       scope of this library to handle so appropriately.
  *
  * Parameters:
- *       @type_size: The size of each object's type in bytes.
  *       @num_elems: The number of objects to allocate.
+ *       @elem_size: The size of each object in bytes.
  *
  * Returns:
  *       A pointer if successful; otherwise abort() is called and this
- *       function will never return.
- *
- * Side effects:
- *       None.
+ *       function will never return. In the cases of num_elems = 0 or
+ *       integer overflow in num_elems * elem_size, NULL is returned.
  *
  *--------------------------------------------------------------------------
  */
 
 void *
-bson_array_alloc(size_t type_size /* IN */, size_t num_elems /* IN */)
+bson_array_alloc(size_t num_elems /* IN */, size_t elem_size /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes = type_size * num_elems;
+   size_t num_bytes = num_elems * elem_size;
 
-   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / type_size)) {
+   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / elem_size)) {
       mem = bson_malloc(num_bytes);
    }
    return mem;
@@ -269,18 +268,19 @@ bson_array_alloc(size_t type_size /* IN */, size_t num_elems /* IN */)
 /*
  *--------------------------------------------------------------------------
  *
- * bson_array_alloc0 --
+ * bson_array_alloc0--
  *
  *       Like bson_array_alloc() except the memory is zeroed after allocation
  *       for convenience.
  *
  * Parameters:
- *       @type_size: The size of each object's type in bytes.
  *       @num_elems: The number of objects to allocate.
+ *       @elem_size: The size of each object in bytes.
  *
  * Returns:
  *       A pointer if successful; otherwise abort() is called and this
- *       function will never return.
+ *       function will never return. In the cases of num_elems = 0 or
+ *       integer overflow in num_elems * elem_size, NULL is returned.
  *
  * Side effects:
  *       None.
@@ -289,13 +289,16 @@ bson_array_alloc(size_t type_size /* IN */, size_t num_elems /* IN */)
  */
 
 void *
-bson_array_alloc0(size_t type_size /* IN */, size_t num_elems /* IN */)
+bson_array_alloc0(size_t num_elems /* IN */, size_t elem_size /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes = type_size * num_elems;
+   size_t num_bytes = num_elems * elem_size;
 
-   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / type_size)) {
-      mem = bson_malloc0(num_bytes);
+   if (BSON_LIKELY(num_bytes) && BSON_LIKELY(num_elems == num_bytes / elem_size)) {
+      if (BSON_UNLIKELY(!(mem = gMemVtable.calloc(num_elems, elem_size)))) {
+         fprintf(stderr, "Failure to allocate memory in bson_array_alloc0(). errno: %d.\n", errno);
+         abort();
+      }
    }
    return mem;
 }

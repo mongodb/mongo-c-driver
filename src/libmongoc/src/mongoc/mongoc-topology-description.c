@@ -798,7 +798,7 @@ mongoc_topology_description_suitable_servers(mongoc_array_t *set, /* OUT */
       .topology_type = topology->type,
       .has_secondary = false,
       .candidates_len = 0,
-      .candidates = bson_array_alloc0(sizeof(mongoc_server_description_t *), td_servers->items_len),
+      .candidates = BSON_ARRAY_ALLOC0(td_servers->items_len, const mongoc_server_description_t *),
    };
 
    /* The "effective" read mode is the read mode that we should behave for, and
@@ -2370,7 +2370,7 @@ mongoc_topology_description_get_servers(const mongoc_topology_description_t *td,
 {
    const mongoc_set_t *const set = mc_tpld_servers_const(BSON_ASSERT_PTR_INLINE(td));
    /* enough room for all descriptions, even if some are unknown  */
-   mongoc_server_description_t **sds = bson_array_alloc0(sizeof(mongoc_server_description_t *), set->items_len);
+   mongoc_server_description_t **sds = BSON_ARRAY_ALLOC0(set->items_len, mongoc_server_description_t *);
 
    BSON_ASSERT_PARAM(n);
 

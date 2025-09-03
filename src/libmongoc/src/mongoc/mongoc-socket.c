@@ -336,7 +336,7 @@ mongoc_socket_poll(mongoc_socket_poll_t *sds, /* IN */
       }
    }
 #else
-   pfds = (struct pollfd *)bson_array_alloc(sizeof(*pfds), nsds);
+   pfds = BSON_ARRAY_ALLOC(nsds, struct pollfd);
 
    for (size_t i = 0u; i < nsds; i++) {
       pfds[i].fd = sds[i].socket->sd;
@@ -1349,7 +1349,7 @@ mongoc_socket_sendv(mongoc_socket_t *sock,  /* IN */
    BSON_ASSERT(in_iov);
    BSON_ASSERT(iovcnt);
 
-   iov = bson_array_alloc(sizeof(*iov), iovcnt);
+   iov = BSON_ARRAY_ALLOC(iovcnt, mongoc_iovec_t);
    memcpy(iov, in_iov, sizeof(*iov) * iovcnt);
 
    for (;;) {
