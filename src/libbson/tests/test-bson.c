@@ -125,6 +125,25 @@ test_bson_alloc(void)
 
 
 static void
+test_bson_array_alloc(void) 
+{
+   // Can allocate an array of items:
+   {
+      int *arr = BSON_ARRAY_ALLOC(2, int);
+      arr[0] = 1;
+      arr[1] = 2;
+      bson_free(arr);
+   }
+
+   // Allocating with overflow in byte size aborts:
+   mlib_assert_aborts () {
+      int *arr = BSON_ARRAY_ALLOC(SIZE_MAX, int);
+      bson_free(arr);
+   }
+}
+
+
+static void
 BSON_ASSERT_BSON_EQUAL(const bson_t *a, const bson_t *b)
 {
    const uint8_t *data1 = bson_get_data(a);
@@ -2971,6 +2990,7 @@ test_bson_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/init", test_bson_init);
    TestSuite_Add(suite, "/bson/init_static", test_bson_init_static);
    TestSuite_Add(suite, "/bson/basic", test_bson_alloc);
+   TestSuite_Add(suite, "/bson/basic_array_alloc", test_bson_array_alloc);
    TestSuite_Add(suite, "/bson/append_overflow", test_bson_append_overflow);
    TestSuite_Add(suite, "/bson/append_array", test_bson_append_array);
    TestSuite_Add(suite, "/bson/append_binary", test_bson_append_binary);
