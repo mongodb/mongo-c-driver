@@ -257,7 +257,7 @@ void *
 bson_array_alloc(size_t num_elems /* IN */, size_t elem_size /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes;
+   size_t num_bytes = 0;
    BSON_ASSERT(!mlib_mul(&num_bytes, num_elems, elem_size));
 
    if (BSON_LIKELY(num_bytes)) {
@@ -292,7 +292,7 @@ void *
 bson_array_alloc0(size_t num_elems /* IN */, size_t elem_size /* IN */)
 {
    void *mem = NULL;
-   size_t num_bytes;
+   size_t num_bytes = 0;
    BSON_ASSERT(!mlib_mul(&num_bytes, num_elems, elem_size));
 
    if (BSON_LIKELY(num_bytes)) {
