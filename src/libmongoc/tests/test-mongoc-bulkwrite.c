@@ -319,13 +319,26 @@ test_bulkwrite_serverid(void *ctx)
 
    ok = mongoc_bulkwrite_append_insertone(bw, "db.coll", tmp_bson("{}"), NULL, &error);
    ASSERT_OR_PRINT(ok, error);
+
+   // Getting the server ID before calling `mongoc_bulkwrite_execute` is an error
+   {
+      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      ASSERT(!serverid_maybe.is_ok);
+      ASSERT_ERROR_CONTAINS(error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "bulk write has not been executed or execution failed");
+   }
+
    // Execute.
    {
       mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute(bw, bwo);
       ASSERT(bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect the selected server is reported as used.
-      uint32_t const used_serverid = mongoc_bulkwrite_serverid(bw);
+      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
+      uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, ==, used_serverid);
       // Expect both mongoc_bulkwrite_t and mongoc_bulkwriteresult_t report the same server ID
       uint32_t const used_serverid_res = mongoc_bulkwriteresult_serverid(bwr.res);
@@ -384,7 +397,9 @@ test_bulkwrite_serverid_unacknowledged(void *ctx)
       ASSERT(!bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect the selected server is reported as used.
-      uint32_t const used_serverid = mongoc_bulkwrite_serverid(bw);
+      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
+      uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, ==, used_serverid);
       mongoc_bulkwriteresult_destroy(bwr.res);
       mongoc_bulkwriteexception_destroy(bwr.exc);
@@ -448,7 +463,9 @@ test_bulkwrite_serverid_on_retry(void *ctx)
       ASSERT(bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect a different server was used due to retry.
-      uint32_t const used_serverid = mongoc_bulkwrite_serverid(bw);
+      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
+      uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, !=, used_serverid);
       // Expect both mongoc_bulkwrite_t and mongoc_bulkwriteresult_t report the same server ID
       uint32_t const used_serverid_res = mongoc_bulkwriteresult_serverid(bwr.res);
@@ -498,7 +515,9 @@ test_bulkwrite_serverid_on_retry_unacknowledged(void *ctx)
       ASSERT(!bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect a different server was used due to retry.
-      uint32_t const used_serverid = mongoc_bulkwrite_serverid(bw);
+      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
+      uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, !=, used_serverid);
       mongoc_bulkwriteresult_destroy(bwr.res);
       mongoc_bulkwriteexception_destroy(bwr.exc);
