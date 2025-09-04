@@ -270,8 +270,8 @@ MONGOC_EXPORT(mongoc_bulkwrite_check_acknowledged_t)
 mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t *error);
 
 typedef struct {
-   bool is_ok;
-   uint32_t serverid;
+   bool is_ok;        // true if no error
+   uint32_t serverid; // the server ID last used in `mongoc_bulkwrite_execute`
 } mongoc_bulkwrite_serverid_maybe_t;
 
 // `mongoc_bulkwrite_serverid` identifies the most recently selected server. This may differ from a previously set

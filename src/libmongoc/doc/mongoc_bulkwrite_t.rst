@@ -55,4 +55,5 @@ to execute the operation.
     mongoc_bulkwrite_set_session
     mongoc_bulkwrite_execute
     mongoc_bulkwrite_check_acknowledged
+    mongoc_bulkwrite_serverid
     mongoc_bulkwrite_destroy
