@@ -125,7 +125,7 @@ test_bson_alloc(void)
 
 
 static void
-test_bson_array_alloc(void) 
+test_bson_array_alloc(void)
 {
    // Can allocate an array of items:
    {
