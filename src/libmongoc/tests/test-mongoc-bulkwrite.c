@@ -270,7 +270,7 @@ static uint32_t
 _select_server_and_get_id(mongoc_client_t *client)
 {
    bson_error_t error;
-   mongoc_server_description_t *sd = mongoc_client_select_server(client, true /* for_writes */, NULL, &error);
+   mongoc_server_description_t *const sd = mongoc_client_select_server(client, true /* for_writes */, NULL, &error);
    ASSERT_OR_PRINT(sd, error);
 
    uint32_t const selected_serverid = mongoc_server_description_id(sd);
@@ -292,7 +292,7 @@ _capture_last_bulkWrite_serverid(const mongoc_apm_command_started_t *event)
 static void
 _setup_last_captured_serverid_callback(mongoc_client_t *client, uint32_t *id)
 {
-   mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new();
+   mongoc_apm_callbacks_t *const cbs = mongoc_apm_callbacks_new();
    mongoc_apm_set_command_started_cb(cbs, _capture_last_bulkWrite_serverid);
    mongoc_client_set_apm_callbacks(client, cbs, id);
    mongoc_apm_callbacks_destroy(cbs);
