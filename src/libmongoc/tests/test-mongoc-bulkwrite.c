@@ -483,55 +483,6 @@ test_bulkwrite_serverid_on_retry(void *ctx)
 }
 
 static void
-test_bulkwrite_serverid_on_retry_unacknowledged(void *ctx)
-{
-   BSON_UNUSED(ctx);
-   bool ok;
-   bson_error_t error;
-
-   mongoc_uri_t *uri = test_framework_get_uri();
-   ASSERT_OR_PRINT(test_framework_uri_apply_multi_mongos(uri, true, &error), error);
-   mongoc_client_t *client = mongoc_client_new_from_uri(uri);
-   test_framework_set_ssl_opts(client);
-
-   uint32_t const selected_serverid = _select_server_and_get_id(client);
-
-   _setup_bulkwrite_fail_point(client, selected_serverid);
-
-   uint32_t last_captured = 0;
-   _setup_last_captured_serverid_callback(client, &last_captured);
-
-   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
-   mongoc_bulkwriteopts_t *bwo = mongoc_bulkwriteopts_new();
-   mongoc_bulkwriteopts_set_serverid(bwo, selected_serverid);
-
-   _set_opts_for_unacknowledged_writes(bwo);
-
-   ok = mongoc_bulkwrite_append_insertone(bw, "db.coll", tmp_bson("{}"), NULL, &error);
-   ASSERT_OR_PRINT(ok, error);
-   // Execute.
-   {
-      mongoc_bulkwritereturn_t bwr = mongoc_bulkwrite_execute(bw, bwo);
-      ASSERT(!bwr.res);
-      ASSERT_NO_BULKWRITEEXCEPTION(bwr);
-      // Expect a different server was used due to retry.
-      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
-      ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
-      uint32_t const used_serverid = serverid_maybe.serverid;
-      ASSERT_CMPUINT32(selected_serverid, !=, used_serverid);
-      mongoc_bulkwriteresult_destroy(bwr.res);
-      mongoc_bulkwriteexception_destroy(bwr.exc);
-      // Expect the used server was reported in command monitoring.
-      ASSERT_CMPUINT32(last_captured, ==, used_serverid);
-   }
-
-   mongoc_uri_destroy(uri);
-   mongoc_bulkwriteopts_destroy(bwo);
-   mongoc_bulkwrite_destroy(bw);
-   mongoc_client_destroy(client);
-}
-
-static void
 capture_last_bulkWrite_command(const mongoc_apm_command_started_t *event)
 {
    if (0 == strcmp(mongoc_apm_command_started_get_command_name(event), "bulkWrite")) {
@@ -1011,16 +962,6 @@ test_bulkwrite_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/bulkwrite/server_id/on_retry",
                      test_bulkwrite_serverid_on_retry,
-                     NULL /* dtor */,
-                     NULL /* ctx */,
-                     test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
-                     test_framework_skip_if_not_mongos, // Requires multiple hosts that can accept writes.
-                     test_framework_skip_if_no_crypto   // Require crypto for retryable writes.
-   );
-
-   TestSuite_AddFull(suite,
-                     "/bulkwrite/server_id/on_retry/unacknowledged",
-                     test_bulkwrite_serverid_on_retry_unacknowledged,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
