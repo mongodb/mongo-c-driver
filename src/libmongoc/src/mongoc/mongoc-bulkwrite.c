@@ -159,8 +159,10 @@ struct _mongoc_bulkwrite_t {
    bool executed;
    // `serverid` is set in `mongoc_bulkwrite_execute` to identify the last used serverid. For acknowledged writes, this
    // will be the same as `mongoc_bulkwriteresult_serverid`.
-   uint32_t serverid;
-   bool serverid_is_set;
+   struct {
+      bool is_set;
+      uint32_t value;
+   } serverid;
    // `is_acknowledged` is set in `mongoc_bulkwrite_execute` based on the chosen write concern.
    mongoc_optional_t is_acknowledged;
    // `ops` is a document sequence.
@@ -1982,11 +1984,11 @@ fail:
    }
    bson_destroy(&cmd);
    if (ss) {
-      self->serverid = ss->sd->id;
-      self->serverid_is_set = true;
+      self->serverid.value = ss->sd->id;
+      self->serverid.is_set = true;
 
       if (ret.res) {
-         ret.res->serverid = self->serverid;
+         ret.res->serverid = self->serverid.value;
       }
    }
    mongoc_server_stream_cleanup(ss);
@@ -2024,7 +2026,7 @@ mongoc_bulkwrite_serverid(mongoc_bulkwrite_t const *self, bson_error_t *error)
    BSON_ASSERT_PARAM(self);
    BSON_OPTIONAL_PARAM(error);
 
-   mongoc_bulkwrite_serverid_maybe_t const result = {.is_ok = self->serverid_is_set, .serverid = self->serverid};
+   mongoc_bulkwrite_serverid_maybe_t const result = {.is_ok = self->serverid.is_set, .serverid = self->serverid.value};
 
    if (!result.is_ok) {
       _mongoc_set_error(error,
