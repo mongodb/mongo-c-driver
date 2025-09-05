@@ -322,7 +322,7 @@ test_bulkwrite_serverid(void *ctx)
 
    // Getting the server ID before calling `mongoc_bulkwrite_execute` is an error
    {
-      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      mongoc_bulkwrite_serverid_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
       ASSERT(!serverid_maybe.is_ok);
       ASSERT_ERROR_CONTAINS(error,
                             MONGOC_ERROR_COMMAND,
@@ -336,7 +336,7 @@ test_bulkwrite_serverid(void *ctx)
       ASSERT(bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect the selected server is reported as used.
-      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      mongoc_bulkwrite_serverid_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
       ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
       uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, ==, used_serverid);
@@ -397,7 +397,7 @@ test_bulkwrite_serverid_unacknowledged(void *ctx)
       ASSERT(!bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect the selected server is reported as used.
-      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      mongoc_bulkwrite_serverid_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
       ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
       uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, ==, used_serverid);
@@ -463,7 +463,7 @@ test_bulkwrite_serverid_on_retry(void *ctx)
       ASSERT(bwr.res);
       ASSERT_NO_BULKWRITEEXCEPTION(bwr);
       // Expect a different server was used due to retry.
-      mongoc_bulkwrite_serverid_maybe_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
+      mongoc_bulkwrite_serverid_t const serverid_maybe = mongoc_bulkwrite_serverid(bw, &error);
       ASSERT_OR_PRINT(serverid_maybe.is_ok, error);
       uint32_t const used_serverid = serverid_maybe.serverid;
       ASSERT_CMPUINT32(selected_serverid, !=, used_serverid);

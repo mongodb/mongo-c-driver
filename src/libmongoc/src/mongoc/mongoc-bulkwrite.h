@@ -272,13 +272,13 @@ mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t
 typedef struct {
    bool is_ok;        // true if no error
    uint32_t serverid; // the server ID last used in `mongoc_bulkwrite_execute`
-} mongoc_bulkwrite_serverid_maybe_t;
+} mongoc_bulkwrite_serverid_t;
 
 // `mongoc_bulkwrite_serverid` identifies the most recently selected server. This may differ from a previously set
 // serverid if a retry occurred. Unlike `mongoc_bulkwriteresult_serverid`, this can be used for unacknowledged writes.
 // For acknowledged writes, `mongoc_bulkwrite_serverid` and `mongoc_bulkwriteresult_serverid` report the same server
 // ID.
-MONGOC_EXPORT(mongoc_bulkwrite_serverid_maybe_t)
+MONGOC_EXPORT(mongoc_bulkwrite_serverid_t)
 mongoc_bulkwrite_serverid(mongoc_bulkwrite_t const *self, bson_error_t *error);
 
 MONGOC_EXPORT(void)

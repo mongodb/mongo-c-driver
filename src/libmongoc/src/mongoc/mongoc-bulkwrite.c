@@ -2020,13 +2020,13 @@ mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t
    return result;
 }
 
-mongoc_bulkwrite_serverid_maybe_t
+mongoc_bulkwrite_serverid_t
 mongoc_bulkwrite_serverid(mongoc_bulkwrite_t const *self, bson_error_t *error)
 {
    BSON_ASSERT_PARAM(self);
    BSON_OPTIONAL_PARAM(error);
 
-   mongoc_bulkwrite_serverid_maybe_t const result = {.is_ok = self->serverid.is_set, .serverid = self->serverid.value};
+   mongoc_bulkwrite_serverid_t const result = {.is_ok = self->serverid.is_set, .serverid = self->serverid.value};
 
    if (!result.is_ok) {
       _mongoc_set_error(error,
