@@ -16,6 +16,7 @@ API Reference
    mongoc_bulkwriteresult_t
    mongoc_bulkwriteexception_t
    mongoc_bulkwrite_check_acknowledged_t
+   mongoc_bulkwrite_serverid_t
    mongoc_bulk_operation_t
    mongoc_change_stream_t
    mongoc_client_encryption_t
