@@ -23,21 +23,6 @@ class FetchDET(Function):
             working_dir="drivers-evergreen-tools",
             script='find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;',
         ),
-
-        # python is used frequently enough by many tasks that it is worth
-        # running find_python3 once here and reusing the result.
-        bash_exec(
-            command_type=EvgCommandType.SETUP,
-            script='''\
-                set -o errexit
-                . drivers-evergreen-tools/.evergreen/find-python3.sh
-                echo "PYTHON3_BINARY: $(find_python3)" >|python3_binary.yml
-            ''',
-        ),
-        expansions_update(
-            command_type=EvgCommandType.SETUP,
-            file='python3_binary.yml',
-        ),
     ]
 
 
