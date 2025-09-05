@@ -15,5 +15,5 @@ Description
 -----------
 
 Returns the most recently selected server. The returned value may differ from a ``serverid`` previously set with
-:symbol:`mongoc_bulkwriteopts_set_serverid` if a retry occurred. Intended for use by wrapping drivers that select a
-server before running the operation.
+:symbol:`mongoc_bulkwriteopts_set_serverid` if a retry occurred. A server ID of 0 indicates that no server was
+successfully selected. Intended for use by wrapping drivers that select a server before running the operation.
