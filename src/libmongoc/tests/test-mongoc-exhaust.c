@@ -115,6 +115,9 @@ test_exhaust_cursor(bool pooled)
       pool = test_framework_new_default_client_pool();
       stream_tracker_track_pool(st, pool);
       client = mongoc_client_pool_pop(pool);
+      // Server 4.4 added support for streaming monitoring and has 2 monitoring connections.
+      int monitor_count = test_framework_get_server_version() >= test_framework_str_to_version("4.4") ? 2 : 1;
+      stream_tracker_assert_eventual_active_count(st, "localhost:27017", monitor_count);
    } else {
       client = test_framework_new_default_client();
       stream_tracker_track_client(st, client);
