@@ -136,6 +136,8 @@ declare -a test_args=(
   "test-results.json"
   "--skip-tests"
   ".evergreen/etc/skip-tests.txt"
+  "--match"
+  "/Client/exhaust_cursor/pool"
 )
 
 # TODO (CDRIVER-4045): consolidate DNS tests into regular test tasks.
@@ -282,7 +284,9 @@ cygwin)
     openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
   fi
 
-  LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  for i in {1..10}; do
+    LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
+  done
   ;;
 esac
 
