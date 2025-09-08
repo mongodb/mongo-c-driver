@@ -157,6 +157,12 @@ struct _mongoc_bulkwrite_t {
    // `executed` is set to true once `mongoc_bulkwrite_execute` is called.
    // `mongoc_bulkwrite_t` may not be executed more than once.
    bool executed;
+   // `serverid` is set in `mongoc_bulkwrite_execute` to identify the last used serverid. For acknowledged writes, this
+   // will be the same as `mongoc_bulkwriteresult_serverid`.
+   struct {
+      bool is_set;
+      uint32_t value;
+   } serverid;
    // `is_acknowledged` is set in `mongoc_bulkwrite_execute` based on the chosen write concern.
    mongoc_optional_t is_acknowledged;
    // `ops` is a document sequence.
@@ -1977,9 +1983,13 @@ fail:
       mongoc_cmd_parts_cleanup(&parts);
    }
    bson_destroy(&cmd);
-   if (ret.res && ss) {
-      // Set the returned server ID to the most recently selected server.
-      ret.res->serverid = ss->sd->id;
+   if (ss) {
+      self->serverid.value = ss->sd->id;
+      self->serverid.is_set = true;
+
+      if (ret.res) {
+         ret.res->serverid = self->serverid.value;
+      }
    }
    mongoc_server_stream_cleanup(ss);
    if (!ret.exc->has_any_error) {
@@ -2001,6 +2011,24 @@ mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t
    if (result.is_ok) {
       result.is_acknowledged = mongoc_optional_value(&self->is_acknowledged);
    } else {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_COMMAND,
+                        MONGOC_ERROR_COMMAND_INVALID_ARG,
+                        "bulk write has not been executed or execution failed");
+   }
+
+   return result;
+}
+
+mongoc_bulkwrite_serverid_t
+mongoc_bulkwrite_serverid(mongoc_bulkwrite_t const *self, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(self);
+   BSON_OPTIONAL_PARAM(error);
+
+   mongoc_bulkwrite_serverid_t const result = {.is_ok = self->serverid.is_set, .serverid = self->serverid.value};
+
+   if (!result.is_ok) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_COMMAND,
                         MONGOC_ERROR_COMMAND_INVALID_ARG,
