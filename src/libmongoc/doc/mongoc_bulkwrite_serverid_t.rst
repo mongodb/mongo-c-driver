@@ -1,7 +1,7 @@
 :man_page: mongoc_bulkwrite_serverid_t
 
 mongoc_bulkwrite_serverid_t
-=================================
+===========================
 
 Synopsis
 --------
