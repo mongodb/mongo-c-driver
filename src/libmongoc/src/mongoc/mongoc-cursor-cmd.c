@@ -39,7 +39,6 @@ static getmore_type_t
 _getmore_type(mongoc_cursor_t *cursor)
 {
    mongoc_server_stream_t *server_stream;
-   int32_t wire_version;
    data_cmd_t *data = (data_cmd_t *)cursor->impl.data;
    if (data->getmore_type != UNKNOWN) {
       return data->getmore_type;
@@ -50,7 +49,6 @@ _getmore_type(mongoc_cursor_t *cursor)
    if (!server_stream) {
       return UNKNOWN;
    }
-   wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup(server_stream);
 
    data->getmore_type = GETMORE_CMD;
