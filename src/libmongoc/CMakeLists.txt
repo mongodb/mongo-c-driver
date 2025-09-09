@@ -752,6 +752,22 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
 )
 
+set(MONGOC_CXX_COMPILER_ID "Unknown")
+set(MONGOC_CXX_COMPILER_VERSION "")
+
+if(DEFINED CMAKE_CXX_COMPILER_ID)
+    set(MONGOC_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+if(DEFINED CMAKE_CXX_COMPILER_VERSION)
+    set(MONGOC_CXX_COMPILER_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+endif()
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config-private.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config-private.h"
+)
+
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h"
