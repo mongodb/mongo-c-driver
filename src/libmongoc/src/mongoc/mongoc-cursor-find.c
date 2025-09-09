@@ -31,7 +31,6 @@ _mongoc_cursor_impl_find_cmd_init(mongoc_cursor_t *cursor, bson_t *filter);
 static mongoc_cursor_state_t
 _prime(mongoc_cursor_t *cursor)
 {
-   int32_t wire_version;
    mongoc_server_stream_t *server_stream;
    data_find_t *data = (data_find_t *)cursor->impl.data;
 
@@ -42,7 +41,6 @@ _prime(mongoc_cursor_t *cursor)
    if (!server_stream) {
       return DONE;
    }
-   wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup(server_stream);
 
    /* set all mongoc_impl_t function pointers. */
