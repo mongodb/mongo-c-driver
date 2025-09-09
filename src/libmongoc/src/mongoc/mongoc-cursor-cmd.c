@@ -19,8 +19,8 @@
 
 #include <mongoc/mongoc.h>
 
-typedef enum { NONE, CMD_RESPONSE, OP_GETMORE_RESPONSE } reading_from_t;
-typedef enum { UNKNOWN, GETMORE_CMD, OP_GETMORE } getmore_type_t;
+typedef enum { NONE, CMD_RESPONSE } reading_from_t;
+typedef enum { UNKNOWN, GETMORE_CMD } getmore_type_t;
 typedef struct _data_cmd_t {
    /* Two paths:
     * - Mongo 3.2+, sent "getMore" cmd, we're reading reply's "nextBatch" array
@@ -53,13 +53,7 @@ _getmore_type(mongoc_cursor_t *cursor)
    wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup(server_stream);
 
-   // CDRIVER-4722: always GETMORE_CMD once WIRE_VERSION_MIN >=
-   // WIRE_VERSION_4_2.
-   if (_mongoc_cursor_use_op_msg(cursor, wire_version)) {
-      data->getmore_type = GETMORE_CMD;
-   } else {
-      data->getmore_type = OP_GETMORE;
-   }
+   data->getmore_type = GETMORE_CMD;
 
    return data->getmore_type;
 }
@@ -94,9 +88,6 @@ _pop_from_batch(mongoc_cursor_t *cursor)
    case CMD_RESPONSE:
       _mongoc_cursor_response_read(cursor, &data->response, &cursor->current);
       break;
-   case OP_GETMORE_RESPONSE:
-      cursor->current = bson_reader_read(data->response_legacy.reader, NULL);
-      break;
    case NONE:
    default:
       fprintf(stderr, "trying to pop from an uninitialized cursor reader.\n");
@@ -123,10 +114,6 @@ _get_next_batch(mongoc_cursor_t *cursor)
       _mongoc_cursor_response_refresh(cursor, &getmore_cmd, NULL /* opts */, &data->response);
       bson_destroy(&getmore_cmd);
       data->reading_from = CMD_RESPONSE;
-      return IN_BATCH;
-   case OP_GETMORE:
-      _mongoc_cursor_op_getmore(cursor, &data->response_legacy);
-      data->reading_from = OP_GETMORE_RESPONSE;
       return IN_BATCH;
    case UNKNOWN:
    default:

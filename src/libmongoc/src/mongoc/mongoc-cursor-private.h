@@ -200,10 +200,6 @@ const bson_t *
 _mongoc_cursor_initial_query(mongoc_cursor_t *cursor);
 const bson_t *
 _mongoc_cursor_get_more(mongoc_cursor_t *cursor);
-bool
-_mongoc_cursor_opts_to_flags(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream, int32_t *flags /* OUT */);
-bool
-_mongoc_cursor_use_op_msg(const mongoc_cursor_t *cursor, int32_t wire_version);
 void
 _mongoc_cursor_monitor_succeeded(mongoc_cursor_t *cursor,
                                  mongoc_cursor_response_legacy_t *response,
@@ -234,10 +230,6 @@ _mongoc_cursor_prime(mongoc_cursor_t *cursor);
 /* legacy functions defined in mongoc-cursor-legacy.c */
 bool
 _mongoc_cursor_next(mongoc_cursor_t *cursor, const bson_t **bson);
-bool
-_mongoc_cursor_op_query_find(mongoc_cursor_t *cursor, bson_t *filter, mongoc_cursor_response_legacy_t *response);
-void
-_mongoc_cursor_op_getmore(mongoc_cursor_t *cursor, mongoc_cursor_response_legacy_t *response);
 mongoc_cursor_t *
 _mongoc_cursor_new_with_opts(mongoc_client_t *client,
                              const char *db_and_collection,

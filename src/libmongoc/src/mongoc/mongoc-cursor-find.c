@@ -26,8 +26,6 @@ typedef struct _data_find_t {
 
 extern void
 _mongoc_cursor_impl_find_cmd_init(mongoc_cursor_t *cursor, bson_t *filter);
-extern void
-_mongoc_cursor_impl_find_opquery_init(mongoc_cursor_t *cursor, bson_t *filter);
 
 
 static mongoc_cursor_state_t
@@ -48,12 +46,8 @@ _prime(mongoc_cursor_t *cursor)
    mongoc_server_stream_cleanup(server_stream);
 
    /* set all mongoc_impl_t function pointers. */
-   /* CDRIVER-4722: always find_cmd when server >= 4.2 */
-   if (_mongoc_cursor_use_op_msg(cursor, wire_version)) {
-      _mongoc_cursor_impl_find_cmd_init(cursor, &data->filter /* stolen */);
-   } else {
-      _mongoc_cursor_impl_find_opquery_init(cursor, &data->filter /* stolen */);
-   }
+   _mongoc_cursor_impl_find_cmd_init(cursor, &data->filter /* stolen */);
+
    /* destroy this impl data since impl functions have been replaced. */
    bson_free(data);
    /* prime with the new implementation. */

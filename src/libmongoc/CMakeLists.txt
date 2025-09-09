@@ -569,7 +569,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd-deprecated.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-cmd.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-opquery.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-legacy.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c

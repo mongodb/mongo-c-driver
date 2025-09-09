@@ -895,58 +895,6 @@ _mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
    } while (false)
 
 bool
-_mongoc_cursor_opts_to_flags(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream, int32_t *flags /* OUT */)
-{
-   /* CDRIVER-4722: these flags are only used in legacy OP_QUERY */
-   bson_iter_t iter;
-   const char *key;
-
-   *flags = MONGOC_OP_QUERY_FLAG_NONE;
-
-   if (!bson_iter_init(&iter, &cursor->opts)) {
-      _mongoc_set_error(&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Invalid 'opts' parameter.");
-      return false;
-   }
-
-   while (bson_iter_next(&iter)) {
-      key = bson_iter_key(&iter);
-
-      if (!strcmp(key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
-      } else if (!strcmp(key, MONGOC_CURSOR_AWAIT_DATA)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
-      } else if (!strcmp(key, MONGOC_CURSOR_EXHAUST)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
-      } else if (!strcmp(key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
-      } else if (!strcmp(key, MONGOC_CURSOR_OPLOG_REPLAY)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
-      } else if (!strcmp(key, MONGOC_CURSOR_TAILABLE)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
-      }
-   }
-
-   if (cursor->secondary_ok) {
-      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-   } else if (cursor->server_id &&
-              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-   }
-
-   return true;
-}
-
-bool
-_mongoc_cursor_use_op_msg(const mongoc_cursor_t *cursor, int32_t wire_version)
-{
-   /* CDRIVER-4722: always true once 4.2 is the minimum supported
-      No check needed for 3.6 as it's the current minimum */
-   return !_mongoc_cursor_get_opt_bool(cursor, MONGOC_CURSOR_EXHAUST) || wire_version >= WIRE_VERSION_4_2;
-}
-
-bool
 _mongoc_cursor_run_command(
    mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply, bool retry_prohibited)
 {
@@ -1020,15 +968,6 @@ _mongoc_cursor_run_command(
 
    db = bson_strndup(cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
-
-   {
-      int32_t flags;
-      if (!_mongoc_cursor_opts_to_flags(cursor, server_stream, &flags)) {
-         _mongoc_bson_init_if_set(reply);
-         GOTO(done);
-      }
-      parts.user_query_flags = (mongoc_query_flags_t)flags;
-   }
 
    if (_mongoc_cursor_get_opt_bool(cursor, MONGOC_CURSOR_EXHAUST)) {
       const bool sharded = _mongoc_topology_get_type(cursor->client->topology) == MONGOC_TOPOLOGY_SHARDED;
