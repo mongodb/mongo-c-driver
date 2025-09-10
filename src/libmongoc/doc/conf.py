@@ -32,7 +32,7 @@ this_path = os.path.dirname(__file__)
 sys.path.append(this_path)
 sys.path.append(os.path.normpath(os.path.join(this_path, '../../../build/sphinx')))
 
-from mongoc_common import *  # noqa: E402
+from mongoc_common import mongoc_common_setup  # noqa: E402
 
 extensions = [
     'mongoc',
