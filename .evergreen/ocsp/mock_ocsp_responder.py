@@ -496,7 +496,7 @@ class OCSPResponder:
             return (CertificateStatus.revoked, time)
         elif self._fault == FAULT_UNKNOWN:
             return (CertificateStatus.unknown, None)
-        elif self._fault != None:
+        elif self._fault is not None:
             raise NotImplementedError('Fault type could not be found')
         return (CertificateStatus.good, time)
 

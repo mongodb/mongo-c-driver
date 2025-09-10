@@ -132,8 +132,13 @@ if py3k:
 
     basestring = str
     unicode = str
-    json_loads = lambda s: json_lds(touni(s))
-    callable = lambda x: hasattr(x, '__call__')
+
+    def json_loads(s):
+        return json_lds(touni(s))
+
+    def callable(x):
+        return hasattr(x, '__call__')
+
     imap = map
 
     def _raise(*a):
@@ -1155,7 +1160,10 @@ class Bottle(object):
         elif isinstance(first, bytes):
             new_iter = itertools.chain([first], iout)
         elif isinstance(first, unicode):
-            encoder = lambda x: x.encode(response.charset)
+
+            def encoder(x):
+                return x.encode(response.charset)
+
             new_iter = imap(encoder, itertools.chain([first], iout))
         else:
             msg = 'Unsupported response type: %s' % type(first)
@@ -4158,7 +4166,10 @@ class FileCheckerThread(threading.Thread):
 
     def run(self):
         exists = os.path.exists
-        mtime = lambda p: os.stat(p).st_mtime
+
+        def mtime(p):
+            return os.stat(p).st_mtime
+
         files = dict()
 
         for module in list(sys.modules.values()):

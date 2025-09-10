@@ -1002,8 +1002,11 @@ class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
         d128_tetra = (hi_word << 64) | low_word
         # Create an array of individual bits (high bits first):
         bits = tuple(((d128_tetra >> n) & 1) for n in range(127, -1, -1))
+
         # Recombine a sequence of bits into an int (high bits first)
-        mergebits: Callable[[tuple[int, ...]], int] = lambda bs: functools.reduce(lambda a, b: (a << 1) | b, bs, 0)
+        def mergebits(bs: tuple[int, ...]) -> int:
+            return functools.reduce(lambda a, b: (a << 1) | b, bs, 0)
+
         # Sign bit:
         sign = bits[0]
         # BID uses the first two combo bits to indicate that the exponent is shifted
