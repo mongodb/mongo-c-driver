@@ -446,31 +446,6 @@ test_bson_size_limits_and_batch_splitting(bool with_qe)
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
    bson_destroy(docs[0]);
 
-   /* Check that inserting close to, but not exceeding, 16MiB, passes */
-   docs[0] = bson_new();
-   bson_append_utf8(docs[0], "_id", -1, "under_16mib", -1);
-   bson_append_utf8(docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
-   bson_destroy(docs[0]);
-
-   /* but.. exceeding 16 MiB fails */
-   docs[0] = get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/limits-doc.json");
-   bson_append_utf8(docs[0], "_id", -1, "under_16mib", -1);
-   bson_append_utf8(docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
-   BSON_ASSERT(!mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
-   {
-      const uint32_t too_large = 10334;
-      // SERVER-104405 changed the expected error code from 2 to 10334:
-      const uint32_t too_large_old = 2;
-      ASSERT_CMPUINT32(error.domain, ==, (uint32_t)MONGOC_ERROR_SERVER);
-      if (error.code != too_large && error.code != too_large_old) {
-         test_error(
-            "Unexpected error: %" PRIu32 ". Expected %" PRIu32 " or %" PRIu32, error.code, too_large, too_large_old);
-      }
-      ASSERT_CONTAINS(error.message, "too large");
-   }
-   bson_destroy(docs[0]);
-
    /* Insert two documents that each exceed 2MiB but no encryption occurs.
     * Expect the bulk write to succeed and run as two separate inserts.
     */
@@ -501,6 +476,31 @@ test_bson_size_limits_and_batch_splitting(bool with_qe)
    ASSERT_CMPINT(ctx.num_inserts, ==, 2);
    bson_destroy(docs[0]);
    bson_destroy(docs[1]);
+
+   /* Check that inserting close to, but not exceeding, 16MiB, passes */
+   docs[0] = bson_new();
+   bson_append_utf8(docs[0], "_id", -1, "under_16mib", -1);
+   bson_append_utf8(docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
+   bson_destroy(docs[0]);
+
+   /* but.. exceeding 16 MiB fails */
+   docs[0] = get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/limits-doc.json");
+   bson_append_utf8(docs[0], "_id", -1, "under_16mib", -1);
+   bson_append_utf8(docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
+   BSON_ASSERT(!mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
+   {
+      const uint32_t too_large = 10334;
+      // SERVER-104405 changed the expected error code from 2 to 10334:
+      const uint32_t too_large_old = 2;
+      ASSERT_CMPUINT32(error.domain, ==, (uint32_t)MONGOC_ERROR_SERVER);
+      if (error.code != too_large && error.code != too_large_old) {
+         test_error(
+            "Unexpected error: %" PRIu32 ". Expected %" PRIu32 " or %" PRIu32, error.code, too_large, too_large_old);
+      }
+      ASSERT_CONTAINS(error.message, "too large");
+   }
+   bson_destroy(docs[0]);
 
    if (with_qe) {
       mongoc_bulkwriteopts_t *bw_opts = mongoc_bulkwriteopts_new();
