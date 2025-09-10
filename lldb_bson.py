@@ -525,7 +525,7 @@ class DocumentDisplay(SyntheticDisplayBase['DocumentInfo | DocumentError']):
             return DocumentError(f'Invalid element type tag 0x{buf[0]:x}', elem_offset)
         except IndexError:
             # 'buf' was empty
-            return DocumentError(f'Unexpected end-of-data', elem_offset)
+            return DocumentError('Unexpected end-of-data', elem_offset)
         # Stop if this is the end:
         if type_tag == BSONType.EOD:
             return DocumentElement(type_tag, '', 0, 0)
@@ -533,7 +533,7 @@ class DocumentDisplay(SyntheticDisplayBase['DocumentInfo | DocumentError']):
         try:
             key_nulpos = buf.index(0, 1)
         except ValueError:
-            return DocumentError(f'Unexpected end-of-data while parsing the element key', elem_offset)
+            return DocumentError('Unexpected end-of-data while parsing the element key', elem_offset)
         key_bytes = buf[1:key_nulpos]
         try:
             key = key_bytes.decode('utf-8')

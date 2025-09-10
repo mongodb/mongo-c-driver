@@ -15,7 +15,6 @@ except ImportError:
 from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
-from sphinx.config import Config
 
 has_sphinx_design = False
 try:
@@ -247,7 +246,7 @@ if has_sphinx_design:
             adm = self.options.get('admonition')
             if adm is not None:
                 self.options.setdefault('class-container', []).extend(('admonition', adm))
-                self.options.setdefault('class-title', []).append(f'admonition-title')
+                self.options.setdefault('class-title', []).append('admonition-title')
             return super().run()
 else:
 

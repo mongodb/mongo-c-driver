@@ -35,7 +35,7 @@ html_sidebars = {}
 
 html_use_index = False
 
-rst_prolog = rf"""
+rst_prolog = r"""
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 

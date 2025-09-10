@@ -49,7 +49,6 @@ import re
 import sys
 import textwrap
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Optional, Tuple
 
 from asn1crypto import core, keys, ocsp, x509
 from asn1crypto.ocsp import OCSPRequest, OCSPResponse
@@ -498,7 +497,7 @@ class OCSPResponder:
         elif self._fault == FAULT_UNKNOWN:
             return (CertificateStatus.unknown, None)
         elif self._fault != None:
-            raise NotImplemented('Fault type could not be found')
+            raise NotImplementedError('Fault type could not be found')
         return (CertificateStatus.good, time)
 
     def _build_ocsp_response(self, ocsp_request: OCSPRequest) -> OCSPResponse:
@@ -510,7 +509,7 @@ class OCSPResponder:
         request_list = tbs_request['request_list']
         if len(request_list) < 1:
             logger.warning('Received OCSP request with no requests')
-            raise NotImplemented('Empty requests not supported')
+            raise NotImplementedError('Empty requests not supported')
 
         single_request = request_list[0]  # TODO: Support more than one request
         req_cert = single_request['req_cert']

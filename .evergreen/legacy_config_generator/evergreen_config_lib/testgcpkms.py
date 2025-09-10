@@ -22,8 +22,6 @@ from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
-
 
 def _create_tasks():
     passtask = NamedTask(

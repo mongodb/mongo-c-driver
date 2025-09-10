@@ -14,7 +14,6 @@ except ImportError:
     # Try importing from older Sphinx version path.
     from sphinx.builders.html import DirectoryHTMLBuilder
 from docutils.parsers.rst import Directive
-from sphinx.config import Config
 
 # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
 needs_sphinx = '1.7'

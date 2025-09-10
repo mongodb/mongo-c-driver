@@ -59,7 +59,7 @@ html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 html_use_smartypants = False
 html_show_sourcelink = False
 html_use_index = False
-rst_prolog = rf"""
+rst_prolog = r"""
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 

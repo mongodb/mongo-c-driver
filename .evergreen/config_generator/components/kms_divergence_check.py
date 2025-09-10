@@ -1,4 +1,4 @@
-from shrub.v3.evg_command import EvgCommandType, s3_put
+from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTask
 
 from config_generator.etc.function import Function

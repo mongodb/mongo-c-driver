@@ -9,7 +9,7 @@ from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.upload_build import UploadBuild
-from config_generator.etc.distros import find_large_distro, find_small_distro, make_distro_str
+from config_generator.etc.distros import find_large_distro, make_distro_str
 from config_generator.etc.utils import bash_exec
 
 # Use `rhel8-latest` distro. `rhel8-latest` distro includes necessary dependency: `haproxy`.

@@ -38,7 +38,7 @@ html_theme = 'nature'
 pygments_style = 'sphinx'
 html_static_path = []
 
-rst_prolog = rf"""
+rst_prolog = r"""
 .. role:: bash(code)
     :language: bash
 """

@@ -14,15 +14,14 @@
 
 from collections import OrderedDict as OD
 from itertools import chain
-from typing import ClassVar, Iterable, Literal, Mapping, MutableMapping, MutableSequence, Optional, Sequence
+from typing import ClassVar, Iterable, Literal, Mapping, MutableSequence, Optional, Sequence
 
-from evergreen_config_generator import Scalar, Value
+from evergreen_config_generator import Value
 from evergreen_config_generator.functions import func, s3_put
 from evergreen_config_generator.tasks import (
     DependencySpec,
     MatrixTask,
     NamedTask,
-    Task,
     both_or_neither,
     prohibit,
     require,
@@ -742,7 +741,7 @@ class AWSTestTask(MatrixTask):
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
         yield f'{self.settings.version}'
-        yield f'test-aws'
+        yield 'test-aws'
 
     def post_commands(self) -> Iterable[Value]:
         return [
