@@ -4144,7 +4144,7 @@ def run(
         pass
     except (SystemExit, MemoryError):
         raise
-    except:
+    except Exception:
         if not reloader:
             raise
         if not getattr(server, 'quiet', quiet):
