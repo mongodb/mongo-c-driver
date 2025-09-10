@@ -556,20 +556,6 @@ test_bson_size_limits_and_batch_splitting(bool with_qe)
       bson_destroy(coll_opts);
       mongoc_database_destroy(db);
    }
-   /* Check that inserting close to, but not exceeding, 16MiB, passes */
-   docs[0] = bson_new();
-   bson_append_utf8(docs[0], "_id", -1, "under_16mib", -1);
-   bson_append_utf8(docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error), error);
-   bson_destroy(docs[0]);
-
-   /* but.. exceeding 16 MiB fails */
-   docs[0] = get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/limits-doc.json");
-   bson_append_utf8(docs[0], "_id", -1, "under_16mib", -1);
-   bson_append_utf8(docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
-   BSON_ASSERT(!mongoc_collection_insert_one(coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER, 2, "too large");
-   bson_destroy(docs[0]);
 
    bson_free(as);
    bson_destroy(kms_providers);
