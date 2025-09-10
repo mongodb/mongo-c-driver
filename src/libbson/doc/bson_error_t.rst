@@ -36,6 +36,8 @@ See `Handling Errors <errors_>`_.
 
     bson_set_error
     bson_strerror_r
+    bson_error_clear
+    bson_error_reset
 
 Example
 -------

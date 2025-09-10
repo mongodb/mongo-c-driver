@@ -22,8 +22,9 @@
 
 
 #include <bson/bson.h>
-#include <stdlib.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #ifndef STDIN_FILENO
@@ -31,7 +32,7 @@
 #endif
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    bson_json_reader_t *reader;
    bson_error_t error;
@@ -44,7 +45,7 @@ main (int argc, char *argv[])
     * Print program usage if no arguments are provided.
     */
    if (argc == 1) {
-      fprintf (stderr, "usage: %s FILE...\n", argv[0]);
+      fprintf(stderr, "usage: %s FILE...\n", argv[0]);
       return 1;
    }
 
@@ -57,11 +58,11 @@ main (int argc, char *argv[])
       /*
        * Open the filename provided in command line arguments.
        */
-      if (0 == strcmp (filename, "-")) {
-         reader = bson_json_reader_new_from_fd (STDIN_FILENO, false);
+      if (0 == strcmp(filename, "-")) {
+         reader = bson_json_reader_new_from_fd(STDIN_FILENO, false);
       } else {
-         if (!(reader = bson_json_reader_new_from_file (filename, &error))) {
-            fprintf (stderr, "Failed to open \"%s\": %s\n", filename, error.message);
+         if (!(reader = bson_json_reader_new_from_file(filename, &error))) {
+            fprintf(stderr, "Failed to open \"%s\": %s\n", filename, error.message);
             continue;
          }
       }
@@ -69,21 +70,21 @@ main (int argc, char *argv[])
       /*
        * Convert each incoming document to BSON and print to stdout.
        */
-      while ((b = bson_json_reader_read (reader, &doc, &error))) {
+      while ((b = bson_json_reader_read(reader, &doc, &error))) {
          if (b < 0) {
-            fprintf (stderr, "Error in json parsing:\n%s\n", error.message);
-            abort ();
+            fprintf(stderr, "Error in json parsing:\n%s\n", error.message);
+            abort();
          }
 
-         if (fwrite (bson_get_data (&doc), 1, doc.len, stdout) != doc.len) {
-            fprintf (stderr, "Failed to write to stdout, exiting.\n");
-            exit (1);
+         if (fwrite(bson_get_data(&doc), 1, doc.len, stdout) != doc.len) {
+            fprintf(stderr, "Failed to write to stdout, exiting.\n");
+            exit(1);
          }
-         bson_reinit (&doc);
+         bson_reinit(&doc);
       }
 
-      bson_json_reader_destroy (reader);
-      bson_destroy (&doc);
+      bson_json_reader_destroy(reader);
+      bson_destroy(&doc);
    }
 
    return 0;

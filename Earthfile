@@ -1,10 +1,49 @@
-VERSION --arg-scope-and-set --pass-args 0.7
+VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
 LOCALLY
+
+# Allow setting the "default" container image registry to use for image short names (e.g. to Amazon ECR).
+ARG --global default_search_registry=docker.io
 
 IMPORT ./tools/ AS tools
 
 # For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
 # Example use: <earthly> +build --env=u22 --sasl=off --tls=OpenSSL --c_compiler=gcc
+
+# COPY_SOURCE :
+#   Copy source files required for the build into the specified "--into" directory
+COPY_SOURCE:
+    FUNCTION
+    ARG --required into
+    COPY --dir \
+        build/ \
+        CMakeLists.txt \
+        COPYING \
+        NEWS \
+        README.rst \
+        src/ \
+        THIRD_PARTY_NOTICES \
+        VERSION_CURRENT \
+        "$into"
+
+# CONFIGURE :
+#   Configure the project in $source_dir into $build_dir with a common set of configuration options
+CONFIGURE:
+    FUNCTION
+    ARG --required source_dir
+    ARG --required build_dir
+    ARG --required tls
+    ARG --required sasl
+    RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
+        -D ENABLE_MAINTAINER_FLAGS=ON \
+        -D ENABLE_SHM_COUNTERS=ON \
+        -D ENABLE_SASL=$(echo $sasl | __str upper) \
+        -D ENABLE_SNAPPY=ON \
+        -D ENABLE_SRV=ON \
+        -D ENABLE_ZLIB=BUNDLED \
+        -D ENABLE_SSL=$(echo $tls | __str upper) \
+        -D ENABLE_COVERAGE=ON \
+        -D ENABLE_DEBUG_ASSERTIONS=ON \
+        -Werror
 
 # build :
 #   Build libmongoc and libbson using the specified environment.
@@ -25,28 +64,9 @@ build:
     ARG --required tls
     LET source_dir=/opt/mongoc/source
     LET build_dir=/opt/mongoc/build
-    COPY --dir \
-        build/ \
-        CMakeLists.txt \
-        COPYING \
-        NEWS \
-        README.rst \
-        src/ \
-        THIRD_PARTY_NOTICES \
-        VERSION_CURRENT \
-        "$source_dir"
+    DO +COPY_SOURCE --into=$source_dir
     ENV CCACHE_HOME=/root/.cache/ccache
-    RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
-        -D ENABLE_MAINTAINER_FLAGS=ON \
-        -D ENABLE_SHM_COUNTERS=ON \
-        -D ENABLE_SASL=$(echo $sasl | __str upper) \
-        -D ENABLE_SNAPPY=ON \
-        -D ENABLE_SRV=ON \
-        -D ENABLE_ZLIB=BUNDLED \
-        -D ENABLE_SSL=$(echo $tls | __str upper) \
-        -D ENABLE_COVERAGE=ON \
-        -D ENABLE_DEBUG_ASSERTIONS=ON \
-        -Werror
+    DO --pass-args +CONFIGURE --source_dir=$source_dir --build_dir=$build_dir
     RUN --mount=type=cache,target=$CCACHE_HOME \
         env CCACHE_BASE="$source_dir" \
             cmake --build $build_dir --config $config
@@ -114,20 +134,11 @@ test-cxx-driver:
 
 # PREP_CMAKE "warms up" the CMake installation cache for the current environment
 PREP_CMAKE:
-    COMMAND
-    LET scratch=/opt/mongoc-cmake
-    # Copy the minimal amount that we need, as to avoid cache invalidation
-    COPY tools/use.sh tools/platform.sh tools/paths.sh tools/base.sh tools/download.sh \
-        $scratch/tools/
-    COPY .evergreen/scripts/find-cmake-version.sh \
-        .evergreen/scripts/use-tools.sh \
-        .evergreen/scripts/find-cmake-latest.sh \
-        .evergreen/scripts/cmake.sh \
-        $scratch/.evergreen/scripts/
-    # "Install" a shim that runs our managed CMake executable:
-    RUN __alias cmake /opt/mongoc-cmake/.evergreen/scripts/cmake.sh
+    FUNCTION
+    # Run all CMake commands using uvx:
+    RUN __alias cmake uvx cmake
     # Executing any CMake command will warm the cache:
-    RUN cmake --version
+    RUN cmake --version | head -n 1
 
 env-warmup:
     ARG --required env
@@ -137,8 +148,10 @@ env-warmup:
 # Simultaneously builds and tests multiple different platforms
 multibuild:
     BUILD +run --targets "test-example" \
-        --env=alpine3.16 --env=alpine3.17 --env=alpine3.18 --env=alpine3.19 \
-        --env=u16 --env=u18 --env=u20 --env=u22 --env=centos7 \
+        --env=alpine3.19 --env=alpine3.20 --env=alpine3.21 --env=alpine3.22 \
+        --env=u20 --env=u22 --env=u24 \
+        --env=centos9 --env=centos10 \
+        --env=almalinux8 --env=almalinux9 --env=almalinux10 \
         --env=archlinux \
         --tls=OpenSSL --tls=off \
         --sasl=Cyrus --sasl=off \
@@ -148,7 +161,7 @@ multibuild:
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
-    FROM alpine:3.20
+    FROM $default_search_registry/library/alpine:3.20
     RUN apk add git bash
     ARG --required prefix
     ARG --required ref
@@ -193,7 +206,7 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM alpine:3.20
+    FROM $default_search_registry/library/alpine:3.20
     RUN apk add curl
     RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
     SAVE ARTIFACT /c-driver.pub
@@ -203,7 +216,7 @@ signing-pubkey:
 #   to be used to access them. (Refer to dev docs)
 sign-file:
     # Pull from Garasign:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-local/garasign-gpg
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/garasign-gpg
     # Copy the file to be signed
     ARG --required file
     COPY $file /s/file
@@ -223,7 +236,7 @@ sign-file:
 #   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
 #   (Refer to dev docs)
 signed-release:
-    FROM alpine:3.20
+    FROM $default_search_registry/library/alpine:3.20
     RUN apk add git
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
@@ -253,7 +266,7 @@ signed-release:
 
 # This target is simply an environment in which the SilkBomb executable is available.
 silkbomb:
-    FROM artifactory.corp.mongodb.com/release-tools-container-registry-public-local/silkbomb:2.0
+    FROM 901841024863.dkr.ecr.us-east-1.amazonaws.com/release-infrastructure/silkbomb:2.0
     # Alias the silkbomb executable to a simpler name:
     RUN ln -s /python/src/sbom/silkbomb/bin /usr/local/bin/silkbomb
 
@@ -312,7 +325,7 @@ sbom-validate:
             --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 ubuntu:24.04
+    FROM --platform=linux/amd64 $default_search_registry/library/ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
@@ -384,7 +397,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM alpine:3.18
+    FROM $default_search_registry/library/alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git
@@ -395,6 +408,35 @@ vcpkg-base:
     LET src_dir=/opt/mongoc-vcpkg-example
     COPY src/libmongoc/examples/cmake/vcpkg/ $src_dir
     WORKDIR $src_dir
+
+# verify-headers :
+#   Execute CMake header verification on the sources
+#
+#   See `earthly.rst` for more details.
+verify-headers:
+    # We test against multiple different platforms, because glibc/musl versions may
+    # rearrange their header contents and requirements, so we want to check against as
+    # many as possible.
+    BUILD +do-verify-headers-impl \
+        --from +env.alpine3.19 \
+        --from +env.almalinux8 \
+        --from +env.u20 \
+        --from +env.centos10 \
+        --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc
+
+do-verify-headers-impl:
+    ARG --required from
+    # We don't really care about the specifics of the build env/settings, so set some
+    # reasonable defaults so the caller doesn't need to specify. In the future, it is
+    # possible that we will need to test other environments and build settings.
+    FROM --pass-args "$from" --purpose=build
+    # Add C++ so we can test as C++ headers
+    DO --pass-args tools+ADD_CXX_COMPILER
+    DO +COPY_SOURCE --into=/s
+    DO --pass-args +CONFIGURE --source_dir /s --build_dir /s/_build
+    # The "all_verify_interface_header_sets" target is created automatically
+    # by CMake for the VERIFY_INTERFACE_HEADER_SETS target property.
+    RUN cmake --build /s/_build --target all_verify_interface_header_sets
 
 # run :
 #   Run one or more targets simultaneously.
@@ -418,36 +460,12 @@ run:
 # 88.     88  V888  `8bd8'    .88.   88 `88. `8b  d8' 88  V888 88  88  88 88.     88  V888    88    db   8D
 # Y88888P VP   V8P    YP    Y888888P 88   YD  `Y88P'  VP   V8P YP  YP  YP Y88888P VP   V8P    YP    `8888Y'
 
-env.u16:
-    DO --pass-args +UBUNTU_ENV --version=16.04
-
-env.u18:
-    DO --pass-args +UBUNTU_ENV --version=18.04
-
-env.u20:
-    DO --pass-args +UBUNTU_ENV --version=20.04
-
-env.u22:
-    DO --pass-args +UBUNTU_ENV --version=22.04
-
-env.alpine3.16:
-    DO --pass-args +ALPINE_ENV --version=3.16
-
-env.alpine3.17:
-    DO --pass-args +ALPINE_ENV --version=3.17
-
-env.alpine3.18:
-    DO --pass-args +ALPINE_ENV --version=3.18
-
-env.alpine3.19:
-    DO --pass-args +ALPINE_ENV --version=3.19
-
 env.archlinux:
-    FROM --pass-args tools+init-env --from archlinux
+    FROM --pass-args tools+init-env --from $default_search_registry/library/archlinux
     RUN pacman-key --init
     ARG --required purpose
 
-    RUN __install ninja snappy
+    RUN __install ninja snappy uv
 
     IF test "$purpose" = build
         RUN __install ccache
@@ -458,18 +476,33 @@ env.archlinux:
     DO --pass-args tools+ADD_C_COMPILER
     DO +PREP_CMAKE
 
-env.centos7:
-    DO --pass-args +CENTOS_ENV --version=7
+env.alpine3.19:
+    DO --pass-args +ALPINE_ENV --version=3.19
+
+env.alpine3.20:
+    DO --pass-args +ALPINE_ENV --version=3.20
+
+env.alpine3.21:
+    DO --pass-args +ALPINE_ENV --version=3.21
+
+env.alpine3.22:
+    DO --pass-args +ALPINE_ENV --version=3.22
 
 ALPINE_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from alpine:$version
-    # XXX: On Alpine, we just use the system's CMake. At time of writing, it is
-    # very up-to-date and much faster than building our own from source (since
-    # Kitware does not (yet) provide libmuslc builds of CMake)
-    RUN __install bash curl cmake ninja musl-dev make
+    FROM --pass-args tools+init-env --from $default_search_registry/library/alpine:$version
+    RUN __install bash curl ninja musl-dev make python3
     ARG --required purpose
+
+    IF test "$version" = "3.19" -o "$version" = "3.20"
+        # uv is not yet available. Install via pipx.
+        RUN __install pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
+    ELSE
+        RUN __install uv
+    END
 
     IF test "$purpose" = "build"
         RUN __install snappy-dev ccache
@@ -482,13 +515,28 @@ ALPINE_ENV:
     # Add "gcc" when installing Clang, since it pulls in a lot of runtime libraries and
     # utils that are needed for linking with Clang
     DO --pass-args tools+ADD_C_COMPILER --clang_pkg="gcc clang compiler-rt"
+    DO +PREP_CMAKE
+
+env.u20:
+    DO --pass-args +UBUNTU_ENV --version=20.04
+
+env.u22:
+    DO --pass-args +UBUNTU_ENV --version=22.04
+
+env.u24:
+    DO --pass-args +UBUNTU_ENV --version=24.04
 
 UBUNTU_ENV:
-    COMMAND
+    FUNCTION
     ARG --required version
-    FROM --pass-args tools+init-env --from ubuntu:$version
+    FROM --pass-args tools+init-env --from $default_search_registry/library/ubuntu:$version
     RUN __install curl build-essential
     ARG --required purpose
+
+    # uv is not available via apt. Avoid snapd (systemd) by using pipx instead.
+    RUN __install python3-venv pipx
+    ENV PATH="/opt/uv/bin:$PATH"
+    RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
 
     IF test "$purpose" = build
         RUN __install ninja-build gcc ccache libsnappy-dev zlib1g-dev
@@ -501,21 +549,58 @@ UBUNTU_ENV:
     DO --pass-args tools+ADD_C_COMPILER
     DO +PREP_CMAKE
 
-CENTOS_ENV:
-    COMMAND
-    ARG --required version
-    FROM --pass-args tools+init-env --from centos:$version
-    # Update repositories to use vault.centos.org
-    RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
-        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-    RUN yum -y install epel-release && yum -y update
-    RUN yum -y install curl gcc gcc-c++ make
-    ARG --required purpose
+env.centos9:
+    DO --pass-args +CENTOS_STREAM_ENV --version=9 --image=quay.io/centos/centos:stream9
 
+env.centos10:
+    DO --pass-args +CENTOS_STREAM_ENV --version=10 --image=quay.io/centos/centos:stream10
+
+env.almalinux8:
+    DO --pass-args +CENTOS_STREAM_ENV --version 8 --image=$default_search_registry/library/almalinux:8
+
+env.almalinux9:
+    DO --pass-args +CENTOS_STREAM_ENV --version 9 --image=$default_search_registry/library/almalinux:9
+
+env.almalinux10:
+    DO --pass-args +CENTOS_STREAM_ENV --version 10 --image=$default_search_registry/library/almalinux:10
+
+CENTOS_STREAM_ENV:
+    FUNCTION
+    ARG --required version
+    ARG --required image
+    FROM --pass-args tools+init-env --from "$image"
+
+    RUN yum -y install epel-release
+    RUN yum -y install "dnf-command(config-manager)"
+    IF test "$version" = "8"
+        RUN yum config-manager --enable powertools
+    ELSE
+        RUN yum config-manager --enable crb
+    END
+
+    RUN yum -y install gcc gcc-c++ make
+
+    ARG --required purpose
     IF test "$purpose" = build
         RUN yum -y install ninja-build ccache snappy-devel zlib-devel
     ELSE IF test "$purpose" = test
         RUN yum -y install ninja-build snappy
+    END
+
+    IF test "$version" = "8"
+        # Neither uv nor pipx is available via yum.
+        # uv requires Python 3.7+, but system default is Python 3.6. yum provides Python 3.8+.
+        RUN yum -y install python38
+        RUN python3 -m pip install --no-warn-script-location pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin python3 -m pipx install uv
+    ELSE IF test "$version" = "9"
+        # uv is not available via yum. Avoid snapd (systemd) by using pipx instead.
+        RUN yum -y install pipx
+        ENV PATH="/opt/uv/bin:$PATH"
+        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
+    ELSE
+        RUN yum -y install uv
     END
 
     DO --pass-args tools+ADD_SASL --cyrus_dev_pkg="cyrus-sasl-devel" --cyrus_rt_pkg="cyrus-sasl-lib"

@@ -16,11 +16,12 @@
 
 
 #include <mongoc/mongoc.h>
+
 #include <stdio.h>
 
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
    mongoc_database_t *database;
    mongoc_client_t *client;
@@ -34,56 +35,56 @@ main (int argc, char *argv[])
    bool r;
 
    if (argc < 2 || argc > 3) {
-      fprintf (stderr, "usage: %s HOSTNAME [PORT]\n", argv[0]);
+      fprintf(stderr, "usage: %s HOSTNAME [PORT]\n", argv[0]);
       return EXIT_FAILURE;
    }
 
-   mongoc_init ();
+   mongoc_init();
 
-   port = (argc == 3) ? atoi (argv[2]) : 27017;
+   port = (argc == 3) ? atoi(argv[2]) : 27017;
 
-   if (!strncmp (argv[1], "mongodb://", 10) || !strncmp (argv[1], "mongodb+srv://", 14)) {
-      host_and_port = bson_strdup (argv[1]);
+   if (!strncmp(argv[1], "mongodb://", 10) || !strncmp(argv[1], "mongodb+srv://", 14)) {
+      host_and_port = bson_strdup(argv[1]);
    } else {
-      host_and_port = bson_strdup_printf ("mongodb://%s:%hu", argv[1], port);
+      host_and_port = bson_strdup_printf("mongodb://%s:%hu", argv[1], port);
    }
 
-   uri = mongoc_uri_new_with_error (host_and_port, &error);
+   uri = mongoc_uri_new_with_error(host_and_port, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               host_and_port,
-               error.message);
+      fprintf(stderr,
+              "failed to parse URI: %s\n"
+              "error message:       %s\n",
+              host_and_port,
+              error.message);
       return EXIT_FAILURE;
    }
-   bson_free (host_and_port);
+   bson_free(host_and_port);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri(uri);
    if (!client) {
       return EXIT_FAILURE;
    }
 
-   mongoc_client_set_error_api (client, 2);
+   mongoc_client_set_error_api(client, 2);
 
-   bson_init (&ping);
-   bson_append_int32 (&ping, "ping", 4, 1);
-   database = mongoc_client_get_database (client, "test");
-   r = mongoc_database_command_with_opts (database, &ping, NULL, NULL, &reply, &error);
+   bson_init(&ping);
+   bson_append_int32(&ping, "ping", 4, 1);
+   database = mongoc_client_get_database(client, "test");
+   r = mongoc_database_command_with_opts(database, &ping, NULL, NULL, &reply, &error);
 
    if (r) {
-      str = bson_as_canonical_extended_json (&reply, NULL);
-      fprintf (stdout, "%s\n", str);
-      bson_free (str);
+      str = bson_as_canonical_extended_json(&reply, NULL);
+      fprintf(stdout, "%s\n", str);
+      bson_free(str);
    } else {
-      fprintf (stderr, "Ping failure: %s\n", error.message);
+      fprintf(stderr, "Ping failure: %s\n", error.message);
    }
 
-   bson_destroy (&ping);
-   bson_destroy (&reply);
-   mongoc_database_destroy (database);
-   mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
+   bson_destroy(&ping);
+   bson_destroy(&reply);
+   mongoc_database_destroy(database);
+   mongoc_uri_destroy(uri);
+   mongoc_client_destroy(client);
 
    return r ? 0 : 3;
 }

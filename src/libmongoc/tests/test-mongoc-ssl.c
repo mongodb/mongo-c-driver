@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-#include "TestSuite.h"
-#include <mongoc/mongoc-config.h>
-#include "test-conveniences.h"
 #include <common-string-private.h>
+
+#include <mongoc/mongoc-config.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl-private.h>
@@ -50,7 +52,7 @@ MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK "tlsdisableocspendpointcheck"
 */
 
 static void
-test_mongoc_ssl_opts_from_bson (void)
+test_mongoc_ssl_opts_from_bson(void)
 {
    testcase_t tests[] = {{
                             "test all options set",
@@ -142,83 +144,83 @@ test_mongoc_ssl_opts_from_bson (void)
    for (test = tests; test->bson != NULL; test++) {
       mongoc_ssl_opt_t ssl_opt = {0};
       mcommon_string_append_t errmsg;
-      mcommon_string_new_as_append (&errmsg);
-      bool ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), &errmsg);
+      mcommon_string_new_as_append(&errmsg);
+      bool ok = _mongoc_ssl_opts_from_bson(&ssl_opt, tmp_bson(test->bson), &errmsg);
 
-      MONGOC_DEBUG ("testcase: %s", test->bson);
+      MONGOC_DEBUG("testcase: %s", test->bson);
       if (test->expect_error) {
-         ASSERT_CONTAINS (mcommon_str_from_append (&errmsg), test->expect_error);
-         ASSERT (!ok);
+         ASSERT_CONTAINS(mcommon_str_from_append(&errmsg), test->expect_error);
+         ASSERT(!ok);
       } else {
          if (!ok) {
-            test_error ("unexpected error parsing: %s", mcommon_str_from_append (&errmsg));
+            test_error("unexpected error parsing: %s", mcommon_str_from_append(&errmsg));
          }
       }
 
       if (!test->expect_pem_file) {
-         ASSERT (!ssl_opt.pem_file);
+         ASSERT(!ssl_opt.pem_file);
       } else {
-         ASSERT (ssl_opt.pem_file);
-         ASSERT_CMPSTR (test->expect_pem_file, ssl_opt.pem_file);
+         ASSERT(ssl_opt.pem_file);
+         ASSERT_CMPSTR(test->expect_pem_file, ssl_opt.pem_file);
       }
 
       if (!test->expect_pem_pwd) {
-         ASSERT (!ssl_opt.pem_pwd);
+         ASSERT(!ssl_opt.pem_pwd);
       } else {
-         ASSERT (ssl_opt.pem_pwd);
-         ASSERT_CMPSTR (test->expect_pem_pwd, ssl_opt.pem_pwd);
+         ASSERT(ssl_opt.pem_pwd);
+         ASSERT_CMPSTR(test->expect_pem_pwd, ssl_opt.pem_pwd);
       }
 
       if (!test->expect_ca_file) {
-         ASSERT (!ssl_opt.ca_file);
+         ASSERT(!ssl_opt.ca_file);
       } else {
-         ASSERT (ssl_opt.ca_file);
-         ASSERT_CMPSTR (test->expect_ca_file, ssl_opt.ca_file);
+         ASSERT(ssl_opt.ca_file);
+         ASSERT_CMPSTR(test->expect_ca_file, ssl_opt.ca_file);
       }
 
-      ASSERT (test->expect_weak_cert_validation == ssl_opt.weak_cert_validation);
-      ASSERT (test->expect_allow_invalid_hostname == ssl_opt.allow_invalid_hostname);
-      ASSERT (test->expect_disable_ocsp_endpoint_check == _mongoc_ssl_opts_disable_ocsp_endpoint_check (&ssl_opt));
-      ASSERT (test->expect_disable_certificate_revocation_check ==
-              _mongoc_ssl_opts_disable_certificate_revocation_check (&ssl_opt));
+      ASSERT(test->expect_weak_cert_validation == ssl_opt.weak_cert_validation);
+      ASSERT(test->expect_allow_invalid_hostname == ssl_opt.allow_invalid_hostname);
+      ASSERT(test->expect_disable_ocsp_endpoint_check == _mongoc_ssl_opts_disable_ocsp_endpoint_check(&ssl_opt));
+      ASSERT(test->expect_disable_certificate_revocation_check ==
+             _mongoc_ssl_opts_disable_certificate_revocation_check(&ssl_opt));
 
       /* It is not possible to set ca_dir or crl_file. */
-      ASSERT (!ssl_opt.ca_dir);
-      ASSERT (!ssl_opt.crl_file);
+      ASSERT(!ssl_opt.ca_dir);
+      ASSERT(!ssl_opt.crl_file);
 
-      _mongoc_ssl_opts_cleanup (&ssl_opt, true /* free_internal */);
-      mcommon_string_from_append_destroy (&errmsg);
+      _mongoc_ssl_opts_cleanup(&ssl_opt, true /* free_internal */);
+      mcommon_string_from_append_destroy(&errmsg);
    }
 }
 
 /* Test that it is safe to call _mongoc_ssl_opts_cleanup on a zero'd struct. */
 static void
-test_mongoc_ssl_opts_cleanup_zero (void)
+test_mongoc_ssl_opts_cleanup_zero(void)
 {
    mongoc_ssl_opt_t ssl_opt = {0};
 
-   _mongoc_ssl_opts_cleanup (&ssl_opt, true /* free_internal */);
-   _mongoc_ssl_opts_cleanup (&ssl_opt, false /* free_internal */);
+   _mongoc_ssl_opts_cleanup(&ssl_opt, true /* free_internal */);
+   _mongoc_ssl_opts_cleanup(&ssl_opt, false /* free_internal */);
 }
 
 // `test_non_existant_cafile` is a regression test for CDRIVER-5736.
 static void
-test_non_existant_cafile (void)
+test_non_existant_cafile(void)
 {
-   mongoc_client_t *client = mongoc_client_new ("mongodb://localhost:27017/?tls=true&tlsCAFile=/nonexistant/ca.pem");
+   mongoc_client_t *client = mongoc_client_new("mongodb://localhost:27017/?tls=true&tlsCAFile=/nonexistant/ca.pem");
    // Ignore return. May return true on Windows hosts. See CDRIVER-5747.
-   mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
-   mongoc_client_destroy (client);
+   mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, NULL);
+   mongoc_client_destroy(client);
 }
 
 #endif /* MONGOC_ENABLE_SSL */
 
 void
-test_ssl_install (TestSuite *suite)
+test_ssl_install(TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_Add (suite, "/ssl_opt/from_bson", test_mongoc_ssl_opts_from_bson);
-   TestSuite_Add (suite, "/ssl_opt/cleanup", test_mongoc_ssl_opts_cleanup_zero);
-   TestSuite_Add (suite, "/ssl_opt/non-existant-cafile", test_non_existant_cafile);
+   TestSuite_Add(suite, "/ssl_opt/from_bson", test_mongoc_ssl_opts_from_bson);
+   TestSuite_Add(suite, "/ssl_opt/cleanup", test_mongoc_ssl_opts_cleanup_zero);
+   TestSuite_Add(suite, "/ssl_opt/non-existant-cafile", test_non_existant_cafile);
 #endif /* MONGOC_ENABLE_SSL */
 }

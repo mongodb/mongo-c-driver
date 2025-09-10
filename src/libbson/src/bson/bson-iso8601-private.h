@@ -21,15 +21,16 @@
 #define BSON_ISO8601_PRIVATE_H
 
 
-#include <bson/bson-compat.h>
-#include <bson/bson-macros.h>
 #include <common-string-private.h>
+
+#include <bson/compat.h>
+#include <bson/macros.h>
 
 
 BSON_BEGIN_DECLS
 
 bool
-_bson_iso8601_date_parse (const char *str, int32_t len, int64_t *out, bson_error_t *error);
+_bson_iso8601_date_parse(const char *str, int32_t len, int64_t *out, bson_error_t *error);
 
 BSON_END_DECLS
 

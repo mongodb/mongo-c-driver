@@ -1,5 +1,36 @@
-Unreleased
-==========
+libbson 2.2.0 (Unreleased)
+==========================
+
+## Deprecated
+
+- Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
+
+libbson 2.1.0
+=============
+
+## Fixes
+
+* The uninstall script for Windows is fixed so it no longer "succeeds" with a non-zero `%ERRORLABEL%` value.
+* The uninstall script for non-Windows environments now calls `find "$dir" -maxdepth 1` instead of `ls --almost-all "$dir"` when detecting non-empty directories to fix macOS compatibility.
+
+## Changed
+
+* The CMake project now sets a CMake policy max version of `4.0` (previously unset).
+
+## Removed
+
+* Support for Debian 9 and Debian 10.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Roberto C. Sánchez
+  * Micah Scott
+
+libbson 2.0.2
+=============
 
 Fixes:
 
@@ -11,6 +42,25 @@ Fixes:
     validated with a fixed set of rules and is treated as an opaque JavaScript
     object.
   * A document nesting limit is now enforced during validation.
+
+libbson 1.30.5
+==============
+
+Fixes:
+
+* Various fixes have been applied to the `bson_validate` family of functions,
+  with some minor behavioral changes.
+  * Previously accepted invalid UTF-8 will be rejected when `BSON_VALIDATE_UTF8`
+    is specified.
+  * The scope document in a deprecated "code with scope" element is now
+    validated with a fixed set of rules and is treated as an opaque JavaScript
+    object.
+  * A document nesting limit is now enforced during validation.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
 
 libbson 2.0.1
 =============

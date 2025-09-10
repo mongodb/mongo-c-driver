@@ -20,14 +20,14 @@
 #define MONGOC_STREAM_TLS_OPENSSL_H
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 
-MONGOC_EXPORT (mongoc_stream_t *)
-mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
+MONGOC_EXPORT(mongoc_stream_t *)
+mongoc_stream_tls_openssl_new(mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS

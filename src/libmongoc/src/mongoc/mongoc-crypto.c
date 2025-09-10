@@ -17,9 +17,11 @@
 
 #ifdef MONGOC_ENABLE_CRYPTO
 
-#include <bson/bson.h>
-#include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-crypto-private.h>
+
+#include <mongoc/mongoc-log.h>
+
+#include <bson/bson.h>
 #if defined(MONGOC_ENABLE_CRYPTO_LIBCRYPTO)
 #include <mongoc/mongoc-crypto-openssl-private.h>
 #elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
@@ -29,7 +31,7 @@
 #endif
 
 void
-mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo)
+mongoc_crypto_init(mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo)
 {
    crypto->pbkdf = NULL;
    crypto->hmac = NULL;
@@ -63,39 +65,39 @@ mongoc_crypto_init (mongoc_crypto_t *crypto, mongoc_crypto_hash_algorithm_t algo
       crypto->hash = mongoc_crypto_cng_sha256;
 #endif
    }
-   BSON_ASSERT (crypto->pbkdf);
-   BSON_ASSERT (crypto->hmac);
-   BSON_ASSERT (crypto->hash);
+   BSON_ASSERT(crypto->pbkdf);
+   BSON_ASSERT(crypto->hmac);
+   BSON_ASSERT(crypto->hash);
    crypto->algorithm = algo;
 }
 
 bool
-mongoc_crypto_pbkdf (mongoc_crypto_t *crypto,
-                     const char *password,
-                     size_t password_len,
-                     const uint8_t *salt,
-                     size_t salt_len,
-                     uint32_t iterations,
-                     size_t output_len,
-                     unsigned char *output)
+mongoc_crypto_pbkdf(mongoc_crypto_t *crypto,
+                    const char *password,
+                    size_t password_len,
+                    const uint8_t *salt,
+                    size_t salt_len,
+                    uint32_t iterations,
+                    size_t output_len,
+                    unsigned char *output)
 {
-   return crypto->pbkdf (crypto, password, password_len, salt, salt_len, iterations, output_len, output);
+   return crypto->pbkdf(crypto, password, password_len, salt, salt_len, iterations, output_len, output);
 }
 
 void
-mongoc_crypto_hmac (mongoc_crypto_t *crypto,
-                    const void *key,
-                    int key_len,
-                    const unsigned char *data,
-                    int data_len,
-                    unsigned char *hmac_out)
+mongoc_crypto_hmac(mongoc_crypto_t *crypto,
+                   const void *key,
+                   int key_len,
+                   const unsigned char *data,
+                   int data_len,
+                   unsigned char *hmac_out)
 {
-   crypto->hmac (crypto, key, key_len, data, data_len, hmac_out);
+   crypto->hmac(crypto, key, key_len, data, data_len, hmac_out);
 }
 
 bool
-mongoc_crypto_hash (mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *output)
+mongoc_crypto_hash(mongoc_crypto_t *crypto, const unsigned char *input, const size_t input_len, unsigned char *output)
 {
-   return crypto->hash (crypto, input, input_len, output);
+   return crypto->hash(crypto, input, input_len, output);
 }
 #endif

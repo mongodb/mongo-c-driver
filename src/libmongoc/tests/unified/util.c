@@ -14,41 +14,42 @@
  * limitations under the License.
  */
 
-#include "util.h"
+#include "./util.h"
 
-#include "test-conveniences.h"
-#include "TestSuite.h"
 #include <mlib/cmp.h>
 #include <mlib/loop.h>
 
+#include <TestSuite.h>
+#include <test-conveniences.h>
+
 static int
-cmp_key (const void *a, const void *b)
+cmp_key(const void *a, const void *b)
 {
-   return strcmp (*(const char **) a, *(const char **) b);
+   return strcmp(*(const char **)a, *(const char **)b);
 }
 
 bson_t *
-bson_copy_and_sort (const bson_t *in)
+bson_copy_and_sort(const bson_t *in)
 {
-   bson_t *out = bson_new ();
+   bson_t *out = bson_new();
    bson_iter_t iter;
    const char **keys;
-   int nkeys = bson_count_keys (in);
+   int nkeys = bson_count_keys(in);
    int i = 0;
 
-   keys = bson_malloc0 (sizeof (const char *) * nkeys);
-   BSON_FOREACH (in, iter)
+   keys = bson_malloc0(sizeof(const char *) * nkeys);
+   BSON_FOREACH(in, iter)
    {
-      keys[i] = bson_iter_key (&iter);
+      keys[i] = bson_iter_key(&iter);
       i++;
    }
 
-   qsort ((void *) keys, nkeys, sizeof (const char *), cmp_key);
+   qsort((void *)keys, nkeys, sizeof(const char *), cmp_key);
    for (i = 0; i < nkeys; i++) {
-      BSON_ASSERT (bson_iter_init_find (&iter, in, keys[i]));
-      BSON_APPEND_VALUE (out, keys[i], bson_iter_value (&iter));
+      BSON_ASSERT(bson_iter_init_find(&iter, in, keys[i]));
+      BSON_APPEND_VALUE(out, keys[i], bson_iter_value(&iter));
    }
-   bson_free ((void *) keys);
+   bson_free((void *)keys);
    return out;
 }
 
@@ -73,51 +74,51 @@ mcommon_string_and_type_t bson_type_map[] = {
 };
 
 bson_type_t
-bson_type_from_string (const char *in)
+bson_type_from_string(const char *in)
 {
    mlib_foreach_arr (mcommon_string_and_type_t, it, bson_type_map) {
-      if (0 == strcmp (in, it->str)) {
+      if (0 == strcmp(in, it->str)) {
          return it->type;
       }
    }
-   test_error ("unrecognized type string: %s\n", in);
+   test_error("unrecognized type string: %s\n", in);
    return BSON_TYPE_EOD;
 }
 
 const char *
-bson_type_to_string (bson_type_t btype)
+bson_type_to_string(bson_type_t btype)
 {
    mlib_foreach_arr (mcommon_string_and_type_t, it, bson_type_map) {
       if (btype == it->type) {
          return it->str;
       }
    }
-   test_error ("unrecognized type: %d\n", (int) btype);
+   test_error("unrecognized type: %d\n", (int)btype);
    return "invalid";
 }
 
 static void
-test_copy_and_sort (void)
+test_copy_and_sort(void)
 {
-   bson_t *in = tmp_bson ("{'b': 1, 'a': 1, 'd': 1, 'c': 1}");
-   bson_t *expect = tmp_bson ("{'a': 1, 'b': 1, 'c': 1, 'd': 1}");
-   bson_t *out = bson_copy_and_sort (in);
-   if (!bson_equal (expect, out)) {
-      test_error ("expected: %s, got: %s", tmp_json (expect), tmp_json (out));
+   bson_t *in = tmp_bson("{'b': 1, 'a': 1, 'd': 1, 'c': 1}");
+   bson_t *expect = tmp_bson("{'a': 1, 'b': 1, 'c': 1, 'd': 1}");
+   bson_t *out = bson_copy_and_sort(in);
+   if (!bson_equal(expect, out)) {
+      test_error("expected: %s, got: %s", tmp_json(expect), tmp_json(out));
    }
-   bson_destroy (out);
+   bson_destroy(out);
 }
 
 void
-test_bson_util_install (TestSuite *suite)
+test_bson_util_install(TestSuite *suite)
 {
-   TestSuite_Add (suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
+   TestSuite_Add(suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
 }
 
 /* CMAP (CDRIVER-3525) isn't planned for implementation in this driver. Many tests that would otherwise require CMAP
  * are used in partial form by skipping individual checks that involve unsupported events. */
 bool
-is_unsupported_event_type (const char *event_type)
+is_unsupported_event_type(const char *event_type)
 {
    char *unsupported_event_types[] = {"poolCreatedEvent",
                                       "poolReadyEvent",
@@ -135,7 +136,7 @@ is_unsupported_event_type (const char *event_type)
    char **iter;
 
    for (iter = unsupported_event_types; *iter != NULL; iter++) {
-      if (0 == bson_strcasecmp (event_type, *iter)) {
+      if (0 == bson_strcasecmp(event_type, *iter)) {
          return true;
       }
    }
@@ -143,30 +144,30 @@ is_unsupported_event_type (const char *event_type)
 }
 
 int64_t
-usecs_since_epoch (void)
+usecs_since_epoch(void)
 {
    struct timeval tv;
-   BSON_ASSERT (bson_gettimeofday (&tv) == 0);
+   BSON_ASSERT(bson_gettimeofday(&tv) == 0);
 
-   BSON_ASSERT (mlib_in_range (int64_t, tv.tv_sec));
-   BSON_ASSERT (mlib_in_range (int64_t, tv.tv_usec));
+   BSON_ASSERT(mlib_in_range(int64_t, tv.tv_sec));
+   BSON_ASSERT(mlib_in_range(int64_t, tv.tv_usec));
 
-   const int64_t secs = (int64_t) tv.tv_sec;
-   const int64_t usecs = (int64_t) tv.tv_usec;
+   const int64_t secs = (int64_t)tv.tv_sec;
+   const int64_t usecs = (int64_t)tv.tv_usec;
 
    const int64_t factor = 1000000;
 
-   BSON_ASSERT (INT64_MAX / factor >= secs);
-   BSON_ASSERT (INT64_MAX - (factor * secs) >= usecs);
+   BSON_ASSERT(INT64_MAX / factor >= secs);
+   BSON_ASSERT(INT64_MAX - (factor * secs) >= usecs);
 
    return secs * factor + usecs;
 }
 
 const char *
-mongoc_strcasestr (const char *haystack, const char *needle)
+mongoc_strcasestr(const char *haystack, const char *needle)
 {
-   BSON_ASSERT_PARAM (haystack);
-   BSON_ASSERT_PARAM (needle);
+   BSON_ASSERT_PARAM(haystack);
+   BSON_ASSERT_PARAM(needle);
 
    if (!*needle) {
       return haystack;
@@ -177,7 +178,7 @@ mongoc_strcasestr (const char *haystack, const char *needle)
       const char *h_start = h;
       const char *n = needle;
 
-      while (*n && *h && tolower (*h) == tolower (*n)) {
+      while (*n && *h && tolower(*h) == tolower(*n)) {
          h++;
          n++;
       }

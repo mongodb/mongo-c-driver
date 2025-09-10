@@ -19,17 +19,17 @@
 #ifndef MONGOC_STREAM_BUFFERED_H
 #define MONGOC_STREAM_BUFFERED_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-stream.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
 
 
-MONGOC_EXPORT (mongoc_stream_t *)
-mongoc_stream_buffered_new (mongoc_stream_t *base_stream, size_t buffer_size) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(mongoc_stream_t *)
+mongoc_stream_buffered_new(mongoc_stream_t *base_stream, size_t buffer_size) BSON_GNUC_WARN_UNUSED_RESULT;
 
 
 BSON_END_DECLS

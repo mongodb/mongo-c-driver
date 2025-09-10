@@ -19,17 +19,17 @@
 #ifndef MONGOC_INIT_H
 #define MONGOC_INIT_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 
 
-MONGOC_EXPORT (void)
-mongoc_init (void);
-MONGOC_EXPORT (void)
-mongoc_cleanup (void);
+MONGOC_EXPORT(void)
+mongoc_init(void);
+MONGOC_EXPORT(void)
+mongoc_cleanup(void);
 
 
 BSON_END_DECLS

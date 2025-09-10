@@ -19,11 +19,11 @@
 #ifndef MONGOC_GRIDFS_PRIVATE_H
 #define MONGOC_GRIDFS_PRIVATE_H
 
-#include <bson/bson.h>
-
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-write-concern.h>
-#include <mongoc/mongoc-client.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
@@ -37,7 +37,7 @@ struct _mongoc_gridfs_t {
 
 
 mongoc_gridfs_t *
-_mongoc_gridfs_new (mongoc_client_t *client, const char *db, const char *prefix, bson_error_t *error);
+_mongoc_gridfs_new(mongoc_client_t *client, const char *db, const char *prefix, bson_error_t *error);
 
 
 BSON_END_DECLS

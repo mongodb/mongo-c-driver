@@ -19,9 +19,11 @@
 #if defined(__linux__)
 
 #include <mongoc/mongoc.h>
-#include <stdio.h>
+
+#include <TestSuite.h>
+
 #include <signal.h>
-#include "TestSuite.h"
+#include <stdio.h>
 
 #ifndef SIGSTOP
 #define SIGSTOP 19
@@ -29,7 +31,7 @@
 static char *ca_file;
 
 static int
-ping (void)
+ping(void)
 {
    mongoc_client_t *client;
    mongoc_database_t *database;
@@ -39,53 +41,53 @@ ping (void)
    char *uri;
    int ret = EXIT_FAILURE;
 
-   uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s", ca_file);
-   ASSERT ((client = mongoc_client_new (uri)));
+   uri = bson_strdup_printf("mongodb://localhost/?tls=true&tlsCAFile=%s", ca_file);
+   ASSERT((client = mongoc_client_new(uri)));
 
-   bson_init (&ping);
-   bson_append_int32 (&ping, "ping", 4, 1);
-   database = mongoc_client_get_database (client, "cache");
+   bson_init(&ping);
+   bson_append_int32(&ping, "ping", 4, 1);
+   database = mongoc_client_get_database(client, "cache");
 
-   if (mongoc_database_command_with_opts (database, &ping, NULL, NULL, &reply, &error)) {
-      MONGOC_DEBUG ("Ping success\n");
+   if (mongoc_database_command_with_opts(database, &ping, NULL, NULL, &reply, &error)) {
+      MONGOC_DEBUG("Ping success\n");
       ret = EXIT_SUCCESS;
    } else {
-      MONGOC_DEBUG ("Ping failure: %s\n", error.message);
-      ASSERT_ERROR_CONTAINS (
+      MONGOC_DEBUG("Ping failure: %s\n", error.message);
+      ASSERT_ERROR_CONTAINS(
          error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "TLS handshake failed");
    }
 
-   bson_free (uri);
-   bson_destroy (&ping);
-   bson_destroy (&reply);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
+   bson_free(uri);
+   bson_destroy(&ping);
+   bson_destroy(&reply);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
 
    return ret;
 }
 #endif
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
-   (void) argc;
-   (void) argv;
+   (void)argc;
+   (void)argv;
 
 #if defined(__linux__)
    if (argc != 2) {
-      fprintf (stderr, "usage: %s CA_FILE_PATH\n", argv[0]);
+      fprintf(stderr, "usage: %s CA_FILE_PATH\n", argv[0]);
       return EXIT_FAILURE;
    }
 
    ca_file = argv[1];
 
-   mongoc_init ();
+   mongoc_init();
 
-   ASSERT (ping () == EXIT_FAILURE);
-   raise (SIGSTOP);
-   ASSERT (ping () == EXIT_FAILURE);
+   ASSERT(ping() == EXIT_FAILURE);
+   raise(SIGSTOP);
+   ASSERT(ping() == EXIT_FAILURE);
 
-   mongoc_cleanup ();
+   mongoc_cleanup();
 #endif
    return EXIT_SUCCESS;
 }

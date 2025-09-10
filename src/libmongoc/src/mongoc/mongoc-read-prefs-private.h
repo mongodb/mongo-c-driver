@@ -19,10 +19,11 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-cluster-private.h>
+
 #include <mongoc/mongoc-read-prefs.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
@@ -42,26 +43,23 @@ typedef struct _mongoc_assemble_query_result_t {
 } mongoc_assemble_query_result_t;
 
 
-#define ASSEMBLE_QUERY_RESULT_INIT   \
-   {                                 \
-      NULL, false, MONGOC_QUERY_NONE \
-   }
+#define ASSEMBLE_QUERY_RESULT_INIT {NULL, false, MONGOC_QUERY_NONE}
 
 const char *
-_mongoc_read_mode_as_str (mongoc_read_mode_t mode);
+_mongoc_read_mode_as_str(mongoc_read_mode_t mode);
 
 void
-assemble_query (const mongoc_read_prefs_t *read_prefs,
-                const mongoc_server_stream_t *server_stream,
-                const bson_t *query_bson,
-                int32_t initial_flags,
-                mongoc_assemble_query_result_t *result);
+assemble_query(const mongoc_read_prefs_t *read_prefs,
+               const mongoc_server_stream_t *server_stream,
+               const bson_t *query_bson,
+               int32_t initial_flags,
+               mongoc_assemble_query_result_t *result);
 
 void
-assemble_query_result_cleanup (mongoc_assemble_query_result_t *result);
+assemble_query_result_cleanup(mongoc_assemble_query_result_t *result);
 
 bool
-_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs, bson_error_t *error);
+_mongoc_read_prefs_validate(const mongoc_read_prefs_t *read_prefs, bson_error_t *error);
 
 typedef enum {
    MONGOC_READ_PREFS_CONTENT_FLAG_MODE = (1 << 0),
@@ -71,9 +69,9 @@ typedef enum {
 } mongoc_read_prefs_content_flags_t;
 
 bool
-mongoc_read_prefs_append_contents_to_bson (const mongoc_read_prefs_t *read_prefs,
-                                           bson_t *bson,
-                                           mongoc_read_prefs_content_flags_t flags);
+mongoc_read_prefs_append_contents_to_bson(const mongoc_read_prefs_t *read_prefs,
+                                          bson_t *bson,
+                                          mongoc_read_prefs_content_flags_t flags);
 
 #define IS_PREF_PRIMARY(_pref) (!(_pref) || ((_pref)->mode == MONGOC_READ_PRIMARY))
 

@@ -19,9 +19,9 @@
 #ifndef MONGOC_COLLECTION_PRIVATE_H
 #define MONGOC_COLLECTION_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-client.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 
@@ -41,18 +41,18 @@ struct _mongoc_collection_t {
 
 
 mongoc_collection_t *
-_mongoc_collection_new (mongoc_client_t *client,
-                        const char *db,
-                        const char *collection,
-                        const mongoc_read_prefs_t *read_prefs,
-                        const mongoc_read_concern_t *read_concern,
-                        const mongoc_write_concern_t *write_concern);
+_mongoc_collection_new(mongoc_client_t *client,
+                       const char *db,
+                       const char *collection,
+                       const mongoc_read_prefs_t *read_prefs,
+                       const mongoc_read_concern_t *read_concern,
+                       const mongoc_write_concern_t *write_concern);
 
 bool
-_mongoc_collection_create_index_if_not_exists (mongoc_collection_t *collection,
-                                               const bson_t *keys,
-                                               const bson_t *opts,
-                                               bson_error_t *error);
+_mongoc_collection_create_index_if_not_exists(mongoc_collection_t *collection,
+                                              const bson_t *keys,
+                                              const bson_t *opts,
+                                              bson_error_t *error);
 
 BSON_END_DECLS
 

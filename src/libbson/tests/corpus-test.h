@@ -17,9 +17,9 @@
 #ifndef CORPUS_TEST_H
 #define CORPUS_TEST_H
 
-#include "TestSuite.h"
-
 #include <bson/bson.h>
+
+#include <TestSuite.h>
 
 /*
 See:
@@ -66,18 +66,18 @@ typedef struct _test_bson_parse_error_type_t {
    uint32_t str_len;
 } test_bson_parse_error_type_t;
 
-typedef void (*test_bson_valid_cb) (test_bson_valid_type_t *test);
-typedef void (*test_bson_decode_error_cb) (test_bson_decode_error_type_t *test);
-typedef void (*test_bson_parse_error_cb) (test_bson_parse_error_type_t *test);
+typedef void (*test_bson_valid_cb)(test_bson_valid_type_t *test);
+typedef void (*test_bson_decode_error_cb)(test_bson_decode_error_type_t *test);
+typedef void (*test_bson_parse_error_cb)(test_bson_parse_error_type_t *test);
 
 void
-corpus_test_print_description (const char *description);
+corpus_test_print_description(const char *description);
 uint8_t *
-corpus_test_unhexlify (bson_iter_t *iter, uint32_t *bson_str_len);
+corpus_test_unhexlify(bson_iter_t *iter, uint32_t *bson_str_len);
 void
-corpus_test (bson_t *scenario,
-             test_bson_valid_cb valid,
-             test_bson_decode_error_cb decode_error,
-             test_bson_parse_error_cb parse_error);
+corpus_test(bson_t *scenario,
+            test_bson_valid_cb valid,
+            test_bson_decode_error_cb decode_error,
+            test_bson_parse_error_cb parse_error);
 
 #endif

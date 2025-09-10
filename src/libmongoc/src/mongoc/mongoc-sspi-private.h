@@ -19,8 +19,9 @@
 #ifndef MONGOC_SSPI_PRIVATE_H
 #define MONGOC_SSPI_PRIVATE_H
 
-#include <bson/bson.h>
 #include <mongoc/mongoc-sasl-private.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
@@ -29,8 +30,9 @@ BSON_BEGIN_DECLS
 #define SECURITY_WIN32 1 /* Required for SSPI */
 
 #include <Windows.h>
-#include <limits.h>
 #include <sspi.h>
+
+#include <limits.h>
 #include <string.h>
 
 #define MONGOC_SSPI_AUTH_GSS_ERROR -1
@@ -51,29 +53,29 @@ typedef struct {
 } mongoc_sspi_client_state_t;
 
 void
-_mongoc_sspi_set_gsserror (DWORD errCode, const SEC_CHAR *msg);
+_mongoc_sspi_set_gsserror(DWORD errCode, const SEC_CHAR *msg);
 
 void
-_mongoc_sspi_destroy_sspi_client_state (mongoc_sspi_client_state_t *state);
+_mongoc_sspi_destroy_sspi_client_state(mongoc_sspi_client_state_t *state);
 
 int
-_mongoc_sspi_auth_sspi_client_init (WCHAR *service,
-                                    ULONG flags,
-                                    WCHAR *user,
-                                    ULONG ulen,
-                                    WCHAR *domain,
-                                    ULONG dlen,
-                                    WCHAR *password,
-                                    ULONG plen,
-                                    mongoc_sspi_client_state_t *state);
+_mongoc_sspi_auth_sspi_client_init(WCHAR *service,
+                                   ULONG flags,
+                                   WCHAR *user,
+                                   ULONG ulen,
+                                   WCHAR *domain,
+                                   ULONG dlen,
+                                   WCHAR *password,
+                                   ULONG plen,
+                                   mongoc_sspi_client_state_t *state);
 int
-_mongoc_sspi_auth_sspi_client_step (mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
+_mongoc_sspi_auth_sspi_client_step(mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
 
 int
-_mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
+_mongoc_sspi_auth_sspi_client_unwrap(mongoc_sspi_client_state_t *state, SEC_CHAR *challenge);
 
 int
-_mongoc_sspi_auth_sspi_client_wrap (
+_mongoc_sspi_auth_sspi_client_wrap(
    mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, ULONG ulen, INT protect);
 
 

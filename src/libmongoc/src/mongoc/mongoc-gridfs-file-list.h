@@ -19,10 +19,10 @@
 #ifndef MONGOC_GRIDFS_FILE_LIST_H
 #define MONGOC_GRIDFS_FILE_LIST_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-gridfs-file.h>
+#include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
@@ -31,12 +31,12 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_gridfs_file_list_t mongoc_gridfs_file_list_t;
 
 
-MONGOC_EXPORT (mongoc_gridfs_file_t *)
-mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list) BSON_GNUC_WARN_UNUSED_RESULT;
-MONGOC_EXPORT (void)
-mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
-MONGOC_EXPORT (bool)
-mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list, bson_error_t *error);
+MONGOC_EXPORT(mongoc_gridfs_file_t *)
+mongoc_gridfs_file_list_next(mongoc_gridfs_file_list_t *list) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(void)
+mongoc_gridfs_file_list_destroy(mongoc_gridfs_file_list_t *list);
+MONGOC_EXPORT(bool)
+mongoc_gridfs_file_list_error(mongoc_gridfs_file_list_t *list, bson_error_t *error);
 
 
 BSON_END_DECLS

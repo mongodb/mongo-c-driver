@@ -20,10 +20,11 @@
 #define MONGOC_STREAM_TLS_OPENSSL_PRIVATE_H
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-#include <bson/bson.h>
-#include <openssl/ssl.h>
-
 #include <mongoc/mongoc-stream-tls.h>
+
+#include <bson/bson.h>
+
+#include <openssl/ssl.h>
 
 BSON_BEGIN_DECLS
 
@@ -38,7 +39,7 @@ typedef struct {
 } mongoc_openssl_ocsp_opt_t;
 
 void
-mongoc_openssl_ocsp_opt_destroy (void *ocsp_opt);
+mongoc_openssl_ocsp_opt_destroy(void *ocsp_opt);
 
 /**
  * mongoc_stream_tls_openssl_t:
@@ -53,12 +54,12 @@ typedef struct {
 } mongoc_stream_tls_openssl_t;
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-MONGOC_EXPORT (mongoc_stream_t *)
-mongoc_stream_tls_openssl_new_with_context (mongoc_stream_t *base_stream,
-                                            const char *host,
-                                            mongoc_ssl_opt_t *opt,
-                                            int client,
-                                            SSL_CTX *ssl_ctx) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(mongoc_stream_t *)
+mongoc_stream_tls_openssl_new_with_context(mongoc_stream_t *base_stream,
+                                           const char *host,
+                                           mongoc_ssl_opt_t *opt,
+                                           int client,
+                                           SSL_CTX *ssl_ctx) BSON_GNUC_WARN_UNUSED_RESULT;
 #endif
 
 BSON_END_DECLS

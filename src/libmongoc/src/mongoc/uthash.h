@@ -18,10 +18,11 @@
 #define MONGOC_UTHASH_H
 
 #include <mongoc/mongoc-prelude.h>
+
 #include <bson/bson.h>
 
-#define uthash_malloc(sz) bson_malloc (sz)
-#define uthash_free(ptr, sz) bson_free (ptr)
+#define uthash_malloc(sz) bson_malloc(sz)
+#define uthash_free(ptr, sz) bson_free(ptr)
 
 #include <uthash-2.3.0/uthash.h>
 

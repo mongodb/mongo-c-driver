@@ -18,22 +18,24 @@
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
+#include <mongoc/mongoc-counters-private.h>
+#include <mongoc/mongoc-errno-private.h>
+#include <mongoc/mongoc-openssl-private.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-stream-tls-openssl-bio-private.h>
+#include <mongoc/mongoc-stream-tls-openssl-private.h>
+#include <mongoc/mongoc-stream-tls-private.h>
+#include <mongoc/mongoc-trace-private.h>
+
+#include <mongoc/mongoc-log.h>
+#include <mongoc/mongoc-stream-tls.h>
+
 #include <bson/bson.h>
+
+#include <mlib/cmp.h>
 
 #include <errno.h>
 #include <string.h>
-
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-errno-private.h>
-#include <mongoc/mongoc-stream-tls.h>
-#include <mongoc/mongoc-stream-private.h>
-#include <mongoc/mongoc-stream-tls-private.h>
-#include <mongoc/mongoc-stream-tls-openssl-bio-private.h>
-#include <mongoc/mongoc-stream-tls-openssl-private.h>
-#include <mongoc/mongoc-openssl-private.h>
-#include <mongoc/mongoc-trace-private.h>
-#include <mongoc/mongoc-log.h>
-#include <mlib/cmp.h>
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -55,25 +57,25 @@ static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {BIO_TYPE_FILTER,
                                                        NULL};
 
 static void
-BIO_set_data (BIO *b, void *ptr)
+BIO_set_data(BIO *b, void *ptr)
 {
    b->ptr = ptr;
 }
 
 static void *
-BIO_get_data (BIO *b)
+BIO_get_data(BIO *b)
 {
    return b->ptr;
 }
 
 static void
-BIO_set_init (BIO *b, int init)
+BIO_set_init(BIO *b, int init)
 {
    b->init = init;
 }
 
 BIO_METHOD *
-mongoc_stream_tls_openssl_bio_meth_new (void)
+mongoc_stream_tls_openssl_bio_meth_new(void)
 {
    BIO_METHOD *meth = NULL;
 
@@ -84,19 +86,19 @@ mongoc_stream_tls_openssl_bio_meth_new (void)
 #else
 
 BIO_METHOD *
-mongoc_stream_tls_openssl_bio_meth_new (void)
+mongoc_stream_tls_openssl_bio_meth_new(void)
 {
    BIO_METHOD *meth = NULL;
 
-   meth = BIO_meth_new (BIO_TYPE_FILTER, "mongoc-stream-tls-glue");
+   meth = BIO_meth_new(BIO_TYPE_FILTER, "mongoc-stream-tls-glue");
    if (meth) {
-      BIO_meth_set_write (meth, mongoc_stream_tls_openssl_bio_write);
-      BIO_meth_set_read (meth, mongoc_stream_tls_openssl_bio_read);
-      BIO_meth_set_puts (meth, mongoc_stream_tls_openssl_bio_puts);
-      BIO_meth_set_gets (meth, mongoc_stream_tls_openssl_bio_gets);
-      BIO_meth_set_ctrl (meth, mongoc_stream_tls_openssl_bio_ctrl);
-      BIO_meth_set_create (meth, mongoc_stream_tls_openssl_bio_create);
-      BIO_meth_set_destroy (meth, mongoc_stream_tls_openssl_bio_destroy);
+      BIO_meth_set_write(meth, mongoc_stream_tls_openssl_bio_write);
+      BIO_meth_set_read(meth, mongoc_stream_tls_openssl_bio_read);
+      BIO_meth_set_puts(meth, mongoc_stream_tls_openssl_bio_puts);
+      BIO_meth_set_gets(meth, mongoc_stream_tls_openssl_bio_gets);
+      BIO_meth_set_ctrl(meth, mongoc_stream_tls_openssl_bio_ctrl);
+      BIO_meth_set_create(meth, mongoc_stream_tls_openssl_bio_create);
+      BIO_meth_set_destroy(meth, mongoc_stream_tls_openssl_bio_destroy);
    }
 
    return meth;
@@ -105,9 +107,9 @@ mongoc_stream_tls_openssl_bio_meth_new (void)
 #endif
 
 void
-mongoc_stream_tls_openssl_bio_set_data (BIO *b, void *ptr)
+mongoc_stream_tls_openssl_bio_set_data(BIO *b, void *ptr)
 {
-   BIO_set_data (b, ptr);
+   BIO_set_data(b, ptr);
 }
 
 
@@ -128,13 +130,13 @@ mongoc_stream_tls_openssl_bio_set_data (BIO *b, void *ptr)
  */
 
 int
-mongoc_stream_tls_openssl_bio_create (BIO *b)
+mongoc_stream_tls_openssl_bio_create(BIO *b)
 {
-   BSON_ASSERT (b);
+   BSON_ASSERT(b);
 
-   BIO_set_init (b, 1);
-   BIO_set_data (b, NULL);
-   BIO_set_flags (b, 0);
+   BIO_set_init(b, 1);
+   BIO_set_data(b, NULL);
+   BIO_set_flags(b, 0);
 
    return 1;
 }
@@ -157,23 +159,23 @@ mongoc_stream_tls_openssl_bio_create (BIO *b)
  */
 
 int
-mongoc_stream_tls_openssl_bio_destroy (BIO *b)
+mongoc_stream_tls_openssl_bio_destroy(BIO *b)
 {
    mongoc_stream_tls_t *tls;
 
-   BSON_ASSERT (b);
+   BSON_ASSERT(b);
 
-   tls = (mongoc_stream_tls_t *) BIO_get_data (b);
+   tls = (mongoc_stream_tls_t *)BIO_get_data(b);
 
    if (!tls) {
       return -1;
    }
 
-   BIO_set_data (b, NULL);
-   BIO_set_init (b, 0);
-   BIO_set_flags (b, 0);
+   BIO_set_data(b, NULL);
+   BIO_set_init(b, 0);
+   BIO_set_flags(b, 0);
 
-   ((mongoc_stream_tls_openssl_t *) tls->ctx)->bio = NULL;
+   ((mongoc_stream_tls_openssl_t *)tls->ctx)->bio = NULL;
 
    return 1;
 }
@@ -196,48 +198,48 @@ mongoc_stream_tls_openssl_bio_destroy (BIO *b)
  */
 
 int
-mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
+mongoc_stream_tls_openssl_bio_read(BIO *b, char *buf, int len)
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_openssl_t *openssl;
 
-   BSON_ASSERT (b);
-   BSON_ASSERT (buf);
+   BSON_ASSERT(b);
+   BSON_ASSERT(buf);
    ENTRY;
 
-   tls = (mongoc_stream_tls_t *) BIO_get_data (b);
+   tls = (mongoc_stream_tls_t *)BIO_get_data(b);
 
    if (!tls) {
-      RETURN (-1);
+      RETURN(-1);
    }
 
    if (len < 0) {
-      RETURN (-1);
+      RETURN(-1);
    }
 
-   if (BSON_UNLIKELY (!mlib_in_range (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY(!mlib_in_range(int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
-      MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
+      MONGOC_ERROR("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
       return -1;
    }
 
-   openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
+   openssl = (mongoc_stream_tls_openssl_t *)tls->ctx;
 
    errno = 0;
-   const ssize_t ret = mongoc_stream_read (tls->base_stream, buf, (size_t) len, 0, (int32_t) tls->timeout_msec);
-   BIO_clear_retry_flags (b);
+   const ssize_t ret = mongoc_stream_read(tls->base_stream, buf, (size_t)len, 0, (int32_t)tls->timeout_msec);
+   BIO_clear_retry_flags(b);
 
-   if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
+   if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN(errno)) {
       /* this BIO is not the same as "b", which openssl passed in to this func.
        * set its retry flag, which we check with BIO_should_retry in
        * mongoc-stream-tls-openssl.c
        */
-      BIO_set_retry_read (openssl->bio);
+      BIO_set_retry_read(openssl->bio);
    }
 
-   BSON_ASSERT (mlib_in_range (int, ret));
+   BSON_ASSERT(mlib_in_range(int, ret));
 
-   RETURN ((int) ret);
+   RETURN((int)ret);
 }
 
 
@@ -258,59 +260,59 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
  */
 
 int
-mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
+mongoc_stream_tls_openssl_bio_write(BIO *b, const char *buf, int len)
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_openssl_t *openssl;
    mongoc_iovec_t iov;
    ENTRY;
 
-   BSON_ASSERT (b);
-   BSON_ASSERT (buf);
+   BSON_ASSERT(b);
+   BSON_ASSERT(buf);
 
-   tls = (mongoc_stream_tls_t *) BIO_get_data (b);
+   tls = (mongoc_stream_tls_t *)BIO_get_data(b);
 
    if (!tls) {
-      RETURN (-1);
+      RETURN(-1);
    }
 
    if (len < 0) {
-      RETURN (-1);
+      RETURN(-1);
    }
 
-   openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
+   openssl = (mongoc_stream_tls_openssl_t *)tls->ctx;
 
-   iov.iov_base = (void *) buf;
-   iov.iov_len = (size_t) len;
+   iov.iov_base = (void *)buf;
+   iov.iov_len = (size_t)len;
 
-   if (BSON_UNLIKELY (!mlib_in_range (int32_t, tls->timeout_msec))) {
+   if (BSON_UNLIKELY(!mlib_in_range(int32_t, tls->timeout_msec))) {
       // CDRIVER-4589
-      MONGOC_ERROR ("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
-      RETURN (-1);
+      MONGOC_ERROR("timeout_msec value %" PRId64 " exceeds supported 32-bit range", tls->timeout_msec);
+      RETURN(-1);
    }
 
    errno = 0;
-   TRACE ("mongoc_stream_writev is expected to write: %d", len);
-   const ssize_t ret = mongoc_stream_writev (tls->base_stream, &iov, 1, (int32_t) tls->timeout_msec);
-   BIO_clear_retry_flags (b);
+   TRACE("mongoc_stream_writev is expected to write: %d", len);
+   const ssize_t ret = mongoc_stream_writev(tls->base_stream, &iov, 1, (int32_t)tls->timeout_msec);
+   BIO_clear_retry_flags(b);
 
    if (len > ret) {
-      TRACE ("Returned short write: %zd of %d", ret, len);
+      TRACE("Returned short write: %zd of %d", ret, len);
    } else {
-      TRACE ("Completed the %zd", ret);
+      TRACE("Completed the %zd", ret);
    }
-   if (ret <= 0 && MONGOC_ERRNO_IS_AGAIN (errno)) {
+   if (ret <= 0 && MONGOC_ERRNO_IS_AGAIN(errno)) {
       /* this BIO is not the same as "b", which openssl passed in to this func.
        * set its retry flag, which we check with BIO_should_retry in
        * mongoc-stream-tls-openssl.c
        */
-      TRACE ("%s", "Requesting a retry");
-      BIO_set_retry_write (openssl->bio);
+      TRACE("%s", "Requesting a retry");
+      BIO_set_retry_write(openssl->bio);
    }
 
-   BSON_ASSERT (mlib_in_range (int, ret));
+   BSON_ASSERT(mlib_in_range(int, ret));
 
-   RETURN ((int) ret);
+   RETURN((int)ret);
 }
 
 
@@ -331,11 +333,11 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
  */
 
 long
-mongoc_stream_tls_openssl_bio_ctrl (BIO *b, int cmd, long num, void *ptr)
+mongoc_stream_tls_openssl_bio_ctrl(BIO *b, int cmd, long num, void *ptr)
 {
-   BSON_UNUSED (b);
-   BSON_UNUSED (num);
-   BSON_UNUSED (ptr);
+   BSON_UNUSED(b);
+   BSON_UNUSED(num);
+   BSON_UNUSED(ptr);
 
    switch (cmd) {
    case BIO_CTRL_FLUSH:
@@ -363,11 +365,11 @@ mongoc_stream_tls_openssl_bio_ctrl (BIO *b, int cmd, long num, void *ptr)
  */
 
 int
-mongoc_stream_tls_openssl_bio_gets (BIO *b, char *buf, int len)
+mongoc_stream_tls_openssl_bio_gets(BIO *b, char *buf, int len)
 {
-   BSON_UNUSED (b);
-   BSON_UNUSED (buf);
-   BSON_UNUSED (len);
+   BSON_UNUSED(b);
+   BSON_UNUSED(buf);
+   BSON_UNUSED(len);
 
    return -1;
 }
@@ -391,9 +393,9 @@ mongoc_stream_tls_openssl_bio_gets (BIO *b, char *buf, int len)
  */
 
 int
-mongoc_stream_tls_openssl_bio_puts (BIO *b, const char *str)
+mongoc_stream_tls_openssl_bio_puts(BIO *b, const char *str)
 {
-   return mongoc_stream_tls_openssl_bio_write (b, str, (int) strlen (str));
+   return mongoc_stream_tls_openssl_bio_write(b, str, (int)strlen(str));
 }
 
 

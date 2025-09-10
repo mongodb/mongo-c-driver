@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-#include "TestSuite.h"
-
 #include <common-oid-private.h>
 
+#include <TestSuite.h>
+
 static void
-test_mcommon_oid_zero (void)
+test_mcommon_oid_zero(void)
 {
    bson_oid_t oid;
-   bson_oid_init_from_string (&oid, "000000000000000000000000");
-   BSON_ASSERT (true == bson_oid_equal (&oid, &kZeroObjectId));
-   BSON_ASSERT (true == mcommon_oid_is_zero (&oid));
-   bson_oid_init_from_string (&oid, "010000000000000000000000");
-   BSON_ASSERT (false == mcommon_oid_is_zero (&oid));
-   bson_oid_init_from_string (&oid, "000000000000000000000001");
-   BSON_ASSERT (false == mcommon_oid_is_zero (&oid));
-   bson_oid_init_from_string (&oid, "ffffffffffffffffffffffff");
-   BSON_ASSERT (false == mcommon_oid_is_zero (&oid));
-   mcommon_oid_set_zero (&oid);
-   BSON_ASSERT (true == mcommon_oid_is_zero (&oid));
+   bson_oid_init_from_string(&oid, "000000000000000000000000");
+   BSON_ASSERT(true == bson_oid_equal(&oid, &kZeroObjectId));
+   BSON_ASSERT(true == mcommon_oid_is_zero(&oid));
+   bson_oid_init_from_string(&oid, "010000000000000000000000");
+   BSON_ASSERT(false == mcommon_oid_is_zero(&oid));
+   bson_oid_init_from_string(&oid, "000000000000000000000001");
+   BSON_ASSERT(false == mcommon_oid_is_zero(&oid));
+   bson_oid_init_from_string(&oid, "ffffffffffffffffffffffff");
+   BSON_ASSERT(false == mcommon_oid_is_zero(&oid));
+   mcommon_oid_set_zero(&oid);
+   BSON_ASSERT(true == mcommon_oid_is_zero(&oid));
 }
 
 void
-test_mcommon_oid_install (TestSuite *suite)
+test_mcommon_oid_install(TestSuite *suite)
 {
-   TestSuite_Add (suite, "/mcommon/oid/zero", test_mcommon_oid_zero);
+   TestSuite_Add(suite, "/mcommon/oid/zero", test_mcommon_oid_zero);
 }

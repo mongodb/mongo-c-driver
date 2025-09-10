@@ -41,62 +41,62 @@ struct _mongoc_oidc_credential_t {
 };
 
 mongoc_oidc_callback_t *
-mongoc_oidc_callback_new (mongoc_oidc_callback_fn_t fn)
+mongoc_oidc_callback_new(mongoc_oidc_callback_fn_t fn)
 {
    if (!fn) {
       return NULL;
    }
 
-   mongoc_oidc_callback_t *const ret = bson_malloc (sizeof (*ret));
+   mongoc_oidc_callback_t *const ret = bson_malloc(sizeof(*ret));
    *ret = (mongoc_oidc_callback_t){.fn = fn};
    return ret;
 }
 
 mongoc_oidc_callback_t *
-mongoc_oidc_callback_new_with_user_data (mongoc_oidc_callback_fn_t fn, void *user_data)
+mongoc_oidc_callback_new_with_user_data(mongoc_oidc_callback_fn_t fn, void *user_data)
 {
    if (!fn) {
       return NULL;
    }
 
-   mongoc_oidc_callback_t *const ret = bson_malloc (sizeof (*ret));
+   mongoc_oidc_callback_t *const ret = bson_malloc(sizeof(*ret));
    *ret = (mongoc_oidc_callback_t){.fn = fn, .user_data = user_data};
    return ret;
 }
 
 void
-mongoc_oidc_callback_destroy (mongoc_oidc_callback_t *callback)
+mongoc_oidc_callback_destroy(mongoc_oidc_callback_t *callback)
 {
    if (callback) {
-      bson_free (callback);
+      bson_free(callback);
    }
 }
 
 mongoc_oidc_callback_fn_t
-mongoc_oidc_callback_get_fn (const mongoc_oidc_callback_t *callback)
+mongoc_oidc_callback_get_fn(const mongoc_oidc_callback_t *callback)
 {
-   BSON_ASSERT_PARAM (callback);
+   BSON_ASSERT_PARAM(callback);
    return callback->fn;
 }
 
 void *
-mongoc_oidc_callback_get_user_data (const mongoc_oidc_callback_t *callback)
+mongoc_oidc_callback_get_user_data(const mongoc_oidc_callback_t *callback)
 {
-   BSON_ASSERT_PARAM (callback);
+   BSON_ASSERT_PARAM(callback);
    return callback->user_data;
 }
 
 void
-mongoc_oidc_callback_set_user_data (mongoc_oidc_callback_t *callback, void *user_data)
+mongoc_oidc_callback_set_user_data(mongoc_oidc_callback_t *callback, void *user_data)
 {
-   BSON_ASSERT_PARAM (callback);
+   BSON_ASSERT_PARAM(callback);
    callback->user_data = user_data;
 }
 
 mongoc_oidc_callback_params_t *
-mongoc_oidc_callback_params_new (void)
+mongoc_oidc_callback_params_new(void)
 {
-   mongoc_oidc_callback_params_t *const ret = bson_malloc (sizeof (*ret));
+   mongoc_oidc_callback_params_t *const ret = bson_malloc(sizeof(*ret));
    *ret = (mongoc_oidc_callback_params_t){
       .version = MONGOC_PRIVATE_OIDC_CALLBACK_API_VERSION,
    };
@@ -104,118 +104,118 @@ mongoc_oidc_callback_params_new (void)
 }
 
 void
-mongoc_oidc_callback_params_destroy (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_destroy(mongoc_oidc_callback_params_t *params)
 {
    if (params) {
-      bson_free (params->username);
-      bson_free (params);
+      bson_free(params->username);
+      bson_free(params);
    }
 }
 
 int32_t
-mongoc_oidc_callback_params_get_version (const mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_get_version(const mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    return params->version;
 }
 
 void
-mongoc_oidc_callback_params_set_version (mongoc_oidc_callback_params_t *params, int32_t version)
+mongoc_oidc_callback_params_set_version(mongoc_oidc_callback_params_t *params, int32_t version)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    params->version = version;
 }
 
 void *
-mongoc_oidc_callback_params_get_user_data (const mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_get_user_data(const mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    return params->user_data;
 }
 
 void
-mongoc_oidc_callback_params_set_user_data (mongoc_oidc_callback_params_t *params, void *user_data)
+mongoc_oidc_callback_params_set_user_data(mongoc_oidc_callback_params_t *params, void *user_data)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    params->user_data = user_data;
 }
 
 const int64_t *
-mongoc_oidc_callback_params_get_timeout (const mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_get_timeout(const mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    return params->timeout_is_set ? &params->timeout : NULL;
 }
 
 void
-mongoc_oidc_callback_params_set_timeout (mongoc_oidc_callback_params_t *params, int64_t timeout)
+mongoc_oidc_callback_params_set_timeout(mongoc_oidc_callback_params_t *params, int64_t timeout)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    params->timeout = timeout;
    params->timeout_is_set = true;
 }
 
 void
-mongoc_oidc_callback_params_unset_timeout (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_unset_timeout(mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    params->timeout_is_set = false;
 }
 
 const char *
-mongoc_oidc_callback_params_get_username (const mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_get_username(const mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    return params->username;
 }
 
 void
-mongoc_oidc_callback_params_set_username (mongoc_oidc_callback_params_t *params, const char *username)
+mongoc_oidc_callback_params_set_username(mongoc_oidc_callback_params_t *params, const char *username)
 {
-   BSON_ASSERT_PARAM (params);
-   bson_free (params->username);
-   params->username = bson_strdup (username);
+   BSON_ASSERT_PARAM(params);
+   bson_free(params->username);
+   params->username = bson_strdup(username);
 }
 
 mongoc_oidc_credential_t *
-mongoc_oidc_callback_params_cancel_with_timeout (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_cancel_with_timeout(mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    params->cancelled_with_timeout = true;
    return NULL;
 }
 
 bool
-mongoc_oidc_callback_params_get_cancelled_with_timeout (const mongoc_oidc_callback_params_t *params)
+mongoc_oidc_callback_params_get_cancelled_with_timeout(const mongoc_oidc_callback_params_t *params)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    return params->cancelled_with_timeout;
 }
 
 void
-mongoc_oidc_callback_params_set_cancelled_with_timeout (mongoc_oidc_callback_params_t *params, bool value)
+mongoc_oidc_callback_params_set_cancelled_with_timeout(mongoc_oidc_callback_params_t *params, bool value)
 {
-   BSON_ASSERT_PARAM (params);
+   BSON_ASSERT_PARAM(params);
    params->cancelled_with_timeout = value;
 }
 
 mongoc_oidc_credential_t *
-mongoc_oidc_credential_new (const char *access_token)
+mongoc_oidc_credential_new(const char *access_token)
 {
    if (!access_token) {
       return NULL;
    }
 
-   mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
+   mongoc_oidc_credential_t *const ret = bson_malloc(sizeof(*ret));
    *ret = (mongoc_oidc_credential_t){
-      .access_token = bson_strdup (access_token),
+      .access_token = bson_strdup(access_token),
       .expires_in_set = false, // Infinite.
    };
    return ret;
 }
 
 mongoc_oidc_credential_t *
-mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t expires_in)
+mongoc_oidc_credential_new_with_expires_in(const char *access_token, int64_t expires_in)
 {
    if (!access_token) {
       return NULL;
@@ -225,9 +225,9 @@ mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t ex
       return NULL;
    }
 
-   mongoc_oidc_credential_t *const ret = bson_malloc (sizeof (*ret));
+   mongoc_oidc_credential_t *const ret = bson_malloc(sizeof(*ret));
    *ret = (mongoc_oidc_credential_t){
-      .access_token = bson_strdup (access_token),
+      .access_token = bson_strdup(access_token),
       .expires_in_set = true,
       .expires_in = expires_in,
    };
@@ -235,24 +235,34 @@ mongoc_oidc_credential_new_with_expires_in (const char *access_token, int64_t ex
 }
 
 void
-mongoc_oidc_credential_destroy (mongoc_oidc_credential_t *cred)
+mongoc_oidc_credential_destroy(mongoc_oidc_credential_t *cred)
 {
    if (cred) {
-      bson_free (cred->access_token);
-      bson_free (cred);
+      bson_free(cred->access_token);
+      bson_free(cred);
    }
 }
 
 const char *
-mongoc_oidc_credential_get_access_token (const mongoc_oidc_credential_t *cred)
+mongoc_oidc_credential_get_access_token(const mongoc_oidc_credential_t *cred)
 {
-   BSON_ASSERT_PARAM (cred);
+   BSON_ASSERT_PARAM(cred);
    return cred->access_token;
 }
 
 const int64_t *
-mongoc_oidc_credential_get_expires_in (const mongoc_oidc_credential_t *cred)
+mongoc_oidc_credential_get_expires_in(const mongoc_oidc_credential_t *cred)
 {
-   BSON_ASSERT_PARAM (cred);
+   BSON_ASSERT_PARAM(cred);
    return cred->expires_in_set ? &cred->expires_in : NULL;
+}
+
+mongoc_oidc_callback_t *
+mongoc_oidc_callback_copy(const mongoc_oidc_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(callback);
+   mongoc_oidc_callback_t *const ret = mongoc_oidc_callback_new_with_user_data(
+      mongoc_oidc_callback_get_fn(callback), mongoc_oidc_callback_get_user_data(callback));
+   BSON_ASSERT(ret);
+   return ret;
 }

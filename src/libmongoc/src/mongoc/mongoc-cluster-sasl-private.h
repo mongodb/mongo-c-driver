@@ -19,13 +19,15 @@
 #ifndef MONGOC_CLUSTER_SASL_PRIVATE_H
 #define MONGOC_CLUSTER_SASL_PRIVATE_H
 
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-cluster-private.h>
+
+#include <mongoc/mongoc-config.h>
+
 #include <bson/bson.h>
 
 bool
-_mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
-                                mongoc_stream_t *stream,
-                                mongoc_server_description_t *sd,
-                                bson_error_t *error);
+_mongoc_cluster_auth_node_sasl(mongoc_cluster_t *cluster,
+                               mongoc_stream_t *stream,
+                               mongoc_server_description_t *sd,
+                               bson_error_t *error);
 #endif /* MONGOC_CLUSTER_SASL_PRIVATE_H */

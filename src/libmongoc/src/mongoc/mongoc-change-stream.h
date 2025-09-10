@@ -19,25 +19,25 @@
 #ifndef MONGOC_CHANGE_STREAM_H
 #define MONGOC_CHANGE_STREAM_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-macros.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 
 typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 
-MONGOC_EXPORT (void)
-mongoc_change_stream_destroy (mongoc_change_stream_t *);
+MONGOC_EXPORT(void)
+mongoc_change_stream_destroy(mongoc_change_stream_t *);
 
-MONGOC_EXPORT (const bson_t *)
-mongoc_change_stream_get_resume_token (mongoc_change_stream_t *);
+MONGOC_EXPORT(const bson_t *)
+mongoc_change_stream_get_resume_token(mongoc_change_stream_t *);
 
-MONGOC_EXPORT (bool)
-mongoc_change_stream_next (mongoc_change_stream_t *, const bson_t **);
+MONGOC_EXPORT(bool)
+mongoc_change_stream_next(mongoc_change_stream_t *, const bson_t **);
 
-MONGOC_EXPORT (bool)
-mongoc_change_stream_error_document (const mongoc_change_stream_t *, bson_error_t *, const bson_t **);
+MONGOC_EXPORT(bool)
+mongoc_change_stream_error_document(const mongoc_change_stream_t *, bson_error_t *, const bson_t **);
 
 BSON_END_DECLS
 

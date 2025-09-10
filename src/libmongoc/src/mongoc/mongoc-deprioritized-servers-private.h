@@ -19,9 +19,9 @@
 #ifndef MONGOC_DEPRIORITIZED_SERVERS_PRIVATE_H
 #define MONGOC_DEPRIORITIZED_SERVERS_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-server-description.h>
+
+#include <bson/bson.h>
 
 #include <stdbool.h>
 
@@ -30,16 +30,16 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_deprioritized_servers_t mongoc_deprioritized_servers_t;
 
 mongoc_deprioritized_servers_t *
-mongoc_deprioritized_servers_new (void);
+mongoc_deprioritized_servers_new(void);
 
 void
-mongoc_deprioritized_servers_destroy (mongoc_deprioritized_servers_t *ds);
+mongoc_deprioritized_servers_destroy(mongoc_deprioritized_servers_t *ds);
 
 void
-mongoc_deprioritized_servers_add (mongoc_deprioritized_servers_t *ds, const mongoc_server_description_t *sd);
+mongoc_deprioritized_servers_add(mongoc_deprioritized_servers_t *ds, const mongoc_server_description_t *sd);
 
 bool
-mongoc_deprioritized_servers_contains (const mongoc_deprioritized_servers_t *ds, const mongoc_server_description_t *sd);
+mongoc_deprioritized_servers_contains(const mongoc_deprioritized_servers_t *ds, const mongoc_server_description_t *sd);
 
 BSON_END_DECLS
 

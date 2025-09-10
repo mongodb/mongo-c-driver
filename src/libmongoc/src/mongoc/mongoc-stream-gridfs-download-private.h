@@ -19,8 +19,9 @@
 #ifndef MONGOC_STREAM_GRIDFS_DOWNLOAD_PRIVATE_H
 #define MONGOC_STREAM_GRIDFS_DOWNLOAD_PRIVATE_H
 
-#include <mongoc/mongoc-stream.h>
 #include <mongoc/mongoc-gridfs-bucket-file-private.h>
+
+#include <mongoc/mongoc-stream.h>
 
 typedef struct {
    mongoc_stream_t stream;
@@ -28,6 +29,6 @@ typedef struct {
 } mongoc_gridfs_download_stream_t;
 
 mongoc_stream_t *
-_mongoc_download_stream_gridfs_new (mongoc_gridfs_bucket_file_t *file);
+_mongoc_download_stream_gridfs_new(mongoc_gridfs_bucket_file_t *file);
 
 #endif /* MONGOC_STREAM_GRIDFS_DOWNLOAD_PRIVATE_H */

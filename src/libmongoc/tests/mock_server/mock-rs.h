@@ -17,52 +17,51 @@
 #ifndef MOCK_RS_H
 #define MOCK_RS_H
 
-#include <mongoc/mongoc.h>
+#include "./mock-server.h"
 
-#include "mock-server.h"
+#include <mongoc/mongoc.h>
 
 typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *
-mock_rs_with_auto_hello (int32_t max_wire_version, bool has_primary, int n_secondaries, int n_arbiters);
-
-
-void
-mock_rs_tag_secondary (mock_rs_t *rs, int server_number, const bson_t *tags);
+mock_rs_with_auto_hello(int32_t max_wire_version, bool has_primary, int n_secondaries, int n_arbiters);
 
 void
-mock_rs_set_request_timeout_msec (mock_rs_t *rs, int64_t request_timeout_msec);
+mock_rs_tag_secondary(mock_rs_t *rs, int server_number, const bson_t *tags);
 
 void
-mock_rs_run (mock_rs_t *rs);
+mock_rs_set_request_timeout_msec(mock_rs_t *rs, int64_t request_timeout_msec);
+
+void
+mock_rs_run(mock_rs_t *rs);
 
 const mongoc_uri_t *
-mock_rs_get_uri (mock_rs_t *rs);
+mock_rs_get_uri(mock_rs_t *rs);
 
 request_t *
-mock_rs_receives_request (mock_rs_t *rs);
+mock_rs_receives_request(mock_rs_t *rs);
 
 request_t *
-mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id);
+mock_rs_receives_kill_cursors(mock_rs_t *rs, int64_t cursor_id);
 
 request_t *
-_mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...);
+_mock_rs_receives_msg(mock_rs_t *rs, uint32_t flags, ...);
 
-#define mock_rs_receives_msg(_rs, _flags, ...) _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
+#define mock_rs_receives_msg(_rs, _flags, ...) _mock_rs_receives_msg(_rs, _flags, __VA_ARGS__, NULL)
 
 bool
-mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request);
+mock_rs_request_is_to_primary(mock_rs_t *rs, request_t *request);
 
 bool
-mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request);
+mock_rs_request_is_to_secondary(mock_rs_t *rs, request_t *request);
 
 void
-mock_rs_stepdown (mock_rs_t *rs);
+mock_rs_stepdown(mock_rs_t *rs);
 
 void
-mock_rs_elect (mock_rs_t *rs, size_t id);
+mock_rs_elect(mock_rs_t *rs, size_t id);
 
 void
-mock_rs_destroy (mock_rs_t *rs);
+mock_rs_destroy(mock_rs_t *rs);
 
 #endif /* MOCK_RS_H */

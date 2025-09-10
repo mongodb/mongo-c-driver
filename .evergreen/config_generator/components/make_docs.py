@@ -17,17 +17,11 @@ class MakeDocs(Function):
             working_dir="mongoc",
             include_expansions_in_env=["distro_id"],
             script="""\
-                set -o errexit
-                ./tools/poetry.sh install --with=docs
                 # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
-                ./tools/poetry.sh run env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
-                """,
+                uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
+            """,
         ),
     ]
-
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
 
 
 class UploadDocs(Function):
@@ -71,10 +65,6 @@ class UploadDocs(Function):
         ),
     ]
 
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
-
 
 class UploadManPages(Function):
     name = "upload-man-pages"
@@ -115,10 +105,6 @@ class UploadManPages(Function):
             remote_file="${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html",
         ),
     ]
-
-    @classmethod
-    def call(cls, **kwargs):
-        return cls.default_call(**kwargs)
 
 
 def functions():

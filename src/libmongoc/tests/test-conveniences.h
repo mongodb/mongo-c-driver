@@ -17,11 +17,12 @@
 #ifndef TEST_CONVENIENCES_H
 #define TEST_CONVENIENCES_H
 
-#include <bson/bson.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-read-prefs-private.h>
 
 #include <mongoc/mongoc.h>
-#include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-client-private.h>
+
+#include <bson/bson.h>
 
 /* TODO: split this header up.
  * Move bson_lookup_* functions under bsonutil.
@@ -32,45 +33,45 @@
  * Safe to call repeatedly, or after calling test_conveniences_cleanup().
  */
 void
-test_conveniences_init (void);
+test_conveniences_init(void);
 
 /* Tear down global test conveniences.
  * Safe to call repeatedly.
  * Called automatically at process exit.
  */
 void
-test_conveniences_cleanup (void);
+test_conveniences_cleanup(void);
 
 /* Return a bson_t representation from a single-quoted JSON string, with
  * possible printf format directives.
  * bson_t is freed automatically at test cleanup.
  * E.g. tmp_bson ("{'key': %d}", 123); */
 bson_t *
-tmp_bson (const char *json, ...);
+tmp_bson(const char *json, ...);
 
 /* Return a string, with possible printf format directives. String is
  * automatically freed at test cleanup. */
 const char *
-tmp_str (const char *fmt, ...);
+tmp_str(const char *fmt, ...);
 
 /* Return a JSON string representation of BSON. String is freed automatically at
  * test cleanup. */
 const char *
-tmp_json (const bson_t *bson);
+tmp_json(const bson_t *bson);
 
 void
-bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
+bson_iter_bson(const bson_iter_t *iter, bson_t *bson);
 
 /* create a bson_t containing all types of values, and an empty key. The
  * returned bson_t does not need to be freed. This corresponds to the same
  * document in json_with_all_types. */
 bson_t *
-bson_with_all_types (void);
+bson_with_all_types(void);
 
 /* returns a json string with all types of values, and an empty key. This
  * corresponds to the same document in bson_with_all_types. */
 const char *
-json_with_all_types (void);
+json_with_all_types(void);
 
 
 #ifndef PATH_MAX
@@ -78,65 +79,65 @@ json_with_all_types (void);
 #endif
 
 #ifdef _WIN32
-#define realpath(path, expanded) GetFullPathName (path, PATH_MAX, expanded, NULL)
+#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
 #endif
 
 void
-bson_lookup (const bson_t *bson, const char *path, bson_iter_t *out);
+bson_lookup(const bson_t *bson, const char *path, bson_iter_t *out);
 
 const char *
-bson_lookup_utf8 (const bson_t *b, const char *key);
+bson_lookup_utf8(const bson_t *b, const char *key);
 
 void
-value_init_from_doc (bson_value_t *value, const bson_t *doc);
+value_init_from_doc(bson_value_t *value, const bson_t *doc);
 
 void
-bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value);
+bson_lookup_value(const bson_t *b, const char *key, bson_value_t *value);
 
 bson_t *
-bson_lookup_bson (const bson_t *b, const char *key);
+bson_lookup_bson(const bson_t *b, const char *key);
 
 void
-bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
+bson_lookup_doc(const bson_t *b, const char *key, bson_t *doc);
 
 bool
-bson_lookup_bool (const bson_t *b, const char *key);
+bson_lookup_bool(const bson_t *b, const char *key);
 
 int32_t
-bson_lookup_int32 (const bson_t *b, const char *key);
+bson_lookup_int32(const bson_t *b, const char *key);
 
 int64_t
-bson_lookup_int64 (const bson_t *b, const char *key);
+bson_lookup_int64(const bson_t *b, const char *key);
 
 mongoc_read_concern_t *
-bson_lookup_read_concern (const bson_t *b, const char *key);
+bson_lookup_read_concern(const bson_t *b, const char *key);
 
 mongoc_write_concern_t *
-bson_lookup_write_concern (const bson_t *b, const char *key);
+bson_lookup_write_concern(const bson_t *b, const char *key);
 
 mongoc_read_prefs_t *
-bson_lookup_read_prefs (const bson_t *b, const char *key);
+bson_lookup_read_prefs(const bson_t *b, const char *key);
 
 void
-bson_lookup_database_opts (const bson_t *b, const char *key, mongoc_database_t *database);
+bson_lookup_database_opts(const bson_t *b, const char *key, mongoc_database_t *database);
 
 void
-bson_lookup_collection_opts (const bson_t *b, const char *key, mongoc_collection_t *collection);
+bson_lookup_collection_opts(const bson_t *b, const char *key, mongoc_collection_t *collection);
 
 mongoc_transaction_opt_t *
-bson_lookup_txn_opts (const bson_t *b, const char *key);
+bson_lookup_txn_opts(const bson_t *b, const char *key);
 
 mongoc_session_opt_t *
-bson_lookup_session_opts (const bson_t *b, const char *key);
+bson_lookup_session_opts(const bson_t *b, const char *key);
 
 mongoc_client_session_t *
-bson_lookup_session (const bson_t *b, const char *key, mongoc_client_t *client);
+bson_lookup_session(const bson_t *b, const char *key, mongoc_client_t *client);
 
 bool
-bson_init_from_value (bson_t *b, const bson_value_t *v);
+bson_init_from_value(bson_t *b, const bson_value_t *v);
 
 char *
-single_quotes_to_double (const char *str);
+single_quotes_to_double(const char *str);
 
 /* match_action_t determines if default check for a field is overridden. */
 typedef enum {
@@ -147,7 +148,7 @@ typedef enum {
 
 struct _match_ctx_t;
 /* doc_iter may be null if the pattern field is not found. */
-typedef match_action_t (*match_visitor_fn) (struct _match_ctx_t *ctx, bson_iter_t *pattern_iter, bson_iter_t *doc_iter);
+typedef match_action_t (*match_visitor_fn)(struct _match_ctx_t *ctx, bson_iter_t *pattern_iter, bson_iter_t *doc_iter);
 
 typedef struct _match_ctx_t {
    char errmsg[1000];
@@ -172,83 +173,83 @@ typedef struct _match_ctx_t {
    if (1) {                                                                         \
       match_ctx_t _ctx = {.strict_numeric_types = true, .is_command = _is_command}; \
                                                                                     \
-      if (!match_bson_with_ctx (doc, pattern, &_ctx)) {                             \
-         test_error ("Expected: %s\n, Got: %s\n, %s\n",                             \
-                     bson_as_canonical_extended_json (pattern, NULL),               \
-                     bson_as_canonical_extended_json (doc, NULL),                   \
-                     _ctx.errmsg);                                                  \
+      if (!match_bson_with_ctx(doc, pattern, &_ctx)) {                              \
+         test_error("Expected: %s\n, Got: %s\n, %s\n",                              \
+                    bson_as_canonical_extended_json(pattern, NULL),                 \
+                    bson_as_canonical_extended_json(doc, NULL),                     \
+                    _ctx.errmsg);                                                   \
       }                                                                             \
    } else                                                                           \
-      (void) 0
+      (void)0
 
 bool
-match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);
+match_bson(const bson_t *doc, const bson_t *pattern, bool is_command);
 
 int64_t
-bson_value_as_int64 (const bson_value_t *value);
+bson_value_as_int64(const bson_value_t *value);
 
 bool
-match_bson_value (const bson_value_t *doc, const bson_value_t *pattern, match_ctx_t *ctx);
+match_bson_value(const bson_value_t *doc, const bson_value_t *pattern, match_ctx_t *ctx);
 
 bool
-match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx);
+match_bson_with_ctx(const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx);
 
 bool
-match_json (const bson_t *doc,
-            bool is_command,
-            const char *filename,
-            int lineno,
-            const char *funcname,
-            const char *json_pattern,
-            ...);
+match_json(const bson_t *doc,
+           bool is_command,
+           const char *filename,
+           int lineno,
+           const char *funcname,
+           const char *json_pattern,
+           ...);
 
-#define ASSERT_MATCH(doc, ...)                                                           \
-   do {                                                                                  \
-      BSON_ASSERT (match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
+#define ASSERT_MATCH(doc, ...)                                                         \
+   do {                                                                                \
+      BSON_ASSERT(match_json(doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
    } while (0)
 
-#define ASSERT_EQUAL_BSON(expected, actual)                                   \
-   do {                                                                       \
-      const bson_t *_expected_bson = expected, *_actual_bson = actual;        \
-      char *_expected_str, *_actual_str;                                      \
-      _expected_str = bson_as_canonical_extended_json (_expected_bson, NULL); \
-      _actual_str = bson_as_canonical_extended_json (_actual_bson, NULL);     \
-      if (!bson_equal (_expected_bson, _actual_bson)) {                       \
-         test_error ("BSON unequal: \n"                                       \
-                     "Expected: %s\n"                                         \
-                     "Got     : %s",                                          \
-                     _expected_str,                                           \
-                     _actual_str);                                            \
-      }                                                                       \
-      bson_free (_actual_str);                                                \
-      bson_free (_expected_str);                                              \
+#define ASSERT_EQUAL_BSON(expected, actual)                                  \
+   do {                                                                      \
+      const bson_t *_expected_bson = expected, *_actual_bson = actual;       \
+      char *_expected_str, *_actual_str;                                     \
+      _expected_str = bson_as_canonical_extended_json(_expected_bson, NULL); \
+      _actual_str = bson_as_canonical_extended_json(_actual_bson, NULL);     \
+      if (!bson_equal(_expected_bson, _actual_bson)) {                       \
+         test_error("BSON unequal: \n"                                       \
+                    "Expected: %s\n"                                         \
+                    "Got     : %s",                                          \
+                    _expected_str,                                           \
+                    _actual_str);                                            \
+      }                                                                      \
+      bson_free(_actual_str);                                                \
+      bson_free(_expected_str);                                              \
    } while (0)
 
 bool
-mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern, bson_t *command);
+mongoc_write_concern_append_bad(mongoc_write_concern_t *write_concern, bson_t *command);
 
 #define FOUR_MB 1024 * 1024 * 4
 
 const char *
-huge_string (mongoc_client_t *client);
+huge_string(mongoc_client_t *client);
 
 size_t
-huge_string_length (mongoc_client_t *client);
+huge_string_length(mongoc_client_t *client);
 
 const char *
-four_mb_string (void);
+four_mb_string(void);
 
 void
-assert_no_duplicate_keys (const bson_t *doc);
+assert_no_duplicate_keys(const bson_t *doc);
 
 void
-match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx);
+match_in_array(const bson_t *doc, const bson_t *array, match_ctx_t *ctx);
 
 void
-match_err (match_ctx_t *ctx, const char *fmt, ...);
+match_err(match_ctx_t *ctx, const char *fmt, ...);
 
 void
-assert_wc_oob_error (bson_error_t *error);
+assert_wc_oob_error(bson_error_t *error);
 
 typedef struct {
    int major;
@@ -259,19 +260,19 @@ typedef struct {
 } semver_t;
 
 void
-semver_parse (const char *str, semver_t *out);
+semver_parse(const char *str, semver_t *out);
 
 void
-server_semver (mongoc_client_t *client, semver_t *out);
+server_semver(mongoc_client_t *client, semver_t *out);
 
 int
-semver_cmp (semver_t *a, semver_t *b);
+semver_cmp(semver_t *a, semver_t *b);
 
 int
-semver_cmp_str (semver_t *a, const char *str);
+semver_cmp_str(semver_t *a, const char *str);
 
 const char *
-semver_to_string (semver_t *str);
+semver_to_string(semver_t *str);
 
 /* Iterate over a BSON document or array.
  *
@@ -286,16 +287,15 @@ semver_to_string (semver_t *str);
  *    printf ("%d: %s", bson_iter_key (&iter), tmp_json (&el));
  * }
  */
-#define BSON_FOREACH(bson, iter_varname) \
-   for (bson_iter_init (&(iter_varname), (bson)); bson_iter_next (&(iter_varname));)
+#define BSON_FOREACH(bson, iter_varname) for (bson_iter_init(&(iter_varname), (bson)); bson_iter_next(&(iter_varname));)
 
 #define TEST_ERROR_DOMAIN 123456
 #define TEST_ERROR_CODE 654321
-#define test_set_error(error, ...) bson_set_error (error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
+#define test_set_error(error, ...) bson_set_error(error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
 
 /* An arbitrary traceable mongoc_ss_log_context_t for tests.
  * Logs the function name and file:line as the "operation". */
 #define TEST_SS_LOG_CONTEXT \
-   (&(mongoc_ss_log_context_t){.operation = tmp_str ("%s:%d: %s", __FILE__, (int) __LINE__, BSON_FUNC)})
+   (&(mongoc_ss_log_context_t){.operation = tmp_str("%s:%d: %s", __FILE__, (int)__LINE__, BSON_FUNC)})
 
 #endif /* TEST_CONVENIENCES_H */

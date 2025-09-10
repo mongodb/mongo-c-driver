@@ -15,7 +15,7 @@ enum {
     * server might accept. The main purpose of this limit is to prevent stack
     * overflow, not to reject invalid data.
     */
-   BSON_VALIDATION_MAX_NESTING_DEPTH = 1000,
+   BSON_VALIDATION_MAX_NESTING_DEPTH = 500,
 };
 
 /**
@@ -32,6 +32,6 @@ enum {
  * @return false Otherwise
  */
 bool
-_bson_validate_impl_v2 (const bson_t *bson, bson_validate_flags_t flags, size_t *offset, bson_error_t *error);
+_bson_validate_impl_v2(const bson_t *bson, bson_validate_flags_t flags, size_t *offset, bson_error_t *error);
 
 #endif // BSON_VALIDATE_PRIVATE_H_INCLUDED

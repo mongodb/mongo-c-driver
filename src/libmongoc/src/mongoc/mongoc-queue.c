@@ -15,29 +15,29 @@
  */
 
 
-#include <string.h>
-
 #include <mongoc/mongoc-queue-private.h>
+
+#include <string.h>
 
 
 void
-_mongoc_queue_init (mongoc_queue_t *queue)
+_mongoc_queue_init(mongoc_queue_t *queue)
 {
-   BSON_ASSERT (queue);
+   BSON_ASSERT(queue);
 
-   memset (queue, 0, sizeof *queue);
+   memset(queue, 0, sizeof *queue);
 }
 
 
 void
-_mongoc_queue_push_head (mongoc_queue_t *queue, void *data)
+_mongoc_queue_push_head(mongoc_queue_t *queue, void *data)
 {
    mongoc_queue_item_t *item;
 
-   BSON_ASSERT (queue);
-   BSON_ASSERT (data);
+   BSON_ASSERT(queue);
+   BSON_ASSERT(data);
 
-   item = (mongoc_queue_item_t *) bson_malloc0 (sizeof *item);
+   item = (mongoc_queue_item_t *)bson_malloc0(sizeof *item);
    item->next = queue->head;
    item->data = data;
 
@@ -52,14 +52,14 @@ _mongoc_queue_push_head (mongoc_queue_t *queue, void *data)
 
 
 void
-_mongoc_queue_push_tail (mongoc_queue_t *queue, void *data)
+_mongoc_queue_push_tail(mongoc_queue_t *queue, void *data)
 {
    mongoc_queue_item_t *item;
 
-   BSON_ASSERT (queue);
-   BSON_ASSERT (data);
+   BSON_ASSERT(queue);
+   BSON_ASSERT(data);
 
-   item = (mongoc_queue_item_t *) bson_malloc0 (sizeof *item);
+   item = (mongoc_queue_item_t *)bson_malloc0(sizeof *item);
    item->data = data;
 
    if (queue->tail) {
@@ -74,12 +74,12 @@ _mongoc_queue_push_tail (mongoc_queue_t *queue, void *data)
 
 
 void *
-_mongoc_queue_pop_head (mongoc_queue_t *queue)
+_mongoc_queue_pop_head(mongoc_queue_t *queue)
 {
    mongoc_queue_item_t *item;
    void *data = NULL;
 
-   BSON_ASSERT (queue);
+   BSON_ASSERT(queue);
 
    if ((item = queue->head)) {
       if (!item->next) {
@@ -87,7 +87,7 @@ _mongoc_queue_pop_head (mongoc_queue_t *queue)
       }
       queue->head = item->next;
       data = item->data;
-      bson_free (item);
+      bson_free(item);
       queue->length--;
    }
 
@@ -96,12 +96,12 @@ _mongoc_queue_pop_head (mongoc_queue_t *queue)
 
 
 void *
-_mongoc_queue_pop_tail (mongoc_queue_t *queue)
+_mongoc_queue_pop_tail(mongoc_queue_t *queue)
 {
    mongoc_queue_item_t *item;
    void *data = NULL;
 
-   BSON_ASSERT (queue);
+   BSON_ASSERT(queue);
 
    if (queue->length == 0) {
       return NULL;
@@ -110,14 +110,14 @@ _mongoc_queue_pop_tail (mongoc_queue_t *queue)
    data = queue->tail->data;
 
    if (queue->length == 1) {
-      bson_free (queue->tail);
+      bson_free(queue->tail);
       queue->head = queue->tail = NULL;
    } else {
       /* find item pointing at tail */
       for (item = queue->head; item; item = item->next) {
          if (item->next == queue->tail) {
             item->next = NULL;
-            bson_free (queue->tail);
+            bson_free(queue->tail);
             queue->tail = item;
             break;
          }
@@ -131,9 +131,9 @@ _mongoc_queue_pop_tail (mongoc_queue_t *queue)
 
 
 uint32_t
-_mongoc_queue_get_length (const mongoc_queue_t *queue)
+_mongoc_queue_get_length(const mongoc_queue_t *queue)
 {
-   BSON_ASSERT (queue);
+   BSON_ASSERT(queue);
 
    return queue->length;
 }

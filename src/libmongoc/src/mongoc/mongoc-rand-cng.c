@@ -18,60 +18,62 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
-#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc-rand-private.h>
 
+#include <mongoc/mongoc-rand.h>
 #include <mongoc/mongoc.h>
 
-#include <windows.h>
-#include <stdio.h>
 #include <bcrypt.h>
 
-#define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
-#define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)
+#include <windows.h>
+
+#include <stdio.h>
+
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+#define STATUS_UNSUCCESSFUL ((NTSTATUS)0xC0000001L)
 
 int
-_mongoc_rand_bytes (uint8_t *buf, int num)
+_mongoc_rand_bytes(uint8_t *buf, int num)
 {
    static BCRYPT_ALG_HANDLE algorithm = 0;
    NTSTATUS status = 0;
 
    if (!algorithm) {
-      status = BCryptOpenAlgorithmProvider (&algorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
-      if (!NT_SUCCESS (status)) {
-         MONGOC_ERROR ("BCryptOpenAlgorithmProvider(): %ld", status);
+      status = BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+      if (!NT_SUCCESS(status)) {
+         MONGOC_ERROR("BCryptOpenAlgorithmProvider(): %ld", status);
          return 0;
       }
    }
 
-   status = BCryptGenRandom (algorithm, buf, num, 0);
-   if (NT_SUCCESS (status)) {
+   status = BCryptGenRandom(algorithm, buf, num, 0);
+   if (NT_SUCCESS(status)) {
       return 1;
    }
 
-   MONGOC_ERROR ("BCryptGenRandom(): %ld", status);
+   MONGOC_ERROR("BCryptGenRandom(): %ld", status);
    return 0;
 }
 
 void
-mongoc_rand_seed (const void *buf, int num)
+mongoc_rand_seed(const void *buf, int num)
 {
-   BSON_UNUSED (buf);
-   BSON_UNUSED (num);
+   BSON_UNUSED(buf);
+   BSON_UNUSED(num);
    /* N/A - OS Does not need entropy seed */
 }
 
 void
-mongoc_rand_add (const void *buf, int num, double entropy)
+mongoc_rand_add(const void *buf, int num, double entropy)
 {
-   BSON_UNUSED (buf);
-   BSON_UNUSED (num);
-   BSON_UNUSED (entropy);
+   BSON_UNUSED(buf);
+   BSON_UNUSED(num);
+   BSON_UNUSED(entropy);
    /* N/A - OS Does not need entropy seed */
 }
 
 int
-mongoc_rand_status (void)
+mongoc_rand_status(void)
 {
    return 1;
 }

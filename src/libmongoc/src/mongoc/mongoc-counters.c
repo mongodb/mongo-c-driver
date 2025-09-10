@@ -15,10 +15,12 @@
  */
 
 
-#include <mlib/cmp.h>
 #include <bson/bson.h>
 
+#include <mlib/cmp.h>
+
 #include <fcntl.h>
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,9 +34,10 @@
 #include <windows.h>
 #endif
 
-#include <mongoc/mongoc-counters-private.h>
-#include <mongoc/mongoc-log.h>
 #include <common-atomic-private.h>
+#include <mongoc/mongoc-counters-private.h>
+
+#include <mongoc/mongoc-log.h>
 
 
 #pragma pack(1)
@@ -48,7 +51,7 @@ typedef struct {
 #pragma pack()
 
 
-BSON_STATIC_ASSERT2 (counter_info_t, sizeof (mongoc_counter_info_t) == 128);
+BSON_STATIC_ASSERT2(counter_info_t, sizeof(mongoc_counter_info_t) == 128);
 
 
 #pragma pack(1)
@@ -63,7 +66,7 @@ typedef struct {
 #pragma pack()
 
 
-BSON_STATIC_ASSERT2 (counters_t, sizeof (mongoc_counters_t) == 64);
+BSON_STATIC_ASSERT2(counters_t, sizeof(mongoc_counters_t) == 64);
 
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
 /* When counters are enabled at compile time but fail to initiate a shared
@@ -85,9 +88,9 @@ static void *gCounterFallback = NULL;
  * Returns: true if SHM is to be used.
  */
 static bool
-mongoc_counters_use_shm (void)
+mongoc_counters_use_shm(void)
 {
-   return !getenv ("MONGOC_DISABLE_SHM");
+   return !getenv("MONGOC_DISABLE_SHM");
 }
 
 /**
@@ -100,23 +103,24 @@ mongoc_counters_use_shm (void)
  * Returns: The number of bytes required.
  */
 static size_t
-mongoc_counters_calc_size (void)
+mongoc_counters_calc_size(void)
 {
    size_t n_cpu;
    size_t n_groups;
    size_t size;
 
-   n_cpu = _mongoc_get_cpu_count ();
+   n_cpu = _mongoc_get_cpu_count();
    n_groups = (LAST_COUNTER / SLOTS_PER_CACHELINE) + 1;
-   size = (sizeof (mongoc_counters_t) + (LAST_COUNTER * sizeof (mongoc_counter_info_t)) +
-           (n_cpu * n_groups * sizeof (mongoc_counter_slots_t)));
+   size = (sizeof(mongoc_counters_t) + (LAST_COUNTER * sizeof(mongoc_counter_info_t)) +
+           (n_cpu * n_groups * sizeof(mongoc_counter_slots_t)));
 
 #ifdef BSON_OS_UNIX
-   const long pg_sz = sysconf (_SC_PAGESIZE);
-   if (mlib_cmp (size, >, pg_sz)) {
+   const long pg_sz = sysconf(_SC_PAGESIZE);
+   if (mlib_cmp(size, >, pg_sz)) {
       return size;
    } else {
-      return (size_t) pg_sz;
+      BSON_ASSERT(pg_sz > 0);
+      return (size_t)pg_sz;
    }
 #else
    return size;
@@ -131,22 +135,22 @@ mongoc_counters_calc_size (void)
  * Removes the shared memory segment for the current processes counters.
  */
 void
-_mongoc_counters_cleanup (void)
+_mongoc_counters_cleanup(void)
 {
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    if (gCounterFallback) {
-      bson_free (gCounterFallback);
+      bson_free(gCounterFallback);
       gCounterFallback = NULL;
 #if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
    } else {
       char name[32];
       int pid;
 
-      pid = getpid ();
+      pid = getpid();
       // Truncation is OK.
-      int req = bson_snprintf (name, sizeof name, "/mongoc-%d", pid);
-      BSON_ASSERT (req > 0);
-      shm_unlink (name);
+      int req = bson_snprintf(name, sizeof name, "/mongoc-%d", pid);
+      BSON_ASSERT(req > 0);
+      shm_unlink(name);
 #endif
    }
 #endif
@@ -164,7 +168,7 @@ _mongoc_counters_cleanup (void)
  * Returns: A shared memory segment, or malloc'd memory on failure.
  */
 static void *
-mongoc_counters_alloc (size_t size)
+mongoc_counters_alloc(size_t size)
 {
 #if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
    void *mem;
@@ -172,56 +176,56 @@ mongoc_counters_alloc (size_t size)
    int pid;
    int fd;
 
-   if (!mongoc_counters_use_shm ()) {
+   if (!mongoc_counters_use_shm()) {
       goto skip_shm;
    }
 
-   pid = getpid ();
+   pid = getpid();
    // Truncation is OK.
-   int req = bson_snprintf (name, sizeof name, "/mongoc-%d", pid);
-   BSON_ASSERT (req > 0);
+   int req = bson_snprintf(name, sizeof name, "/mongoc-%d", pid);
+   BSON_ASSERT(req > 0);
 
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0
 #endif
-   if (-1 == (fd = shm_open (name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | O_NOFOLLOW))) {
+   if (-1 == (fd = shm_open(name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | O_NOFOLLOW))) {
       goto fail_noclean;
    }
 
 #if defined(__APPLE__)
    // macOS does not have posix_fallocate available.
-   if (-1 == ftruncate (fd, size)) {
+   if (-1 == ftruncate(fd, size)) {
       goto fail_cleanup;
    }
 #else
    // Prefer posix_fallocate on Linux. posix_fallocate ensures that disk space
    // is allocated.
-   if (0 != posix_fallocate (fd, 0, size)) {
+   if (0 != posix_fallocate(fd, 0, size)) {
       goto fail_cleanup;
    }
 #endif // __APPLE__
 
-   mem = mmap (NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+   mem = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
    if (mem == MAP_FAILED) {
       goto fail_cleanup;
    }
 
-   close (fd);
-   memset (mem, 0, size);
+   close(fd);
+   memset(mem, 0, size);
 
    return mem;
 
 fail_cleanup:
-   shm_unlink (name);
-   close (fd);
+   shm_unlink(name);
+   close(fd);
 
 fail_noclean:
-   MONGOC_WARNING ("Falling back to malloc for counters.");
+   MONGOC_WARNING("Falling back to malloc for counters.");
 
 skip_shm:
 #endif
 
-   gCounterFallback = (void *) bson_malloc0 (size);
+   gCounterFallback = (void *)bson_malloc0(size);
 
    return gCounterFallback;
 }
@@ -241,17 +245,17 @@ skip_shm:
  * Returns: The offset to the data for the counters values.
  */
 static size_t
-mongoc_counters_register (
+mongoc_counters_register(
    mongoc_counters_t *counters, uint32_t num, const char *category, const char *name, const char *description)
 {
    mongoc_counter_info_t *infos;
    char *segment;
    int n_cpu;
 
-   BSON_ASSERT (counters);
-   BSON_ASSERT (category);
-   BSON_ASSERT (name);
-   BSON_ASSERT (description);
+   BSON_ASSERT(counters);
+   BSON_ASSERT(category);
+   BSON_ASSERT(name);
+   BSON_ASSERT(description);
 
    /*
     * Implementation Note:
@@ -261,19 +265,19 @@ mongoc_counters_register (
     * only knows about the counter after we have initialized it.
     */
 
-   n_cpu = _mongoc_get_cpu_count ();
-   segment = (char *) counters;
+   n_cpu = _mongoc_get_cpu_count();
+   segment = (char *)counters;
 
-   infos = (mongoc_counter_info_t *) (segment + counters->infos_offset);
+   infos = (mongoc_counter_info_t *)(segment + counters->infos_offset);
    infos = &infos[counters->n_counters];
    infos->slot = num % SLOTS_PER_CACHELINE;
-   infos->offset = (counters->values_offset + ((num / SLOTS_PER_CACHELINE) * n_cpu * sizeof (mongoc_counter_slots_t)));
+   infos->offset = (counters->values_offset + ((num / SLOTS_PER_CACHELINE) * n_cpu * sizeof(mongoc_counter_slots_t)));
 
-   bson_strncpy (infos->category, category, sizeof infos->category);
-   bson_strncpy (infos->name, name, sizeof infos->name);
-   bson_strncpy (infos->description, description, sizeof infos->description);
+   bson_strncpy(infos->category, category, sizeof infos->category);
+   bson_strncpy(infos->name, name, sizeof infos->name);
+   bson_strncpy(infos->description, description, sizeof infos->description);
 
-   mcommon_atomic_thread_fence ();
+   mcommon_atomic_thread_fence();
 
    counters->n_counters++;
 
@@ -288,7 +292,7 @@ mongoc_counters_register (
  * initialization using the GCC constructor attribute.
  */
 void
-_mongoc_counters_init (void)
+_mongoc_counters_init(void)
 {
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    mongoc_counter_info_t *info;
@@ -298,21 +302,21 @@ _mongoc_counters_init (void)
    size_t size;
    char *segment;
 
-   size = mongoc_counters_calc_size ();
-   segment = (char *) mongoc_counters_alloc (size);
+   size = mongoc_counters_calc_size();
+   segment = (char *)mongoc_counters_alloc(size);
    infos_size = LAST_COUNTER * sizeof *info;
 
-   counters = (mongoc_counters_t *) segment;
-   counters->n_cpu = _mongoc_get_cpu_count ();
+   counters = (mongoc_counters_t *)segment;
+   counters->n_cpu = _mongoc_get_cpu_count();
    counters->n_counters = 0;
    counters->infos_offset = sizeof *counters;
-   counters->values_offset = (uint32_t) (counters->infos_offset + infos_size);
+   counters->values_offset = (uint32_t)(counters->infos_offset + infos_size);
 
-   BSON_ASSERT ((counters->values_offset % 64) == 0);
+   BSON_ASSERT((counters->values_offset % 64) == 0);
 
-#define COUNTER(ident, Category, Name, Desc)                                         \
-   off = mongoc_counters_register (counters, COUNTER_##ident, Category, Name, Desc); \
-   __mongoc_counter_##ident.cpus = (mongoc_counter_slots_t *) (segment + off);
+#define COUNTER(ident, Category, Name, Desc)                                        \
+   off = mongoc_counters_register(counters, COUNTER_##ident, Category, Name, Desc); \
+   __mongoc_counter_##ident.cpus = (mongoc_counter_slots_t *)(segment + off);
 #include <mongoc/mongoc-counters.defs>
 #undef COUNTER
 
@@ -323,7 +327,7 @@ _mongoc_counters_init (void)
     * we have initialized the rest of the counters. Don't forget our memory
     * barrier to prevent compiler reordering.
     */
-   mcommon_atomic_thread_fence ();
-   counters->size = (uint32_t) size;
+   mcommon_atomic_thread_fence();
+   counters->size = (uint32_t)size;
 #endif
 }

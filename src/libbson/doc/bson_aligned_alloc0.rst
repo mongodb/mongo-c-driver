@@ -22,8 +22,6 @@ Description
 
 This is a portable ``aligned_alloc()`` wrapper that also sets the memory to zero.
 
-In general, this function will return an allocation at least ``sizeof(void*)`` bytes or bigger with an alignment of at least ``alignment``.
-
 If there was a failure to allocate ``num_bytes`` bytes aligned to ``alignment``, the process will be aborted.
 
 .. warning::

@@ -19,10 +19,13 @@
 #ifndef MONGOC_CYRUS_PRIVATE_H
 #define MONGOC_CYRUS_PRIVATE_H
 
-#include <mongoc/mongoc-uri.h>
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-sasl-private.h>
+
+#include <mongoc/mongoc-uri.h>
+
 #include <bson/bson.h>
+
 #include <sasl/sasl.h>
 
 
@@ -43,27 +46,27 @@ struct _mongoc_cyrus_t {
 
 
 #ifndef SASL_CALLBACK_FN
-#define SASL_CALLBACK_FN(_f) ((int (*) (void)) ((void (*) (void)) (_f)))
+#define SASL_CALLBACK_FN(_f) ((int (*)(void))((void (*)(void))(_f)))
 #endif
 
 int
-_mongoc_cyrus_verifyfile_cb (void *context, const char *file, sasl_verify_type_t type);
+_mongoc_cyrus_verifyfile_cb(void *context, const char *file, sasl_verify_type_t type);
 void
-_mongoc_cyrus_init (mongoc_cyrus_t *sasl);
+_mongoc_cyrus_init(mongoc_cyrus_t *sasl);
 bool
-_mongoc_cyrus_new_from_cluster (
+_mongoc_cyrus_new_from_cluster(
    mongoc_cyrus_t *sasl, mongoc_cluster_t *cluster, mongoc_stream_t *stream, const char *hostname, bson_error_t *error);
 int
-_mongoc_cyrus_log (mongoc_cyrus_t *sasl, int level, const char *message);
+_mongoc_cyrus_log(mongoc_cyrus_t *sasl, int level, const char *message);
 void
-_mongoc_cyrus_destroy (mongoc_cyrus_t *sasl);
+_mongoc_cyrus_destroy(mongoc_cyrus_t *sasl);
 bool
-_mongoc_cyrus_step (mongoc_cyrus_t *sasl,
-                    const uint8_t *inbuf,
-                    uint32_t inbuflen,
-                    uint8_t **outbuf,
-                    uint32_t *outbuflen,
-                    bson_error_t *error);
+_mongoc_cyrus_step(mongoc_cyrus_t *sasl,
+                   const uint8_t *inbuf,
+                   uint32_t inbuflen,
+                   uint8_t **outbuf,
+                   uint32_t *outbuflen,
+                   bson_error_t *error);
 
 
 BSON_END_DECLS

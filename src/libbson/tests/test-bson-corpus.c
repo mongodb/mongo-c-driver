@@ -1,14 +1,15 @@
-#include <bson/bson.h>
-#include "TestSuite.h"
-#include "json-test.h"
-#include "corpus-test.h"
+#include "./corpus-test.h"
+
 #include <common-string-private.h>
+
+#include <bson/bson.h>
+
+#include <TestSuite.h>
+#include <json-test.h>
 
 #include <inttypes.h>
 
-
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull
-
 
 typedef struct {
    const char *scenario;
@@ -31,50 +32,47 @@ skipped_corpus_test_t SKIPPED_CORPUS_TESTS[] = {
    {"String", "three-byte UTF-8 (\xe2\x98\x86)"},          /* \u2606 */
    {0}};
 
-
 skipped_corpus_test_t VS2013_SKIPPED_CORPUS_TESTS[] = {
    /* VS 2013 and older is imprecise stackoverflow.com/questions/32232331 */
    {"Double type", "1.23456789012345677E+18"},
    {"Double type", "-1.23456789012345677E+18"},
    {0}};
 
-
 static void
-compare_data (const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len)
+compare_data(const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len)
 {
    mcommon_string_append_t a_str, b_str;
    uint32_t i;
 
-   if (a_len != b_len || memcmp (a, b, (size_t) a_len)) {
-      mcommon_string_new_as_append (&a_str);
+   if (a_len != b_len || memcmp(a, b, (size_t)a_len)) {
+      mcommon_string_new_as_append(&a_str);
       for (i = 0; i < a_len; i++) {
-         mcommon_string_append_printf (&a_str, "%02" PRIx8, a[i]);
+         mcommon_string_append_printf(&a_str, "%02" PRIx8, a[i]);
       }
 
-      mcommon_string_new_as_append (&b_str);
+      mcommon_string_new_as_append(&b_str);
       for (i = 0; i < b_len; i++) {
-         mcommon_string_append_printf (&b_str, "%02" PRIx8, b[i]);
+         mcommon_string_append_printf(&b_str, "%02" PRIx8, b[i]);
       }
 
-      fprintf (stderr,
-               "unequal data of length %" PRIu32 " and %" PRIu32 ":\n%s\n%s\n",
-               a_len,
-               b_len,
-               mcommon_str_from_append (&a_str),
-               mcommon_str_from_append (&b_str));
+      fprintf(stderr,
+              "unequal data of length %" PRIu32 " and %" PRIu32 ":\n%s\n%s\n",
+              a_len,
+              b_len,
+              mcommon_str_from_append(&a_str),
+              mcommon_str_from_append(&b_str));
 
-      abort ();
+      abort();
    }
 }
 
-
 static bool
-is_test_skipped (const char *scenario, const char *description)
+is_test_skipped(const char *scenario, const char *description)
 {
    skipped_corpus_test_t *skip;
 
    for (skip = SKIPPED_CORPUS_TESTS; skip->scenario != NULL; skip++) {
-      if (!strcmp (skip->scenario, scenario) && !strcmp (skip->test, description)) {
+      if (!strcmp(skip->scenario, scenario) && !strcmp(skip->test, description)) {
          return true;
       }
    }
@@ -82,7 +80,7 @@ is_test_skipped (const char *scenario, const char *description)
 /* _MSC_VER 1900 is Visual Studio 2015 */
 #if (defined(_MSC_VER) && _MSC_VER < 1900)
    for (skip = VS2013_SKIPPED_CORPUS_TESTS; skip->scenario != NULL; skip++) {
-      if (!strcmp (skip->scenario, scenario) && !strcmp (skip->test, description)) {
+      if (!strcmp(skip->scenario, scenario) && !strcmp(skip->test, description)) {
          return true;
       }
    }
@@ -90,7 +88,6 @@ is_test_skipped (const char *scenario, const char *description)
 
    return false;
 }
-
 
 /*
 See:
@@ -116,7 +113,7 @@ github.com/mongodb/specifications/blob/master/source/bson-corpus/bson-corpus.rst
 
  */
 static void
-test_bson_corpus_valid (test_bson_valid_type_t *test)
+test_bson_corpus_valid(test_bson_valid_type_t *test)
 {
    bson_t cB;
    bson_t dB;
@@ -125,70 +122,69 @@ test_bson_corpus_valid (test_bson_valid_type_t *test)
    bson_t *decode_rE;
    bson_error_t error;
 
-   BSON_ASSERT (test->cB);
-   BSON_ASSERT (test->cE);
+   BSON_ASSERT(test->cB);
+   BSON_ASSERT(test->cE);
 
-   if (is_test_skipped (test->scenario_description, test->test_description)) {
-      if (test_suite_debug_output ()) {
-         printf ("      SKIP\n");
-         fflush (stdout);
+   if (is_test_skipped(test->scenario_description, test->test_description)) {
+      if (test_suite_debug_output()) {
+         printf("      SKIP\n");
+         fflush(stdout);
       }
 
       return;
    }
 
-   BSON_ASSERT (bson_init_static (&cB, test->cB, test->cB_len));
-   ASSERT_CMPJSON (bson_as_canonical_extended_json (&cB, NULL), test->cE);
+   BSON_ASSERT(bson_init_static(&cB, test->cB, test->cB_len));
+   ASSERT_CMPJSON(bson_as_canonical_extended_json(&cB, NULL), test->cE);
 
    if (test->rE) {
-      ASSERT_CMPJSON (bson_as_relaxed_extended_json (&cB, NULL), test->rE);
+      ASSERT_CMPJSON(bson_as_relaxed_extended_json(&cB, NULL), test->rE);
    }
 
-   decode_cE = bson_new_from_json ((const uint8_t *) test->cE, -1, &error);
+   decode_cE = bson_new_from_json((const uint8_t *)test->cE, -1, &error);
 
-   ASSERT_OR_PRINT (decode_cE, error);
+   ASSERT_OR_PRINT(decode_cE, error);
 
    if (!test->lossy) {
-      compare_data (bson_get_data (decode_cE), decode_cE->len, test->cB, test->cB_len);
+      compare_data(bson_get_data(decode_cE), decode_cE->len, test->cB, test->cB_len);
    }
 
    if (test->dB) {
-      BSON_ASSERT (bson_init_static (&dB, test->dB, test->dB_len));
-      ASSERT_CMPJSON (bson_as_canonical_extended_json (&dB, NULL), test->cE);
+      BSON_ASSERT(bson_init_static(&dB, test->dB, test->dB_len));
+      ASSERT_CMPJSON(bson_as_canonical_extended_json(&dB, NULL), test->cE);
 
       if (test->rE) {
-         ASSERT_CMPJSON (bson_as_relaxed_extended_json (&dB, NULL), test->rE);
+         ASSERT_CMPJSON(bson_as_relaxed_extended_json(&dB, NULL), test->rE);
       }
 
-      bson_destroy (&dB);
+      bson_destroy(&dB);
    }
 
    if (test->dE) {
-      decode_dE = bson_new_from_json ((const uint8_t *) test->dE, -1, &error);
+      decode_dE = bson_new_from_json((const uint8_t *)test->dE, -1, &error);
 
-      ASSERT_OR_PRINT (decode_dE, error);
-      ASSERT_CMPJSON (bson_as_canonical_extended_json (decode_dE, NULL), test->cE);
+      ASSERT_OR_PRINT(decode_dE, error);
+      ASSERT_CMPJSON(bson_as_canonical_extended_json(decode_dE, NULL), test->cE);
 
       if (!test->lossy) {
-         compare_data (bson_get_data (decode_dE), decode_dE->len, test->cB, test->cB_len);
+         compare_data(bson_get_data(decode_dE), decode_dE->len, test->cB, test->cB_len);
       }
 
-      bson_destroy (decode_dE);
+      bson_destroy(decode_dE);
    }
 
    if (test->rE) {
-      decode_rE = bson_new_from_json ((const uint8_t *) test->rE, -1, &error);
+      decode_rE = bson_new_from_json((const uint8_t *)test->rE, -1, &error);
 
-      ASSERT_OR_PRINT (decode_rE, error);
-      ASSERT_CMPJSON (bson_as_relaxed_extended_json (decode_rE, NULL), test->rE);
+      ASSERT_OR_PRINT(decode_rE, error);
+      ASSERT_CMPJSON(bson_as_relaxed_extended_json(decode_rE, NULL), test->rE);
 
-      bson_destroy (decode_rE);
+      bson_destroy(decode_rE);
    }
 
-   bson_destroy (decode_cE);
-   bson_destroy (&cB);
+   bson_destroy(decode_cE);
+   bson_destroy(&cB);
 }
-
 
 /*
 See:
@@ -196,26 +192,25 @@ github.com/mongodb/specifications/blob/master/source/bson-corpus/bson-corpus.rst
 #testing-decode-errors
  */
 static void
-test_bson_corpus_decode_error (test_bson_decode_error_type_t *test)
+test_bson_corpus_decode_error(test_bson_decode_error_type_t *test)
 {
    bson_t invalid_bson;
 
-   BSON_ASSERT (test->bson);
+   BSON_ASSERT(test->bson);
 
-   if (is_test_skipped (test->scenario_description, test->test_description)) {
-      if (test_suite_debug_output ()) {
-         printf ("      SKIP\n");
-         fflush (stdout);
+   if (is_test_skipped(test->scenario_description, test->test_description)) {
+      if (test_suite_debug_output()) {
+         printf("      SKIP\n");
+         fflush(stdout);
       }
 
       return;
    }
 
-   ASSERT (test->bson);
-   ASSERT (!bson_init_static (&invalid_bson, test->bson, test->bson_len) || bson_empty (&invalid_bson) ||
-           !bson_as_canonical_extended_json (&invalid_bson, NULL));
+   ASSERT(test->bson);
+   ASSERT(!bson_init_static(&invalid_bson, test->bson, test->bson_len) || bson_empty(&invalid_bson) ||
+          !bson_as_canonical_extended_json(&invalid_bson, NULL));
 }
-
 
 /*
 See:
@@ -223,14 +218,14 @@ github.com/mongodb/specifications/blob/master/source/bson-corpus/bson-corpus.rst
 #testing-parsing-errors
  */
 static void
-test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
+test_bson_corpus_parse_error(test_bson_parse_error_type_t *test)
 {
-   BSON_ASSERT (test->str);
+   BSON_ASSERT(test->str);
 
-   if (is_test_skipped (test->scenario_description, test->test_description)) {
-      if (test_suite_debug_output ()) {
-         printf ("      SKIP\n");
-         fflush (stdout);
+   if (is_test_skipped(test->scenario_description, test->test_description)) {
+      if (test_suite_debug_output()) {
+         printf("      SKIP\n");
+         fflush(stdout);
       }
 
       return;
@@ -239,12 +234,12 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
    switch (test->bson_type) {
    case BSON_TYPE_EOD: /* top-level document to be parsed as JSON */
    case BSON_TYPE_BINARY:
-      ASSERT (!bson_new_from_json ((uint8_t *) test->str, test->str_len, NULL));
+      ASSERT(!bson_new_from_json((uint8_t *)test->str, test->str_len, NULL));
       break;
    case BSON_TYPE_DECIMAL128: {
       bson_decimal128_t dec;
-      ASSERT (!bson_decimal128_from_string (test->str, &dec));
-      ASSERT (IS_NAN (dec));
+      ASSERT(!bson_decimal128_from_string(test->str, &dec));
+      ASSERT(IS_NAN(dec));
       break;
    }
    case BSON_TYPE_DOUBLE:
@@ -267,52 +262,51 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
    case BSON_TYPE_MAXKEY:
    case BSON_TYPE_MINKEY:
    default:
-      fprintf (stderr, "Unsupported parseError type: %#x\n", test->bson_type);
-      abort ();
+      fprintf(stderr, "Unsupported parseError type: %#x\n", test->bson_type);
+      abort();
    }
 }
 
-
 static void
-test_bson_corpus_cb (void *scenario)
+test_bson_corpus_cb(void *scenario)
 {
-   corpus_test (scenario, test_bson_corpus_valid, test_bson_corpus_decode_error, test_bson_corpus_parse_error);
+   corpus_test(scenario, test_bson_corpus_valid, test_bson_corpus_decode_error, test_bson_corpus_parse_error);
 }
 
 static void
-test_bson_corpus_prose_1 (void)
+test_bson_corpus_prose_1(void)
 {
    bson_t *bson;
    bool ok;
    bson_t subdoc;
 
    /* Field name within a root document */
-   bson = bson_new ();
-   ok = bson_append_int32 (bson, "a\0b", 3, 123);
-   BSON_ASSERT (!ok);
-   bson_destroy (bson);
+   bson = bson_new();
+   ok = bson_append_int32(bson, "a\0b", 3, 123);
+   BSON_ASSERT(!ok);
+   bson_destroy(bson);
 
    /* Field name within a sub-document */
-   bson = bson_new ();
-   bson_append_document_begin (bson, "subdoc", -1, &subdoc);
-   ok = bson_append_int32 (&subdoc, "a\0b", 3, 123);
-   BSON_ASSERT (!ok);
-   bson_destroy (&subdoc);
-   bson_destroy (bson);
+   bson = bson_new();
+   bson_append_document_begin(bson, "subdoc", -1, &subdoc);
+   ok = bson_append_int32(&subdoc, "a\0b", 3, 123);
+   BSON_ASSERT(!ok);
+   bson_destroy(&subdoc);
+   bson_destroy(bson);
 
    /* Pattern for a regular expression */
-   bson = bson_new ();
-   ok = bson_append_regex_w_len (bson, "key", 3, "a\0b", 3, "");
-   BSON_ASSERT (!ok);
-   bson_destroy (bson);
+   bson = bson_new();
+   ok = bson_append_regex_w_len(bson, "key", 3, "a\0b", 3, "");
+   BSON_ASSERT(!ok);
+   bson_destroy(bson);
 
    /* Testing options for a regular expression is not possible, since
     * bson_append_regex_w_len does not accept a length for options. */
 }
 
 void
-test_bson_corpus_install (TestSuite *suite)
+test_bson_corpus_install(TestSuite *suite)
 {
-   install_json_test_suite_with_check (suite, BSON_JSON_DIR, "bson_corpus", test_bson_corpus_cb);
-   TestSuite_Add (suite, "/bson_corpus/prose_1", test_bson_corpus_prose_1);
+   install_json_test_suite_with_check(suite, BSON_JSON_DIR, "bson_corpus", test_bson_corpus_cb);
+   TestSuite_Add(suite, "/bson_corpus/prose_1", test_bson_corpus_prose_1);
 }

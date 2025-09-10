@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required (VERSION 3.15...4.0)
 project(pkg-config-import-test LANGUAGES C)
 
 # This is a test case that tries to build against bson/mongoc using pkg-config.

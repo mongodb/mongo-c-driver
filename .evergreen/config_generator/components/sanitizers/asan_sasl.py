@@ -10,15 +10,12 @@ from config_generator.components.sanitizers.asan import TAG
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('ubuntu2004', 'clang', None, ['cyrus']),
-    ('debian10',   'clang', None, ['cyrus']),
+    ('rhel8-latest', 'clang', None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
-    ('ubuntu2004', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-
-    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
-    ('debian10',   'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2']), 
+    # rhel8-latest provides 4.2 through latest.
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

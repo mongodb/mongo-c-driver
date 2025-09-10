@@ -20,26 +20,27 @@
 #define MONGOC_LOG_PRIVATE_H
 
 #include <mongoc/mongoc-iovec.h>
+#include <mongoc/mongoc-log.h>
 
 /* just for testing */
 void
-_mongoc_log_get_handler (mongoc_log_func_t *log_func, void **user_data);
+_mongoc_log_get_handler(mongoc_log_func_t *log_func, void **user_data);
 
 bool
-_mongoc_log_trace_is_enabled (void);
+_mongoc_log_trace_is_enabled(void);
 
 void
-mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l);
+mongoc_log_trace_bytes(const char *domain, const uint8_t *_b, size_t _l);
 
 void
-mongoc_log_trace_iovec (const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt);
+mongoc_log_trace_iovec(const char *domain, const mongoc_iovec_t *_iov, size_t _iovcnt);
 
-#define STOP_LOGGING_CHECK                                 \
-   if (1) {                                                \
-      if (!gLogFunc || !_mongoc_log_trace_is_enabled ()) { \
-         return;                                           \
-      }                                                    \
-   } else                                                  \
-      (void) 0
+#define STOP_LOGGING_CHECK                                \
+   if (1) {                                               \
+      if (!gLogFunc || !_mongoc_log_trace_is_enabled()) { \
+         return;                                          \
+      }                                                   \
+   } else                                                 \
+      (void)0
 
 #endif /* MONGOC_LOG_PRIVATE_H */

@@ -18,8 +18,9 @@
 #ifndef MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 #define MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 
-#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-util-private.h>
+
+#include <mongoc/mongoc-config.h>
 
 /*
  * Thanks to:
@@ -37,26 +38,26 @@
 #define MONGOC_COMPILER_VERSION __VERSION__
 #elif defined(__HP_cc) || defined(__HP_aCC)
 #define MONGOC_COMPILER "aCC"
-#define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR (__HP_cc)
+#define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR(__HP_cc)
 #elif defined(__IBMC__) || defined(__IBMCPP__)
 #define MONGOC_COMPILER "xlc"
 #define MONGOC_COMPILER_VERSION __xlc__
 #elif defined(_MSC_VER)
 #define MONGOC_COMPILER "MSVC"
-#define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR (_MSC_VER)
+#define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR(_MSC_VER)
 #elif defined(__PGI)
 #define MONGOC_COMPILER "Portland PGCC"
-#define MONGOC_COMPILER_VERSION   \
-   MONGOC_EVALUATE_STR (__PGIC__) \
-   "." MONGOC_EVALUATE_STR (__PGIC_MINOR) "." MONGOC_EVALUATE_STR (__PGIC_PATCHLEVEL__)
+#define MONGOC_COMPILER_VERSION  \
+   MONGOC_EVALUATE_STR(__PGIC__) \
+   "." MONGOC_EVALUATE_STR(__PGIC_MINOR) "." MONGOC_EVALUATE_STR(__PGIC_PATCHLEVEL__)
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #define MONGOC_COMPILER "Solaris Studio"
-#define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR (__SUNPRO_C)
+#define MONGOC_COMPILER_VERSION MONGOC_EVALUATE_STR(__SUNPRO_C)
 #elif defined(__PCC__)
 /* Portable C Compiler. Version may not be available */
 #define MONGOC_COMPILER "PCC"
 #else
-#define MONGOC_COMPILER MONGOC_EVALUATE_STR (MONGOC_CC)
+#define MONGOC_COMPILER MONGOC_EVALUATE_STR(MONGOC_CC)
 /* Not defining COMPILER_VERSION. We'll fall back to values set at
  * configure-time */
 #endif

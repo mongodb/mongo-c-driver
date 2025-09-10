@@ -15,35 +15,37 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('debian92', 'clang', None, ['cyrus']),
-    ('debian92', 'gcc',   None, ['cyrus']),
-    ('debian10', 'clang', None, ['cyrus']),
-    ('debian10', 'gcc',   None, ['cyrus']),
-    ('debian11', 'clang', None, ['cyrus']),
-    ('debian11', 'gcc',   None, ['cyrus']),
-    ('rhel80',            'gcc',       None, ['cyrus']),
-    ('rhel8-zseries',     'gcc',       None, ['cyrus']),
-    ('ubuntu2004',        'clang',     None, ['cyrus']),
-    ('ubuntu2004',        'gcc',       None, ['cyrus']),
+    # For test matrix.
+    ('rhel8-latest',      'gcc',       None, ['cyrus']),
+    ('rhel8-zseries',     'gcc',       None, ['cyrus']), # Big Endian.
     ('ubuntu2004-arm64',  'gcc',       None, ['cyrus']),
-    ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2022x64', None, ['cyrus']),
+
+    # For compile only.
+    ('debian11',   'clang',    None, ['cyrus']),
+    ('debian11',   'gcc',      None, ['cyrus']),
+    ('debian12',   'clang',    None, ['cyrus']),
+    ('debian12',   'gcc',      None, ['cyrus']),
+    ('rhel80',     'gcc',      None, ['cyrus']),
+    ('ubuntu2004', 'gcc',      None, ['cyrus']),
+    ('ubuntu2004', 'clang',    None, ['cyrus']),
+    ('ubuntu2204', 'gcc',      None, ['cyrus']),
+    ('ubuntu2204', 'clang-12', None, ['cyrus']),
+    ('ubuntu2404', 'gcc',      None, ['cyrus']),
+    ('ubuntu2404', 'clang-14', None, ['cyrus']),
 ]
 
-# TODO (CDRIVER-3789): test cse with the 'sharded' topology.
+# QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.
 TEST_MATRIX = [
-    # 4.2 and 4.4 not available on rhel8-zseries.
-    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server'], ['5.0']),
+    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0' ]),
+    ('windows-vsCurrent', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # Test 7.0+ with a replica set since Queryable Encryption does not support the 'server' topology. Queryable Encryption tests require 7.0+.
-    ('ubuntu2004',        'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel8-zseries',     'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
-    ('ubuntu2004-arm64',  'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], [ '7.0', '8.0', 'latest']),
+    # ubuntu2004-arm64 only provides 4.4+.
+    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # Test 4.2 with Debian 10 since 4.2 does not ship on Ubuntu 20.04+.
-    ('debian10',          'gcc',       None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2']),
+    # rhel8-zseries only provides 5.0+. Resource-limited: use sparingly.
+    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['sharded'], ['5.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -105,6 +107,8 @@ def variants():
             )
         else:
             tasks.append(task.get_task_ref())
+
+    tasks.sort(key=lambda t: t.name)
 
     return [
         BuildVariant(

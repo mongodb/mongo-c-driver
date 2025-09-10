@@ -40,14 +40,17 @@
  * IF IBM IS APPRISED OF THE POSSIBILITY OF SUCH DAMAGES.
  */
 
-#include <bson/bson.h>
 #include <common-b64-private.h>
+#include <common-thread-private.h>
+
+#include <bson/bson.h>
+
 #include <mlib/config.h>
 #include <mlib/loop.h>
 
 #define Assert(Cond) \
    if (!(Cond))      \
-   abort ()
+   abort()
 
 static const char Base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char Pad64 = '=';
@@ -115,7 +118,7 @@ static const char Pad64 = '=';
  */
 
 int
-mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t targsize)
+mcommon_b64_ntop(uint8_t const *src, size_t srclength, char *target, size_t targsize)
 {
    size_t datalength = 0;
    uint8_t input[3];
@@ -133,13 +136,13 @@ mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t tar
       srclength -= 3;
 
       output[0] = input[0] >> 2;
-      output[1] = (uint8_t) (((input[0] & 0x03) << 4) + (input[1] >> 4));
-      output[2] = (uint8_t) (((input[1] & 0x0f) << 2) + (input[2] >> 6));
+      output[1] = (uint8_t)(((input[0] & 0x03) << 4) + (input[1] >> 4));
+      output[2] = (uint8_t)(((input[1] & 0x0f) << 2) + (input[2] >> 6));
       output[3] = input[2] & 0x3f;
-      Assert (output[0] < 64);
-      Assert (output[1] < 64);
-      Assert (output[2] < 64);
-      Assert (output[3] < 64);
+      Assert(output[0] < 64);
+      Assert(output[1] < 64);
+      Assert(output[2] < 64);
+      Assert(output[3] < 64);
 
       if (datalength + 4 > targsize) {
          return -1;
@@ -155,13 +158,13 @@ mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t tar
       /* Get what's left. */
       input[0] = input[1] = input[2] = '\0';
 
-      memcpy (input, src, srclength);
+      memcpy(input, src, srclength);
       output[0] = input[0] >> 2;
-      output[1] = (uint8_t) (((input[0] & 0x03) << 4) + (input[1] >> 4));
-      output[2] = (uint8_t) (((input[1] & 0x0f) << 2) + (input[2] >> 6));
-      Assert (output[0] < 64);
-      Assert (output[1] < 64);
-      Assert (output[2] < 64);
+      output[1] = (uint8_t)(((input[0] & 0x03) << 4) + (input[1] >> 4));
+      output[2] = (uint8_t)(((input[1] & 0x0f) << 2) + (input[2] >> 6));
+      Assert(output[0] < 64);
+      Assert(output[1] < 64);
+      Assert(output[2] < 64);
 
       if (datalength + 4 > targsize) {
          return -1;
@@ -181,7 +184,7 @@ mcommon_b64_ntop (uint8_t const *src, size_t srclength, char *target, size_t tar
       return -1;
    }
    target[datalength] = '\0'; /* Returned value doesn't count \0. */
-   return (int) datalength;
+   return (int)datalength;
 }
 
 /* (From RFC1521 and draft-ietf-dnssec-secext-03.txt)
@@ -260,32 +263,15 @@ static const uint8_t mongoc_b64rmap_space = 0xfe;
 static const uint8_t mongoc_b64rmap_invalid = 0xff;
 
 /* initializing the reverse map isn't thread safe, do it in pthread_once */
-#if defined(BSON_OS_UNIX)
-#include <pthread.h>
-#define mongoc_common_once_t pthread_once_t
-#define mongoc_common_once pthread_once
-#define MONGOC_COMMON_ONCE_FUN(n) void n (void)
-#define MONGOC_COMMON_ONCE_RETURN return
-#define MONGOC_COMMON_ONCE_INIT PTHREAD_ONCE_INIT
-#else
-#define mongoc_common_once_t INIT_ONCE
-#define MONGOC_COMMON_ONCE_INIT INIT_ONCE_STATIC_INIT
-#define mongoc_common_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
-#define MONGOC_COMMON_ONCE_FUN(n)                                                                    \
-   BOOL CALLBACK MLIB_PRAGMA_IF_MSVC (warning (push)) MLIB_PRAGMA_IF_MSVC (warning (disable : 4100)) \
-      n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c) MLIB_PRAGMA_IF_MSVC (warning (pop))
-#define MONGOC_COMMON_ONCE_RETURN return true
-#endif
-
-static MONGOC_COMMON_ONCE_FUN (bson_b64_initialize_rmap)
+static BSON_ONCE_FUN(bson_b64_initialize_rmap)
 {
    /* Null: end of string, stop parsing */
    mongoc_b64rmap[0] = mongoc_b64rmap_end;
 
    mlib_foreach_urange (i, 1, 256) {
-      const uint8_t ch = (uint8_t) i;
+      const uint8_t ch = (uint8_t)i;
       /* Whitespaces */
-      if (bson_isspace (ch))
+      if (bson_isspace(ch))
          mongoc_b64rmap[ch] = mongoc_b64rmap_space;
       /* Padding: stop parsing */
       else if (ch == Pad64)
@@ -297,13 +283,13 @@ static MONGOC_COMMON_ONCE_FUN (bson_b64_initialize_rmap)
 
    /* Fill reverse mapping for base64 chars */
    for (uint8_t i = 0; Base64[i] != '\0'; ++i)
-      mongoc_b64rmap[(uint8_t) Base64[i]] = i;
+      mongoc_b64rmap[(uint8_t)Base64[i]] = i;
 
-   MONGOC_COMMON_ONCE_RETURN;
+   BSON_ONCE_RETURN;
 }
 
 static int
-mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
+mongoc_b64_pton_do(char const *src, uint8_t *target, size_t targsize)
 {
    int tarindex, state;
    uint8_t ch, ofs;
@@ -312,7 +298,7 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
    tarindex = 0;
 
    while (1) {
-      ch = (uint8_t) *src++;
+      ch = (uint8_t)*src++;
       ofs = mongoc_b64rmap[ch];
 
       if (ofs >= mongoc_b64rmap_special) {
@@ -328,13 +314,13 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
 
       switch (state) {
       case 0:
-         if ((size_t) tarindex >= targsize)
+         if ((size_t)tarindex >= targsize)
             return (-1);
          target[tarindex] = ofs << 2;
          state = 1;
          break;
       case 1:
-         if ((size_t) tarindex + 1 >= targsize)
+         if ((size_t)tarindex + 1 >= targsize)
             return (-1);
          target[tarindex] |= ofs >> 4;
          target[tarindex + 1] = (ofs & 0x0f) << 4;
@@ -342,7 +328,7 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
          state = 2;
          break;
       case 2:
-         if ((size_t) tarindex + 1 >= targsize)
+         if ((size_t)tarindex + 1 >= targsize)
             return (-1);
          target[tarindex] |= ofs >> 2;
          target[tarindex + 1] = (ofs & 0x03) << 6;
@@ -350,14 +336,14 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
          state = 3;
          break;
       case 3:
-         if ((size_t) tarindex >= targsize)
+         if ((size_t)tarindex >= targsize)
             return (-1);
          target[tarindex] |= ofs;
          tarindex++;
          state = 0;
          break;
       default:
-         abort ();
+         abort();
       }
    }
 
@@ -366,8 +352,8 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
     * on a byte boundary, and/or with erroneous trailing characters.
     */
 
-   if (ch == Pad64) {        /* We got a pad char. */
-      ch = (uint8_t) *src++; /* Skip it, get next. */
+   if (ch == Pad64) {       /* We got a pad char. */
+      ch = (uint8_t)*src++; /* Skip it, get next. */
       switch (state) {
       case 0: /* Invalid = in first position */
       case 1: /* Invalid = in second position */
@@ -375,13 +361,13 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
 
       case 2: /* Valid, means one byte of info */
          /* Skip any number of spaces. */
-         for ((void) NULL; ch != '\0'; ch = (uint8_t) *src++)
+         for ((void)NULL; ch != '\0'; ch = (uint8_t)*src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                break;
          /* Make sure there is another trailing = sign. */
          if (ch != Pad64)
             return (-1);
-         ch = (uint8_t) *src++; /* Skip the = */
+         ch = (uint8_t)*src++; /* Skip the = */
          /* Fall through to "single trailing =" case. */
          /* FALLTHROUGH */
 
@@ -390,7 +376,7 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
           * We know this char is an =.  Is there anything but
           * whitespace after it?
           */
-         for ((void) NULL; ch != '\0'; ch = (uint8_t) *src++)
+         for ((void)NULL; ch != '\0'; ch = (uint8_t)*src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                return (-1);
 
@@ -419,7 +405,7 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
 
 
 static int
-mongoc_b64_pton_len (char const *src)
+mongoc_b64_pton_len(char const *src)
 {
    uint8_t ch = 0;
    uint8_t ofs = 0;
@@ -427,7 +413,7 @@ mongoc_b64_pton_len (char const *src)
    int tarindex = 0;
 
    while (1) {
-      ch = (uint8_t) *src++;
+      ch = (uint8_t)*src++;
       ofs = mongoc_b64rmap[ch];
 
       if (ofs >= mongoc_b64rmap_special) {
@@ -458,7 +444,7 @@ mongoc_b64_pton_len (char const *src)
          state = 0;
          break;
       default:
-         abort ();
+         abort();
       }
    }
 
@@ -467,8 +453,8 @@ mongoc_b64_pton_len (char const *src)
     * on a byte boundary, and/or with erroneous trailing characters.
     */
 
-   if (ch == Pad64) {        /* We got a pad char. */
-      ch = (uint8_t) *src++; /* Skip it, get next. */
+   if (ch == Pad64) {       /* We got a pad char. */
+      ch = (uint8_t)*src++; /* Skip it, get next. */
       switch (state) {
       case 0: /* Invalid = in first position */
       case 1: /* Invalid = in second position */
@@ -476,13 +462,13 @@ mongoc_b64_pton_len (char const *src)
 
       case 2: /* Valid, means one byte of info */
          /* Skip any number of spaces. */
-         for ((void) NULL; ch != '\0'; ch = (uint8_t) *src++)
+         for ((void)NULL; ch != '\0'; ch = (uint8_t)*src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                break;
          /* Make sure there is another trailing = sign. */
          if (ch != Pad64)
             return (-1);
-         ch = (uint8_t) *src++; /* Skip the = */
+         ch = (uint8_t)*src++; /* Skip the = */
          /* Fall through to "single trailing =" case. */
          /* FALLTHROUGH */
 
@@ -491,7 +477,7 @@ mongoc_b64_pton_len (char const *src)
           * We know this char is an =.  Is there anything but
           * whitespace after it?
           */
-         for (; ch != '\0'; ch = (uint8_t) *src++)
+         for (; ch != '\0'; ch = (uint8_t)*src++)
             if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
                return (-1);
 
@@ -512,24 +498,24 @@ mongoc_b64_pton_len (char const *src)
 
 
 int
-mcommon_b64_pton (char const *src, uint8_t *target, size_t targsize)
+mcommon_b64_pton(char const *src, uint8_t *target, size_t targsize)
 {
-   static mongoc_common_once_t once = MONGOC_COMMON_ONCE_INIT;
+   static bson_once_t once = BSON_ONCE_INIT;
 
-   mongoc_common_once (&once, bson_b64_initialize_rmap);
+   bson_once(&once, bson_b64_initialize_rmap);
 
    if (!src) {
       return -1;
    }
 
    if (target)
-      return mongoc_b64_pton_do (src, target, targsize);
+      return mongoc_b64_pton_do(src, target, targsize);
    else
-      return mongoc_b64_pton_len (src);
+      return mongoc_b64_pton_len(src);
 }
 
 size_t
-mcommon_b64_ntop_calculate_target_size (size_t raw_size)
+mcommon_b64_ntop_calculate_target_size(size_t raw_size)
 {
    size_t num_bits = raw_size * 8;
    /* Calculate how many groups of six bits this contains, adding 5 to round up
@@ -542,7 +528,7 @@ mcommon_b64_ntop_calculate_target_size (size_t raw_size)
 }
 
 size_t
-mcommon_b64_pton_calculate_target_size (size_t base64_encoded_size)
+mcommon_b64_pton_calculate_target_size(size_t base64_encoded_size)
 {
    /* Without inspecting the data, we don't know how many padding characters
     * there are. Assuming none, that means each character represents 6 bits of

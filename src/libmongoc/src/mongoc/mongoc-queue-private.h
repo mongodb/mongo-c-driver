@@ -19,18 +19,15 @@
 #ifndef MONGOC_QUEUE_PRIVATE_H
 #define MONGOC_QUEUE_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <mongoc/mongoc-list-private.h>
+
+#include <bson/bson.h>
 
 
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_QUEUE_INITIALIZER \
-   {                             \
-      NULL, NULL                 \
-   }
+#define MONGOC_QUEUE_INITIALIZER {NULL, NULL}
 
 
 typedef struct _mongoc_queue_t mongoc_queue_t;
@@ -51,17 +48,17 @@ struct _mongoc_queue_item_t {
 
 
 void
-_mongoc_queue_init (mongoc_queue_t *queue);
+_mongoc_queue_init(mongoc_queue_t *queue);
 void *
-_mongoc_queue_pop_head (mongoc_queue_t *queue);
+_mongoc_queue_pop_head(mongoc_queue_t *queue);
 void *
-_mongoc_queue_pop_tail (mongoc_queue_t *queue);
+_mongoc_queue_pop_tail(mongoc_queue_t *queue);
 void
-_mongoc_queue_push_head (mongoc_queue_t *queue, void *data);
+_mongoc_queue_push_head(mongoc_queue_t *queue, void *data);
 void
-_mongoc_queue_push_tail (mongoc_queue_t *queue, void *data);
+_mongoc_queue_push_tail(mongoc_queue_t *queue, void *data);
 uint32_t
-_mongoc_queue_get_length (const mongoc_queue_t *queue);
+_mongoc_queue_get_length(const mongoc_queue_t *queue);
 
 
 BSON_END_DECLS

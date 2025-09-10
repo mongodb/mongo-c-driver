@@ -1,9 +1,10 @@
-#include <assert.h>
 #include <mongoc/mongoc.h>
+
+#include <assert.h>
 #include <stdio.h>
 
 static void
-bulk2 (mongoc_collection_t *collection)
+bulk2(mongoc_collection_t *collection)
 {
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
@@ -15,59 +16,59 @@ bulk2 (mongoc_collection_t *collection)
    bool ret;
    int i;
 
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts(collection, NULL);
 
    /* Remove everything */
-   query = bson_new ();
-   mongoc_bulk_operation_remove (bulk, query);
-   bson_destroy (query);
+   query = bson_new();
+   mongoc_bulk_operation_remove(bulk, query);
+   bson_destroy(query);
 
    /* Add a few documents */
    for (i = 1; i < 4; i++) {
-      doc = BCON_NEW ("_id", BCON_INT32 (i));
-      mongoc_bulk_operation_insert (bulk, doc);
-      bson_destroy (doc);
+      doc = BCON_NEW("_id", BCON_INT32(i));
+      mongoc_bulk_operation_insert(bulk, doc);
+      bson_destroy(doc);
    }
 
    /* {_id: 1} => {$set: {foo: "bar"}} */
-   query = BCON_NEW ("_id", BCON_INT32 (1));
-   doc = BCON_NEW ("$set", "{", "foo", BCON_UTF8 ("bar"), "}");
-   mongoc_bulk_operation_update_many_with_opts (bulk, query, doc, NULL, &error);
-   bson_destroy (query);
-   bson_destroy (doc);
+   query = BCON_NEW("_id", BCON_INT32(1));
+   doc = BCON_NEW("$set", "{", "foo", BCON_UTF8("bar"), "}");
+   mongoc_bulk_operation_update_many_with_opts(bulk, query, doc, NULL, &error);
+   bson_destroy(query);
+   bson_destroy(doc);
 
    /* {_id: 4} => {'$inc': {'j': 1}} (upsert) */
-   opts = BCON_NEW ("upsert", BCON_BOOL (true));
-   query = BCON_NEW ("_id", BCON_INT32 (4));
-   doc = BCON_NEW ("$inc", "{", "j", BCON_INT32 (1), "}");
-   mongoc_bulk_operation_update_many_with_opts (bulk, query, doc, opts, &error);
-   bson_destroy (query);
-   bson_destroy (doc);
-   bson_destroy (opts);
+   opts = BCON_NEW("upsert", BCON_BOOL(true));
+   query = BCON_NEW("_id", BCON_INT32(4));
+   doc = BCON_NEW("$inc", "{", "j", BCON_INT32(1), "}");
+   mongoc_bulk_operation_update_many_with_opts(bulk, query, doc, opts, &error);
+   bson_destroy(query);
+   bson_destroy(doc);
+   bson_destroy(opts);
 
    /* replace {j:1} with {j:2} */
-   query = BCON_NEW ("j", BCON_INT32 (1));
-   doc = BCON_NEW ("j", BCON_INT32 (2));
-   mongoc_bulk_operation_replace_one_with_opts (bulk, query, doc, NULL, &error);
-   bson_destroy (query);
-   bson_destroy (doc);
+   query = BCON_NEW("j", BCON_INT32(1));
+   doc = BCON_NEW("j", BCON_INT32(2));
+   mongoc_bulk_operation_replace_one_with_opts(bulk, query, doc, NULL, &error);
+   bson_destroy(query);
+   bson_destroy(doc);
 
-   ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ret = mongoc_bulk_operation_execute(bulk, &reply, &error);
 
-   str = bson_as_canonical_extended_json (&reply, NULL);
-   printf ("%s\n", str);
-   bson_free (str);
+   str = bson_as_canonical_extended_json(&reply, NULL);
+   printf("%s\n", str);
+   bson_free(str);
 
    if (!ret) {
-      printf ("Error: %s\n", error.message);
+      printf("Error: %s\n", error.message);
    }
 
-   bson_destroy (&reply);
-   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy(&reply);
+   mongoc_bulk_operation_destroy(bulk);
 }
 
 int
-main (void)
+main(void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -75,33 +76,33 @@ main (void)
    mongoc_uri_t *uri;
    bson_error_t error;
 
-   mongoc_init ();
+   mongoc_init();
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      fprintf (stderr,
-               "failed to parse URI: %s\n"
-               "error message:       %s\n",
-               uri_string,
-               error.message);
+      fprintf(stderr,
+              "failed to parse URI: %s\n"
+              "error message:       %s\n",
+              uri_string,
+              error.message);
       return EXIT_FAILURE;
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri(uri);
    if (!client) {
       return EXIT_FAILURE;
    }
 
-   mongoc_client_set_error_api (client, 2);
-   collection = mongoc_client_get_collection (client, "test", "test");
+   mongoc_client_set_error_api(client, 2);
+   collection = mongoc_client_get_collection(client, "test", "test");
 
-   bulk2 (collection);
+   bulk2(collection);
 
-   mongoc_uri_destroy (uri);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
+   mongoc_uri_destroy(uri);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
 
-   mongoc_cleanup ();
+   mongoc_cleanup();
 
    return EXIT_SUCCESS;
 }

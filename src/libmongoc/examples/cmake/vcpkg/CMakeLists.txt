@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required (VERSION 3.15...4.0)
 project(vcpkg-example-project)
 
 find_package(mongoc CONFIG REQUIRED)

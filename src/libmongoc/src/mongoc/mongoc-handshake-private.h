@@ -113,6 +113,9 @@ typedef struct _mongoc_handshake_t {
    char *compiler_info;
    char *flags;
 
+   bool docker;
+   bool kubernetes;
+
    mongoc_handshake_env_t env;
    optional_int32 env_timeout_sec;
    optional_int32 env_memory_mb;
@@ -122,22 +125,22 @@ typedef struct _mongoc_handshake_t {
 } mongoc_handshake_t;
 
 void
-_mongoc_handshake_init (void);
+_mongoc_handshake_init(void);
 
 void
-_mongoc_handshake_cleanup (void);
+_mongoc_handshake_cleanup(void);
 
 bson_t *
-_mongoc_handshake_build_doc_with_application (const char *application);
+_mongoc_handshake_build_doc_with_application(const char *application);
 
 void
-_mongoc_handshake_freeze (void);
+_mongoc_handshake_freeze(void);
 
 mongoc_handshake_t *
-_mongoc_handshake_get (void);
+_mongoc_handshake_get(void);
 
 bool
-_mongoc_handshake_appname_is_valid (const char *appname);
+_mongoc_handshake_appname_is_valid(const char *appname);
 
 typedef struct {
    bool scram_sha_256;
@@ -145,11 +148,11 @@ typedef struct {
 } mongoc_handshake_sasl_supported_mechs_t;
 
 void
-_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri, bson_t *hello);
+_mongoc_handshake_append_sasl_supported_mechs(const mongoc_uri_t *uri, bson_t *hello);
 
 void
-_mongoc_handshake_parse_sasl_supported_mechs (const bson_t *hello,
-                                              mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
+_mongoc_handshake_parse_sasl_supported_mechs(const bson_t *hello,
+                                             mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
 
 BSON_END_DECLS
 

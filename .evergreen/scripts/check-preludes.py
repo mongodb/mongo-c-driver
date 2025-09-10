@@ -39,7 +39,7 @@ checks = [
     },
     {
         "name": "libbson",
-        "headers": list(BSON_PREFIX.glob("*.h")),
+        "headers": list(BSON_PREFIX.glob("bson-*.h")),
         "exclusions": [
             BSON_PREFIX / "bson-prelude.h",
             BSON_PREFIX / "bson.h",

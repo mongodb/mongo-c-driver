@@ -19,13 +19,13 @@
 #ifndef MONGOC_SERVER_STREAM_H
 #define MONGOC_SERVER_STREAM_H
 
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+
 #include <mongoc/mongoc-config.h>
+#include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
-
-#include <mongoc/mongoc-topology-description-private.h>
-#include <mongoc/mongoc-server-description-private.h>
-#include <mongoc/mongoc-stream.h>
 
 BSON_BEGIN_DECLS
 
@@ -45,21 +45,21 @@ typedef struct _mongoc_server_stream_t {
 
 
 mongoc_server_stream_t *
-mongoc_server_stream_new (const mongoc_topology_description_t *td,
-                          mongoc_server_description_t *sd,
-                          mongoc_stream_t *stream);
+mongoc_server_stream_new(const mongoc_topology_description_t *td,
+                         mongoc_server_description_t *sd,
+                         mongoc_stream_t *stream);
 
 int32_t
-mongoc_server_stream_max_bson_obj_size (mongoc_server_stream_t *server_stream);
+mongoc_server_stream_max_bson_obj_size(mongoc_server_stream_t *server_stream);
 
 int32_t
-mongoc_server_stream_max_msg_size (mongoc_server_stream_t *server_stream);
+mongoc_server_stream_max_msg_size(mongoc_server_stream_t *server_stream);
 
 int32_t
-mongoc_server_stream_max_write_batch_size (mongoc_server_stream_t *server_stream);
+mongoc_server_stream_max_write_batch_size(mongoc_server_stream_t *server_stream);
 
 void
-mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream);
+mongoc_server_stream_cleanup(mongoc_server_stream_t *server_stream);
 
 BSON_END_DECLS
 

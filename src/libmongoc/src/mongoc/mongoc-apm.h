@@ -19,12 +19,12 @@
 #ifndef MONGOC_APM_H
 #define MONGOC_APM_H
 
-#include <bson/bson.h>
-
-#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-server-description.h>
 #include <mongoc/mongoc-topology-description.h>
+
+#include <bson/bson.h>
 
 BSON_BEGIN_DECLS
 
@@ -77,303 +77,303 @@ typedef struct _mongoc_apm_server_heartbeat_failed_t mongoc_apm_server_heartbeat
 /* command-started event fields */
 
 
-MONGOC_EXPORT (const bson_t *)
-mongoc_apm_command_started_get_command (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(const bson_t *)
+mongoc_apm_command_started_get_command(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (const char *)
-mongoc_apm_command_started_get_database_name (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(const char *)
+mongoc_apm_command_started_get_database_name(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (const char *)
-mongoc_apm_command_started_get_command_name (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(const char *)
+mongoc_apm_command_started_get_command_name(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_started_get_request_id (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_started_get_request_id(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_started_get_operation_id (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_started_get_operation_id(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_command_started_get_host (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_command_started_get_host(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (uint32_t)
-mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(uint32_t)
+mongoc_apm_command_started_get_server_id(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (const bson_oid_t *)
-mongoc_apm_command_started_get_service_id (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(const bson_oid_t *)
+mongoc_apm_command_started_get_service_id(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_started_get_server_connection_id_int64 (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_started_get_server_connection_id_int64(const mongoc_apm_command_started_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_command_started_get_context (const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_command_started_get_context(const mongoc_apm_command_started_t *event);
 
 /* command-succeeded event fields */
 
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_succeeded_get_duration (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_succeeded_get_duration(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (const bson_t *)
-mongoc_apm_command_succeeded_get_reply (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(const bson_t *)
+mongoc_apm_command_succeeded_get_reply(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (const char *)
-mongoc_apm_command_succeeded_get_command_name (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(const char *)
+mongoc_apm_command_succeeded_get_command_name(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (const char *)
-mongoc_apm_command_succeeded_get_database_name (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(const char *)
+mongoc_apm_command_succeeded_get_database_name(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_succeeded_get_request_id (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_succeeded_get_request_id(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_succeeded_get_operation_id (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_succeeded_get_operation_id(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_command_succeeded_get_host (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_command_succeeded_get_host(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (uint32_t)
-mongoc_apm_command_succeeded_get_server_id (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(uint32_t)
+mongoc_apm_command_succeeded_get_server_id(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (const bson_oid_t *)
-mongoc_apm_command_succeeded_get_service_id (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(const bson_oid_t *)
+mongoc_apm_command_succeeded_get_service_id(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_succeeded_get_server_connection_id_int64 (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_succeeded_get_server_connection_id_int64(const mongoc_apm_command_succeeded_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_command_succeeded_get_context (const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_command_succeeded_get_context(const mongoc_apm_command_succeeded_t *event);
 
 /* command-failed event fields */
 
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_failed_get_duration (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_failed_get_duration(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (const char *)
-mongoc_apm_command_failed_get_command_name (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(const char *)
+mongoc_apm_command_failed_get_command_name(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (const char *)
-mongoc_apm_command_failed_get_database_name (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(const char *)
+mongoc_apm_command_failed_get_database_name(const mongoc_apm_command_failed_t *event);
 /* retrieve the error by filling out the passed-in "error" struct */
 
-MONGOC_EXPORT (void)
-mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event, bson_error_t *error);
+MONGOC_EXPORT(void)
+mongoc_apm_command_failed_get_error(const mongoc_apm_command_failed_t *event, bson_error_t *error);
 
-MONGOC_EXPORT (const bson_t *)
-mongoc_apm_command_failed_get_reply (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(const bson_t *)
+mongoc_apm_command_failed_get_reply(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_failed_get_request_id (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_failed_get_request_id(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_failed_get_operation_id (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_failed_get_operation_id(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_command_failed_get_host (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_command_failed_get_host(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (uint32_t)
-mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(uint32_t)
+mongoc_apm_command_failed_get_server_id(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (const bson_oid_t *)
-mongoc_apm_command_failed_get_service_id (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(const bson_oid_t *)
+mongoc_apm_command_failed_get_service_id(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_command_failed_get_server_connection_id_int64 (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_command_failed_get_server_connection_id_int64(const mongoc_apm_command_failed_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_command_failed_get_context (const mongoc_apm_command_failed_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_command_failed_get_context(const mongoc_apm_command_failed_t *event);
 
 /* server-changed event fields */
 
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_server_changed_get_host (const mongoc_apm_server_changed_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_server_changed_get_host(const mongoc_apm_server_changed_t *event);
 
-MONGOC_EXPORT (void)
-mongoc_apm_server_changed_get_topology_id (const mongoc_apm_server_changed_t *event, bson_oid_t *topology_id);
+MONGOC_EXPORT(void)
+mongoc_apm_server_changed_get_topology_id(const mongoc_apm_server_changed_t *event, bson_oid_t *topology_id);
 
-MONGOC_EXPORT (const mongoc_server_description_t *)
-mongoc_apm_server_changed_get_previous_description (const mongoc_apm_server_changed_t *event);
+MONGOC_EXPORT(const mongoc_server_description_t *)
+mongoc_apm_server_changed_get_previous_description(const mongoc_apm_server_changed_t *event);
 
-MONGOC_EXPORT (const mongoc_server_description_t *)
-mongoc_apm_server_changed_get_new_description (const mongoc_apm_server_changed_t *event);
+MONGOC_EXPORT(const mongoc_server_description_t *)
+mongoc_apm_server_changed_get_new_description(const mongoc_apm_server_changed_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_server_changed_get_context (const mongoc_apm_server_changed_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_server_changed_get_context(const mongoc_apm_server_changed_t *event);
 
 /* server-opening event fields */
 
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_server_opening_get_host (const mongoc_apm_server_opening_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_server_opening_get_host(const mongoc_apm_server_opening_t *event);
 
-MONGOC_EXPORT (void)
-mongoc_apm_server_opening_get_topology_id (const mongoc_apm_server_opening_t *event, bson_oid_t *topology_id);
+MONGOC_EXPORT(void)
+mongoc_apm_server_opening_get_topology_id(const mongoc_apm_server_opening_t *event, bson_oid_t *topology_id);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_server_opening_get_context (const mongoc_apm_server_opening_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_server_opening_get_context(const mongoc_apm_server_opening_t *event);
 
 /* server-closed event fields */
 
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_server_closed_get_host (const mongoc_apm_server_closed_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_server_closed_get_host(const mongoc_apm_server_closed_t *event);
 
-MONGOC_EXPORT (void)
-mongoc_apm_server_closed_get_topology_id (const mongoc_apm_server_closed_t *event, bson_oid_t *topology_id);
+MONGOC_EXPORT(void)
+mongoc_apm_server_closed_get_topology_id(const mongoc_apm_server_closed_t *event, bson_oid_t *topology_id);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_server_closed_get_context (const mongoc_apm_server_closed_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_server_closed_get_context(const mongoc_apm_server_closed_t *event);
 
 /* topology-changed event fields */
 
 
-MONGOC_EXPORT (void)
-mongoc_apm_topology_changed_get_topology_id (const mongoc_apm_topology_changed_t *event, bson_oid_t *topology_id);
+MONGOC_EXPORT(void)
+mongoc_apm_topology_changed_get_topology_id(const mongoc_apm_topology_changed_t *event, bson_oid_t *topology_id);
 
-MONGOC_EXPORT (const mongoc_topology_description_t *)
-mongoc_apm_topology_changed_get_previous_description (const mongoc_apm_topology_changed_t *event);
+MONGOC_EXPORT(const mongoc_topology_description_t *)
+mongoc_apm_topology_changed_get_previous_description(const mongoc_apm_topology_changed_t *event);
 
-MONGOC_EXPORT (const mongoc_topology_description_t *)
-mongoc_apm_topology_changed_get_new_description (const mongoc_apm_topology_changed_t *event);
+MONGOC_EXPORT(const mongoc_topology_description_t *)
+mongoc_apm_topology_changed_get_new_description(const mongoc_apm_topology_changed_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_topology_changed_get_context (const mongoc_apm_topology_changed_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_topology_changed_get_context(const mongoc_apm_topology_changed_t *event);
 
 /* topology-opening event field */
 
 
-MONGOC_EXPORT (void)
-mongoc_apm_topology_opening_get_topology_id (const mongoc_apm_topology_opening_t *event, bson_oid_t *topology_id);
+MONGOC_EXPORT(void)
+mongoc_apm_topology_opening_get_topology_id(const mongoc_apm_topology_opening_t *event, bson_oid_t *topology_id);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_topology_opening_get_context (const mongoc_apm_topology_opening_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_topology_opening_get_context(const mongoc_apm_topology_opening_t *event);
 
 /* topology-closed event field */
 
 
-MONGOC_EXPORT (void)
-mongoc_apm_topology_closed_get_topology_id (const mongoc_apm_topology_closed_t *event, bson_oid_t *topology_id);
+MONGOC_EXPORT(void)
+mongoc_apm_topology_closed_get_topology_id(const mongoc_apm_topology_closed_t *event, bson_oid_t *topology_id);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_topology_closed_get_context (const mongoc_apm_topology_closed_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_topology_closed_get_context(const mongoc_apm_topology_closed_t *event);
 
 /* heartbeat-started event field */
 
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_server_heartbeat_started_get_host (const mongoc_apm_server_heartbeat_started_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_server_heartbeat_started_get_host(const mongoc_apm_server_heartbeat_started_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_server_heartbeat_started_get_context (const mongoc_apm_server_heartbeat_started_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_server_heartbeat_started_get_context(const mongoc_apm_server_heartbeat_started_t *event);
 
-MONGOC_EXPORT (bool)
-mongoc_apm_server_heartbeat_started_get_awaited (const mongoc_apm_server_heartbeat_started_t *event);
+MONGOC_EXPORT(bool)
+mongoc_apm_server_heartbeat_started_get_awaited(const mongoc_apm_server_heartbeat_started_t *event);
 
 /* heartbeat-succeeded event fields */
 
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_server_heartbeat_succeeded_get_duration (const mongoc_apm_server_heartbeat_succeeded_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_server_heartbeat_succeeded_get_duration(const mongoc_apm_server_heartbeat_succeeded_t *event);
 
-MONGOC_EXPORT (const bson_t *)
-mongoc_apm_server_heartbeat_succeeded_get_reply (const mongoc_apm_server_heartbeat_succeeded_t *event);
+MONGOC_EXPORT(const bson_t *)
+mongoc_apm_server_heartbeat_succeeded_get_reply(const mongoc_apm_server_heartbeat_succeeded_t *event);
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_server_heartbeat_succeeded_get_host (const mongoc_apm_server_heartbeat_succeeded_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_server_heartbeat_succeeded_get_host(const mongoc_apm_server_heartbeat_succeeded_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_server_heartbeat_succeeded_get_context (const mongoc_apm_server_heartbeat_succeeded_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_server_heartbeat_succeeded_get_context(const mongoc_apm_server_heartbeat_succeeded_t *event);
 
-MONGOC_EXPORT (bool)
-mongoc_apm_server_heartbeat_succeeded_get_awaited (const mongoc_apm_server_heartbeat_succeeded_t *event);
+MONGOC_EXPORT(bool)
+mongoc_apm_server_heartbeat_succeeded_get_awaited(const mongoc_apm_server_heartbeat_succeeded_t *event);
 
 /* heartbeat-failed event fields */
 
 
-MONGOC_EXPORT (int64_t)
-mongoc_apm_server_heartbeat_failed_get_duration (const mongoc_apm_server_heartbeat_failed_t *event);
+MONGOC_EXPORT(int64_t)
+mongoc_apm_server_heartbeat_failed_get_duration(const mongoc_apm_server_heartbeat_failed_t *event);
 
-MONGOC_EXPORT (void)
-mongoc_apm_server_heartbeat_failed_get_error (const mongoc_apm_server_heartbeat_failed_t *event, bson_error_t *error);
+MONGOC_EXPORT(void)
+mongoc_apm_server_heartbeat_failed_get_error(const mongoc_apm_server_heartbeat_failed_t *event, bson_error_t *error);
 
-MONGOC_EXPORT (const mongoc_host_list_t *)
-mongoc_apm_server_heartbeat_failed_get_host (const mongoc_apm_server_heartbeat_failed_t *event);
+MONGOC_EXPORT(const mongoc_host_list_t *)
+mongoc_apm_server_heartbeat_failed_get_host(const mongoc_apm_server_heartbeat_failed_t *event);
 
-MONGOC_EXPORT (void *)
-mongoc_apm_server_heartbeat_failed_get_context (const mongoc_apm_server_heartbeat_failed_t *event);
+MONGOC_EXPORT(void *)
+mongoc_apm_server_heartbeat_failed_get_context(const mongoc_apm_server_heartbeat_failed_t *event);
 
-MONGOC_EXPORT (bool)
-mongoc_apm_server_heartbeat_failed_get_awaited (const mongoc_apm_server_heartbeat_failed_t *event);
+MONGOC_EXPORT(bool)
+mongoc_apm_server_heartbeat_failed_get_awaited(const mongoc_apm_server_heartbeat_failed_t *event);
 
 
 /*
  * callbacks
  */
 
-typedef void (BSON_CALL *mongoc_apm_command_started_cb_t) (const mongoc_apm_command_started_t *event);
-typedef void (BSON_CALL *mongoc_apm_command_succeeded_cb_t) (const mongoc_apm_command_succeeded_t *event);
-typedef void (BSON_CALL *mongoc_apm_command_failed_cb_t) (const mongoc_apm_command_failed_t *event);
-typedef void (BSON_CALL *mongoc_apm_server_changed_cb_t) (const mongoc_apm_server_changed_t *event);
-typedef void (BSON_CALL *mongoc_apm_server_opening_cb_t) (const mongoc_apm_server_opening_t *event);
-typedef void (BSON_CALL *mongoc_apm_server_closed_cb_t) (const mongoc_apm_server_closed_t *event);
-typedef void (BSON_CALL *mongoc_apm_topology_changed_cb_t) (const mongoc_apm_topology_changed_t *event);
-typedef void (BSON_CALL *mongoc_apm_topology_opening_cb_t) (const mongoc_apm_topology_opening_t *event);
-typedef void (BSON_CALL *mongoc_apm_topology_closed_cb_t) (const mongoc_apm_topology_closed_t *event);
-typedef void (BSON_CALL *mongoc_apm_server_heartbeat_started_cb_t) (const mongoc_apm_server_heartbeat_started_t *event);
-typedef void (BSON_CALL *mongoc_apm_server_heartbeat_succeeded_cb_t) (
+typedef void(BSON_CALL *mongoc_apm_command_started_cb_t)(const mongoc_apm_command_started_t *event);
+typedef void(BSON_CALL *mongoc_apm_command_succeeded_cb_t)(const mongoc_apm_command_succeeded_t *event);
+typedef void(BSON_CALL *mongoc_apm_command_failed_cb_t)(const mongoc_apm_command_failed_t *event);
+typedef void(BSON_CALL *mongoc_apm_server_changed_cb_t)(const mongoc_apm_server_changed_t *event);
+typedef void(BSON_CALL *mongoc_apm_server_opening_cb_t)(const mongoc_apm_server_opening_t *event);
+typedef void(BSON_CALL *mongoc_apm_server_closed_cb_t)(const mongoc_apm_server_closed_t *event);
+typedef void(BSON_CALL *mongoc_apm_topology_changed_cb_t)(const mongoc_apm_topology_changed_t *event);
+typedef void(BSON_CALL *mongoc_apm_topology_opening_cb_t)(const mongoc_apm_topology_opening_t *event);
+typedef void(BSON_CALL *mongoc_apm_topology_closed_cb_t)(const mongoc_apm_topology_closed_t *event);
+typedef void(BSON_CALL *mongoc_apm_server_heartbeat_started_cb_t)(const mongoc_apm_server_heartbeat_started_t *event);
+typedef void(BSON_CALL *mongoc_apm_server_heartbeat_succeeded_cb_t)(
    const mongoc_apm_server_heartbeat_succeeded_t *event);
-typedef void (BSON_CALL *mongoc_apm_server_heartbeat_failed_cb_t) (const mongoc_apm_server_heartbeat_failed_t *event);
+typedef void(BSON_CALL *mongoc_apm_server_heartbeat_failed_cb_t)(const mongoc_apm_server_heartbeat_failed_t *event);
 
 /*
  * registering callbacks
  */
 
 
-MONGOC_EXPORT (mongoc_apm_callbacks_t *)
-mongoc_apm_callbacks_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(mongoc_apm_callbacks_t *)
+mongoc_apm_callbacks_new(void) BSON_GNUC_WARN_UNUSED_RESULT;
 
-MONGOC_EXPORT (void)
-mongoc_apm_callbacks_destroy (mongoc_apm_callbacks_t *callbacks);
+MONGOC_EXPORT(void)
+mongoc_apm_callbacks_destroy(mongoc_apm_callbacks_t *callbacks);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_command_started_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_started_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_command_started_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_started_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_command_succeeded_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_succeeded_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_command_succeeded_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_succeeded_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_command_failed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_failed_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_command_failed_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_command_failed_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_server_changed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_changed_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_server_changed_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_changed_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_server_opening_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_opening_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_server_opening_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_opening_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_server_closed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_closed_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_server_closed_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_server_closed_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_changed_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_topology_changed_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_changed_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_opening_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_topology_opening_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_opening_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_topology_closed_cb (mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_closed_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_topology_closed_cb(mongoc_apm_callbacks_t *callbacks, mongoc_apm_topology_closed_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_server_heartbeat_started_cb (mongoc_apm_callbacks_t *callbacks,
-                                            mongoc_apm_server_heartbeat_started_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_server_heartbeat_started_cb(mongoc_apm_callbacks_t *callbacks,
+                                           mongoc_apm_server_heartbeat_started_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_server_heartbeat_succeeded_cb (mongoc_apm_callbacks_t *callbacks,
-                                              mongoc_apm_server_heartbeat_succeeded_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_server_heartbeat_succeeded_cb(mongoc_apm_callbacks_t *callbacks,
+                                             mongoc_apm_server_heartbeat_succeeded_cb_t cb);
 
-MONGOC_EXPORT (void)
-mongoc_apm_set_server_heartbeat_failed_cb (mongoc_apm_callbacks_t *callbacks,
-                                           mongoc_apm_server_heartbeat_failed_cb_t cb);
+MONGOC_EXPORT(void)
+mongoc_apm_set_server_heartbeat_failed_cb(mongoc_apm_callbacks_t *callbacks,
+                                          mongoc_apm_server_heartbeat_failed_cb_t cb);
 BSON_END_DECLS
 
 #endif /* MONGOC_APM_H */

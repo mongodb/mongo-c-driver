@@ -17,12 +17,15 @@
 #ifndef UNIFIED_RUNNER_H
 #define UNIFIED_RUNNER_H
 
-#include <bson/bson.h>
-#include "bsonutil/bson-parser.h"
-#include "entity-map.h"
+#include "./entity-map.h"
+
 #include <mongoc/mongoc-array-private.h>
-#include "test-conveniences.h"
-#include "TestSuite.h"
+
+#include <bson/bson.h>
+#include <bsonutil/bson-parser.h>
+
+#include <TestSuite.h>
+#include <test-conveniences.h>
 
 /* test_runner_t, test_file_t, and test_t model the types described in the "Test
  * Runner Implementation" section of the Unified Test Format specification. */
@@ -68,17 +71,17 @@ typedef struct {
 
 /* Set server_id to 0 if the failpoint was not against a pinned mongos. */
 void
-register_failpoint (test_t *test, char *failpoint, char *client_id, uint32_t server_id);
+register_failpoint(test_t *test, char *failpoint, char *client_id, uint32_t server_id);
 
 bool
-test_count_matching_events_for_client (
+test_count_matching_events_for_client(
    test_t *test, entity_t *client, bson_t *expected_event, bson_error_t *error, int64_t *count_out);
 
 /* Run a directory of test files through the unified test runner. */
 void
-run_unified_tests (TestSuite *suite, const char *base, const char *subdir);
+run_unified_tests(TestSuite *suite, const char *base, const char *subdir);
 
 void
-run_one_test_file (void *bson_vp);
+run_one_test_file(void *bson_vp);
 
 #endif /* UNIFIED_RUNNER_H */

@@ -17,6 +17,7 @@
 #include <mongoc/mongoc-prelude.h>
 
 #include <mongoc/mongoc-config.h>
+
 #include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
@@ -29,52 +30,52 @@
 BSON_BEGIN_DECLS
 
 bool
-mongoc_crypto_openssl_pbkdf2_hmac_sha1 (mongoc_crypto_t *crypto,
-                                        const char *password,
-                                        size_t password_len,
-                                        const uint8_t *salt,
-                                        size_t salt_len,
-                                        uint32_t iterations,
-                                        size_t output_len,
-                                        unsigned char *output);
+mongoc_crypto_openssl_pbkdf2_hmac_sha1(mongoc_crypto_t *crypto,
+                                       const char *password,
+                                       size_t password_len,
+                                       const uint8_t *salt,
+                                       size_t salt_len,
+                                       uint32_t iterations,
+                                       size_t output_len,
+                                       unsigned char *output);
 
 void
-mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
-                                 const void *key,
-                                 int key_len,
-                                 const unsigned char *data,
-                                 int data_len,
-                                 unsigned char *hmac_out);
+mongoc_crypto_openssl_hmac_sha1(mongoc_crypto_t *crypto,
+                                const void *key,
+                                int key_len,
+                                const unsigned char *data,
+                                int data_len,
+                                unsigned char *hmac_out);
 
 bool
-mongoc_crypto_openssl_sha1 (mongoc_crypto_t *crypto,
-                            const unsigned char *input,
-                            const size_t input_len,
-                            unsigned char *hash_out);
+mongoc_crypto_openssl_sha1(mongoc_crypto_t *crypto,
+                           const unsigned char *input,
+                           const size_t input_len,
+                           unsigned char *hash_out);
 
 bool
-mongoc_crypto_openssl_pbkdf2_hmac_sha256 (mongoc_crypto_t *crypto,
-                                          const char *password,
-                                          size_t password_len,
-                                          const uint8_t *salt,
-                                          size_t salt_len,
-                                          uint32_t iterations,
-                                          size_t output_len,
-                                          unsigned char *output);
+mongoc_crypto_openssl_pbkdf2_hmac_sha256(mongoc_crypto_t *crypto,
+                                         const char *password,
+                                         size_t password_len,
+                                         const uint8_t *salt,
+                                         size_t salt_len,
+                                         uint32_t iterations,
+                                         size_t output_len,
+                                         unsigned char *output);
 
 void
-mongoc_crypto_openssl_hmac_sha256 (mongoc_crypto_t *crypto,
-                                   const void *key,
-                                   int key_len,
-                                   const unsigned char *data,
-                                   int data_len,
-                                   unsigned char *hmac_out);
+mongoc_crypto_openssl_hmac_sha256(mongoc_crypto_t *crypto,
+                                  const void *key,
+                                  int key_len,
+                                  const unsigned char *data,
+                                  int data_len,
+                                  unsigned char *hmac_out);
 
 bool
-mongoc_crypto_openssl_sha256 (mongoc_crypto_t *crypto,
-                              const unsigned char *input,
-                              const size_t input_len,
-                              unsigned char *hash_out);
+mongoc_crypto_openssl_sha256(mongoc_crypto_t *crypto,
+                             const unsigned char *input,
+                             const size_t input_len,
+                             unsigned char *hash_out);
 
 BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_OPENSSL_PRIVATE_H */

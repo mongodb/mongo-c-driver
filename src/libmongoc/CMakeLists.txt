@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.15...4.0)
 
 project (libmongoc
    LANGUAGES C
@@ -204,7 +204,7 @@ endfunction()
 # Per-backend link libs/options:
 set(SecureTransport/LINK_LIBRARIES "-framework CoreFoundation" "-framework Security")
 set(SecureTransport/pkg_config_LIBS -framework Corefoundation -framework Security)
-set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
+set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib ncrypt.lib)
 set(SecureChannel/pkg_config_LIBS ${SecureChannel/LINK_LIBRARIES})
 set(OpenSSL/LINK_LIBRARIES OpenSSL::SSL OpenSSL::Crypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
 set(OpenSSL/pkg_config_LIBS -lssl -lcrypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
@@ -489,10 +489,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.13.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.15.0)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.13.0 is required to enable In-Use Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.15.0 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -971,6 +971,23 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(MONGOC_ENABLE_STATIC_INSTALL)
       mongo_generate_pkg_config (mongoc_static FILENAME mongoc${PROJECT_VERSION_MAJOR}-static.pc INSTALL)
    endif()
+
+   if(MONGO_CAN_VERIFY_HEADERS AND ENABLE_TESTS)
+      mongo_verify_headers(
+         mongoc
+         USE_LIBRARIES mongoc::static
+         HEADERS "src/*.h"
+         EXCLUDE_REGEX
+            # Ignore all headers that start with "mongoc-", as they have not
+            # been sanitized for direct inclusion.
+            "mongoc/mongoc-.*\\.h"
+            # Other private headers that aren't for public consumption:
+            "/mcd-"
+            "service-gcp\\.h"
+            "uthash\\.h"
+            "utlist\\.h"
+         )
+   endif()
 endif ()
 
 
@@ -1015,6 +1032,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/mock_server/mock-server.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/request.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/sync-queue.c
+   ${PROJECT_SOURCE_DIR}/tests/stream-tracker.c
    ${PROJECT_SOURCE_DIR}/tests/test-conveniences.c
    ${PROJECT_SOURCE_DIR}/tests/test-happy-eyeballs.c
    ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
@@ -1075,6 +1093,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-secure-channel.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
@@ -1191,9 +1210,6 @@ if (ENABLE_TESTS)
 
    mongoc_add_test (test-libmongoc ${PROJECT_SOURCE_DIR}/tests/test-libmongoc-main.c)
    target_link_libraries (test-libmongoc PUBLIC test-libmongoc-lib)
-
-   mongoc_add_test (test-atlas-executor ${PROJECT_SOURCE_DIR}/tests/test-atlas-executor.c)
-   target_link_libraries (test-atlas-executor PUBLIC test-libmongoc-lib)
 
    mongoc_add_test (test-mongoc-gssapi ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
    mongoc_add_test (test-mongoc-cache ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)

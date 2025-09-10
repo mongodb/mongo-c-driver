@@ -21,9 +21,9 @@
 #define BSON_PRIVATE_H
 
 
-#include <bson/bson-macros.h>
-#include <bson/bson-memory.h>
 #include <bson/bson-types.h>
+#include <bson/macros.h>
+#include <bson/memory.h>
 
 
 BSON_BEGIN_DECLS
@@ -43,15 +43,15 @@ typedef enum {
 #define BSON_INLINE_DATA_SIZE 120
 
 
-BSON_ALIGNED_BEGIN (BSON_ALIGN_OF_PTR)
+BSON_ALIGNED_BEGIN(BSON_ALIGN_OF_PTR)
 typedef struct {
    bson_flags_t flags;
    uint32_t len;
    uint8_t data[BSON_INLINE_DATA_SIZE];
-} bson_impl_inline_t BSON_ALIGNED_END (BSON_ALIGN_OF_PTR);
+} bson_impl_inline_t BSON_ALIGNED_END(BSON_ALIGN_OF_PTR);
 
 
-BSON_STATIC_ASSERT2 (impl_inline_t, sizeof (bson_impl_inline_t) == 128);
+BSON_STATIC_ASSERT2(impl_inline_t, sizeof(bson_impl_inline_t) == 128);
 
 typedef struct {
    bson_flags_t flags; /* flags describing the bson_t */
@@ -72,12 +72,12 @@ typedef struct {
 } bson_impl_alloc_t;
 
 
-BSON_STATIC_ASSERT2 (impl_alloc_t, sizeof (bson_impl_alloc_t) <= 128);
+BSON_STATIC_ASSERT2(impl_alloc_t, sizeof(bson_impl_alloc_t) <= 128);
 
 // Ensure both `bson_t` implementations have the same alignment requirement:
-BSON_STATIC_ASSERT2 (impls_match_alignment, BSON_ALIGNOF (bson_impl_inline_t) == BSON_ALIGNOF (bson_impl_alloc_t));
+BSON_STATIC_ASSERT2(impls_match_alignment, BSON_ALIGNOF(bson_impl_inline_t) == BSON_ALIGNOF(bson_impl_alloc_t));
 // Ensure `bson_t` has same alignment requirement as implementations:
-BSON_STATIC_ASSERT2 (impls_match_alignment, BSON_ALIGNOF (bson_t) == BSON_ALIGNOF (bson_impl_alloc_t));
+BSON_STATIC_ASSERT2(impls_match_alignment, BSON_ALIGNOF(bson_t) == BSON_ALIGNOF(bson_impl_alloc_t));
 
 
 BSON_END_DECLS

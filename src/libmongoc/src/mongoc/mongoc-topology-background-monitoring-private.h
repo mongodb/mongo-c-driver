@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2009-present MongoDB, Inc.
  *
@@ -20,24 +19,25 @@
 #ifndef MONGOC_TOPOLOGY_BACKGROUND_MONITORING_PRIVATE_H
 #define MONGOC_TOPOLOGY_BACKGROUND_MONITORING_PRIVATE_H
 
-#include <mongoc/mongoc.h>
 #include <mongoc/mongoc-topology-private.h>
+
+#include <mongoc/mongoc.h>
 
 /* Methods of mongoc_topology_t for managing background monitoring. */
 
 void
-_mongoc_topology_background_monitoring_start (mongoc_topology_t *topology);
+_mongoc_topology_background_monitoring_start(mongoc_topology_t *topology);
 
 void
-_mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology, mongoc_topology_description_t *td);
+_mongoc_topology_background_monitoring_reconcile(mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 void
-_mongoc_topology_background_monitoring_request_scan (mongoc_topology_t *topology);
+_mongoc_topology_background_monitoring_request_scan(mongoc_topology_t *topology);
 
 void
-_mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology);
+_mongoc_topology_background_monitoring_stop(mongoc_topology_t *topology);
 
 void
-_mongoc_topology_background_monitoring_cancel_check (mongoc_topology_t *topology, uint32_t server_id);
+_mongoc_topology_background_monitoring_cancel_check(mongoc_topology_t *topology, uint32_t server_id);
 
 #endif /* MONGOC_TOPOLOGY_BACKGROUND_MONITORING_PRIVATE_H */

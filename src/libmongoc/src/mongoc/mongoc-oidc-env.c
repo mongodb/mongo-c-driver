@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-oidc-env-private.h>
+
 #include <mongoc/mongoc-oidc-callback.h>
 
 struct _mongoc_oidc_env_t {
@@ -30,39 +31,39 @@ struct _mongoc_oidc_env_callback_t {
 };
 
 static mongoc_oidc_credential_t *
-mongoc_oidc_env_fn_test (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_env_fn_test(mongoc_oidc_callback_params_t *params)
 {
-   BSON_UNUSED (params);
+   BSON_UNUSED(params);
    // TODO (CDRIVER-4489)
    return NULL;
 }
 
 static mongoc_oidc_credential_t *
-mongoc_oidc_env_fn_azure (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
 {
-   BSON_UNUSED (params);
+   BSON_UNUSED(params);
    // TODO (CDRIVER-4489)
    return NULL;
 }
 
 static mongoc_oidc_credential_t *
-mongoc_oidc_env_fn_gcp (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_env_fn_gcp(mongoc_oidc_callback_params_t *params)
 {
-   BSON_UNUSED (params);
+   BSON_UNUSED(params);
    // TODO (CDRIVER-4489)
    return NULL;
 }
 
 static mongoc_oidc_credential_t *
-mongoc_oidc_env_fn_k8s (mongoc_oidc_callback_params_t *params)
+mongoc_oidc_env_fn_k8s(mongoc_oidc_callback_params_t *params)
 {
-   BSON_UNUSED (params);
+   BSON_UNUSED(params);
    // TODO (CDRIVER-4489)
    return NULL;
 }
 
 const mongoc_oidc_env_t *
-mongoc_oidc_env_find (const char *name)
+mongoc_oidc_env_find(const char *name)
 {
    static const mongoc_oidc_env_t oidc_env_table[] = {
       {.name = "test", .callback_fn = mongoc_oidc_env_fn_test},
@@ -76,7 +77,7 @@ mongoc_oidc_env_find (const char *name)
 
    if (name) {
       for (const mongoc_oidc_env_t *row = oidc_env_table; row->name; ++row) {
-         if (!strcmp (name, row->name)) {
+         if (!strcmp(name, row->name)) {
             return row;
          }
       }
@@ -85,54 +86,54 @@ mongoc_oidc_env_find (const char *name)
 }
 
 const char *
-mongoc_oidc_env_name (const mongoc_oidc_env_t *env)
+mongoc_oidc_env_name(const mongoc_oidc_env_t *env)
 {
-   BSON_ASSERT_PARAM (env);
+   BSON_ASSERT_PARAM(env);
    return env->name;
 }
 
 bool
-mongoc_oidc_env_supports_username (const mongoc_oidc_env_t *env)
+mongoc_oidc_env_supports_username(const mongoc_oidc_env_t *env)
 {
-   BSON_ASSERT_PARAM (env);
+   BSON_ASSERT_PARAM(env);
    return env->supports_username;
 }
 
 bool
-mongoc_oidc_env_requires_token_resource (const mongoc_oidc_env_t *env)
+mongoc_oidc_env_requires_token_resource(const mongoc_oidc_env_t *env)
 {
-   BSON_ASSERT_PARAM (env);
+   BSON_ASSERT_PARAM(env);
    return env->requires_token_resource;
 }
 
 mongoc_oidc_env_callback_t *
-mongoc_oidc_env_callback_new (const mongoc_oidc_env_t *env, const char *token_resource)
+mongoc_oidc_env_callback_new(const mongoc_oidc_env_t *env, const char *token_resource)
 {
-   BSON_ASSERT_PARAM (env);
-   BSON_OPTIONAL_PARAM (token_resource);
-   mongoc_oidc_env_callback_t *env_callback = bson_malloc (sizeof *env_callback);
+   BSON_ASSERT_PARAM(env);
+   BSON_OPTIONAL_PARAM(token_resource);
+   mongoc_oidc_env_callback_t *env_callback = bson_malloc(sizeof *env_callback);
    // Note that the callback's user_data points back to this containing mongoc_oidc_env_callback_t.
    // We expect that the inner callback can only be destroyed via mongoc_oidc_env_callback_destroy.
    *env_callback =
-      (mongoc_oidc_env_callback_t){.inner = mongoc_oidc_callback_new_with_user_data (env->callback_fn, env_callback),
-                                   .token_resource = bson_strdup (token_resource)};
+      (mongoc_oidc_env_callback_t){.inner = mongoc_oidc_callback_new_with_user_data(env->callback_fn, env_callback),
+                                   .token_resource = bson_strdup(token_resource)};
    return env_callback;
 }
 
 void
-mongoc_oidc_env_callback_destroy (mongoc_oidc_env_callback_t *env_callback)
+mongoc_oidc_env_callback_destroy(mongoc_oidc_env_callback_t *env_callback)
 {
    if (env_callback) {
-      BSON_ASSERT (mongoc_oidc_callback_get_user_data (env_callback->inner) == (void *) env_callback);
-      mongoc_oidc_callback_destroy (env_callback->inner);
-      bson_free (env_callback->token_resource);
-      bson_free (env_callback);
+      BSON_ASSERT(mongoc_oidc_callback_get_user_data(env_callback->inner) == (void *)env_callback);
+      mongoc_oidc_callback_destroy(env_callback->inner);
+      bson_free(env_callback->token_resource);
+      bson_free(env_callback);
    }
 }
 
 const mongoc_oidc_callback_t *
-mongoc_oidc_env_callback_inner (const mongoc_oidc_env_callback_t *env_callback)
+mongoc_oidc_env_callback_inner(const mongoc_oidc_env_callback_t *env_callback)
 {
-   BSON_ASSERT_PARAM (env_callback);
+   BSON_ASSERT_PARAM(env_callback);
    return env_callback->inner;
 }

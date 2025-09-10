@@ -19,20 +19,21 @@
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
-#include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-topology-scanner-private.h>
-#include <mongoc/mongoc-server-description-private.h>
-#include <mongoc/mongoc-topology-description-private.h>
-#include <mongoc/mongoc-log-and-monitor-private.h>
-#include <mongoc/mongoc-thread-private.h>
-#include <mongoc/mongoc-uri.h>
+#include <common-atomic-private.h>
 #include <mongoc/mongoc-client-session-private.h>
 #include <mongoc/mongoc-crypt-private.h>
-#include <mongoc/mongoc-ts-pool-private.h>
+#include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-shared-private.h>
+#include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-topology-scanner-private.h>
+#include <mongoc/mongoc-ts-pool-private.h>
+
+#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-sleep.h>
-#include <common-atomic-private.h>
+#include <mongoc/mongoc-uri.h>
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -77,20 +78,20 @@ typedef struct _mongoc_rr_data_t {
 
 struct _mongoc_topology_t;
 
-MONGOC_DECL_SPECIAL_TS_POOL (mongoc_server_session_t,
-                             mongoc_server_session_pool,
-                             struct _mongoc_topology_t,
-                             /* ctor/dtor/prune are defined in the new_with_params call */
-                             NULL,
-                             NULL,
-                             NULL)
+MONGOC_DECL_SPECIAL_TS_POOL(mongoc_server_session_t,
+                            mongoc_server_session_pool,
+                            struct _mongoc_topology_t,
+                            /* ctor/dtor/prune are defined in the new_with_params call */
+                            NULL,
+                            NULL,
+                            NULL)
 
-typedef bool (*_mongoc_rr_resolver_fn) (const char *hostname,
-                                        mongoc_rr_type_t rr_type,
-                                        mongoc_rr_data_t *rr_data,
-                                        size_t initial_buffer_size,
-                                        bool prefer_tcp,
-                                        bson_error_t *error);
+typedef bool (*_mongoc_rr_resolver_fn)(const char *hostname,
+                                       mongoc_rr_type_t rr_type,
+                                       mongoc_rr_data_t *rr_data,
+                                       size_t initial_buffer_size,
+                                       bool prefer_tcp,
+                                       bson_error_t *error);
 
 /**
  * @brief A reference-counted reference to a topology description.
@@ -235,22 +236,22 @@ typedef struct _mongoc_topology_t {
 } mongoc_topology_t;
 
 mongoc_topology_t *
-mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
+mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded);
 
 void
-mongoc_topology_set_structured_log_opts (mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts);
+mongoc_topology_set_structured_log_opts(mongoc_topology_t *topology, const mongoc_structured_log_opts_t *opts);
 
 
 void
-mongoc_topology_destroy (mongoc_topology_t *topology);
+mongoc_topology_destroy(mongoc_topology_t *topology);
 
 void
-mongoc_topology_reconcile (const mongoc_topology_t *topology, mongoc_topology_description_t *td);
+mongoc_topology_reconcile(const mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 bool
-mongoc_topology_compatible (const mongoc_topology_description_t *td,
-                            const mongoc_read_prefs_t *read_prefs,
-                            bson_error_t *error);
+mongoc_topology_compatible(const mongoc_topology_description_t *td,
+                           const mongoc_read_prefs_t *read_prefs,
+                           bson_error_t *error);
 
 /**
  * @brief Select a server description for an operation. May scan and update the
@@ -278,12 +279,12 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
  * @note This function may update the topology description.
  */
 mongoc_server_description_t *
-mongoc_topology_select (mongoc_topology_t *topology,
-                        mongoc_ss_optype_t optype,
-                        const mongoc_ss_log_context_t *log_context,
-                        const mongoc_read_prefs_t *read_prefs,
-                        bool *must_use_primary,
-                        bson_error_t *error);
+mongoc_topology_select(mongoc_topology_t *topology,
+                       mongoc_ss_optype_t optype,
+                       const mongoc_ss_log_context_t *log_context,
+                       const mongoc_read_prefs_t *read_prefs,
+                       bool *must_use_primary,
+                       bson_error_t *error);
 
 /**
  * @brief Obtain the integral ID of a server description matching the requested
@@ -307,13 +308,13 @@ mongoc_topology_select (mongoc_topology_t *topology,
  * @note This function may update the topology description.
  */
 uint32_t
-mongoc_topology_select_server_id (mongoc_topology_t *topology,
-                                  mongoc_ss_optype_t optype,
-                                  const mongoc_ss_log_context_t *log_context,
-                                  const mongoc_read_prefs_t *read_prefs,
-                                  bool *must_use_primary,
-                                  const mongoc_deprioritized_servers_t *ds,
-                                  bson_error_t *error);
+mongoc_topology_select_server_id(mongoc_topology_t *topology,
+                                 mongoc_ss_optype_t optype,
+                                 const mongoc_ss_log_context_t *log_context,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 bool *must_use_primary,
+                                 const mongoc_deprioritized_servers_t *ds,
+                                 bson_error_t *error);
 
 /**
  * @brief Return a new mongoc_host_list_t for the given server matching the
@@ -328,7 +329,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
  * `_mongoc_host_list_destroy_all()`
  */
 mongoc_host_list_t *
-_mongoc_topology_host_by_id (const mongoc_topology_description_t *topology, uint32_t id, bson_error_t *error);
+_mongoc_topology_host_by_id(const mongoc_topology_description_t *topology, uint32_t id, bson_error_t *error);
 
 /**
  * @brief Update the topology from the response to a handshake on a new
@@ -343,39 +344,39 @@ _mongoc_topology_host_by_id (const mongoc_topology_description_t *topology, uint
  * @return false If the server was already removed from the topology.
  */
 bool
-_mongoc_topology_update_from_handshake (mongoc_topology_t *topology, const mongoc_server_description_t *sd);
+_mongoc_topology_update_from_handshake(mongoc_topology_t *topology, const mongoc_server_description_t *sd);
 
 void
-_mongoc_topology_update_last_used (mongoc_topology_t *topology, uint32_t server_id);
+_mongoc_topology_update_last_used(mongoc_topology_t *topology, uint32_t server_id);
 
 int64_t
-mongoc_topology_server_timestamp (mongoc_topology_t *topology, uint32_t id);
+mongoc_topology_server_timestamp(mongoc_topology_t *topology, uint32_t id);
 
 /**
  * @brief Get the current type of the topology
  */
 mongoc_topology_description_type_t
-_mongoc_topology_get_type (const mongoc_topology_t *topology);
+_mongoc_topology_get_type(const mongoc_topology_t *topology);
 
 bool
-_mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname);
+_mongoc_topology_set_appname(mongoc_topology_t *topology, const char *appname);
 
 void
-_mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t *reply);
+_mongoc_topology_update_cluster_time(mongoc_topology_t *topology, const bson_t *reply);
 
 mongoc_server_session_t *
-_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
-                                     const mongoc_ss_log_context_t *log_context,
-                                     bson_error_t *error);
+_mongoc_topology_pop_server_session(mongoc_topology_t *topology,
+                                    const mongoc_ss_log_context_t *log_context,
+                                    bson_error_t *error);
 
 void
-_mongoc_topology_push_server_session (mongoc_topology_t *topology, mongoc_server_session_t *server_session);
+_mongoc_topology_push_server_session(mongoc_topology_t *topology, mongoc_server_session_t *server_session);
 
 bool
-_mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd);
+_mongoc_topology_end_sessions_cmd(mongoc_topology_t *topology, bson_t *cmd);
 
 void
-_mongoc_topology_do_blocking_scan (mongoc_topology_t *topology, bson_error_t *error);
+_mongoc_topology_do_blocking_scan(mongoc_topology_t *topology, bson_error_t *error);
 
 /**
  * @brief Duplicate the handshake command of the topology scanner.
@@ -392,12 +393,12 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology, bson_error_t *er
  * node in _mongoc_stream_run_hello.
  */
 void
-_mongoc_topology_dup_handshake_cmd (const mongoc_topology_t *topology, bson_t *copy_into);
+_mongoc_topology_dup_handshake_cmd(const mongoc_topology_t *topology, bson_t *copy_into);
 void
-_mongoc_topology_request_scan (mongoc_topology_t *topology);
+_mongoc_topology_request_scan(mongoc_topology_t *topology);
 
 void
-_mongoc_topology_bypass_cooldown (mongoc_topology_t *topology);
+_mongoc_topology_bypass_cooldown(mongoc_topology_t *topology);
 
 typedef enum {
    MONGOC_SDAM_APP_ERROR_COMMAND,
@@ -427,20 +428,20 @@ typedef enum {
  * @note May update the topology description.
  */
 bool
-_mongoc_topology_handle_app_error (mongoc_topology_t *topology,
-                                   uint32_t server_id,
-                                   bool handshake_complete,
-                                   _mongoc_sdam_app_error_type_t type,
-                                   const bson_t *reply,
-                                   const bson_error_t *why,
-                                   uint32_t generation,
-                                   const bson_oid_t *service_id);
+_mongoc_topology_handle_app_error(mongoc_topology_t *topology,
+                                  uint32_t server_id,
+                                  bool handshake_complete,
+                                  _mongoc_sdam_app_error_type_t type,
+                                  const bson_t *reply,
+                                  const bson_error_t *why,
+                                  uint32_t generation,
+                                  const bson_oid_t *service_id);
 
 void
-mongoc_topology_rescan_srv (mongoc_topology_t *topology);
+mongoc_topology_rescan_srv(mongoc_topology_t *topology);
 
 bool
-mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
+mongoc_topology_should_rescan_srv(mongoc_topology_t *topology);
 
 /* _mongoc_topology_set_rr_resolver is called by tests to mock DNS responses for
  * SRV polling.
@@ -449,24 +450,24 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
  * Callers should call this before monitoring starts.
  */
 void
-_mongoc_topology_set_rr_resolver (mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver);
+_mongoc_topology_set_rr_resolver(mongoc_topology_t *topology, _mongoc_rr_resolver_fn rr_resolver);
 
 /**
  * @brief Thread-safe update the SRV polling rescan interval on the given topology
  */
 static BSON_INLINE void
-_mongoc_topology_set_srv_polling_rescan_interval_ms (mongoc_topology_t *topology, int64_t val)
+_mongoc_topology_set_srv_polling_rescan_interval_ms(mongoc_topology_t *topology, int64_t val)
 {
-   mcommon_atomic_int64_exchange (&topology->_atomic_srv_polling_rescan_interval_ms, val, mcommon_memory_order_seq_cst);
+   mcommon_atomic_int64_exchange(&topology->_atomic_srv_polling_rescan_interval_ms, val, mcommon_memory_order_seq_cst);
 }
 
 /**
  * @brief Thread-safe get the SRV polling interval
  */
 static BSON_INLINE int64_t
-_mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *topology)
+_mongoc_topology_get_srv_polling_rescan_interval_ms(mongoc_topology_t const *topology)
 {
-   return mcommon_atomic_int64_fetch (&topology->_atomic_srv_polling_rescan_interval_ms, mcommon_memory_order_seq_cst);
+   return mcommon_atomic_int64_fetch(&topology->_atomic_srv_polling_rescan_interval_ms, mcommon_memory_order_seq_cst);
 }
 
 /**
@@ -483,9 +484,9 @@ _mongoc_topology_get_srv_polling_rescan_interval_ms (mongoc_topology_t const *to
  * server does not exist in the topology.
  */
 uint32_t
-_mongoc_topology_get_connection_pool_generation (const mongoc_topology_description_t *td,
-                                                 uint32_t server_id,
-                                                 const bson_oid_t *service_id);
+_mongoc_topology_get_connection_pool_generation(const mongoc_topology_description_t *td,
+                                                uint32_t server_id,
+                                                const bson_oid_t *service_id);
 
 /**
  * @brief Obtain a reference to the current topology description for the given
@@ -496,9 +497,9 @@ _mongoc_topology_get_connection_pool_generation (const mongoc_topology_descripti
  * topology description are immutable.
  */
 static BSON_INLINE mc_shared_tpld
-mc_tpld_take_ref (const mongoc_topology_t *tpl)
+mc_tpld_take_ref(const mongoc_topology_t *tpl)
 {
-   return (mc_shared_tpld){._sptr_ = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_._sptr_)};
+   return (mc_shared_tpld){._sptr_ = mongoc_atomic_shared_ptr_load(&tpl->_shared_descr_._sptr_)};
 }
 
 /**
@@ -508,9 +509,9 @@ mc_tpld_take_ref (const mongoc_topology_t *tpl)
  * The pointed-to shared reference will be reset to NULL.
  */
 static BSON_INLINE void
-mc_tpld_drop_ref (mc_shared_tpld *p)
+mc_tpld_drop_ref(mc_shared_tpld *p)
 {
-   mongoc_shared_ptr_reset_null (&p->_sptr_);
+   mongoc_shared_ptr_reset_null(&p->_sptr_);
 }
 
 /**
@@ -526,10 +527,10 @@ mc_tpld_drop_ref (mc_shared_tpld *p)
  * `mc_tpld_take_ref()`.
  */
 static BSON_INLINE void
-mc_tpld_renew_ref (mc_shared_tpld *td, mongoc_topology_t *tpl)
+mc_tpld_renew_ref(mc_shared_tpld *td, mongoc_topology_t *tpl)
 {
-   mc_tpld_drop_ref (td);
-   *td = mc_tpld_take_ref (tpl);
+   mc_tpld_drop_ref(td);
+   *td = mc_tpld_take_ref(tpl);
 }
 
 /**
@@ -560,20 +561,20 @@ typedef struct mc_tpld_modification {
  * this API while the current thread is already performing a modification!
  */
 mc_tpld_modification
-mc_tpld_modify_begin (mongoc_topology_t *tpl);
+mc_tpld_modify_begin(mongoc_topology_t *tpl);
 
 /**
  * @brief Commit a topology description modification to the owning topology.
  *
  * All later calls to mc_tpld_take_ref() will see the new topology.
  */
-void mc_tpld_modify_commit (mc_tpld_modification);
+void mc_tpld_modify_commit(mc_tpld_modification);
 
 /**
  * @brief Drop a pending modification to a topology description. No changes will
  * be made to the topology.
  */
-void mc_tpld_modify_drop (mc_tpld_modification);
+void mc_tpld_modify_drop(mc_tpld_modification);
 
 /**
  * @brief Obtain a pointer-to-mutable mongoc_topology_description_t for the
@@ -586,7 +587,7 @@ void mc_tpld_modify_drop (mc_tpld_modification);
  * To obtain a safe pointer to the topology description, use mc_tpld_take_ref().
  */
 static BSON_INLINE mongoc_topology_description_t *
-mc_tpld_unsafe_get_mutable (mongoc_topology_t *tpl)
+mc_tpld_unsafe_get_mutable(mongoc_topology_t *tpl)
 {
    return tpl->_shared_descr_._sptr_.ptr;
 }
@@ -605,7 +606,7 @@ mc_tpld_unsafe_get_mutable (mongoc_topology_t *tpl)
  * description for the given topology.
  */
 static BSON_INLINE const mongoc_topology_description_t *
-mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
+mc_tpld_unsafe_get_const(const mongoc_topology_t *tpl)
 {
    return tpl->_shared_descr_._sptr_.ptr;
 }
@@ -620,13 +621,13 @@ mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
  * @param server_id The ID of a server in the topology.
  */
 static BSON_INLINE void
-_mongoc_topology_invalidate_server (mongoc_topology_t *topology, uint32_t server_id)
+_mongoc_topology_invalidate_server(mongoc_topology_t *topology, uint32_t server_id)
 {
    bson_error_t error;
-   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
-   _mongoc_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
-   mongoc_topology_description_invalidate_server (tdmod.new_td, &topology->log_and_monitor, server_id, &error);
-   mc_tpld_modify_commit (tdmod);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
+   _mongoc_set_error(&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
+   mongoc_topology_description_invalidate_server(tdmod.new_td, &topology->log_and_monitor, server_id, &error);
+   mc_tpld_modify_commit(tdmod);
 }
 
 /* Return an array view to `max_hosts` or fewer elements of `hl`, or NULL if
@@ -637,18 +638,18 @@ _mongoc_topology_invalidate_server (mongoc_topology_t *topology, uint32_t server
  * array must not be freed, as they are still owned by `hl`.
  */
 const mongoc_host_list_t **
-_mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl, size_t max_hosts, size_t *hl_array_size);
+_mongoc_apply_srv_max_hosts(const mongoc_host_list_t *hl, size_t max_hosts, size_t *hl_array_size);
 
 
 /* Returns true if a versioned server API has been selected, otherwise returns
  * false. */
 bool
-mongoc_topology_uses_server_api (const mongoc_topology_t *topology);
+mongoc_topology_uses_server_api(const mongoc_topology_t *topology);
 
 
 /* Returns true if load balancing mode has been seelected, otherwise returns
  * false. */
 bool
-mongoc_topology_uses_loadbalanced (const mongoc_topology_t *topology);
+mongoc_topology_uses_loadbalanced(const mongoc_topology_t *topology);
 
 #endif
