@@ -1026,7 +1026,7 @@ _mongoc_sasl_prep_impl(const char *name, const char *in_utf8, bson_error_t *err)
 
    /* convert to unicode. */
    BSON_ASSERT(mlib_cmp(num_chars, <=, SIZE_MAX / sizeof(uint32_t) - 1));
-   utf8_codepoints = bson_malloc(sizeof(uint32_t) * ((size_t)num_chars + 1u)); /* add one for trailing 0 value. */
+   utf8_codepoints = BSON_ARRAY_ALLOC(((size_t)num_chars + 1u), uint32_t); /* add one for trailing 0 value. */
    const char *c = in_utf8;
 
    mlib_foreach_irange (i, num_chars) {
@@ -1083,7 +1083,7 @@ _mongoc_sasl_prep_impl(const char *name, const char *in_utf8, bson_error_t *err)
          utf8_pre_norm_len += len;
       }
    }
-   char *utf8_pre_norm = (char *)bson_malloc(sizeof(char) * (utf8_pre_norm_len + 1));
+   char *utf8_pre_norm = BSON_ARRAY_ALLOC((utf8_pre_norm_len + 1), char);
 
    char *loc = utf8_pre_norm;
    mlib_foreach_irange (i, num_chars) {

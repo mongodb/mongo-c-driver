@@ -920,8 +920,8 @@ test_bson_vector_view_api_fuzz_int8(void)
 {
    size_t current_length = 0;
    bson_t vector_doc = BSON_INITIALIZER;
-   int8_t *expected_elements = bson_malloc(MAX_TESTED_VECTOR_LENGTH * sizeof *expected_elements);
-   int8_t *actual_elements = bson_malloc(MAX_TESTED_VECTOR_LENGTH * sizeof *actual_elements);
+   int8_t *expected_elements = BSON_ARRAY_ALLOC(MAX_TESTED_VECTOR_LENGTH, int8_t);
+   int8_t *actual_elements = BSON_ARRAY_ALLOC(MAX_TESTED_VECTOR_LENGTH, int8_t);
    for (int fuzz_iter = 0; fuzz_iter < FUZZ_TEST_ITERS; fuzz_iter++) {
       unsigned r = (unsigned)rand();
       unsigned r_operation = r & 0xFu;
@@ -974,8 +974,8 @@ test_bson_vector_view_api_fuzz_float32(void)
 {
    size_t current_length = 0;
    bson_t vector_doc = BSON_INITIALIZER;
-   float *expected_elements = bson_malloc(MAX_TESTED_VECTOR_LENGTH * sizeof *expected_elements);
-   float *actual_elements = bson_malloc(MAX_TESTED_VECTOR_LENGTH * sizeof *actual_elements);
+   float *expected_elements = BSON_ARRAY_ALLOC(MAX_TESTED_VECTOR_LENGTH, float);
+   float *actual_elements = BSON_ARRAY_ALLOC(MAX_TESTED_VECTOR_LENGTH, float);
    for (int fuzz_iter = 0; fuzz_iter < FUZZ_TEST_ITERS; fuzz_iter++) {
       unsigned r = (unsigned)rand();
       unsigned r_operation = r & 0xFu;
@@ -1028,8 +1028,8 @@ test_bson_vector_view_api_fuzz_packed_bit(void)
 {
    size_t current_length = 0;
    bson_t vector_doc = BSON_INITIALIZER;
-   bool *expected_elements = bson_malloc(MAX_TESTED_VECTOR_LENGTH * sizeof *expected_elements);
-   bool *actual_elements = bson_malloc(MAX_TESTED_VECTOR_LENGTH * sizeof *actual_elements);
+   bool *expected_elements = BSON_ARRAY_ALLOC(MAX_TESTED_VECTOR_LENGTH, bool);
+   bool *actual_elements = BSON_ARRAY_ALLOC(MAX_TESTED_VECTOR_LENGTH, bool);
    uint8_t *packed_buffer = bson_malloc((MAX_TESTED_VECTOR_LENGTH + 7) / 8);
    for (int fuzz_iter = 0; fuzz_iter < FUZZ_TEST_ITERS; fuzz_iter++) {
       unsigned r = (unsigned)rand();
@@ -1392,7 +1392,7 @@ test_bson_vector_edge_cases_int8(void)
    // Test some read and write boundaries.
    {
       size_t values_size = 100;
-      int8_t *values = bson_malloc0(values_size * sizeof *values);
+      int8_t *values = BSON_ARRAY_ALLOC0(values_size, int8_t);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(
          view, max_alloc_elements, values, values_size, bson_vector_int8_view_read, bson_vector_int8_view_write);
       bson_free(values);
@@ -1439,7 +1439,7 @@ test_bson_vector_edge_cases_float32(void)
    // Test some read and write boundaries.
    {
       size_t values_size = 100;
-      float *values = bson_malloc0(values_size * sizeof *values);
+      float *values = BSON_ARRAY_ALLOC0(values_size, float);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(
          view, max_alloc_elements, values, values_size, bson_vector_float32_view_read, bson_vector_float32_view_write);
       bson_free(values);
@@ -1506,7 +1506,7 @@ test_bson_vector_edge_cases_packed_bit(void)
    // Only tests one length, but it's chosen to be greater than 8 and not a multiple of 8.
    {
       size_t values_size = 190;
-      bool *values = bson_malloc0(values_size * sizeof *values);
+      bool *values = BSON_ARRAY_ALLOC0(values_size, bool);
       TEST_BSON_VECTOR_EDGE_CASES_RW_COMMON(view,
                                             max_alloc_elements,
                                             values,

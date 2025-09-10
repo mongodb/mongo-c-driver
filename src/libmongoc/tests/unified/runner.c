@@ -635,8 +635,9 @@ check_schema_version(test_file_t *test_file)
    // 1.21 is partially supported (expectedError.writeErrors and expectedError.writeConcernErrors)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    // 1.23 is partially supported (automatic encryption)
+   // 1.25 is partially supported (minLibmongocryptVersion)
    semver_t schema_version;
-   semver_parse("1.23", &schema_version);
+   semver_parse("1.25", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -778,7 +779,37 @@ check_run_on_requirement(test_runner_t *test_runner,
 
 #if defined(MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
       if (0 == strcmp(key, "csfle")) {
-         const bool csfle_required = bson_iter_bool(&req_iter);
+         bool csfle_required = false;
+         if (BSON_ITER_HOLDS_DOCUMENT(&req_iter)) {
+            csfle_required = true;
+            bson_iter_t csfle_iter;
+            ASSERT(bson_iter_recurse(&req_iter, &csfle_iter));
+            while (bson_iter_next(&csfle_iter)) {
+               if (0 == strcmp(bson_iter_key(&csfle_iter), "minLibmongocryptVersion")) {
+                  semver_t min_libmongocrypt_version;
+                  semver_t loaded_libmongocrypt_version;
+
+                  semver_parse(bson_iter_utf8(&csfle_iter, NULL), &min_libmongocrypt_version);
+                  semver_parse(_mongoc_crypt_get_libmongocrypt_version(), &loaded_libmongocrypt_version);
+
+                  if (semver_cmp(&loaded_libmongocrypt_version, &min_libmongocrypt_version) < 0) {
+                     *fail_reason = bson_strdup_printf("libmongocrypt version %s is lower than "
+                                                       "minLibmongocryptVersion %s required by CSFLE",
+                                                       semver_to_string(&loaded_libmongocrypt_version),
+                                                       semver_to_string(&min_libmongocrypt_version));
+                     return false;
+                  }
+               } else {
+                  test_error("Unexpected field: csfle.%s", bson_iter_key(&csfle_iter));
+               }
+            }
+
+         } else if (BSON_ITER_HOLDS_BOOL(&req_iter)) {
+            csfle_required = bson_iter_bool(&req_iter);
+         } else {
+            test_error("Unexpected type %s for 'csfle'", _mongoc_bson_type_to_str(bson_iter_type(&req_iter)));
+         }
+
          semver_t min_server_version;
 
          semver_parse("4.2.0", &min_server_version);
@@ -805,7 +836,14 @@ check_run_on_requirement(test_runner_t *test_runner,
          return false;
 #else
       if (0 == strcmp(key, "csfle")) {
-         const bool csfle_required = bson_iter_bool(&req_iter);
+         bool csfle_required = false;
+         if (BSON_ITER_HOLDS_DOCUMENT(&req_iter)) {
+            csfle_required = true;
+         } else if (BSON_ITER_HOLDS_BOOL(&req_iter)) {
+            csfle_required = bson_iter_bool(&req_iter);
+         } else {
+            test_error("Unexpected type %s for 'csfle'", _mongoc_bson_type_to_str(bson_iter_type(&req_iter)));
+         }
 
          if (!csfle_required) {
             continue;

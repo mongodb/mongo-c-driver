@@ -15,4 +15,5 @@ Description
 -----------
 
 Executes a :symbol:`mongoc_bulkwrite_t`. Once executed, it is an error to call other functions on ``self``, aside from
+:symbol:`mongoc_bulkwrite_check_acknowledged`, :symbol:`mongoc_bulkwrite_serverid`, and
 :symbol:`mongoc_bulkwrite_destroy`.
