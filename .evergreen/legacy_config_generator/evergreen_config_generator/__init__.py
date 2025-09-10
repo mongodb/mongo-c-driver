@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-import sys
 from collections import OrderedDict as OD
 from typing import Any, Iterable, Mapping, MutableMapping, MutableSequence, Sequence, Union
 
