@@ -1,11 +1,8 @@
 from shrub.v3.evg_task import EvgTask
 
-from config_generator.etc.distros import find_large_distro
-from config_generator.etc.distros import make_distro_str
-from config_generator.etc.distros import compiler_to_vars
-
 from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from config_generator.components.funcs.upload_build import UploadBuild
+from config_generator.etc.distros import compiler_to_vars, find_large_distro, make_distro_str
 
 
 def generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, MATRIX, MORE_TAGS=None, MORE_VARS=None):
@@ -14,7 +11,7 @@ def generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, MATRIX, MORE_TAGS=None, MORE_
     MORE_TAGS = MORE_TAGS if MORE_TAGS else []
     MORE_VARS = MORE_VARS if MORE_VARS else {}
 
-    for distro_name, compiler, arch, sasls, in MATRIX:
+    for distro_name, compiler, arch, sasls in MATRIX:
         tags = [TAG, 'compile', distro_name, compiler] + MORE_TAGS
 
         distro = find_large_distro(distro_name)

@@ -1,12 +1,10 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
 
-from config_generator.etc.function import merge_defns
 from config_generator.etc.compile import generate_compile_tasks
-
+from config_generator.etc.function import merge_defns
 from config_generator.etc.sasl.compile import CompileCommon
 from config_generator.etc.sasl.test import generate_test_tasks
-
 
 SSL = 'darwinssl'
 TAG = f'sasl-matrix-{SSL}'

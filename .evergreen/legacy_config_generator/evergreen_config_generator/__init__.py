@@ -18,22 +18,22 @@ from collections import OrderedDict as OD
 from typing import Any, Iterable, Mapping, MutableMapping, MutableSequence, Sequence, Union
 
 Scalar = Union[str, bool, int, None, float]
-"YAML simple schema scalar types"
-ValueSequence = Sequence["Value"]
-"Sequence of YAML simple values"
-MutableValueArray = MutableSequence["Value"]
-"A mutable sequence of JSON values"
-ValueMapping = Mapping[Scalar, "Value"]
-"A YAML mapping type (arbitrary scalars as keys)"
-MutableValueMapping = MutableMapping[Scalar, "Value"]
-"A mutable YAML mapping type"
+'YAML simple schema scalar types'
+ValueSequence = Sequence['Value']
+'Sequence of YAML simple values'
+MutableValueArray = MutableSequence['Value']
+'A mutable sequence of JSON values'
+ValueMapping = Mapping[Scalar, 'Value']
+'A YAML mapping type (arbitrary scalars as keys)'
+MutableValueMapping = MutableMapping[Scalar, 'Value']
+'A mutable YAML mapping type'
 Value = Union[ValueSequence, ValueMapping, Scalar]
-"Any YAML simple value"
+'Any YAML simple value'
 MutableValue = Union[MutableValueMapping, MutableValueArray, Scalar]
-"Any YAML simple value, which may be a mutable sequence or map"
+'Any YAML simple value, which may be a mutable sequence or map'
 
 ValueOrderedDict = OD[Scalar, Value]
-"An OrderedDict of YAML values"
+'An OrderedDict of YAML values'
 
 
 import yaml
@@ -43,10 +43,10 @@ import yamlloader
 class ConfigObject(object):
     @property
     def name(self) -> str:
-        return "UNSET"
+        return 'UNSET'
 
     def to_dict(self) -> Value:
-        return OD([("name", self.name)])
+        return OD([('name', self.name)])
 
 
 # We want legible YAML tasks:
@@ -72,8 +72,8 @@ class _Dumper(yamlloader.ordereddict.Dumper):
         self.add_multi_representer(ConfigObject, type(self).represent_config_object)
 
     def represent_scalar(self, tag: str, value: Value, style: str | None = None) -> yaml.ScalarNode:
-        if isinstance(value, (str)) and "\n" in value:
-            style = "|"
+        if isinstance(value, (str)) and '\n' in value:
+            style = '|'
         return super().represent_scalar(tag, value, style)  # type: ignore
 
     def represent_set(self, data: Iterable[Value]) -> yaml.MappingNode:
@@ -92,7 +92,7 @@ def generate(config: Any, path: str):
     """Dump config to a file as YAML.
     config is a dict, preferably an OrderedDict. path is a file path.
     """
-    f = open(path, "w+")
+    f = open(path, 'w+')
     f.write(
         """####################################
 # Evergreen configuration

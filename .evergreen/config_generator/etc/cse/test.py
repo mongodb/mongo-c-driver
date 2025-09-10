@@ -1,18 +1,14 @@
 from itertools import product
 
-from shrub.v3.evg_command import expansions_update
-from shrub.v3.evg_command import KeyValueParam
+from shrub.v3.evg_command import KeyValueParam, expansions_update
 from shrub.v3.evg_task import EvgTask, EvgTaskDependency
-
-from config_generator.etc.distros import find_large_distro, find_small_distro
-from config_generator.etc.distros import make_distro_str
-from config_generator.etc.distros import compiler_to_vars
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.run_mock_kms_servers import RunMockKMSServers
 from config_generator.components.funcs.run_tests import RunTests
+from config_generator.etc.distros import compiler_to_vars, find_large_distro, find_small_distro, make_distro_str
 
 
 def generate_test_tasks(SSL, TAG, MATRIX):
@@ -27,7 +23,7 @@ def generate_test_tasks(SSL, TAG, MATRIX):
     for distro_name, compiler, arch, sasl, auths, topologies, server_vers in MATRIX:
         tags = [TAG, 'test', distro_name, compiler, f'sasl-{sasl}', 'cse']
         if distro_name == 'rhel8-latest':
-            test_distro = find_large_distro(distro_name) # DEVPROD-18763
+            test_distro = find_large_distro(distro_name)  # DEVPROD-18763
         else:
             test_distro = find_small_distro(distro_name)
 

@@ -1,15 +1,14 @@
-from config_generator.etc.distros import find_large_distro, make_distro_str
-from config_generator.etc.function import Function
-from config_generator.etc.utils import bash_exec
-
-from config_generator.components.funcs.fetch_source import FetchSource
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from itertools import product
 
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType, FunctionCall
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from itertools import product
+from config_generator.components.funcs.fetch_source import FetchSource
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.etc.distros import find_large_distro, make_distro_str
+from config_generator.etc.function import Function
+from config_generator.etc.utils import bash_exec
 
 TAG = 'openssl-compat'
 
@@ -73,7 +72,7 @@ def tasks():
                     FetchSource.call(),
                     FindCMakeLatest.call(),
                     OpenSSLSetup.call(vars=vars),
-                    FunctionCall(func="run auth tests"),
+                    FunctionCall(func='run auth tests'),
                 ],
             )
 
@@ -94,7 +93,7 @@ def tasks():
                     FetchSource.call(),
                     FindCMakeLatest.call(),
                     OpenSSLSetup.call(vars=vars),
-                    FunctionCall(func="run auth tests"),
+                    FunctionCall(func='run auth tests'),
                 ],
             )
 

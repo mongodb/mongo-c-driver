@@ -1,8 +1,7 @@
-from docutils.nodes import literal, Text
+from docutils.nodes import Text, literal
 from docutils.parsers.rst import roles
-
-from sphinx.roles import XRefRole
 from sphinx import version_info as sphinx_version_info
+from sphinx.roles import XRefRole
 
 
 class SymbolRole(XRefRole):
@@ -42,8 +41,7 @@ class SymbolRole(XRefRole):
 
 
 def setup(app):
-    roles.register_local_role(
-        'symbol', SymbolRole(warn_dangling=True, innernodeclass=literal))
+    roles.register_local_role('symbol', SymbolRole(warn_dangling=True, innernodeclass=literal))
 
     return {
         'version': '1.0',

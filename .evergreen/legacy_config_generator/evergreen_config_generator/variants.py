@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Iterable, Mapping
+
 from evergreen_config_generator import ConfigObject
 
 from . import ValueMapping
@@ -48,7 +49,7 @@ class Variant(ConfigObject):
 
     def to_dict(self):
         v = super(Variant, self).to_dict()
-        for i in "display_name", "expansions", "run_on", "tasks", "patchable", "batchtime", "tags", "display_tasks":
+        for i in 'display_name', 'expansions', 'run_on', 'tasks', 'patchable', 'batchtime', 'tags', 'display_tasks':
             attr = getattr(self, i)
 
             # Allow `False`, but ignore empty lists and dicts.

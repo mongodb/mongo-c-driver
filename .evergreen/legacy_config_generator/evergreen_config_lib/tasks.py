@@ -16,24 +16,24 @@ from collections import OrderedDict as OD
 from itertools import chain
 from typing import ClassVar, Iterable, Literal, Mapping, MutableMapping, MutableSequence, Optional, Sequence
 
-from evergreen_config_generator import Value, Scalar
+from evergreen_config_generator import Scalar, Value
 from evergreen_config_generator.functions import func, s3_put
 from evergreen_config_generator.tasks import (
-    both_or_neither,
+    DependencySpec,
     MatrixTask,
     NamedTask,
+    Task,
+    both_or_neither,
     prohibit,
     require,
-    Task,
-    DependencySpec,
 )
-from evergreen_config_lib import shell_mongoc
 from packaging.version import Version
 
+from evergreen_config_lib import shell_mongoc
 
-ToggleStr = Literal["OFF", "ON"]
+ToggleStr = Literal['OFF', 'ON']
 OptToggleStr = Optional[ToggleStr]
-TopologyStr = Literal["server"]
+TopologyStr = Literal['server']
 
 
 class CompileTask(NamedTask):
@@ -45,21 +45,21 @@ class CompileTask(NamedTask):
         self,
         task_name: str,
         tags: Iterable[str] = (),
-        config: str = "debug",
-        compression: str | None = "default",
+        config: str = 'debug',
+        compression: str | None = 'default',
         suffix_commands: Iterable[Value] = (),
         depends_on: Iterable[DependencySpec] = (),
         prefix_commands: Iterable[Value] = (),
-        sanitize: Iterable[Literal["undefined", "address", "thread"]] = (),
+        sanitize: Iterable[Literal['undefined', 'address', 'thread']] = (),
         *,
         CFLAGS: str | None = None,
         LDFLAGS: str | None = None,
         EXTRA_CONFIGURE_FLAGS: str | None = None,
-        SSL: Literal["WINDOWS", "DARWIN", "OPENSSL", "OPENSSL_STATIC", "OFF", None] = None,
+        SSL: Literal['WINDOWS', 'DARWIN', 'OPENSSL', 'OPENSSL_STATIC', 'OFF', None] = None,
         ENABLE_SHM_COUNTERS: OptToggleStr = None,
         CHECK_LOG: OptToggleStr = None,
         TRACING: OptToggleStr = None,
-        SASL: Literal[None, "OFF", "AUTO", "CYRUS", "SSPI"] = None,
+        SASL: Literal[None, 'OFF', 'AUTO', 'CYRUS', 'SSPI'] = None,
         ENABLE_RDTSCP: OptToggleStr = None,
         SRV: OptToggleStr = None,
     ):
@@ -71,38 +71,38 @@ class CompileTask(NamedTask):
         # Environment variables for .evergreen/scripts/compile.sh.
         self.compile_sh_opt: dict[str, str] = {}
 
-        if config != "debug":
-            assert config == "release"
-            self.compile_sh_opt["RELEASE"] = "ON"
+        if config != 'debug':
+            assert config == 'release'
+            self.compile_sh_opt['RELEASE'] = 'ON'
 
         if CFLAGS:
-            self.compile_sh_opt["CFLAGS"] = CFLAGS
+            self.compile_sh_opt['CFLAGS'] = CFLAGS
         if LDFLAGS:
-            self.compile_sh_opt["LDFLAGS"] = LDFLAGS
+            self.compile_sh_opt['LDFLAGS'] = LDFLAGS
         if EXTRA_CONFIGURE_FLAGS:
-            self.compile_sh_opt["EXTRA_CONFIGURE_FLAGS"] = EXTRA_CONFIGURE_FLAGS
+            self.compile_sh_opt['EXTRA_CONFIGURE_FLAGS'] = EXTRA_CONFIGURE_FLAGS
         if SSL:
-            self.compile_sh_opt["SSL"] = SSL
+            self.compile_sh_opt['SSL'] = SSL
         if ENABLE_SHM_COUNTERS:
-            self.compile_sh_opt["ENABLE_SHM_COUNTERS"] = ENABLE_SHM_COUNTERS
+            self.compile_sh_opt['ENABLE_SHM_COUNTERS'] = ENABLE_SHM_COUNTERS
         if CHECK_LOG:
-            self.compile_sh_opt["CHECK_LOG"] = CHECK_LOG
+            self.compile_sh_opt['CHECK_LOG'] = CHECK_LOG
         if TRACING:
-            self.compile_sh_opt["TRACING"] = TRACING
+            self.compile_sh_opt['TRACING'] = TRACING
         if SASL:
-            self.compile_sh_opt["SASL"] = SASL
+            self.compile_sh_opt['SASL'] = SASL
         if ENABLE_RDTSCP:
-            self.compile_sh_opt["ENABLE_RDTSCP"] = ENABLE_RDTSCP
+            self.compile_sh_opt['ENABLE_RDTSCP'] = ENABLE_RDTSCP
         if SRV:
-            self.compile_sh_opt["SRV"] = SRV
+            self.compile_sh_opt['SRV'] = SRV
 
-        if compression != "default":
-            self.compile_sh_opt["SNAPPY"] = "ON" if compression in ("all", "snappy") else "OFF"
-            self.compile_sh_opt["ZLIB"] = "BUNDLED" if compression in ("all", "zlib") else "OFF"
-            self.compile_sh_opt["ZSTD"] = "ON" if compression in ("all", "zstd") else "OFF"
+        if compression != 'default':
+            self.compile_sh_opt['SNAPPY'] = 'ON' if compression in ('all', 'snappy') else 'OFF'
+            self.compile_sh_opt['ZLIB'] = 'BUNDLED' if compression in ('all', 'zlib') else 'OFF'
+            self.compile_sh_opt['ZSTD'] = 'ON' if compression in ('all', 'zstd') else 'OFF'
 
         if sanitize:
-            self.compile_sh_opt["SANITIZE"] = ",".join(sanitize)
+            self.compile_sh_opt['SANITIZE'] = ','.join(sanitize)
 
         self.compile_sh_opt.update(type(self).cls_compile_sh_env)
 
@@ -111,20 +111,20 @@ class CompileTask(NamedTask):
 
     def to_dict(self):
         task = super(CompileTask, self).to_dict()
-        commands = task["commands"]
+        commands = task['commands']
         assert isinstance(commands, MutableSequence), task
 
         commands.extend(self.prefix_commands)
 
-        script = "env"
+        script = 'env'
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += ' %s="%s"' % (opt, value)
 
-        script += " .evergreen/scripts/compile.sh"
+        script += ' .evergreen/scripts/compile.sh'
 
         commands.append(func('find-cmake-latest'))
         commands.append(shell_mongoc(script, add_expansions_to_env=True))
-        commands.append(func("upload-build"))
+        commands.append(func('upload-build'))
         commands.extend(self.suffix_commands)
         return task
 
@@ -134,38 +134,38 @@ class CompileTask(NamedTask):
 
 
 class SpecialTask(CompileTask):
-    cls_tags: ClassVar[Sequence[str]] = ["special"]
+    cls_tags: ClassVar[Sequence[str]] = ['special']
 
 
 class CompileWithClientSideEncryption(CompileTask):
     cls_compile_sh_env: ClassVar[Mapping[str, str]] = dict(
         # Compiling with ClientSideEncryption support requires linking against the library libmongocrypt.
-        COMPILE_LIBMONGOCRYPT="ON",
-        EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON",
+        COMPILE_LIBMONGOCRYPT='ON',
+        EXTRA_CONFIGURE_FLAGS='-DENABLE_PIC=ON',
     )
-    cls_tags: ClassVar[Sequence[str]] = "client-side-encryption", "special"
+    cls_tags: ClassVar[Sequence[str]] = 'client-side-encryption', 'special'
 
 
 class CompileWithClientSideEncryptionAsan(CompileTask):
     cls_compile_sh_env: ClassVar[Mapping[str, str]] = dict(
-        CFLAGS="-fno-omit-frame-pointer",
-        COMPILE_LIBMONGOCRYPT="ON",
-        CHECK_LOG="ON",
-        PATH="/usr/lib/llvm-3.8/bin:$PATH",
+        CFLAGS='-fno-omit-frame-pointer',
+        COMPILE_LIBMONGOCRYPT='ON',
+        CHECK_LOG='ON',
+        PATH='/usr/lib/llvm-3.8/bin:$PATH',
     )
-    cls_tags: ClassVar[Sequence[str]] = ["client-side-encryption"]
-    cls_sanitize: ClassVar[Sequence[str]] = ["address"]
+    cls_tags: ClassVar[Sequence[str]] = ['client-side-encryption']
+    cls_sanitize: ClassVar[Sequence[str]] = ['address']
 
 
 class LinkTask(NamedTask):
     def __init__(
-        self, task_name: str, suffix_commands: Iterable[Value], orchestration: Literal[True, False, "ssl"] = True
+        self, task_name: str, suffix_commands: Iterable[Value], orchestration: Literal[True, False, 'ssl'] = True
     ):
-        if orchestration == "ssl":
+        if orchestration == 'ssl':
             # Actual value of SSL does not matter here so long as it is not 'nossl'.
-            bootstrap_commands = [func("fetch-det"), func("bootstrap-mongo-orchestration", SSL="openssl")]
+            bootstrap_commands = [func('fetch-det'), func('bootstrap-mongo-orchestration', SSL='openssl')]
         elif orchestration:
-            bootstrap_commands = [func("fetch-det"), func("bootstrap-mongo-orchestration")]
+            bootstrap_commands = [func('fetch-det'), func('bootstrap-mongo-orchestration')]
         else:
             bootstrap_commands = []
 
@@ -177,103 +177,113 @@ class LinkTask(NamedTask):
 
 all_tasks = [
     CompileTask(
-        "hardened-compile",
-        tags=["hardened"],
+        'hardened-compile',
+        tags=['hardened'],
         compression=None,
-        CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O",
-        LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now",
+        CFLAGS='-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O',
+        LDFLAGS='-pie -Wl,-z,relro -Wl,-z,now',
     ),
-    CompileTask("debug-compile-compression-zlib", tags=["zlib", "compression"], compression="zlib"),
-    CompileTask("debug-compile-compression-snappy", tags=["snappy", "compression"], compression="snappy"),
-    CompileTask("debug-compile-compression-zstd", tags=["zstd", "compression"], compression="zstd"),
-    CompileTask("debug-compile-nosasl-nossl", tags=["debug-compile", "nosasl", "nossl"], SSL="OFF"),
-    CompileTask("debug-compile-lto", CFLAGS="-flto"),
-    CompileTask("debug-compile-lto-thin", CFLAGS="-flto=thin"),
-    CompileTask("debug-compile-no-counters", tags=["debug-compile", "no-counters"], ENABLE_SHM_COUNTERS="OFF"),
-    CompileTask("compile-tracing", TRACING="ON", CFLAGS="-Werror -Wno-cast-align"),
-    CompileTask("release-compile", config="release"),
-    CompileTask("debug-compile-nosasl-openssl", tags=["debug-compile", "nosasl", "openssl"], SSL="OPENSSL"),
-    CompileTask("debug-compile-nosasl-darwinssl", tags=["debug-compile", "nosasl", "darwinssl"], SSL="DARWIN"),
-    CompileTask("debug-compile-nosasl-winssl", tags=["debug-compile", "nosasl", "winssl"], SSL="WINDOWS"),
-    CompileTask("debug-compile-sasl-openssl", tags=["debug-compile", "sasl", "openssl"], SASL="AUTO", SSL="OPENSSL"),
-    CompileTask("debug-compile-sasl-darwinssl", tags=["debug-compile", "sasl", "darwinssl"], SASL="AUTO", SSL="DARWIN"),
-    CompileTask("debug-compile-rdtscp", ENABLE_RDTSCP="ON"),
-    CompileTask("debug-compile-sspi-winssl", tags=["debug-compile", "sspi", "winssl"], SASL="SSPI", SSL="WINDOWS"),
-    CompileTask("debug-compile-nosrv", tags=["debug-compile"], SRV="OFF"),
-    LinkTask("link-with-cmake", suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1)]),
+    CompileTask('debug-compile-compression-zlib', tags=['zlib', 'compression'], compression='zlib'),
+    CompileTask('debug-compile-compression-snappy', tags=['snappy', 'compression'], compression='snappy'),
+    CompileTask('debug-compile-compression-zstd', tags=['zstd', 'compression'], compression='zstd'),
+    CompileTask('debug-compile-nosasl-nossl', tags=['debug-compile', 'nosasl', 'nossl'], SSL='OFF'),
+    CompileTask('debug-compile-lto', CFLAGS='-flto'),
+    CompileTask('debug-compile-lto-thin', CFLAGS='-flto=thin'),
+    CompileTask('debug-compile-no-counters', tags=['debug-compile', 'no-counters'], ENABLE_SHM_COUNTERS='OFF'),
+    CompileTask('compile-tracing', TRACING='ON', CFLAGS='-Werror -Wno-cast-align'),
+    CompileTask('release-compile', config='release'),
+    CompileTask('debug-compile-nosasl-openssl', tags=['debug-compile', 'nosasl', 'openssl'], SSL='OPENSSL'),
+    CompileTask('debug-compile-nosasl-darwinssl', tags=['debug-compile', 'nosasl', 'darwinssl'], SSL='DARWIN'),
+    CompileTask('debug-compile-nosasl-winssl', tags=['debug-compile', 'nosasl', 'winssl'], SSL='WINDOWS'),
+    CompileTask('debug-compile-sasl-openssl', tags=['debug-compile', 'sasl', 'openssl'], SASL='AUTO', SSL='OPENSSL'),
+    CompileTask('debug-compile-sasl-darwinssl', tags=['debug-compile', 'sasl', 'darwinssl'], SASL='AUTO', SSL='DARWIN'),
+    CompileTask('debug-compile-rdtscp', ENABLE_RDTSCP='ON'),
+    CompileTask('debug-compile-sspi-winssl', tags=['debug-compile', 'sspi', 'winssl'], SASL='SSPI', SSL='WINDOWS'),
+    CompileTask('debug-compile-nosrv', tags=['debug-compile'], SRV='OFF'),
+    LinkTask('link-with-cmake', suffix_commands=[func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask(
-        "link-with-cmake-ssl",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SSL=1)],
+        'link-with-cmake-ssl',
+        suffix_commands=[func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SSL=1)],
     ),
     LinkTask(
-        "link-with-cmake-snappy",
-        suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SNAPPY="ON")],
+        'link-with-cmake-snappy',
+        suffix_commands=[func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1, ENABLE_SNAPPY='ON')],
     ),
-    LinkTask("link-with-cmake-mac", suffix_commands=[func("link sample program", BUILD_SAMPLE_WITH_CMAKE=1)]),
-    LinkTask("link-with-cmake-windows", suffix_commands=[func("link sample program MSVC")]),
+    LinkTask('link-with-cmake-mac', suffix_commands=[func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
+    LinkTask('link-with-cmake-windows', suffix_commands=[func('link sample program MSVC')]),
     LinkTask(
-        "link-with-cmake-windows-ssl",
-        suffix_commands=[func("link sample program MSVC", ENABLE_SSL=1)],
-        orchestration="ssl",
+        'link-with-cmake-windows-ssl',
+        suffix_commands=[func('link sample program MSVC', ENABLE_SSL=1)],
+        orchestration='ssl',
     ),
-    LinkTask("link-with-cmake-windows-snappy", suffix_commands=[func("link sample program MSVC", ENABLE_SNAPPY="ON")]),
-    LinkTask("link-with-cmake-mingw", suffix_commands=[func("link sample program mingw")]),
-    LinkTask("link-with-pkg-config", suffix_commands=[func("link sample program")]),
-    LinkTask("link-with-pkg-config-mac", suffix_commands=[func("link sample program")]),
-    LinkTask("link-with-pkg-config-ssl", suffix_commands=[func("link sample program", ENABLE_SSL=1)]),
-    LinkTask("link-with-bson", suffix_commands=[func("link sample program bson")], orchestration=False),
-    LinkTask("link-with-bson-mac", suffix_commands=[func("link sample program bson")], orchestration=False),
-    LinkTask("link-with-bson-windows", suffix_commands=[func("link sample program MSVC bson")], orchestration=False),
-    LinkTask("link-with-bson-mingw", suffix_commands=[func("link sample program mingw bson")], orchestration=False),
+    LinkTask('link-with-cmake-windows-snappy', suffix_commands=[func('link sample program MSVC', ENABLE_SNAPPY='ON')]),
+    LinkTask('link-with-cmake-mingw', suffix_commands=[func('link sample program mingw')]),
+    LinkTask('link-with-pkg-config', suffix_commands=[func('link sample program')]),
+    LinkTask('link-with-pkg-config-mac', suffix_commands=[func('link sample program')]),
+    LinkTask('link-with-pkg-config-ssl', suffix_commands=[func('link sample program', ENABLE_SSL=1)]),
+    LinkTask('link-with-bson', suffix_commands=[func('link sample program bson')], orchestration=False),
+    LinkTask('link-with-bson-mac', suffix_commands=[func('link sample program bson')], orchestration=False),
+    LinkTask('link-with-bson-windows', suffix_commands=[func('link sample program MSVC bson')], orchestration=False),
+    LinkTask('link-with-bson-mingw', suffix_commands=[func('link sample program mingw bson')], orchestration=False),
     NamedTask(
-        "debian-package-build",
+        'debian-package-build',
         commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n' ".evergreen/scripts/debian_package_build.sh"),
+            shell_mongoc('export IS_PATCH="${is_patch}"\n.evergreen/scripts/debian_package_build.sh'),
             s3_put(
-                local_file="deb.tar.gz",
-                remote_file="${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz",
-                content_type="${content_type|application/x-gzip}",
+                local_file='deb.tar.gz',
+                remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
+                content_type='${content_type|application/x-gzip}',
             ),
             s3_put(
-                local_file="deb.tar.gz",
-                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz",
-                content_type="${content_type|application/x-gzip}",
+                local_file='deb.tar.gz',
+                remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz',
+                content_type='${content_type|application/x-gzip}',
             ),
             s3_put(
-                local_file="deb-i386.tar.gz",
-                remote_file="${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz",
-                content_type="${content_type|application/x-gzip}",
+                local_file='deb-i386.tar.gz',
+                remote_file='${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz',
+                content_type='${content_type|application/x-gzip}',
             ),
             s3_put(
-                local_file="deb-i386.tar.gz",
-                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz",
-                content_type="${content_type|application/x-gzip}",
+                local_file='deb-i386.tar.gz',
+                remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz',
+                content_type='${content_type|application/x-gzip}',
             ),
         ],
     ),
     NamedTask(
-        "rpm-package-build",
+        'rpm-package-build',
         commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n' ".evergreen/scripts/check_rpm_spec.sh"),
-            shell_mongoc(".evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc('export IS_PATCH="${is_patch}"\n.evergreen/scripts/check_rpm_spec.sh'),
+            shell_mongoc('.evergreen/scripts/build_snapshot_rpm.sh'),
             s3_put(
-                local_file="rpm.tar.gz",
-                remote_file="${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz",
-                content_type="${content_type|application/x-gzip}",
+                local_file='rpm.tar.gz',
+                remote_file='${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz',
+                content_type='${content_type|application/x-gzip}',
             ),
             s3_put(
-                local_file="rpm.tar.gz",
-                remote_file="${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz",
-                content_type="${content_type|application/x-gzip}",
+                local_file='rpm.tar.gz',
+                remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz',
+                content_type='${content_type|application/x-gzip}',
             ),
-            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
-            shell_mongoc("sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n" "export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n" ".evergreen/scripts/build_snapshot_rpm.sh"),
+            shell_mongoc(
+                'sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n'
+                'export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n'
+                '.evergreen/scripts/build_snapshot_rpm.sh'
+            ),
+            shell_mongoc(
+                'sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n'
+                'export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n'
+                '.evergreen/scripts/build_snapshot_rpm.sh'
+            ),
         ],
     ),
-    CompileTask("debug-compile-with-warnings", CFLAGS="-Werror -Wno-cast-align"),
+    CompileTask('debug-compile-with-warnings', CFLAGS='-Werror -Wno-cast-align'),
     NamedTask(
-        "install-libmongoc-after-libbson",
-        commands=[shell_mongoc(".evergreen/scripts/install-libmongoc-after-libbson.sh"),],
+        'install-libmongoc-after-libbson',
+        commands=[
+            shell_mongoc('.evergreen/scripts/install-libmongoc-after-libbson.sh'),
+        ],
     ),
 ]
 
@@ -281,29 +291,29 @@ all_tasks = [
 class CoverageTask(MatrixTask):
     axes = OD(
         [
-            ("version", ["latest"]),
-            ("topology", ["replica_set"]),
-            ("auth", [True]),
-            ("sasl", ["sasl"]),
-            ("ssl", ["openssl"]),
-            ("cse", [False, True]),
+            ('version', ['latest']),
+            ('topology', ['replica_set']),
+            ('auth', [True]),
+            ('sasl', ['sasl']),
+            ('ssl', ['openssl']),
+            ('cse', [False, True]),
         ]
     )
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
-        yield "test-coverage"
+        yield 'test-coverage'
         yield str(self.settings.version)
         if self.cse:
-            yield "client-side-encryption"
+            yield 'client-side-encryption'
 
     def name_parts(self) -> Iterable[str]:
-        yield "test-coverage"
-        yield self.display("version")
-        yield self.display("topology").replace("_", "-")
-        yield from map(self.display, ("auth", "sasl", "ssl"))
+        yield 'test-coverage'
+        yield self.display('version')
+        yield self.display('topology').replace('_', '-')
+        yield from map(self.display, ('auth', 'sasl', 'ssl'))
         if self.settings.cse:
-            yield "cse"
+            yield 'cse'
 
     @property
     def cse(self) -> bool:
@@ -312,38 +322,38 @@ class CoverageTask(MatrixTask):
     def post_commands(self) -> Iterable[Value]:
         if self.cse:
             yield func(
-                "compile coverage",
-                SASL="AUTO",
-                SSL="OPENSSL",
-                COMPILE_LIBMONGOCRYPT="ON",
+                'compile coverage',
+                SASL='AUTO',
+                SSL='OPENSSL',
+                COMPILE_LIBMONGOCRYPT='ON',
                 EXTRA_CONFIGURE_FLAGS='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON"',
             )
         else:
-            yield func("compile coverage", SASL="AUTO", SSL="OPENSSL")
+            yield func('compile coverage', SASL='AUTO', SSL='OPENSSL')
 
-        yield func("fetch-det")
+        yield func('fetch-det')
         yield func(
-            "bootstrap-mongo-orchestration",
+            'bootstrap-mongo-orchestration',
             MONGODB_VERSION=self.settings.version,
             TOPOLOGY=self.settings.topology,
-            AUTH=self.display("auth"),
-            SSL=self.display("ssl"),
+            AUTH=self.display('auth'),
+            SSL=self.display('ssl'),
         )
-        yield func("run-simple-http-server")
-        extra = {"COVERAGE": "ON"}
+        yield func('run-simple-http-server')
+        extra = {'COVERAGE': 'ON'}
         if self.cse:
-            extra["CLIENT_SIDE_ENCRYPTION"] = "ON"
-            yield func("run-mock-kms-servers")
-        yield func("run-tests", AUTH=self.display("auth"), SSL=self.display("ssl"), **extra)
-        yield func("upload coverage")
-        yield func("update codecov.io")
+            extra['CLIENT_SIDE_ENCRYPTION'] = 'ON'
+            yield func('run-mock-kms-servers')
+        yield func('run-tests', AUTH=self.display('auth'), SSL=self.display('ssl'), **extra)
+        yield func('upload coverage')
+        yield func('update codecov.io')
 
     def do_is_valid_combination(self) -> bool:
         # Limit coverage tests to test-coverage-latest-replica-set-auth-sasl-openssl (+ cse).
-        require(self.setting_eq("topology", "replica_set"))
-        require(self.setting_eq("sasl", "sasl"))
-        require(self.setting_eq("ssl", "openssl"))
-        require(self.setting_eq("version", "latest"))
+        require(self.setting_eq('topology', 'replica_set'))
+        require(self.setting_eq('sasl', 'sasl'))
+        require(self.setting_eq('ssl', 'openssl'))
+        require(self.setting_eq('version', 'latest'))
         require(self.settings.auth is True)
 
         if not self.cse:
@@ -351,9 +361,9 @@ class CoverageTask(MatrixTask):
             return True
 
         # CSE has extra requirements
-        if self.settings.version != "latest":
+        if self.settings.version != 'latest':
             # We only work with 4.2 or newer for CSE
-            require(Version(str(self.settings.version)) >= Version("4.2"))
+            require(Version(str(self.settings.version)) >= Version('4.2'))
         return True
 
 
@@ -363,64 +373,64 @@ all_tasks = chain(all_tasks, CoverageTask.matrix())
 class DNSTask(MatrixTask):
     axes = OD(
         [
-            ("auth", [False, True]),
-            ("loadbalanced", [False, True]),
-            ("ssl", ["openssl", "winssl", "darwinssl"]),
+            ('auth', [False, True]),
+            ('loadbalanced', [False, True]),
+            ('ssl', ['openssl', 'winssl', 'darwinssl']),
         ]
     )
 
-    name_prefix = "test-dns"
+    name_prefix = 'test-dns'
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield self.build_task_name
 
     @property
     def build_task_name(self) -> str:
-        sasl = "sspi" if self.settings.ssl == "winssl" else "sasl"
+        sasl = 'sspi' if self.settings.ssl == 'winssl' else 'sasl'
         return f'debug-compile-{sasl}-{self.display("ssl")}'
 
     def name_parts(self) -> Iterable[str]:
-        yield "test-dns"
+        yield 'test-dns'
         if self.settings.auth:
-            yield "auth"
+            yield 'auth'
         if self.settings.loadbalanced:
-            yield "loadbalanced"
-        yield self.display("ssl")
+            yield 'loadbalanced'
+        yield self.display('ssl')
 
     def post_commands(self) -> Iterable[Value]:
-        yield func("fetch-build", BUILD_NAME=self.build_task_name)
-        yield func("fetch-det")
+        yield func('fetch-build', BUILD_NAME=self.build_task_name)
+        yield func('fetch-det')
         if self.settings.loadbalanced:
             orchestration = func(
-                "bootstrap-mongo-orchestration",
-                TOPOLOGY="sharded_cluster",
-                AUTH="auth" if self.settings.auth else "noauth",
-                SSL="ssl",
-                LOAD_BALANCER="on",
+                'bootstrap-mongo-orchestration',
+                TOPOLOGY='sharded_cluster',
+                AUTH='auth' if self.settings.auth else 'noauth',
+                SSL='ssl',
+                LOAD_BALANCER='on',
             )
         else:
             orchestration = func(
-                "bootstrap-mongo-orchestration",
-                TOPOLOGY="replica_set",
-                AUTH="auth" if self.settings.auth else "noauth",
-                SSL="ssl",
+                'bootstrap-mongo-orchestration',
+                TOPOLOGY='replica_set',
+                AUTH='auth' if self.settings.auth else 'noauth',
+                SSL='ssl',
             )
 
         yield orchestration
 
-        dns = "on"
+        dns = 'on'
         if self.settings.loadbalanced:
-            dns = "loadbalanced"
-            yield func("fetch-det")
-            yield func("start-load-balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018")
+            dns = 'loadbalanced'
+            yield func('fetch-det')
+            yield func('start-load-balancer', MONGODB_URI='mongodb://localhost:27017,localhost:27018')
         elif self.settings.auth:
-            dns = "dns-auth"
-        yield func("run-tests", SSL="ssl", AUTH=self.display("auth"), DNS=dns)
+            dns = 'dns-auth'
+        yield func('run-tests', SSL='ssl', AUTH=self.display('auth'), DNS=dns)
 
     def do_is_valid_combination(self) -> bool:
         prohibit(bool(self.settings.loadbalanced) and bool(self.settings.auth))
         # Load balancer tests only run on some Linux hosts in Evergreen until CDRIVER-4041 is resolved.
-        prohibit(bool(self.settings.loadbalanced) and self.settings.ssl in ["darwinssl", "winssl"])
+        prohibit(bool(self.settings.loadbalanced) and self.settings.ssl in ['darwinssl', 'winssl'])
         return True
 
 
@@ -428,51 +438,51 @@ all_tasks = chain(all_tasks, DNSTask.matrix())
 
 
 class CompressionTask(MatrixTask):
-    axes = OD([("compression", ["zlib", "snappy", "zstd"])])
-    name_prefix = "test-latest-server"
+    axes = OD([('compression', ['zlib', 'snappy', 'zstd'])])
+    name_prefix = 'test-latest-server'
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield self.build_task_name
 
     @property
     def build_task_name(self) -> str:
-        return f"debug-compile-{self._compressor_suffix()}"
+        return f'debug-compile-{self._compressor_suffix()}'
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
-        yield "compression"
-        yield "latest"
+        yield 'compression'
+        yield 'latest'
         yield from self._compressor_list()
 
     def name_parts(self) -> Iterable[str]:
         return [self.name_prefix, self._compressor_suffix()]
 
     def post_commands(self) -> Iterable[Value]:
-        yield func("fetch-build", BUILD_NAME=self.build_task_name)
-        yield func("fetch-det")
-        yield func("bootstrap-mongo-orchestration", AUTH="noauth", SSL="nossl")
-        yield func("run-simple-http-server")
-        yield func("run-tests", AUTH="noauth", SSL="nossl", COMPRESSORS=",".join(self._compressor_list()))
+        yield func('fetch-build', BUILD_NAME=self.build_task_name)
+        yield func('fetch-det')
+        yield func('bootstrap-mongo-orchestration', AUTH='noauth', SSL='nossl')
+        yield func('run-simple-http-server')
+        yield func('run-tests', AUTH='noauth', SSL='nossl', COMPRESSORS=','.join(self._compressor_list()))
 
     def _compressor_suffix(self):
-        if self.settings.compression == "zlib":
-            return "compression-zlib"
-        elif self.settings.compression == "snappy":
-            return "compression-snappy"
-        elif self.settings.compression == "zstd":
-            return "compression-zstd"
+        if self.settings.compression == 'zlib':
+            return 'compression-zlib'
+        elif self.settings.compression == 'snappy':
+            return 'compression-snappy'
+        elif self.settings.compression == 'zstd':
+            return 'compression-zstd'
         else:
-            return "compression"
+            return 'compression'
 
     def _compressor_list(self):
-        if self.settings.compression == "zlib":
-            return ["zlib"]
-        elif self.settings.compression == "snappy":
-            return ["snappy"]
-        elif self.settings.compression == "zstd":
-            return ["zstd"]
+        if self.settings.compression == 'zlib':
+            return ['zlib']
+        elif self.settings.compression == 'snappy':
+            return ['snappy']
+        elif self.settings.compression == 'zstd':
+            return ['zstd']
         else:
-            return ["snappy", "zlib", "zstd"]
+            return ['snappy', 'zlib', 'zstd']
 
 
 all_tasks = chain(all_tasks, CompressionTask.matrix())
@@ -482,11 +492,11 @@ class SpecialIntegrationTask(NamedTask):
     def __init__(
         self,
         task_name: str,
-        main_dep: str = "debug-compile-sasl-openssl",
+        main_dep: str = 'debug-compile-sasl-openssl',
         uri: str | None = None,
         tags: Iterable[str] = (),
-        version: str = "latest",
-        topology: str = "server",
+        version: str = 'latest',
+        topology: str = 'server',
     ):
         self._main_dep = main_dep
         super().__init__(task_name, depends_on=[self._main_dep], tags=tags)
@@ -495,40 +505,40 @@ class SpecialIntegrationTask(NamedTask):
         self._topo = topology
 
     def pre_commands(self) -> Iterable[Value]:
-        yield func("fetch-build", BUILD_NAME=self._main_dep)
-        yield func("fetch-det")
-        yield func("bootstrap-mongo-orchestration", MONGODB_VERSION=self._version, TOPOLOGY=self._topo)
-        yield func("run-simple-http-server")
-        yield func("run-tests", URI=self._uri)
+        yield func('fetch-build', BUILD_NAME=self._main_dep)
+        yield func('fetch-det')
+        yield func('bootstrap-mongo-orchestration', MONGODB_VERSION=self._version, TOPOLOGY=self._topo)
+        yield func('run-simple-http-server')
+        yield func('run-tests', URI=self._uri)
 
 
 all_tasks = chain(
     all_tasks,
     [
         # Verify that retryWrites=true is ignored with standalone.
-        SpecialIntegrationTask("retry-true-latest-server", uri="mongodb://localhost/?retryWrites=true"),
-        SpecialIntegrationTask("test-latest-server-hardened", "hardened-compile", tags=["hardened", "latest"]),
+        SpecialIntegrationTask('retry-true-latest-server', uri='mongodb://localhost/?retryWrites=true'),
+        SpecialIntegrationTask('test-latest-server-hardened', 'hardened-compile', tags=['hardened', 'latest']),
     ],
 )
 
 
 class AuthTask(MatrixTask):
-    axes = OD([("sasl", ["sasl", "sspi", False]), ("ssl", ["openssl", "darwinssl", "winssl"])])
+    axes = OD([('sasl', ['sasl', 'sspi', False]), ('ssl', ['openssl', 'darwinssl', 'winssl'])])
 
-    name_prefix = "authentication-tests"
+    name_prefix = 'authentication-tests'
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
-        yield "authentication-tests"
-        yield self.display("ssl")
-        yield self.display("sasl")
+        yield 'authentication-tests'
+        yield self.display('ssl')
+        yield self.display('sasl')
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield self.build_task_name
 
     def post_commands(self) -> Iterable[Value]:
-        yield func("fetch-build", BUILD_NAME=self.build_task_name)
-        yield func("run auth tests")
+        yield func('fetch-build', BUILD_NAME=self.build_task_name)
+        yield func('run auth tests')
 
     @property
     def build_task_name(self) -> str:
@@ -536,14 +546,14 @@ class AuthTask(MatrixTask):
 
     def name_parts(self) -> Iterable[str]:
         yield self.name_prefix
-        yield self.display("ssl")
+        yield self.display('ssl')
         if not self.settings.sasl:
-            yield "nosasl"
+            yield 'nosasl'
 
     def do_is_valid_combination(self) -> bool:
-        both_or_neither(self.settings.ssl == "winssl", self.settings.sasl == "sspi")
+        both_or_neither(self.settings.ssl == 'winssl', self.settings.sasl == 'sspi')
         if not self.settings.sasl:
-            require(self.settings.ssl == "openssl")
+            require(self.settings.ssl == 'openssl')
         return True
 
 
@@ -556,109 +566,109 @@ class PostCompileTask(NamedTask):
         self._dep = get_build
 
     def pre_commands(self) -> Iterable[Value]:
-        yield func("fetch-build", BUILD_NAME=self._dep)
+        yield func('fetch-build', BUILD_NAME=self._dep)
 
 
 all_tasks = chain(
     all_tasks,
     [
         PostCompileTask(
-            "test-mongohouse",
+            'test-mongohouse',
             tags=[],
-            get_build="debug-compile-sasl-openssl",
-            commands=[func("fetch-det"), func("build mongohouse"), func("run mongohouse"), func("test mongohouse")],
+            get_build='debug-compile-sasl-openssl',
+            commands=[func('fetch-det'), func('build mongohouse'), func('run mongohouse'), func('test mongohouse')],
         ),
         NamedTask(
-            "authentication-tests-asan-memcheck",
-            tags=["authentication-tests", "asan"],
+            'authentication-tests-asan-memcheck',
+            tags=['authentication-tests', 'asan'],
             commands=[
-                func("find-cmake-latest"),
+                func('find-cmake-latest'),
                 shell_mongoc(
                     """
             env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
             """,
                     add_expansions_to_env=True,
                 ),
-                func("run auth tests", ASAN="on"),
+                func('run auth tests', ASAN='on'),
             ],
-        )
+        ),
     ],
 )
 
 # Add API version tasks.
-for server_version in [ "8.0", "7.0", "6.0", "5.0"]:
+for server_version in ['8.0', '7.0', '6.0', '5.0']:
     all_tasks = chain(
         all_tasks,
         [
             PostCompileTask(
-                "test-versioned-api-" + server_version,
-                tags=["versioned-api", f"{server_version}"],
-                get_build="debug-compile-nosasl-openssl",
+                'test-versioned-api-' + server_version,
+                tags=['versioned-api', f'{server_version}'],
+                get_build='debug-compile-nosasl-openssl',
                 commands=[
-                    func("fetch-det"),
+                    func('fetch-det'),
                     func(
-                        "bootstrap-mongo-orchestration",
-                        TOPOLOGY="server",
-                        AUTH="auth",
-                        SSL="ssl",
+                        'bootstrap-mongo-orchestration',
+                        TOPOLOGY='server',
+                        AUTH='auth',
+                        SSL='ssl',
                         MONGODB_VERSION=server_version,
-                        REQUIRE_API_VERSION="true",
+                        REQUIRE_API_VERSION='true',
                     ),
-                    func("run-simple-http-server"),
-                    func("run-tests", MONGODB_API_VERSION=1, AUTH="auth", SSL="ssl"),
+                    func('run-simple-http-server'),
+                    func('run-tests', MONGODB_API_VERSION=1, AUTH='auth', SSL='ssl'),
                 ],
             ),
             PostCompileTask(
-                "test-versioned-api-accept-version-two-" + server_version,
-                tags=["versioned-api", f"{server_version}"],
-                get_build="debug-compile-nosasl-nossl",
+                'test-versioned-api-accept-version-two-' + server_version,
+                tags=['versioned-api', f'{server_version}'],
+                get_build='debug-compile-nosasl-nossl',
                 commands=[
-                    func("fetch-det"),
+                    func('fetch-det'),
                     func(
-                        "bootstrap-mongo-orchestration",
-                        TOPOLOGY="server",
-                        AUTH="noauth",
-                        SSL="nossl",
+                        'bootstrap-mongo-orchestration',
+                        TOPOLOGY='server',
+                        AUTH='noauth',
+                        SSL='nossl',
                         MONGODB_VERSION=server_version,
-                        ORCHESTRATION_FILE="versioned-api-testing.json",
+                        ORCHESTRATION_FILE='versioned-api-testing.json',
                     ),
-                    func("run-simple-http-server"),
-                    func("run-tests", MONGODB_API_VERSION=1, AUTH="noauth", SSL="nossl"),
+                    func('run-simple-http-server'),
+                    func('run-tests', MONGODB_API_VERSION=1, AUTH='noauth', SSL='nossl'),
                 ],
-            )
-        ]
+            ),
+        ],
     )
 
 
 class IPTask(MatrixTask):
     axes = OD(
         [
-            ("client", ["ipv6", "ipv4", "localhost"]),
-            ("server", ["ipv6", "ipv4"]),
+            ('client', ['ipv6', 'ipv4', 'localhost']),
+            ('server', ['ipv6', 'ipv4']),
         ]
     )
 
-    name_prefix = "test-latest"
+    name_prefix = 'test-latest'
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
-        yield "debug-compile-nosasl-nossl"
+        yield 'debug-compile-nosasl-nossl'
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
-        yield from ("nossl", "nosasl", "server", "ipv4-ipv6", "latest")
+        yield from ('nossl', 'nosasl', 'server', 'ipv4-ipv6', 'latest')
 
     def post_commands(self) -> Iterable[Value]:
         return [
-            func("fetch-build", BUILD_NAME="debug-compile-nosasl-nossl"),
-            func("fetch-det"),
-            func("bootstrap-mongo-orchestration"),
-            func("run-simple-http-server"),
+            func('fetch-build', BUILD_NAME='debug-compile-nosasl-nossl'),
+            func('fetch-det'),
+            func('bootstrap-mongo-orchestration'),
+            func('run-simple-http-server'),
             func(
-                "run-tests",
+                'run-tests',
                 URI={
-                    "ipv6": "mongodb://[::1]/",
-                    "ipv4": "mongodb://127.0.0.1/",
-                    "localhost": "mongodb://localhost/",
+                    'ipv6': 'mongodb://[::1]/',
+                    'ipv4': 'mongodb://127.0.0.1/',
+                    'localhost': 'mongodb://localhost/',
                 }[str(self.settings.client)],
             ),
         ]
@@ -668,26 +678,26 @@ class IPTask(MatrixTask):
             self.name_prefix,
             f'server-{self.display("server")}',
             f'client-{self.display("client")}',
-            "noauth",
-            "nosasl",
-            "nossl",
+            'noauth',
+            'nosasl',
+            'nossl',
         )
 
     def do_is_valid_combination(self) -> bool:
         # This would fail by design.
-        if self.settings.server == "ipv4":
-            prohibit(self.settings.client == "ipv6")
+        if self.settings.server == 'ipv4':
+            prohibit(self.settings.client == 'ipv6')
 
         # Default configuration is tested in other variants.
-        if self.settings.server == "ipv6":
-            prohibit(self.settings.client == "localhost")
+        if self.settings.server == 'ipv6':
+            prohibit(self.settings.client == 'localhost')
         return True
 
 
 all_tasks = chain(all_tasks, IPTask.matrix())
 
 aws_compile_task = NamedTask(
-    "debug-compile-aws",
+    'debug-compile-aws',
     commands=[
         func('find-cmake-latest'),
         shell_mongoc(
@@ -709,7 +719,7 @@ aws_compile_task = NamedTask(
             include_expansions_in_env=['distro_id', 'CC'],
             redirect_standard_error_to_output=True,
         ),
-        func("upload-build"),
+        func('upload-build'),
     ],
 )
 
@@ -719,15 +729,15 @@ all_tasks = chain(all_tasks, [aws_compile_task])
 class AWSTestTask(MatrixTask):
     axes = OD(
         [
-            ("testcase", ["regular", "ec2", "ecs", "lambda", "assume_role", "assume_role_with_web_identity"]),
-            ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
+            ('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
+            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
-    name_prefix = "test-aws-openssl"
+    name_prefix = 'test-aws-openssl'
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
-        yield "debug-compile-aws"
+        yield 'debug-compile-aws'
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
@@ -736,21 +746,21 @@ class AWSTestTask(MatrixTask):
 
     def post_commands(self) -> Iterable[Value]:
         return [
-            func("fetch-build", BUILD_NAME="debug-compile-aws"),
-            func("fetch-det"),
+            func('fetch-build', BUILD_NAME='debug-compile-aws'),
+            func('fetch-det'),
             func(
-                "bootstrap-mongo-orchestration",
-                AUTH="auth",
-                ORCHESTRATION_FILE="auth-aws.json",
+                'bootstrap-mongo-orchestration',
+                AUTH='auth',
+                ORCHESTRATION_FILE='auth-aws.json',
                 MONGODB_VERSION=self.settings.version,
-                TOPOLOGY="server",
+                TOPOLOGY='server',
             ),
-            func("run aws tests", TESTCASE=str(self.settings.testcase).upper()),
+            func('run aws tests', TESTCASE=str(self.settings.testcase).upper()),
         ]
 
     @property
     def name(self):
-        return f"{self.name_prefix}-{self.settings.testcase}-{self.settings.version}"
+        return f'{self.name_prefix}-{self.settings.testcase}-{self.settings.version}'
 
 
 all_tasks = chain(all_tasks, AWSTestTask.matrix())
@@ -760,26 +770,26 @@ class OCSPTask(MatrixTask):
     axes = OD(
         [
             (
-                "test",
+                'test',
                 [
-                    "test_1",
-                    "test_2",
-                    "test_3",
-                    "test_4",
-                    "soft_fail_test",
-                    "malicious_server_test_1",
-                    "malicious_server_test_2",
-                    "cache",
+                    'test_1',
+                    'test_2',
+                    'test_3',
+                    'test_4',
+                    'soft_fail_test',
+                    'malicious_server_test_1',
+                    'malicious_server_test_2',
+                    'cache',
                 ],
             ),
-            ("delegate", ["delegate", "nodelegate"]),
-            ("cert", ["rsa", "ecdsa"]),
-            ("ssl", ["openssl", "darwinssl", "winssl"]),
-            ("version", ["latest", "8.0", "7.0", "6.0", "5.0", "4.4"]),
+            ('delegate', ['delegate', 'nodelegate']),
+            ('cert', ['rsa', 'ecdsa']),
+            ('ssl', ['openssl', 'darwinssl', 'winssl']),
+            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
-    name_prefix = "test-ocsp"
+    name_prefix = 'test-ocsp'
 
     @property
     def build_task_name(self) -> str:
@@ -794,34 +804,34 @@ class OCSPTask(MatrixTask):
 
     @property
     def name(self):
-        return f"ocsp-{self.settings.ssl}-{self.test}-{self.settings.cert}-{self.settings.delegate}-{self.settings.version}"
+        return f'ocsp-{self.settings.ssl}-{self.test}-{self.settings.cert}-{self.settings.delegate}-{self.settings.version}'
 
     @property
     def test(self) -> str:
         return str(self.settings.test)
 
     def post_commands(self) -> Iterable[Value]:
-        yield func("fetch-build", BUILD_NAME=self.build_task_name)
-        yield func("fetch-det")
+        yield func('fetch-build', BUILD_NAME=self.build_task_name)
+        yield func('fetch-det')
 
-        stapling = "mustStaple"
-        if self.test in ["test_3", "test_4", "soft_fail_test", "cache"]:
-            stapling = "disableStapling"
-        if self.test in ["malicious_server_test_1", "malicious_server_test_2"]:
-            stapling = "mustStaple-disableStapling"
+        stapling = 'mustStaple'
+        if self.test in ['test_3', 'test_4', 'soft_fail_test', 'cache']:
+            stapling = 'disableStapling'
+        if self.test in ['malicious_server_test_1', 'malicious_server_test_2']:
+            stapling = 'mustStaple-disableStapling'
 
         orchestration = func(
-            "bootstrap-mongo-orchestration",
+            'bootstrap-mongo-orchestration',
             MONGODB_VERSION=self.settings.version,
-            TOPOLOGY="server",
-            SSL="ssl",
-            OCSP="on",
-            ORCHESTRATION_FILE=f"{self.settings.cert}-basic-tls-ocsp-{stapling}.json",
+            TOPOLOGY='server',
+            SSL='ssl',
+            OCSP='on',
+            ORCHESTRATION_FILE=f'{self.settings.cert}-basic-tls-ocsp-{stapling}.json',
         )
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
-        test_column = "TEST_4" if self.test == "cache" else str(self.test).upper()
-        use_delegate = "ON" if self.settings.delegate == "delegate" else "OFF"
+        test_column = 'TEST_4' if self.test == 'cache' else str(self.test).upper()
+        use_delegate = 'ON' if self.settings.delegate == 'delegate' else 'OFF'
 
         yield (
             shell_mongoc(
@@ -833,7 +843,7 @@ class OCSPTask(MatrixTask):
 
         yield (orchestration)
 
-        if self.test == "cache":
+        if self.test == 'cache':
             yield (
                 shell_mongoc(
                     f"""
@@ -857,35 +867,35 @@ class OCSPTask(MatrixTask):
 
         # OCSP tests should run with a batchtime of 14 days. Avoid running OCSP
         # tests in patch builds by default (only in commit builds).
-        task["patchable"] = False
+        task['patchable'] = False
 
         return task
 
     # Testing in OCSP has a lot of exceptions.
     def do_is_valid_combination(self) -> bool:
-        if self.settings.ssl == "darwinssl":
+        if self.settings.ssl == 'darwinssl':
             # Secure Transport quietly ignores a must-staple certificate with no stapled response.
-            prohibit(self.test == "malicious_server_test_2")
+            prohibit(self.test == 'malicious_server_test_2')
 
             # Why does this fail with Secure Transport (CSSMERR_TP_CERT_SUSPENDED)...?
-            prohibit(self.test == "test_3")
+            prohibit(self.test == 'test_3')
 
             # CDRIVER-3759: Secure Transport does not implement soft failure?
-            prohibit(self.test == "soft_fail_test")
+            prohibit(self.test == 'soft_fail_test')
 
             # Only Server 6.0+ are available on MacOS ARM64.
-            if self.settings.version != "latest":
-                prohibit(Version(self.settings.version) < Version("6.0"))
+            if self.settings.version != 'latest':
+                prohibit(Version(self.settings.version) < Version('6.0'))
 
-        if self.settings.ssl == "darwinssl" or self.settings.ssl == "winssl":
+        if self.settings.ssl == 'darwinssl' or self.settings.ssl == 'winssl':
             # ECDSA certs can't be loaded (in the PEM format they're stored) on Windows/macOS. Skip them.
-            prohibit(self.settings.cert == "ecdsa")
+            prohibit(self.settings.cert == 'ecdsa')
 
             # OCSP stapling is not supported on macOS or Windows.
-            prohibit(self.test in ["test_1", "test_2", "cache"])
+            prohibit(self.test in ['test_1', 'test_2', 'cache'])
 
-        if self.test == "soft_fail_test" or self.test == "malicious_server_test_2" or self.test == "cache":
-            prohibit(self.settings.delegate == "delegate")
+        if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2' or self.test == 'cache':
+            prohibit(self.settings.delegate == 'delegate')
 
         return True
 

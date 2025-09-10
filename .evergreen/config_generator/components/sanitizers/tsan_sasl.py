@@ -1,11 +1,7 @@
-from config_generator.etc.compile  import generate_compile_tasks
-
-from config_generator.etc.sanitizers.test import generate_test_tasks
-
-from config_generator.components.sasl.openssl import SaslCyrusOpenSSLCompile
-
 from config_generator.components.sanitizers.tsan import TAG
-
+from config_generator.components.sasl.openssl import SaslCyrusOpenSSLCompile
+from config_generator.etc.compile import generate_compile_tasks
+from config_generator.etc.sanitizers.test import generate_test_tasks
 
 # pylint: disable=line-too-long
 # fmt: off
@@ -30,9 +26,7 @@ def tasks():
     SSL = 'openssl'
     SASL_TO_FUNC = {'cyrus': SaslCyrusOpenSSLCompile}
 
-    res += generate_compile_tasks(
-        SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS
-    )
+    res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS)
 
     res += generate_test_tasks(SSL, TAG, TEST_OPENSSL_MATRIX, MORE_TAGS)
 

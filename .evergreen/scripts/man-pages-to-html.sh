@@ -38,7 +38,7 @@ echo "
   <body><pre>"
 
 for doc in $2/*.3; do
-  fullpath=`pwd`/$doc
+  fullpath=$(pwd)/$doc
   name=$(basename $doc)
 
   if [ ! -e "$fullpath" ]; then

@@ -16,48 +16,30 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NoReturn, Sequence, Union, cast
 
 if TYPE_CHECKING:
-    from typing import (Literal, NamedTuple, TypedDict)
+    from typing import Literal, NamedTuple, TypedDict
 
 INTERUPT_SIGNAL = signal.SIGINT if os.name != 'nt' else signal.CTRL_C_SIGNAL
 
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser('proc-ctl')
-    grp = parser.add_subparsers(title='Commands',
-                                dest='command',
-                                metavar='<subcommand>')
+    grp = parser.add_subparsers(title='Commands', dest='command', metavar='<subcommand>')
 
     start = grp.add_parser('start', help='Start a new subprocess')
-    start.add_argument('--ctl-dir',
-                       help='The control directory for the subprocess',
-                       required=True,
-                       type=Path)
-    start.add_argument('--cwd',
-                       help='The new subdirectory of the spawned process',
-                       type=Path)
-    start.add_argument(
-        '--spawn-wait',
-        help='Number of seconds to wait for child to be running',
-        type=float,
-        default=3)
-    start.add_argument('child_command',
-                       nargs='+',
-                       help='The command to execute',
-                       metavar='<command> [args...]')
+    start.add_argument('--ctl-dir', help='The control directory for the subprocess', required=True, type=Path)
+    start.add_argument('--cwd', help='The new subdirectory of the spawned process', type=Path)
+    start.add_argument('--spawn-wait', help='Number of seconds to wait for child to be running', type=float, default=3)
+    start.add_argument('child_command', nargs='+', help='The command to execute', metavar='<command> [args...]')
 
     stop = grp.add_parser('stop', help='Stop a running subprocess')
-    stop.add_argument('--ctl-dir',
-                      help='The control directory for the subprocess',
-                      required=True,
-                      type=Path)
-    stop.add_argument('--stop-wait',
-                      help='Number of seconds to wait for stopping',
-                      type=float,
-                      default=5)
-    stop.add_argument('--if-not-running',
-                      help='Action to take if the child is not running',
-                      choices=['fail', 'ignore'],
-                      default='fail')
+    stop.add_argument('--ctl-dir', help='The control directory for the subprocess', required=True, type=Path)
+    stop.add_argument('--stop-wait', help='Number of seconds to wait for stopping', type=float, default=5)
+    stop.add_argument(
+        '--if-not-running',
+        help='Action to take if the child is not running',
+        choices=['fail', 'ignore'],
+        default='fail',
+    )
 
     ll_run = grp.add_parser('__run')
     ll_run.add_argument('--ctl-dir', type=Path, required=True)
@@ -67,33 +49,39 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 if TYPE_CHECKING:
-    StartCommandArgs = NamedTuple('StartCommandArgs', [
-        ('command', Literal['start']),
-        ('ctl_dir', Path),
-        ('cwd', Path),
-        ('child_command', Sequence[str]),
-        ('spawn_wait', float),
-    ])
+    StartCommandArgs = NamedTuple(
+        'StartCommandArgs',
+        [
+            ('command', Literal['start']),
+            ('ctl_dir', Path),
+            ('cwd', Path),
+            ('child_command', Sequence[str]),
+            ('spawn_wait', float),
+        ],
+    )
 
-    StopCommandArgs = NamedTuple('StopCommandArgs', [
-        ('command', Literal['stop']),
-        ('ctl_dir', Path),
-        ('stop_wait', float),
-        ('if_not_running', Literal['fail', 'ignore']),
-    ])
+    StopCommandArgs = NamedTuple(
+        'StopCommandArgs',
+        [
+            ('command', Literal['stop']),
+            ('ctl_dir', Path),
+            ('stop_wait', float),
+            ('if_not_running', Literal['fail', 'ignore']),
+        ],
+    )
 
-    _RunCommandArgs = NamedTuple('_RunCommandArgs', [
-        ('command', Literal['__run']),
-        ('child_command', Sequence[str]),
-        ('ctl_dir', Path),
-    ])
+    _RunCommandArgs = NamedTuple(
+        '_RunCommandArgs',
+        [
+            ('command', Literal['__run']),
+            ('child_command', Sequence[str]),
+            ('ctl_dir', Path),
+        ],
+    )
 
     CommandArgs = Union[StartCommandArgs, StopCommandArgs, _RunCommandArgs]
 
-    _ResultType = TypedDict('_ResultType', {
-        'exit': 'str | int | None',
-        'error': 'str | None'
-    })
+    _ResultType = TypedDict('_ResultType', {'exit': 'str | int | None', 'error': 'str | None'})
 
 
 def parse_argv(argv: 'Sequence[str]') -> 'CommandArgs':
@@ -103,7 +91,6 @@ def parse_argv(argv: 'Sequence[str]') -> 'CommandArgs':
 
 
 class _ChildControl:
-
     def __init__(self, ctl_dir: Path) -> None:
         self._ctl_dir = ctl_dir
 
@@ -128,10 +115,7 @@ class _ChildControl:
         return int(txt)
 
     def set_exit(self, exit: 'str | int | None', error: 'str | None') -> None:
-        write_text(self.result_file, json.dumps({
-            'exit': exit,
-            'error': error
-        }))
+        write_text(self.result_file, json.dumps({'exit': exit, 'error': error}))
         remove_file(self.pid_file)
 
     def get_result(self) -> 'None | _ResultType':
@@ -159,8 +143,7 @@ def _start(args: 'StartCommandArgs') -> int:
     args.ctl_dir.mkdir(exist_ok=True, parents=True)
     child = _ChildControl(args.ctl_dir)
     if child.get_pid() is not None:
-        raise RuntimeError('Child process is already running [PID {}]'.format(
-            child.get_pid()))
+        raise RuntimeError('Child process is already running [PID {}]'.format(child.get_pid()))
     child.clear_result()
     # Spawn the child controller
     subprocess.Popen(
@@ -168,7 +151,8 @@ def _start(args: 'StartCommandArgs') -> int:
         cwd=args.cwd,
         stderr=subprocess.STDOUT,
         stdout=args.ctl_dir.joinpath('runner-output.txt').open('wb'),
-        stdin=subprocess.DEVNULL)
+        stdin=subprocess.DEVNULL,
+    )
     expire = datetime.now() + timedelta(seconds=args.spawn_wait)
     # Wait for the PID to appear
     while child.get_pid() is None and child.get_result() is None:
@@ -182,8 +166,7 @@ def _start(args: 'StartCommandArgs') -> int:
             raise RuntimeError('Failed to spawn child runner?')
         if result['error']:
             print(result['error'], file=sys.stderr)
-        raise RuntimeError('Child exited immediately [Exited {}]'.format(
-            result['exit']))
+        raise RuntimeError('Child exited immediately [Exited {}]'.format(result['exit']))
     # Wait to see that it is still running after --spawn-wait seconds
     while child.get_result() is None:
         if expire < datetime.now():
@@ -194,8 +177,7 @@ def _start(args: 'StartCommandArgs') -> int:
     if result is not None:
         if result['error']:
             print(result['error'], file=sys.stderr)
-        raise RuntimeError('Child exited prematurely [Exited {}]'.format(
-            result['exit']))
+        raise RuntimeError('Child exited prematurely [Exited {}]'.format(result['exit']))
     return 0
 
 
@@ -216,8 +198,7 @@ def _stop(args: 'StopCommandArgs') -> int:
         time.sleep(0.1)
     result = child.get_result()
     if result is None:
-        raise RuntimeError(
-            'Child process did not exit within the grace period')
+        raise RuntimeError('Child process did not exit within the grace period')
     return 0
 
 
@@ -228,7 +209,8 @@ def __run(args: '_RunCommandArgs') -> int:
             args.child_command,
             stdout=args.ctl_dir.joinpath('child-output.txt').open('wb'),
             stderr=subprocess.STDOUT,
-            stdin=subprocess.DEVNULL)
+            stdin=subprocess.DEVNULL,
+        )
     except:
         this.set_exit('spawn-failed', traceback.format_exc())
         raise
@@ -272,8 +254,7 @@ def remove_file(fpath: Path):
     then delete that file. This ensures the file is "out of the way", even if
     it takes some time to delete.
     """
-    delname = fpath.with_name(fpath.name + '.delete-' +
-                              str(random.randint(0, 999999)))
+    delname = fpath.with_name(fpath.name + '.delete-' + str(random.randint(0, 999999)))
     try:
         fpath.rename(delname)
     except FileNotFoundError:
