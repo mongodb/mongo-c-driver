@@ -1,6 +1,6 @@
 {
   "description": "fle2v2-Rangev2-Long-FindOneAndUpdate",
-  "schemaVersion": "1.23",
+  "schemaVersion": "1.25",
   "runOnRequirements": [
     {
       "minServerVersion": "8.0.0",
@@ -8,7 +8,10 @@
         "replicaset",
         "sharded",
         "load-balanced"
-      ]
+      ],
+      "csfle": {
+        "minLibmongocryptVersion": "1.15.1"
+      }
     }
   ],
   "createEntities": [

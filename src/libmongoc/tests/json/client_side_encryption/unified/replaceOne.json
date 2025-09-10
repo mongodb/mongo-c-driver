@@ -1,9 +1,12 @@
 {
   "description": "replaceOne",
-  "schemaVersion": "1.23",
+  "schemaVersion": "1.25",
   "runOnRequirements": [
     {
-      "minServerVersion": "4.1.10"
+      "minServerVersion": "4.1.10",
+      "csfle": {
+        "minLibmongocryptVersion": "1.15.1"
+      }
     }
   ],
   "createEntities": [
