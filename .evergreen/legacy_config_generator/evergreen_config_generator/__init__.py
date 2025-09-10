@@ -16,6 +16,9 @@
 from collections import OrderedDict as OD
 from typing import Any, Iterable, Mapping, MutableMapping, MutableSequence, Sequence, Union
 
+import yaml
+import yamlloader
+
 Scalar = Union[str, bool, int, None, float]
 'YAML simple schema scalar types'
 ValueSequence = Sequence['Value']
@@ -33,10 +36,6 @@ MutableValue = Union[MutableValueMapping, MutableValueArray, Scalar]
 
 ValueOrderedDict = OD[Scalar, Value]
 'An OrderedDict of YAML values'
-
-
-import yaml
-import yamlloader
 
 
 class ConfigObject(object):

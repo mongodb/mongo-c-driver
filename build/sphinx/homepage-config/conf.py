@@ -8,7 +8,7 @@ from docutils import nodes
 this_path = os.path.dirname(__file__)
 sys.path.append(os.path.normpath(os.path.join(this_path, '../')))
 
-from mongoc_common import *
+from mongoc_common import *  # noqa: E402
 
 with open(this_path + '/../../../VERSION_CURRENT') as vc:
     release = version = vc.read()

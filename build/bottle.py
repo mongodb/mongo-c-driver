@@ -70,27 +70,27 @@ if __name__ == '__main__':
 # Imports and Python 2/3 unification ##########################################
 ###############################################################################
 
-import base64
-import calendar
-import email.utils
-import functools
-import hashlib
-import hmac
-import itertools
-import mimetypes
-import os
-import re
-import tempfile
-import threading
-import time
-import warnings
-import weakref
-from datetime import date as datedate
-from datetime import datetime, timedelta
-from tempfile import NamedTemporaryFile
-from traceback import format_exc, print_exc
-from types import FunctionType
-from unicodedata import normalize
+import base64  # noqa: E402
+import calendar  # noqa: E402
+import email.utils  # noqa: E402
+import functools  # noqa: E402
+import hashlib  # noqa: E402
+import hmac  # noqa: E402
+import itertools  # noqa: E402
+import mimetypes  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+import tempfile  # noqa: E402
+import threading  # noqa: E402
+import time  # noqa: E402
+import warnings  # noqa: E402
+import weakref  # noqa: E402
+from datetime import date as datedate  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from tempfile import NamedTemporaryFile  # noqa: E402
+from traceback import format_exc, print_exc  # noqa: E402
+from types import FunctionType  # noqa: E402
+from unicodedata import normalize  # noqa: E402
 
 try:
     from ujson import dumps as json_dumps

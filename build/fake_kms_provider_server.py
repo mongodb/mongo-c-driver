@@ -4,14 +4,13 @@ import sys
 import time
 import traceback
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Iterable, cast, overload
 
 import bottle
 from bottle import Bottle, HTTPResponse
 
 kms_provider = Bottle(autojson=True)
 """A mock server for Azure IMDS and GCP metadata"""
-
-from typing import TYPE_CHECKING, Any, Callable, Iterable, cast, overload
 
 if not TYPE_CHECKING:
     from bottle import request
