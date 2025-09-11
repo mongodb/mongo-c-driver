@@ -19,41 +19,10 @@
 
 #include <mongoc/mongoc.h>
 
-typedef enum { NONE, CMD_RESPONSE } reading_from_t;
-typedef enum { UNKNOWN, GETMORE_CMD } getmore_type_t;
 typedef struct _data_cmd_t {
-   /* Two paths:
-    * - Mongo 3.2+, sent "getMore" cmd, we're reading reply's "nextBatch" array
-    * - Mongo 2.6 to 3, after "aggregate" or similar command we sent OP_GETMORE,
-    *   we're reading the raw reply from a stream
-    */
    mongoc_cursor_response_t response;
-   reading_from_t reading_from;
-   getmore_type_t getmore_type; /* cache after first getmore. */
    bson_t cmd;
 } data_cmd_t;
-
-
-static getmore_type_t
-_getmore_type(mongoc_cursor_t *cursor)
-{
-   mongoc_server_stream_t *server_stream;
-   data_cmd_t *data = (data_cmd_t *)cursor->impl.data;
-   if (data->getmore_type != UNKNOWN) {
-      return data->getmore_type;
-   }
-   const mongoc_ss_log_context_t ss_log_context = {
-      .operation = "getMore", .has_operation_id = true, .operation_id = cursor->operation_id};
-   server_stream = _mongoc_cursor_fetch_stream(cursor, &ss_log_context);
-   if (!server_stream) {
-      return UNKNOWN;
-   }
-   mongoc_server_stream_cleanup(server_stream);
-
-   data->getmore_type = GETMORE_CMD;
-
-   return data->getmore_type;
-}
 
 
 static mongoc_cursor_state_t
@@ -70,7 +39,6 @@ _prime(mongoc_cursor_t *cursor)
    /* server replies to aggregate/listIndexes/listCollections with:
     * {cursor: {id: N, firstBatch: []}} */
    _mongoc_cursor_response_refresh(cursor, &data->cmd, &copied_opts, &data->response);
-   data->reading_from = CMD_RESPONSE;
    bson_destroy(&copied_opts);
    return IN_BATCH;
 }
@@ -81,15 +49,8 @@ _pop_from_batch(mongoc_cursor_t *cursor)
 {
    data_cmd_t *data = (data_cmd_t *)cursor->impl.data;
 
-   switch (data->reading_from) {
-   case CMD_RESPONSE:
-      _mongoc_cursor_response_read(cursor, &data->response, &cursor->current);
-      break;
-   case NONE:
-   default:
-      fprintf(stderr, "trying to pop from an uninitialized cursor reader.\n");
-      BSON_ASSERT(false);
-   }
+   _mongoc_cursor_response_read(cursor, &data->response, &cursor->current);
+
    if (cursor->current) {
       return IN_BATCH;
    } else {
@@ -103,19 +64,12 @@ _get_next_batch(mongoc_cursor_t *cursor)
 {
    data_cmd_t *data = (data_cmd_t *)cursor->impl.data;
    bson_t getmore_cmd;
-   getmore_type_t getmore_type = _getmore_type(cursor);
 
-   switch (getmore_type) {
-   case GETMORE_CMD:
-      _mongoc_cursor_prepare_getmore_command(cursor, &getmore_cmd);
-      _mongoc_cursor_response_refresh(cursor, &getmore_cmd, NULL /* opts */, &data->response);
-      bson_destroy(&getmore_cmd);
-      data->reading_from = CMD_RESPONSE;
-      return IN_BATCH;
-   case UNKNOWN:
-   default:
-      return DONE;
-   }
+   _mongoc_cursor_prepare_getmore_command(cursor, &getmore_cmd);
+   _mongoc_cursor_response_refresh(cursor, &getmore_cmd, NULL /* opts */, &data->response);
+   bson_destroy(&getmore_cmd);
+
+   return IN_BATCH;
 }
 
 
@@ -175,7 +129,6 @@ _mongoc_cursor_cmd_new_from_reply(mongoc_client_t *client, const bson_t *cmd, co
    mongoc_cursor_t *cursor = _mongoc_cursor_cmd_new(client, NULL, cmd, opts, NULL, NULL, NULL);
    data_cmd_t *data = (data_cmd_t *)cursor->impl.data;
 
-   data->reading_from = CMD_RESPONSE;
    cursor->state = IN_BATCH;
 
    bson_destroy(&data->response.reply);
