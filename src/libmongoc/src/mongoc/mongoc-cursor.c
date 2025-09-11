@@ -803,16 +803,10 @@ _mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_secondary_ok(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream)
 {
-   if (cursor->secondary_ok) {
-      return true;
-   } else if (cursor->server_id &&
-              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      return true;
-   }
-
-   return false;
+   return cursor->secondary_ok || (cursor->server_id != 0 &&
+                                   (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+                                    stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+                                   stream->sd->type != MONGOC_SERVER_RS_PRIMARY);
 }
 
 bool
