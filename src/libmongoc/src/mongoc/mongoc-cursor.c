@@ -895,6 +895,21 @@ _mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
    } while (false)
 
 bool
+_mongoc_cursor_secondary_ok(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream)
+{
+   if (cursor->secondary_ok) {
+      return true;
+   } else if (cursor->server_id &&
+              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
+      return true;
+   }
+
+   return false;
+}
+
+bool
 _mongoc_cursor_run_command(
    mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply, bool retry_prohibited)
 {
@@ -995,7 +1010,7 @@ _mongoc_cursor_run_command(
     */
    is_primary = !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 
-   if (strcmp(cmd_name, "getMore") != 0 && is_primary && parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
+   if (strcmp(cmd_name, "getMore") != 0 && is_primary && _mongoc_cursor_secondary_ok(cursor, server_stream)) {
       parts.read_prefs = prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
    } else {
       parts.read_prefs = cursor->read_prefs;
