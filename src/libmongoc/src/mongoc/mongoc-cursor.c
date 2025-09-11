@@ -672,119 +672,6 @@ _mongoc_cursor_fetch_stream(mongoc_cursor_t *cursor, const mongoc_ss_log_context
    RETURN(server_stream);
 }
 
-
-bool
-_mongoc_cursor_monitor_command(mongoc_cursor_t *cursor,
-                               mongoc_server_stream_t *server_stream,
-                               const bson_t *cmd,
-                               const char *cmd_name)
-{
-   mongoc_apm_command_started_t event;
-   char *db;
-
-   ENTRY;
-
-   mongoc_client_t *client = cursor->client;
-   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
-
-   mongoc_structured_log(
-      log_and_monitor->structured_log,
-      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command started",
-      int32("requestId", client->cluster.request_id),
-      server_description(server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-      utf8_n("databaseName", cursor->ns, cursor->dblen),
-      utf8("commandName", cmd_name),
-      int64("operationId", cursor->operation_id),
-      bson_as_json("command", cmd));
-
-   if (!log_and_monitor->apm_callbacks.started) {
-      /* successful */
-      RETURN(true);
-   }
-
-   db = bson_strndup(cursor->ns, cursor->dblen);
-
-   mongoc_apm_command_started_init(&event,
-                                   cmd,
-                                   db,
-                                   cmd_name,
-                                   client->cluster.request_id,
-                                   cursor->operation_id,
-                                   &server_stream->sd->host,
-                                   server_stream->sd->id,
-                                   &server_stream->sd->service_id,
-                                   server_stream->sd->server_connection_id,
-                                   NULL,
-                                   log_and_monitor->apm_context);
-
-   log_and_monitor->apm_callbacks.started(&event);
-   mongoc_apm_command_started_cleanup(&event);
-   bson_free(db);
-
-   RETURN(true);
-}
-
-void
-_mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
-                              int64_t duration,
-                              mongoc_server_stream_t *stream,
-                              const char *cmd_name)
-{
-   mongoc_apm_command_failed_t event;
-
-   ENTRY;
-
-   mongoc_client_t *client = cursor->client;
-   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
-
-   /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
-    * {ok: 0}
-    */
-   bsonBuildDecl(reply, kv("ok", int32(0)));
-   char *db = bson_strndup(cursor->ns, cursor->dblen);
-
-   mongoc_structured_log(log_and_monitor->structured_log,
-                         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-                         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-                         "Command failed",
-                         int32("requestId", client->cluster.request_id),
-                         server_description(stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-                         utf8("databaseName", db),
-                         utf8("commandName", cmd_name),
-                         int64("operationId", cursor->operation_id),
-                         monotonic_time_duration(duration),
-                         bson_as_json("failure", &reply));
-
-   if (log_and_monitor->apm_callbacks.failed) {
-      mongoc_apm_command_failed_init(&event,
-                                     duration,
-                                     cmd_name,
-                                     db,
-                                     &cursor->error,
-                                     &reply,
-                                     client->cluster.request_id,
-                                     cursor->operation_id,
-                                     &stream->sd->host,
-                                     stream->sd->id,
-                                     &stream->sd->service_id,
-                                     stream->sd->server_connection_id,
-                                     false,
-                                     log_and_monitor->apm_context);
-
-      log_and_monitor->apm_callbacks.failed(&event);
-
-      mongoc_apm_command_failed_cleanup(&event);
-   }
-
-   bson_destroy(&reply);
-   bson_free(db);
-
-   EXIT;
-}
-
-
 #define ADD_FLAG(_flags, _value)                                     \
    do {                                                              \
       if (!BSON_ITER_HOLDS_BOOL(&iter)) {                            \
@@ -904,9 +791,7 @@ _mongoc_cursor_run_command(
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
-    * direct connection to a secondary (topology type "single"). with
-    * OP_QUERY we handle this by setting secondaryOk. here we use
-    * $readPreference.
+    * direct connection to a secondary (topology type "single").
     */
    is_primary = !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 

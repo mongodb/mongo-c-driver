@@ -595,9 +595,8 @@ killcursors_succeeded(const mongoc_apm_command_succeeded_t *event)
 
 /* Tests killing a cursor with mongo_cursor_destroy and a real server.
  * Asserts that the cursor ID is no longer valid by attempting to get another
- * batch of results with the previously killed cursor ID. Uses OP_GET_MORE (on
- * servers older than 3.2) or a getMore command (servers 3.2+) to iterate the
- * cursor ID.
+ * batch of results with the previously killed cursor ID. Uses getMore command
+ * to iterate the cursor ID.
  */
 static void
 test_kill_cursor_live(void)
@@ -638,7 +637,7 @@ test_kill_cursor_live(void)
    ctx.cursor_id = mongoc_cursor_get_id(cursor);
    ASSERT(ctx.cursor_id);
 
-   /* sends OP_KILLCURSORS or killCursors command to server */
+   /* sends killCursors command to server */
    mongoc_cursor_destroy(cursor);
 
    ASSERT_CMPINT(ctx.succeeded_count, ==, 1);
@@ -737,7 +736,7 @@ _test_kill_cursors(bool pooled)
 
    reply_to_request_simple(request, "{'ok': 1}");
 
-   /* OP_KILLCURSORS was sent to the right secondary */
+   /* killCursors command was sent to the right secondary */
    ASSERT_CMPINT(request_get_server_port(kill_cursors), ==, request_get_server_port(request));
 
    BSON_ASSERT(future_wait(future));
