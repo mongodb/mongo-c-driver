@@ -7,7 +7,7 @@ import sys
 this_path = os.path.dirname(__file__)
 sys.path.append(os.path.normpath(os.path.join(this_path, '../../../build/sphinx')))
 
-from mongoc_common import mongoc_common_setup  # noqa: E402
+from mongoc_common import *  # noqa: E402, F403
 
 extensions = [
     'mongoc',
@@ -51,5 +51,5 @@ def add_canonical_link(app, pagename, templatename, context, doctree):
 
 
 def setup(app):
-    mongoc_common_setup(app)
+    mongoc_common_setup(app)  # noqa: F405
     app.connect('html-page-context', add_canonical_link)

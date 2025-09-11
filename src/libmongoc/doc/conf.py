@@ -32,7 +32,7 @@ this_path = os.path.dirname(__file__)
 sys.path.append(this_path)
 sys.path.append(os.path.normpath(os.path.join(this_path, '../../../build/sphinx')))
 
-from mongoc_common import mongoc_common_setup  # noqa: E402
+from mongoc_common import *  # noqa: E402, F403
 
 extensions = [
     'mongoc',
@@ -273,7 +273,7 @@ def check_html_builder_requirements(app):
 
 
 def setup(app: Sphinx):
-    mongoc_common_setup(app)
+    mongoc_common_setup(app)  # noqa: F405
     app.connect('builder-inited', check_html_builder_requirements)
     if has_sphinx_design:
         app.add_directive('ad-dropdown', AdDropdown)
