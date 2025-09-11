@@ -3,6 +3,7 @@ from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTask
 from shrub.v3.evg_task import EvgTaskRef
 
+from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.etc.distros import find_small_distro
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
@@ -33,7 +34,10 @@ def tasks():
     yield EvgTask(
         name=TAG,
         tags=[TAG],
-        commands=[ClangFormat.call()],
+        commands=[
+            InstallUV.call(),
+            ClangFormat.call(),
+        ],
     )
 
 

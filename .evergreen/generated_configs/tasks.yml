@@ -1693,6 +1693,7 @@ tasks:
   - name: clang-format
     tags: [clang-format]
     commands:
+      - func: install-uv
       - func: clang-format
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
     run_on: macos-14-arm64
