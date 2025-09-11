@@ -68,7 +68,6 @@ class UploadManPages(Function):
     commands = [
         bash_exec(
             working_dir='mongoc',
-            silent=True,
             script="""\
                 set -o errexit
                 # Get "aha", the ANSI HTML Adapter.

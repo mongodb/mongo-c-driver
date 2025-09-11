@@ -737,7 +737,6 @@ functions:
       params:
         binary: bash
         working_dir: mongoc
-        silent: true
         args:
           - -c
           - |
