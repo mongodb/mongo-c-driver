@@ -28,7 +28,6 @@ typedef struct _data_cmd_t {
     *   we're reading the raw reply from a stream
     */
    mongoc_cursor_response_t response;
-   mongoc_cursor_response_legacy_t response_legacy;
    reading_from_t reading_from;
    getmore_type_t getmore_type; /* cache after first getmore. */
    bson_t cmd;
@@ -126,7 +125,6 @@ _destroy(mongoc_cursor_impl_t *impl)
    data_cmd_t *data = (data_cmd_t *)impl->data;
    bson_destroy(&data->response.reply);
    bson_destroy(&data->cmd);
-   _mongoc_cursor_response_legacy_destroy(&data->response_legacy);
    bson_free(data);
 }
 
@@ -137,7 +135,6 @@ _clone(mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
    data_cmd_t *data_src = (data_cmd_t *)src->data;
    data_cmd_t *data_dst = BSON_ALIGNED_ALLOC0(data_cmd_t);
    bson_init(&data_dst->response.reply);
-   _mongoc_cursor_response_legacy_init(&data_dst->response_legacy);
    bson_copy_to(&data_src->cmd, &data_dst->cmd);
    dst->data = data_dst;
 }
@@ -158,7 +155,6 @@ _mongoc_cursor_cmd_new(mongoc_client_t *client,
    data_cmd_t *data = BSON_ALIGNED_ALLOC0(data_cmd_t);
 
    cursor = _mongoc_cursor_new_with_opts(client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
-   _mongoc_cursor_response_legacy_init(&data->response_legacy);
    _mongoc_cursor_check_and_copy_to(cursor, "command", cmd, &data->cmd);
    bson_init(&data->response.reply);
    cursor->impl.prime = _prime;
