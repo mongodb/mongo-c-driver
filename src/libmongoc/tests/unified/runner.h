@@ -37,7 +37,6 @@ typedef struct {
    const char *topology_type;
    mongoc_array_t server_ids;
    bson_t *server_parameters;
-   bool is_serverless;
 } test_runner_t;
 
 typedef struct {
