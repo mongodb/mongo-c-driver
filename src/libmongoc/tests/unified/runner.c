@@ -53,11 +53,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
 
-   // CDRIVER-3886: serverless testing (schema version 1.4)
-   {"poc-crud", SKIP_ALL_TESTS},
-   {"db-aggregate", SKIP_ALL_TESTS},
-   {"mongos-unpin", SKIP_ALL_TESTS},
-
    // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
