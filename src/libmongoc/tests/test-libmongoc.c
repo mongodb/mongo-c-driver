@@ -2431,21 +2431,6 @@ test_framework_skip_if_no_setenv(void)
    return 1;
 }
 
-bool
-test_framework_is_serverless(void)
-{
-   return test_framework_getenv_bool("MONGOC_TEST_IS_SERVERLESS");
-}
-
-int
-test_framework_skip_if_serverless(void)
-{
-   if (test_framework_is_serverless()) {
-      return 0; // do not proceed
-   }
-   return 1; // proceed.
-}
-
 static char MONGOC_TEST_UNIQUE[32];
 
 #if defined(_MSC_VER) && defined(_WIN64)
