@@ -102,13 +102,6 @@ struct _mongoc_cursor_impl_t {
    void *data;
 };
 
-/* pre-3.2 and exhaust cursor responses -- read documents from stream. */
-typedef struct _mongoc_cursor_response_legacy {
-   mcd_rpc_message *rpc;
-   mongoc_buffer_t buffer;
-   bson_reader_t *reader;
-} mongoc_cursor_response_legacy_t;
-
 /* 3.2+ responses -- read batch docs like {cursor:{id: 123, firstBatch: []}} */
 typedef struct _mongoc_cursor_response_t {
    bson_t reply;           /* the entire command reply */
@@ -185,32 +178,11 @@ _mongoc_cursor_more(mongoc_cursor_t *cursor);
 bool
 _mongoc_cursor_set_opt_int64(mongoc_cursor_t *cursor, const char *option, int64_t value);
 void
-_mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
-                              int64_t duration,
-                              mongoc_server_stream_t *stream,
-                              const char *cmd_name);
-bool
-_mongoc_cursor_monitor_command(mongoc_cursor_t *cursor,
-                               mongoc_server_stream_t *server_stream,
-                               const bson_t *cmd,
-                               const char *cmd_name);
-void
 _mongoc_cursor_prepare_find_command(mongoc_cursor_t *cursor, const bson_t *filter, bson_t *command);
 const bson_t *
 _mongoc_cursor_initial_query(mongoc_cursor_t *cursor);
 const bson_t *
 _mongoc_cursor_get_more(mongoc_cursor_t *cursor);
-bool
-_mongoc_cursor_opts_to_flags(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream, int32_t *flags /* OUT */);
-bool
-_mongoc_cursor_use_op_msg(const mongoc_cursor_t *cursor, int32_t wire_version);
-void
-_mongoc_cursor_monitor_succeeded(mongoc_cursor_t *cursor,
-                                 mongoc_cursor_response_legacy_t *response,
-                                 int64_t duration,
-                                 bool first_batch,
-                                 mongoc_server_stream_t *stream,
-                                 const char *cmd_name);
 /* start iterating a reply like
  * {cursor: {id: 1234, ns: "db.collection", firstBatch: [...]}} or
  * {cursor: {id: 1234, ns: "db.collection", nextBatch: [...]}} */
@@ -231,13 +203,8 @@ bool
 _mongoc_cursor_check_and_copy_to(mongoc_cursor_t *cursor, const char *err_prefix, const bson_t *src, bson_t *dst);
 void
 _mongoc_cursor_prime(mongoc_cursor_t *cursor);
-/* legacy functions defined in mongoc-cursor-legacy.c */
 bool
 _mongoc_cursor_next(mongoc_cursor_t *cursor, const bson_t **bson);
-bool
-_mongoc_cursor_op_query_find(mongoc_cursor_t *cursor, bson_t *filter, mongoc_cursor_response_legacy_t *response);
-void
-_mongoc_cursor_op_getmore(mongoc_cursor_t *cursor, mongoc_cursor_response_legacy_t *response);
 mongoc_cursor_t *
 _mongoc_cursor_new_with_opts(mongoc_client_t *client,
                              const char *db_and_collection,
@@ -245,10 +212,6 @@ _mongoc_cursor_new_with_opts(mongoc_client_t *client,
                              const mongoc_read_prefs_t *user_prefs,
                              const mongoc_read_prefs_t *default_prefs,
                              const mongoc_read_concern_t *read_concern);
-void
-_mongoc_cursor_response_legacy_init(mongoc_cursor_response_legacy_t *response);
-void
-_mongoc_cursor_response_legacy_destroy(mongoc_cursor_response_legacy_t *response);
 /* cursor constructors. */
 mongoc_cursor_t *
 _mongoc_cursor_find_new(mongoc_client_t *client,
