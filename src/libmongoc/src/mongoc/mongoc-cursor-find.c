@@ -20,36 +20,52 @@
 #include <mongoc/mongoc.h>
 
 typedef struct _data_find_t {
+   mongoc_cursor_response_t response;
    bson_t filter;
 } data_find_t;
-
-
-extern void
-_mongoc_cursor_impl_find_cmd_init(mongoc_cursor_t *cursor, bson_t *filter);
-
 
 static mongoc_cursor_state_t
 _prime(mongoc_cursor_t *cursor)
 {
    data_find_t *data = (data_find_t *)cursor->impl.data;
+   bson_t find_cmd;
 
-   /* set all mongoc_impl_t function pointers. */
-   _mongoc_cursor_impl_find_cmd_init(cursor, &data->filter /* stolen */);
-
-   /* destroy this impl data since impl functions have been replaced. */
-   bson_free(data);
-   /* prime with the new implementation. */
-   return cursor->impl.prime(cursor);
+   bson_init(&find_cmd);
+   cursor->operation_id = ++cursor->client->cluster.operation_id;
+   /* construct { find: "<collection>", filter: {<filter>} } */
+   _mongoc_cursor_prepare_find_command(cursor, &data->filter, &find_cmd);
+   _mongoc_cursor_response_refresh(cursor, &find_cmd, &cursor->opts, &data->response);
+   bson_destroy(&find_cmd);
+   return IN_BATCH;
 }
 
 
-static void
-_clone(mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
+static mongoc_cursor_state_t
+_pop_from_batch(mongoc_cursor_t *cursor)
 {
-   data_find_t *data_dst = BSON_ALIGNED_ALLOC0(data_find_t);
-   data_find_t *data_src = (data_find_t *)src->data;
-   bson_copy_to(&data_src->filter, &data_dst->filter);
-   dst->data = data_dst;
+   data_find_t *data = (data_find_t *)cursor->impl.data;
+   _mongoc_cursor_response_read(cursor, &data->response, &cursor->current);
+   if (cursor->current) {
+      return IN_BATCH;
+   } else {
+      return cursor->cursor_id ? END_OF_BATCH : DONE;
+   }
+}
+
+
+static mongoc_cursor_state_t
+_get_next_batch(mongoc_cursor_t *cursor)
+{
+   data_find_t *data = (data_find_t *)cursor->impl.data;
+   bson_t getmore_cmd;
+
+   if (!cursor->cursor_id) {
+      return DONE;
+   }
+   _mongoc_cursor_prepare_getmore_command(cursor, &getmore_cmd);
+   _mongoc_cursor_response_refresh(cursor, &getmore_cmd, NULL /* opts */, &data->response);
+   bson_destroy(&getmore_cmd);
+   return IN_BATCH;
 }
 
 
@@ -58,9 +74,20 @@ _destroy(mongoc_cursor_impl_t *impl)
 {
    data_find_t *data = (data_find_t *)impl->data;
    bson_destroy(&data->filter);
+   bson_destroy(&data->response.reply);
    bson_free(data);
 }
 
+
+static void
+_clone(mongoc_cursor_impl_t *dst, const mongoc_cursor_impl_t *src)
+{
+   data_find_t *data_src = (data_find_t *)src->data;
+   data_find_t *data_dst = BSON_ALIGNED_ALLOC0(data_find_t);
+   bson_init(&data_dst->response.reply);
+   bson_copy_to(&data_src->filter, &data_dst->filter);
+   dst->data = data_dst;
+}
 
 mongoc_cursor_t *
 _mongoc_cursor_find_new(mongoc_client_t *client,
@@ -74,12 +101,18 @@ _mongoc_cursor_find_new(mongoc_client_t *client,
    BSON_ASSERT_PARAM(client);
 
    mongoc_cursor_t *cursor;
+
    data_find_t *data = BSON_ALIGNED_ALLOC0(data_find_t);
+   bson_init(&data->response.reply);
+
    cursor = _mongoc_cursor_new_with_opts(client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
    _mongoc_cursor_check_and_copy_to(cursor, "filter", filter, &data->filter);
    cursor->impl.prime = _prime;
-   cursor->impl.clone = _clone;
+   cursor->impl.pop_from_batch = _pop_from_batch;
+   cursor->impl.get_next_batch = _get_next_batch;
    cursor->impl.destroy = _destroy;
-   cursor->impl.data = data;
+   cursor->impl.clone = _clone;
+   cursor->impl.data = (void *)data;
+
    return cursor;
 }
