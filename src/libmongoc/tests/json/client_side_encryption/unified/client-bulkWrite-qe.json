@@ -9,7 +9,6 @@
         "sharded",
         "load-balanced"
       ],
-      "serverless": "forbid",
       "csfle": {
         "minLibmongocryptVersion": "1.10.0"
       }

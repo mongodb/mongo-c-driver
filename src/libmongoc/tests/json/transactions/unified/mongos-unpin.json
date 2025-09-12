@@ -50,11 +50,6 @@
   "tests": [
     {
       "description": "unpin after TransientTransactionError error on commit",
-      "runOnRequirements": [
-        {
-          "serverless": "forbid"
-        }
-      ],
       "operations": [
         {
           "name": "startTransaction",
@@ -143,11 +138,6 @@
     },
     {
       "description": "unpin after TransientTransactionError error on abort",
-      "runOnRequirements": [
-        {
-          "serverless": "forbid"
-        }
-      ],
       "operations": [
         {
           "name": "startTransaction",

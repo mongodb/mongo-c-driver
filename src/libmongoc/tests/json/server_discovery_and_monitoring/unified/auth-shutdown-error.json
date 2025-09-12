@@ -5,7 +5,6 @@
     {
       "minServerVersion": "4.4",
       "auth": true,
-      "serverless": "forbid",
       "topologies": [
         "single",
         "replicaset",

@@ -607,11 +607,6 @@
     },
     {
       "description": "pinned connection is released after a transient non-network CRUD error",
-      "runOnRequirements": [
-        {
-          "serverless": "forbid"
-        }
-      ],
       "operations": [
         {
           "name": "failPoint",
@@ -720,11 +715,6 @@
     },
     {
       "description": "pinned connection is released after a transient network CRUD error",
-      "runOnRequirements": [
-        {
-          "serverless": "forbid"
-        }
-      ],
       "operations": [
         {
           "name": "failPoint",
@@ -841,11 +831,6 @@
     },
     {
       "description": "pinned connection is released after a transient non-network commit error",
-      "runOnRequirements": [
-        {
-          "serverless": "forbid"
-        }
-      ],
       "operations": [
         {
           "name": "failPoint",

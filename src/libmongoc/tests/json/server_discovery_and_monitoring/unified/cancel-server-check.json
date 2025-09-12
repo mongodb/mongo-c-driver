@@ -6,15 +6,13 @@
       "minServerVersion": "4.0",
       "topologies": [
         "replicaset"
-      ],
-      "serverless": "forbid"
+      ]
     },
     {
       "minServerVersion": "4.2",
       "topologies": [
         "sharded"
-      ],
-      "serverless": "forbid"
+      ]
     }
   ],
   "createEntities": [

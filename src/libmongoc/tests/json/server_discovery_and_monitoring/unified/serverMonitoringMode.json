@@ -7,8 +7,7 @@
         "single",
         "sharded",
         "sharded-replicaset"
-      ],
-      "serverless": "forbid"
+      ]
     }
   ],
   "tests": [
