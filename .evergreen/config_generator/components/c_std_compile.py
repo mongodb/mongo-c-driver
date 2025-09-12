@@ -2,7 +2,7 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.components.funcs.install_uv import InstallUV
 
 from config_generator.etc.distros import find_large_distro
 from config_generator.etc.distros import make_distro_str
@@ -96,7 +96,7 @@ def tasks():
                     run_on=distro.name,
                     tags=tags + [f'std-c{std}'],
                     commands=[
-                        FindCMakeLatest.call(),
+                        InstallUV.call(),
                         StdCompile.call(vars=compile_vars | with_std)
                     ],
                 )

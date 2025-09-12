@@ -11,6 +11,7 @@ from config_generator.etc.distros import compiler_to_vars
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
+from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 
@@ -63,6 +64,7 @@ def generate_test_tasks(SSL, TAG, MATRIX):
             test_commands.append(expansions_update(updates=updates))
             test_commands.append(FetchDET.call())
             test_commands.append(BootstrapMongoOrchestration.call())
+            test_commands.append(InstallUV.call())
             test_commands.append(RunSimpleHTTPServer.call())
             test_commands.append(RunTests.call())
 
