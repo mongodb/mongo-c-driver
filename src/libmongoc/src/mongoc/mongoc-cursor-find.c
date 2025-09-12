@@ -31,17 +31,7 @@ _mongoc_cursor_impl_find_cmd_init(mongoc_cursor_t *cursor, bson_t *filter);
 static mongoc_cursor_state_t
 _prime(mongoc_cursor_t *cursor)
 {
-   mongoc_server_stream_t *server_stream;
    data_find_t *data = (data_find_t *)cursor->impl.data;
-
-   /* determine if this should be a command or op_query cursor. */
-   const mongoc_ss_log_context_t ss_log_context = {
-      .operation = "find", .has_operation_id = true, .operation_id = cursor->operation_id};
-   server_stream = _mongoc_cursor_fetch_stream(cursor, &ss_log_context);
-   if (!server_stream) {
-      return DONE;
-   }
-   mongoc_server_stream_cleanup(server_stream);
 
    /* set all mongoc_impl_t function pointers. */
    _mongoc_cursor_impl_find_cmd_init(cursor, &data->filter /* stolen */);
