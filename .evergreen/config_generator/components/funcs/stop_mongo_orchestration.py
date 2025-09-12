@@ -6,11 +6,11 @@ class StopMongoOrchestration(Function):
     name = 'stop-mongo-orchestration'
     commands = [
         bash_exec(
-            script='''\
+            script="""\
                 if [[ -d MO ]]; then
                     cd MO && mongo-orchestration stop
                 fi
-            '''
+            """
         ),
     ]
 

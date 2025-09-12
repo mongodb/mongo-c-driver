@@ -2,10 +2,8 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
 
 from config_generator.etc.compile import generate_compile_tasks
-
 from config_generator.etc.cse.compile import CompileCommon
 from config_generator.etc.cse.test import generate_test_tasks
-
 
 SSL = 'darwinssl'
 TAG = f'cse-matrix-{SSL}'
@@ -52,9 +50,7 @@ def tasks():
 
     MORE_TAGS = ['cse']
 
-    res += generate_compile_tasks(
-        SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS
-    )
+    res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS)
 
     res += generate_test_tasks(SSL, TAG, TEST_MATRIX)
 

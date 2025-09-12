@@ -1,5 +1,4 @@
-from shrub.v3.evg_command import archive_targz_pack
-from shrub.v3.evg_command import s3_put
+from shrub.v3.evg_command import archive_targz_pack, s3_put
 
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
@@ -10,7 +9,7 @@ class UploadMOArtifacts(Function):
     commands = [
         bash_exec(
             working_dir='mongoc',
-            script='''\
+            script="""\
                 set -o errexit
                 declare dir="MO"
                 if [[ -d "/cygdrive/c/data/mo" ]]; then
@@ -19,7 +18,7 @@ class UploadMOArtifacts(Function):
                 if [[ -d "$dir" ]]; then
                     find "$dir" -name \\*.log | xargs tar czf mongodb-logs.tar.gz
                 fi
-            '''
+            """,
         ),
         s3_put(
             aws_key='${aws_key}',
@@ -45,7 +44,7 @@ class UploadMOArtifacts(Function):
         ),
         bash_exec(
             working_dir='mongoc',
-            script='''\
+            script="""\
                 set -o errexit
                 # Find all core files from mongodb in orchestration and move to mongoc
                 declare dir="MO"
@@ -64,7 +63,7 @@ class UploadMOArtifacts(Function):
                         mv "$core_file" .
                     fi
                 done
-            '''
+            """,
         ),
         archive_targz_pack(
             target='mongo-coredumps.tgz',

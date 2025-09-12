@@ -3,13 +3,9 @@ from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
 from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
-
-from config_generator.etc.distros import find_large_distro
-from config_generator.etc.distros import make_distro_str
-from config_generator.etc.distros import compiler_to_vars
+from config_generator.etc.distros import compiler_to_vars, find_large_distro, make_distro_str
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
-
 
 TAG = 'std-matrix'
 
@@ -95,10 +91,7 @@ def tasks():
                     name=task_name,
                     run_on=distro.name,
                     tags=tags + [f'std-c{std}'],
-                    commands=[
-                        FindCMakeLatest.call(),
-                        StdCompile.call(vars=compile_vars | with_std)
-                    ],
+                    commands=[FindCMakeLatest.call(), StdCompile.call(vars=compile_vars | with_std)],
                 )
             )
 

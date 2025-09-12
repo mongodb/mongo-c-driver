@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import MutableMapping
+
 from evergreen_config_generator import ConfigObject
 
 from . import Value, ValueSequence
@@ -42,16 +43,16 @@ class TaskGroup(ConfigObject):
         # See possible TaskGroup attributes from the Evergreen wiki:
         # https://github.com/evergreen-ci/evergreen/wiki/Project-Configuration-Files#task-groups
         attrs = [
-            "setup_group",
-            "teardown_group",
-            "setup_task",
-            "teardown_task",
-            "max_hosts",
-            "timeout",
-            "setup_group_can_fail_task",
-            "setup_group_timeout_secs",
-            "share_processes",
-            "tasks",
+            'setup_group',
+            'teardown_group',
+            'setup_task',
+            'teardown_task',
+            'max_hosts',
+            'timeout',
+            'setup_group_can_fail_task',
+            'setup_group_timeout_secs',
+            'share_processes',
+            'tasks',
         ]
 
         for i in attrs:

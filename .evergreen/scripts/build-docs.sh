@@ -7,7 +7,7 @@ set -o errexit # Exit the script with error if any of the commands fail
 CMAKE=$(find_cmake_latest)
 
 # Check that a CLion user didn't accidentally convert NEWS from UTF-8 to ASCII
-grep "á" NEWS > /dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
+grep "á" NEWS >/dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
 
 build_dir=$MONGOC_DIR/_build/for-docs
 "$CMAKE" --fresh -S "$MONGOC_DIR" -B "$build_dir" \

@@ -16,7 +16,7 @@ class RunMockKMSServers(Function):
         bash_exec(
             command_type=command_type,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
-            script='''\
+            script="""\
                 set -o errexit
                 echo "Preparing KMS TLS venv environment..."
                 # TODO: remove this function along with the "run kms servers" function.
@@ -33,13 +33,13 @@ class RunMockKMSServers(Function):
                     deactivate
                 fi
                 echo "Preparing KMS TLS venv environment... done."
-            ''',
+            """,
         ),
         bash_exec(
             command_type=command_type,
             background=True,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
-            script='''\
+            script="""\
                 set -o errexit
                 echo "Starting mock KMS TLS servers..."
                 . ./activate-kmstlsvenv.sh
@@ -51,7 +51,7 @@ class RunMockKMSServers(Function):
                 python -u kms_kmip_server.py &
                 deactivate
                 echo "Starting mock KMS TLS servers... done."
-            ''',
+            """,
         ),
     ]
 

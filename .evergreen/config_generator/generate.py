@@ -4,16 +4,14 @@
 
 
 import sys
-
 from importlib import import_module
 
-
 GENERATOR_NAMES = [
-    "functions",
-    "tasks",
-    "task_groups",
-    "variants",
-    "legacy_config",
+    'functions',
+    'tasks',
+    'task_groups',
+    'variants',
+    'legacy_config',
 ]
 
 
@@ -23,11 +21,11 @@ def main():
     assert sys.version_info.minor >= 10
 
     for name in GENERATOR_NAMES:
-        m = import_module(f"config_generator.generators.{name}")
-        print(f"Running {name}.generate()...")
+        m = import_module(f'config_generator.generators.{name}')
+        print(f'Running {name}.generate()...')
         m.generate()
-        print(f"Running {name}.generate()... done.")
+        print(f'Running {name}.generate()... done.')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

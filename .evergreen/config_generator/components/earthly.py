@@ -19,62 +19,62 @@ from config_generator.etc.function import Function
 
 from ..etc.utils import all_possible
 
-T = TypeVar("T")
+T = TypeVar('T')
 
-_ENV_PARAM_NAME = "MONGOC_EARTHLY_ENV"
-_CC_PARAM_NAME = "MONGOC_EARTHLY_C_COMPILER"
-"The name of the EVG expansion for the Earthly c_compiler argument"
+_ENV_PARAM_NAME = 'MONGOC_EARTHLY_ENV'
+_CC_PARAM_NAME = 'MONGOC_EARTHLY_C_COMPILER'
+'The name of the EVG expansion for the Earthly c_compiler argument'
 
 
 EnvKey = Literal[
-    "u20",
-    "u22",
-    "almalinux8",
-    "almalinux9",
-    "almalinux10",
-    "alpine3.19",
-    "alpine3.20",
-    "alpine3.21",
-    "alpine3.22",
-    "archlinux",
-    "centos9",
-    "centos10",
+    'u20',
+    'u22',
+    'almalinux8',
+    'almalinux9',
+    'almalinux10',
+    'alpine3.19',
+    'alpine3.20',
+    'alpine3.21',
+    'alpine3.22',
+    'archlinux',
+    'centos9',
+    'centos10',
 ]
 "Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
-CompilerName = Literal["gcc", "clang"]
-"The name of the compiler program that is used for the build. Passed via --c_compiler to Earthly."
+CompilerName = Literal['gcc', 'clang']
+'The name of the compiler program that is used for the build. Passed via --c_compiler to Earthly.'
 
 # Other options: SSPI (Windows only), AUTO (not reliably test-able without more environments)
-SASLOption = Literal["Cyrus", "off"]
-"Valid options for the SASL configuration parameter"
-TLSOption = Literal["OpenSSL", "off"]
+SASLOption = Literal['Cyrus', 'off']
+'Valid options for the SASL configuration parameter'
+TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal["master", "r4.1.0", "none"]
-"C++ driver refs that are under CI test"
+CxxVersion = Literal['master', 'r4.1.0', 'none']
+'C++ driver refs that are under CI test'
 
 # A separator character, since we cannot use whitespace
-_SEPARATOR = "\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}"
+_SEPARATOR = '\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}'
 
 
 def os_split(env: EnvKey) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
         # Match 'alpine3.18' 'alpine53.123' etc.
-        case alp if mat := re.match(r"alpine(\d+\.\d+)", alp):
-            return ("Alpine", mat[1])
-        case "archlinux":
-            return "ArchLinux", None
+        case alp if mat := re.match(r'alpine(\d+\.\d+)', alp):
+            return ('Alpine', mat[1])
+        case 'archlinux':
+            return 'ArchLinux', None
         # Match 'u22', 'u20', 'u71' etc.
-        case ubu if mat := re.match(r"u(\d\d)", ubu):
-            return "Ubuntu", f"{mat[1]}.04"
+        case ubu if mat := re.match(r'u(\d\d)', ubu):
+            return 'Ubuntu', f'{mat[1]}.04'
         # Match 'centos9', 'centos10', etc.
-        case cent if mat := re.match(r"centos(\d+)", cent):
-            return "CentOS", f"{mat[1]}"
+        case cent if mat := re.match(r'centos(\d+)', cent):
+            return 'CentOS', f'{mat[1]}'
         # Match 'almalinux8', 'almalinux10', etc.
-        case alm if mat := re.match(r"almalinux(\d+)", alm):
-            return "AlmaLinux", f"{mat[1]}"
+        case alm if mat := re.match(r'almalinux(\d+)', alm):
+            return 'AlmaLinux', f'{mat[1]}'
         case _:
-            raise ValueError(f"Failed to split OS env key {env=} into a name+version pair (unrecognized)")
+            raise ValueError(f'Failed to split OS env key {env=} into a name+version pair (unrecognized)')
 
 
 class EarthlyVariant(NamedTuple):
@@ -95,14 +95,14 @@ class EarthlyVariant(NamedTuple):
             case name, None:
                 base = name
             case name, version:
-                base = f"{name} {version}"
+                base = f'{name} {version}'
         toolchain: str
         match self.c_compiler:
-            case "clang":
-                toolchain = "LLVM/Clang"
-            case "gcc":
-                toolchain = "GCC"
-        return f"{base} ({toolchain})"
+            case 'clang':
+                toolchain = 'LLVM/Clang'
+            case 'gcc':
+                toolchain = 'GCC'
+        return f'{base} ({toolchain})'
 
     @property
     def task_selector_tag(self) -> str:
@@ -110,7 +110,7 @@ class EarthlyVariant(NamedTuple):
         The task tag that is used to select the tasks that want to run on this
         variant.
         """
-        return f"{self.env}-{self.c_compiler}"
+        return f'{self.env}-{self.c_compiler}'
 
     @property
     def expansions(self) -> Mapping[str, str]:
@@ -125,8 +125,8 @@ class EarthlyVariant(NamedTuple):
 
     def as_evg_variant(self) -> BuildVariant:
         return BuildVariant(
-            name=f"{self.task_selector_tag}",
-            tasks=[EvgTaskRef(name=f".{self.task_selector_tag}")],
+            name=f'{self.task_selector_tag}',
+            tasks=[EvgTaskRef(name=f'.{self.task_selector_tag}')],
             display_name=self.display_name,
             expansions=dict(self.expansions),
         )
@@ -148,28 +148,28 @@ class Configuration(NamedTuple):
 
     @property
     def suffix(self) -> str:
-        return _SEPARATOR.join(f"{k}={v}" for k, v in self._asdict().items())
+        return _SEPARATOR.join(f'{k}={v}' for k, v in self._asdict().items())
 
 
 # Authenticate with DevProd-provided Amazon ECR instance to use as pull-through cache for DockerHub.
 class DockerLoginAmazonECR(Function):
-    name = "docker-login-amazon-ecr"
+    name = 'docker-login-amazon-ecr'
     commands = [
         # Avoid inadvertently using a pre-existing and potentially conflicting Docker config.
-        expansions_update(updates=[KeyValueParam(key="DOCKER_CONFIG", value="${workdir}/.docker")]),
-        ec2_assume_role(role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"),
+        expansions_update(updates=[KeyValueParam(key='DOCKER_CONFIG', value='${workdir}/.docker')]),
+        ec2_assume_role(role_arn='arn:aws:iam::901841024863:role/ecr-role-evergreen-ro'),
         subprocess_exec(
-            binary="bash",
+            binary='bash',
             command_type=EvgCommandType.SETUP,
             include_expansions_in_env=[
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "AWS_SESSION_TOKEN",
-                "DOCKER_CONFIG",
+                'AWS_ACCESS_KEY_ID',
+                'AWS_SECRET_ACCESS_KEY',
+                'AWS_SESSION_TOKEN',
+                'DOCKER_CONFIG',
             ],
             args=[
-                "-c",
-                "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com",
+                '-c',
+                'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com',
             ],
         ),
     ]
@@ -195,7 +195,7 @@ def variants_for(config: Configuration) -> Iterable[EarthlyVariant]:
 
 def earthly_exec(
     *,
-    kind: Literal["test", "setup", "system"],
+    kind: Literal['test', 'setup', 'system'],
     target: str,
     secrets: Mapping[str, str] | None = None,
     args: Mapping[str, str] | None = None,
@@ -203,20 +203,20 @@ def earthly_exec(
     """Create a subprocess_exec command that runs Earthly with the given arguments"""
     env: dict[str, str] = {k: v for k, v in (secrets or {}).items()}
     return subprocess_exec(
-        "./tools/earthly.sh",
+        './tools/earthly.sh',
         args=[
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            "--buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3",
-            *(f"--secret={k}" for k in (secrets or ())),
-            f"+{target}",
+            '--buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3',
+            *(f'--secret={k}' for k in (secrets or ())),
+            f'+{target}',
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            "--default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub",
-            *(f"--{arg}={val}" for arg, val in (args or {}).items()),
+            '--default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub',
+            *(f'--{arg}={val}' for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),
-        include_expansions_in_env=["DOCKER_CONFIG"],
+        include_expansions_in_env=['DOCKER_CONFIG'],
         env=env if env else None,
-        working_dir="mongoc",
+        working_dir='mongoc',
     )
 
 
@@ -243,8 +243,8 @@ def earthly_task(
     earthly_args = config._asdict()
     earthly_args |= {
         # Add arguments that come from parameter expansions defined in the build variant
-        "env": f"${{{_ENV_PARAM_NAME}}}",
-        "c_compiler": f"${{{_CC_PARAM_NAME}}}",
+        'env': f'${{{_ENV_PARAM_NAME}}}',
+        'c_compiler': f'${{{_CC_PARAM_NAME}}}',
     }
     return EvgTask(
         name=name,
@@ -255,29 +255,29 @@ def earthly_task(
             # for timing and logging purposes. The subequent build step will cache-hit the
             # warmed-up build environments.
             earthly_exec(
-                kind="setup",
-                target="env-warmup",
+                kind='setup',
+                target='env-warmup',
                 args=earthly_args,
             ),
             # Now execute the main tasks:
             earthly_exec(
-                kind="test",
-                target="run",
+                kind='test',
+                target='run',
                 # The "targets" arg is for +run to specify which targets to run
-                args={"targets": " ".join(targets)} | earthly_args,
+                args={'targets': ' '.join(targets)} | earthly_args,
             ),
         ],  # type: ignore (The type annots on `commands` is wrong)
-        tags=["earthly", "pr-merge-gate", *env_tags],
+        tags=['earthly', 'pr-merge-gate', *env_tags],
         run_on=CONTAINER_RUN_DISTROS,
     )
 
 
 CONTAINER_RUN_DISTROS = [
-    "amazon2",
-    "debian11-large",
-    "debian12-large",
-    "ubuntu2204-large",
-    "ubuntu2404-large",
+    'amazon2',
+    'debian11-large',
+    'debian12-large',
+    'ubuntu2204-large',
+    'ubuntu2404-large',
 ]
 
 
@@ -288,14 +288,14 @@ def functions():
 def tasks() -> Iterable[EvgTask]:
     for conf in all_possible(Configuration):
         # test-example is a target in all configurations
-        targets = ["test-example"]
+        targets = ['test-example']
 
         # test-cxx-driver is only a target in configurations with specified mongocxx versions
-        if conf.test_mongocxx_ref != "none":
-            targets.append("test-cxx-driver")
+        if conf.test_mongocxx_ref != 'none':
+            targets.append('test-cxx-driver')
 
         task = earthly_task(
-            name=f"check:{conf.suffix}",
+            name=f'check:{conf.suffix}',
             targets=targets,
             config=conf,
         )
@@ -303,12 +303,12 @@ def tasks() -> Iterable[EvgTask]:
             yield task
 
     yield EvgTask(
-        name="verify-headers",
+        name='verify-headers',
         commands=[
             DockerLoginAmazonECR.call(),
-            earthly_exec(kind="test", target="verify-headers"),
+            earthly_exec(kind='test', target='verify-headers'),
         ],
-        tags=["pr-merge-gate"],
+        tags=['pr-merge-gate'],
         run_on=CONTAINER_RUN_DISTROS,
     )
 

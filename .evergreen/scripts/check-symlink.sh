@@ -1,5 +1,4 @@
-check_symlink()
-{
+check_symlink() {
   SYMLINK="$INSTALL_DIR/lib/$1"
   EXPECTED_TARGET="$2"
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Sequence
+
 from evergreen_config_generator.taskgroups import TaskGroup
 
 all_task_groups: Sequence[TaskGroup] = []

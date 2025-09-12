@@ -1,5 +1,4 @@
-from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_command import expansions_update
+from shrub.v3.evg_command import EvgCommandType, expansions_update
 
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
@@ -15,10 +14,7 @@ class BootstrapMongoOrchestration(Function):
             script='.evergreen/scripts/integration-tests.sh',
             add_expansions_to_env=True,
         ),
-        expansions_update(
-            command_type=command_type,
-            file='mongoc/mo-expansion.yml'
-        ),
+        expansions_update(command_type=command_type, file='mongoc/mo-expansion.yml'),
     ]
 
 

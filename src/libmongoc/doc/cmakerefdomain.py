@@ -8,38 +8,40 @@ domain plugin. If that is the case, this extention can likely be disabled and
 replaced by a more full-featured extension.
 
 """
+
 from typing import Any, List
+
 from sphinx.application import Sphinx
-from sphinx.roles import XRefRole
 from sphinx.domains import Domain, ObjType
+from sphinx.roles import XRefRole
 
 kinds = [
-    "command",
-    "cpack_gen",
-    "envvar",
-    "generator",
-    "genex",
-    "guide",
-    "variable",
-    "module",
-    "policy",
-    "prop_cache",
-    "prop_dir",
-    "prop_gbl",
-    "prop_inst",
-    "prop_sf",
-    "prop_test",
-    "prop_tgt",
-    "manual",
+    'command',
+    'cpack_gen',
+    'envvar',
+    'generator',
+    'genex',
+    'guide',
+    'variable',
+    'module',
+    'policy',
+    'prop_cache',
+    'prop_dir',
+    'prop_gbl',
+    'prop_inst',
+    'prop_sf',
+    'prop_test',
+    'prop_tgt',
+    'manual',
 ]
 
 
 class CMakeRefDomain(Domain):
-    name = "cmake"
-    label = "CMake (Minimal)"
+    name = 'cmake'
+    label = 'CMake (Minimal)'
     object_types = {k: ObjType(k, k) for k in kinds}
     roles = {k: XRefRole() for k in kinds}
-    roles["command"] = XRefRole(fix_parens=True)
+    roles['command'] = XRefRole(fix_parens=True)
     directives = {}
     initial_data: Any = {}
 
@@ -51,6 +53,6 @@ class CMakeRefDomain(Domain):
 def setup(app: Sphinx):
     app.add_domain(CMakeRefDomain)
     return {
-        "parallel_read_safe": True,
-        "parallel_write_safe": True,
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
     }

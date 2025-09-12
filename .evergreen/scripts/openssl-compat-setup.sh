@@ -25,14 +25,14 @@ openssl_install_dir="${mongoc_dir:?}/openssl-install-dir"
 openssl_download "${OPENSSL_VERSION:?}"
 
 rm -rf "${openssl_install_dir:?}"
-mkdir  "${openssl_install_dir:?}" # For openssl.cnf.
+mkdir "${openssl_install_dir:?}" # For openssl.cnf.
 
 declare -a config_flags=(
   "--prefix=${openssl_install_dir:?}"
   "--openssldir=${openssl_install_dir:?}/ssl"
   "--libdir=lib"
-  "shared" # Enable shared libraries.
-  "-fPIC" # For static libraries.
+  "shared"                              # Enable shared libraries.
+  "-fPIC"                               # For static libraries.
   "-Wl,-rpath,${openssl_install_dir:?}" # For shared libraries.
 )
 
@@ -79,9 +79,9 @@ echo "Building and installing OpenSSL ${OPENSSL_VERSION:?}..."
       PATH="${openssl_install_dir:?}/bin:${PATH:-}" \
       LD_LIBRARY_PATH="${openssl_install_dir:?}/lib:${LD_LIBRARY_PATH:-}" \
       openssl fipsinstall \
-        -out "${openssl_install_dir:?}/ssl/fipsmodule.cnf" \
-        -module "${openssl_install_dir:?}/lib/ossl-modules/fips.so" \
-        -quiet
+      -out "${openssl_install_dir:?}/ssl/fipsmodule.cnf" \
+      -module "${openssl_install_dir:?}/lib/ossl-modules/fips.so" \
+      -quiet
 
     # Verification.
     echo "Verifying OpenSSL FIPS 3.0 module is enabled..."
