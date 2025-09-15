@@ -731,6 +731,11 @@ check_run_on_requirement(test_runner_t *test_runner,
          continue;
       }
 
+      if (0 == strcmp(key, "serverless")) {
+         // Ignore deprecated serverless runOnRequirement. Serverless is not tested.
+         continue;
+      }
+
       if (0 == strcmp(key, "auth")) {
          bool auth_requirement = bson_iter_bool(&req_iter);
 
