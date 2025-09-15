@@ -4,6 +4,7 @@
   "runOnRequirements": [
     {
       "minServerVersion": "4.9",
+      "serverless": "forbid",
       "topologies": [
         "replicaset",
         "sharded"

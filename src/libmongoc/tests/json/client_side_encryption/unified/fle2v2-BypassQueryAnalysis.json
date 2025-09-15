@@ -4,6 +4,7 @@
   "runOnRequirements": [
     {
       "minServerVersion": "7.0.0",
+      "serverless": "forbid",
       "csfle": true,
       "topologies": [
         "replicaset",

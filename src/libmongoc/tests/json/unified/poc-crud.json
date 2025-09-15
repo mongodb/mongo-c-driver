@@ -408,7 +408,8 @@
       "description": "Aggregate with $listLocalSessions",
       "runOnRequirements": [
         {
-          "minServerVersion": "3.6.0"
+          "minServerVersion": "3.6.0",
+          "serverless": "forbid"
         }
       ],
       "operations": [
