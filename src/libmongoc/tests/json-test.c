@@ -1766,6 +1766,9 @@ run_json_general_test(const json_test_config_t *config)
 
       set_auto_encryption_opts(client, &test);
       /* Drop and recreate test database/collection if necessary. */
+      _recreate(db_name, collection_name, scenario);
+      _recreate(db2_name, collection2_name, scenario);
+
       insert_data(db_name, collection_name, scenario);
 
       db = mongoc_client_get_database(client, db_name);
