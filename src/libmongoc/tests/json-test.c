@@ -1262,11 +1262,6 @@ deactivate_fail_points(mongoc_client_t *client, uint32_t server_id)
 
    ASSERT(client);
 
-   if (test_framework_is_mongohouse()) {
-      // mongohouse does not support failpoints.
-      return;
-   }
-
    if (server_id) {
       sd = mongoc_client_get_server_description(client, server_id);
       BSON_ASSERT(sd);
@@ -1771,11 +1766,6 @@ run_json_general_test(const json_test_config_t *config)
 
       set_auto_encryption_opts(client, &test);
       /* Drop and recreate test database/collection if necessary. */
-      if (!test_framework_is_mongohouse()) {
-         // mongohouse test user is not authorized to run `drop`.
-         _recreate(db_name, collection_name, scenario);
-         _recreate(db2_name, collection2_name, scenario);
-      }
       insert_data(db_name, collection_name, scenario);
 
       db = mongoc_client_get_database(client, db_name);
