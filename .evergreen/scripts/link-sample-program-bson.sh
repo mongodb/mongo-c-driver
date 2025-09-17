@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 #   LINK_STATIC              Whether to statically link to libbson
 #   BUILD_SAMPLE_WITH_CMAKE  Link program w/ CMake. Default: use pkg-config.
-
 
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
@@ -15,8 +14,8 @@ CMAKE=$(find_cmake_latest)
 
 # The major version of the project. Appears in certain install filenames.
 _full_version=$(cat "$DIR/../../VERSION_CURRENT")
-version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
-major="${version%%.*}"         # 1.2.3     → 1
+version="${_full_version%-*}" # 1.2.3-dev → 1.2.3
+major="${version%%.*}"        # 1.2.3     → 1
 echo "major version: $major"
 echo " full version: $version"
 
@@ -30,7 +29,7 @@ else
   LDD=ldd
 fi
 
-SRCROOT=`pwd`
+SRCROOT=$(pwd)
 SCRATCH_DIR=$(pwd)/.scratch
 rm -rf "$SCRATCH_DIR"
 mkdir -p "$SCRATCH_DIR"

@@ -6,7 +6,7 @@ class StopLoadBalancer(Function):
     name = 'stop-load-balancer'
     commands = [
         bash_exec(
-            script='''\
+            script="""\
                 # Only run if a load balancer was started.
                 if [[ -z "${SINGLE_MONGOS_LB_URI}" ]]; then
                     echo "OK - no load balancer running"
@@ -15,7 +15,7 @@ class StopLoadBalancer(Function):
                 if [[ -d drivers-evergreen-tools ]]; then
                     cd drivers-evergreen-tools && .evergreen/run-load-balancer.sh stop
                 fi
-            '''
+            """
         ),
     ]
 

@@ -73,7 +73,7 @@ fi
 configure_flags_append "-DCMAKE_BUILD_TYPE=${build_config:?}"
 configure_flags_append "-DENABLE_SSL=${SSL:-}"
 
-  # shellcheck source=.evergreen/scripts/find-cmake-version.sh
+# shellcheck source=.evergreen/scripts/find-cmake-version.sh
 . "${script_dir}/find-cmake-latest.sh"
 declare cmake_binary
 cmake_binary="$(find_cmake_latest)"

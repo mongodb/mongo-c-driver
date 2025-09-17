@@ -25,9 +25,10 @@ Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
 # yapf: disable
-from collections import OrderedDict
-from os.path import basename, dirname, join as joinpath, normpath
 import re
+from collections import OrderedDict
+from os.path import basename, dirname, normpath
+from os.path import join as joinpath
 
 from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
 

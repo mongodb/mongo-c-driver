@@ -9,14 +9,12 @@ class UploadTestResults(Function):
     commands = [
         # Ensure attach_results does not fail even if no tests results exist.
         bash_exec(
-            script='''\
+            script="""\
                 mkdir -p mongoc
                 touch mongoc/test-results.json
-            '''
+            """
         ),
-        attach_results(
-            file_location='mongoc/test-results.json'
-        ),
+        attach_results(file_location='mongoc/test-results.json'),
     ]
 
 
