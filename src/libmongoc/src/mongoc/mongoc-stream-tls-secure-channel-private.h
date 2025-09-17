@@ -27,9 +27,9 @@
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
 #define SCHANNEL_USE_BLACKLISTS
+#include <winternl.h>
 #include <schannel.h>
 #include <security.h>
-#include <winternl.h>
 
 
 BSON_BEGIN_DECLS
