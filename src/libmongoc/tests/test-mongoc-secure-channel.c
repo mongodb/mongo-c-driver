@@ -100,7 +100,7 @@ test_secure_channel_shared_creds_stream(void *unused)
    {
       mongoc_secure_channel_cred *cred = mongoc_secure_channel_cred_new(&ssl_opt);
       mongoc_shared_ptr cred_ptr = mongoc_shared_ptr_create(cred, mongoc_secure_channel_cred_deleter);
-      cred->cred.dwVersion = 0; // Invalid version.
+      cred->cred->dwVersion = 0; // Invalid version.
       capture_logs(true);
       mongoc_stream_t *stream = connect_with_secure_channel_cred(&ssl_opt, cred_ptr, &error);
       ASSERT(!stream);
