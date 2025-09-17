@@ -14,7 +14,7 @@
 
 from collections import OrderedDict as OD
 
-from evergreen_config_generator.functions import Function, s3_put, shell_exec
+from evergreen_config_generator.functions import Function, s3_put
 
 from evergreen_config_lib import shell_mongoc
 
@@ -94,9 +94,7 @@ all_functions = OD(
             'run auth tests',
             Function(
                 shell_mongoc(
-                    r"""
-                    .evergreen/scripts/run-auth-tests.sh
-                    """,
+                    '.evergreen/scripts/run-auth-tests.sh',
                     add_expansions_to_env=True,
                 ),
             ),
@@ -193,14 +191,16 @@ all_functions = OD(
         (
             'link sample program mingw bson',
             Function(
-                shell_mongoc(r"""
-                # Build libmongoc with CMake and compile a program that links
-                # dynamically to it, using variables from pkg-config.exe.
-                . .evergreen/scripts/use-tools.sh paths
-                . .evergreen/scripts/find-cmake-latest.sh
-                export CMAKE="$(native-path "$(find_cmake_latest)")"
-                cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
-                """),
+                shell_mongoc(
+                    r"""
+                    # Build libmongoc with CMake and compile a program that links
+                    # dynamically to it, using variables from pkg-config.exe.
+                    . .evergreen/scripts/use-tools.sh paths
+                    . .evergreen/scripts/find-cmake-latest.sh
+                    export CMAKE="$(native-path "$(find_cmake_latest)")"
+                    cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
+                    """,
+                ),
             ),
         ),
         (
