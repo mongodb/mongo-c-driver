@@ -26,8 +26,10 @@
 
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
+#define SCHANNEL_USE_BLACKLISTS
 #include <schannel.h>
 #include <security.h>
+#include <winternl.h>
 
 
 BSON_BEGIN_DECLS
@@ -52,7 +54,7 @@ typedef struct {
 // `mongoc_secure_channel_cred` may be shared on multiple connections.
 typedef struct _mongoc_secure_channel_cred {
    PCCERT_CONTEXT cert; /* Owning. Optional client cert. */
-   SCHANNEL_CRED cred;  // TODO: switch to SCH_CREDENTIALS to support TLS v1.3
+   SCH_CREDENTIALS *cred;
 } mongoc_secure_channel_cred;
 
 typedef struct {
