@@ -2,7 +2,6 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.etc.utils import bash_exec
 
@@ -13,7 +12,6 @@ def tasks():
             name='mock-server-test',
             run_on='ubuntu2204-small',
             commands=[
-                InstallUV.call(),
                 RunSimpleHTTPServer.call(),
                 bash_exec(
                     command_type=EvgCommandType.TEST,

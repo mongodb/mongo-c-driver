@@ -22,15 +22,12 @@ from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
 
-from config_generator.components.funcs.install_uv import InstallUV
-
 
 def _create_tasks():
     passtask = NamedTask(
         task_name='testgcpkms-task',
         commands=[
             func('fetch-source'),
-            func(InstallUV.name),
             shell_exec(
                 r"""
             echo "Building test-gcpkms ... begin"
@@ -72,7 +69,6 @@ def _create_tasks():
     failtask = NamedTask(
         task_name='testgcpkms-fail-task',
         commands=[
-            func(InstallUV.name),
             shell_exec(
                 r"""
             pushd mongoc
@@ -99,8 +95,7 @@ def _create_variant():
     return Variant(
         name='testgcpkms-variant',
         display_name='GCP KMS',
-        # GCP Virtual Machine created is Debian 11.
-        run_on='debian11-small',
+        run_on='debian12-small',  # GCP Virtual Machine is actually Debian 11.
         tasks=['testgcpkms_task_group', 'testgcpkms-fail-task'],
         batchtime=20160,
     )  # Use a batchtime of 14 days as suggested by the CSFLE test README
