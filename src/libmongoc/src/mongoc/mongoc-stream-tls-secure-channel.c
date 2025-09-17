@@ -75,10 +75,10 @@
 
 #define SECURITY_WIN32
 #define SCHANNEL_USE_BLACKLISTS
-#include <winternl.h>
 #include <schannel.h>
 #include <schnlsp.h>
 #include <security.h>
+#include <subauth.h>
 
 /* mingw doesn't define these */
 #ifndef SP_PROT_TLS1_1_CLIENT
