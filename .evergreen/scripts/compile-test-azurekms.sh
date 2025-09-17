@@ -6,11 +6,13 @@ set -o nounset
 # Working directory is expected to be mongo-c-driver repo.
 ROOT=$(pwd)
 INSTALL_DIR=$ROOT/install
-. .evergreen/scripts/find-cmake-latest.sh
-declare cmake_binary
-cmake_binary="$(find_cmake_latest)"
+
+. .evergreen/scripts/install-build-tools.sh
+install_build_tools
+export CMAKE_GENERATOR="Ninja"
+
 echo "Installing libmongocrypt ... begin"
-.evergreen/scripts/compile-libmongocrypt.sh "${cmake_binary}" "$ROOT" "$INSTALL_DIR" &>output.txt || {
+.evergreen/scripts/compile-libmongocrypt.sh "$(command -v cmake)" "$ROOT" "$INSTALL_DIR" &>output.txt || {
   cat output.txt 1>&2
   exit 1
 }
@@ -22,7 +24,7 @@ find_ccache_and_export_vars "$(pwd)" || true
 
 echo "Compile test-azurekms ... begin"
 # Disable unnecessary dependencies. test-azurekms is copied to a remote host for testing, which may not have all dependent libraries.
-"${cmake_binary}" \
+cmake \
   -DENABLE_SASL=OFF \
   -DENABLE_SNAPPY=OFF \
   -DENABLE_ZSTD=OFF \
@@ -31,5 +33,5 @@ echo "Compile test-azurekms ... begin"
   -DENABLE_CLIENT_SIDE_ENCRYPTION=ON \
   -DCMAKE_PREFIX_PATH="$INSTALL_DIR" \
   .
-"${cmake_binary}" --build . --target test-azurekms
+cmake --build . --target test-azurekms
 echo "Compile test-azurekms ... end"
