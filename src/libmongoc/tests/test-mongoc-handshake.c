@@ -24,6 +24,7 @@
 #endif
 
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-config-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 
 #include <mongoc/mongoc-handshake.h>
@@ -1342,6 +1343,19 @@ test_mongoc_handshake_race_condition(void)
    _reset_handshake();
 }
 
+static void
+test_mongoc_handshake_cpp(void)
+{
+   bson_t *handshake = _mongoc_handshake_build_doc_with_application("foo");
+   const char *platform = bson_lookup_utf8(handshake, "platform");
+   if (0 != strlen(MONGOC_CXX_COMPILER_VERSION)) {
+      ASSERT_CONTAINS(platform, "CXX=" MONGOC_CXX_COMPILER_ID " " MONGOC_CXX_COMPILER_VERSION);
+   } else {
+      ASSERT_CONTAINS(platform, "CXX=" MONGOC_CXX_COMPILER_ID);
+   }
+   bson_destroy(handshake);
+}
+
 void
 test_handshake_install(TestSuite *suite)
 {
@@ -1428,4 +1442,5 @@ test_handshake_install(TestSuite *suite)
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_no_setenv);
+   TestSuite_Add(suite, "/MongoDB/handshake/includes_c++", test_mongoc_handshake_cpp);
 }

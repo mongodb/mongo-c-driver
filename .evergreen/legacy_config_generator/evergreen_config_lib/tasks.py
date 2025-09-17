@@ -575,12 +575,6 @@ class PostCompileTask(NamedTask):
 all_tasks = chain(
     all_tasks,
     [
-        PostCompileTask(
-            "test-mongohouse",
-            tags=[],
-            get_build="debug-compile-sasl-openssl",
-            commands=[func("fetch-det"), func("build mongohouse"), func("run mongohouse"), func("test mongohouse")],
-        ),
         NamedTask(
             "authentication-tests-asan-memcheck",
             tags=["authentication-tests", "asan"],

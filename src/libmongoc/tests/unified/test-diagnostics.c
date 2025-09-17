@@ -28,11 +28,11 @@
 typedef struct _msg_t {
    char *string;
    struct _msg_t *next;
-} msg_t;
+} diagnostics_msg_t;
 
 typedef struct {
-   msg_t *test_info;
-   msg_t *error_info;
+   diagnostics_msg_t *test_info;
+   diagnostics_msg_t *error_info;
    bson_mutex_t mutex;
 } test_diagnostics_t;
 
@@ -41,7 +41,7 @@ static test_diagnostics_t diagnostics;
 static char *
 test_diagnostics_error_string(bson_error_t *error)
 {
-   msg_t *msg_iter = NULL;
+   diagnostics_msg_t *msg_iter = NULL;
    test_diagnostics_t *td = &diagnostics;
 
    mcommon_string_append_t str;
@@ -111,7 +111,7 @@ void
 test_diagnostics_reset(void)
 {
    test_diagnostics_t *td = &diagnostics;
-   msg_t *iter, *iter_tmp;
+   diagnostics_msg_t *iter, *iter_tmp;
 
    LL_FOREACH_SAFE(td->test_info, iter, iter_tmp)
    {
@@ -144,14 +144,14 @@ _test_diagnostics_add(bool fail, const char *fmt, ...)
 {
    test_diagnostics_t *td = &diagnostics;
    va_list args;
-   msg_t *msg = NULL;
+   diagnostics_msg_t *msg = NULL;
    char *msg_string;
 
    va_start(args, fmt);
    msg_string = bson_strdupv_printf(fmt, args);
    va_end(args);
 
-   msg = bson_malloc0(sizeof(msg_t));
+   msg = bson_malloc0(sizeof(diagnostics_msg_t));
    msg->string = msg_string;
 
    bson_mutex_lock(&td->mutex);

@@ -593,14 +593,10 @@ killcursors_succeeded(const mongoc_apm_command_succeeded_t *event)
    ASSERT_CMPINT64(ctx->cursor_id, ==, bson_iter_int64(&array));
 }
 
-extern void
-_mongoc_cursor_impl_find_opquery_init(mongoc_cursor_t *cursor, bson_t *filter);
-
 /* Tests killing a cursor with mongo_cursor_destroy and a real server.
  * Asserts that the cursor ID is no longer valid by attempting to get another
- * batch of results with the previously killed cursor ID. Uses OP_GET_MORE (on
- * servers older than 3.2) or a getMore command (servers 3.2+) to iterate the
- * cursor ID.
+ * batch of results with the previously killed cursor ID. Uses getMore command
+ * to iterate the cursor ID.
  */
 static void
 test_kill_cursor_live(void)
@@ -641,36 +637,18 @@ test_kill_cursor_live(void)
    ctx.cursor_id = mongoc_cursor_get_id(cursor);
    ASSERT(ctx.cursor_id);
 
-   /* sends OP_KILLCURSORS or killCursors command to server */
+   /* sends killCursors command to server */
    mongoc_cursor_destroy(cursor);
 
    ASSERT_CMPINT(ctx.succeeded_count, ==, 1);
 
-   if (test_framework_supports_legacy_opcodes()) {
-      b = bson_new();
-      cursor = _mongoc_cursor_find_new(client, collection->ns, b, NULL, NULL, NULL, NULL);
-      /* override the typical priming, and immediately transition to an OPQUERY
-       * find cursor. */
-      cursor->impl.destroy(&cursor->impl);
-      _mongoc_cursor_impl_find_opquery_init(cursor, b);
+   bson_t *cmd;
 
-      cursor->cursor_id = ctx.cursor_id;
-      cursor->state = END_OF_BATCH; /* meaning, "finished reading first batch" */
-      r = mongoc_cursor_next(cursor, &doc);
-      ASSERT(!r);
-      ASSERT(mongoc_cursor_error(cursor, &error));
-      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CURSOR, 16, "cursor is invalid");
-
-      mongoc_cursor_destroy(cursor);
-   } else {
-      bson_t *cmd;
-
-      cmd = BCON_NEW("getMore", BCON_INT64(ctx.cursor_id), "collection", mongoc_collection_get_name(collection));
-      r = mongoc_client_command_simple(client, "test", cmd, NULL /* read prefs */, NULL /* reply */, &error);
-      ASSERT(!r);
-      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, MONGOC_SERVER_ERR_CURSOR_NOT_FOUND, "not found");
-      bson_destroy(cmd);
-   }
+   cmd = BCON_NEW("getMore", BCON_INT64(ctx.cursor_id), "collection", mongoc_collection_get_name(collection));
+   r = mongoc_client_command_simple(client, "test", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ASSERT(!r);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, MONGOC_SERVER_ERR_CURSOR_NOT_FOUND, "not found");
+   bson_destroy(cmd);
 
    mongoc_bulk_operation_destroy(bulk);
    mongoc_collection_destroy(collection);
@@ -758,7 +736,7 @@ _test_kill_cursors(bool pooled)
 
    reply_to_request_simple(request, "{'ok': 1}");
 
-   /* OP_KILLCURSORS was sent to the right secondary */
+   /* killCursors command was sent to the right secondary */
    ASSERT_CMPINT(request_get_server_port(kill_cursors), ==, request_get_server_port(request));
 
    BSON_ASSERT(future_wait(future));
