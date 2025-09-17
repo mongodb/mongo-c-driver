@@ -226,7 +226,7 @@ if(NOT APPLE)
    endif()
 endif()
 
-# Optionally enable C++ to do some C++-specific tests
+# Check for an optional C++ compiler. Result included in handshake metadata. Enables optional C++-specific tests.
 include (CheckLanguage)
 check_language (CXX)
 if (CMAKE_CXX_COMPILER)

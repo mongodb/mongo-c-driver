@@ -233,56 +233,6 @@ all_functions = OD(
             ),
         ),
         (
-            'build mongohouse',
-            Function(
-                # Assume role to get AWS secrets.
-                {'command': 'ec2.assume_role', 'params': {'role_arn': '${aws_test_secrets_role}'}},
-                shell_exec(
-                    r"""
-                    cd drivers-evergreen-tools
-                    export DRIVERS_TOOLS=$(pwd)
-                    .evergreen/atlas_data_lake/pull-mongohouse-image.sh
-                    """,
-                    include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
-                ),
-            ),
-        ),
-        (
-            'run mongohouse',
-            Function(
-                shell_exec(r"""
-                cd drivers-evergreen-tools
-                export DRIVERS_TOOLS=$(pwd)
-                .evergreen/atlas_data_lake/run-mongohouse-image.sh
-                """),
-            ),
-        ),
-        (
-            'test mongohouse',
-            Function(
-                shell_mongoc(r"""
-                echo "Waiting for mongohouse to start..."
-                wait_for_mongohouse() {
-                    for _ in $(seq 300); do
-                        # Exit code 7: "Failed to connect to host".
-                        if curl -s localhost:$1; (("$?" != 7)); then
-                            return 0
-                        else
-                            sleep 1
-                        fi
-                    done
-                    echo "Could not detect mongohouse on port $1" 1>&2
-                    return 1
-                }
-                wait_for_mongohouse 27017 || exit
-                echo "Waiting for mongohouse to start... done."
-                pgrep -a "mongohouse"
-                export RUN_MONGOHOUSE_TESTS=ON
-                ./cmake-build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
-                """),
-            ),
-        ),
-        (
             'run aws tests',
             Function(
                 # Assume role to get AWS secrets.

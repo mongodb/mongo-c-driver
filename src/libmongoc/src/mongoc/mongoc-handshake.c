@@ -28,6 +28,7 @@
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-config-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-compiler-private.h>
 #include <mongoc/mongoc-handshake-os-private.h>
@@ -489,6 +490,13 @@ _set_compiler_info(mongoc_handshake_t *handshake)
 #ifdef MONGOC_COMPILER_VERSION
    mcommon_string_append_printf(&append, " %s", MONGOC_COMPILER_VERSION);
 #endif
+
+   mcommon_string_append(&append, " CXX=" MONGOC_CXX_COMPILER_ID);
+
+   if (0 != strlen(MONGOC_CXX_COMPILER_VERSION)) {
+      mcommon_string_append(&append, " " MONGOC_CXX_COMPILER_VERSION);
+   }
+
    handshake->compiler_info = mcommon_string_from_append_destroy_with_steal(&append);
 }
 
