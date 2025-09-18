@@ -900,16 +900,16 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
       }
    }
 
-   cred->cred->cTlsParameters = 1;
-   TLS_PARAMETERS tls_parameters = {0};
-   cred->cred->pTlsParameters = &tls_parameters;
-   DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+    cred->cred->cTlsParameters = 1;
+    TLS_PARAMETERS tls_parameters;
+    cred->cred->pTlsParameters = &tls_parameters;
 
    // TLS 1.3 is supported starting in Windows Server 2022
+   DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
    if (_WIN32_WINNT >= 0x0A00) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
    }
-
+   
    cred->cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
 
    return cred;
