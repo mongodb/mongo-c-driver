@@ -72,12 +72,13 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure-channel"
 
+#include <subauth.h>
+
 #define SECURITY_WIN32
 #define SCHANNEL_USE_BLACKLISTS
 #include <schannel.h>
 #include <schnlsp.h>
 #include <security.h>
-#include <subauth.h>
 
 
 /* mingw doesn't define these */
@@ -895,7 +896,7 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 
       if (cred->cert) {
          cred->cred->cCreds = 1;
-         cred->cred->paCred = cred->cert;
+         cred->cred->paCred = &cred->cert;
       }
    }
 
