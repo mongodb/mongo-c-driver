@@ -24,10 +24,11 @@
 
 #include <bson/bson.h>
 
+#include <subauth.h>
+
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
 #define SCHANNEL_USE_BLACKLISTS
-#include <subauth.h>
 #include <schannel.h>
 #include <security.h>
 
