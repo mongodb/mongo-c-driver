@@ -854,7 +854,7 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    BSON_ASSERT_PARAM(opt);
    mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
 
-#if defined(SCH_CREDENTIALS) && (WORD)_WIN32_WINNT >= MAKEWORD(17763, 10)
+#if defined(SCH_CREDENTIALS)
    cred->cred->dwVersion = SCH_CREDENTIALS_VERSION;
 #else
    cred->cred->dwVersion = SCHANNEL_CRED_VERSION;
@@ -905,12 +905,13 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
       }
    }
 
-#if defined(SCH_CREDENTIALS) && (WORD)_WIN32_WINNT >= MAKEWORD(17763, 10)
+#if defined(SCH_CREDENTIALS)
    cred->cred->cTlsParameters = 1;
    TLS_PARAMETERS tls_parameters;
    cred->cred->pTlsParameters = &tls_parameters;
 
    // TLS 1.3 is supported starting with Windows Server 2022
+   // TODO - fix check, this enables on earlier versions too
    DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
    if (_WIN32_WINNT >= 0x0A00) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;

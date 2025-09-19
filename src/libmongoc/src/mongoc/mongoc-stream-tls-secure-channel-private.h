@@ -55,7 +55,7 @@ typedef struct {
 // `mongoc_secure_channel_cred` may be shared on multiple connections.
 typedef struct _mongoc_secure_channel_cred {
    PCCERT_CONTEXT cert;                                                   /* Owning. Optional client cert. */
-#if defined(SCH_CREDENTIALS) && (WORD)_WIN32_WINNT >= MAKEWORD(17763, 10) // Windows Server 2019
+#if defined(SCH_CREDENTIALS)
    SCH_CREDENTIALS *cred;
 #else
    SCHANNEL_CRED *cred;
