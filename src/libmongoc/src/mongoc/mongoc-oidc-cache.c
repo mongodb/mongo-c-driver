@@ -33,7 +33,7 @@ struct mongoc_oidc_cache_t {
    void *usleep_data;
 
    // lock is used to prevent concurrent calls to callback. Guards access to token, last_called, and ever_called.
-   bson_mutex_t lock;
+   bson_shared_mutex_t lock;
 
    // token is a cached OIDC access token.
    char *token;
@@ -50,7 +50,7 @@ mongoc_oidc_cache_new(void)
 {
    mongoc_oidc_cache_t *oidc = bson_malloc0(sizeof(mongoc_oidc_cache_t));
    oidc->usleep_fn = mongoc_usleep_default_impl;
-   bson_mutex_init(&oidc->lock);
+   bson_shared_mutex_init(&oidc->lock);
    return oidc;
 }
 
@@ -92,7 +92,7 @@ mongoc_oidc_cache_destroy(mongoc_oidc_cache_t *cache)
       return;
    }
    bson_free(cache->token);
-   bson_mutex_destroy(&cache->lock);
+   bson_shared_mutex_destroy(&cache->lock);
    mongoc_oidc_callback_destroy(cache->callback);
    bson_free(cache);
 }
@@ -103,9 +103,9 @@ mongoc_oidc_cache_get_cached_token(const mongoc_oidc_cache_t *cache)
    BSON_ASSERT_PARAM(cache);
 
    // Cast away const to lock. This function is logically const (read-only).
-   bson_mutex_lock(&((mongoc_oidc_cache_t *)cache)->lock);
+   bson_shared_mutex_lock_shared(&((mongoc_oidc_cache_t *)cache)->lock);
    char *token = bson_strdup(cache->token);
-   bson_mutex_unlock(&((mongoc_oidc_cache_t *)cache)->lock);
+   bson_shared_mutex_unlock_shared(&((mongoc_oidc_cache_t *)cache)->lock);
    return token;
 }
 
@@ -115,7 +115,7 @@ mongoc_oidc_cache_set_cached_token(mongoc_oidc_cache_t *cache, const char *token
    BSON_ASSERT_PARAM(cache);
    BSON_OPTIONAL_PARAM(token);
 
-   bson_mutex_lock(&cache->lock);
+   bson_shared_mutex_lock(&cache->lock);
 
    if (cache->token) {
       bson_free(cache->token);
@@ -123,7 +123,7 @@ mongoc_oidc_cache_set_cached_token(mongoc_oidc_cache_t *cache, const char *token
    }
 
    cache->token = token ? bson_strdup(token) : NULL;
-   bson_mutex_unlock(&cache->lock);
+   bson_shared_mutex_unlock(&cache->lock);
 }
 
 char *
@@ -143,12 +143,19 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
       return NULL;
    }
 
-   bson_mutex_lock(&cache->lock);
-
-   if (NULL != cache->token) {
-      // Access token is cached.
-      token = bson_strdup(cache->token);
+   token = mongoc_oidc_cache_get_cached_token(cache);
+   if (NULL != token) {
       *found_in_cache = true;
+      return token;
+   }
+
+   // Obtain write-lock:
+   bson_shared_mutex_lock(&cache->lock);
+
+   // Check if another thread populated cache between checking cached token and obtaining write lock:
+   if (cache->token) {
+      *found_in_cache = true;
+      token = bson_strdup(cache->token);
       goto unlock_and_return;
    }
 
@@ -184,7 +191,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
    cache->token = bson_strdup(token); // Cache a copy.
 
 unlock_and_return:
-   bson_mutex_unlock(&cache->lock);
+   bson_shared_mutex_unlock(&cache->lock);
    mongoc_oidc_credential_destroy(cred);
    return token;
 }
@@ -195,12 +202,12 @@ mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token
    BSON_ASSERT_PARAM(cache);
    BSON_ASSERT_PARAM(token);
 
-   bson_mutex_lock(&cache->lock);
+   bson_shared_mutex_lock(&cache->lock);
 
    if (cache->token && 0 == strcmp(cache->token, token)) {
       bson_free(cache->token);
       cache->token = NULL;
    }
 
-   bson_mutex_unlock(&cache->lock);
+   bson_shared_mutex_unlock(&cache->lock);
 }
