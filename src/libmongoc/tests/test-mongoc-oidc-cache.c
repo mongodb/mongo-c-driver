@@ -259,6 +259,43 @@ test_oidc_cache_propagates_error(void)
    mongoc_oidc_cache_destroy(cache);
 }
 
+static void
+test_oidc_cache_invalidate(void)
+{
+   mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
+
+   // Can invalidate when nothing cached:
+   {
+      ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
+      mongoc_oidc_cache_invalidate_token(cache, "foobar");
+      ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
+   }
+
+   // Cache a token:
+   {
+      mongoc_oidc_cache_set_cached_token(cache, "foo");
+      char *token = mongoc_oidc_cache_get_cached_token(cache);
+      ASSERT_CMPSTR(token, "foo");
+      bson_free(token);
+   }
+
+   // Invalidating a different token has no effect:
+   {
+      mongoc_oidc_cache_invalidate_token(cache, "bar");
+      char *token = mongoc_oidc_cache_get_cached_token(cache);
+      ASSERT_CMPSTR(token, "foo");
+      bson_free(token);
+   }
+
+   // Invalidating same token clears cache:
+   {
+      mongoc_oidc_cache_invalidate_token(cache, "foo");
+      ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
+   }
+
+   mongoc_oidc_cache_destroy(cache);
+}
+
 
 void
 test_mongoc_oidc_install(TestSuite *suite)
@@ -268,4 +305,5 @@ test_mongoc_oidc_install(TestSuite *suite)
    TestSuite_Add(suite, "/oidc/cache/set_sleep", test_oidc_cache_set_sleep);
    TestSuite_Add(suite, "/oidc/cache/set_cached_token", test_oidc_cache_set_cached_token);
    TestSuite_Add(suite, "/oidc/cache/propagates_error", test_oidc_cache_propagates_error);
+   TestSuite_Add(suite, "/oidc/cache/invalidate", test_oidc_cache_invalidate);
 }
