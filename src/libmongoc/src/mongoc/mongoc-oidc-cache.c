@@ -98,14 +98,15 @@ mongoc_oidc_cache_destroy(mongoc_oidc_cache_t *cache)
 }
 
 char *
-mongoc_oidc_cache_get_cached_token(mongoc_oidc_cache_t *cache)
+mongoc_oidc_cache_get_cached_token(const mongoc_oidc_cache_t *cache)
 {
    BSON_ASSERT_PARAM(cache);
 
-   bson_mutex_lock(&cache->lock);
-   const char *token = cache->token;
-   bson_mutex_unlock(&cache->lock);
-   return token ? bson_strdup(token) : NULL;
+   // Cast away const to lock. This function is logically const (read-only).
+   bson_mutex_lock(&((mongoc_oidc_cache_t *)cache)->lock);
+   char *token = bson_strdup(cache->token);
+   bson_mutex_unlock(&((mongoc_oidc_cache_t *)cache)->lock);
+   return token;
 }
 
 void

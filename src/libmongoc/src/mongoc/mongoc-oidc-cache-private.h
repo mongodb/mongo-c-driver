@@ -50,7 +50,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
 
 // mongoc_oidc_cache_get_cached_token returns a cached token or NULL if none is cached. Thread safe.
 char *
-mongoc_oidc_cache_get_cached_token(mongoc_oidc_cache_t *cache);
+mongoc_oidc_cache_get_cached_token(const mongoc_oidc_cache_t *cache);
 
 // mongoc_oidc_cache_set_cached_token overwrites the cached token. Useful for tests. Thread safe.
 void
