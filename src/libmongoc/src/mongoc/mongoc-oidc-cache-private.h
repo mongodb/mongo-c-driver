@@ -34,7 +34,6 @@ void
 mongoc_oidc_cache_set_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb);
 
 // mongoc_oidc_cache_get_callback gets the token callback.
-// Not thread safe. Call before any authentication can occur.
 const mongoc_oidc_callback_t *
 mongoc_oidc_cache_get_callback(mongoc_oidc_cache_t *cache);
 
