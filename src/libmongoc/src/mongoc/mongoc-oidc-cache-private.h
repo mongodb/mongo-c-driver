@@ -43,10 +43,10 @@ void
 mongoc_oidc_cache_set_usleep_fn(mongoc_oidc_cache_t *cache, mongoc_usleep_func_t usleep_fn, void *usleep_data);
 
 // mongoc_oidc_cache_get_token returns a token or NULL on error. Thread safe.
-// Sets *is_cache to indicate if the returned token came from the cache or callback.
+// Sets *found_in_cache to indicate if the returned token came from the cache or callback.
 // Calls sleep if needed to enforce 100ms delay between calls to the callback.
 char *
-mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *is_cache, bson_error_t *error);
+mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bson_error_t *error);
 
 // mongoc_oidc_cache_get_cached_token returns a cached token or NULL if none is cached. Thread safe.
 char *

@@ -126,16 +126,16 @@ mongoc_oidc_cache_set_cached_token(mongoc_oidc_cache_t *cache, const char *token
 }
 
 char *
-mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *is_cache, bson_error_t *error)
+mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bson_error_t *error)
 {
    BSON_ASSERT_PARAM(cache);
-   BSON_ASSERT_PARAM(is_cache);
+   BSON_ASSERT_PARAM(found_in_cache);
    BSON_OPTIONAL_PARAM(error);
 
    char *token = NULL;
    mongoc_oidc_credential_t *cred = NULL;
 
-   *is_cache = false;
+   *found_in_cache = false;
 
    if (!cache->callback) {
       SET_ERROR("MONGODB-OIDC requested, but no callback set");
@@ -147,7 +147,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *is_cache, bson_err
    if (NULL != cache->token) {
       // Access token is cached.
       token = bson_strdup(cache->token);
-      *is_cache = true;
+      *found_in_cache = true;
       goto unlock_and_return;
    }
 

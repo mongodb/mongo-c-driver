@@ -40,7 +40,7 @@ oidc_callback_fn(mongoc_oidc_callback_params_t *params)
 static void
 test_oidc_cache_works(void)
 {
-   bool is_cache = false;
+   bool found_in_cache = false;
    bson_error_t error;
 
    mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
@@ -49,7 +49,7 @@ test_oidc_cache_works(void)
 
    // Expect error if no callback set:
    {
-      ASSERT(!mongoc_oidc_cache_get_token(cache, &is_cache, &error));
+      ASSERT(!mongoc_oidc_cache_get_token(cache, &found_in_cache, &error));
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "no callback set");
       ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
    }
@@ -65,10 +65,10 @@ test_oidc_cache_works(void)
    // Expect callback is called to fetch token:
    {
       start = mlib_now();
-      char *token = mongoc_oidc_cache_get_token(cache, &is_cache, &error);
+      char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
-      ASSERT(!is_cache);
+      ASSERT(!found_in_cache);
       bson_free(token);
    }
 
@@ -81,10 +81,10 @@ test_oidc_cache_works(void)
 
    // Expect callback is not called if token is cached:
    {
-      char *token = mongoc_oidc_cache_get_token(cache, &is_cache, &error);
+      char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
-      ASSERT(is_cache);
+      ASSERT(found_in_cache);
       bson_free(token);
    }
 
@@ -107,12 +107,12 @@ test_oidc_cache_works(void)
 
    // Expect subsequent call to fetch tokens waits at least 100ms.
    {
-      char *token = mongoc_oidc_cache_get_token(cache, &is_cache, &error);
+      char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       mlib_duration diff = mlib_time_difference(mlib_now(), start);
       ASSERT_CMPINT64(mlib_milliseconds_count(diff), >=, 10); // Use shorter time to avoid timing test failures.
       ASSERT_CMPINT(ctx.call_count, ==, 2);
-      ASSERT(!is_cache);
+      ASSERT(!found_in_cache);
       bson_free(token);
    }
 
@@ -174,7 +174,7 @@ test_oidc_cache_set_sleep(void)
 
    // Can use a custom sleep function:
    {
-      bool is_cache = false;
+      bool found_in_cache = false;
       bson_error_t error;
       char *token;
 
@@ -182,24 +182,24 @@ test_oidc_cache_set_sleep(void)
       mongoc_oidc_cache_set_usleep_fn(cache, sleep_callback_fn, &sleep_ctx);
 
       // First call to get_token does not sleep:
-      token = mongoc_oidc_cache_get_token(cache, &is_cache, &error);
+      token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT_CMPINT(sleep_ctx.call_count, ==, 0);
-      ASSERT(!is_cache);
+      ASSERT(!found_in_cache);
 
       // Invalidate cache to trigger another call:
       mongoc_oidc_cache_invalidate_cached_token(cache, token);
       bson_free(token);
 
       // Second call to get_token sleeps to ensure at least 100ms between calls:
-      token = mongoc_oidc_cache_get_token(cache, &is_cache, &error);
+      token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       ASSERT_CMPINT(ctx.call_count, ==, 2);
       ASSERT_CMPINT(sleep_ctx.call_count, ==, 1);
       ASSERT_CMPINT64(sleep_ctx.last_arg, >, 0);
       ASSERT_CMPINT64(sleep_ctx.last_arg, <=, 100 * 1000); // at most 100ms
-      ASSERT(!is_cache);
+      ASSERT(!found_in_cache);
       bson_free(token);
    }
 
@@ -234,7 +234,7 @@ static void
 test_oidc_cache_propagates_error(void)
 {
    // Test a callback returning NULL.
-   bool is_cache = false;
+   bool found_in_cache = false;
    bson_error_t error;
 
    mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
@@ -250,9 +250,9 @@ test_oidc_cache_propagates_error(void)
 
    // Expect error:
    {
-      ASSERT(!mongoc_oidc_cache_get_token(cache, &is_cache, &error));
+      ASSERT(!mongoc_oidc_cache_get_token(cache, &found_in_cache, &error));
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "callback failed");
-      ASSERT(!is_cache);
+      ASSERT(!found_in_cache);
       ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
    }
 
