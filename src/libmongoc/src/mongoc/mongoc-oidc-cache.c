@@ -60,6 +60,8 @@ mongoc_oidc_cache_set_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_cal
    BSON_ASSERT_PARAM(cache);
    BSON_OPTIONAL_PARAM(cb);
 
+   BSON_ASSERT(!cache->ever_called);
+
    if (cache->callback) {
       mongoc_oidc_callback_destroy(cache->callback);
    }
@@ -80,6 +82,8 @@ mongoc_oidc_cache_set_usleep_fn(mongoc_oidc_cache_t *cache, mongoc_usleep_func_t
    BSON_ASSERT_PARAM(cache);
    BSON_OPTIONAL_PARAM(usleep_fn);
    BSON_OPTIONAL_PARAM(usleep_data);
+
+   BSON_ASSERT(!cache->ever_called);
 
    cache->usleep_fn = usleep_fn ? usleep_fn : mongoc_usleep_default_impl;
    cache->usleep_data = usleep_data;
