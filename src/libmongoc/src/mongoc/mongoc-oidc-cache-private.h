@@ -56,9 +56,9 @@ mongoc_oidc_cache_get_cached_token(const mongoc_oidc_cache_t *cache);
 void
 mongoc_oidc_cache_set_cached_token(mongoc_oidc_cache_t *cache, const char *token);
 
-// mongoc_oidc_cache_invalidate_cached_token invalidates if the cached token matches `token`. Thread safe.
+// mongoc_oidc_cache_invalidate_token invalidates if the cached token matches `token`. Thread safe.
 void
-mongoc_oidc_cache_invalidate_cached_token(mongoc_oidc_cache_t *cache, const char *token);
+mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token);
 
 void
 mongoc_oidc_cache_destroy(mongoc_oidc_cache_t *);

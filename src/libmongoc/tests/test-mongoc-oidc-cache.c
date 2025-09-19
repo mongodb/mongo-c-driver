@@ -90,7 +90,7 @@ test_oidc_cache_works(void)
 
    // Invalidating a different token has no effect:
    {
-      mongoc_oidc_cache_invalidate_cached_token(cache, "different-token");
+      mongoc_oidc_cache_invalidate_token(cache, "different-token");
       char *token = mongoc_oidc_cache_get_cached_token(cache);
       ASSERT(token);
       bson_free(token);
@@ -99,7 +99,7 @@ test_oidc_cache_works(void)
    // Invalidating same token clears cache:
    {
       char *token = mongoc_oidc_cache_get_cached_token(cache);
-      mongoc_oidc_cache_invalidate_cached_token(cache, token);
+      mongoc_oidc_cache_invalidate_token(cache, token);
       ASSERT(token);
       bson_free(token);
       ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
@@ -189,7 +189,7 @@ test_oidc_cache_set_sleep(void)
       ASSERT(!found_in_cache);
 
       // Invalidate cache to trigger another call:
-      mongoc_oidc_cache_invalidate_cached_token(cache, token);
+      mongoc_oidc_cache_invalidate_token(cache, token);
       bson_free(token);
 
       // Second call to get_token sleeps to ensure at least 100ms between calls:

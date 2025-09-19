@@ -190,7 +190,7 @@ unlock_and_return:
 }
 
 void
-mongoc_oidc_cache_invalidate_cached_token(mongoc_oidc_cache_t *cache, const char *token)
+mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token)
 {
    BSON_ASSERT_PARAM(cache);
    BSON_ASSERT_PARAM(token);
