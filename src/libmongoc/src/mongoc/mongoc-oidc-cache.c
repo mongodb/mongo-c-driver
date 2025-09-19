@@ -67,7 +67,7 @@ mongoc_oidc_cache_set_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_cal
 }
 
 const mongoc_oidc_callback_t *
-mongoc_oidc_cache_get_callback(mongoc_oidc_cache_t *cache)
+mongoc_oidc_cache_get_callback(const mongoc_oidc_cache_t *cache)
 {
    BSON_ASSERT_PARAM(cache);
 

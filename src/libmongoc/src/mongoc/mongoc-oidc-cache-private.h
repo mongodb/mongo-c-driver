@@ -35,7 +35,7 @@ mongoc_oidc_cache_set_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_cal
 
 // mongoc_oidc_cache_get_callback gets the token callback.
 const mongoc_oidc_callback_t *
-mongoc_oidc_cache_get_callback(mongoc_oidc_cache_t *cache);
+mongoc_oidc_cache_get_callback(const mongoc_oidc_cache_t *cache);
 
 // mongoc_oidc_cache_set_usleep_fn sets a custom sleep function.
 // Not thread safe. Call before any authentication can occur.
