@@ -211,59 +211,6 @@ functions:
       script: |-
         set -o errexit
         COVERAGE=ON .evergreen/scripts/compile.sh
-  build mongohouse:
-  - command: ec2.assume_role
-    params:
-      role_arn: ${aws_test_secrets_role}
-  - command: shell.exec
-    type: test
-    params:
-      include_expansions_in_env:
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
-      - AWS_SESSION_TOKEN
-      shell: bash
-      script: |-
-        set -o errexit
-        cd drivers-evergreen-tools
-        export DRIVERS_TOOLS=$(pwd)
-        .evergreen/atlas_data_lake/pull-mongohouse-image.sh
-  run mongohouse:
-  - command: shell.exec
-    type: test
-    params:
-      shell: bash
-      script: |-
-        set -o errexit
-        cd drivers-evergreen-tools
-        export DRIVERS_TOOLS=$(pwd)
-        .evergreen/atlas_data_lake/run-mongohouse-image.sh
-  test mongohouse:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        echo "Waiting for mongohouse to start..."
-        wait_for_mongohouse() {
-            for _ in $(seq 300); do
-                # Exit code 7: "Failed to connect to host".
-                if curl -s localhost:$1; (("$?" != 7)); then
-                    return 0
-                else
-                    sleep 1
-                fi
-            done
-            echo "Could not detect mongohouse on port $1" 1>&2
-            return 1
-        }
-        wait_for_mongohouse 27017 || exit
-        echo "Waiting for mongohouse to start... done."
-        pgrep -a "mongohouse"
-        export RUN_MONGOHOUSE_TESTS=ON
-        ./cmake-build/src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d --skip-tests .evergreen/etc/skip-tests.txt
   run aws tests:
   - command: ec2.assume_role
     params:
@@ -1119,17 +1066,6 @@ tasks:
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
   - func: run auth tests
-- name: test-mongohouse
-  depends_on:
-    name: debug-compile-sasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-sasl-openssl
-  - func: fetch-det
-  - func: build mongohouse
-  - func: run mongohouse
-  - func: test mongohouse
 - name: authentication-tests-asan-memcheck
   tags:
   - asan
@@ -10340,12 +10276,6 @@ buildvariants:
   - .test-aws .7.0
   - .test-aws .8.0
   - .test-aws .latest
-- name: mongohouse
-  display_name: Mongohouse Test
-  run_on: ubuntu2204-small
-  tasks:
-  - debug-compile-sasl-openssl
-  - test-mongohouse
 - name: ocsp
   display_name: OCSP tests
   run_on: ubuntu2004-small

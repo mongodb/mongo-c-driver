@@ -130,11 +130,6 @@ bool
 test_framework_is_mongos(void);
 bool
 test_framework_is_replset(void);
-// `test_framework_is_mongohouse` returns true if configured to test
-// mongohoused (used for Atlas Data Lake).
-// See: "Atlas Data Lake Tests" in the MongoDB Specifications.
-bool
-test_framework_is_mongohouse(void);
 bool
 test_framework_server_is_secondary(mongoc_client_t *client, uint32_t server_id);
 int64_t
@@ -162,8 +157,6 @@ int
 test_framework_skip_if_crypto(void);
 int
 test_framework_skip_if_no_crypto(void);
-int
-test_framework_skip_if_no_mongohouse(void);
 int
 test_framework_skip_if_mongos(void);
 int
@@ -280,12 +273,6 @@ test_framework_skip_if_no_getlasterror(void);
 
 int
 test_framework_skip_if_no_exhaust_cursors(void);
-
-bool
-test_framework_is_serverless(void);
-
-int
-test_framework_skip_if_serverless(void);
 
 bool
 test_framework_is_loadbalanced(void);

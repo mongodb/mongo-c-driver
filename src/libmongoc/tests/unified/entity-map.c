@@ -1407,9 +1407,12 @@ _parse_and_set_auto_encryption_opts(mongoc_client_t *client, bson_t *opts, bson_
 
    if (extra_options) {
       extra = bson_copy(extra_options);
-      maybe_set_extra_crypt_shared(extra);
-      mongoc_auto_encryption_opts_set_extra(auto_encryption_opts, extra);
+   } else {
+      extra = bson_new();
    }
+
+   maybe_set_extra_crypt_shared(extra);
+   mongoc_auto_encryption_opts_set_extra(auto_encryption_opts, extra);
 
    if (!mongoc_client_enable_auto_encryption(client, auto_encryption_opts, error)) {
       goto done;

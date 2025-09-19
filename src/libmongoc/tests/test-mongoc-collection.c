@@ -4883,6 +4883,76 @@ test_insert_one_reports_id(void)
 
 #undef ASSERT_INDEX_EXISTS
 
+static void
+test_create_indexes_acts_as_write_command(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = get_test_collection(client, "test_create_indexes_with_opts");
+   bson_error_t error;
+   bson_t reply;
+
+   // Test write concern is inherited from collection:
+   {
+      // Set a non-default write concern on collection:
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new();
+         mongoc_write_concern_set_w(wc, -1); // Set a write concern that fails.
+         mongoc_collection_set_write_concern(coll, wc);
+         mongoc_write_concern_destroy(wc);
+      }
+
+      // Create index:
+      {
+         const bson_t *keys = tmp_bson("{'x': 1}");
+         mongoc_index_model_t *im = mongoc_index_model_new(keys, NULL);
+         bool ok =
+            mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* options */, NULL /* reply */, &error);
+         ASSERT(!ok);
+         ASSERT_ERROR_CONTAINS(error, 5, 9, "w has to be a non-negative number and not greater than 50");
+         mongoc_index_model_destroy(im);
+      }
+   }
+
+   // Test a server reply with "writeConcernError" is considered an error:
+   {
+      // Set the default write concern on collection:
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new(); // Default write concern.
+         mongoc_collection_set_write_concern(coll, wc);
+         mongoc_write_concern_destroy(wc);
+      }
+
+      // Set a failpoint to fail with "writeConcernError":
+      {
+         const char *cmd_str = BSON_STR({
+            "configureFailPoint" : "failCommand",
+            "mode" : {"times" : 1},
+            "data" : {"failCommands" : ["createIndexes"], "writeConcernError" : {"code" : 123, "errmsg" : "foo"}}
+         });
+         bson_t *failpoint_cmd = bson_new_from_json((const uint8_t *)cmd_str, -1, &error);
+         ASSERT_OR_PRINT(failpoint_cmd, error);
+         bool ok = mongoc_client_command_simple(client, "admin", failpoint_cmd, NULL /* read_prefs */, &reply, &error);
+         ASSERT_OR_PRINT(ok, error);
+         bson_destroy(failpoint_cmd);
+         bson_destroy(&reply);
+      }
+
+      {
+         const bson_t *keys = tmp_bson("{'x': 1}");
+         mongoc_index_model_t *im = mongoc_index_model_new(keys, NULL);
+         bool ok = mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* opts */, NULL /* reply */, &error);
+         ASSERT(!ok);
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_WRITE_CONCERN, 123, "foo");
+         mongoc_index_model_destroy(im);
+      }
+   }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 
 void
 test_collection_install(TestSuite *suite)
@@ -5016,4 +5086,14 @@ test_collection_install(TestSuite *suite)
                      // requires failpoint
                      test_framework_skip_if_no_failpoint);
    TestSuite_AddLive(suite, "/Collection/insert_one_reports_id", test_insert_one_reports_id);
+
+   TestSuite_AddFull(suite,
+                     "/Collection/test_create_indexes_acts_as_write_command",
+                     test_create_indexes_acts_as_write_command,
+                     NULL /* _dtor */,
+                     NULL /* _ctx */,
+                     // requires failpoint
+                     test_framework_skip_if_no_failpoint,
+                     // Server Version 4.4 has Wire Version 9 - w < 0 does not error on earlier versions.
+                     test_framework_skip_if_max_wire_version_less_than_9);
 }

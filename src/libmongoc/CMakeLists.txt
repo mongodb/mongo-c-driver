@@ -489,10 +489,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.13.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.15.0)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.13.0 is required to enable In-Use Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.15.0 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -568,9 +568,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-change-stream.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd-deprecated.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-cmd.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-opquery.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-legacy.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
@@ -750,6 +747,22 @@ set (HEADERS
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
+)
+
+set(MONGOC_CXX_COMPILER_ID "Unknown")
+set(MONGOC_CXX_COMPILER_VERSION "")
+
+if(DEFINED CMAKE_CXX_COMPILER_ID)
+    set(MONGOC_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+if(DEFINED CMAKE_CXX_COMPILER_VERSION)
+    set(MONGOC_CXX_COMPILER_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+endif()
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config-private.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config-private.h"
 )
 
 configure_file (
@@ -1077,7 +1090,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-long-namespace.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongohouse.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-callback.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c

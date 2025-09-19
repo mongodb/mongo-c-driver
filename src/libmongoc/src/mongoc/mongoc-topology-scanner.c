@@ -191,6 +191,13 @@ _reset_hello(mongoc_topology_scanner_t *ts)
    _add_hello(ts);
 }
 
+void
+_mongoc_topology_scanner_node_parse_sasl_supported_mechs(const bson_t *hello, mongoc_topology_scanner_node_t *node)
+{
+   _mongoc_handshake_parse_sasl_supported_mechs(hello, &node->sasl_supported_mechs);
+   node->negotiated_sasl_supported_mechs = true;
+}
+
 const char *
 _mongoc_topology_scanner_get_speculative_auth_mechanism(const mongoc_uri_t *uri)
 {
@@ -727,7 +734,7 @@ _async_success(mongoc_async_cmd_t *acmd, const bson_t *hello_response, mlib_dura
    }
 
    if (ts->negotiate_sasl_supported_mechs && !node->negotiated_sasl_supported_mechs) {
-      _mongoc_handshake_parse_sasl_supported_mechs(hello_response, &node->sasl_supported_mechs);
+      _mongoc_topology_scanner_node_parse_sasl_supported_mechs(hello_response, node);
    }
 
    if (ts->speculative_authentication) {
