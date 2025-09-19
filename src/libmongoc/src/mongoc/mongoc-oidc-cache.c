@@ -121,12 +121,9 @@ mongoc_oidc_cache_set_cached_token(mongoc_oidc_cache_t *cache, const char *token
 
    bson_shared_mutex_lock(&cache->lock);
 
-   if (cache->token) {
-      bson_free(cache->token);
-      cache->token = NULL;
-   }
-
-   cache->token = token ? bson_strdup(token) : NULL;
+   bson_free(cache->token);
+   cache->token = NULL;
+   cache->token = bson_strdup(token);
    bson_shared_mutex_unlock(&cache->lock);
 }
 
