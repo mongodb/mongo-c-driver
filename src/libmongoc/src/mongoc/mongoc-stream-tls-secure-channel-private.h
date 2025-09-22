@@ -28,7 +28,7 @@
 
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
-#define SCHANNEL_USE_BLACKLISTS
+#define SCHANNEL_USE_BLACKLISTS 1
 #include <schannel.h>
 #include <security.h>
 
@@ -55,7 +55,7 @@ typedef struct {
 // `mongoc_secure_channel_cred` may be shared on multiple connections.
 typedef struct _mongoc_secure_channel_cred {
    PCCERT_CONTEXT cert;                                                   /* Owning. Optional client cert. */
-#if defined(SCH_CREDENTIALS)
+#ifdef MONGOC_HAVE_SCH_CREDENTIALS
    SCH_CREDENTIALS *cred;
 #else
    SCHANNEL_CRED *cred;

@@ -539,6 +539,36 @@ else ()
    set (MONGOC_HAVE_BCRYPT_PBKDF2 0)
 endif ()
 
+# Check if SCH_CREDENTIALS is defined in schannel.h
+if (WIN32 AND MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+
+   FILE (WRITE ${CMAKE_CURRENT_BINARY_DIR}/sch_credentials_test.c
+      "
+      #include <windows.h>
+      #include <subauth.h>
+      #define SCHANNEL_USE_BLACKLISTS
+      #include <schannel.h>
+
+      int main(void) {
+         SCH_CREDENTIALS cred;
+         (void)cred;
+         return 0;
+      }
+      ")
+
+   TRY_COMPILE (HAVE_SCH_CREDENTIALS ${CMAKE_CURRENT_BINARY_DIR}
+      ${CMAKE_CURRENT_BINARY_DIR}/sch_credentials_test.c CMAKE_FLAGS
+      "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
+
+   if (HAVE_SCH_CREDENTIALS)
+      message(STATUS "SCH_CREDENTIALS symbol found.")    
+      set (MONGOC_HAVE_SCH_CREDENTIALS 1)
+   else ()
+      message(STATUS "SCH_CREDENTIALS symbol not found. Using SCHANNEL_CRED.")
+      set (MONGOC_HAVE_SCH_CREDENTIALS 0)
+   endif ()
+endif()
+
 
 set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c

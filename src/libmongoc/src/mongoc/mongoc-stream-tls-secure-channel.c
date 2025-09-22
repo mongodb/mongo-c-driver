@@ -76,7 +76,7 @@
 
 
 #define SECURITY_WIN32
-#define SCHANNEL_USE_BLACKLISTS
+#define SCHANNEL_USE_BLACKLISTS 1
 #include <schannel.h>
 #include <schnlsp.h>
 #include <security.h>
@@ -848,13 +848,36 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
    RETURN(mongoc_stream_should_retry(tls->base_stream));
 }
 
+ // TLS 1.3 is supported starting with Windows Server 2022
+ static bool
+_mongoc_secure_channel_verify_tls_1_3_support ()
+{
+   OSVERSIONINFOEX osvi;
+   int op=VER_GREATER_EQUAL;
+
+   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+   osvi.dwMajorVersion = 10;
+   osvi.dwMinorVersion = 0;
+   osvi.wProductType = VER_NT_SERVER;
+   osvi.dwBuildNumber = 20348;
+
+   ULONGLONG dwlConditionMask = 0;
+   VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+   VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+   VER_SET_CONDITION(dwlConditionMask, VER_PRODUCT_TYPE, VER_GREATER_EQUAL);
+   VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+   return VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_PRODUCT_TYPE | VER_BUILDNUMBER, dwlConditionMask);
+}
+
 mongoc_secure_channel_cred *
 mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 {
    BSON_ASSERT_PARAM(opt);
    mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
 
-#if defined(SCH_CREDENTIALS)
+#ifdef MONGOC_HAVE_SCH_CREDENTIALS
    cred->cred->dwVersion = SCH_CREDENTIALS_VERSION;
 #else
    cred->cred->dwVersion = SCHANNEL_CRED_VERSION;
@@ -905,15 +928,13 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
       }
    }
 
-#if defined(SCH_CREDENTIALS)
+#ifdef MONGOC_HAVE_SCH_CREDENTIALS
    cred->cred->cTlsParameters = 1;
    TLS_PARAMETERS tls_parameters;
    cred->cred->pTlsParameters = &tls_parameters;
 
-   // TLS 1.3 is supported starting with Windows Server 2022
-   // TODO - fix check, this enables on earlier versions too
    DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
-   if (_WIN32_WINNT >= 0x0A00) {
+   if (_mongoc_secure_channel_verify_tls_1_3_support()) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
    }
 
