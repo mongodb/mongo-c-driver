@@ -22,7 +22,7 @@ Description
 
 This is a portable ``realloc()`` wrapper.
 
-In general, this function will return an allocation at least ``sizeof(void*)`` bytes or bigger. If ``num_bytes`` is 0, then the allocation will be freed.
+If ``num_bytes`` is 0, then the allocation will be freed.
 
 If there was a failure to allocate ``num_bytes`` bytes, the process will be aborted.
 

@@ -64,6 +64,23 @@ test_oidc_callback_new(void)
 }
 
 static void
+test_oidc_callback_copy(void)
+{
+   int user_data = 0;
+
+   mongoc_oidc_callback_t *const callback = mongoc_oidc_callback_new(&_test_oidc_callback_fn_cb);
+   mongoc_oidc_callback_set_user_data(callback, &user_data);
+
+   mongoc_oidc_callback_t *callback_copy = mongoc_oidc_callback_copy(callback);
+
+   ASSERT(mongoc_oidc_callback_get_fn(callback_copy) == &_test_oidc_callback_fn_cb);
+   ASSERT(mongoc_oidc_callback_get_user_data(callback_copy) == &user_data);
+
+   mongoc_oidc_callback_destroy(callback_copy);
+   mongoc_oidc_callback_destroy(callback);
+}
+
+static void
 test_oidc_callback_params(void)
 {
    mongoc_oidc_callback_params_t *const params = mongoc_oidc_callback_params_new();
@@ -179,6 +196,7 @@ void
 test_mongoc_oidc_callback_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/oidc/callback/new", test_oidc_callback_new);
+   TestSuite_Add(suite, "/oidc/callback/copy", test_oidc_callback_copy);
    TestSuite_Add(suite, "/oidc/callback/params", test_oidc_callback_params);
    TestSuite_Add(suite, "/oidc/callback/credential", test_oidc_credential);
 }

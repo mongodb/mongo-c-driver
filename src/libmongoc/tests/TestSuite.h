@@ -275,6 +275,30 @@ _test_error(const char *format, ...) BSON_GNUC_PRINTF(1, 2);
 #define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "f", double)
 #define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "p", void *)
 
+// Returns "true" or "false". The result does _not_ need to be freed.
+static inline char const *
+_bool_to_str(bool b)
+{
+   return b ? "true" : "false";
+}
+
+#define ASSERT_CMPBOOL(a, eq, b)                                                 \
+   do {                                                                          \
+      /* evaluate once */                                                        \
+      bool _a = a;                                                               \
+      bool _b = b;                                                               \
+      if (!((_a)eq(_b))) {                                                       \
+         MONGOC_STDERR_PRINTF("FAIL\n\nAssert Failure: %s %s %s\n%s:%d  %s()\n", \
+                              _bool_to_str(_a),                                  \
+                              BSON_STR(eq),                                      \
+                              _bool_to_str(_b),                                  \
+                              __FILE__,                                          \
+                              (int)(__LINE__),                                   \
+                              BSON_FUNC);                                        \
+         abort();                                                                \
+      }                                                                          \
+   } while (0)
+
 #define ASSERT_MEMCMP(a, b, n)                                                                            \
    do {                                                                                                   \
       const void *_a = (a);                                                                               \

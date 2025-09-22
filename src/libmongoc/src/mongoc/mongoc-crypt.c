@@ -40,6 +40,12 @@
 
 #include <mongocrypt/mongocrypt.h>
 
+const char *
+_mongoc_crypt_get_libmongocrypt_version(void)
+{
+   return mongocrypt_version(NULL);
+}
+
 // `mcd_mapof_kmsid_to_tlsopts` maps a KMS ID (e.g. `aws` or `aws:myname`) to a
 // `mongoc_ssl_opt_t`. The acryonym TLS is preferred over SSL for
 // consistency with the CSE and URI specifications.
@@ -313,9 +319,9 @@ _state_machine_destroy(_state_machine_t *state_machine)
    bson_free(state_machine);
 }
 
-/* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO */
+/* State handler MONGOCRYPT_CTX_NEED_MONGO_COLLINFO{_WITH_DB} */
 static bool
-_state_need_mongo_collinfo(_state_machine_t *state_machine, bson_error_t *error)
+_state_need_mongo_collinfo(_state_machine_t *state_machine, const char *db_name, bson_error_t *error)
 {
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
@@ -339,7 +345,12 @@ _state_need_mongo_collinfo(_state_machine_t *state_machine, bson_error_t *error)
    }
 
    bson_append_document(&opts, "filter", -1, &filter_bson);
-   db = mongoc_client_get_database(state_machine->collinfo_client, state_machine->db_name);
+   if (!db_name) {
+      _ctx_check_error(state_machine->ctx, error, true);
+      goto fail;
+   }
+   db = mongoc_client_get_database(state_machine->collinfo_client, db_name);
+
    cursor = mongoc_database_find_collections_with_opts(db, &opts);
    if (mongoc_cursor_error(cursor, error)) {
       goto fail;
@@ -1079,7 +1090,7 @@ _state_machine_run(_state_machine_t *state_machine, bson_t *result, bson_error_t
          _ctx_check_error(state_machine->ctx, error, true);
          goto fail;
       case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-         if (!_state_need_mongo_collinfo(state_machine, error)) {
+         if (!_state_need_mongo_collinfo(state_machine, state_machine->db_name, error)) {
             goto fail;
          }
          break;
@@ -1112,14 +1123,16 @@ _state_machine_run(_state_machine_t *state_machine, bson_t *result, bson_error_t
       case MONGOCRYPT_CTX_DONE:
          goto success;
          break;
-      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB:
-         _mongoc_set_error(error,
-                           MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                           MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                           "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB is "
-                           "unimplemented");
-         goto fail;
-         break;
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO_WITH_DB: {
+         const char *db_name = mongocrypt_ctx_mongo_db(state_machine->ctx);
+         if (!db_name) {
+            _ctx_check_error(state_machine->ctx, error, true);
+            goto fail;
+         }
+         if (!_state_need_mongo_collinfo(state_machine, db_name, error)) {
+            goto fail;
+         }
+      } break;
       }
    }
 
@@ -1401,6 +1414,8 @@ _mongoc_crypt_new(const bson_t *kms_providers,
    crypt->kmsid_to_tlsopts = mcd_mapof_kmsid_to_tlsopts_new();
    crypt->handle = mongocrypt_new();
    mongocrypt_setopt_retry_kms(crypt->handle, true);
+   mongocrypt_setopt_use_need_mongo_collinfo_with_db_state(crypt->handle);
+
    if (!mongocrypt_setopt_enable_multiple_collinfo(crypt->handle)) {
       _crypt_check_error(crypt->handle, error, true);
       goto fail;
