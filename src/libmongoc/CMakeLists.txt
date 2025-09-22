@@ -559,15 +559,15 @@ if (WIN32 AND MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    TRY_COMPILE (HAVE_SCH_CREDENTIALS ${CMAKE_CURRENT_BINARY_DIR}
       ${CMAKE_CURRENT_BINARY_DIR}/sch_credentials_test.c CMAKE_FLAGS
       "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
-
-   if (HAVE_SCH_CREDENTIALS)
-      message(STATUS "SCH_CREDENTIALS symbol found.")    
-      set (MONGOC_HAVE_SCH_CREDENTIALS 1)
-   else ()
-      message(STATUS "SCH_CREDENTIALS symbol not found. Using SCHANNEL_CRED.")
-      set (MONGOC_HAVE_SCH_CREDENTIALS 0)
-   endif ()
 endif()
+
+if (HAVE_SCH_CREDENTIALS)
+   message(STATUS "SCH_CREDENTIALS symbol found.")    
+   set (MONGOC_HAVE_SCH_CREDENTIALS 1)
+else ()
+   message(STATUS "SCH_CREDENTIALS symbol not found. Using SCHANNEL_CRED.")
+   set (MONGOC_HAVE_SCH_CREDENTIALS 0)
+endif ()
 
 
 set (MONGOC_SOURCES
