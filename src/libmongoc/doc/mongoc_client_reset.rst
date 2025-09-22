@@ -22,7 +22,7 @@ This method causes the client to clear its session pool without sending endSessi
 
 .. warning::
 
-This method should only be called on single threaded clients. Calling :symbol:`mongoc_client_reset()` on a multi threaded client is a no-op and will result in a warning.
+  This method should only be called on single threaded clients. Calling :symbol:`mongoc_client_reset()` on a multi threaded client is a no-op and will result in a warning.
 
 Parameters
 ----------
