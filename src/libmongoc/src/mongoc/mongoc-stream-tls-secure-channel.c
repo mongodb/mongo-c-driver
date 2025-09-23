@@ -856,8 +856,10 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
 
 #ifdef MONGOC_HAVE_SCH_CREDENTIALS
+   cred->cred = bson_malloc0(sizeof(SCH_CREDENTIALS));   
    cred->cred->dwVersion = SCH_CREDENTIALS_VERSION;
 #else
+   cred->cred = bson_malloc0(sizeof(SCHANNEL_CRED));
    cred->cred->dwVersion = SCHANNEL_CRED_VERSION;
 #endif
 
@@ -936,6 +938,7 @@ mongoc_secure_channel_cred_deleter(void *cred_void)
       return;
    }
    CertFreeCertificateContext(cred->cert);
+   bson_free(cred->cred);
    bson_free(cred);
 }
 

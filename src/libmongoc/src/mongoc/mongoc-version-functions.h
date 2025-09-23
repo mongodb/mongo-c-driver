@@ -38,7 +38,7 @@ MONGOC_EXPORT(bool)
 mongoc_check_version(int required_major, int required_minor, int required_micro);
 #ifdef _WIN32
 MONGOC_EXPORT(bool)
-_mongoc_verify_windows_version(int major_version, int minor_version, int build_number, bool strictly_equal); 
+_mongoc_verify_windows_version(int major_version, int minor_version, int build_number, bool strictly_equal);
 #endif
 
 BSON_END_DECLS
