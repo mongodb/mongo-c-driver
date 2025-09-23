@@ -107,8 +107,8 @@ _mongoc_verify_windows_version(int major_version, int minor_version, int build_n
    osvi.dwMinorVersion = minor_version;
 
    ULONGLONG mask = 0;
-   mask = VER_SET_CONDITION(mask, VER_MAJORVERSION, op);
-   mask = VER_SET_CONDITION(mask, VER_MINORVERSION, op);
+   VER_SET_CONDITION(mask, VER_MAJORVERSION, op);
+   VER_SET_CONDITION(mask, VER_MINORVERSION, op);
 
    matched = VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION, mask);
 
@@ -119,7 +119,7 @@ _mongoc_verify_windows_version(int major_version, int minor_version, int build_n
       osvi.dwBuildNumber = build_number;
 
       mask = 0;
-      mask = VER_SET_CONDITION(mask, VER_BUILDNUMBER, op);
+      VER_SET_CONDITION(mask, VER_BUILDNUMBER, op);
 
       matched = VerifyVersionInfo(&osvi, VER_BUILDNUMBER, mask);
    }

@@ -918,6 +918,7 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    if ((is_server && _mongoc_verify_windows_version(10, 0, 19044, false)) ||
        (!is_server && _mongoc_verify_windows_version(10, 0, 22000, false))) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
+      printf("Enabling TLS 1.3 with Secure Channel \n");
    }
    cred->cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
 #else

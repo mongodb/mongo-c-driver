@@ -562,10 +562,8 @@ if (WIN32 AND MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 endif()
 
 if (HAVE_SCH_CREDENTIALS)
-   message(STATUS "SCH_CREDENTIALS symbol found.")    
    set (MONGOC_HAVE_SCH_CREDENTIALS 1)
 else ()
-   message(STATUS "SCH_CREDENTIALS symbol not found. Using SCHANNEL_CRED.")
    set (MONGOC_HAVE_SCH_CREDENTIALS 0)
 endif ()
 
