@@ -80,6 +80,7 @@
 #include <schannel.h>
 #include <schnlsp.h>
 #include <security.h>
+#include <versionhelpers.h>
 
 
 /* mingw doesn't define these */
@@ -848,29 +849,6 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
    RETURN(mongoc_stream_should_retry(tls->base_stream));
 }
 
- // TLS 1.3 is supported starting with Windows Server 2022
- static bool
-_mongoc_secure_channel_verify_tls_1_3_support ()
-{
-   OSVERSIONINFOEX osvi;
-   int op=VER_GREATER_EQUAL;
-
-   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
-   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-   osvi.dwMajorVersion = 10;
-   osvi.dwMinorVersion = 0;
-   osvi.wProductType = VER_NT_SERVER;
-   osvi.dwBuildNumber = 20348;
-
-   ULONGLONG dwlConditionMask = 0;
-   VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
-   VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
-   VER_SET_CONDITION(dwlConditionMask, VER_PRODUCT_TYPE, VER_GREATER_EQUAL);
-   VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
-
-   return VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_PRODUCT_TYPE | VER_BUILDNUMBER, dwlConditionMask);
-}
-
 mongoc_secure_channel_cred *
 mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 {
@@ -934,10 +912,13 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    cred->cred->pTlsParameters = &tls_parameters;
 
    DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
-   if (_mongoc_secure_channel_verify_tls_1_3_support()) {
+   bool is_server = IsWindowsServer();
+
+   // TLS 1.3 is supported starting with Windows 11 and Windows Server 2022
+   if ((is_server && _mongoc_verify_windows_version(10, 0, 19044, false)) ||
+       (!is_server && _mongoc_verify_windows_version(10, 0, 22000, false))) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
    }
-
    cred->cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
 #else
    cred->cred->grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;

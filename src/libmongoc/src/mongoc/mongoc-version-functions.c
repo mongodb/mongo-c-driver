@@ -19,6 +19,13 @@
 
 #include <mongoc/mongoc-version.h>
 
+#ifdef _WIN32
+#include <winbase.h>
+#include <winnt.h>
+
+#include <windows.h>
+#endif
+
 /**
  * mongoc_get_major_version:
  *
@@ -75,3 +82,48 @@ mongoc_check_version(int required_major, int required_minor, int required_micro)
 {
    return MONGOC_CHECK_VERSION(required_major, required_minor, required_micro);
 }
+
+#ifdef _WIN32
+/**
+ * _mongoc_verify_windows_version:
+ *
+ * True if the Windows version is greater than or equal to the required
+ * desktop or server version.
+ */
+bool
+_mongoc_verify_windows_version(int major_version, int minor_version, int build_number, bool strictly_equal)
+{
+   OSVERSIONINFOEX osvi;
+   bool matched;
+   int op = VER_GREATER_EQUAL;
+
+   if (strictly_equal) {
+      op = VER_EQUAL;
+   }
+
+   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+   osvi.dwMajorVersion = major_version;
+   osvi.dwMinorVersion = minor_version;
+
+   ULONGLONG mask = 0;
+   mask = VER_SET_CONDITION(mask, VER_MAJORVERSION, op);
+   mask = VER_SET_CONDITION(mask, VER_MINORVERSION, op);
+
+   matched = VerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION, mask);
+
+   // Compare build number separately if major and minor versions are equal
+   if (build_number && matched && _mongoc_verify_windows_version(major_version, minor_version, 0, true)) {
+      ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+      osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+      osvi.dwBuildNumber = build_number;
+
+      mask = 0;
+      mask = VER_SET_CONDITION(mask, VER_BUILDNUMBER, op);
+      
+      matched = VerifyVersionInfo(&osvi, VER_BUILDNUMBER, mask);
+   }
+
+   return matched;
+}
+#endif
