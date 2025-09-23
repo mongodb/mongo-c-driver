@@ -922,6 +922,7 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
       printf("Enabling TLS 1.3 with Secure Channel \n");
    }
+
    cred->cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
 #else
    cred->cred->grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
@@ -1015,7 +1016,7 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
                                           UNISP_NAME,           /* security package */
                                           SECPKG_CRED_OUTBOUND, /* we are preparing outbound connection */
                                           NULL,                 /*  Optional logon */
-                                          &cred->cred,          /* TLS "configuration", "auth data" */
+                                          cred->cred,          /* TLS "configuration", "auth data" */
                                           NULL,                 /* unused */
                                           NULL,                 /* unused */
                                           &secure_channel->cred_handle->cred_handle, /* credential OUT param */
