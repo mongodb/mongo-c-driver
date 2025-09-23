@@ -120,7 +120,7 @@ _mongoc_verify_windows_version(int major_version, int minor_version, int build_n
 
       mask = 0;
       mask = VER_SET_CONDITION(mask, VER_BUILDNUMBER, op);
-      
+
       matched = VerifyVersionInfo(&osvi, VER_BUILDNUMBER, mask);
    }
 
