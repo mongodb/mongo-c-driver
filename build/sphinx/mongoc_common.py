@@ -81,7 +81,7 @@ def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: Di
     if not app.env.config.analytics:
         return
 
-    # Add google analytics and NPS survey.
+    # Add google analytics.
     context["metatags"] = (
         context.get("metatags", "")
         + """
