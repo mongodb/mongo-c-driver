@@ -26,9 +26,7 @@ all_functions = OD(
             'install ssl',
             Function(
                 shell_mongoc(
-                    r"""
-        .evergreen/scripts/install-ssl.sh
-        """,
+                    '.evergreen/scripts/install-ssl.sh',
                     test=False,
                     add_expansions_to_env=True,
                 ),
@@ -39,10 +37,10 @@ all_functions = OD(
             Function(
                 shell_mongoc(
                     r"""
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp coverage s3://mciuploads/${project}/%s/coverage/ --recursive --acl public-read --region us-east-1
-        """
+                    export AWS_ACCESS_KEY_ID=${aws_key}
+                    export AWS_SECRET_ACCESS_KEY=${aws_secret}
+                    aws s3 cp coverage s3://mciuploads/${project}/%s/coverage/ --recursive --acl public-read --region us-east-1
+                    """
                     % (build_path,),
                     test=False,
                     silent=True,
@@ -62,19 +60,21 @@ all_functions = OD(
         (
             'upload scan artifacts',
             Function(
-                shell_mongoc(r"""
-        if find scan -name \*.html | grep -q html; then
-          (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
-        else
-          echo "No issues found" > scan.html
-        fi
-        """),
                 shell_mongoc(
                     r"""
-        export AWS_ACCESS_KEY_ID=${aws_key}
-        export AWS_SECRET_ACCESS_KEY=${aws_secret}
-        aws s3 cp scan s3://mciuploads/${project}/%s/scan/ --recursive --acl public-read --region us-east-1
-        """
+                    if find scan -name \*.html | grep -q html; then
+                      (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
+                    else
+                      echo "No issues found" > scan.html
+                    fi
+                    """,
+                ),
+                shell_mongoc(
+                    r"""
+                    export AWS_ACCESS_KEY_ID=${aws_key}
+                    export AWS_SECRET_ACCESS_KEY=${aws_secret}
+                    aws s3 cp scan s3://mciuploads/${project}/%s/scan/ --recursive --acl public-read --region us-east-1
+                    """
                     % (build_path,),
                     test=False,
                     silent=True,
@@ -96,9 +96,7 @@ all_functions = OD(
             'run auth tests',
             Function(
                 shell_mongoc(
-                    r"""
-        .evergreen/scripts/run-auth-tests.sh
-        """,
+                    '.evergreen/scripts/run-auth-tests.sh',
                     add_expansions_to_env=True,
                 ),
             ),
@@ -108,15 +106,15 @@ all_functions = OD(
             Function(
                 shell_mongoc(
                     r"""
-        # Compile a program that links dynamically or statically to libmongoc,
-        # using variables from pkg-config or CMake's find_package command.
-        export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
-        export ENABLE_SSL=${ENABLE_SSL}
-        export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        PATH="${UV_INSTALL_DIR}:$PATH"
-        LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
-        LINK_STATIC=1 .evergreen/scripts/link-sample-program.sh
-        """,
+                    # Compile a program that links dynamically or statically to libmongoc,
+                    # using variables from pkg-config or CMake's find_package command.
+                    export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
+                    export ENABLE_SSL=${ENABLE_SSL}
+                    export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+                    PATH="${UV_INSTALL_DIR}:$PATH"
+                    LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
+                    LINK_STATIC=1 .evergreen/scripts/link-sample-program.sh
+                    """,
                     include_expansions_in_env=['distro_id', 'UV_INSTALL_DIR'],
                 ),
             ),
@@ -126,14 +124,14 @@ all_functions = OD(
             Function(
                 shell_mongoc(
                     r"""
-        # Compile a program that links dynamically or statically to libbson,
-        # using variables from pkg-config or from CMake's find_package command.
-        PATH="${UV_INSTALL_DIR}:$PATH"
-        BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
-        BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
-        """,
+                    # Compile a program that links dynamically or statically to libbson,
+                    # using variables from pkg-config or from CMake's find_package command.
+                    PATH="${UV_INSTALL_DIR}:$PATH"
+                    BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+                    BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+                    BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
+                    BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
+                    """,
                     include_expansions_in_env=['distro_id', 'UV_INSTALL_DIR'],
                 ),
             ),
@@ -141,53 +139,61 @@ all_functions = OD(
         (
             'link sample program MSVC',
             Function(
-                shell_mongoc(r"""
-        # Build libmongoc with CMake and compile a program that links
-        # dynamically or statically to it, using variables from CMake's
-        # find_package command.
-        export ENABLE_SSL=${ENABLE_SSL}
-        export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        PATH="${UV_INSTALL_DIR}:$PATH"
-        LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
-        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
-        """)
+                shell_mongoc(
+                    r"""
+                    # Build libmongoc with CMake and compile a program that links
+                    # dynamically or statically to it, using variables from CMake's
+                    # find_package command.
+                    export ENABLE_SSL=${ENABLE_SSL}
+                    export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+                    PATH="${UV_INSTALL_DIR}:$PATH"
+                    LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
+                    LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
+                    """,
+                )
             ),
         ),
         (
             'link sample program mingw',
             Function(
-                shell_mongoc(r"""
-        # Build libmongoc with CMake and compile a program that links
-        # dynamically to it, using variables from pkg-config.exe.
-        PATH="${UV_INSTALL_DIR}:$PATH"
-        cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
-        """)
+                shell_mongoc(
+                    r"""
+                    # Build libmongoc with CMake and compile a program that links
+                    # dynamically to it, using variables from pkg-config.exe.
+                    PATH="${UV_INSTALL_DIR}:$PATH"
+                    cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
+                    """,
+                )
             ),
         ),
         (
             'link sample program MSVC bson',
             Function(
-                shell_mongoc(r"""
-        # Build libmongoc with CMake and compile a program that links
-        # dynamically or statically to it, using variables from CMake's
-        # find_package command.
-        export ENABLE_SSL=${ENABLE_SSL}
-        export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        PATH="${UV_INSTALL_DIR}:$PATH"
-        LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
-        LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
-        """)
+                shell_mongoc(
+                    r"""
+                    # Build libmongoc with CMake and compile a program that links
+                    # dynamically or statically to it, using variables from CMake's
+                    # find_package command.
+                    export ENABLE_SSL=${ENABLE_SSL}
+                    export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+                    PATH="${UV_INSTALL_DIR}:$PATH"
+                    LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
+                    LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
+                    """,
+                )
             ),
         ),
         (
             'link sample program mingw bson',
             Function(
-                shell_mongoc(r"""
-        # Build libmongoc with CMake and compile a program that links
-        # dynamically to it, using variables from pkg-config.exe.
-        PATH="${UV_INSTALL_DIR}:$PATH"
-        cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
-        """)
+                shell_mongoc(
+                    r"""
+                    # Build libmongoc with CMake and compile a program that links
+                    # dynamically to it, using variables from pkg-config.exe.
+                    PATH="${UV_INSTALL_DIR}:$PATH"
+                    cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
+                    """,
+                )
             ),
         ),
         (
@@ -195,17 +201,17 @@ all_functions = OD(
             Function(
                 shell_mongoc(
                     r"""
-        # Note: coverage is currently only enabled on the ubuntu1804 distro.
-        # This script does not support MacOS, Windows, or non-x86_64 distros.
-        # Update accordingly if code coverage is expanded to other distros.
-        curl -Os https://uploader.codecov.io/latest/linux/codecov
-        chmod +x codecov
-        # -Z: Exit with a non-zero value if error.
-        # -g: Run with gcov support.
-        # -t: Codecov upload token.
-        # perl: filter verbose "Found" list and "Processing" messages.
-        ./codecov -Zgt "${codecov_token}" | perl -lne 'print if not m|^.*\.gcov(\.\.\.)?$|'
-        """,
+                    # Note: coverage is currently only enabled on the ubuntu1804 distro.
+                    # This script does not support MacOS, Windows, or non-x86_64 distros.
+                    # Update accordingly if code coverage is expanded to other distros.
+                    curl -Os https://uploader.codecov.io/latest/linux/codecov
+                    chmod +x codecov
+                    # -Z: Exit with a non-zero value if error.
+                    # -g: Run with gcov support.
+                    # -t: Codecov upload token.
+                    # perl: filter verbose "Found" list and "Processing" messages.
+                    ./codecov -Zgt "${codecov_token}" | perl -lne 'print if not m|^.*\.gcov(\.\.\.)?$|'
+                    """,
                     test=False,
                 ),
             ),
@@ -214,9 +220,7 @@ all_functions = OD(
             'compile coverage',
             Function(
                 shell_mongoc(
-                    r"""
-        COVERAGE=ON .evergreen/scripts/compile.sh
-        """,
+                    'COVERAGE=ON .evergreen/scripts/compile.sh',
                     add_expansions_to_env=True,
                 ),
             ),
@@ -228,19 +232,19 @@ all_functions = OD(
                 {'command': 'ec2.assume_role', 'params': {'role_arn': '${aws_test_secrets_role}'}},
                 shell_mongoc(
                     r"""
-        pushd ../drivers-evergreen-tools/.evergreen/auth_aws
-        ./setup_secrets.sh drivers/aws_auth
-        popd # ../drivers-evergreen-tools/.evergreen/auth_aws
-        """,
+                    pushd ../drivers-evergreen-tools/.evergreen/auth_aws
+                    ./setup_secrets.sh drivers/aws_auth
+                    popd # ../drivers-evergreen-tools/.evergreen/auth_aws
+                    """,
                     include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
                 ),
                 shell_mongoc(
                     r"""
-        pushd ../drivers-evergreen-tools/.evergreen/auth_aws
-        . ./activate-authawsvenv.sh
-        popd # ../drivers-evergreen-tools/.evergreen/auth_aws
-        .evergreen/scripts/run-aws-tests.sh
-        """,
+                    pushd ../drivers-evergreen-tools/.evergreen/auth_aws
+                    . ./activate-authawsvenv.sh
+                    popd # ../drivers-evergreen-tools/.evergreen/auth_aws
+                    .evergreen/scripts/run-aws-tests.sh
+                    """,
                     include_expansions_in_env=['TESTCASE'],
                 ),
             ),
