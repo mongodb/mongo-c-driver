@@ -849,83 +849,143 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
    RETURN(mongoc_stream_should_retry(tls->base_stream));
 }
 
-mongoc_secure_channel_cred *
-mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
-{
-   BSON_ASSERT_PARAM(opt);
-   mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
-
 #ifdef MONGOC_HAVE_SCH_CREDENTIALS
-   cred->cred = bson_malloc0(sizeof(SCH_CREDENTIALS));   
-   cred->cred->dwVersion = SCH_CREDENTIALS_VERSION;
-#else
-   cred->cred = bson_malloc0(sizeof(SCHANNEL_CRED));
-   cred->cred->dwVersion = SCHANNEL_CRED_VERSION;
-#endif
+
+void *
+_mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT cert, DWORD enabled_protocols)
+{
+   SCH_CREDENTIALS *cred = bson_malloc0(sizeof(SCH_CREDENTIALS));
+
+   // version
+   cred->dwVersion = SCH_CREDENTIALS_VERSION;
 
 /* SCHANNEL_CRED:
  * SCH_USE_STRONG_CRYPTO is not available in VS2010
  *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
 #ifdef SCH_USE_STRONG_CRYPTO
-   cred->cred->dwFlags = SCH_USE_STRONG_CRYPTO;
+   cred->dwFlags = SCH_USE_STRONG_CRYPTO;
 #endif
 
    /* By default, enable soft failing.
     * A certificate with no revocation check is a soft failure. */
-   cred->cred->dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+   cred->dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
    /* An offline OCSP responder / CRL distribution list is a soft failure. */
-   cred->cred->dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+   cred->dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
    if (opt->weak_cert_validation) {
-      cred->cred->dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
+      cred->dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
       TRACE("%s", "disabled server certificate checks");
    } else {
-      cred->cred->dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
+      cred->dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
       if (!_mongoc_ssl_opts_disable_certificate_revocation_check(opt)) {
-         cred->cred->dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
+         cred->dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
          TRACE("%s", "enabled server certificate revocation checks");
       }
       TRACE("%s", "enabled server certificate checks");
    }
 
    if (opt->allow_invalid_hostname) {
-      cred->cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
+      cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
    }
 
-   if (opt->ca_file) {
-      mongoc_secure_channel_setup_ca(opt);
+   if (cert) {
+      cred->cCreds = 1;
+      cred->paCred = &cert;
    }
 
-   if (opt->crl_file) {
-      mongoc_secure_channel_setup_crl(opt);
-   }
-
-   if (opt->pem_file) {
-      cred->cert = mongoc_secure_channel_setup_certificate(opt);
-
-      if (cred->cert) {
-         cred->cred->cCreds = 1;
-         cred->cred->paCred = &cred->cert;
-      }
-   }
-
-#ifdef MONGOC_HAVE_SCH_CREDENTIALS
-   cred->cred->cTlsParameters = 1;
    TLS_PARAMETERS tls_parameters;
-   cred->cred->pTlsParameters = &tls_parameters;
+   cred->cTlsParameters = 1;
+   cred->pTlsParameters = &tls_parameters;
 
-   DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+   // Blocked suites
+   CRYPTO_SETTINGS crypto_settings[1] = { { 0 } };
+   cred->pTlsParameters->cDisabledCrypto = 0;
+   cred->pTlsParameters->pDisabledCrypto = crypto_settings;
+
+   cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
+
+   return (void*)cred;
+}
+
+#endif
+
+void *
+_mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT cert, DWORD enabled_protocols)
+{
+   SCHANNEL_CRED *cred = bson_malloc0(sizeof(SCHANNEL_CRED));
+
+   cred->dwVersion = SCHANNEL_CRED_VERSION;
+
+/* SCHANNEL_CRED:
+ * SCH_USE_STRONG_CRYPTO is not available in VS2010
+ *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
+#ifdef SCH_USE_STRONG_CRYPTO
+   cred->dwFlags = SCH_USE_STRONG_CRYPTO;
+#endif
+
+   /* By default, enable soft failing.
+    * A certificate with no revocation check is a soft failure. */
+   cred->dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+   /* An offline OCSP responder / CRL distribution list is a soft failure. */
+   cred->dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+   if (opt->weak_cert_validation) {
+      cred->dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
+      TRACE("%s", "disabled server certificate checks");
+   } else {
+      cred->dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
+      if (!_mongoc_ssl_opts_disable_certificate_revocation_check(opt)) {
+         cred->dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
+         TRACE("%s", "enabled server certificate revocation checks");
+      }
+      TRACE("%s", "enabled server certificate checks");
+   }
+
+   if (opt->allow_invalid_hostname) {
+      cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
+   }
+
+   if (cert) {
+      cred->cCreds = 1;
+      cred->paCred = &cert;
+   }
+
+   cred->grbitEnabledProtocols = enabled_protocols;
+
+   return (void*)cred;
+}
+
+mongoc_secure_channel_cred *
+mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
+{
+   BSON_ASSERT_PARAM(opt);
+   mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
+   
    bool is_server = IsWindowsServer();
+   DWORD enabled_protocols =  SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
-   // TLS 1.3 is supported starting with Windows 11 and Windows Server 2022
+   /* TLS 1.3 is supported starting with Windows 11 and Windows Server 2022. 
+    * Schannel will not negotiate TLS 1.3 when SCHANNEL_CRED is used. */
    if ((is_server && _mongoc_verify_windows_version(10, 0, 19044, false)) ||
        (!is_server && _mongoc_verify_windows_version(10, 0, 22000, false))) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
       printf("Enabling TLS 1.3 with Secure Channel \n");
    }
 
-   cred->cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
+   if (opt->pem_file) {
+      cred->cert = mongoc_secure_channel_setup_certificate(opt);
+   }
+
+#ifdef MONGOC_HAVE_SCH_CREDENTIALS
+   // SCH_CREDENTIALS is supported in Windows 10 1809 / Server 1809 and later
+   if (_mongoc_verify_windows_version(10, 0, 17763, false)) { 
+      cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, cred->cert, enabled_protocols);
+      cred->cred_type = sch_credentials;
+   } else {
+      cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, cred->cert, enabled_protocols);
+      cred->cred_type = schannel_cred;
+   }
 #else
-   cred->cred->grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+   cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, cred->cert, enabled_protocols);
+   cred->cred_type = schannel_cred;
 #endif
 
    return cred;
@@ -1026,6 +1086,7 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
       char *msg = mongoc_winerr_to_string((DWORD)sspi_status);
       MONGOC_ERROR("Failed to initialize security context: %s", msg);
+      printf("Failed to initialize security context: %s\n", msg);
       bson_free(msg);
       // Detach the base stream so caller can free.
       tls->base_stream = NULL;
