@@ -970,6 +970,14 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
       printf("Enabling TLS 1.3 with Secure Channel \n");
    }
 
+   if (opt->ca_file) {
+      mongoc_secure_channel_setup_ca(opt);
+   }
+
+   if (opt->crl_file) {
+      mongoc_secure_channel_setup_crl(opt);
+   }
+
    if (opt->pem_file) {
       cred->cert = mongoc_secure_channel_setup_certificate(opt);
    }
@@ -979,13 +987,16 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    if (_mongoc_verify_windows_version(10, 0, 17763, false)) { 
       cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, cred->cert, enabled_protocols);
       cred->cred_type = sch_credentials;
+      printf("Using SCH_CREDENTIALS\n");
    } else {
       cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, cred->cert, enabled_protocols);
       cred->cred_type = schannel_cred;
+      printf("Using SCHANNEL_CREDS\n");
    }
 #else
    cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, cred->cert, enabled_protocols);
    cred->cred_type = schannel_cred;
+   printf("Using SCHANNEL_CREDS\n");
 #endif
 
    return cred;
