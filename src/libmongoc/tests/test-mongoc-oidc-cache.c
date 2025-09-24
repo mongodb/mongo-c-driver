@@ -63,7 +63,6 @@ test_oidc_cache_works(void)
       mongoc_oidc_callback_destroy(cb);
    }
 
-   mlib_time_point const start = mlib_now();
    // Expect callback is called to fetch token:
    {
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
@@ -108,18 +107,67 @@ test_oidc_cache_works(void)
       ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
    }
 
-   // Expect subsequent call to fetch tokens waits at least 100ms.
+   mongoc_oidc_cache_destroy(cache);
+}
+
+static void
+test_oidc_cache_waits_between_calls(void)
+{
+   bool found_in_cache = false;
+   bson_error_t error;
+   mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
+   callback_ctx_t ctx = {0};
+
+   // Set a callback:
    {
-      mlib_duration diff = mlib_time_difference(mlib_now(), start);
-      ASSERT_CMPINT64(mlib_milliseconds_count(diff), <, 100); // Before call: less than 100ms passed.
+      mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
+      mongoc_oidc_callback_set_user_data(cb, &ctx);
+      mongoc_oidc_cache_set_callback(cache, cb);
+      mongoc_oidc_callback_destroy(cb);
+   }
+
+   mlib_time_point const start = mlib_now();
+
+   // Expect callback is called to fetch token:
+   {
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
-      diff = mlib_time_difference(mlib_now(), start);
-      ASSERT_CMPINT64(mlib_milliseconds_count(diff), >=, 10); // Use shorter time to avoid timing test failures.
+      ASSERT_CMPINT(ctx.call_count, ==, 1);
+      ASSERT(!found_in_cache);
+      bson_free(token);
+   }
+
+   // Invalidate token to clear cache:
+   {
+      char *token = mongoc_oidc_cache_get_cached_token(cache);
+      ASSERT(token);
+      mongoc_oidc_cache_invalidate_token(cache, token);
+      bson_free(token);
+      ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
+   }
+
+   const int64_t expected_delay = 90; // Use shorter time. Windows appears to sleep slightly less.
+   // Expect duration less than delay:
+   {
+      mlib_duration diff = mlib_time_difference(mlib_now(), start);
+      ASSERT_CMPINT64(mlib_milliseconds_count(diff), <, expected_delay);
+   }
+
+   // Fetch token again:
+   {
+      char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
+      ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
       ASSERT_CMPINT(ctx.call_count, ==, 2);
       ASSERT(!found_in_cache);
       bson_free(token);
+   }
+
+   // Expect delay:
+   {
+      mlib_duration diff = mlib_time_difference(mlib_now(), start);
+      ASSERT_CMPINT64(mlib_milliseconds_count(diff), >=, expected_delay);
    }
 
    mongoc_oidc_cache_destroy(cache);
@@ -314,4 +362,5 @@ test_mongoc_oidc_install(TestSuite *suite)
    TestSuite_Add(suite, "/oidc/cache/set_cached_token", test_oidc_cache_set_cached_token);
    TestSuite_Add(suite, "/oidc/cache/propagates_error", test_oidc_cache_propagates_error);
    TestSuite_Add(suite, "/oidc/cache/invalidate", test_oidc_cache_invalidate);
+   TestSuite_Add(suite, "/oidc/cache/waits_between_calls", test_oidc_cache_waits_between_calls);
 }
