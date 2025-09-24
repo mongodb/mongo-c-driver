@@ -1,4 +1,5 @@
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from itertools import product
+
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType, FunctionCall
 from shrub.v3.evg_task import EvgTask, EvgTaskRef

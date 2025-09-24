@@ -19,6 +19,7 @@ from collections import OrderedDict as OD
 from typing import MutableSequence
 
 from evergreen_config_generator.functions import func, shell_exec
+from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
 
