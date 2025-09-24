@@ -69,21 +69,23 @@ all_functions = OD([
         export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+        PATH="${UV_INSTALL_DIR}:$PATH"
         LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
         LINK_STATIC=1 .evergreen/scripts/link-sample-program.sh
         ''',
-        include_expansions_in_env=['distro_id']),
+        include_expansions_in_env=['distro_id', 'UV_INSTALL_DIR']),
     )),
     ('link sample program bson', Function(
         shell_mongoc(r'''
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
+        PATH="${UV_INSTALL_DIR}:$PATH"
         BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
         ''',
-        include_expansions_in_env=['distro_id']),
+        include_expansions_in_env=['distro_id', 'UV_INSTALL_DIR']),
     )),
     ('link sample program MSVC', Function(
         shell_mongoc(r'''
@@ -92,24 +94,18 @@ all_functions = OD([
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
-        ''',
-        include_expansions_in_env=['distro_id']),
+        ''')
     )),
     ('link sample program mingw', Function(
         shell_mongoc(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
-        ''',
-        include_expansions_in_env=['distro_id']),
+        ''')
     )),
     ('link sample program MSVC bson', Function(
         shell_mongoc(r'''
@@ -118,23 +114,18 @@ all_functions = OD([
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
-        ''',
-        include_expansions_in_env=['distro_id']),
+        ''')
     )),
     ('link sample program mingw bson', Function(
         shell_mongoc(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
-        '''),
+        ''')
     )),
     ('update codecov.io', Function(
         shell_mongoc(r'''

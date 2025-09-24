@@ -4,7 +4,7 @@ from config_generator.etc.distros import find_large_distro
 from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import compiler_to_vars
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.components.funcs.upload_build import UploadBuild
 
 
@@ -37,7 +37,7 @@ def generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, MATRIX, MORE_TAGS=None, MORE_
                 task_name = f'{tag}-{task_name}'
 
             commands = []
-            commands.append(FindCMakeLatest.call())
+            commands.append(InstallUV.call())
             commands.append(SASL_TO_FUNC[sasl].call(vars=compile_vars if compile_vars else None))
             commands.append(UploadBuild.call())
 

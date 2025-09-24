@@ -2,7 +2,7 @@ from shrub.v3.evg_command import EvgCommandType
 from shrub.v3.evg_command import s3_put
 from shrub.v3.evg_task import EvgTask
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.components.funcs.install_uv import InstallUV
 
 from config_generator.etc.function import Function
 from config_generator.etc.function import merge_defns
@@ -18,7 +18,7 @@ class MakeDocs(Function):
             include_expansions_in_env=["distro_id"],
             script="""\
                 # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
-                uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
+                PATH="${UV_INSTALL_DIR}:$PATH" uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
             """,
         ),
     ]
@@ -120,7 +120,7 @@ def tasks():
         EvgTask(
             name="make-docs",
             commands=[
-                FindCMakeLatest.call(),
+                InstallUV.call(),
                 MakeDocs.call(),
                 UploadDocs.call(),
                 UploadManPages.call(),

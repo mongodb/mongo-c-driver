@@ -17,7 +17,7 @@
 from collections import OrderedDict as OD
 from typing import MutableSequence
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.components.funcs.install_uv import InstallUV
 
 from evergreen_config_generator.functions import shell_exec, func
 from evergreen_config_generator.tasks import NamedTask
@@ -30,7 +30,7 @@ def _create_tasks():
         task_name="testgcpkms-task",
         commands=[
             func("fetch-source"),
-            func("find-cmake-latest"),
+            func(InstallUV.name),
             shell_exec(
                 r"""
             echo "Building test-gcpkms ... begin"
@@ -72,7 +72,7 @@ def _create_tasks():
     failtask = NamedTask(
         task_name="testgcpkms-fail-task",
         commands=[
-            func("find-cmake-latest"),
+            func(InstallUV.name),
             shell_exec(
                 r"""
             pushd mongoc
