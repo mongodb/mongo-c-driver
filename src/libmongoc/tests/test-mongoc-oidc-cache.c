@@ -66,6 +66,7 @@ test_oidc_cache_works(void)
    {
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, "placeholder-token");
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT(!found_in_cache);
       bson_free(token);
@@ -82,6 +83,7 @@ test_oidc_cache_works(void)
    {
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, "placeholder-token");
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT(found_in_cache);
       bson_free(token);
@@ -110,6 +112,7 @@ test_oidc_cache_works(void)
       ASSERT_CMPINT64(mlib_milliseconds_count(diff), <, 100); // Before call: less than 100ms passed.
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, "placeholder-token");
       diff = mlib_time_difference(mlib_now(), start);
       ASSERT_CMPINT64(mlib_milliseconds_count(diff), >=, 10); // Use shorter time to avoid timing test failures.
       ASSERT_CMPINT(ctx.call_count, ==, 2);
@@ -185,6 +188,7 @@ test_oidc_cache_set_sleep(void)
       // First call to get_token does not sleep:
       token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, "placeholder-token");
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT_CMPINT(sleep_ctx.call_count, ==, 0);
       ASSERT(!found_in_cache);
@@ -196,6 +200,7 @@ test_oidc_cache_set_sleep(void)
       // Second call to get_token sleeps to ensure at least 100ms between calls:
       token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, "placeholder-token");
       ASSERT_CMPINT(ctx.call_count, ==, 2);
       ASSERT_CMPINT(sleep_ctx.call_count, ==, 1);
       ASSERT_CMPINT64(sleep_ctx.last_arg, >, 0);
