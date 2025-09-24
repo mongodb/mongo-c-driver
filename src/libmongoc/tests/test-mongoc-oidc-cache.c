@@ -102,8 +102,8 @@ test_oidc_cache_works(void)
    // Invalidating same token clears cache:
    {
       char *token = mongoc_oidc_cache_get_cached_token(cache);
-      mongoc_oidc_cache_invalidate_token(cache, token);
       ASSERT(token);
+      mongoc_oidc_cache_invalidate_token(cache, token);
       bson_free(token);
       ASSERT(!mongoc_oidc_cache_get_cached_token(cache));
    }
