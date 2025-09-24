@@ -25,6 +25,8 @@ typedef struct {
    bool returns_null;
 } callback_ctx_t;
 
+#define PLACEHOLDER_TOKEN "PLACEHOLDER_TOKEN"
+
 static mongoc_oidc_credential_t *
 oidc_callback_fn(mongoc_oidc_callback_params_t *params)
 {
@@ -34,7 +36,7 @@ oidc_callback_fn(mongoc_oidc_callback_params_t *params)
    if (ctx->returns_null) {
       return NULL;
    }
-   return mongoc_oidc_credential_new("placeholder-token");
+   return mongoc_oidc_credential_new(PLACEHOLDER_TOKEN);
 }
 
 static void
@@ -66,7 +68,7 @@ test_oidc_cache_works(void)
    {
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
-      ASSERT_CMPSTR(token, "placeholder-token");
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT(!found_in_cache);
       bson_free(token);
@@ -83,7 +85,7 @@ test_oidc_cache_works(void)
    {
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
-      ASSERT_CMPSTR(token, "placeholder-token");
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT(found_in_cache);
       bson_free(token);
@@ -112,7 +114,7 @@ test_oidc_cache_works(void)
       ASSERT_CMPINT64(mlib_milliseconds_count(diff), <, 100); // Before call: less than 100ms passed.
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
-      ASSERT_CMPSTR(token, "placeholder-token");
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
       diff = mlib_time_difference(mlib_now(), start);
       ASSERT_CMPINT64(mlib_milliseconds_count(diff), >=, 10); // Use shorter time to avoid timing test failures.
       ASSERT_CMPINT(ctx.call_count, ==, 2);
@@ -188,7 +190,7 @@ test_oidc_cache_set_sleep(void)
       // First call to get_token does not sleep:
       token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
-      ASSERT_CMPSTR(token, "placeholder-token");
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
       ASSERT_CMPINT(sleep_ctx.call_count, ==, 0);
       ASSERT(!found_in_cache);
@@ -200,7 +202,7 @@ test_oidc_cache_set_sleep(void)
       // Second call to get_token sleeps to ensure at least 100ms between calls:
       token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
-      ASSERT_CMPSTR(token, "placeholder-token");
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
       ASSERT_CMPINT(ctx.call_count, ==, 2);
       ASSERT_CMPINT(sleep_ctx.call_count, ==, 1);
       ASSERT_CMPINT64(sleep_ctx.last_arg, >, 0);
@@ -221,9 +223,9 @@ test_oidc_cache_set_cached_token(void)
 
    // Can set a cached token:
    {
-      mongoc_oidc_cache_set_cached_token(cache, "token1");
+      mongoc_oidc_cache_set_cached_token(cache, PLACEHOLDER_TOKEN);
       char *got = mongoc_oidc_cache_get_cached_token(cache);
-      ASSERT_CMPSTR(got, "token1");
+      ASSERT_CMPSTR(got, PLACEHOLDER_TOKEN);
       bson_free(got);
    }
 
