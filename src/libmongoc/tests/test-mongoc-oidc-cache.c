@@ -45,7 +45,6 @@ test_oidc_cache_works(void)
 
    mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
    callback_ctx_t ctx = {0};
-   mlib_time_point start;
 
    // Expect error if no callback set:
    {
@@ -62,9 +61,9 @@ test_oidc_cache_works(void)
       mongoc_oidc_callback_destroy(cb);
    }
 
+   mlib_time_point const start = mlib_now();
    // Expect callback is called to fetch token:
    {
-      start = mlib_now();
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
       ASSERT_CMPINT(ctx.call_count, ==, 1);
@@ -107,9 +106,11 @@ test_oidc_cache_works(void)
 
    // Expect subsequent call to fetch tokens waits at least 100ms.
    {
+      mlib_duration diff = mlib_time_difference(mlib_now(), start);
+      ASSERT_CMPINT64(mlib_milliseconds_count(diff), <, 100); // Before call: less than 100ms passed.
       char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
       ASSERT_OR_PRINT(token, error);
-      mlib_duration diff = mlib_time_difference(mlib_now(), start);
+      diff = mlib_time_difference(mlib_now(), start);
       ASSERT_CMPINT64(mlib_milliseconds_count(diff), >=, 10); // Use shorter time to avoid timing test failures.
       ASSERT_CMPINT(ctx.call_count, ==, 2);
       ASSERT(!found_in_cache);
