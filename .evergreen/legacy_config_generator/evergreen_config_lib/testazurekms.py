@@ -19,9 +19,10 @@ from collections import OrderedDict as OD
 from typing import MutableSequence
 
 from evergreen_config_generator.functions import func, shell_exec
-from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
+
+from config_generator.components.funcs.install_uv import InstallUV
 
 
 def _create_tasks():
@@ -29,7 +30,7 @@ def _create_tasks():
     passtask = NamedTask(task_name='testazurekms-task')
     passtask.commands = [
         func('fetch-source'),
-        func('find-cmake-latest'),
+        func(InstallUV.name),
         shell_exec(
             r"""
             echo "Building test-azurekms ... begin"
@@ -74,7 +75,7 @@ def _create_tasks():
     failtask = NamedTask(task_name='testazurekms-fail-task')
     failtask.commands = [
         func('fetch-source'),
-        func('find-cmake-latest'),
+        func(InstallUV.name),
         shell_exec(
             r"""
             pushd mongoc

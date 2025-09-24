@@ -88,6 +88,7 @@ functions:
       working_dir: mongoc
       include_expansions_in_env:
       - distro_id
+      - UV_INSTALL_DIR
       shell: bash
       script: |-
         set -o errexit
@@ -96,6 +97,7 @@ functions:
         export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+        PATH="${UV_INSTALL_DIR}:$PATH"
         LINK_STATIC=  .evergreen/scripts/link-sample-program.sh
         LINK_STATIC=1 .evergreen/scripts/link-sample-program.sh
   link sample program bson:
@@ -105,11 +107,13 @@ functions:
       working_dir: mongoc
       include_expansions_in_env:
       - distro_id
+      - UV_INSTALL_DIR
       shell: bash
       script: |-
         set -o errexit
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
+        PATH="${UV_INSTALL_DIR}:$PATH"
         BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 .evergreen/scripts/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  .evergreen/scripts/link-sample-program-bson.sh
@@ -119,8 +123,6 @@ functions:
     type: test
     params:
       working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -129,9 +131,7 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
   link sample program mingw:
@@ -139,24 +139,18 @@ functions:
     type: test
     params:
       working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
       shell: bash
       script: |-
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
   link sample program MSVC bson:
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -165,9 +159,7 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
   link sample program mingw bson:
@@ -180,9 +172,7 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
   update codecov.io:
   - command: shell.exec
@@ -247,7 +237,7 @@ tasks:
   tags:
   - hardened
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -263,7 +253,7 @@ tasks:
   - compression
   - zlib
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -279,7 +269,7 @@ tasks:
   - compression
   - snappy
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -295,7 +285,7 @@ tasks:
   - compression
   - zstd
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -312,7 +302,7 @@ tasks:
   - nosasl
   - nossl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -325,7 +315,7 @@ tasks:
   - func: upload-build
 - name: debug-compile-lto
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -338,7 +328,7 @@ tasks:
   - func: upload-build
 - name: debug-compile-lto-thin
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -354,7 +344,7 @@ tasks:
   - debug-compile
   - no-counters
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -367,7 +357,7 @@ tasks:
   - func: upload-build
 - name: compile-tracing
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -380,7 +370,7 @@ tasks:
   - func: upload-build
 - name: release-compile
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -397,7 +387,7 @@ tasks:
   - nosasl
   - openssl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -414,7 +404,7 @@ tasks:
   - debug-compile
   - nosasl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -431,7 +421,7 @@ tasks:
   - nosasl
   - winssl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -448,7 +438,7 @@ tasks:
   - openssl
   - sasl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -465,7 +455,7 @@ tasks:
   - debug-compile
   - sasl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -478,7 +468,7 @@ tasks:
   - func: upload-build
 - name: debug-compile-rdtscp
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -495,7 +485,7 @@ tasks:
   - sspi
   - winssl
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -510,7 +500,7 @@ tasks:
   tags:
   - debug-compile
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -525,6 +515,7 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
@@ -532,6 +523,7 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
@@ -540,6 +532,7 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
@@ -548,6 +541,7 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
     vars:
       BUILD_SAMPLE_WITH_CMAKE: 1
@@ -555,6 +549,7 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program MSVC
 - name: link-with-cmake-windows-ssl
   commands:
@@ -562,6 +557,7 @@ tasks:
   - func: bootstrap-mongo-orchestration
     vars:
       SSL: openssl
+  - func: install-uv
   - func: link sample program MSVC
     vars:
       ENABLE_SSL: 1
@@ -569,6 +565,7 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program MSVC
     vars:
       ENABLE_SNAPPY: 'ON'
@@ -576,35 +573,43 @@ tasks:
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program mingw
 - name: link-with-pkg-config
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
 - name: link-with-pkg-config-mac
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
 - name: link-with-pkg-config-ssl
   commands:
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: link sample program
     vars:
       ENABLE_SSL: 1
 - name: link-with-bson
   commands:
+  - func: install-uv
   - func: link sample program bson
 - name: link-with-bson-mac
   commands:
+  - func: install-uv
   - func: link sample program bson
 - name: link-with-bson-windows
   commands:
+  - func: install-uv
   - func: link sample program MSVC bson
 - name: link-with-bson-mingw
   commands:
+  - func: install-uv
   - func: link sample program mingw bson
 - name: debian-package-build
   commands:
@@ -712,7 +717,7 @@ tasks:
         .evergreen/scripts/build_snapshot_rpm.sh
 - name: debug-compile-with-warnings
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -725,10 +730,14 @@ tasks:
   - func: upload-build
 - name: install-libmongoc-after-libbson
   commands:
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
+      - UV_INSTALL_DIR
       shell: bash
       script: |-
         set -o errexit
@@ -738,6 +747,7 @@ tasks:
   - latest
   - test-coverage
   commands:
+  - func: install-uv
   - func: compile coverage
     vars:
       SASL: AUTO
@@ -763,6 +773,7 @@ tasks:
   - latest
   - test-coverage
   commands:
+  - func: install-uv
   - func: compile coverage
     vars:
       COMPILE_LIBMONGOCRYPT: 'ON'
@@ -933,6 +944,7 @@ tasks:
     vars:
       AUTH: noauth
       SSL: nossl
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -955,6 +967,7 @@ tasks:
     vars:
       AUTH: noauth
       SSL: nossl
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -977,6 +990,7 @@ tasks:
     vars:
       AUTH: noauth
       SSL: nossl
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -995,6 +1009,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1014,6 +1029,7 @@ tasks:
     vars:
       MONGODB_VERSION: latest
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1071,7 +1087,7 @@ tasks:
   - asan
   - authentication-tests
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
@@ -1102,6 +1118,7 @@ tasks:
       REQUIRE_API_VERSION: 'true'
       SSL: ssl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1126,6 +1143,7 @@ tasks:
       ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1150,6 +1168,7 @@ tasks:
       REQUIRE_API_VERSION: 'true'
       SSL: ssl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1174,6 +1193,7 @@ tasks:
       ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1198,6 +1218,7 @@ tasks:
       REQUIRE_API_VERSION: 'true'
       SSL: ssl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1222,6 +1243,7 @@ tasks:
       ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1246,6 +1268,7 @@ tasks:
       REQUIRE_API_VERSION: 'true'
       SSL: ssl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1270,6 +1293,7 @@ tasks:
       ORCHESTRATION_FILE: versioned-api-testing.json
       SSL: nossl
       TOPOLOGY: server
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1291,6 +1315,7 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1310,6 +1335,7 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1329,6 +1355,7 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1348,34 +1375,33 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+  - func: install-uv
   - func: run-simple-http-server
   - func: run-tests
     vars:
       URI: mongodb://localhost/
 - name: debug-compile-aws
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
       redirect_standard_error_to_output: true
       include_expansions_in_env:
-      - distro_id
       - CC
       shell: bash
       script: |-
         set -o errexit
         set -o errexit
         set -o pipefail
-        . .evergreen/scripts/find-cmake-latest.sh
-        cmake_binary="$(find_cmake_latest)"
+        PATH="${UV_INSTALL_DIR}:$PATH"
         # Use ccache if able.
         . .evergreen/scripts/find-ccache.sh
         find_ccache_and_export_vars "$(pwd)" || true
         # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
-        "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
-        "$cmake_binary" --build cmake-build --target test-awsauth
+        uvx cmake -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
+        uvx cmake --build cmake-build --target test-awsauth
   - func: upload-build
 - name: test-aws-openssl-regular-latest
   tags:
@@ -9800,7 +9826,7 @@ tasks:
 - name: testazurekms-task
   commands:
   - func: fetch-source
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9843,7 +9869,7 @@ tasks:
 - name: testazurekms-fail-task
   commands:
   - func: fetch-source
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9868,7 +9894,7 @@ tasks:
 - name: testgcpkms-task
   commands:
   - func: fetch-source
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9908,7 +9934,7 @@ tasks:
         GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
 - name: testgcpkms-fail-task
   commands:
-  - func: find-cmake-latest
+  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true

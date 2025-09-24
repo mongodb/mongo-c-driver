@@ -18,9 +18,10 @@ from collections import OrderedDict as OD
 from typing import MutableSequence
 
 from evergreen_config_generator.functions import func, shell_exec
-from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
+
+from config_generator.components.funcs.install_uv import InstallUV
 
 
 def _create_tasks():
@@ -28,7 +29,7 @@ def _create_tasks():
         task_name='testgcpkms-task',
         commands=[
             func('fetch-source'),
-            func('find-cmake-latest'),
+            func(InstallUV.name),
             shell_exec(
                 r"""
             echo "Building test-gcpkms ... begin"
@@ -70,7 +71,7 @@ def _create_tasks():
     failtask = NamedTask(
         task_name='testgcpkms-fail-task',
         commands=[
-            func('find-cmake-latest'),
+            func(InstallUV.name),
             shell_exec(
                 r"""
             pushd mongoc

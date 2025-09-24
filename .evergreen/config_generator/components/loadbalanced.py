@@ -5,7 +5,7 @@ from shrub.v3.evg_task import EvgTask, EvgTaskDependency, EvgTaskRef
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.upload_build import UploadBuild
@@ -57,6 +57,7 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
                     'LOAD_BALANCER': 'on',
                 }
             ),
+            InstallUV.call(),
             RunSimpleHTTPServer.call(),
             FunctionCall(func='start-load-balancer', vars={'MONGODB_URI': 'mongodb://localhost:27017,localhost:27018'}),
             RunTests().call(
@@ -78,10 +79,11 @@ def tasks():
         run_on=find_large_distro(_DISTRO_NAME).name,
         tags=['loadbalanced', _DISTRO_NAME, _COMPILER],
         commands=[
-            FindCMakeLatest.call(),
+            InstallUV.call(),
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 env={'CC': _COMPILER, 'CFLAGS': '-fno-omit-frame-pointer', 'SSL': 'OPENSSL'},
+                include_expansions_in_env=['distro_id', 'UV_INSTALL_DIR'],
                 working_dir='mongoc',
                 script='.evergreen/scripts/compile.sh',
             ),

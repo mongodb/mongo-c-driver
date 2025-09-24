@@ -8,9 +8,10 @@ set -o errexit # Exit the script with error if any of the commands fail
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 DIR=$(dirname $0)
-. $DIR/find-cmake-latest.sh
-CMAKE=$(find_cmake_latest)
-. $DIR/check-symlink.sh
+
+. "${DIR:?}/install-build-tools.sh"
+install_build_tools
+export CMAKE_GENERATOR="Ninja"
 
 # The major version of the project. Appears in certain install filenames.
 _full_version=$(cat "$DIR/../../VERSION_CURRENT")
@@ -53,13 +54,13 @@ fi
 
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF "$SCRATCH_DIR"
-  $CMAKE --build . --parallel
-  $CMAKE --build . --parallel --target install
+  cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF "$SCRATCH_DIR"
+  cmake --build . --parallel
+  cmake --build . --parallel --target install
 else
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF -DENABLE_STATIC=OFF "$SCRATCH_DIR"
-  $CMAKE --build . --parallel
-  $CMAKE --build . --parallel --target install
+  cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DBUILD_TESTING=OFF -DENABLE_TESTS=OFF -DENABLE_MONGOC=OFF -DENABLE_STATIC=OFF "$SCRATCH_DIR"
+  cmake --build . --parallel
+  cmake --build . --parallel --target install
 fi
 
 # Revert ccache options, they no longer apply.
@@ -77,8 +78,8 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   fi
 
   cd $EXAMPLE_DIR
-  $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
-  $CMAKE --build . --parallel
+  cmake -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
+  cmake --build . --parallel
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig

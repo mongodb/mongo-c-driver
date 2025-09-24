@@ -25,9 +25,9 @@ set version=1.31.0
 cd %BUILD_DIR% || goto :error
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "Ninja" DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_C_FLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_STATIC=ON .. || goto :error
-%CMAKE% --build . --parallel || goto :error
-%CMAKE% --build . --target install || goto :error
+uvx cmake -G "Ninja" DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_C_FLAGS="-pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_STATIC=ON .. || goto :error
+uvx cmake --build . --parallel || goto :error
+uvx cmake --build . --target install || goto :error
 
 rem Test our pkg-config file
 set EXAMPLE_DIR=%SRCROOT%\src\libbson\examples\

@@ -1,11 +1,10 @@
-from itertools import product
-
+from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType, FunctionCall
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
 from config_generator.components.funcs.fetch_source import FetchSource
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
+from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.etc.distros import find_large_distro, make_distro_str
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
@@ -38,13 +37,21 @@ class OpenSSLSetup(Function):
         bash_exec(
             command_type=EvgCommandType.SETUP,
             working_dir='mongoc',
-            include_expansions_in_env=['OPENSSL_VERSION', 'OPENSSL_ENABLE_FIPS', 'OPENSSL_USE_STATIC_LIBS'],
+            include_expansions_in_env=[
+                'OPENSSL_ENABLE_FIPS',
+                'OPENSSL_USE_STATIC_LIBS',
+                'OPENSSL_VERSION',
+            ],
             script='.evergreen/scripts/openssl-compat-setup.sh',
         ),
         bash_exec(
             command_type=EvgCommandType.SETUP,
             working_dir='mongoc',
-            include_expansions_in_env=['OPENSSL_VERSION', 'OPENSSL_USE_STATIC_LIBS'],
+            include_expansions_in_env=[
+                'OPENSSL_USE_STATIC_LIBS',
+                'OPENSSL_VERSION',
+                'UV_INSTALL_DIR',
+            ],
             script='.evergreen/scripts/openssl-compat-check.sh',
         ),
     ]
@@ -70,7 +77,7 @@ def tasks():
                 tags=[TAG, f'openssl-{version}', f'openssl-{link_type}', distro_name, compiler],
                 commands=[
                     FetchSource.call(),
-                    FindCMakeLatest.call(),
+                    InstallUV.call(),
                     OpenSSLSetup.call(vars=vars),
                     FunctionCall(func='run auth tests'),
                 ],
@@ -91,7 +98,7 @@ def tasks():
                 tags=[TAG, f'openssl-fips-{version}', f'openssl-{link_type}', distro_name, compiler],
                 commands=[
                     FetchSource.call(),
-                    FindCMakeLatest.call(),
+                    InstallUV.call(),
                     OpenSSLSetup.call(vars=vars),
                     FunctionCall(func='run auth tests'),
                 ],

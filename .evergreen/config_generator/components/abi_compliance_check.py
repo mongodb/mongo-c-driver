@@ -1,14 +1,14 @@
 from shrub.v3.evg_command import EvgCommandType, s3_put
 from shrub.v3.evg_task import EvgTask
 
-from config_generator.components.funcs.set_cache_dir import SetCacheDir
+from config_generator.components.funcs.install_uv import InstallUV
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
 
 
 class CheckABICompliance(Function):
     name = 'abi-compliance-check'
-    commands = SetCacheDir.commands + [
+    commands = [
         bash_exec(
             command_type=EvgCommandType.SETUP,
             working_dir='mongoc',
@@ -19,7 +19,7 @@ class CheckABICompliance(Function):
             command_type=EvgCommandType.TEST,
             add_expansions_to_env=True,
             working_dir='mongoc',
-            include_expansions_in_env=['MONGO_C_DRIVER_CACHE_DIR'],
+            include_expansions_in_env=['MONGO_C_DRIVER_CACHE_DIR', 'UV_INSTALL_DIR'],
             script='.evergreen/scripts/abi-compliance-check.sh',
         ),
         s3_put(
@@ -55,6 +55,9 @@ def tasks():
     return [
         EvgTask(
             name=CheckABICompliance.name,
-            commands=[CheckABICompliance.call()],
+            commands=[
+                InstallUV.call(),
+                CheckABICompliance.call(),
+            ],
         )
     ]
