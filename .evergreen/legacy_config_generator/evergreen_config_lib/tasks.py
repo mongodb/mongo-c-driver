@@ -16,7 +16,7 @@ from collections import OrderedDict as OD
 from itertools import chain
 from typing import ClassVar, Iterable, Literal, Mapping, MutableSequence, Optional, Sequence
 
-from evergreen_config_generator import Scalar, Value
+from evergreen_config_generator import Value
 from evergreen_config_generator.functions import func, s3_put
 from evergreen_config_generator.tasks import (
     DependencySpec,

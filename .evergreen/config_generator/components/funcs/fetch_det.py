@@ -1,4 +1,4 @@
-from shrub.v3.evg_command import EvgCommandType, expansions_update
+from shrub.v3.evg_command import EvgCommandType
 
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
