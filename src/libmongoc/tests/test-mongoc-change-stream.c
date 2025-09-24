@@ -1932,12 +1932,14 @@ prose_test_18(void)
 
 // Test that a resume does not occur after an "invalidate" event.
 static void
-iterate_after_invalidate(void)
+iterate_after_invalidate(void *test_ctx)
 {
    mongoc_client_t *client = test_framework_new_default_client();
    mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
    bson_error_t error;
    int64_t start_time = bson_get_monotonic_time();
+
+   BSON_UNUSED(test_ctx);
 
    // Insert a document into the collection to ensure the collection is created.
    bool ok = mongoc_collection_insert_one(coll, tmp_bson("{'foo': 'bar'}"), NULL /* opts */, NULL /* reply */, &error);
@@ -2246,7 +2248,12 @@ test_change_stream_install(TestSuite *suite)
                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest(suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest(suite, "/change_streams/prose_test_18", prose_test_18);
-   TestSuite_AddLive(suite, "/change_streams/iterate_after_invalidate", iterate_after_invalidate);
+   TestSuite_AddFull(suite,
+                     "/change_streams/iterate_after_invalidate",
+                     iterate_after_invalidate,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
                      "/change_stream/batchSize0",
                      test_change_stream_batchSize0,
