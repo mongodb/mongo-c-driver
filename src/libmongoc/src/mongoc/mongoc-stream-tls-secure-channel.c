@@ -886,7 +886,7 @@ _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_C
       cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
    }
 
-   if (cert) {
+   if (*cert) {
       cred->cCreds = 1;
       cred->paCred = cert;
    }
@@ -935,7 +935,7 @@ _mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CON
       cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
    }
 
-   if (cert) {
+   if (*cert) {
       cred->cCreds = 1;
       cred->paCred = cert;
    }
