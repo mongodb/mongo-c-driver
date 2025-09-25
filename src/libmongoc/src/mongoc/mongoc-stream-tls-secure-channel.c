@@ -856,7 +856,6 @@ _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_C
 {
    SCH_CREDENTIALS *cred = bson_malloc0(sizeof(SCH_CREDENTIALS));
 
-   // version
    cred->dwVersion = SCH_CREDENTIALS_VERSION;
 
 /* SCHANNEL_CRED:
@@ -892,18 +891,11 @@ _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_C
       cred->paCred = cert;
    }
 
-   TLS_PARAMETERS tls_parameters;
    cred->cTlsParameters = 1;
-   cred->pTlsParameters = &tls_parameters;
-
-   // Blocked suites
-   CRYPTO_SETTINGS crypto_settings[1] = { { 0 } };
-   cred->pTlsParameters->cDisabledCrypto = 0;
-   cred->pTlsParameters->pDisabledCrypto = crypto_settings;
-
+   cred->pTlsParameters = bson_malloc0(sizeof(TLS_PARAMETERS));
    cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
 
-   return (void*)cred;
+   return (void *)cred;
 }
 
 #endif
@@ -950,7 +942,7 @@ _mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CON
 
    cred->grbitEnabledProtocols = enabled_protocols;
 
-   return (void*)cred;
+   return (void *)cred;
 }
 
 mongoc_secure_channel_cred *
@@ -958,16 +950,15 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 {
    BSON_ASSERT_PARAM(opt);
    mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
-   
-   bool is_server = IsWindowsServer();
-   DWORD enabled_protocols =  SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
-   /* TLS 1.3 is supported starting with Windows 11 and Windows Server 2022. 
+   bool is_server = IsWindowsServer();
+   DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+
+   /* TLS 1.3 is supported on Windows 11  (or Windows Server 2022) and newer.
     * Schannel will not negotiate TLS 1.3 when SCHANNEL_CRED is used. */
    if ((is_server && _mongoc_verify_windows_version(10, 0, 19044, false)) ||
        (!is_server && _mongoc_verify_windows_version(10, 0, 22000, false))) {
       enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
-      printf("Enabling TLS 1.3 with Secure Channel \n");
    }
 
    if (opt->ca_file) {
@@ -984,7 +975,7 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 
 #ifdef MONGOC_HAVE_SCH_CREDENTIALS
    // SCH_CREDENTIALS is supported in Windows 10 1809 / Server 1809 and later
-   if (_mongoc_verify_windows_version(10, 0, 17763, false)) { 
+   if (_mongoc_verify_windows_version(10, 0, 17763, false)) {
       cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, &cred->cert, enabled_protocols);
       cred->cred_type = sch_credentials;
    } else {
@@ -1007,6 +998,12 @@ mongoc_secure_channel_cred_deleter(void *cred_void)
       return;
    }
    CertFreeCertificateContext(cred->cert);
+#ifdef MONGOC_HAVE_SCH_CREDENTIALS
+   if (cred->cred_type == sch_credentials) {
+      SCH_CREDENTIALS *sch_cred = (SCH_CREDENTIALS *)cred->cred;
+      bson_free(sch_cred->pTlsParameters);
+   }
+#endif
    bson_free(cred->cred);
    bson_free(cred);
 }
@@ -1084,7 +1081,7 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
                                           UNISP_NAME,           /* security package */
                                           SECPKG_CRED_OUTBOUND, /* we are preparing outbound connection */
                                           NULL,                 /*  Optional logon */
-                                          cred->cred,          /* TLS "configuration", "auth data" */
+                                          cred->cred,           /* TLS "configuration", "auth data" */
                                           NULL,                 /* unused */
                                           NULL,                 /* unused */
                                           &secure_channel->cred_handle->cred_handle, /* credential OUT param */

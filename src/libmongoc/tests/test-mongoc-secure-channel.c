@@ -96,21 +96,21 @@ test_secure_channel_shared_creds_stream(void *unused)
       mongoc_shared_ptr_reset_null(&cred_ptr);
    }
 
-   // Test with bad SCHANNEL_CRED to exercise error path:
+   // Test with bad SCHANNEL CREDENTIALS to exercise error path:
    {
       mongoc_secure_channel_cred *cred = mongoc_secure_channel_cred_new(&ssl_opt);
       mongoc_shared_ptr cred_ptr = mongoc_shared_ptr_create(cred, mongoc_secure_channel_cred_deleter);
 #ifdef MONGOC_HAVE_SCH_CREDENTIALS
-   if (cred->cred_type == sch_credentials) {
-      SCH_CREDENTIALS *sch_cred = (SCH_CREDENTIALS*)cred->cred;
-      sch_cred->dwVersion = 0; // Invalid version.
-   } else {
-      SCHANNEL_CRED *sch_cred = (SCHANNEL_CRED*)cred->cred;
-      sch_cred->dwVersion = 0; 
-   }
+      if (cred->cred_type == sch_credentials) {
+         SCH_CREDENTIALS *sch_cred = (SCH_CREDENTIALS *)cred->cred;
+         sch_cred->dwVersion = 0; // Invalid version.
+      } else {
+         SCHANNEL_CRED *sch_cred = (SCHANNEL_CRED *)cred->cred;
+         sch_cred->dwVersion = 0;
+      }
 #else
-   SCHANNEL_CRED *sch_cred = (SCHANNEL_CRED*)cred->cred;
-   sch_cred->dwVersion = 0; 
+      SCHANNEL_CRED *sch_cred = (SCHANNEL_CRED *)cred->cred;
+      sch_cred->dwVersion = 0;
 #endif
       capture_logs(true);
       mongoc_stream_t *stream = connect_with_secure_channel_cred(&ssl_opt, cred_ptr, &error);

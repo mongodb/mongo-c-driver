@@ -46,10 +46,7 @@ typedef enum {
 } ssl_connect_state;
 
 /* enum for underlying type cred field in mongoc_secure_channel_cred */
-typedef enum {
-   schannel_cred,
-   sch_credentials
-} schannel_credential_type;
+typedef enum { schannel_cred, sch_credentials } schannel_credential_type;
 
 /* Structs to store Schannel handles */
 typedef struct {
@@ -61,7 +58,7 @@ typedef struct {
 typedef struct _mongoc_secure_channel_cred {
    PCCERT_CONTEXT cert; /* Owning. Optional client cert. */
    schannel_credential_type cred_type;
-   void *cred;          /* Underlying type is specified by schannel_credential_type. */
+   void *cred; /* Underlying type is specified by schannel_credential_type. */
 } mongoc_secure_channel_cred;
 
 typedef struct {
