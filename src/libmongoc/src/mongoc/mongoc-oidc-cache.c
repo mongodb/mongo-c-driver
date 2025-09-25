@@ -137,7 +137,6 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
    BSON_OPTIONAL_PARAM(error);
 
    char *token = NULL;
-   mongoc_oidc_credential_t *cred = NULL;
 
    *found_in_cache = false;
 
@@ -152,6 +151,16 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
       return token;
    }
 
+   // Prepare to call callback outside of lock:
+   mongoc_oidc_credential_t *cred = NULL;
+   mongoc_oidc_callback_params_t *params = mongoc_oidc_callback_params_new();
+   mongoc_oidc_callback_params_set_user_data(params, mongoc_oidc_callback_get_user_data(cache->callback));
+   // From spec: "If CSOT is not applied, then the driver MUST use 1 minute as the timeout."
+   // The timeout parameter (when set) is meant to be directly compared against bson_get_monotonic_time(). It is a
+   // time point, not a duration.
+   mongoc_oidc_callback_params_set_timeout(
+      params, mlib_microseconds_count(mlib_time_add(mlib_now(), mlib_duration(1, min)).time_since_monotonic_start));
+
    // Obtain write-lock:
    bson_shared_mutex_lock(&cache->lock);
 
@@ -161,14 +170,6 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
       token = bson_strdup(cache->token);
       goto unlock_and_return;
    }
-
-   mongoc_oidc_callback_params_t *params = mongoc_oidc_callback_params_new();
-   mongoc_oidc_callback_params_set_user_data(params, mongoc_oidc_callback_get_user_data(cache->callback));
-   // From spec: "If CSOT is not applied, then the driver MUST use 1 minute as the timeout."
-   // The timeout parameter (when set) is meant to be directly compared against bson_get_monotonic_time(). It is a
-   // time point, not a duration.
-   mongoc_oidc_callback_params_set_timeout(
-      params, mlib_microseconds_count(mlib_time_add(mlib_now(), mlib_duration(1, min)).time_since_monotonic_start));
 
    // From spec: "Wait until it has been at least 100ms since the last callback invocation"
    if (cache->ever_called) {
@@ -184,7 +185,6 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
 
    cache->last_called = mlib_now();
    cache->ever_called = true;
-   mongoc_oidc_callback_params_destroy(params);
 
    if (!cred) {
       SET_ERROR("MONGODB-OIDC callback failed");
@@ -196,6 +196,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
 
 unlock_and_return:
    bson_shared_mutex_unlock(&cache->lock);
+   mongoc_oidc_callback_params_destroy(params);
    mongoc_oidc_credential_destroy(cred);
    return token;
 }
