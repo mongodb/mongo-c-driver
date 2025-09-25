@@ -122,10 +122,15 @@ mongoc_oidc_cache_set_cached_token(mongoc_oidc_cache_t *cache, const char *token
    BSON_ASSERT_PARAM(cache);
    BSON_OPTIONAL_PARAM(token);
 
-   bson_shared_mutex_lock(&cache->lock);
-   char *const old_token = cache->token;
-   cache->token = bson_strdup(token);
-   bson_shared_mutex_unlock(&cache->lock);
+   char *old_token;
+
+   // Lock to update token:
+   {
+      bson_shared_mutex_lock(&cache->lock);
+      old_token = cache->token;
+      cache->token = bson_strdup(token);
+      bson_shared_mutex_unlock(&cache->lock);
+   }
    bson_free(old_token);
 }
 
@@ -162,40 +167,41 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
       params, mlib_microseconds_count(mlib_time_add(mlib_now(), mlib_duration(1, min)).time_since_monotonic_start));
 
    // Obtain write-lock:
-   bson_shared_mutex_lock(&cache->lock);
-
-   // Check if another thread populated cache between checking cached token and obtaining write lock:
-   if (cache->token) {
-      *found_in_cache = true;
-      token = bson_strdup(cache->token);
-      goto unlock_and_return;
-   }
-
-   // From spec: "Wait until it has been at least 100ms since the last callback invocation"
-   if (cache->ever_called) {
-      mlib_duration since_last_call = mlib_time_difference(mlib_now(), cache->last_called);
-      if (mlib_duration_cmp(since_last_call, <, (100, ms))) {
-         mlib_duration to_sleep = mlib_duration((100, ms), minus, since_last_call);
-         cache->usleep_fn(mlib_microseconds_count(to_sleep), cache->usleep_data);
+   {
+      bson_shared_mutex_lock(&cache->lock);
+      // Check if another thread populated cache between checking cached token and obtaining write lock:
+      if (cache->token) {
+         *found_in_cache = true;
+         token = bson_strdup(cache->token);
+         goto unlock_and_return;
       }
+
+      // From spec: "Wait until it has been at least 100ms since the last callback invocation"
+      if (cache->ever_called) {
+         mlib_duration since_last_call = mlib_time_difference(mlib_now(), cache->last_called);
+         if (mlib_duration_cmp(since_last_call, <, (100, ms))) {
+            mlib_duration to_sleep = mlib_duration((100, ms), minus, since_last_call);
+            cache->usleep_fn(mlib_microseconds_count(to_sleep), cache->usleep_data);
+         }
+      }
+
+      // Call callback:
+      cred = mongoc_oidc_callback_get_fn(cache->callback)(params);
+
+      cache->last_called = mlib_now();
+      cache->ever_called = true;
+
+      if (!cred) {
+         SET_ERROR("MONGODB-OIDC callback failed");
+         goto unlock_and_return;
+      }
+
+      token = bson_strdup(mongoc_oidc_credential_get_access_token(cred));
+      cache->token = bson_strdup(token); // Cache a copy.
+
+   unlock_and_return:
+      bson_shared_mutex_unlock(&cache->lock);
    }
-
-   // Call callback:
-   cred = mongoc_oidc_callback_get_fn(cache->callback)(params);
-
-   cache->last_called = mlib_now();
-   cache->ever_called = true;
-
-   if (!cred) {
-      SET_ERROR("MONGODB-OIDC callback failed");
-      goto unlock_and_return;
-   }
-
-   token = bson_strdup(mongoc_oidc_credential_get_access_token(cred));
-   cache->token = bson_strdup(token); // Cache a copy.
-
-unlock_and_return:
-   bson_shared_mutex_unlock(&cache->lock);
    mongoc_oidc_callback_params_destroy(params);
    mongoc_oidc_credential_destroy(cred);
    return token;
@@ -207,12 +213,13 @@ mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token
    BSON_ASSERT_PARAM(cache);
    BSON_ASSERT_PARAM(token);
 
-   bson_shared_mutex_lock(&cache->lock);
-
-   if (cache->token && 0 == strcmp(cache->token, token)) {
-      bson_free(cache->token);
-      cache->token = NULL;
+   // Lock to clear token
+   {
+      bson_shared_mutex_lock(&cache->lock);
+      if (cache->token && 0 == strcmp(cache->token, token)) {
+         bson_free(cache->token);
+         cache->token = NULL;
+      }
+      bson_shared_mutex_unlock(&cache->lock);
    }
-
-   bson_shared_mutex_unlock(&cache->lock);
 }
