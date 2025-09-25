@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <common-macros-private.h> // MC_DISABLE_CAST_QUAL_WARNING_BEGIN
 #include <common-thread-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-oidc-cache-private.h>
@@ -107,9 +108,11 @@ mongoc_oidc_cache_get_cached_token(const mongoc_oidc_cache_t *cache)
    BSON_ASSERT_PARAM(cache);
 
    // Cast away const to lock. This function is logically const (read-only).
+   MC_DISABLE_CAST_QUAL_WARNING_BEGIN
    bson_shared_mutex_lock_shared(&((mongoc_oidc_cache_t *)cache)->lock);
    char *token = bson_strdup(cache->token);
    bson_shared_mutex_unlock_shared(&((mongoc_oidc_cache_t *)cache)->lock);
+   MC_DISABLE_CAST_QUAL_WARNING_END
    return token;
 }
 

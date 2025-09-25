@@ -96,4 +96,16 @@
 #define MC_DISABLE_IMPLICIT_WARNING_END
 #endif
 
+// Disable the -Wcast-qual warning
+#if defined(__GNUC__)
+#define MC_DISABLE_CAST_QUAL_WARNING_BEGIN MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
+#define MC_DISABLE_CAST_QUAL_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
+#elif defined(__clang__)
+#define MC_DISABLE_CAST_QUAL_WARNING_BEGIN MC_PRAGMA_DIAGNOSTIC_PUSH _Pragma("clang diagnostic ignored \"-Wcast-qual\"")
+#define MC_DISABLE_CAST_QUAL_WARNING_END MC_PRAGMA_DIAGNOSTIC_POP
+#else
+#define MC_DISABLE_CAST_QUAL_WARNING_BEGIN
+#define MC_DISABLE_CAST_QUAL_WARNING_END
+#endif
+
 #endif /* MONGO_C_DRIVER_COMMON_MACROS_PRIVATE_H */
