@@ -563,10 +563,8 @@ endif()
 
 if (HAVE_SCH_CREDENTIALS)
    set (MONGOC_HAVE_SCH_CREDENTIALS 1)
-   message (STATUS "SCH_CREDENTIALS found")
 else ()
    set (MONGOC_HAVE_SCH_CREDENTIALS 0)
-   message (STATUS "Using deprecated SCHANNEL_CREDS")
 endif ()
 
 
