@@ -213,13 +213,17 @@ mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token
    BSON_ASSERT_PARAM(cache);
    BSON_ASSERT_PARAM(token);
 
+   char *old_token = NULL;
+
    // Lock to clear token
    {
       bson_shared_mutex_lock(&cache->lock);
       if (cache->token && 0 == strcmp(cache->token, token)) {
-         bson_free(cache->token);
+         old_token = cache->token;
          cache->token = NULL;
       }
       bson_shared_mutex_unlock(&cache->lock);
    }
+
+   bson_free(old_token);
 }
