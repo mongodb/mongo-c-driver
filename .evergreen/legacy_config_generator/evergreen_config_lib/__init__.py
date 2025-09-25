@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Iterable
+
 from evergreen_config_generator.functions import shell_exec
 
 
@@ -30,7 +31,7 @@ def shell_mongoc(
 ):
     return shell_exec(
         script,
-        working_dir="mongoc",
+        working_dir='mongoc',
         test=test,
         errexit=errexit,
         xtrace=xtrace,

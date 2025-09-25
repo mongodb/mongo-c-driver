@@ -18,19 +18,19 @@
 from collections import OrderedDict as OD
 from typing import MutableSequence
 
-from config_generator.components.funcs.install_uv import InstallUV
-
-from evergreen_config_generator.functions import shell_exec, func
+from evergreen_config_generator.functions import func, shell_exec
+from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
-from evergreen_config_generator.taskgroups import TaskGroup
+
+from config_generator.components.funcs.install_uv import InstallUV
 
 
 def _create_tasks():
     # passtask is expected to run on a remote Azure VM and succeed at obtaining credentials.
-    passtask = NamedTask(task_name="testazurekms-task")
+    passtask = NamedTask(task_name='testazurekms-task')
     passtask.commands = [
-        func("fetch-source"),
+        func('fetch-source'),
         func(InstallUV.name),
         shell_exec(
             r"""
@@ -73,9 +73,9 @@ def _create_tasks():
         ),
     ]
 
-    failtask = NamedTask(task_name="testazurekms-fail-task")
+    failtask = NamedTask(task_name='testazurekms-fail-task')
     failtask.commands = [
-        func("fetch-source"),
+        func('fetch-source'),
         func(InstallUV.name),
         shell_exec(
             r"""
@@ -102,28 +102,23 @@ def _create_tasks():
 
 def _create_variant():
     return Variant(
-        name="testazurekms-variant",
-        display_name="Azure KMS",
+        name='testazurekms-variant',
+        display_name='Azure KMS',
         # Azure Virtual Machine created is Debian 10.
-        run_on="debian11-small",
-        tasks=["testazurekms_task_group", "testazurekms-fail-task"],
+        run_on='debian11-small',
+        tasks=['testazurekms_task_group', 'testazurekms-fail-task'],
         batchtime=20160,
     )  # Use a batchtime of 14 days as suggested by the CSFLE test README
 
 
 def _create_task_group():
-    task_group = TaskGroup(name="testazurekms_task_group")
+    task_group = TaskGroup(name='testazurekms_task_group')
     task_group.setup_group_can_fail_task = True
     task_group.setup_group_timeout_secs = 1800  # 30 minutes
     task_group.setup_group = [
-        func("fetch-det"),
+        func('fetch-det'),
         # Assume role to get AWS secrets.
-        {
-            "command": "ec2.assume_role",
-            "params": {
-                "role_arn": "${aws_test_secrets_role}"
-            }
-        },
+        {'command': 'ec2.assume_role', 'params': {'role_arn': '${aws_test_secrets_role}'}},
         shell_exec(
             r"""
             DRIVERS_TOOLS=$(pwd)/drivers-evergreen-tools
@@ -143,17 +138,17 @@ def _create_task_group():
             $DRIVERS_TOOLS/.evergreen/csfle/azurekms/create-and-setup-vm.sh
             """,
             test=False,
-            include_expansions_in_env=[ "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN" ]
+            include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
         ),
         # Load the AZUREKMS_VMNAME expansion.
         OD(
             [
-                ("command", "expansions.update"),
+                ('command', 'expansions.update'),
                 (
-                    "params",
+                    'params',
                     OD(
                         [
-                            ("file", "testazurekms-expansions.yml"),
+                            ('file', 'testazurekms-expansions.yml'),
                         ]
                     ),
                 ),
@@ -165,12 +160,12 @@ def _create_task_group():
         # Load expansions again. The setup task may have failed before running `expansions.update`.
         OD(
             [
-                ("command", "expansions.update"),
+                ('command', 'expansions.update'),
                 (
-                    "params",
+                    'params',
                     OD(
                         [
-                            ("file", "testazurekms-expansions.yml"),
+                            ('file', 'testazurekms-expansions.yml'),
                         ]
                     ),
                 ),
@@ -186,7 +181,7 @@ def _create_task_group():
             test=False,
         ),
     ]
-    task_group.tasks = ["testazurekms-task"]
+    task_group.tasks = ['testazurekms-task']
     return task_group
 
 

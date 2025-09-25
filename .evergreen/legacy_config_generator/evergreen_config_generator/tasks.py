@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import OrderedDict as OD
 import copy
-from itertools import chain, product
 import itertools
+from collections import OrderedDict as OD
+from itertools import chain, product
 from typing import ClassVar, Iterable, Literal, Mapping, MutableMapping, Sequence, Union
 
 from evergreen_config_generator import ConfigObject
 from evergreen_config_generator.functions import func
 
-from . import Value, MutableValueMapping, ValueSequence
-
+from . import MutableValueMapping, Value, ValueSequence
 
 DependencySpec = Union[str, Mapping[str, Value]]
 
@@ -44,7 +43,7 @@ class Task(ConfigObject):
         self._depends_on = list(map(self._normal_dep, depends_on))
 
         if exec_timeout_secs is not None:
-            self.options["exec_timeout_secs"] = exec_timeout_secs
+            self.options['exec_timeout_secs'] = exec_timeout_secs
 
     @property
     def dependencies(self) -> Sequence[Mapping[str, Value]]:
@@ -54,7 +53,7 @@ class Task(ConfigObject):
 
     def _normal_dep(self, spec: DependencySpec) -> Mapping[str, Value]:
         if isinstance(spec, str):
-            return OD([("name", spec)])
+            return OD([('name', spec)])
         return spec
 
     @property
@@ -83,7 +82,7 @@ class Task(ConfigObject):
 
     def add_dependency(self, dependency: DependencySpec):
         if isinstance(dependency, str):
-            dependency = OD([("name", dependency)])
+            dependency = OD([('name', dependency)])
 
         self._depends_on.append(dependency)
 
@@ -91,15 +90,15 @@ class Task(ConfigObject):
         task: MutableValueMapping = super().to_dict()  # type: ignore
         assert isinstance(task, MutableMapping)
         if self.tags:
-            task["tags"] = list(self.tags)
+            task['tags'] = list(self.tags)
         task.update(self.options)
         deps: Sequence[MutableValueMapping] = list(self.dependencies)  # type: ignore
         if deps:
             if len(deps) == 1:
-                task["depends_on"] = OD(deps[0])
+                task['depends_on'] = OD(deps[0])
             else:
-                task["depends_on"] = copy.deepcopy(deps)
-        task["commands"] = list(
+                task['depends_on'] = copy.deepcopy(deps)
+        task['commands'] = list(
             itertools.chain(
                 self.pre_commands(),
                 self.main_commands(),
@@ -149,7 +148,7 @@ def both_or_neither(rule0: bool, rule1: bool) -> None:
 
 
 class SettingsAccess:
-    def __init__(self, inst: "MatrixTask") -> None:
+    def __init__(self, inst: 'MatrixTask') -> None:
         self._task = inst
 
     def __getattr__(self, __setting: str) -> str | bool:
@@ -170,18 +169,18 @@ class MatrixTask(Task):
         value = self.setting_value(axis_name)
         if value is False:
             # E.g., if self.auth is False, return 'noauth'.
-            return f"no{axis_name}"
+            return f'no{axis_name}'
         elif value is True:
             return axis_name
         else:
             return value
 
-    def on_off(self, key: str, val: str) -> Literal["on", "off"]:
-        return "on" if self.setting_value(key) == val else "off"
+    def on_off(self, key: str, val: str) -> Literal['on', 'off']:
+        return 'on' if self.setting_value(key) == val else 'off'
 
     @property
     def name(self) -> str:
-        return "-".join(self.name_parts())
+        return '-'.join(self.name_parts())
 
     def name_parts(self) -> Iterable[str]:
         raise NotImplementedError
@@ -191,24 +190,24 @@ class MatrixTask(Task):
         return SettingsAccess(self)
 
     def setting_value(self, axis: str) -> str | bool:
-        assert (
-            axis in type(self).axes.keys()
-        ), f'Attempted to inspect setting "{axis}", which is not defined for this task type'
+        assert axis in type(self).axes.keys(), (
+            f'Attempted to inspect setting "{axis}", which is not defined for this task type'
+        )
         return self._settings[axis]
 
     def setting_eq(self, axis: str, val: str | bool) -> bool:
         current = self.setting_value(axis)
         options = type(self).axes[axis]
-        assert (
-            val in options
-        ), f'Looking for value "{val}" on setting "{axis}", but that is not a supported option (Expects one of {options})'
+        assert val in options, (
+            f'Looking for value "{val}" on setting "{axis}", but that is not a supported option (Expects one of {options})'
+        )
         return current == val
 
     def is_valid_combination(self) -> bool:
         try:
             return self.do_is_valid_combination()
         except Prohibited:
-            print(f"Ignoring invalid combination {self.name!r}")
+            print(f'Ignoring invalid combination {self.name!r}')
             return False
 
     def do_is_valid_combination(self) -> bool:

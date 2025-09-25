@@ -6,7 +6,7 @@ set -o errexit # Exit the script with error if any of the commands fail
 . "$MONGOC_DIR/.evergreen/scripts/install-build-tools.sh"
 
 # Check that a CLion user didn't accidentally convert NEWS from UTF-8 to ASCII
-grep "á" NEWS > /dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
+grep "á" NEWS >/dev/null || (echo "NEWS file appears to have lost its UTF-8 encoding?" || exit 1)
 
 build_dir=$MONGOC_DIR/_build/for-docs
 uvx cmake --fresh -G "Ninja" -S "$MONGOC_DIR" -B "$build_dir" \

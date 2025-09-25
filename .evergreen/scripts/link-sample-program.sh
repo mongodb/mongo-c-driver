@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 #   LINK_STATIC                Whether to statically link to libmongoc
@@ -7,7 +7,6 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #   ENABLE_SSL                 Set -DENABLE_SSL
 #   ENABLE_SNAPPY              Set -DENABLE_SNAPPY
 #   CMAKE                      Path to cmake executable.
-
 
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
@@ -21,8 +20,8 @@ export CMAKE_GENERATOR="Ninja"
 
 # The major version of the project. Appears in certain install filenames.
 _full_version=$(cat "$DIR/../../VERSION_CURRENT")
-version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
-major="${version%%.*}"         # 1.2.3     → 1
+version="${_full_version%-*}" # 1.2.3-dev → 1.2.3
+major="${version%%.*}"        # 1.2.3     → 1
 echo "major version: $major"
 echo " full version: $version"
 
@@ -36,7 +35,7 @@ else
   LDD=ldd
 fi
 
-SRCROOT=`pwd`
+SRCROOT=$(pwd)
 SCRATCH_DIR=$(pwd)/.scratch
 rm -rf "$SCRATCH_DIR"
 mkdir -p "$SCRATCH_DIR"
@@ -70,14 +69,13 @@ fi
 
 if [ "$ENABLE_SSL" ]; then
   if [ "$OS" = "darwin" ]; then
-     SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=DARWIN"
+    SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=DARWIN"
   else
-     SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OPENSSL"
+    SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OPENSSL"
   fi
 else
   SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
 fi
-
 
 if [ "$LINK_STATIC" ]; then
   STATIC_CMAKE_OPTION="-DENABLE_STATIC=ON -DENABLE_TESTS=ON"

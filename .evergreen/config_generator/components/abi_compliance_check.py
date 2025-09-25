@@ -1,9 +1,7 @@
-from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_command import s3_put
+from shrub.v3.evg_command import EvgCommandType, s3_put
 from shrub.v3.evg_task import EvgTask
 
 from config_generator.components.funcs.install_uv import InstallUV
-
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
 

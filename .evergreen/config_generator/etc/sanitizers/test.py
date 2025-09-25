@@ -1,20 +1,16 @@
 from itertools import product
 
-from shrub.v3.evg_command import expansions_update
-from shrub.v3.evg_command import KeyValueParam
+from shrub.v3.evg_command import KeyValueParam, expansions_update
 from shrub.v3.evg_task import EvgTask, EvgTaskDependency
-
-from config_generator.etc.distros import find_large_distro, find_small_distro
-from config_generator.etc.distros import make_distro_str
-from config_generator.etc.distros import compiler_to_vars
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.install_uv import InstallUV
-from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_mock_kms_servers import RunMockKMSServers
+from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
+from config_generator.etc.distros import compiler_to_vars, find_large_distro, find_small_distro, make_distro_str
 
 
 def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS=None, MORE_VARS=None):
@@ -31,12 +27,10 @@ def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS
     MORE_VARS = MORE_VARS if MORE_VARS else {}
 
     for distro_name, compiler, arch, sasl, auths, topologies, server_vers in MATRIX:
-        tags = [
-            TAG, 'test', distro_name, compiler, f'sasl-{sasl}'
-        ] + MORE_COMPILE_TAGS
+        tags = [TAG, 'test', distro_name, compiler, f'sasl-{sasl}'] + MORE_COMPILE_TAGS
 
         if distro_name == 'rhel8-latest':
-            test_distro = find_large_distro(distro_name) # DEVPROD-18763
+            test_distro = find_large_distro(distro_name)  # DEVPROD-18763
         else:
             test_distro = find_small_distro(distro_name)
 
@@ -78,9 +72,7 @@ def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS
             ]
 
             if 'cse' in MORE_COMPILE_TAGS:
-                updates.append(
-                    KeyValueParam(key='CLIENT_SIDE_ENCRYPTION', value='on')
-                )
+                updates.append(KeyValueParam(key='CLIENT_SIDE_ENCRYPTION', value='on'))
 
             for key, value in MORE_VARS.items():
                 updates.append(KeyValueParam(key=key, value=value))
