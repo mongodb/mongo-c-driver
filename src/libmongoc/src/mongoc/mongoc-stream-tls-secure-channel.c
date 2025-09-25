@@ -852,7 +852,7 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
 #ifdef MONGOC_HAVE_SCH_CREDENTIALS
 
 void *
-_mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT cert, DWORD enabled_protocols)
+_mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT *cert, DWORD enabled_protocols)
 {
    SCH_CREDENTIALS *cred = bson_malloc0(sizeof(SCH_CREDENTIALS));
 
@@ -889,7 +889,7 @@ _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_C
 
    if (cert) {
       cred->cCreds = 1;
-      cred->paCred = &cert;
+      cred->paCred = cert;
    }
 
    TLS_PARAMETERS tls_parameters;
@@ -909,7 +909,7 @@ _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_C
 #endif
 
 void *
-_mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT cert, DWORD enabled_protocols)
+_mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT *cert, DWORD enabled_protocols)
 {
    SCHANNEL_CRED *cred = bson_malloc0(sizeof(SCHANNEL_CRED));
 
@@ -945,7 +945,7 @@ _mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CON
 
    if (cert) {
       cred->cCreds = 1;
-      cred->paCred = &cert;
+      cred->paCred = cert;
    }
 
    cred->grbitEnabledProtocols = enabled_protocols;
@@ -985,18 +985,15 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 #ifdef MONGOC_HAVE_SCH_CREDENTIALS
    // SCH_CREDENTIALS is supported in Windows 10 1809 / Server 1809 and later
    if (_mongoc_verify_windows_version(10, 0, 17763, false)) { 
-      cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, cred->cert, enabled_protocols);
+      cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, &cred->cert, enabled_protocols);
       cred->cred_type = sch_credentials;
-      printf("Using SCH_CREDENTIALS\n");
    } else {
-      cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, cred->cert, enabled_protocols);
+      cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, &cred->cert, enabled_protocols);
       cred->cred_type = schannel_cred;
-      printf("Using SCHANNEL_CREDS\n");
    }
 #else
-   cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, cred->cert, enabled_protocols);
+   cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, &cred->cert, enabled_protocols);
    cred->cred_type = schannel_cred;
-   printf("Using SCHANNEL_CREDS\n");
 #endif
 
    return cred;
@@ -1097,7 +1094,6 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
       char *msg = mongoc_winerr_to_string((DWORD)sspi_status);
       MONGOC_ERROR("Failed to initialize security context: %s", msg);
-      printf("Failed to initialize security context: %s\n", msg);
       bson_free(msg);
       // Detach the base stream so caller can free.
       tls->base_stream = NULL;

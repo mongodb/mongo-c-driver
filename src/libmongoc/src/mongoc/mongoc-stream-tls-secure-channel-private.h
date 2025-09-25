@@ -32,7 +32,6 @@
 #include <schannel.h>
 #include <security.h>
 
-
 BSON_BEGIN_DECLS
 
 
@@ -62,7 +61,7 @@ typedef struct {
 typedef struct _mongoc_secure_channel_cred {
    PCCERT_CONTEXT cert; /* Owning. Optional client cert. */
    schannel_credential_type cred_type;
-   void *cred;          /* Underlying type is specified by type. */
+   void *cred;          /* Underlying type is specified by schannel_credential_type. */
 } mongoc_secure_channel_cred;
 
 typedef struct {
