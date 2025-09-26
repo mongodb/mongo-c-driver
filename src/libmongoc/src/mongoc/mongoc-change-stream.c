@@ -497,6 +497,15 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
          goto end;
       }
 
+      /* the cursor is closed. */
+      if (stream->cursor->cursor_id == 0) {
+         _mongoc_set_error(&stream->err,
+                           MONGOC_ERROR_CURSOR,
+                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                           "Cannot advance a closed change stream.");
+         goto end;
+      }
+
       resumable = _is_resumable_error(stream, err_doc);
       while (resumable) {
          /* recreate the cursor. */
