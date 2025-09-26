@@ -13,7 +13,8 @@ Synopsis
 
 Return a value comparable with :symbol:`bson_get_monotonic_time()` to determine when a timeout must occur.
 
-The return value is an absolute time point, not a duration. A callback can signal a timeout error using. Example:
+The return value is an absolute time point, not a duration. A callback can signal a timeout error using
+:symbol:`mongoc_oidc_callback_params_cancel_with_timeout`. Example:
 
 .. code-block:: c
 
@@ -26,7 +27,7 @@ The return value is an absolute time point, not a duration. A callback can signa
           return mongoc_oidc_callback_params_cancel_with_timeout (params);
        }
 
-       // ...
+       // ... your code here ...
     }
 
 A ``NULL`` (unset) return value means "infinite" timeout.

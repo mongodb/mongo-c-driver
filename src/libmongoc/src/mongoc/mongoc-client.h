@@ -34,6 +34,7 @@
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl.h>
 #endif
+#include <mongoc/mongoc-oidc-callback.h>
 #include <mongoc/mongoc-read-concern.h>
 #include <mongoc/mongoc-server-description.h>
 #include <mongoc/mongoc-stream.h>
@@ -275,6 +276,9 @@ mongoc_client_set_server_api(mongoc_client_t *client, const mongoc_server_api_t 
 MONGOC_EXPORT(mongoc_server_description_t *)
 mongoc_client_get_handshake_description(mongoc_client_t *client, uint32_t server_id, bson_t *opts, bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT(bool)
+mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callback_t *callback);
 
 BSON_END_DECLS
 

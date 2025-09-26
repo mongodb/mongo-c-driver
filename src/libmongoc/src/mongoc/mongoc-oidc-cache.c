@@ -227,3 +227,40 @@ mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token
 
    bson_free(old_token);
 }
+
+struct mongoc_oidc_connection_cache_t {
+   char *token;
+};
+
+mongoc_oidc_connection_cache_t *
+mongoc_oidc_connection_cache_new(void)
+{
+   mongoc_oidc_connection_cache_t *oidc = bson_malloc0(sizeof(mongoc_oidc_connection_cache_t));
+   return oidc;
+}
+
+void
+mongoc_oidc_connection_cache_set(mongoc_oidc_connection_cache_t *cache, const char *token)
+{
+   BSON_ASSERT_PARAM(cache);
+   BSON_OPTIONAL_PARAM(token);
+   bson_free(cache->token);
+   cache->token = bson_strdup(token);
+}
+
+char *
+mongoc_oidc_connection_cache_get(const mongoc_oidc_connection_cache_t *cache)
+{
+   BSON_ASSERT_PARAM(cache);
+   return bson_strdup(cache->token);
+}
+
+void
+mongoc_oidc_connection_cache_destroy(mongoc_oidc_connection_cache_t *cache)
+{
+   if (!cache) {
+      return;
+   }
+   bson_free(cache->token);
+   bson_free(cache);
+}

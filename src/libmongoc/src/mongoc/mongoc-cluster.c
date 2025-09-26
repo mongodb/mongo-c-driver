@@ -40,6 +40,7 @@
 #include <common-bson-dsl-private.h>
 #include <common-oid-private.h>
 #include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-cluster-oidc-private.h>
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-error-private.h>
@@ -465,26 +466,9 @@ _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc
    _mongoc_write_error_handle_labels(cmd_ret, cmd_err, reply, cmd->server_stream->sd);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_run_command_monitored --
- *
- *       Internal function to run a command on a given stream.
- *       @error and @reply are optional out-pointers.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       If the client's APM callbacks are set, they are executed.
- *       @reply is set and should ALWAYS be released with bson_destroy().
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
+// run_command_monitored is an internal helper to run a command with APM monitoring.
+static bool
+run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
    bool retval;
    const int32_t request_id = ++cluster->request_id;
@@ -659,6 +643,90 @@ fail_no_events:
    return retval;
 }
 
+// _try_get_oidc_connection_cache returns the OIDC connection cache (for either a single or pooled client).
+// Returns NULL if server is not found.
+static mongoc_oidc_connection_cache_t *
+_try_get_oidc_connection_cache(mongoc_cluster_t *cluster, uint32_t server_id, bson_error_t *error)
+{
+   mongoc_oidc_connection_cache_t *ret = NULL;
+
+   if (cluster->client->topology->single_threaded) {
+      mongoc_topology_scanner_node_t *scanner_node =
+         mongoc_topology_scanner_get_node(cluster->client->topology->scanner, server_id);
+      if (scanner_node) {
+         ret = scanner_node->oidc_connection_cache;
+      }
+   } else {
+      mongoc_cluster_node_t *cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id);
+      if (cluster_node) {
+         ret = cluster_node->oidc_connection_cache;
+      }
+   }
+
+   if (!ret) {
+      // Possible on bad server_id or if server was removed. Unexpected with current call paths.
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_COMMAND,
+                        MONGOC_ERROR_COMMAND_INVALID_ARG,
+                        "Could not find server with id: %" PRIu32,
+                        server_id);
+   }
+   return ret;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_run_command_monitored --
+ *
+ *       Internal function to run a command on a given stream.
+ *       @error and @reply are optional out-pointers.
+ *       If the server returns a ReauthenticationRequired error, auth
+ *       may be re-attempted.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       If the client's APM callbacks are set, they are executed.
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
+{
+   bool ok = run_command_monitored(cluster, cmd, reply, error);
+   if (!ok) {
+      const char *mechanism = mongoc_uri_get_auth_mechanism(cluster->uri);
+      bool using_oidc = mechanism && 0 == strcasecmp(mechanism, "MONGODB-OIDC");
+
+      // From auth spec:
+      // > If any operation fails with `ReauthenticationRequired` (error code 391) and MONGODB-OIDC is in use, the
+      // > driver MUST reauthenticate the connection.
+      if (using_oidc && _mongoc_error_is_reauth(error, cluster->client->error_api_version)) {
+         if (reply) {
+            bson_destroy(reply);
+            bson_init(reply);
+         }
+
+         mongoc_oidc_connection_cache_t *oidc_connection_cache =
+            _try_get_oidc_connection_cache(cluster, cmd->server_stream->sd->id, error);
+         if (!oidc_connection_cache) {
+            return false;
+         }
+
+         if (!_mongoc_cluster_reauth_node_oidc(
+                cluster, cmd->server_stream->stream, oidc_connection_cache, cmd->server_stream->sd, error)) {
+            return false;
+         }
+         return run_command_monitored(cluster, cmd, reply, error);
+      }
+   }
+   return ok;
+}
+
 
 static bool
 _should_use_op_msg(const mongoc_cluster_t *cluster)
@@ -783,6 +851,7 @@ mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
 static mongoc_server_description_t *
 _stream_run_hello(mongoc_cluster_t *cluster,
                   mongoc_stream_t *stream,
+                  mongoc_oidc_connection_cache_t *oidc_connection_cache,
                   const char *address,
                   uint32_t server_id,
                   bool negotiate_sasl_supported_mechs,
@@ -800,7 +869,11 @@ _stream_run_hello(mongoc_cluster_t *cluster,
    _mongoc_topology_dup_handshake_cmd(cluster->client->topology, &handshake_command);
 
    if (cluster->requires_auth && speculative_auth_response) {
-      _mongoc_topology_scanner_add_speculative_authentication(&handshake_command, cluster->uri, scram);
+      char *oidc_access_token = mongoc_oidc_cache_get_cached_token(cluster->client->topology->oidc_cache);
+      _mongoc_topology_scanner_add_speculative_authentication(
+         &handshake_command, cluster->uri, oidc_access_token, server_id, scram);
+      mongoc_oidc_connection_cache_set(oidc_connection_cache, oidc_access_token);
+      bson_free(oidc_access_token);
    }
 
    if (negotiate_sasl_supported_mechs) {
@@ -935,6 +1008,7 @@ _cluster_run_hello(mongoc_cluster_t *cluster,
 
    sd = _stream_run_hello(cluster,
                           node->stream,
+                          node->oidc_connection_cache,
                           node->connection_address,
                           server_id,
                           _mongoc_uri_requires_auth_negotiation(cluster->uri),
@@ -1583,6 +1657,7 @@ _mongoc_cluster_auth_node_scram_sha_256(mongoc_cluster_t *cluster,
 static bool
 _mongoc_cluster_auth_node(mongoc_cluster_t *cluster,
                           mongoc_stream_t *stream,
+                          mongoc_oidc_connection_cache_t *oidc_connection_cache,
                           mongoc_server_description_t *sd,
                           const mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs,
                           bson_error_t *error)
@@ -1623,6 +1698,8 @@ _mongoc_cluster_auth_node(mongoc_cluster_t *cluster,
       ret = _mongoc_cluster_auth_node_plain(cluster, stream, sd, error);
    } else if (0 == strcasecmp(mechanism, "MONGODB-AWS")) {
       ret = _mongoc_cluster_auth_node_aws(cluster, stream, sd, error);
+   } else if (0 == strcasecmp(mechanism, "MONGODB-OIDC")) {
+      ret = _mongoc_cluster_auth_node_oidc(cluster, stream, oidc_connection_cache, sd, error);
    } else {
       _mongoc_set_error(error,
                         MONGOC_ERROR_CLIENT,
@@ -1683,6 +1760,7 @@ _mongoc_cluster_node_destroy(mongoc_cluster_node_t *node)
    mongoc_stream_failed(node->stream);
    bson_free(node->connection_address);
    mongoc_server_description_destroy(node->handshake_sd);
+   mongoc_oidc_connection_cache_destroy(node->oidc_connection_cache);
 
    bson_free(node);
 }
@@ -1763,6 +1841,22 @@ _mongoc_cluster_finish_speculative_auth(mongoc_cluster_t *cluster,
    }
 #endif
 
+   if (strcasecmp(mechanism, "MONGODB-OIDC") == 0) {
+      // Expect successful reply to include `done: true`:
+      {
+         auth_handled = true;
+
+         bsonParse(*speculative_auth_response, require(allOf(key("done"), isTrue), nop));
+         if (bsonParseError) {
+            _mongoc_set_error(
+               error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Error in OIDC reply: %s", bsonParseError);
+            ret = false;
+         } else {
+            ret = true;
+         }
+      }
+   }
+
    if (auth_handled) {
       if (!ret) {
          mongoc_counter_auth_failure_inc();
@@ -1833,6 +1927,7 @@ _cluster_add_node(mongoc_cluster_t *cluster,
 
    /* take critical fields from a fresh hello */
    cluster_node = _mongoc_cluster_node_new(stream, host->host_and_port);
+   cluster_node->oidc_connection_cache = mongoc_oidc_connection_cache_new();
 
    handshake_sd = _cluster_run_hello(cluster, cluster_node, server_id, &scram, &speculative_auth_response, error);
    if (!handshake_sd) {
@@ -1846,8 +1941,12 @@ _cluster_add_node(mongoc_cluster_t *cluster,
       bool is_auth = _mongoc_cluster_finish_speculative_auth(
          cluster, stream, handshake_sd, &speculative_auth_response, &scram, error);
 
-      if (!is_auth &&
-          !_mongoc_cluster_auth_node(cluster, cluster_node->stream, handshake_sd, &sasl_supported_mechs, error)) {
+      if (!is_auth && !_mongoc_cluster_auth_node(cluster,
+                                                 cluster_node->stream,
+                                                 cluster_node->oidc_connection_cache,
+                                                 handshake_sd,
+                                                 &sasl_supported_mechs,
+                                                 error)) {
          MONGOC_WARNING("Failed authentication to %s (%s)", host->host_and_port, error->message);
          mongoc_server_description_destroy(handshake_sd);
          GOTO(error);
@@ -2173,9 +2272,12 @@ _cluster_fetch_stream_single(mongoc_cluster_t *cluster,
          return NULL;
       }
 
-      if (!has_speculative_auth &&
-          !_mongoc_cluster_auth_node(
-             cluster, scanner_node->stream, handshake_sd, &scanner_node->sasl_supported_mechs, &handshake_sd->error)) {
+      if (!has_speculative_auth && !_mongoc_cluster_auth_node(cluster,
+                                                              scanner_node->stream,
+                                                              scanner_node->oidc_connection_cache,
+                                                              handshake_sd,
+                                                              &scanner_node->sasl_supported_mechs,
+                                                              &handshake_sd->error)) {
          *error = handshake_sd->error;
          mongoc_server_description_destroy(handshake_sd);
          return NULL;

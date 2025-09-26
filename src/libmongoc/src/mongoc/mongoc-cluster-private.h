@@ -50,6 +50,7 @@ typedef struct _mongoc_cluster_node_t {
    /* handshake_sd is a server description created from the handshake on the
     * stream. */
    mongoc_server_description_t *handshake_sd;
+   mongoc_oidc_connection_cache_t *oidc_connection_cache;
 } mongoc_cluster_node_t;
 
 typedef struct _mongoc_cluster_t {
@@ -81,6 +82,7 @@ mongoc_cluster_reset_sockettimeoutms(mongoc_cluster_t *cluster);
 
 void
 mongoc_cluster_disconnect_node(mongoc_cluster_t *cluster, uint32_t id);
+
 
 int32_t
 mongoc_cluster_get_max_bson_obj_size(mongoc_cluster_t *cluster);

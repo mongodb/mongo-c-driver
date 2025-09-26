@@ -22,6 +22,7 @@ check_var_opt SINGLE_MONGOS_LB_URI
 check_var_opt SKIP_CRYPT_SHARED_LIB
 check_var_opt SSL "nossl"
 check_var_opt URI
+check_var_opt OIDC "nooidc"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -152,6 +153,13 @@ if [[ "${DNS}" != "nodns" ]]; then
   else
     export MONGOC_TEST_DNS=on
   fi
+fi
+
+if [[ "${OIDC}" != "nooidc" ]]; then
+  export MONGOC_TEST_OIDC="ON"
+  # Only run OIDC tests.
+  test_args+=("-l" "/oidc/*")
+  test_args+=("-l" "/auth/unified/*")
 fi
 
 wait_for_server() {
