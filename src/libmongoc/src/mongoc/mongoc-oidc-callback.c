@@ -28,7 +28,7 @@ struct _mongoc_oidc_callback_t {
 struct _mongoc_oidc_callback_params_t {
    void *user_data;
    char *username;
-   int64_t timeout; // Guarded by timeout_is_set.
+   int64_t timeout; // Guarded by timeout_is_set. In microseconds since monotonic clock start.
    int32_t version;
    bool cancelled_with_timeout;
    bool timeout_is_set;

@@ -594,6 +594,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-cache.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-callback.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-env.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
@@ -1092,6 +1093,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-callback.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-cache.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
