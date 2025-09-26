@@ -274,7 +274,7 @@ def earthly_task(
 
 CONTAINER_RUN_DISTROS = [
     'amazon2',
-    'debian11-large',
+    # "debian11-large", # No uv binary available.
     'debian12-large',
     'ubuntu2204-large',
     'ubuntu2404-large',
