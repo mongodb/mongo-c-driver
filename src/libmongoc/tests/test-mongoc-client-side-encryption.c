@@ -53,7 +53,7 @@ _before_test(json_test_ctx_t *ctx, const bson_t *test)
    /* Insert data into the key vault. */
    client = test_framework_new_default_client();
    wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_wmajority(wc, 1000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    bson_init(&insert_opts);
    mongoc_write_concern_append(wc, &insert_opts);
 
@@ -400,7 +400,7 @@ test_bson_size_limits_and_batch_splitting(bool with_qe)
       (void)mongoc_collection_drop(coll, NULL);
       datakey = get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
       wc = mongoc_write_concern_new();
-      mongoc_write_concern_set_wmajority(wc, 1000);
+      mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
       mongoc_collection_set_write_concern(coll, wc);
       ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, datakey, NULL /* opts */, NULL /* reply */, &error), error);
       mongoc_write_concern_destroy(wc);
@@ -1033,7 +1033,7 @@ _test_key_vault(bool with_external_key_vault)
 
    /* Insert the document external-key.json into ``keyvault.datakeys``. */
    wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_wmajority(wc, 1000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern(coll, wc);
    datakey = get_bson_from_json_file("./src/libmongoc/tests/"
                                      "client_side_encryption_prose/external/"
@@ -1807,7 +1807,7 @@ _test_corpus(bool local_schema)
    coll = mongoc_client_get_collection(client, "keyvault", "datakeys");
    (void)mongoc_collection_drop(coll, NULL);
    wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_wmajority(wc, 1000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern(coll, wc);
    _insert_from_file(coll,
                      "./src/libmongoc/tests/client_side_encryption_prose/"
@@ -1980,7 +1980,7 @@ _reset(mongoc_client_pool_t **pool,
       coll = mongoc_client_get_collection(*singled_threaded_client, "db", "keyvault");
       (void)mongoc_collection_drop(coll, NULL);
       wc = mongoc_write_concern_new();
-      mongoc_write_concern_set_wmajority(wc, 1000);
+      mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
       mongoc_collection_set_write_concern(coll, wc);
       datakey = get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
       BSON_ASSERT(datakey);
@@ -2211,7 +2211,7 @@ _test_multi_threaded(bool external_key_vault)
    datakey = get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
    BSON_ASSERT(datakey);
    wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_wmajority(wc, 1000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern(coll, wc);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, datakey, NULL /* opts */, NULL /* reply */, &error), error);
 

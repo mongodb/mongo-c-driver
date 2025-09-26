@@ -309,7 +309,7 @@ test_change_stream_live_track_resume_token(void *test_ctx)
 
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
 
@@ -428,7 +428,7 @@ test_change_stream_live_batch_size(void *test_ctx)
 
    ctx.expected_getmore_batch_size = 1;
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    for (i = 0; i < 10; i++) {
       bson_t *doc = BCON_NEW("_id", BCON_INT32(i));
@@ -486,7 +486,7 @@ _test_resume_token_error(const char *id_projection)
    ASSERT(stream);
    ASSERT_OR_PRINT(!mongoc_change_stream_error_document(stream, &err, NULL), err);
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 2}"), &opts, NULL, &err), err);
 
@@ -888,7 +888,7 @@ test_change_stream_live_watch(void *test_ctx)
 
    BSON_UNUSED(test_ctx);
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
 
    coll = drop_and_get_coll(client, "db", "coll_watch");
    ASSERT(coll);
@@ -1610,7 +1610,7 @@ prose_test_11(void *ctx)
    post_batch_expected = (_data_change_stream_t *)stream->cursor->impl.data;
    ASSERT(bson_compare(resume_token, &post_batch_expected->post_batch_resume_token) == 0);
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
 
@@ -1661,7 +1661,7 @@ prose_test_13(void *ctx)
 
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
 

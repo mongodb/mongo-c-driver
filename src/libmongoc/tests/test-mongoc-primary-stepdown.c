@@ -62,7 +62,7 @@ _setup_test_with_client(mongoc_client_t *client)
 
       {
          mongoc_write_concern_t *const wc = mongoc_write_concern_new();
-         mongoc_write_concern_set_wmajority(wc, -1);
+         mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
          ASSERT(mongoc_write_concern_append(wc, &opts));
          mongoc_write_concern_destroy(wc);
       }
@@ -158,7 +158,7 @@ test_getmore_iteration(mongoc_client_t *client, stream_tracker_t *st)
 
       {
          mongoc_write_concern_t *const wc = mongoc_write_concern_new();
-         mongoc_write_concern_set_wmajority(wc, -1);
+         mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
          ASSERT(mongoc_write_concern_append(wc, &opts));
          mongoc_write_concern_destroy(wc);
       }

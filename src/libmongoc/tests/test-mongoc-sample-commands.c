@@ -3933,7 +3933,7 @@ with_transaction_example(bson_error_t *error)
     * concern by default.
     */
    wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_wmajority(wc, 0);
+   mongoc_write_concern_set_wmajority(wc, 1000);
    insert_opts = bson_new();
    mongoc_write_concern_append(wc, insert_opts);
    coll = mongoc_client_get_collection(client, "mydb1", "foo");
