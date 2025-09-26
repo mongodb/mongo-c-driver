@@ -85,7 +85,9 @@ mongoc_check_version(int required_major, int required_minor, int required_micro)
 
 #ifdef _WIN32
 
-typedef NTSTATUS (APIENTRY *RTLVERIFYVERSIONINFO_FN) (PRTL_OSVERSIONINFOEXW VersionInfo, ULONG TypeMask, ULONGLONG ConditionMask);
+typedef NTSTATUS(APIENTRY *RTLVERIFYVERSIONINFO_FN)(PRTL_OSVERSIONINFOEXW VersionInfo,
+                                                    ULONG TypeMask,
+                                                    ULONGLONG ConditionMask);
 
 /**
  * _mongoc_verify_windows_version:
@@ -106,7 +108,7 @@ _mongoc_verify_windows_version(int major_version, int minor_version, int build_n
    }
 
    /* Windows version functions may not return the correct version for
-   later Windows versions unless the application is so manifested. Try  
+   later Windows versions unless the application is so manifested. Try
    to use the more accurate kernel function RtlVerifyVersionInfo */
    HMODULE hDll = LoadLibrary(TEXT("Ntdll.dll"));
    if (hDll) {
@@ -126,7 +128,7 @@ _mongoc_verify_windows_version(int major_version, int minor_version, int build_n
       matched = (pRtlVerifyVersionInfo(&osvi, VER_MAJORVERSION | VER_MINORVERSION, mask) == 0);
    } else {
       matched = (VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION, mask) != 0);
-   } 
+   }
 
    // Compare build number separately if major and minor versions are equal
    if (build_number && matched && _mongoc_verify_windows_version(major_version, minor_version, 0, true)) {
@@ -139,8 +141,7 @@ _mongoc_verify_windows_version(int major_version, int minor_version, int build_n
 
       if (pRtlVerifyVersionInfo) {
          matched = (pRtlVerifyVersionInfo(&osvi, VER_BUILDNUMBER, mask) == 0);
-      } 
-      else {
+      } else {
          matched = (VerifyVersionInfoW(&osvi, VER_BUILDNUMBER, mask) != 0);
       }
    }
