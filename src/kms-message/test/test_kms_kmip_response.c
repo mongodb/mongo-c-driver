@@ -56,6 +56,7 @@ static const uint8_t SUCCESS_REGISTER_RESPONSE[] = {
 
 static const char *const SUCCESS_REGISTER_RESPONSE_UNIQUE_IDENTIFIER = "39";
 
+void kms_kmip_response_get_unique_identifier_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_get_unique_identifier_test (void)
 {
@@ -141,6 +142,7 @@ static const uint8_t SUCCESS_GET_RESPONSE_SECRETDATA[] = {
    0x36, 0xa9, 0x06, 0x6b, 0x4e, 0x10, 0xae, 0xb5, 0x6a, 0x5c, 0xcf, 0x6a,
    0xa4, 0x69, 0x01, 0xe6, 0x25, 0xe3, 0x40, 0x0c, 0x78, 0x11, 0xd2, 0xec};
 
+void kms_kmip_response_get_secretdata_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_get_secretdata_test (void)
 {
@@ -197,6 +199,7 @@ static const uint8_t ERROR_GET_RESPOSE_NOTFOUND[] = {
    0x6c, 0x74, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x49, 0x74, 0x65, 0x6d, 0x4e,
    0x6f, 0x74, 0x46, 0x6f, 0x75, 0x6e, 0x64};
 
+void kms_kmip_response_get_secretdata_notfound_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_get_secretdata_notfound_test (void)
 {
