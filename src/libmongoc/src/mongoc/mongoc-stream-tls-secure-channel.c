@@ -959,8 +959,8 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    /* TLS 1.3 is supported on Windows Server 2022 and newer.
     * Schannel will not negotiate TLS 1.3 when SCHANNEL_CRED is used. */
    if (_mongoc_verify_windows_version(10, 0, 20348, false)) {
-         // TODO - enable TLS 1.3 once renegotiation is supported.
-         // enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
+      // TODO - enable TLS 1.3 once renegotiation is supported.
+      // enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
    }
 
    if (opt->ca_file) {
