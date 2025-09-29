@@ -7388,7 +7388,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_lookup,
                         NULL,
                         NULL,
-                        test_framework_skip_if_max_wire_version_less_than_26 /* require server 8.1+ */,
+                        test_framework_skip_if_max_wire_version_less_than_27 /* require server 8.2+ */,
                         test_framework_skip_if_single, /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
