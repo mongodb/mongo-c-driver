@@ -23,16 +23,16 @@ Requires the evergreen_config_generator package.
 """
 
 from collections import OrderedDict as OD
-from os.path import dirname, join as joinpath, normpath
+from os.path import dirname, normpath
+from os.path import join as joinpath
 
 from evergreen_config_generator import generate
-
 from evergreen_config_lib.functions import all_functions
-from evergreen_config_lib.tasks import all_tasks
-from evergreen_config_lib.variants import all_variants
 from evergreen_config_lib.taskgroups import all_task_groups
-from evergreen_config_lib.testgcpkms import testgcpkms_generate
+from evergreen_config_lib.tasks import all_tasks
 from evergreen_config_lib.testazurekms import testazurekms_generate
+from evergreen_config_lib.testgcpkms import testgcpkms_generate
+from evergreen_config_lib.variants import all_variants
 
 task_groups = list(all_task_groups)
 testazurekms_generate(all_tasks, all_variants, task_groups)
@@ -40,13 +40,13 @@ testgcpkms_generate(all_tasks, all_variants, task_groups)
 
 config = OD(
     [
-        ("functions", all_functions),
-        ("tasks", all_tasks),
-        ("task_groups", task_groups),
-        ("buildvariants", all_variants),
+        ('functions', all_functions),
+        ('tasks', all_tasks),
+        ('task_groups', task_groups),
+        ('buildvariants', all_variants),
     ]
 )
 
 this_dir = dirname(__file__)
-generated_configs_dir = normpath(joinpath(this_dir, "../generated_configs"))
-generate(config, joinpath(generated_configs_dir, "legacy-config.yml"))
+generated_configs_dir = normpath(joinpath(this_dir, '../generated_configs'))
+generate(config, joinpath(generated_configs_dir, 'legacy-config.yml'))

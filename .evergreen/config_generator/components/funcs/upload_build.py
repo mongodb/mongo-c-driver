@@ -1,6 +1,6 @@
+from shrub.v3.evg_command import archive_targz_pack, s3_put
+
 from config_generator.etc.function import Function
-from shrub.v3.evg_command import archive_targz_pack
-from shrub.v3.evg_command import s3_put
 
 
 class UploadBuild(Function):

@@ -568,9 +568,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-change-stream.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd-deprecated.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-cmd.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-opquery.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-legacy.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
@@ -752,6 +749,22 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
 )
 
+set(MONGOC_CXX_COMPILER_ID "Unknown")
+set(MONGOC_CXX_COMPILER_VERSION "")
+
+if(DEFINED CMAKE_CXX_COMPILER_ID)
+    set(MONGOC_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+if(DEFINED CMAKE_CXX_COMPILER_VERSION)
+    set(MONGOC_CXX_COMPILER_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+endif()
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config-private.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config-private.h"
+)
+
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h"
@@ -837,7 +850,7 @@ if (TARGET bson::static)
    target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
    target_link_libraries (mcd_rpc PUBLIC bson::static)
    if (NOT WIN32 AND ENABLE_PIC)
-      target_compile_options (mcd_rpc PUBLIC -fPIC)
+      set_property (TARGET mcd_rpc PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    endif ()
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
@@ -922,7 +935,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_property(TARGET mongoc_static PROPERTY EXPORT_NAME mongoc::static)
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} bson::static mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
-      target_compile_options (mongoc_static PUBLIC -fPIC)
+      set_property(TARGET mongoc_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
    endif ()
    if(ENABLE_SRV AND RESOLVE_LIB_NAME)
@@ -1077,7 +1090,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-long-namespace.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongohouse.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-callback.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c

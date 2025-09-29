@@ -8,7 +8,6 @@
 # Example:
 # TESTCASE=EC2 run-aws-tests.sh
 
-
 set -o errexit
 set -o pipefail
 
@@ -50,7 +49,6 @@ expect_failure() {
   echo "Should fail:"
   "${test_awsauth:?}" "${1:?}" "EXPECT_FAILURE" || exit
 }
-
 
 if [[ "${TESTCASE:?}" == "REGULAR" ]]; then
   echo "===== Testing regular auth via URI ====="
@@ -148,29 +146,29 @@ if [[ "${TESTCASE:?}" == "ASSUME_ROLE_WITH_WEB_IDENTITY" ]]; then
 
   echo "Valid credentials via Web Identity - should succeed"
   AWS_ROLE_ARN="${AWS_ROLE_ARN:?}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
+    AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Valid credentials via Web Identity with session name - should succeed"
   AWS_ROLE_ARN="${AWS_ROLE_ARN:?}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
-  AWS_ROLE_SESSION_NAME=test \
+    AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
+    AWS_ROLE_SESSION_NAME=test \
     expect_success "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Invalid AWS_ROLE_ARN via Web Identity with session name - should fail"
   AWS_ROLE_ARN="invalid_role_arn" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
+    AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Invalid AWS_WEB_IDENTITY_TOKEN_FILE via Web Identity with session name - should fail"
   AWS_ROLE_ARN="${AWS_ROLE_ARN:?}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="/invalid/path" \
+    AWS_WEB_IDENTITY_TOKEN_FILE="/invalid/path" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
 
   echo "Invalid AWS_ROLE_SESSION_NAME via Web Identity with session name - should fail"
   AWS_ROLE_ARN="${AWS_ROLE_ARN:?}" \
-  AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
-  AWS_ROLE_SESSION_NAME="contains_invalid_character_^" \
+    AWS_WEB_IDENTITY_TOKEN_FILE="${AWS_WEB_IDENTITY_TOKEN_FILE:?}" \
+    AWS_ROLE_SESSION_NAME="contains_invalid_character_^" \
     expect_failure "mongodb://localhost/?authMechanism=MONGODB-AWS"
   exit
 fi

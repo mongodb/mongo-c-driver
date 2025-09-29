@@ -21,6 +21,11 @@ format = [
     "clang-format~=20.1.0",
 ]
 
+format-scripts = [
+    "ruff>=0.13.0",
+    "shfmt-py>=3.12.0.2",
+]
+
 docs = [
     # .evergreen/scripts/build-docs.sh
     "furo>=2023.5.20",
@@ -45,3 +50,11 @@ mc-evg-generate = "config_generator.generate:main"
 packages = [
     ".evergreen/config_generator",
 ]
+
+[tool.ruff]
+line-length = 120
+src = [".evergreen", "etc"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"

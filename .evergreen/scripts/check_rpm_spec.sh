@@ -24,8 +24,7 @@ set -o errexit
 # Supported/used environment variables:
 #   IS_PATCH    If "true", this is an Evergreen patch build.
 
-
-on_exit () {
+on_exit() {
   if [ -n "${SPEC_FILE}" ]; then
     rm -f "${SPEC_FILE}"
   fi
@@ -33,11 +32,14 @@ on_exit () {
 trap on_exit EXIT
 
 if [ "${IS_PATCH}" = "true" ]; then
-   echo "This is a patch build...skipping RPM spec check"
-   exit
+  echo "This is a patch build...skipping RPM spec check"
+  exit
 fi
 
 SPEC_FILE=$(mktemp --tmpdir -u mongo-c-driver.XXXXXXXX.spec)
 curl --retry 5 https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec -sS --max-time 120 --fail --output "${SPEC_FILE}"
 
-diff -q .evergreen/etc/mongo-c-driver.spec "${SPEC_FILE}" || (echo "Synchronize RPM spec from downstream to fix this failure. See instructions here: https://docs.google.com/document/d/1ItyBC7VN383zNXu3oUOQJYR7adfYI8ECjLMJ5kqA9X8/edit#heading=h.ahdrr3b5xv3"; exit 1)
+diff -q .evergreen/etc/mongo-c-driver.spec "${SPEC_FILE}" || (
+  echo "Synchronize RPM spec from downstream to fix this failure. See instructions here: https://docs.google.com/document/d/1ItyBC7VN383zNXu3oUOQJYR7adfYI8ECjLMJ5kqA9X8/edit#heading=h.ahdrr3b5xv3"
+  exit 1
+)

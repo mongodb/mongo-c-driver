@@ -2617,6 +2617,11 @@ mongoc_client_reset(mongoc_client_t *client)
 {
    BSON_ASSERT_PARAM(client);
 
+   if (!client->topology->single_threaded) {
+      MONGOC_WARNING("mongoc_client_reset called on a pooled client, this is a no-op.");
+      return;
+   }
+
    client->generation++;
 
    /* Client sessions are owned and destroyed by the user, but we keep

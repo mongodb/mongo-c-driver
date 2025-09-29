@@ -1,77 +1,73 @@
-from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_command import s3_put
+from shrub.v3.evg_command import EvgCommandType, s3_put
 from shrub.v3.evg_task import EvgTask
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
-
-from config_generator.etc.function import Function
-from config_generator.etc.function import merge_defns
+from config_generator.components.funcs.install_uv import InstallUV
+from config_generator.etc.function import Function, merge_defns
 from config_generator.etc.utils import bash_exec
 
 
 class MakeDocs(Function):
-    name = "make-docs"
+    name = 'make-docs'
     commands = [
         bash_exec(
             command_type=EvgCommandType.TEST,
-            working_dir="mongoc",
-            include_expansions_in_env=["distro_id"],
+            working_dir='mongoc',
+            include_expansions_in_env=['distro_id'],
             script="""\
                 # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
-                uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
+                PATH="${UV_INSTALL_DIR}:$PATH" uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
             """,
         ),
     ]
 
 
 class UploadDocs(Function):
-    name = "upload-docs"
+    name = 'upload-docs'
     commands = [
         bash_exec(
-            working_dir="mongoc/_build/for-docs/src/libbson",
+            working_dir='mongoc/_build/for-docs/src/libbson',
             env={
-                "AWS_ACCESS_KEY_ID": "${aws_key}",
-                "AWS_SECRET_ACCESS_KEY": "${aws_secret}",
+                'AWS_ACCESS_KEY_ID': '${aws_key}',
+                'AWS_SECRET_ACCESS_KEY': '${aws_secret}',
             },
-            script="aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1",
+            script='aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1',
         ),
         s3_put(
-            aws_key="${aws_key}",
-            aws_secret="${aws_secret}",
-            bucket="mciuploads",
-            content_type="text/html",
-            display_name="libbson docs",
-            local_file="mongoc/_build/for-docs/src/libbson/doc/html/index.html",
-            permissions="public-read",
-            remote_file="${project}/docs/libbson/${CURRENT_VERSION}/index.html",
+            aws_key='${aws_key}',
+            aws_secret='${aws_secret}',
+            bucket='mciuploads',
+            content_type='text/html',
+            display_name='libbson docs',
+            local_file='mongoc/_build/for-docs/src/libbson/doc/html/index.html',
+            permissions='public-read',
+            remote_file='${project}/docs/libbson/${CURRENT_VERSION}/index.html',
         ),
         bash_exec(
-            working_dir="mongoc/_build/for-docs/src/libmongoc",
+            working_dir='mongoc/_build/for-docs/src/libmongoc',
             env={
-                "AWS_ACCESS_KEY_ID": "${aws_key}",
-                "AWS_SECRET_ACCESS_KEY": "${aws_secret}",
+                'AWS_ACCESS_KEY_ID': '${aws_key}',
+                'AWS_SECRET_ACCESS_KEY': '${aws_secret}',
             },
-            script="aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1",
+            script='aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --quiet --recursive --acl public-read --region us-east-1',
         ),
         s3_put(
-            aws_key="${aws_key}",
-            aws_secret="${aws_secret}",
-            bucket="mciuploads",
-            content_type="text/html",
-            display_name="libmongoc docs",
-            local_file="mongoc/_build/for-docs/src/libmongoc/doc/html/index.html",
-            permissions="public-read",
-            remote_file="${project}/docs/libmongoc/${CURRENT_VERSION}/index.html",
+            aws_key='${aws_key}',
+            aws_secret='${aws_secret}',
+            bucket='mciuploads',
+            content_type='text/html',
+            display_name='libmongoc docs',
+            local_file='mongoc/_build/for-docs/src/libmongoc/doc/html/index.html',
+            permissions='public-read',
+            remote_file='${project}/docs/libmongoc/${CURRENT_VERSION}/index.html',
         ),
     ]
 
 
 class UploadManPages(Function):
-    name = "upload-man-pages"
+    name = 'upload-man-pages'
     commands = [
         bash_exec(
-            working_dir="mongoc",
-            silent=True,
+            working_dir='mongoc',
             script="""\
                 set -o errexit
                 # Get "aha", the ANSI HTML Adapter.
@@ -85,24 +81,24 @@ class UploadManPages(Function):
                 """,
         ),
         s3_put(
-            aws_key="${aws_key}",
-            aws_secret="${aws_secret}",
-            bucket="mciuploads",
-            content_type="text/html",
-            display_name="libbson man pages",
-            local_file="mongoc/bson-man-pages.html",
-            permissions="public-read",
-            remote_file="${project}/man-pages/libbson/${CURRENT_VERSION}/index.html",
+            aws_key='${aws_key}',
+            aws_secret='${aws_secret}',
+            bucket='mciuploads',
+            content_type='text/html',
+            display_name='libbson man pages',
+            local_file='mongoc/bson-man-pages.html',
+            permissions='public-read',
+            remote_file='${project}/man-pages/libbson/${CURRENT_VERSION}/index.html',
         ),
         s3_put(
-            aws_key="${aws_key}",
-            aws_secret="${aws_secret}",
-            bucket="mciuploads",
-            content_type="text/html",
-            display_name="libmongoc man pages",
-            local_file="mongoc/mongoc-man-pages.html",
-            permissions="public-read",
-            remote_file="${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html",
+            aws_key='${aws_key}',
+            aws_secret='${aws_secret}',
+            bucket='mciuploads',
+            content_type='text/html',
+            display_name='libmongoc man pages',
+            local_file='mongoc/mongoc-man-pages.html',
+            permissions='public-read',
+            remote_file='${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html',
         ),
     ]
 
@@ -118,9 +114,9 @@ def functions():
 def tasks():
     return [
         EvgTask(
-            name="make-docs",
+            name='make-docs',
             commands=[
-                FindCMakeLatest.call(),
+                InstallUV.call(),
                 MakeDocs.call(),
                 UploadDocs.call(),
                 UploadManPages.call(),

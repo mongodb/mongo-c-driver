@@ -27,13 +27,13 @@ set PATH=%PATH%;%INSTALL_DIR%\bin
 cd %BUILD_DIR% || goto :error
 
 if "%LINK_STATIC%"=="1" (
-  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .. || goto :error
+  uvx cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .. || goto :error
 ) else (
-  %CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .. || goto :error
+  uvx cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .. || goto :error
 )
 
-%CMAKE% --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
-%CMAKE% --build . --config "Debug" --target INSTALL -- /m || goto :error
+uvx cmake --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
+uvx cmake --build . --config "Debug" --target INSTALL -- /m || goto :error
 
 rem Test our CMake package config file with CMake's find_package command.
 set EXAMPLE_DIR=%SRCROOT%\src\libbson\examples\cmake\find_package
@@ -43,8 +43,8 @@ if "%LINK_STATIC%"=="1" (
 )
 
 cd %EXAMPLE_DIR% || goto :error
-%CMAKE% -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
-%CMAKE% --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
+uvx cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
+uvx cmake --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
 
 rem Yes, they should've named it "dependencies".
 dumpbin.exe /dependents Debug\hello_bson.exe || goto :error

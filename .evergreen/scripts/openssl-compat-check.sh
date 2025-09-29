@@ -10,6 +10,8 @@ set -o pipefail
 check_var_req OPENSSL_VERSION
 check_var_opt OPENSSL_USE_STATIC_LIBS
 
+check_var_req UV_INSTALL_DIR
+
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 
@@ -29,18 +31,14 @@ fi
 
 declare libmongocrypt_install_dir="${mongoc_dir}/install-dir"
 
-# shellcheck source=.evergreen/scripts/find-cmake-latest.sh
-. "${script_dir}/find-cmake-latest.sh"
-declare cmake_binary
-cmake_binary="$(find_cmake_latest)"
-
-export CMAKE_BUILD_PARALLEL_LEVEL
-CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
+. "${script_dir:?}/install-build-tools.sh"
+install_build_tools
+export CMAKE_GENERATOR="Ninja"
 
 # libmongocrypt must use the same OpenSSL library.
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary:?}" "${mongoc_dir:?}" "${mongoc_install_dir:?}" "${openssl_cmake_flags[@]:?}" &>output.txt || {
+"${script_dir}/compile-libmongocrypt.sh" "$(command -v cmake)" "${mongoc_dir:?}" "${mongoc_install_dir:?}" "${openssl_cmake_flags[@]:?}" &>output.txt || {
   cat output.txt 1>&2
   exit 1
 }
@@ -68,7 +66,7 @@ configure_flags+=("${openssl_cmake_flags[@]:?}")
 echo "configure_flags: ${configure_flags[*]}"
 
 echo "Configuring..."
-"${cmake_binary:?}" -S . -B "${mongoc_build_dir:?}" "${configure_flags[@]}" >/dev/null
+cmake -S . -B "${mongoc_build_dir:?}" "${configure_flags[@]}" >/dev/null
 echo "Configuring... done."
 
 echo "Verifying the correct OpenSSL library was found..."
@@ -104,9 +102,9 @@ echo "Verifying the correct OpenSSL library was found..."
 echo "Verifying the correct OpenSSL library was found... done."
 
 echo "Building..."
-"${cmake_binary:?}" --build "${mongoc_build_dir:?}" --target all mongoc-ping test-mongoc-gssapi >/dev/null
+cmake --build "${mongoc_build_dir:?}" --target all mongoc-ping test-mongoc-gssapi >/dev/null
 echo "Building... done."
 
 echo "Installing..."
-"${cmake_binary:?}" --install "${mongoc_build_dir:?}"
+cmake --install "${mongoc_build_dir:?}"
 echo "Installing... done."

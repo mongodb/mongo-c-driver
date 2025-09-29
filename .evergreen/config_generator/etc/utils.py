@@ -3,14 +3,13 @@ from importlib import import_module
 from inspect import isclass
 from pathlib import Path
 from textwrap import dedent
-from typing import (Any, Iterable, Literal, Mapping, Type, TypeVar,
-                    Union, cast)
+from typing import Any, Iterable, Literal, Mapping, Type, TypeVar, Union, cast
 
 import yaml
 from shrub.v3.evg_command import EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
-from shrub.v3.shrub_service import ConfigDumper
 from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.shrub_service import ConfigDumper
 from typing_extensions import get_args, get_origin, get_type_hints
 
 T = TypeVar('T')
@@ -39,8 +38,8 @@ def bash_exec(
     **kwargs,
 ):
     ret = subprocess_exec(
-        binary="bash",
-        args=["-c", dedent(script)],
+        binary='bash',
+        args=['-c', dedent(script)],
         include_expansions_in_env=list(include_expansions_in_env) if include_expansions_in_env else None,
         working_dir=working_dir,
         command_type=command_type,
@@ -49,7 +48,7 @@ def bash_exec(
     )
 
     if retry_on_failure is not None:
-        ret.params |= {"retry_on_failure": retry_on_failure}
+        ret.params |= {'retry_on_failure': retry_on_failure}
 
     return ret
 
@@ -75,7 +74,7 @@ def all_components():
 # Helper function to print component name for diagnostic purposes.
 def component_name(component):
     component_prefix = 'config_generator.components.'
-    res = component.__name__[len(component_prefix):]
+    res = component.__name__[len(component_prefix) :]
     return res
 
 
@@ -118,13 +117,9 @@ class Dumper(ConfigDumper):
             'args',
         ]
 
-        ordered = {
-            field: mapping.pop(field) for field in before if field in mapping
-        }
+        ordered = {field: mapping.pop(field) for field in before if field in mapping}
 
-        suffix = {
-            field: mapping.pop(field) for field in after if field in mapping
-        }
+        suffix = {field: mapping.pop(field) for field in after if field in mapping}
 
         ordered.update(sorted(mapping.items()))
         ordered.update(suffix)
@@ -177,6 +172,4 @@ def all_possible(typ: Type[T]) -> Iterable[T]:
             # Reconstruct as a NamedTuple:
             yield typ(**items)  # type: ignore
     else:
-        raise TypeError(
-            f'Do not know how to do "all_possible" of type {typ!r} ({origin=})'
-        )
+        raise TypeError(f'Do not know how to do "all_possible" of type {typ!r} ({origin=})')

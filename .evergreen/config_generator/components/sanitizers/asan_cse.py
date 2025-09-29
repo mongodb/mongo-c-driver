@@ -1,11 +1,7 @@
-from config_generator.etc.compile import generate_compile_tasks
-
-from config_generator.etc.sanitizers.test import generate_test_tasks
-
 from config_generator.components.cse.openssl import SaslCyrusOpenSSLCompile
-
 from config_generator.components.sanitizers.asan import TAG
-
+from config_generator.etc.compile import generate_compile_tasks
+from config_generator.etc.sanitizers.test import generate_test_tasks
 
 # pylint: disable=line-too-long
 # fmt: off
@@ -33,16 +29,12 @@ def tasks():
         'cyrus': SaslCyrusOpenSSLCompile,
     }
 
-    res += generate_compile_tasks(
-        SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS
-    )
+    res += generate_compile_tasks(SSL, TAG, SASL_TO_FUNC, COMPILE_MATRIX, MORE_TAGS)
 
     res += generate_test_tasks(SSL, TAG, TEST_MATRIX, MORE_TAGS)
 
     res += generate_test_tasks(
-        SSL, TAG, TEST_MATRIX, MORE_TAGS,
-        MORE_TEST_TAGS=['with-mongocrypt'],
-        MORE_VARS={'SKIP_CRYPT_SHARED_LIB': 'on'}
+        SSL, TAG, TEST_MATRIX, MORE_TAGS, MORE_TEST_TAGS=['with-mongocrypt'], MORE_VARS={'SKIP_CRYPT_SHARED_LIB': 'on'}
     )
 
     return res

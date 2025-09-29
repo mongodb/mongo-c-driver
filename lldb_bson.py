@@ -107,13 +107,13 @@ def print_errors(fn: FuncT) -> FuncT:
             print(e)
             raise
 
-    return cast("FuncT", _wrap)
+    return cast('FuncT', _wrap)
 
 
 @print_errors
 def __lldb_init_module(debugger: SBDebugger, internal_dict: InternalDict):
     # Inject the global magic document traverser:
-    internal_dict["bson"] = _BSONWalker()
+    internal_dict['bson'] = _BSONWalker()
     # Register types:
     for cls in _SyntheticMeta.synthetics:
         # The (regex of) the type that is handled by this class:
@@ -127,34 +127,34 @@ def __lldb_init_module(debugger: SBDebugger, internal_dict: InternalDict):
             quoted = cls.__summary_str__.replace("'", "\\'")
             cmd = f"type summary add --summary-string '{quoted}' -x '^{ty}$'"
             debugger.HandleCommand(cmd)
-        if hasattr(cls, "__summary__"):
+        if hasattr(cls, '__summary__'):
             # More complex: Call a Python function that will create the summary
             cmd = f"type summary add -F lldb_bson.{cls.__name__}.__summary__ -x '^{ty}$'"
             debugger.HandleCommand(cmd)
 
     # Render __bson_byte__ as "bytes with ASCII." __bson_byte__ is a
     # debug-only type generated on-the-fly in LLDB
-    debugger.HandleCommand("type format add -f Y __bson_byte__")
+    debugger.HandleCommand('type format add -f Y __bson_byte__')
     # Arrays of bytes as a sequence of hex values:
     debugger.HandleCommand(r"type summary add -s '${var[]%x}' -x '__bson_byte__\[[0-9]+\]'")
 
-    print("lldb_bson is ready")
+    print('lldb_bson is ready')
 
 
 _ = __lldb_init_module  # Silence "unused function" warnings
 
 
-FuncT = TypeVar("FuncT", bound=Callable[..., Any])
-"Type of functions"
-T = TypeVar("T")
-"Unbounded invariant type parameter"
+FuncT = TypeVar('FuncT', bound=Callable[..., Any])
+'Type of functions'
+T = TypeVar('T')
+'Unbounded invariant type parameter'
 InternalDict = Dict[str, Any]
-"Type of internal dictionaries, provided by LLDB"
+'Type of internal dictionaries, provided by LLDB'
 
 
 ValueFactory = Callable[[], SBValue]
 ChildItem = Union[
-    Tuple[str, "str | int"], ValueFactory, Tuple[str, "str | int", "lldb.ValueFormatType|None", "SBType|None"]
+    Tuple[str, 'str | int'], ValueFactory, Tuple[str, 'str | int', 'lldb.ValueFormatType|None', 'SBType|None']
 ]
 
 
@@ -165,19 +165,19 @@ class _SyntheticMeta(type):
     """
 
     synthetics: list[Type[SyntheticDisplayBase[Any]]] = []
-    "The display type classes that have been defined"
+    'The display type classes that have been defined'
 
     @override
     def __new__(
         cls: Type[_SyntheticMeta], name: str, bases: tuple[type, ...], namespace: dict[str, Any]
     ) -> Type[SyntheticDisplayBase[Any]]:
         new_class: Type[SyntheticDisplayBase[Any]] = type.__new__(cast(type, cls), name, bases, namespace)
-        if namespace.get("__abstract__"):
+        if namespace.get('__abstract__'):
             return new_class
         # Check for the required __typename__ and __parse__
-        if not hasattr(new_class, "__typename__"):
+        if not hasattr(new_class, '__typename__'):
             raise TypeError(f'Type "{new_class}" is missing a "__typename__" attribute')
-        if not hasattr(new_class, "__parse__"):
+        if not hasattr(new_class, '__parse__'):
             raise TypeError(f'Type "{new_class}" has no "__parse__" method')
         # Remember this new class:
         cls.synthetics.append(new_class)
@@ -186,12 +186,12 @@ class _SyntheticMeta(type):
 
 class SyntheticDisplayBase(Generic[T], SBSyntheticValueProvider, metaclass=_SyntheticMeta):
     __abstract__: ClassVar[bool] = True
-    "If true, disables metaclass checks"
+    'If true, disables metaclass checks'
 
     __summary_str__: ClassVar[str | None] = None
     "Set to an LLDB '--summary-string' formatting string for rendering the inline value summary"
     __enable_synthetic__: ClassVar[bool] = True
-    "If False, do not generate synthetic children (used for primitive values)"
+    'If False, do not generate synthetic children (used for primitive values)'
 
     if TYPE_CHECKING:
         __typename__: ClassVar[str]
@@ -223,16 +223,16 @@ class SyntheticDisplayBase(Generic[T], SBSyntheticValueProvider, metaclass=_Synt
         Obtain the SBType for this class. Can be overriden in subclasses, and
         the type may consider the value that lives at the address.
         """
-        return generate_or_get_type(f"struct {cls.__typename__} {{}}", frame)
+        return generate_or_get_type(f'struct {cls.__typename__} {{}}', frame)
 
     @print_errors
     def __init__(self, val: SBValue, idict: InternalDict | None = None) -> None:
         self.__sbvalue = val
-        "The SBValue given for this object"
+        'The SBValue given for this object'
         self.__children: list[ChildItem] = []
-        "The synthetic children associated with the value"
+        'The synthetic children associated with the value'
         self.__value: T | None = None
-        "The decoded value, or ``None`` if it has not yet been decoded"
+        'The decoded value, or ``None`` if it has not yet been decoded'
 
     @property
     def sbvalue(self) -> SBValue:
@@ -285,7 +285,7 @@ class SyntheticDisplayBase(Generic[T], SBSyntheticValueProvider, metaclass=_Synt
         """
         # LLDB sometimes calls us with a child that we don't have?
         if pos >= len(self.__children):
-            print(f"NOTE: lldb called get_child_at_index({pos}), but we only have {len(self.__children)} children")
+            print(f'NOTE: lldb called get_child_at_index({pos}), but we only have {len(self.__children)} children')
             return SBValue()
         # Get the child:
         nth = self.__children[pos]
@@ -293,7 +293,7 @@ class SyntheticDisplayBase(Generic[T], SBSyntheticValueProvider, metaclass=_Synt
         if not isinstance(nth, tuple):
             # The type is a ValueFactory, which will return a new SBValue
             val = nth()
-            assert val.error.success, f"{val.error=}, {nth=}, {pos=}"
+            assert val.error.success, f'{val.error=}, {nth=}, {pos=}'
             return val
         # Otherwise, they yielded a tuple:
         if len(nth) == 4:
@@ -338,7 +338,7 @@ class PrimitiveDisplay(Generic[T], SyntheticDisplayBase[T]):
     __enable_synthetic__: ClassVar[bool] = False
 
     __struct_format__: ClassVar[str]
-    "The struct format string that will be used to extract the value from memory"
+    'The struct format string that will be used to extract the value from memory'
 
     @classmethod
     @override
@@ -358,15 +358,15 @@ class PrimitiveDisplay(Generic[T], SyntheticDisplayBase[T]):
 class DoubleDisplay(PrimitiveDisplay[float]):
     """Displays BSON doubles"""
 
-    __typename__ = "__bson_double__"
-    __struct_format__: ClassVar[str] = "<d"
+    __typename__ = '__bson_double__'
+    __struct_format__: ClassVar[str] = '<d'
 
 
 class UTF8Display(SyntheticDisplayBase[bytes]):
     """Display type for BSON UTF-8 values"""
 
-    __typename__ = "__bson_utf8__"
-    __summary_str__ = "${var[1]}"  # Display the second child (which is the actual string)
+    __typename__ = '__bson_utf8__'
+    __summary_str__ = '${var[1]}'  # Display the second child (which is the actual string)
 
     @classmethod
     @override
@@ -378,23 +378,23 @@ class UTF8Display(SyntheticDisplayBase[bytes]):
     @override
     def get_children(self) -> Iterable[ChildItem]:
         strlen = len(self.value)
-        yield "size (bytes)", strlen
+        yield 'size (bytes)', strlen
         # Create a char[] type to represent the string content:
         array_t = self.sbvalue.target.GetBasicType(lldb.eBasicTypeChar).GetArrayType(strlen)
-        yield lambda: self.sbvalue.synthetic_child_from_address("[content]", self.address + 4, array_t)
+        yield lambda: self.sbvalue.synthetic_child_from_address('[content]', self.address + 4, array_t)
         try:
             # Attempt a UTF-8 decode. We don't actually show this, we just want to
             # check if there are encoding errors, which we will display in the output
-            self.value.decode("utf-8")
+            self.value.decode('utf-8')
         except UnicodeDecodeError as e:
-            yield "decode error", str(e)
+            yield 'decode error', str(e)
 
 
 class DocumentInfo(NamedTuple):
     """A decoded document"""
 
     elements: Sequence[DocumentElement | DocumentError]
-    "Existing elements or errors found while parsing the data"
+    'Existing elements or errors found while parsing the data'
 
 
 class DocumentElement(NamedTuple):
@@ -415,7 +415,7 @@ class DocumentError(NamedTuple):
     error_offset: int
 
 
-class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
+class DocumentDisplay(SyntheticDisplayBase['DocumentInfo | DocumentError']):
     """
     Main display of BSON document elements. This parses a document/array, and
     generates the child elements that can be further expanded and inspected.
@@ -424,8 +424,8 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
     the top-level object and is the one responsible for filling the cache.
     """
 
-    __typename__ = "__bson_document_[0-9]+__"
-    __qualifier__: ClassVar[str] = "document"
+    __typename__ = '__bson_document_[0-9]+__'
+    __qualifier__: ClassVar[str] = 'document'
     "The 'qualifier' of this type. Overriden by ArrayDisplay."
 
     @classmethod
@@ -435,12 +435,12 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
         prefix = cls.__qualifier__
         doc = cls.__parse__(value)
         if isinstance(doc, DocumentError):
-            return f"Error parsing {prefix} at byte {doc.error_offset}: {doc.message}"
+            return f'Error parsing {prefix} at byte {doc.error_offset}: {doc.message}'
         if len(doc.elements) == 0:
-            return f"{prefix} (empty)"
+            return f'{prefix} (empty)'
         if len(doc.elements) == 1:
-            return f"{prefix} (1 element)"
-        return f"{prefix} ({len(doc.elements)} elements)"
+            return f'{prefix} (1 element)'
+        return f'{prefix} ({len(doc.elements)} elements)'
 
     @classmethod
     @override
@@ -449,10 +449,10 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
         # Read the size prefix:
         err = SBError()
         header = frame.thread.process.ReadMemory(addr, 4, err)
-        assert err.success, f"{err=}, {frame=}, {addr=}"
+        assert err.success, f'{err=}, {frame=}, {addr=}'
         size = read_i32le(header)
         # Generate the type:
-        typename = f"__bson_{cls.__qualifier__}_{size}__"
+        typename = f'__bson_{cls.__qualifier__}_{size}__'
         doc_t = generate_or_get_type(
             f"""
             enum __bson_byte__ : unsigned char {{}};
@@ -471,7 +471,7 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
             # will be pulled here:
             buf = memcache.read(value)[1]
         except LookupError as e:
-            return DocumentError(f"Failed to read memory: {e}", value.load_addr)
+            return DocumentError(f'Failed to read memory: {e}', value.load_addr)
         return cls.parse_bytes(buf)
 
     @classmethod
@@ -497,12 +497,12 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
             # Yield this one, and then advance to the next element:
             yield elem
             elem_size = 1 + len(elem.key) + 1 + elem.value_size
-            if cls.__qualifier__ == "array":
+            if cls.__qualifier__ == 'array':
                 # Validate that array keys are increasing integers:
                 expect_key = str(array_idx)
                 if elem.key != expect_key:
                     yield DocumentError(
-                        f"Array element must have incrementing integer keys "
+                        f'Array element must have incrementing integer keys '
                         f'(Expected "{expect_key}", got "{elem.key}")',
                         cur_offset,
                     )
@@ -511,7 +511,7 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
         # Check that we actually consumed the whole buffer:
         remain = len(buf) - cur_offset
         if remain > 1:
-            yield DocumentError(f"Extra {len(buf)} bytes in document data", cur_offset)
+            yield DocumentError(f'Extra {len(buf)} bytes in document data', cur_offset)
 
     @classmethod
     def _parse_one(
@@ -522,24 +522,24 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
             type_tag = BSONType(buf[0])
         except ValueError:
             # The tag byte is not a valid tag value
-            return DocumentError(f"Invalid element type tag 0x{buf[0]:x}", elem_offset)
+            return DocumentError(f'Invalid element type tag 0x{buf[0]:x}', elem_offset)
         except IndexError:
             # 'buf' was empty
-            return DocumentError(f"Unexpected end-of-data", elem_offset)
+            return DocumentError('Unexpected end-of-data', elem_offset)
         # Stop if this is the end:
         if type_tag == BSONType.EOD:
-            return DocumentElement(type_tag, "", 0, 0)
+            return DocumentElement(type_tag, '', 0, 0)
         # Find the null terminator on the key:
         try:
             key_nulpos = buf.index(0, 1)
         except ValueError:
-            return DocumentError(f"Unexpected end-of-data while parsing the element key", elem_offset)
+            return DocumentError('Unexpected end-of-data while parsing the element key', elem_offset)
         key_bytes = buf[1:key_nulpos]
         try:
-            key = key_bytes.decode("utf-8")
+            key = key_bytes.decode('utf-8')
         except UnicodeDecodeError as e:
-            yield DocumentError(f"Element key {key_bytes} is not valid UTF-8 ({e})", elem_offset)
-            key = key_bytes.decode("utf-8", errors="replace")
+            yield DocumentError(f'Element key {key_bytes} is not valid UTF-8 ({e})', elem_offset)
+            key = key_bytes.decode('utf-8', errors='replace')
         # The offset of the value within the element:
         inner_offset = key_nulpos + 1
         # The buffer that starts at the value:
@@ -580,7 +580,7 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
             # Size is a length prefix, plus four, plus one for the subtype
             value_size = read_i32le(value_bytes) + 4 + 1
         else:
-            assert False, f"Unhandled value tag? {type_tag=} {buf=} {key=}"
+            assert False, f'Unhandled value tag? {type_tag=} {buf=} {key=}'
         # The absolute offset of the element within the parent document:
         value_offset = elem_offset + inner_offset
         return DocumentElement(type_tag, key, value_offset, value_size)
@@ -590,12 +590,12 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
         doc = self.value
         if isinstance(doc, DocumentError):
             # The entire document failed to parse. Just generate one error:
-            yield "[error]", f"Parsing error at byte {doc.error_offset}: {doc.message}"
+            yield '[error]', f'Parsing error at byte {doc.error_offset}: {doc.message}'
             return
         for elem in doc.elements:
             if isinstance(elem, DocumentError):
                 # There was an error at this location.
-                yield "[error]", f"Data error at offset {elem.error_offset}: {elem.message}"
+                yield '[error]', f'Data error at offset {elem.error_offset}: {elem.message}'
             else:
                 # Create a ValueFactory for each element:
                 yield functools.partial(self.create_child, self.sbvalue, elem)
@@ -603,9 +603,9 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
     @classmethod
     def create_child(cls, parent: SBValue, elem: DocumentElement) -> SBValue:
         """Generate the child elements for LLDB to walk through"""
-        if cls.__qualifier__ == "array":
+        if cls.__qualifier__ == 'array':
             # Don't quote the integer keys
-            name = f"[{elem.key}]"
+            name = f'[{elem.key}]'
         else:
             name = f"['{elem.key}']"
         value_addr = parent.load_addr + elem.value_offset
@@ -637,20 +637,20 @@ class DocumentDisplay(SyntheticDisplayBase["DocumentInfo | DocumentError"]):
             BSONType.MinKey: MinKeyDisplay.__get_sbtype__,
         }
         get_type = by_type.get(elem.type)
-        assert get_type is not None, f"Unhandled type tag? {elem=}"
+        assert get_type is not None, f'Unhandled type tag? {elem=}'
         # Create the SBType:
         type = get_type(frame, value_addr)
         # Create a synthetic child of that type at the address of the element's value:
         val = parent.synthetic_child_from_address(name, value_addr, type)
-        assert val.error.success, f"{elem=}, {val.error=}"
+        assert val.error.success, f'{elem=}, {val.error=}'
         return val
 
 
 class ArrayDisplay(DocumentDisplay):
     """Display for arrays. Most logic is implemented in the DocumentDisplay base."""
 
-    __typename__ = "__bson_array_[0-9]+__"
-    __qualifier__: ClassVar[str] = "array"
+    __typename__ = '__bson_array_[0-9]+__'
+    __qualifier__: ClassVar[str] = 'array'
 
 
 class BinaryInfo(NamedTuple):
@@ -661,7 +661,7 @@ class BinaryInfo(NamedTuple):
 class BinaryDisplay(SyntheticDisplayBase[BinaryInfo]):
     """Display for a BSON binary value"""
 
-    __typename__ = "__bson_binary__"
+    __typename__ = '__bson_binary__'
 
     @classmethod
     @override
@@ -677,11 +677,11 @@ class BinaryDisplay(SyntheticDisplayBase[BinaryInfo]):
 
     @override
     def get_children(self) -> Iterable[ChildItem]:
-        yield "size", len(self.value.data)
-        byte_t = generate_or_get_type("enum __bson_byte__ : char {}", self.sbvalue.frame)
-        yield "subtype", self.value.subtype, lldb.eFormatHex, byte_t
+        yield 'size', len(self.value.data)
+        byte_t = generate_or_get_type('enum __bson_byte__ : char {}', self.sbvalue.frame)
+        yield 'subtype', self.value.subtype, lldb.eFormatHex, byte_t
         array_t = byte_t.GetArrayType(len(self.value.data))
-        yield lambda: self.sbvalue.synthetic_child_from_address("data", self.address + 5, array_t)
+        yield lambda: self.sbvalue.synthetic_child_from_address('data', self.address + 5, array_t)
 
 
 class UndefinedDisplay(SyntheticDisplayBase[None]):
@@ -689,8 +689,8 @@ class UndefinedDisplay(SyntheticDisplayBase[None]):
     Display type for 'undefined' values. Also derived from for other unit types.
     """
 
-    __typename__ = "__bson_undefined__"
-    __summary_str__ = "undefined"
+    __typename__ = '__bson_undefined__'
+    __summary_str__ = 'undefined'
     __enable_synthetic__: ClassVar[bool] = False
 
     @classmethod
@@ -702,7 +702,7 @@ class UndefinedDisplay(SyntheticDisplayBase[None]):
 class ObjectIDDisplay(SyntheticDisplayBase[bytes]):
     """Display type for ObjectIDs"""
 
-    __typename__ = "__bson_objectid__"
+    __typename__ = '__bson_objectid__'
 
     @classmethod
     @override
@@ -729,20 +729,20 @@ class ObjectIDDisplay(SyntheticDisplayBase[bytes]):
 
     @override
     def get_children(self) -> Iterable[ChildItem]:
-        yield "spelling", self.value.hex()
+        yield 'spelling', self.value.hex()
 
 
 class DatetimeDisplay(SyntheticDisplayBase[int]):
     """Display for BSON Datetime objects"""
 
-    __typename__ = "__bson_datetime__"
-    __summary_str__: ClassVar[str] = "datetime: ${var[0]}"
+    __typename__ = '__bson_datetime__'
+    __summary_str__: ClassVar[str] = 'datetime: ${var[0]}'
 
     @classmethod
     @override
     def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
         dt = datetime.fromtimestamp(cls.__parse__(value) / 1000)
-        s = f"{dt:%a %b %m %Y %H:%M:%S +%fμs}"
+        s = f'{dt:%a %b %m %Y %H:%M:%S +%fμs}'
         return f'Date("{s}")'
 
     @classmethod
@@ -750,7 +750,7 @@ class DatetimeDisplay(SyntheticDisplayBase[int]):
     def __parse__(cls, val: SBValue) -> int:
         buf = memcache.get_cached(val.load_addr)
         buf = buf[:8]
-        value: int = struct.unpack("<Q", buf)[0]
+        value: int = struct.unpack('<Q', buf)[0]
         return value
 
     @override
@@ -760,31 +760,31 @@ class DatetimeDisplay(SyntheticDisplayBase[int]):
         # Adjusted to the local time zone:
         adjusted = dt.astimezone()
         yield from {
-            "[isoformat]": dt.isoformat(),
-            "[date]": f"{dt:%B %d, %Y}",
-            "[time]": dt.strftime("%H:%M:%S +%fμs"),
-            "[local]": adjusted.strftime("%c"),
-            "Year": dt.year,
-            "Month": dt.month,
-            "Day": dt.day,
-            "Hour": dt.hour,
-            "Minute": dt.minute,
-            "Second": dt.second,
-            "+μs": dt.microsecond,
+            '[isoformat]': dt.isoformat(),
+            '[date]': f'{dt:%B %d, %Y}',
+            '[time]': dt.strftime('%H:%M:%S +%fμs'),
+            '[local]': adjusted.strftime('%c'),
+            'Year': dt.year,
+            'Month': dt.month,
+            'Day': dt.day,
+            'Hour': dt.hour,
+            'Minute': dt.minute,
+            'Second': dt.second,
+            '+μs': dt.microsecond,
         }.items()
 
 
 class NullDisplay(UndefinedDisplay):
     """Display for the BSON 'null' type"""
 
-    __typename__ = "__bson_null__"
-    __summary_str__ = "null"
+    __typename__ = '__bson_null__'
+    __summary_str__ = 'null'
 
 
 class RegexDisplay(SyntheticDisplayBase[Tuple[bytes, bytes]]):
     """Display type for BSON regular expressions"""
 
-    __typename__ = "__bson_regex_[0-9]+_[0-9]+__"
+    __typename__ = '__bson_regex_[0-9]+_[0-9]+__'
     __enable_synthetic__: ClassVar[bool] = False
 
     @classmethod
@@ -815,8 +815,8 @@ class RegexDisplay(SyntheticDisplayBase[Tuple[bytes, bytes]]):
         # Create a JS-style regex literal:
         pair = cls.__parse__(value)
         regex, options = cls.decode_pair(pair)
-        regex = regex.replace("/", "\\/").replace("\n", "\\n")
-        return f"/{regex}/{options}"
+        regex = regex.replace('/', '\\/').replace('\n', '\\n')
+        return f'/{regex}/{options}'
 
     @classmethod
     def parse_at(cls, addr: int) -> tuple[bytes, bytes]:
@@ -833,16 +833,16 @@ class RegexDisplay(SyntheticDisplayBase[Tuple[bytes, bytes]]):
     @classmethod
     def decode_pair(cls, value: tuple[bytes, bytes]) -> tuple[str, str]:
         regex, options = value
-        regex = regex.decode("utf-8", errors="replace")
-        options = options.decode("utf-8", errors="replace")
+        regex = regex.decode('utf-8', errors='replace')
+        options = options.decode('utf-8', errors='replace')
         return regex, options
 
 
 class DBPointerDisplay(SyntheticDisplayBase[Tuple[bytes, int]]):
     """Display type for DBPointers"""
 
-    __typename__ = "__bson_dbpointer__"
-    __summary_str__: ClassVar[str | None] = "DBPointer(${var[0]}, ${var[1]})"
+    __typename__ = '__bson_dbpointer__'
+    __summary_str__: ClassVar[str | None] = 'DBPointer(${var[0]}, ${var[1]})'
 
     @classmethod
     @override
@@ -858,36 +858,36 @@ class DBPointerDisplay(SyntheticDisplayBase[Tuple[bytes, int]]):
         utf8_t = UTF8Display.__get_sbtype__(self.sbvalue.frame, self.address)
         oid_offset = self.value[1]
         oid_t = ObjectIDDisplay.__get_sbtype__(self.sbvalue.frame, self.address + oid_offset)
-        yield lambda: self.sbvalue.synthetic_child_from_address("collection", self.sbvalue.load_addr, utf8_t)
-        yield lambda: self.sbvalue.synthetic_child_from_address("object", self.sbvalue.load_addr + oid_offset, oid_t)
+        yield lambda: self.sbvalue.synthetic_child_from_address('collection', self.sbvalue.load_addr, utf8_t)
+        yield lambda: self.sbvalue.synthetic_child_from_address('object', self.sbvalue.load_addr + oid_offset, oid_t)
 
 
 class CodeDisplay(UTF8Display):
     """Display type for BSON code"""
 
-    __typename__ = "__bson_code__"
-    __summary_str__ = "Code(${var[1]})"
+    __typename__ = '__bson_code__'
+    __summary_str__ = 'Code(${var[1]})'
 
 
 class SymbolDisplay(UTF8Display):
     """Display type for BSON symbols"""
 
-    __typename__ = "__bson_symbol__"
+    __typename__ = '__bson_symbol__'
 
     @classmethod
     @override
     def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
         spell = cls.__parse__(value)
-        dec = spell.decode("utf-8", errors="replace").rstrip("\x00")
-        return f"Symbol({dec})"
+        dec = spell.decode('utf-8', errors='replace').rstrip('\x00')
+        return f'Symbol({dec})'
 
 
 class CodeWithScopeDisplay(SyntheticDisplayBase[int]):
     """Display type for BSON 'Code w/ Scope'"""
 
-    __typename__ = "__code_with_scope__"
+    __typename__ = '__code_with_scope__'
 
-    __summary_str__: ClassVar[str | None] = "Code(${var[0][1]}, ${var[1]})"
+    __summary_str__: ClassVar[str | None] = 'Code(${var[0][1]}, ${var[1]})'
 
     @classmethod
     @override
@@ -903,54 +903,54 @@ class CodeWithScopeDisplay(SyntheticDisplayBase[int]):
         code_t = CodeDisplay.__get_sbtype__(self.sbvalue.frame, self.address)
         scope_doc_offset = self.value
         doc_t = DocumentDisplay.__get_sbtype__(self.sbvalue.frame, self.address + scope_doc_offset)
-        yield lambda: checked(self.sbvalue.synthetic_child_from_address("code", self.address + 4, code_t))
+        yield lambda: checked(self.sbvalue.synthetic_child_from_address('code', self.address + 4, code_t))
         yield lambda: checked(
-            self.sbvalue.synthetic_child_from_address("scope", self.address + scope_doc_offset, doc_t)
+            self.sbvalue.synthetic_child_from_address('scope', self.address + scope_doc_offset, doc_t)
         )
 
 
 class Int32Display(PrimitiveDisplay[int]):
     """Display for 32-bit BSON integers"""
 
-    __typename__ = "__bson_int32__"
-    __struct_format__: ClassVar[str] = "<i"
+    __typename__ = '__bson_int32__'
+    __struct_format__: ClassVar[str] = '<i'
 
     @classmethod
     @override
     def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
-        return f"NumberInt({cls.__parse__(value)})"
+        return f'NumberInt({cls.__parse__(value)})'
 
 
 class Int64Display(PrimitiveDisplay[int]):
     """Display for 64-bit BSON integers"""
 
-    __typename__ = "__bson_int64__"
-    __struct_format__: ClassVar[str] = "<q"
+    __typename__ = '__bson_int64__'
+    __struct_format__: ClassVar[str] = '<q'
 
     @classmethod
     @override
     def __summary__(cls, value: SBValue, idict: InternalDict) -> str:
-        return f"NumberLong({cls.__parse__(value)})"
+        return f'NumberLong({cls.__parse__(value)})'
 
 
 class TimestampDisplay(SyntheticDisplayBase[Tuple[int, int]]):
     """Display type for BSON timestamps"""
 
-    __typename__ = "__bson_timestamp__"
-    __summary_str__ = "Timestamp(${var[0]}, ${var[1]})"
+    __typename__ = '__bson_timestamp__'
+    __summary_str__ = 'Timestamp(${var[0]}, ${var[1]})'
 
     @classmethod
     @override
     def __parse__(cls, value: SBValue) -> tuple[int, int]:
         buf = memcache.get_cached(value.load_addr)[:8]
         # Just two 32bit integers:
-        timestamp, increment = struct.unpack("<ii", buf)
+        timestamp, increment = struct.unpack('<ii', buf)
         return timestamp, increment
 
     @override
     def get_children(self) -> Iterable[ChildItem]:
-        yield "timestamp", self.value[0]
-        yield "increment", self.value[1]
+        yield 'timestamp', self.value[0]
+        yield 'increment', self.value[1]
 
 
 class Decimal128Value(NamedTuple):
@@ -966,7 +966,7 @@ class Decimal128Value(NamedTuple):
 class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
     """The display type for BSON's Decimal128 type"""
 
-    __typename__ = "__bson_decimal128__"
+    __typename__ = '__bson_decimal128__'
 
     @classmethod
     @override
@@ -1002,8 +1002,11 @@ class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
         d128_tetra = (hi_word << 64) | low_word
         # Create an array of individual bits (high bits first):
         bits = tuple(((d128_tetra >> n) & 1) for n in range(127, -1, -1))
+
         # Recombine a sequence of bits into an int (high bits first)
-        mergebits: Callable[[tuple[int, ...]], int] = lambda bs: functools.reduce(lambda a, b: (a << 1) | b, bs, 0)
+        def mergebits(bs: tuple[int, ...]) -> int:
+            return functools.reduce(lambda a, b: (a << 1) | b, bs, 0)
+
         # Sign bit:
         sign = bits[0]
         # BID uses the first two combo bits to indicate that the exponent is shifted
@@ -1025,11 +1028,11 @@ class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
             # Check for special values in the remainder of the combination:
             more = bits[3:6]
             if more == (1, 0, 0) or more == (1, 0, 1):
-                spelling = "Infinity"
+                spelling = 'Infinity'
             elif more == (1, 1, 0):
-                spelling = "NaN (quiet)"
+                spelling = 'NaN (quiet)'
             elif more == (1, 1, 1):
-                spelling = "NaN (signaling)"
+                spelling = 'NaN (signaling)'
 
         coeff = mergebits(coeff)
         exponent = mergebits(exponent)
@@ -1042,12 +1045,12 @@ class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
                 spelling = spelling.zfill(abs(e))
                 split = len(spelling) + e
                 w, fr = spelling[:split], spelling[split:]
-                spelling = f"{w}.{fr}"
+                spelling = f'{w}.{fr}'
             else:
-                spelling = spelling + "0" * e
+                spelling = spelling + '0' * e
 
         if sign:
-            spelling = f"-{spelling}"
+            spelling = f'-{spelling}'
 
         # The "combination" bits
         combination = mergebits(bits[1:18])
@@ -1055,52 +1058,52 @@ class Decimal128Display(SyntheticDisplayBase[Decimal128Value]):
 
     @override
     def get_children(self) -> Iterable[ChildItem]:
-        yield "sign", self.value.sign
-        yield "combination", self.value.combination, lldb.eFormatBinary, None
-        yield "exponent (biased)", self.value.exponent
-        yield "exponent (actual)", self.value.exponent - 6176
-        yield "significand", str(self.value.significand)
-        yield "value", self.value.spelling
+        yield 'sign', self.value.sign
+        yield 'combination', self.value.combination, lldb.eFormatBinary, None
+        yield 'exponent (biased)', self.value.exponent
+        yield 'exponent (actual)', self.value.exponent - 6176
+        yield 'significand', str(self.value.significand)
+        yield 'value', self.value.spelling
 
 
 class MaxKeyDisplay(NullDisplay):
     """The display type for BSON's 'max key' type"""
 
-    __typename__ = "__bson_maxkey__"
-    __summary_str__ = "max key"
+    __typename__ = '__bson_maxkey__'
+    __summary_str__ = 'max key'
 
 
 class MinKeyDisplay(NullDisplay):
     """The display type for BSON's 'min key' type"""
 
-    __typename__ = "__bson_minkey__"
-    __summary_str__ = "min key"
+    __typename__ = '__bson_minkey__'
+    __summary_str__ = 'min key'
 
 
 class BSONTInfo(NamedTuple):
     """Information about a bson_t object"""
 
     addr: int
-    "The address of the pointer to the beginning of the BSON data managed by this object"
+    'The address of the pointer to the beginning of the BSON data managed by this object'
     size: int
-    "The size of the BSON data managed/referenced by this object"
+    'The size of the BSON data managed/referenced by this object'
     flags: int
-    "Flags of the bson_t object"
+    'Flags of the bson_t object'
 
 
 class BSONTError(NamedTuple):
     """Represents an error while reading a bson_t object"""
 
     reason: str
-    "A description of the error that ocurred"
+    'A description of the error that ocurred'
 
 
-class BSONTDisplay(SyntheticDisplayBase["BSONTInfo | BSONTError"]):
+class BSONTDisplay(SyntheticDisplayBase['BSONTInfo | BSONTError']):
     """
     Implements inspection logic for bson_t
     """
 
-    __typename__ = "bson_t"
+    __typename__ = 'bson_t'
 
     @classmethod
     @override
@@ -1117,42 +1120,42 @@ class BSONTDisplay(SyntheticDisplayBase["BSONTInfo | BSONTError"]):
         err = SBError()
         flags = dat.GetUnsignedInt32(err, 0)
         if err.fail:
-            return BSONTError(f"Failed to read memory at 0x{value.load_addr:x}: {err.description}")
+            return BSONTError(f'Failed to read memory at 0x{value.load_addr:x}: {err.description}')
         length = dat.GetUnsignedInt32(err, 4)
         if err.fail:
-            return BSONTError(f"Failed to read memory at 0x{value.load_addr:x}: {err.description}")
+            return BSONTError(f'Failed to read memory at 0x{value.load_addr:x}: {err.description}')
 
         # Check bogus values:
         MAX_SIZE = 16 * 1024 * 1024
         ALL_FLAGS = (1 << 6) - 1
         if flags & ~ALL_FLAGS or length < 5 or length > MAX_SIZE:
-            return BSONTError(f"bson_t appears uninitialized/invalid [a] {flags=} {length=}")
+            return BSONTError(f'bson_t appears uninitialized/invalid [a] {flags=} {length=}')
 
         is_inline = bool(flags & 1)
 
         if is_inline:
             # Inline objects may only occupy 120 bytes, at most
             if length > 120:
-                return BSONTError("bson_t appears uninitialized/invalid [b]")
+                return BSONTError('bson_t appears uninitialized/invalid [b]')
             # Look for debug info for the inline impl
-            inline_t = value.target.FindFirstType("bson_impl_inline_t")
+            inline_t = value.target.FindFirstType('bson_impl_inline_t')
             if inline_t:
                 as_inline = value.Cast(inline_t)
-                ptr = as_inline.GetChildMemberWithName("data").load_addr
+                ptr = as_inline.GetChildMemberWithName('data').load_addr
             else:
                 # No debug info? Guess its location as the default
                 ptr = value.load_addr + 4 + 4
             if not err.success:
-                return BSONTError(f"Failed to read inline bson_t data: {err}")
+                return BSONTError(f'Failed to read inline bson_t data: {err}')
             return BSONTInfo(ptr, length, flags)
 
         # Look for impl_alloc_t
-        alloc_t = value.target.FindFirstType("bson_impl_alloc_t")
+        alloc_t = value.target.FindFirstType('bson_impl_alloc_t')
         if alloc_t:
             alloc = value.Cast(alloc_t)
             # Walk to the buffer for this value:
-            offset = alloc.GetChildMemberWithName("offset").unsigned
-            buf = alloc.GetChildMemberWithName("buf").deref.deref
+            offset = alloc.GetChildMemberWithName('offset').unsigned
+            buf = alloc.GetChildMemberWithName('buf').deref.deref
             ptr = buf.load_addr + offset
             return BSONTInfo(ptr, length, flags)
 
@@ -1168,48 +1171,48 @@ class BSONTDisplay(SyntheticDisplayBase["BSONTInfo | BSONTError"]):
         offset_off = buf_off + (ptr_size * 2)
         offset = dat.GetUnsignedInt32(err, offset_off)
         if not err.success:
-            return BSONTError(f"Failed to read offset of buffer: {err}")
-        bufptr = value.CreateChildAtOffset("buf", buf_off, u8ptr_t.GetPointerType()).deref
+            return BSONTError(f'Failed to read offset of buffer: {err}')
+        bufptr = value.CreateChildAtOffset('buf', buf_off, u8ptr_t.GetPointerType()).deref
         if not bufptr.error.success:
-            return BSONTError(f"Failed to read the alloc buf: {bufptr.error} {offset=} {buf_off=}")
+            return BSONTError(f'Failed to read the alloc buf: {bufptr.error} {offset=} {buf_off=}')
         ptr = bufptr.data.GetUnsignedInt64(err, 0)
         assert err.success, err
 
-        u32_t = value.target.FindFirstType("uint32_t")
+        u32_t = value.target.FindFirstType('uint32_t')
         addr = SBAddress()
         addr.SetLoadAddress(ptr, value.target)
 
-        u32 = value.target.CreateValueFromAddress("tmp", addr, u32_t)
+        u32 = value.target.CreateValueFromAddress('tmp', addr, u32_t)
         assert u32.error.success, u32
         if u32.unsigned != length or length < 5:
-            return BSONTError(f"bson_t appears uninitialized/invalid [c] {flags=} {length=} {u32.unsigned=}")
+            return BSONTError(f'bson_t appears uninitialized/invalid [c] {flags=} {length=} {u32.unsigned=}')
         return BSONTInfo(ptr, length, flags)
 
     @override
     def get_children(self) -> Iterable[ChildItem]:
         val = self.value
         if isinstance(val, BSONTError):
-            yield "[error]", val.reason
+            yield '[error]', val.reason
             return
 
         # Imbue the flags with the possible debug info to give it a nice rendering
-        flags_t = self.sbvalue.target.FindFirstType("bson_flags_t")
+        flags_t = self.sbvalue.target.FindFirstType('bson_flags_t')
         if flags_t.IsValid():
-            yield "flags", val.flags, None, flags_t
+            yield 'flags', val.flags, None, flags_t
         else:
-            yield "flags", val.flags
-        yield "data size", val.size
+            yield 'flags', val.flags
+        yield 'data size', val.size
         ptr_t = self.sbvalue.target.GetBasicType(lldb.eBasicTypeVoid).GetPointerType()
-        yield "data address", val.addr, lldb.eFormatPointer, ptr_t
+        yield 'data address', val.addr, lldb.eFormatPointer, ptr_t
 
         # Generate the __bson_document_xxx__ that will allow walking the document:
         doc_t = DocumentDisplay.__get_sbtype__(self.sbvalue.frame, val.addr)
-        yield lambda: checked(self.sbvalue.synthetic_child_from_address("[content]", val.addr, doc_t))
+        yield lambda: checked(self.sbvalue.synthetic_child_from_address('[content]', val.addr, doc_t))
 
 
 def checked(val: SBValue) -> SBValue:
     """Assert that ``val`` is valid. Returns ``val``"""
-    assert val.error.success, f"{val=} {val.error=}"
+    assert val.error.success, f'{val=} {val.error=}'
     return val
 
 
@@ -1217,11 +1220,11 @@ def read_i32le(dat: bytes) -> int:
     """Read a 32-bit integer from the given data."""
     # Truncate before the read:
     buf = dat[0:4]
-    return struct.unpack("<i", buf)[0]
+    return struct.unpack('<i', buf)[0]
 
 
 _types_cache: dict[tuple[int, str], SBType] = {}
-"The cache of generated types (for generate_or_get_type)"
+'The cache of generated types (for generate_or_get_type)'
 
 
 def generate_or_get_type(expr_prefix: str, frame: SBFrame) -> SBType:
@@ -1254,8 +1257,8 @@ def generate_or_get_type(expr_prefix: str, frame: SBFrame) -> SBType:
     # Create a new temporary object. Give it a unique name to prevent it from
     # colliding with any possible temporaries we may have generated previously.
     hash = hashlib.md5(expr_prefix.encode()).hexdigest()
-    varname = f"__bson_lldb_tmp_{hash}"
-    full_expr = f"{expr_prefix} {varname}; {varname}"
+    varname = f'__bson_lldb_tmp_{hash}'
+    full_expr = f'{expr_prefix} {varname}; {varname}'
     tmp = frame.EvaluateExpression(full_expr)
     existing = tmp.type
     _types_cache[cachekey] = existing
@@ -1307,11 +1310,11 @@ class _BSONWalker:
             # Evaluate the left-hand string as an expression within the target
             target = lldb.debugger.GetSelectedTarget()
             if target is None:
-                raise RuntimeError("Not attached to a debug target")
+                raise RuntimeError('Not attached to a debug target')
             frame = target.process.selected_thread.frames[0]
             lhs = frame.EvaluateExpression(lhs)
         val: SBValue
-        if hasattr(lhs.__class__, "unwrap"):
+        if hasattr(lhs.__class__, 'unwrap'):
             # CodeLLDB gives us a wrapper around SBValue, but we want the unwrapped
             # version:
             val = lhs.__class__.unwrap(lhs)
@@ -1333,14 +1336,14 @@ class _BSONWalker:
         # Create the synthetic __bson_document_xxx__ object for this doc
         doc_t = DocumentDisplay.__get_sbtype__(val.frame, as_bson.addr)
         # Obtain a value reference to the document data:
-        retval = val.CreateValueFromAddress("[root]", as_bson.addr, doc_t)
+        retval = val.CreateValueFromAddress('[root]', as_bson.addr, doc_t)
 
         # Now resolve the path:
         for part in self._path:
             if isinstance(part, str):
                 # Access via ``p['foo']`` or ``p.foo``, requires our current node
                 # to be a document:
-                if not retval.type.name.startswith("__bson_document_"):
+                if not retval.type.name.startswith('__bson_document_'):
                     raise AttributeError(
                         f'Element of type {retval.type.name} cannot be accessed as a document (looking for element "{part}")'
                     )
@@ -1349,12 +1352,12 @@ class _BSONWalker:
                 want_child_name = f"['{part}']"
             else:
                 # Access via indexing ``p[42]``, requires an array
-                if not retval.type.name.startswith("__bson_array_"):
+                if not retval.type.name.startswith('__bson_array_'):
                     raise AttributeError(
-                        f"Element of type {retval.type.name} cannot be accessed as an array (looking for element {part})"
+                        f'Element of type {retval.type.name} cannot be accessed as an array (looking for element {part})'
                     )
                 # Array keys are bracketed, but not quoted
-                want_child_name = f"[{part}]"
+                want_child_name = f'[{part}]'
             # Find all children that match the key (usually only one)
             matching = (c for c in retval.children if c.name == want_child_name)
             # Get it:
@@ -1364,7 +1367,7 @@ class _BSONWalker:
                 if isinstance(part, str):
                     raise KeyError(f'Document has no element "{part}"')
                 else:
-                    raise IndexError(f"Array index [{part}] is out-of-bounds")
+                    raise IndexError(f'Array index [{part}] is out-of-bounds')
             # Set this as our current node, which we may step in further, or
             # we may be done
             retval = got
@@ -1394,7 +1397,7 @@ class _MemoryCache:
 
     def __init__(self):
         self._segments: dict[int, bytes] = {}
-        "Segments of memory keyed by the base address of the read operation"
+        'Segments of memory keyed by the base address of the read operation'
 
     def get_cached(self, addr: int) -> bytes:
         """
@@ -1410,9 +1413,9 @@ class _MemoryCache:
         segment = self.segment_containing(addr)
         if not segment:
             # Memory does not exist?
-            print(f"lldb_bson: Note: Attempted read of uncached address 0x{addr:x}")
-            print("".join(traceback.format_stack()))
-            return b"\0" * 512
+            print(f'lldb_bson: Note: Attempted read of uncached address 0x{addr:x}')
+            print(''.join(traceback.format_stack()))
+            return b'\0' * 512
         base_addr, data = segment
         inner_offset = addr - base_addr
         return data[inner_offset:]
@@ -1446,4 +1449,4 @@ class _MemoryCache:
 
 
 memcache = _MemoryCache()
-"A module-wide memory segment cache."
+'A module-wide memory segment cache.'

@@ -1,7 +1,7 @@
 from typing import Literal
 
-from pydantic import BaseModel, validator
 from packaging.version import Version
+from pydantic import BaseModel, validator
 
 
 class Distro(BaseModel):
@@ -21,14 +21,17 @@ class Distro(BaseModel):
     os: str | None = None
     os_type: Literal['linux', 'macos', 'windows'] | None = None
     os_ver: str | None = None
-    vs_ver: Literal[
-        '2013',
-        '2015',
-        '2017',
-        '2019',
-        '2022',
-        'vsCurrent',
-    ] | None = None
+    vs_ver: (
+        Literal[
+            '2013',
+            '2015',
+            '2017',
+            '2019',
+            '2022',
+            'vsCurrent',
+        ]
+        | None
+    ) = None
     size: Literal['small', 'large'] | None = None
     arch: Literal['arm64', 'power', 'zseries'] | None = None
 
@@ -61,7 +64,6 @@ MACOS_ARM64_DISTROS = [
 RHEL_DISTROS = [
     *ls_distro(name='rhel7-latest', os='rhel', os_type='linux', os_ver='7'),
     *ls_distro(name='rhel8-latest', os='rhel', os_type='linux', os_ver='8'),
-
     *ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0'),
     *ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4'),
     *ls_distro(name='rhel90', os='rhel', os_type='linux', os_ver='9.0'),
@@ -69,7 +71,7 @@ RHEL_DISTROS = [
     *ls_distro(name='rhel92', os='rhel', os_type='linux', os_ver='9.2'),
     *ls_distro(name='rhel93', os='rhel', os_type='linux', os_ver='9.3'),
     *ls_distro(name='rhel94', os='rhel', os_type='linux', os_ver='9.4'),
-    *ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5'), # rhel9-latest
+    *ls_distro(name='rhel95', os='rhel', os_type='linux', os_ver='9.5'),  # rhel9-latest
 ]
 
 RHEL_POWER_DISTROS = [
@@ -150,14 +152,13 @@ def make_distro_str(distro_name, compiler, arch) -> str:
         #     ('windows-vsCurrent-2022', 'mingw',     None) -> windows-2022-mingw
         #     ('windows-vsCurrent',      'vs2017x64', None) -> windows-2019-vs2017-x64
         #     ('windows-vsCurrent',      'mingw',     None) -> windows-2019-mingw
-        maybe_arch = compiler[len('vs20XY'):]
+        maybe_arch = compiler[len('vs20XY') :]
         if maybe_arch in ('x86', 'x64'):
-            compiler_str = compiler[:-len(maybe_arch)] + '-' + maybe_arch
+            compiler_str = compiler[: -len(maybe_arch)] + '-' + maybe_arch
         else:
             compiler_str = compiler
         if distro_name.startswith('windows-vsCurrent-'):
-            distro_str = 'windows-' + \
-                distro_name[len('windows-vsCurrent-'):] + f'-{compiler_str}'
+            distro_str = 'windows-' + distro_name[len('windows-vsCurrent-') :] + f'-{compiler_str}'
         else:
             distro_str = 'windows-2019-' + compiler_str
     else:
