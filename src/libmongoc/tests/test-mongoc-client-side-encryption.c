@@ -6909,18 +6909,10 @@ test_lookup(void *unused)
          ]
       });
 
-      {
-         mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
-         const bson_t *got;
-         ASSERT(!mongoc_cursor_next(cursor, &got));
-         ASSERT(mongoc_cursor_error(cursor, &error));
-         ASSERT_ERROR_CONTAINS(error,
-                               MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                               1,
-                               "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless "
-                               "csfleEncryptionSchemas only contains non-encryption JSON schema validators");
-         mongoc_cursor_destroy(cursor);
-      }
+      ASSERT_AGG_ERROR(coll,
+                       pipeline,
+                       "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless "
+                       "csfleEncryptionSchemas only contains non-encryption JSON schema validators");
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
