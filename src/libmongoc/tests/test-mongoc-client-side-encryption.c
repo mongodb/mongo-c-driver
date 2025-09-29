@@ -24,8 +24,6 @@
 #include <json-test.h>
 #include <test-libmongoc.h>
 
-#include "TestSuite.h"
-
 /* _mongoc_host_list_from_string_with_err */
 #include <mongoc/mongoc-cluster-aws-private.h>
 #include <mongoc/mongoc-host-list-private.h>
