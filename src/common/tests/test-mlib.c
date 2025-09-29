@@ -1197,6 +1197,88 @@ _test_timer(void)
    mlib_check(mlib_timer_is_expired(tm));
 }
 
+// Tests for `int_vec` assert the behavior of the vector type when handling trivial
+// elements.
+#define T int
+#include <mlib/vec.t.h>
+static void
+_test_int_vec(void)
+{
+   int_vec ints = int_vec_new();
+   mlib_check(ints.size, eq, 0, because, "Initial vector is empty");
+
+   // Append an element
+   int *el;
+   mlib_check(el = int_vec_push(&ints));
+   *el = 42;
+   mlib_check(int_vec_begin(&ints)[0], eq, 42);
+   mlib_check(ints.size, eq, 1);
+
+   int_vec_erase_at(&ints, 0);
+   mlib_check(ints.size, eq, 0, because, "We are back to an empty vector");
+
+   *int_vec_push(&ints) = 42;
+   *int_vec_push(&ints) = 1729;
+   *int_vec_push(&ints) = 123456;
+   *int_vec_push(&ints) = -7;
+   mlib_check(ints.size, eq, 4, because, "We added four elements from empty");
+   // Erase in the middle
+   int_vec_erase(&ints, ints.data + 1, ints.data + 3);
+   mlib_check(ints.size, eq, 2, because, "We erased two elements");
+
+   int_vec_destroy(&ints);
+}
+
+#define T char *
+#define VecName cstring_vec
+#define VecDestroyElement(CStrPtr) ((free(*CStrPtr), *CStrPtr = NULL))
+#define VecCopyElement(Dst, Src) ((*Dst = strdup(*Src)))
+#include <mlib/vec.t.h>
+static void
+_test_cstring_vec(void)
+{
+   // Simple new and destroy
+   {
+      cstring_vec v = cstring_vec_new();
+      mlib_check(v.size, eq, 0);
+      mlib_check(v.capacity, eq, 0);
+      cstring_vec_destroy(&v);
+   }
+   // Simple new and push an element
+   {
+      cstring_vec v = cstring_vec_new();
+      *cstring_vec_push(&v) = strdup("Hey");
+      mlib_check(v.size, eq, 1);
+      mlib_check(v.capacity, eq, 1);
+      mlib_check(cstring_vec_begin(&v)[0], str_eq, "Hey");
+      cstring_vec_destroy(&v);
+   }
+   // Copy an empty
+   {
+      cstring_vec v = cstring_vec_new();
+      cstring_vec b;
+      cstring_vec_init_copy(&b, &v);
+      cstring_vec_destroy(&v);
+      cstring_vec_destroy(&b);
+   }
+   // Copy non-empty
+   {
+      cstring_vec a = cstring_vec_new();
+      *cstring_vec_push(&a) = strdup("Hello");
+      *cstring_vec_push(&a) = strdup("world!");
+      mlib_check(a.size, eq, 2);
+      mlib_check(a.capacity, eq, 2);
+      cstring_vec b;
+      mlib_check(cstring_vec_init_copy(&b, &a));
+      mlib_check(a.size, eq, 2);
+      mlib_check(a.capacity, eq, 2);
+      mlib_check(cstring_vec_begin(&a)[0], str_eq, "Hello");
+      mlib_check(cstring_vec_begin(&b)[1], str_eq, "world!");
+      cstring_vec_destroy(&b);
+      cstring_vec_destroy(&a);
+   }
+}
+
 void
 test_mlib_install(TestSuite *suite)
 {
@@ -1218,6 +1300,8 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
    TestSuite_Add(suite, "/mlib/sleep", _test_sleep);
    TestSuite_Add(suite, "/mlib/timer", _test_timer);
+   TestSuite_Add(suite, "/mlib/int-vector", _test_int_vec);
+   TestSuite_Add(suite, "/mlib/string-vector", _test_cstring_vec);
 }
 
 mlib_diagnostic_pop();
