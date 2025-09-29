@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -54,6 +54,7 @@ kms_kmip_writer_test_evaluate (kmip_writer_t *writer,
    free (expected_hex);
 }
 
+void kms_kmip_writer_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_writer_test (void)
 {
@@ -140,6 +141,7 @@ kms_kmip_writer_test (void)
    kmip_writer_destroy (writer);
 }
 
+void kms_kmip_reader_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_test (void)
 {
@@ -312,6 +314,7 @@ kms_kmip_reader_test (void)
    free (data);
 }
 
+void kms_kmip_reader_negative_int_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_negative_int_test (void)
 {
@@ -356,6 +359,7 @@ kms_kmip_reader_negative_int_test (void)
    free (data);
 }
 
+void kms_kmip_reader_find_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_find_test (void)
 {
@@ -404,6 +408,7 @@ kms_kmip_reader_find_test (void)
    free (data);
 }
 
+void kms_kmip_reader_find_and_recurse_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_find_and_recurse_test (void)
 {
@@ -438,6 +443,7 @@ kms_kmip_reader_find_and_recurse_test (void)
    free (data);
 }
 
+void kms_kmip_reader_find_and_read_enum_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_find_and_read_enum_test (void)
 {
@@ -470,6 +476,7 @@ kms_kmip_reader_find_and_read_enum_test (void)
    free (data);
 }
 
+void kms_kmip_reader_find_and_read_bytes_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_find_and_read_bytes_test (void)
 {
