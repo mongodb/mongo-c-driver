@@ -24,6 +24,8 @@
 #include <json-test.h>
 #include <test-libmongoc.h>
 
+#include "TestSuite.h"
+
 /* _mongoc_host_list_from_string_with_err */
 #include <mongoc/mongoc-cluster-aws-private.h>
 #include <mongoc/mongoc-host-list-private.h>
@@ -6909,7 +6911,18 @@ test_lookup(void *unused)
          ]
       });
 
-      ASSERT_AGG_ERROR(coll, pipeline, "not supported");
+      {
+         mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
+         const bson_t *got;
+         ASSERT(!mongoc_cursor_next(cursor, &got));
+         ASSERT(mongoc_cursor_error(cursor, &error));
+         ASSERT_ERROR_CONTAINS(error,
+                               MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                               1,
+                               "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless "
+                               "csfleEncryptionSchemas only contains non-encryption JSON schema validators");
+         mongoc_cursor_destroy(cursor);
+      }
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
