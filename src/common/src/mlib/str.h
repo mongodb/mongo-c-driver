@@ -565,4 +565,353 @@ mstr_contains_any_of(mstr_view str, mstr_view needle)
 }
 #define mstr_contains_any_of(Str, Needle) mstr_contains_any_of(mstr_view_from(Str), mstr_view_from(Needle))
 
+
+/**
+ * @brief A simple mutable string type, with a guaranteed null terminator.
+ *
+ * This type is a trivially relocatable aggregate type that contains a pointer `data`
+ * and a size `len`. If not null, the pointer `data` points to an array of mutable
+ * `char` of length `len + 1`, where the character at `data[len]` is always zero,
+ * and must not be modified.
+ */
+typedef struct mstr {
+   /**
+    * @brief Pointer to the first char in the string, or NULL if
+    * the string is null.
+    *
+    * The pointed-to character array has a length of `len + 1`, where
+    * the character at `data[len]` is always null.
+    *
+    * @warning Attempting to overwrite the null character at `data[len]`
+    * will result in undefined behavior!
+    *
+    * @note An empty string is not equivalent to a null string! An empty string
+    * will still point to an array of length 1, where the only char is the null
+    * terminator.
+    */
+   char *data;
+   /**
+    * @brief The number of characters in the array pointed-to by `data`
+    * that preceed the null terminator.
+    */
+   size_t len;
+} mstr;
+
+
+/**
+ * @brief Resize an existing or null `mstr`, without initializing any of the
+ * added content other than the null terminator. This operation is potientially
+ * UNSAFE, because it gives uninitialized memory to the caller.
+ *
+ * @param str Pointer to a valid `mstr`, or a null `mstr`.
+ * @param new_len The new length of the string.
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ *
+ * If `str` is a null string, this function will initialize a new `mstr` object
+ * on-the-fly.
+ *
+ * If the operation increases the length of the string (or initializes a new string),
+ * then the new `char` in `str.data[str.len : new_len] will contain uninitialized
+ * values. The char at `str.data[new_len]` WILL be set to zero, to ensure there
+ * is a null terminator. The caller should always initialize the new string
+ * content to ensure that the string has a specified value.
+ */
+static inline bool
+mstr_resize_for_overwrite(mstr *const str, const size_t new_len)
+{
+   // We need to allocate one additional char to hold the null terminator
+   size_t alloc_size = new_len;
+   if (mlib_add(&alloc_size, 1) || alloc_size > SSIZE_MAX) {
+      // Allocation size is too large
+      return false;
+   }
+   // Try to (re)allocate the region
+   char *data = (char *)realloc(str->data, alloc_size);
+   if (!data) {
+      // Failed to (re)allocate
+      return false;
+   }
+   // Note: We do not initialize any of the data in the newly allocated region.
+   // We only set the null terminator. It is up to the caller to do the rest of
+   // the init.
+   data[new_len] = 0;
+   // Update the final object
+   str->data = data;
+   str->len = new_len;
+   // Success
+   return true;
+}
+
+/**
+ * @brief Given an existing `mstr`, resize it to hold `new_len` chars
+ *
+ * @param str Pointer to a string object to update, or a null `mstr`
+ * @param new_len The new length of the string, not including the implicit null terminator
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ *
+ * @note If the operation fails, then `*str` is not modified.
+ */
+static inline bool
+mstr_resize(mstr *str, size_t new_len)
+{
+   const size_t old_len = str->len;
+   if (!mstr_resize_for_overwrite(str, new_len)) {
+      // Failed to allocate new storage for the string
+      return false;
+   }
+   // Check how many chars we added/removed
+   const ptrdiff_t len_diff = new_len - str->len;
+   if (len_diff > 0) {
+      // We added new chars. Zero-init all the new chars
+      memset(str->data + old_len, 0, (size_t)len_diff);
+   }
+   // Success
+   return true;
+}
+
+/**
+ * @brief Create a new `mstr` of the given length
+ *
+ * @param new_len The length of the new string, in characters, not including the null terminator
+ * @return mstr A new string. The string's `data` member is NULL in case of failure
+ *
+ * The character array allocated for the string will always be `new_len + 1` `char` in length,
+ * where the char at the index `new_len` is a null terminator. This means that a string of
+ * length zero will allocate a single character to store the null terminator.
+ *
+ * All characters in the new string are initialize to zero. If you want uninitialized
+ * string content, use `mstr_resize_for_overwrite`.
+ */
+static inline mstr
+mstr_new(size_t new_len)
+{
+   mstr ret = {NULL, 0};
+   // We can rely on `resize` to handle the null state properly.
+   mstr_resize(&ret, new_len);
+   return ret;
+}
+
+/**
+ * @brief Delete an `mstr` that was created with an allocating API, including
+ * the resize APIs
+ *
+ * @param s An `mstr` object. If the object is null, this function is a no-op.
+ *
+ * After this call, the value of the `s` object has been consumed and is invalid.
+ */
+static inline void
+mstr_delete(mstr s)
+{
+   free(s.data);
+}
+
+/**
+ * @brief Replace the content of the given string, attempting to reuse the buffer
+ *
+ * @param inout Pointer to a valid or null `mstr` to be replaced
+ * @param s The new string contents
+ * @return true If the operation succeeded
+ * @return false Otherwise
+ *
+ * If the operation fails, `*inout` is not modified
+ */
+static inline bool
+mstr_assign(mstr *inout, mstr_view s)
+{
+   if (!mstr_resize_for_overwrite(inout, s.len)) {
+      return false;
+   }
+   memcpy(inout->data, s.data, s.len);
+   return true;
+}
+
+#define mstr_assign(InOut, S) mstr_assign((InOut), mstr_view_from((S)))
+
+/**
+ * @brief Create a mutable copy of the given string.
+ *
+ * @param sv The string to be copied
+ * @return mstr A new valid string, or a null string in case of allocation failure.
+ */
+static inline mstr
+mstr_copy(mstr_view sv)
+{
+   mstr ret = {NULL, 0};
+   mstr_assign(&ret, sv);
+   return ret;
+}
+
+#define mstr_copy(S) mstr_copy(mstr_view_from((S)))
+#define mstr_copy_cstring(S) mstr_copy(mstr_cstring((S)))
+
+/**
+ * @brief Concatenate two strings into a new mutable string
+ *
+ * @param a The left-hand string to be concatenated
+ * @param b The right-hand string to be concatenated
+ * @return mstr A new valid string composed by concatenating `a` with `b`, or
+ * a null string in case of allocation failure.
+ */
+static inline mstr
+mstr_concat(mstr_view a, mstr_view b)
+{
+   mstr ret = {NULL, 0};
+   size_t cat_len;
+   if (mlib_add(&cat_len, a.len, b.len)) {
+      // Size would overflow. No go.
+      return ret;
+   }
+   // Prepare the new string
+   if (!mstr_resize_for_overwrite(&ret, cat_len)) {
+      // Failed to allocate. The ret string is still null, and we can just return it
+      return ret;
+   }
+   // Copy in the characters from `a`
+   char *out = ret.data;
+   memcpy(out, a.data, a.len);
+   // Copy in the characters from `b`
+   out += a.len;
+   memcpy(out, b.data, b.len);
+   // Success
+   return ret;
+}
+
+#define mstr_concat(A, B) mstr_concat(mstr_view_from((A)), mstr_view_from((B)))
+
+/**
+ * @brief Delete and/or insert characters into a string
+ *
+ * @param str The string object to be updated
+ * @param splice_pos The position at which to do the splice
+ * @param n_delete The number of characters to delete at `splice_pos`
+ * @param insert A string to be inserted at `split_pos` after chars are deleted
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ *
+ * If `n_delete` is zero, then no characters are deleted. If `insert` is empty
+ * or null, then no characters are inserted.
+ */
+static inline bool
+mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
+{
+   mlib_check(splice_pos <= str->len);
+   // How many chars is it possible to delete from `splice_pos`?
+   size_t n_chars_avail_to_delete = str->len - splice_pos;
+   mlib_check(n_delete <= n_chars_avail_to_delete);
+   // Compute the new string length
+   size_t new_len = str->len;
+   // This should never fail, because we should try to delete more chars than we have
+   mlib_check(!mlib_sub(&new_len, n_delete));
+   // Check if appending would make too big of a string
+   if (mlib_add(&new_len, insert.len)) {
+      // New string will be too long
+      return false;
+   }
+   char *mut = str->data;
+   // We either resize first or resize last, depending on where we are shifting chars
+   if (new_len > str->len) {
+      // Do the resize first
+      if (!mstr_resize_for_overwrite(str, new_len)) {
+         // Failed to allocate
+         return false;
+      }
+      mut = str->data;
+   }
+   // Move to the splice position
+   mut += splice_pos;
+   // Shift the existing string parts around for the deletion operation
+   const size_t tail_len = n_chars_avail_to_delete - n_delete;
+   // Adjust to the begining of the string part that we want to keep
+   char *copy_from = mut + n_delete;
+   char *copy_to = mut + insert.len;
+   memmove(copy_to, copy_from, tail_len);
+   if (new_len < str->len) {
+      // We didn't resize first, so resize now. We are shrinking the string, so this
+      // will never fail, and does not create any uninitialized memory:
+      mlib_check(mstr_resize_for_overwrite(str, new_len));
+      mut = str->data + splice_pos;
+   }
+   // Insert the new data
+   memcpy(mut, insert.data, insert.len);
+   return true;
+}
+
+/**
+ * @brief Append a string to the end of some other string.
+ *
+ * @param str The string to be modified
+ * @param suffix The suffix string to be appended onto `*str`
+ * @return true If the operation was successful
+ * @return false Otherwise
+ *
+ * If case of failure, `*str` is not modified.
+ */
+static inline bool
+mstr_append(mstr *str, mstr_view suffix)
+{
+   return mstr_splice(str, str->len, 0, suffix);
+}
+
+#define mstr_append(Into, Suffix) mstr_append((Into), mstr_view_from((Suffix)))
+
+/**
+ * @brief Append a single character to the given string object
+ *
+ * @param str The string object to be updated
+ * @param c The single character that will be inserted at the end
+ * @return true If the operation succeeded
+ * @return false Otherwise
+ *
+ * In case of failure, the string is not modified.
+ */
+static inline bool
+mstr_pushchar(mstr *str, char c)
+{
+   mstr_view one = mstr_view_data(&c, 1);
+   return mstr_append(str, one);
+}
+
+/**
+ * @brief Replace every occurrence of `needle` in `str` with `sub`
+ *
+ * @param str The string object to be updated
+ * @param needle The non-empty needle string to be searched for.s
+ * @param sub The string to be inserted in place of each `needle`
+ * @return true If the operation succeeds
+ * @return false Otherwise
+ *
+ * @warning If the `needle` string is empty, then the program will terminate!
+ * @note If the operation fails, the content of `str` is an unspecified but valid
+ * string.
+ */
+static inline bool
+mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
+{
+   mlib_check(needle.len, neq, 0, because, "Trying to replace an empty string will result in an infinite loop");
+   // Scan forward, starting from the first position:
+   size_t off = 0;
+   while (1) {
+      // Find the next occurrence, starting from the scan offset
+      off = mstr_find(*str, needle, off);
+      if (off == SIZE_MAX) {
+         // No more occurrences.
+         return true;
+      }
+      // Replace the needle string with the new value
+      if (!mstr_splice(str, off, needle.len, sub)) {
+         return false;
+      }
+      // Advance over the length of the replacement string, so we don't try to
+      // infinitely replace content if the replacement itself contains the needle
+      // string
+      if (mlib_add(&off, sub.len)) {
+         // Integer overflow while advancing the offset. No good.
+         return false;
+      }
+   }
+}
+
+
 #endif // MLIB_STR_H_INCLUDED

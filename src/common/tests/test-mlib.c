@@ -922,6 +922,90 @@ _test_str_view(void)
    }
 }
 
+static inline void
+_test_str(void)
+{
+   // Simple empty
+   {
+      mstr s = mstr_new(0);
+      // Length is zero
+      mlib_check(s.len, eq, 0);
+      // Data is not null for empty strings, since we want a null terminator
+      mlib_check(s.data != NULL);
+      // The null terminator is present:
+      mlib_check(s.data[0], eq, 0);
+      mstr_delete(s);
+   }
+
+   // Simple copy of a C string
+   {
+      mstr s = mstr_copy_cstring("foo bar");
+      mlib_check(s.len, eq, 7);
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo bar")));
+      mstr_delete(s);
+   }
+
+   // Concat two strings
+   {
+      mstr s = mstr_concat(mstr_cstring("foo"), mstr_cstring("bar"));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foobar")));
+      mstr_delete(s);
+   }
+
+   // Append individual characters
+   {
+      mstr s = mstr_new(0);
+      mstr_pushchar(&s, 'f');
+      mstr_pushchar(&s, 'o');
+      mstr_pushchar(&s, 'o');
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo")));
+      mstr_delete(s);
+   }
+
+   // Splice deletion
+   {
+      mstr s = mstr_copy_cstring("foo bar baz");
+      mlib_check(mstr_splice(&s, 4, 3, mstr_cstring("")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo  baz")));
+
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_splice(&s, 4, 3, mstr_cstring("quux")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo quux baz")));
+
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_splice(&s, 4, 0, mstr_cstring("quux ")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo quux bar baz")));
+
+      mstr_delete(s);
+   }
+
+   // Replacing
+   {
+      mstr s = mstr_copy_cstring("abcd abcd");
+      mlib_check(mstr_replace(&s, mstr_cstring("b"), mstr_cstring("foo")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("afoocd afoocd")));
+
+      // Try to replace where the replacement contains the needle
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_replace(&s, mstr_cstring("bar"), mstr_cstring("foo bar baz")));
+      // A naive impl would explode into an infinite string, but we don't try to replace
+      // within the already-replaced content:
+      mlib_check(s.data, str_eq, "foo foo bar baz baz");
+
+      // Try to replace, where the needle is an empty string. This just produces a repetition of the needle
+      mstr_assign(&s, mstr_cstring("foo"));
+      mlib_assert_aborts () {
+         // A naive replacement of an empty string will result in an infinite string
+         // as it keeps matching the empty string forever, so we terminate rather than
+         // allocate forever:
+         mlib_check(mstr_replace(&s, mstr_cstring(""), mstr_cstring("a")));
+      }
+
+      mstr_delete(s);
+   }
+}
+
+
 static void
 _test_duration(void)
 {
@@ -1129,6 +1213,7 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add(suite, "/mlib/str", _test_str);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
    TestSuite_Add(suite, "/mlib/sleep", _test_sleep);
