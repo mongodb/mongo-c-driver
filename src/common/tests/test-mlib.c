@@ -75,6 +75,9 @@ _test_checks(void)
    mlib_assert_aborts () {
       mlib_check(3, gte, 5);
    }
+
+   // An infix with a reason string
+   mlib_check(1, eq, 1, because, "1 = 1");
 }
 
 static void
