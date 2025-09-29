@@ -122,6 +122,7 @@ azure_authenticate (void)
    test_env_init (&test_env);
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
 
@@ -190,6 +191,7 @@ test_azure_wrapkey (void)
    bearer_token = azure_authenticate ();
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_AZURE);
    req = kms_azure_request_wrapkey_new (test_env.key_host,

@@ -88,6 +88,7 @@ kms_gcp_request_oauth_new (const char *host,
    }
 
    jwt_signature = calloc (1, SIGNATURE_LEN);
+   KMS_ASSERT (jwt_signature);
    if (!req->crypto.sign_rsaes_pkcs1_v1_5 (
           req->crypto.sign_ctx,
           private_key_data,
