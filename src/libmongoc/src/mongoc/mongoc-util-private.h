@@ -255,6 +255,13 @@ typedef struct {
    uint64_t value;
 } mcd_optional_u64_t;
 
+/**
+ * Returns true if the Windows version is greater than or equal to the required
+ * desktop or server version.
+ */
+bool
+_mongoc_verify_windows_version(int major_version, int minor_version, int build_number, bool strictly_equal);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */

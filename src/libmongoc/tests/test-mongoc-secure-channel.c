@@ -100,7 +100,7 @@ test_secure_channel_shared_creds_stream(void *unused)
    {
       mongoc_secure_channel_cred *cred = mongoc_secure_channel_cred_new(&ssl_opt);
       mongoc_shared_ptr cred_ptr = mongoc_shared_ptr_create(cred, mongoc_secure_channel_cred_deleter);
-#ifdef MONGOC_HAVE_SCH_CREDENTIALS
+#ifdef HAVE_SCH_CREDENTIALS
       if (cred->cred_type == sch_credentials) {
          SCH_CREDENTIALS *sch_cred = (SCH_CREDENTIALS *)cred->cred;
          sch_cred->dwVersion = 0; // Invalid version.

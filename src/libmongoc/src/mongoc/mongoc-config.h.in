@@ -53,16 +53,6 @@
 #endif
 
 /*
- * MONGOC_HAVE_SCH_CREDENTIALS is set from configure to determine if
- * our Schannel Windows library supports SCH_CREDENTIALS
- */
-#define MONGOC_HAVE_SCH_CREDENTIALS @MONGOC_HAVE_SCH_CREDENTIALS@
-
-#if MONGOC_HAVE_SCH_CREDENTIALS != 1
-#  undef MONGOC_HAVE_SCH_CREDENTIALS
-#endif
-
-/*
  * MONGOC_ENABLE_CRYPTO_CNG is set from configure to determine if we are
  * compiled with Native Crypto support on Windows
  */

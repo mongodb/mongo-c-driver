@@ -62,6 +62,7 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-ssl.h>
@@ -80,8 +81,6 @@
 #include <schannel.h>
 #include <schnlsp.h>
 #include <security.h>
-#include <versionhelpers.h>
-
 
 /* mingw doesn't define these */
 #ifndef SP_PROT_TLS1_1_CLIENT
@@ -94,6 +93,10 @@
 
 #ifndef SP_PROT_TLS1_3_CLIENT
 #define SP_PROT_TLS1_3_CLIENT 0x00002000
+#endif
+
+#ifdef SCH_CREDENTIALS_VERSION
+#define HAVE_SCH_CREDENTIALS
 #endif
 
 static void
@@ -849,7 +852,7 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
    RETURN(mongoc_stream_should_retry(tls->base_stream));
 }
 
-#ifdef MONGOC_HAVE_SCH_CREDENTIALS
+#ifdef HAVE_SCH_CREDENTIALS
 
 void *
 _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT *cert, DWORD enabled_protocols)
@@ -951,14 +954,13 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
    BSON_ASSERT_PARAM(opt);
    mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
 
-   bool is_server = IsWindowsServer();
    DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
-   /* TLS 1.3 is supported on Windows 11  (or Windows Server 2022) and newer.
+   /* TLS 1.3 is supported on Windows Server 2022 and newer.
     * Schannel will not negotiate TLS 1.3 when SCHANNEL_CRED is used. */
-   if ((is_server && _mongoc_verify_windows_version(10, 0, 19044, false)) ||
-       (!is_server && _mongoc_verify_windows_version(10, 0, 22000, false))) {
-      enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
+   if (_mongoc_verify_windows_version(10, 0, 20348, false)) {
+         // TODO - enable TLS 1.3 once renegotiation is supported.
+         // enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
    }
 
    if (opt->ca_file) {
@@ -973,7 +975,7 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
       cred->cert = mongoc_secure_channel_setup_certificate(opt);
    }
 
-#ifdef MONGOC_HAVE_SCH_CREDENTIALS
+#ifdef HAVE_SCH_CREDENTIALS
    // SCH_CREDENTIALS is supported in Windows 10 1809 / Server 1809 and later
    if (_mongoc_verify_windows_version(10, 0, 17763, false)) {
       cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, &cred->cert, enabled_protocols);
@@ -998,7 +1000,7 @@ mongoc_secure_channel_cred_deleter(void *cred_void)
       return;
    }
    CertFreeCertificateContext(cred->cert);
-#ifdef MONGOC_HAVE_SCH_CREDENTIALS
+#ifdef HAVE_SCH_CREDENTIALS
    if (cred->cred_type == sch_credentials) {
       SCH_CREDENTIALS *sch_cred = (SCH_CREDENTIALS *)cred->cred;
       bson_free(sch_cred->pTlsParameters);
