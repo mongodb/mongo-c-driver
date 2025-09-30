@@ -1,6 +1,2 @@
 # Sphinx embeds jQuery
 libbson-doc: embedded-javascript-library
-
-# Sphinx generated man pages have tables which overflow 80 column lines because
-# the names of libbson functions are too long to fit in 80 columns.
-libbson-doc: groff-message
