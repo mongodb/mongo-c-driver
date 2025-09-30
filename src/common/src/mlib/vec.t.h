@@ -43,6 +43,7 @@
  */
 #include <mlib/ckdint.h>
 #include <mlib/config.h>
+#include <mlib/intutil.h>
 
 #include <assert.h>  // assert
 #include <stdbool.h> // bool
@@ -417,6 +418,21 @@ mlib_extern_c_end();
 #ifndef mlib_vec_foreach
 #define mlib_vec_foreach(Type, VarName, Vector) \
    for (Type *VarName = (Vector).data; VarName != (Vector).data + (Vector).size; ++VarName)
+#endif
+
+#ifndef mlib_vec_at
+#define mlib_vec_at(Vec, Pos) ((Vec).data[_mlib_vec_index_adjust((Vec).size, mlib_upsize_integer(Pos))])
+
+static inline size_t
+_mlib_vec_index_adjust(size_t size, mlib_upsized_integer pos)
+{
+   if (pos.is_signed && pos.bits.as_signed < 0) {
+      return mlib_assert_add(size_t, size, pos.bits.as_signed);
+   }
+   mlib_check(pos.bits.as_unsigned, lte, size, because, "the vector index must be in-bounds for mlib_vec_at()");
+   return pos.bits.as_unsigned;
+}
+
 #endif
 
 #undef T
