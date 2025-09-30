@@ -3,7 +3,8 @@ Priority: optional
 Maintainer: Mongo C Driver Team <mongo-c-driver-debian@googlegroups.com>
 Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
            Roberto C. Sanchez <roberto@connexer.com>
-Build-Depends: dpkg-dev (>= 1.22.5), debhelper (>= 11),
+Build-Depends: dpkg-dev (>= 1.22.5),
+               debhelper-compat (= 13),
                cmake,
                libssl-dev,
                pkgconf,

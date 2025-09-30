@@ -1,6 +1,7 @@
 mongo-c-driver (2.1.1-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Update to debhelper compatibility 13
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 30 Sep 2025 15:06:57 -0400
 
