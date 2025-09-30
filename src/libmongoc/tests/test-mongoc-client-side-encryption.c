@@ -6934,10 +6934,34 @@ test_lookup(void *unused)
          ]
       });
 
-      ASSERT_AGG_ERROR(coll,
-                       pipeline,
-                       "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless "
-                       "csfleEncryptionSchemas only contains non-encryption JSON schema validators");
+      if (test_framework_get_server_version() < test_framework_str_to_version("8.2.0")) {
+         ASSERT_AGG_ERROR(coll, pipeline, "not supported");
+      } else {
+         mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
+         const bson_t *got;
+         ASSERT(!mongoc_cursor_next(cursor, &got));
+         ASSERT(mongoc_cursor_error(cursor, &error));
+
+         // The error domain differs depending on the query analysis component:
+         // * `crypt_shared`: `MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION`
+         // * `mongocryptd`: `MONGOC_ERROR_QUERY`
+
+         static const char *const expected_error_substring =
+            "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless csfleEncryptionSchemas only "
+            "contains non-encryption JSON schema validators";
+
+         if (mongoc_client_get_crypt_shared_version(client)) {
+            ASSERT_AGG_ERROR(coll, pipeline, expected_error_substring);
+         } else {
+            mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
+            const bson_t *got;
+            ASSERT(!mongoc_cursor_next(cursor, &got));
+            ASSERT(mongoc_cursor_error(cursor, &error));
+            ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, 0, expected_error_substring);
+            mongoc_cursor_destroy(cursor);
+         }
+      }
+
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
