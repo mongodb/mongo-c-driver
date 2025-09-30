@@ -1,3 +1,19 @@
+libmongoc 2.1.1
+===============
+
+## Fixes
+
+* Do not propagate `-fPIC` in CMake targets.
+* Apply write command behavior to `mongoc_collection_create_indexes_with_opts`.
+* Omit `saslSupportedMechs` in single-threaded monitoring commands.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Julia Garland
+  * Roberto C. Sánchez
+
+
+
 libmongoc 2.1.0
 ===============
 
