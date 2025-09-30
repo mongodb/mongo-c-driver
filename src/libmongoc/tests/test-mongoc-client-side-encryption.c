@@ -6965,6 +6965,14 @@ test_lookup(void *unused)
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
+}
+
+static void
+test_lookup_post82(void *unused)
+{
+   BSON_UNUSED(unused);
+   test_lookup_setup();
+   bson_error_t error;
 
    // Case 10: db.qe joins db.non_csfle_schema:
    {
@@ -7462,8 +7470,16 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_lookup,
                         NULL,
                         NULL,
-                        test_framework_skip_if_max_wire_version_less_than_27 /* require server 8.2+ */,
+                        test_framework_skip_if_max_wire_version_less_than_26 /* require server 8.1+ */,
                         test_framework_skip_if_single, /* QE not supported on standalone */
+                        test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/test_lookup/post-8.2",
+                        test_lookup_post82,
+                        NULL,
+                        NULL,
+                        test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ */
+                        test_framework_skip_if_single,                        /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
                         "/client_side_encryption/test_lookup/pre-8.1",
