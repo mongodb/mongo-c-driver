@@ -6937,11 +6937,6 @@ test_lookup(void *unused)
       if (test_framework_get_server_version() < test_framework_str_to_version("8.2.0")) {
          ASSERT_AGG_ERROR(coll, pipeline, "not supported");
       } else {
-         mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
-         const bson_t *got;
-         ASSERT(!mongoc_cursor_next(cursor, &got));
-         ASSERT(mongoc_cursor_error(cursor, &error));
-
          // The error domain differs depending on the query analysis component:
          // * `crypt_shared`: `MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION`
          // * `mongocryptd`: `MONGOC_ERROR_QUERY`
