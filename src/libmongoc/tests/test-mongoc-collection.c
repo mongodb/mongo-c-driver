@@ -4882,16 +4882,86 @@ test_insert_one_reports_id (void)
       ok = mongoc_collection_insert_one (coll, doc, NULL /* opts */, &reply, &error);
       ASSERT_OR_PRINT (ok, error);
       // Check that `reply` contains the inserted ID.
-      ASSERT_MATCH (&reply, "{'insertedId': '%s'}", large_str);
-      bson_destroy (&reply);
-      bson_free (large_str);
+      ASSERT_MATCH(&reply, "{'insertedId': '%s'}", large_str);
+      bson_destroy(&reply);
+      bson_free(large_str);
    }
 
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
 }
 
 #undef ASSERT_INDEX_EXISTS
+
+static void
+test_create_indexes_acts_as_write_command(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = get_test_collection(client, "test_create_indexes_with_opts");
+   bson_error_t error;
+   bson_t reply;
+
+   // Test write concern is inherited from collection:
+   {
+      // Set a non-default write concern on collection:
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new();
+         mongoc_write_concern_set_w(wc, -1); // Set a write concern that fails.
+         mongoc_collection_set_write_concern(coll, wc);
+         mongoc_write_concern_destroy(wc);
+      }
+
+      // Create index:
+      {
+         const bson_t *keys = tmp_bson("{'x': 1}");
+         mongoc_index_model_t *im = mongoc_index_model_new(keys, NULL);
+         bool ok =
+            mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* options */, NULL /* reply */, &error);
+         ASSERT(!ok);
+         ASSERT_ERROR_CONTAINS(error, 5, 9, "w has to be a non-negative number and not greater than 50");
+         mongoc_index_model_destroy(im);
+      }
+   }
+
+   // Test a server reply with "writeConcernError" is considered an error:
+   {
+      // Set the default write concern on collection:
+      {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new(); // Default write concern.
+         mongoc_collection_set_write_concern(coll, wc);
+         mongoc_write_concern_destroy(wc);
+      }
+
+      // Set a failpoint to fail with "writeConcernError":
+      {
+         const char *cmd_str = BSON_STR({
+            "configureFailPoint" : "failCommand",
+            "mode" : {"times" : 1},
+            "data" : {"failCommands" : ["createIndexes"], "writeConcernError" : {"code" : 123, "errmsg" : "foo"}}
+         });
+         bson_t *failpoint_cmd = bson_new_from_json((const uint8_t *)cmd_str, -1, &error);
+         ASSERT_OR_PRINT(failpoint_cmd, error);
+         bool ok = mongoc_client_command_simple(client, "admin", failpoint_cmd, NULL /* read_prefs */, &reply, &error);
+         ASSERT_OR_PRINT(ok, error);
+         bson_destroy(failpoint_cmd);
+         bson_destroy(&reply);
+      }
+
+      {
+         const bson_t *keys = tmp_bson("{'x': 1}");
+         mongoc_index_model_t *im = mongoc_index_model_new(keys, NULL);
+         bool ok = mongoc_collection_create_indexes_with_opts(coll, &im, 1, NULL /* opts */, NULL /* reply */, &error);
+         ASSERT(!ok);
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_WRITE_CONCERN, 123, "foo");
+         mongoc_index_model_destroy(im);
+      }
+   }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
 
 
 void
@@ -4974,56 +5044,66 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
    TestSuite_AddFull (
       suite, "/Collection/create_index/fail", test_create_index_fail, NULL, NULL, test_framework_skip_if_offline);
-   TestSuite_AddLive (suite, "/Collection/insert_one", test_insert_one);
-   TestSuite_AddLive (suite, "/Collection/update_and_replace", test_update_and_replace);
-   TestSuite_AddLive (suite, "/Collection/array_filters_validate", test_array_filters_validate);
-   TestSuite_AddLive (suite, "/Collection/replace_one_validate", test_replace_one_validate);
-   TestSuite_AddLive (suite, "/Collection/update_one_validate", test_update_one_validate);
-   TestSuite_AddLive (suite, "/Collection/update_many_validate", test_update_many_validate);
-   TestSuite_AddLive (suite, "/Collection/delete_one_or_many", test_delete_one_or_many);
-   TestSuite_AddMockServerTest (suite, "/Collection/delete/collation", test_delete_collation);
-   TestSuite_AddMockServerTest (suite, "/Collection/update/collation", test_update_collation);
-   TestSuite_AddMockServerTest (suite, "/Collection/update/hint", test_update_hint);
-   TestSuite_AddLive (suite, "/Collection/update/hint/validate", test_update_hint_validate);
-   TestSuite_AddMockServerTest (suite, "/Collection/count_documents", test_count_documents);
-   TestSuite_AddLive (suite, "/Collection/count_documents_live", test_count_documents_live);
-   TestSuite_AddMockServerTest (suite, "/Collection/estimated_document_count", test_estimated_document_count);
-   TestSuite_AddLive (suite, "/Collection/estimated_document_count_live", test_estimated_document_count_live);
-   TestSuite_AddMockServerTest (suite, "/Collection/aggregate_with_batch_size", test_aggregate_with_batch_size);
-   TestSuite_AddFull (suite,
-                      "/Collection/fam/no_error_on_retry",
-                      test_fam_no_error_on_retry,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_failpoint,
-                      test_framework_skip_if_max_wire_version_more_than_9);
-   TestSuite_AddLive (suite, "/Collection/hint_is_validated/aggregate", test_hint_is_validated_aggregate);
-   TestSuite_AddLive (suite, "/Collection/hint_is_validated/countDocuments", test_hint_is_validated_countDocuments);
-   TestSuite_AddLive (suite, "/Collection/create_indexes_with_opts", test_create_indexes_with_opts);
-   TestSuite_AddFull (suite,
-                      "/Collection/create_indexes_with_opts/commitQuorum/pre44",
-                      test_create_indexes_with_opts_commitQuorum_pre44,
-                      NULL /* _dtor */,
-                      NULL /* _ctx */,
-                      // commitQuorum option is not available on standalone servers.
-                      test_framework_skip_if_not_replset,
-                      // Server Version 4.4 has Wire Version 9.
-                      test_framework_skip_if_max_wire_version_more_than_8);
-   TestSuite_AddFull (suite,
-                      "/Collection/create_indexes_with_opts/commitQuorum/post44",
-                      test_create_indexes_with_opts_commitQuorum_post44,
-                      NULL /* _dtor */,
-                      NULL /* _ctx */,
-                      // commitQuorum option is not available on standalone servers.
-                      test_framework_skip_if_not_replset,
-                      // Server Version 4.4 has Wire Version 9.
-                      test_framework_skip_if_max_wire_version_less_than_9);
-   TestSuite_AddFull (suite,
-                      "/Collection/create_indexes_with_opts/no_retry",
-                      test_create_indexes_with_opts_no_retry,
-                      NULL /* _dtor */,
-                      NULL /* _ctx */,
-                      // requires failpoint
-                      test_framework_skip_if_no_failpoint);
-   TestSuite_AddLive (suite, "/Collection/insert_one_reports_id", test_insert_one_reports_id);
+   TestSuite_AddLive(suite, "/Collection/insert_one", test_insert_one);
+   TestSuite_AddLive(suite, "/Collection/update_and_replace", test_update_and_replace);
+   TestSuite_AddLive(suite, "/Collection/array_filters_validate", test_array_filters_validate);
+   TestSuite_AddLive(suite, "/Collection/replace_one_validate", test_replace_one_validate);
+   TestSuite_AddLive(suite, "/Collection/update_one_validate", test_update_one_validate);
+   TestSuite_AddLive(suite, "/Collection/update_many_validate", test_update_many_validate);
+   TestSuite_AddLive(suite, "/Collection/delete_one_or_many", test_delete_one_or_many);
+   TestSuite_AddMockServerTest(suite, "/Collection/delete/collation", test_delete_collation);
+   TestSuite_AddMockServerTest(suite, "/Collection/update/collation", test_update_collation);
+   TestSuite_AddMockServerTest(suite, "/Collection/update/hint", test_update_hint);
+   TestSuite_AddLive(suite, "/Collection/update/hint/validate", test_update_hint_validate);
+   TestSuite_AddMockServerTest(suite, "/Collection/count_documents", test_count_documents);
+   TestSuite_AddLive(suite, "/Collection/count_documents_live", test_count_documents_live);
+   TestSuite_AddMockServerTest(suite, "/Collection/estimated_document_count", test_estimated_document_count);
+   TestSuite_AddLive(suite, "/Collection/estimated_document_count_live", test_estimated_document_count_live);
+   TestSuite_AddMockServerTest(suite, "/Collection/aggregate_with_batch_size", test_aggregate_with_batch_size);
+   TestSuite_AddFull(suite,
+                     "/Collection/fam/no_error_on_retry",
+                     test_fam_no_error_on_retry,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_failpoint,
+                     test_framework_skip_if_max_wire_version_more_than_9);
+   TestSuite_AddLive(suite, "/Collection/hint_is_validated/aggregate", test_hint_is_validated_aggregate);
+   TestSuite_AddLive(suite, "/Collection/hint_is_validated/countDocuments", test_hint_is_validated_countDocuments);
+   TestSuite_AddLive(suite, "/Collection/create_indexes_with_opts", test_create_indexes_with_opts);
+   TestSuite_AddFull(suite,
+                     "/Collection/create_indexes_with_opts/commitQuorum/pre44",
+                     test_create_indexes_with_opts_commitQuorum_pre44,
+                     NULL /* _dtor */,
+                     NULL /* _ctx */,
+                     // commitQuorum option is not available on standalone servers.
+                     test_framework_skip_if_not_replset,
+                     // Server Version 4.4 has Wire Version 9.
+                     test_framework_skip_if_max_wire_version_more_than_8);
+   TestSuite_AddFull(suite,
+                     "/Collection/create_indexes_with_opts/commitQuorum/post44",
+                     test_create_indexes_with_opts_commitQuorum_post44,
+                     NULL /* _dtor */,
+                     NULL /* _ctx */,
+                     // commitQuorum option is not available on standalone servers.
+                     test_framework_skip_if_not_replset,
+                     // Server Version 4.4 has Wire Version 9.
+                     test_framework_skip_if_max_wire_version_less_than_9);
+   TestSuite_AddFull(suite,
+                     "/Collection/create_indexes_with_opts/no_retry",
+                     test_create_indexes_with_opts_no_retry,
+                     NULL /* _dtor */,
+                     NULL /* _ctx */,
+                     // requires failpoint
+                     test_framework_skip_if_no_failpoint);
+   TestSuite_AddLive(suite, "/Collection/insert_one_reports_id", test_insert_one_reports_id);
+
+   TestSuite_AddFull(suite,
+                     "/Collection/test_create_indexes_acts_as_write_command",
+                     test_create_indexes_acts_as_write_command,
+                     NULL /* _dtor */,
+                     NULL /* _ctx */,
+                     // requires failpoint
+                     test_framework_skip_if_no_failpoint,
+                     // Server Version 4.4 has Wire Version 9 - w < 0 does not error on earlier versions.
+                     test_framework_skip_if_max_wire_version_less_than_9);
 }

@@ -124,6 +124,11 @@ struct _kms_response_parser_t {
       }                      \
    } while (0)
 
+#if defined(__clang__)
+__attribute__((format(printf, 3, 4)))
+#elif defined(__GNUC__)
+__attribute__((format(gnu_printf, 3, 4)))
+#endif
 void
 kms_set_error (char *error, size_t size, const char *fmt, ...);
 
@@ -137,6 +142,7 @@ kms_set_error (char *error, size_t size, const char *fmt, ...);
    if (!(stmt)) {                             \
       fprintf (stderr, "%s failed\n", #stmt); \
       abort ();                               \
-   }
+   } else                                     \
+       ((void)0)
 
 #endif /* KMS_MESSAGE_PRIVATE_H */

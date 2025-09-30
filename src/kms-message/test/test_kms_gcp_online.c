@@ -98,6 +98,7 @@ gcp_authenticate (void)
    test_env_init (&test_env);
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
 
@@ -171,6 +172,7 @@ test_gcp (void)
    bearer_token = gcp_authenticate ();
 
    opt = kms_request_opt_new ();
+   ASSERT (opt);
    kms_request_opt_set_connection_close (opt, true);
    kms_request_opt_set_provider (opt, KMS_REQUEST_PROVIDER_GCP);
    req = kms_gcp_request_encrypt_new (test_env.kms_host,
