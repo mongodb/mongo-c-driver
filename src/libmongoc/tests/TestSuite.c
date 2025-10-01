@@ -21,6 +21,8 @@
 
 #include <bson/bson.h>
 
+#include <mlib/str.h>
+
 #include <fcntl.h>
 
 
@@ -131,9 +133,6 @@ TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv)
    suite->flags = 0;
    suite->prgname = bson_strdup(argv[0]);
    suite->silent = false;
-   suite->ctest_run = NULL;
-   _mongoc_array_init(&suite->match_patterns, sizeof(char *));
-   _mongoc_array_init(&suite->failing_flaky_skips, sizeof(TestSkip *));
 
    for (i = 1; i < argc; i++) {
       if (0 == strcmp("-d", argv[i])) {
@@ -172,7 +171,7 @@ TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv)
       } else if ((0 == strcmp("-s", argv[i])) || (0 == strcmp("--silent", argv[i]))) {
          suite->silent = true;
       } else if ((0 == strcmp("--ctest-run", argv[i]))) {
-         if (suite->ctest_run) {
+         if (suite->ctest_run.data) {
             test_error("'--ctest-run' can only be specified once");
          }
          if (argc - 1 == i) {
@@ -180,14 +179,14 @@ TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv)
          }
          suite->flags |= TEST_NOFORK;
          suite->silent = true;
-         suite->ctest_run = bson_strdup(argv[++i]);
+         suite->ctest_run = mstr_copy_cstring(argv[i + 1]);
+         ++i;
       } else if ((0 == strcmp("-l", argv[i])) || (0 == strcmp("--match", argv[i]))) {
-         char *val;
          if (argc - 1 == i) {
             test_error("%s requires an argument.", argv[i]);
          }
-         val = bson_strdup(argv[++i]);
-         _mongoc_array_append_val(&suite->match_patterns, val);
+         ++i;
+         *mstr_vec_push(&suite->match_patterns) = mstr_copy_cstring(argv[i]);
       } else if (0 == strcmp("--skip-tests", argv[i])) {
          if (argc - 1 == i) {
             test_error("%s requires an argument.", argv[i]);
@@ -201,7 +200,7 @@ TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv)
       }
    }
 
-   if (suite->match_patterns.len != 0 && suite->ctest_run != NULL) {
+   if (suite->match_patterns.size != 0 && suite->ctest_run.data) {
       test_error("'--ctest-run' cannot be specified with '-l' or '--match'");
    }
 
@@ -280,57 +279,28 @@ TestSuite_AddLive(TestSuite *suite, /* IN */
 }
 
 
-static void
-_TestSuite_AddCheck(Test *test, CheckFunc check, const char *name)
-{
-   test->checks[test->num_checks] = check;
-   if (++test->num_checks > MAX_TEST_CHECK_FUNCS) {
-      MONGOC_STDERR_PRINTF("Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
-                           "to more than %d\n",
-                           name,
-                           MAX_TEST_CHECK_FUNCS);
-      abort();
-   }
-}
-
-
 Test *
 _V_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap)
 {
-   CheckFunc check;
-   Test *test;
-   Test *iter;
-
-   if (suite->ctest_run && (0 != strcmp(suite->ctest_run, name))) {
+   if (suite->ctest_run.data && mstr_cmp(suite->ctest_run, !=, mstr_cstring(name))) {
       if (dtor) {
          dtor(ctx);
       }
       return NULL;
    }
 
-   test = (Test *)bson_malloc0(sizeof *test);
-   test->name = bson_strdup(name);
+   Test *test = TestVec_push(&suite->tests);
+   test->name = mstr_copy_cstring(name);
    test->func = func;
-   test->num_checks = 0;
 
+   CheckFunc check;
    while ((check = va_arg(ap, CheckFunc))) {
-      _TestSuite_AddCheck(test, check, name);
+      *CheckFuncVec_push(&test->checks) = check;
    }
 
-   test->next = NULL;
    test->dtor = dtor;
    test->ctx = ctx;
    TestSuite_SeedRand(suite, test);
-
-   if (!suite->tests) {
-      suite->tests = test;
-      return test;
-   }
-
-   for (iter = suite->tests; iter->next; iter = iter->next) {
-   }
-
-   iter->next = test;
    return test;
 }
 
@@ -348,7 +318,7 @@ _TestSuite_AddMockServerTest(TestSuite *suite, const char *name, TestFunc func, 
    va_end(ap);
 
    if (test) {
-      _TestSuite_AddCheck(test, TestSuite_CheckMockServerAllowed, name);
+      *CheckFuncVec_push(&test->checks) = TestSuite_CheckMockServerAllowed;
    }
 }
 
@@ -531,10 +501,9 @@ TestSuite_RunTest(TestSuite *suite, /* IN */
    char name[MAX_TEST_NAME_LENGTH];
    mcommon_string_append_t buf;
    mcommon_string_t *mock_server_log_buf;
-   size_t i;
    int status = 0;
 
-   bson_snprintf(name, sizeof name, "%s%s", suite->name, test->name);
+   bson_snprintf(name, sizeof name, "%s%.*s", suite->name, MSTR_FMT(test->name));
 
    mcommon_string_new_as_append(&buf);
 
@@ -542,19 +511,18 @@ TestSuite_RunTest(TestSuite *suite, /* IN */
       test_msg("Begin %s, seed %u", name, test->seed);
    }
 
-   for (i = 0; i < suite->failing_flaky_skips.len; i++) {
-      TestSkip *skip = _mongoc_array_index(&suite->failing_flaky_skips, TestSkip *, i);
-      if (0 == strcmp(name, skip->test_name) && skip->subtest_desc == NULL) {
-         if (suite->ctest_run) {
+   mlib_vec_foreach (TestSkip, skip, suite->failing_flaky_skips) {
+      if (mstr_cmp(skip->test_name, ==, mstr_cstring(name)) && !skip->subtest_desc.data) {
+         if (suite->ctest_run.data) {
             /* Write a marker that tells CTest that we are skipping this test */
             test_msg("@@ctest-skipped@@");
          }
          if (!suite->silent) {
             mcommon_string_append_printf(&buf,
-                                         "    { \"status\": \"skip\", \"test_file\": \"%s\","
-                                         " \"reason\": \"%s\" }%s",
-                                         test->name,
-                                         skip->reason,
+                                         "    { \"status\": \"skip\", \"test_file\": \"%.*s\","
+                                         " \"reason\": \"%.*s\" }%s",
+                                         MSTR_FMT(test->name),
+                                         MSTR_FMT(skip->reason),
                                          ((*count) == 1) ? "" : ",");
             test_msg("%s", mcommon_str_from_append(&buf));
             if (suite->outfile) {
@@ -567,15 +535,17 @@ TestSuite_RunTest(TestSuite *suite, /* IN */
       }
    }
 
-   for (i = 0; i < test->num_checks; i++) {
-      if (!test->checks[i]()) {
-         if (suite->ctest_run) {
+   mlib_vec_foreach (CheckFunc, check, test->checks) {
+      if (!(*check)()) {
+         if (suite->ctest_run.data) {
             /* Write a marker that tells CTest that we are skipping this test */
             test_msg("@@ctest-skipped@@");
          }
          if (!suite->silent) {
-            mcommon_string_append_printf(
-               &buf, "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s", test->name, ((*count) == 1) ? "" : ",");
+            mcommon_string_append_printf(&buf,
+                                         "    { \"status\": \"skip\", \"test_file\": \"%.*s\" }%s",
+                                         MSTR_FMT(test->name),
+                                         ((*count) == 1) ? "" : ",");
             test_msg("%s", mcommon_str_from_append(&buf));
             if (suite->outfile) {
                fprintf(suite->outfile, "%s", mcommon_str_from_append(&buf));
@@ -690,11 +660,9 @@ TestSuite_PrintHelp(TestSuite *suite) /* IN */
 static void
 TestSuite_PrintTests(TestSuite *suite) /* IN */
 {
-   Test *iter;
-
    printf("\nTests:\n");
-   for (iter = suite->tests; iter; iter = iter->next) {
-      printf("%s%s\n", suite->name, iter->name);
+   mlib_vec_foreach (Test, t, suite->tests) {
+      printf("%s%.*s\n", suite->name, MSTR_FMT(t->name));
    }
 
    printf("\n");
@@ -870,7 +838,7 @@ TestSuite_TestMatchesName(const TestSuite *suite, const Test *test, const char *
    char name[128];
    bool star = strlen(testname) && testname[strlen(testname) - 1] == '*';
 
-   bson_snprintf(name, sizeof name, "%s%s", suite->name, test->name);
+   bson_snprintf(name, sizeof name, "%s%.*s", suite->name, MSTR_FMT(test->name));
 
    if (star) {
       /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
@@ -884,19 +852,18 @@ TestSuite_TestMatchesName(const TestSuite *suite, const Test *test, const char *
 bool
 test_matches(TestSuite *suite, Test *test)
 {
-   if (suite->ctest_run) {
+   if (suite->ctest_run.data) {
       /* We only want exactly the named test */
-      return strcmp(test->name, suite->ctest_run) == 0;
+      return mstr_cmp(test->name, ==, suite->ctest_run);
    }
 
    /* If no match patterns were provided, then assume all match. */
-   if (suite->match_patterns.len == 0) {
+   if (suite->match_patterns.size == 0) {
       return true;
    }
 
-   for (size_t i = 0u; i < suite->match_patterns.len; i++) {
-      char *pattern = _mongoc_array_index(&suite->match_patterns, char *, i);
-      if (TestSuite_TestMatchesName(suite, test, pattern)) {
+   mlib_vec_foreach (mstr, pat, suite->match_patterns) {
+      if (TestSuite_TestMatchesName(suite, test, pat->data)) {
          return true;
       }
    }
@@ -905,23 +872,9 @@ test_matches(TestSuite *suite, Test *test)
 }
 
 void
-_process_skip_file(const char *filename, mongoc_array_t *skips)
+_process_skip_file(const char *filename, TestSkipVec *skips)
 {
-   const int max_lines = 1000;
-   int lines_read = 0;
-   char buffer[SKIP_LINE_BUFFER_SIZE];
-   size_t buflen;
    FILE *skip_file;
-   char *fgets_ret;
-   TestSkip *skip;
-   char *test_name_end;
-   size_t comment_len;
-   char *comment_char;
-   char *comment_text;
-   size_t subtest_len;
-   size_t new_buflen;
-   char *subtest_start;
-   char *subtest_end;
 
 #ifdef _WIN32
    if (0 != fopen_s(&skip_file, filename, "r")) {
@@ -934,73 +887,47 @@ _process_skip_file(const char *filename, mongoc_array_t *skips)
       test_error("Failed to open skip file: %s: errno: %d", filename, errno);
    }
 
-   while (lines_read < max_lines) {
-      fgets_ret = fgets(buffer, sizeof(buffer), skip_file);
-      buflen = strlen(buffer);
-
-      if (buflen == 0 || !fgets_ret) {
-         break; /* error or EOF */
+   while (1) {
+      char buffer[SKIP_LINE_BUFFER_SIZE];
+      if (!fgets(buffer, sizeof(buffer), skip_file)) {
+         break; /* error */
       }
 
-      if (buffer[0] == '#' || buffer[0] == ' ' || buffer[0] == '\n') {
-         continue; /* Comment line or blank line */
+      mstr_view line = mstr_cstring(buffer);
+      if (!line.len) {
+         // EOF
+         break;
+      }
+      // Remove whitespace
+      line = mstr_trim(line);
+      if (line.len == 0 || line.data[0] == '#') {
+         // Empty line or comment
+         continue;
       }
 
-      skip = (TestSkip *)bson_malloc0(sizeof *skip);
-      if (buffer[buflen - 1] == '\n')
-         buflen--;
-      test_name_end = buffer + buflen;
+      TestSkip skip = {0};
+      // If there is a trailing comment, drop that:
+      mstr_view comment = {0};
+      mstr_split_around(line, mstr_cstring("#"), &line, &comment);
+      line = mstr_trim(line);
+      comment = mstr_trim(comment);
 
-      /* First get the comment, starting at '#' to EOL */
-      comment_len = 0;
-      comment_char = strchr(buffer, '#');
-      if (comment_char) {
-         test_name_end = comment_char;
-         comment_text = comment_char;
-         while (comment_text[0] == '#' || comment_text[0] == ' ' || comment_text[0] == '\t') {
-            if (++comment_text >= (buffer + buflen))
-               break;
-         }
-         skip->reason = bson_strndup(comment_text, buflen - (comment_text - buffer));
-         comment_len = buflen - (comment_char - buffer);
-      } else {
-         skip->reason = NULL;
+      if (comment.len) {
+         skip.reason = mstr_copy(comment);
       }
 
-      /* Next get the subtest name, from first '"' until last '"' */
-      new_buflen = buflen - comment_len;
-      subtest_start = strstr(buffer, "/\"");
-      if (subtest_start && (!comment_char || (subtest_start < comment_char))) {
-         test_name_end = subtest_start;
-         subtest_start++;
-         /* find the second '"' that marks end of subtest name */
-         subtest_end = subtest_start + 1;
-         while (subtest_end[0] != '\0' && subtest_end[0] != '"' && (subtest_end < buffer + new_buflen)) {
-            subtest_end++;
-         }
-         /* 'subtest_start + 1' to trim leading and trailing '"' */
-         subtest_len = subtest_end - (subtest_start + 1);
-         skip->subtest_desc = bson_strndup(subtest_start + 1, subtest_len);
-      } else {
-         skip->subtest_desc = NULL;
+      // If it contains a '/"' substring, the quoted part is the subtest description,
+      // and everything before the '/' is the main test name. Split on that:
+      mstr_view test_name;
+      mstr_view subtest_desc;
+      if (mstr_split_around(line, mstr_cstring("/\""), &test_name, &subtest_desc)) {
+         // Drop trailing quote:
+         mlib_check(mstr_at(subtest_desc, -1), eq, '"', because, "Subtest description should end with a quote");
+         subtest_desc = mstr_slice(subtest_desc, 0, -1);
+         skip.subtest_desc = mstr_copy(subtest_desc);
       }
-
-      /* Next get the test name */
-      while (test_name_end[-1] == ' ' && test_name_end > buffer) {
-         /* trailing space might be between test name and '#' */
-         test_name_end--;
-      }
-      skip->test_name = bson_strndup(buffer, test_name_end - buffer);
-
-      _mongoc_array_append_val(skips, skip);
-
-      lines_read++;
-   }
-   if (lines_read == max_lines) {
-      test_error("Skip file: %s exceeded maximum lines: %d. Increase "
-                 "max_lines in _process_skip_file",
-                 filename,
-                 max_lines);
+      skip.test_name = mstr_copy(test_name);
+      *TestSkipVec_push(skips) = skip;
    }
    fclose(skip_file);
 }
@@ -1008,30 +935,29 @@ _process_skip_file(const char *filename, mongoc_array_t *skips)
 static int
 TestSuite_RunAll(TestSuite *suite /* IN */)
 {
-   Test *test;
    int count = 0;
    int status = 0;
 
    ASSERT(suite);
 
    /* initialize "count" so we can omit comma after last test output */
-   for (test = suite->tests; test; test = test->next) {
-      if (test_matches(suite, test)) {
+   mlib_vec_foreach (Test, t, suite->tests) {
+      if (test_matches(suite, t)) {
          count++;
       }
    }
 
-   if (suite->ctest_run) {
+   if (suite->ctest_run.data) {
       /* We should have matched *at most* one test */
       ASSERT(count <= 1);
       if (count == 0) {
-         test_error("No such test '%s'", suite->ctest_run);
+         test_error("No such test '%.*s'", MSTR_FMT(suite->ctest_run));
       }
    }
 
-   for (test = suite->tests; test; test = test->next) {
-      if (test_matches(suite, test)) {
-         status += TestSuite_RunTest(suite, test, &count);
+   mlib_vec_foreach (Test, t, suite->tests) {
+      if (test_matches(suite, t)) {
+         status += TestSuite_RunTest(suite, t, &count);
          count--;
       }
    }
@@ -1075,39 +1001,20 @@ TestSuite_Run(TestSuite *suite) /* IN */
    }
 
    start_us = bson_get_monotonic_time();
-   if (suite->tests) {
-      failures += TestSuite_RunAll(suite);
-   } else if (!suite->silent) {
-      TestSuite_PrintJsonFooter(stdout);
-      if (suite->outfile) {
-         TestSuite_PrintJsonFooter(suite->outfile);
-      }
-   }
+   failures += TestSuite_RunAll(suite);
    MONGOC_DEBUG("Duration of all tests (s): %" PRId64, (bson_get_monotonic_time() - start_us) / (1000 * 1000));
 
    return failures;
 }
 
-
 void
 TestSuite_Destroy(TestSuite *suite)
 {
-   Test *test;
-   Test *tmp;
-
    bson_mutex_lock(&gTestMutex);
    gTestSuite = NULL;
    bson_mutex_unlock(&gTestMutex);
 
-   for (test = suite->tests; test; test = tmp) {
-      tmp = test->next;
-
-      if (test->dtor) {
-         test->dtor(test->ctx);
-      }
-      bson_free(test->name);
-      bson_free(test);
-   }
+   TestVec_destroy(&suite->tests);
 
    if (suite->outfile) {
       fclose(suite->outfile);
@@ -1117,23 +1024,9 @@ TestSuite_Destroy(TestSuite *suite)
 
    bson_free(suite->name);
    bson_free(suite->prgname);
-   bson_free(suite->ctest_run);
-   for (size_t i = 0u; i < suite->match_patterns.len; i++) {
-      char *val = _mongoc_array_index(&suite->match_patterns, char *, i);
-      bson_free(val);
-   }
-
-   _mongoc_array_destroy(&suite->match_patterns);
-
-   for (size_t i = 0u; i < suite->failing_flaky_skips.len; i++) {
-      TestSkip *val = _mongoc_array_index(&suite->failing_flaky_skips, TestSkip *, i);
-      bson_free(val->test_name);
-      bson_free(val->subtest_desc);
-      bson_free(val->reason);
-      bson_free(val);
-   }
-
-   _mongoc_array_destroy(&suite->failing_flaky_skips);
+   mstr_delete(suite->ctest_run);
+   mstr_vec_destroy(&suite->match_patterns);
+   TestSkipVec_destroy(&suite->failing_flaky_skips);
 }
 
 

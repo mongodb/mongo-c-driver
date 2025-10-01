@@ -25,6 +25,8 @@
 
 #include <bson/bson.h>
 
+#include <mlib/str.h>
+#include <mlib/str_vec.h>
 #include <mlib/time_point.h>
 
 #include <inttypes.h>
@@ -655,50 +657,111 @@ typedef void (*TestFunc)(void);
 typedef void (*TestFuncWC)(void *);
 typedef void (*TestFuncDtor)(void *);
 typedef int (*CheckFunc)(void);
-typedef struct _Test Test;
-typedef struct _TestSuite TestSuite;
+typedef struct Test Test;
+typedef struct TestSuite TestSuite;
 typedef struct _TestFnCtx TestFnCtx;
-typedef struct _TestSkip TestSkip;
+typedef struct TestSkip TestSkip;
 
+#define T CheckFunc
+#define VecName CheckFuncVec
+#include <mlib/vec.t.h>
 
-struct _Test {
-   Test *next;
-   char *name;
+struct Test {
+   /**
+    * @brief The C string that names the test case
+    */
+   mstr name;
+   /**
+    * @brief The function that will be executed for the test case
+    */
    TestFuncWC func;
+   /**
+    * @brief The function that destroys the context data associated with the test case
+    */
    TestFuncDtor dtor;
+   /**
+    * @brief Pointer to arbitrary context data associated with the text case
+    */
    void *ctx;
+   /**
+    * @brief The exit code that was received from the test function
+    */
    int exit_code;
+   /**
+    * @brief Randomness seed for the test case
+    */
    unsigned seed;
-   CheckFunc checks[MAX_TEST_CHECK_FUNCS];
-   size_t num_checks;
+   /**
+    * @brief Array of check functions that determine whether this test case should be skipped
+    */
+   CheckFuncVec checks;
 };
 
+static inline void
+Test_Destroy(Test *t)
+{
+   if (t->dtor) {
+      t->dtor(t->ctx);
+   }
+   mstr_delete(t->name);
+   CheckFuncVec_destroy(&t->checks);
+}
 
-struct _TestSuite {
+#define T Test
+#define VecName TestVec
+#define VecDestroyElement Test_Destroy
+#include <mlib/vec.t.h>
+
+/**
+ * @brief Information about a test that we plan to skip
+ */
+struct TestSkip {
+   /**
+    * @brief The name of the test that is being skipped
+    */
+   mstr test_name;
+   /**
+    * @brief If not-null, the description of the sub-test that we are skipping.
+    */
+   mstr subtest_desc;
+   /**
+    * @brief An explanatory string for why we are skipping the test
+    */
+   mstr reason;
+};
+
+static inline void
+TestSkip_Destroy(TestSkip *skip)
+{
+   mstr_delete(skip->test_name);
+   mstr_delete(skip->subtest_desc);
+   mstr_delete(skip->reason);
+}
+
+#define T TestSkip
+#define VecName TestSkipVec
+#define VecDestroyElement(Skip) TestSkip_Destroy(Skip)
+#include <mlib/vec.t.h>
+
+
+struct TestSuite {
    char *prgname;
    char *name;
-   mongoc_array_t match_patterns;
-   char *ctest_run;
-   Test *tests;
+   mstr_vec match_patterns;
+   mstr ctest_run;
+   TestVec tests;
    FILE *outfile;
    int flags;
    int silent;
    mcommon_string_t *mock_server_log_buf;
    FILE *mock_server_log;
-   mongoc_array_t failing_flaky_skips;
+   TestSkipVec failing_flaky_skips;
 };
 
 
 struct _TestFnCtx {
    TestFunc test_fn;
    TestFuncDtor dtor;
-};
-
-
-struct _TestSkip {
-   char *test_name;
-   char *subtest_desc;
-   char *reason;
 };
 
 
@@ -742,7 +805,7 @@ test_suite_debug_output(void);
 void
 test_suite_mock_server_log(const char *msg, ...);
 void
-_process_skip_file(const char *, mongoc_array_t *);
+_process_skip_file(const char *, TestSkipVec *);
 
 bool
 TestSuite_NoFork(TestSuite *suite);
