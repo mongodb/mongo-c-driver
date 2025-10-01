@@ -6952,7 +6952,8 @@ test_lookup(void *unused)
             const bson_t *got;
             ASSERT(!mongoc_cursor_next(cursor, &got));
             ASSERT(mongoc_cursor_error(cursor, &error));
-            ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, 0, expected_error_substring);
+            static const uint32_t expected_error_code = 10026002u;
+            ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, expected_error_code, expected_error_substring);
             mongoc_cursor_destroy(cursor);
          }
       }
