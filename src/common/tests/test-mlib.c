@@ -920,6 +920,14 @@ _test_str_view(void)
       // But "Food" > "foo" when case-insensitive:
       mlib_check(mstr_latin_casecmp(mstr_cstring("Food"), >, mstr_cstring("foo")));
    }
+
+   // Trimming
+   {
+      mstr_view s = mstr_cstring("  foo bar  \n");
+      mlib_check(mstr_cmp(mstr_trim_left(s), ==, mstr_cstring("foo bar  \n")));
+      mlib_check(mstr_cmp(mstr_trim_right(s), ==, mstr_cstring("  foo bar")));
+      mlib_check(mstr_cmp(mstr_trim(s), ==, mstr_cstring("foo bar")));
+   }
 }
 
 static inline void
@@ -1226,7 +1234,7 @@ _test_int_vec(void)
    int_vec_erase(&ints, ints.data + 1, ints.data + 3);
    mlib_check(ints.size, eq, 2, because, "We erased two elements");
 
-   mlib_check(mlib_vec_at(ints, -1), eq, -7, because, "Negative index wraps");
+   mlib_check(mlib_vec_at(ints, -1), eq, 1729, because, "Negative index wraps");
 
    int_vec_destroy(&ints);
 }

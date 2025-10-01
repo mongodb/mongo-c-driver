@@ -289,6 +289,24 @@ _mstr_adjust_index(mstr_view s, mlib_upsized_integer pos, bool clamp_to_length)
 }
 
 /**
+ * @brief Obtain the code unit at the given zero-based index, with negative index wrapping.
+ *
+ * This function asserts that the index is in-bounds for the given string.
+ *
+ * @param s The string to be inspected.
+ * @param pos The index to access. Zero is the first code unit, and -1 is the last.
+ * @return char The code unit at position `pos`.
+ */
+static inline char
+mstr_at(mstr_view s, mlib_upsized_integer pos_)
+{
+   size_t pos = _mstr_adjust_index(s, pos_, false);
+   return s.data[pos];
+}
+
+#define mstr_at(S, Pos) (mstr_at)(mstr_view_from(S), mlib_upsize_integer(Pos))
+
+/**
  * @brief Create a new `mstr_view` that views a substring within another string
  *
  * @param s The original string view to be inspected
@@ -440,6 +458,63 @@ mstr_find_first_of(mstr_view hay, mstr_view const needles, mlib_upsized_integer 
 #define _mstr_find_first_of_argc_2(Hay, Needle) _mstr_find_first_of_argc_3(Hay, Needle, 0)
 #define _mstr_find_first_of_argc_3(Hay, Needle, Pos) _mstr_find_first_of_argc_4(Hay, Needle, Pos, SIZE_MAX)
 #define _mstr_find_first_of_argc_4(Hay, Needle, Pos, Len) mstr_find_first_of(Hay, Needle, mlib_upsize_integer(Pos), Len)
+
+/**
+ * @brief Trim leading latin (ASCII) whitespace from the given string
+ *
+ * @param s The string to be inspected
+ * @return mstr_view A substring view of `s` that excludes any leading whitespace
+ */
+static inline mstr_view
+mstr_trim_left(mstr_view s)
+{
+   while (s.len) {
+      char c = mstr_at(s, 0);
+      if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
+         s = mstr_substr(s, 1);
+      } else {
+         break;
+      }
+   }
+   return s;
+}
+#define mstr_trim_left(S) (mstr_trim_left)(mstr_view_from(S))
+
+/**
+ * @brief Trim trailing latin (ASCII) whitespace from the given string
+ *
+ * @param s The string to be insepcted
+ * @return mstr_view A substring view of `s` that excludes any trailing whitespace.
+ */
+static inline mstr_view
+mstr_trim_right(mstr_view s)
+{
+   while (s.len) {
+      char c = mstr_at(s, -1);
+      if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
+         s = mstr_slice(s, 0, -1);
+      } else {
+         break;
+      }
+   }
+   return s;
+}
+#define mstr_trim_right(S) (mstr_trim_right)(mstr_view_from(S))
+
+/**
+ * @brief Trim leading and trailing latin (ASCII) whitespace from the string
+ *
+ * @param s The string to be inspected
+ * @return mstr_view A substring of `s` that excludes leading and trailing whitespace.
+ */
+static inline mstr_view
+mstr_trim(mstr_view s)
+{
+   s = mstr_trim_left(s);
+   s = mstr_trim_right(s);
+   return s;
+}
+#define mstr_trim(S) (mstr_trim)(mstr_view_from(S))
 
 /**
  * @brief Split a single string view into two strings at the given position
