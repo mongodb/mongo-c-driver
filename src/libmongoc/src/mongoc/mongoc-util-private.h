@@ -260,7 +260,7 @@ typedef struct {
  * desktop or server version.
  */
 bool
-_mongoc_verify_windows_version(int major_version, int minor_version, int build_number, bool strictly_equal);
+_mongoc_verify_windows_version(DWORD major_version, DWORD minor_version, DWORD build_number, bool strictly_equal);
 
 BSON_END_DECLS
 

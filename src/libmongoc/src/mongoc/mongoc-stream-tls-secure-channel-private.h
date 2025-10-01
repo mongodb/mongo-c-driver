@@ -24,13 +24,17 @@
 
 #include <bson/bson.h>
 
-#include <subauth.h>
+#include <subauth.h> // For SCH_CREDENTIALS
 
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
-#define SCHANNEL_USE_BLACKLISTS 1
+#define SCHANNEL_USE_BLACKLISTS 1 // For SCH_CREDENTIALS
 #include <schannel.h>
 #include <security.h>
+
+#ifdef SCH_CREDENTIALS_VERSION
+#define HAVE_SCH_CREDENTIALS
+#endif
 
 BSON_BEGIN_DECLS
 

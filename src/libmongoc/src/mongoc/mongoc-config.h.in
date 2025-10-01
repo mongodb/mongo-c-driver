@@ -52,6 +52,7 @@
 #  undef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 #endif
 
+
 /*
  * MONGOC_ENABLE_CRYPTO_CNG is set from configure to determine if we are
  * compiled with Native Crypto support on Windows

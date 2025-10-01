@@ -1040,12 +1040,12 @@ typedef NTSTATUS(APIENTRY *RTLVERIFYVERSIONINFO_FN)(PRTL_OSVERSIONINFOEXW Versio
                                                     ULONGLONG ConditionMask);
 
 bool
-_mongoc_verify_windows_version(int major_version, int minor_version, int build_number, bool strictly_equal)
+_mongoc_verify_windows_version(DWORD major_version, DWORD minor_version, DWORD build_number, bool strictly_equal)
 {
    static RTLVERIFYVERSIONINFO_FN pRtlVerifyVersionInfo;
    OSVERSIONINFOEXW osvi;
    bool matched;
-   int op = VER_GREATER_EQUAL;
+   BYTE op = VER_GREATER_EQUAL;
 
    if (strictly_equal) {
       op = VER_EQUAL;

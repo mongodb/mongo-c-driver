@@ -95,10 +95,6 @@
 #define SP_PROT_TLS1_3_CLIENT 0x00002000
 #endif
 
-#ifdef SCH_CREDENTIALS_VERSION
-#define HAVE_SCH_CREDENTIALS
-#endif
-
 static void
 _mongoc_stream_tls_secure_channel_destroy(mongoc_stream_t *stream)
 {
@@ -852,6 +848,41 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
    RETURN(mongoc_stream_should_retry(tls->base_stream));
 }
 
+static DWORD
+get_cred_flags(const mongoc_ssl_opt_t *opt)
+{
+   DWORD dwFlags;
+
+   /* SCH_USE_STRONG_CRYPTO is not available in VS2010
+    *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
+#ifdef SCH_USE_STRONG_CRYPTO
+   dwFlags = SCH_USE_STRONG_CRYPTO;
+#endif
+
+   /* By default, enable soft failing.
+    * A certificate with no revocation check is a soft failure. */
+   dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+   /* An offline OCSP responder / CRL distribution list is a soft failure. */
+   dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+   if (opt->weak_cert_validation) {
+      dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
+      TRACE("%s", "disabled server certificate checks");
+   } else {
+      dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
+      if (!_mongoc_ssl_opts_disable_certificate_revocation_check(opt)) {
+         dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
+         TRACE("%s", "enabled server certificate revocation checks");
+      }
+      TRACE("%s", "enabled server certificate checks");
+   }
+
+   if (opt->allow_invalid_hostname) {
+      dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
+   }
+
+   return dwFlags;
+}
+
 #ifdef HAVE_SCH_CREDENTIALS
 
 void *
@@ -860,34 +891,7 @@ _mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_C
    SCH_CREDENTIALS *cred = bson_malloc0(sizeof(SCH_CREDENTIALS));
 
    cred->dwVersion = SCH_CREDENTIALS_VERSION;
-
-/* SCHANNEL_CRED:
- * SCH_USE_STRONG_CRYPTO is not available in VS2010
- *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
-#ifdef SCH_USE_STRONG_CRYPTO
-   cred->dwFlags = SCH_USE_STRONG_CRYPTO;
-#endif
-
-   /* By default, enable soft failing.
-    * A certificate with no revocation check is a soft failure. */
-   cred->dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
-   /* An offline OCSP responder / CRL distribution list is a soft failure. */
-   cred->dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-   if (opt->weak_cert_validation) {
-      cred->dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
-      TRACE("%s", "disabled server certificate checks");
-   } else {
-      cred->dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
-      if (!_mongoc_ssl_opts_disable_certificate_revocation_check(opt)) {
-         cred->dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
-         TRACE("%s", "enabled server certificate revocation checks");
-      }
-      TRACE("%s", "enabled server certificate checks");
-   }
-
-   if (opt->allow_invalid_hostname) {
-      cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
-   }
+   cred->dwFlags = get_cred_flags(opt);
 
    if (*cert) {
       cred->cCreds = 1;
@@ -909,34 +913,7 @@ _mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CON
    SCHANNEL_CRED *cred = bson_malloc0(sizeof(SCHANNEL_CRED));
 
    cred->dwVersion = SCHANNEL_CRED_VERSION;
-
-/* SCHANNEL_CRED:
- * SCH_USE_STRONG_CRYPTO is not available in VS2010
- *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
-#ifdef SCH_USE_STRONG_CRYPTO
-   cred->dwFlags = SCH_USE_STRONG_CRYPTO;
-#endif
-
-   /* By default, enable soft failing.
-    * A certificate with no revocation check is a soft failure. */
-   cred->dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
-   /* An offline OCSP responder / CRL distribution list is a soft failure. */
-   cred->dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-   if (opt->weak_cert_validation) {
-      cred->dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
-      TRACE("%s", "disabled server certificate checks");
-   } else {
-      cred->dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
-      if (!_mongoc_ssl_opts_disable_certificate_revocation_check(opt)) {
-         cred->dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
-         TRACE("%s", "enabled server certificate revocation checks");
-      }
-      TRACE("%s", "enabled server certificate checks");
-   }
-
-   if (opt->allow_invalid_hostname) {
-      cred->dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
-   }
+   cred->dwFlags = get_cred_flags(opt);
 
    if (*cert) {
       cred->cCreds = 1;

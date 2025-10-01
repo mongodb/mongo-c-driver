@@ -539,6 +539,7 @@ else ()
    set (MONGOC_HAVE_BCRYPT_PBKDF2 0)
 endif ()
 
+
 set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-azure.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mcd-nsinfo.c
