@@ -4802,8 +4802,10 @@ test_multiple_execution(void)
 
 // `test_bulk_big_let` tests a bulk operation with a large let document to reproduce CDRIVER-6112:
 static void
-test_bulk_big_let(void)
+test_bulk_big_let(void *unused)
 {
+   BSON_UNUSED(unused);
+
    mongoc_client_t *client = test_framework_new_default_client();
    mongoc_collection_t *coll = get_test_collection(client, "test_big_let");
    bson_error_t error;
@@ -4818,8 +4820,7 @@ test_bulk_big_let(void)
 
       // Append big string:
       {
-         // size_t num_chars = 78; // OK
-         size_t num_chars = 79; // Crash
+         size_t num_chars = 79;
          char *big_string = bson_malloc0(num_chars + 1);
          memset(big_string, 'a', num_chars);
          BSON_APPEND_UTF8(&testDocument, "a", big_string);
@@ -5025,5 +5026,11 @@ test_bulk_install(TestSuite *suite)
                                "/BulkOperation/set_client_updates_operation_id_when_client_changes",
                                test_bulk_write_set_client_updates_operation_id_when_client_changes);
    TestSuite_AddLive(suite, "/BulkOperation/multiple_execution", test_multiple_execution);
-   TestSuite_AddLive(suite, "/BulkOperation/big_let", test_bulk_big_let);
+   TestSuite_AddFull(
+      suite,
+      "/BulkOperation/big_let",
+      test_bulk_big_let,
+      NULL,
+      NULL,
+      test_framework_skip_if_max_wire_version_less_than_13 /* 5.0+ for 'let' support in CRUD commands */);
 }
