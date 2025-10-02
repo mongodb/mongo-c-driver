@@ -12,9 +12,9 @@ compile_libmongocrypt() {
   # `src/kms-message`.
   #
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
-  declare -r version="1.15.1"
+  declare -r version="1.17.0"
 
-  git clone -q --depth=1 https://github.com/connorsmacd/libmongocrypt --branch qe-json-mixing-error-1.17.0-hack.MONGOCRYPT-793 || return
+  git clone -q --depth=1 https://github.com/connorsmacd/libmongocrypt --branch qe-json-mixing-error.MONGOCRYPT-793 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
