@@ -6522,6 +6522,12 @@ drop_coll(mongoc_database_t *db, const char *collname)
    mongoc_collection_destroy(coll);
 }
 
+server_version_t
+get_libmongocrypt_version(void)
+{
+   return test_framework_str_to_version(_mongoc_crypt_get_libmongocrypt_version());
+}
+
 static void
 test_lookup_setup(void)
 {
@@ -6934,7 +6940,8 @@ test_lookup(void *unused)
          ]
       });
 
-      if (test_framework_get_server_version() < test_framework_str_to_version("8.2.0")) {
+      if (test_framework_get_server_version() < test_framework_str_to_version("8.2.0") ||
+          get_libmongocrypt_version() < test_framework_str_to_version("1.17.0")) {
          ASSERT_AGG_ERROR(coll, pipeline, "not supported");
       } else {
          // The error domain differs depending on the query analysis component:
@@ -7029,6 +7036,12 @@ test_lookup_pre81(void *unused)
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
+}
+
+int
+skip_if_libmongocrypt_less_than_1_17_0(void)
+{
+   return get_libmongocrypt_version() >= test_framework_str_to_version("1.17.0");
 }
 
 void
@@ -7478,6 +7491,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         NULL,
                         NULL,
                         test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ */
+                        skip_if_libmongocrypt_less_than_1_17_0,               /* require libmongocrypt 1.17.0+ */
                         test_framework_skip_if_single,                        /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
