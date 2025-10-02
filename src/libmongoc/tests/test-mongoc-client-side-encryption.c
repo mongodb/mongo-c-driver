@@ -33,6 +33,9 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
 
+/* _mongoc_crypt_get_libmongocrypt_version */
+#include <mongoc/mongoc-crypt-private.h>
+
 #include <mongoc/mongoc-uri.h>
 
 #include <mlib/cmp.h>
