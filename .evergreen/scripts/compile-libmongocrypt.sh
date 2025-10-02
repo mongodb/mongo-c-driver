@@ -14,7 +14,7 @@ compile_libmongocrypt() {
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
   declare -r version="1.16.0"
 
-  git clone -q --depth=1 https://github.com/connorsmacd/libmongocrypt --branch "${version:?}" || return
+  git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch "${version:?}" || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
