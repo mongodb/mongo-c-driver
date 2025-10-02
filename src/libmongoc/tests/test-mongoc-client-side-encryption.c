@@ -6528,7 +6528,11 @@ drop_coll(mongoc_database_t *db, const char *collname)
 server_version_t
 get_libmongocrypt_version(void)
 {
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    return test_framework_str_to_version(_mongoc_crypt_get_libmongocrypt_version());
+#else
+   return 0;
+#endif
 }
 
 static void
