@@ -7,7 +7,7 @@
                     "subType": "04"
                 }
             },
-            "path": "encrypted-textPreview",
+            "path": "encryptedText",
             "bsonType": "string",
             "queries": [
                 {
