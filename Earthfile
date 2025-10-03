@@ -137,6 +137,7 @@ PREP_CMAKE:
     FUNCTION
     # Run all CMake commands using uvx:
     RUN __alias cmake uvx cmake
+    RUN __alias ctest uvx --from=cmake ctest
     # Executing any CMake command will warm the cache:
     RUN cmake --version | head -n 1
 

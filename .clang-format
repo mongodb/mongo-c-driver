@@ -149,6 +149,7 @@ ForEachMacros:
   - mlib_foreach_urange
   - mlib_foreach
   - mlib_foreach_arr
+  - mlib_vec_foreach
 IfMacros:
   - mlib_assert_aborts
   - KJ_IF_MAYBE
