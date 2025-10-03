@@ -1031,6 +1031,7 @@ _parse_kms_provider_aws(
    BSON_UNUSED(tls_opts);
 
    BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(kms_providers, provider, &child));
+   const bool need_temp_creds = bson_has_field(kms_doc, "sessionToken");
 
    BSON_FOREACH(kms_doc, iter)
    {
@@ -1045,6 +1046,8 @@ _parse_kms_provider_aws(
          const char *envvar = "MONGOC_TEST_AWS_ACCESS_KEY_ID";
          if (0 == strcmp(provider, "aws:name2")) {
             envvar = "MONGOC_TEST_AWSNAME2_ACCESS_KEY_ID";
+         } else if (need_temp_creds) {
+            envvar = "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID";
          }
          if (!_append_kms_provider_value_or_getenv(&child, key, value, envvar, error)) {
             return false;
@@ -1053,7 +1056,14 @@ _parse_kms_provider_aws(
          const char *envvar = "MONGOC_TEST_AWS_SECRET_ACCESS_KEY";
          if (0 == strcmp(provider, "aws:name2")) {
             envvar = "MONGOC_TEST_AWSNAME2_SECRET_ACCESS_KEY";
+         } else if (need_temp_creds) {
+            envvar = "MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY";
          }
+         if (!_append_kms_provider_value_or_getenv(&child, key, value, envvar, error)) {
+            return false;
+         }
+      } else if (strcmp(key, "sessionToken") == 0) {
+         const char *envvar = "MONGOC_TEST_AWS_TEMP_SESSION_TOKEN";
          if (!_append_kms_provider_value_or_getenv(&child, key, value, envvar, error)) {
             return false;
          }
