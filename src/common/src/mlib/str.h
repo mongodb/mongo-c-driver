@@ -834,7 +834,7 @@ static inline mstr
 mstr_concat(mstr_view a, mstr_view b)
 {
    mstr ret = {NULL, 0};
-   size_t cat_len;
+   size_t cat_len = 0;
    if (mlib_add(&cat_len, a.len, b.len)) {
       // Size would overflow. No go.
       return ret;
