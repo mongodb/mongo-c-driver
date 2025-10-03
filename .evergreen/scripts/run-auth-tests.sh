@@ -27,36 +27,36 @@ chmod 700 "${secrets_dir:?}"
 
 # Create certificate to test X509 auth with Atlas on cloud-prod:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
-echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
+echo "${atlas_x509_cert_base64:?}" | base64 --decode >"${secrets_dir:?}/atlas_x509.pem"
 # Fix path on Windows:
 if $IS_WINDOWS; then
-    atlas_x509_path="$(cygpath -m "${atlas_x509_path:?}")"
+  atlas_x509_path="$(cygpath -m "${atlas_x509_path:?}")"
 fi
 
 # Create certificate to test X509 auth with Atlas on cloud-dev
 atlas_x509_dev_path="${secrets_dir:?}/atlas_x509_dev.pem"
-echo "${atlas_x509_dev_cert_base64:?}" | base64 --decode > "${atlas_x509_dev_path:?}"
+echo "${atlas_x509_dev_cert_base64:?}" | base64 --decode >"${atlas_x509_dev_path:?}"
 # Fix path on Windows:
 if $IS_WINDOWS; then
-    atlas_x509_dev_path="$(cygpath -m "${atlas_x509_dev_path}")"
+  atlas_x509_dev_path="$(cygpath -m "${atlas_x509_dev_path}")"
 fi
 
 # Create Kerberos config and keytab files.
 echo "Setting up Kerberos ... begin"
 if command -v kinit >/dev/null; then
-    # Copy host config and append realm:
-    if [ -e /etc/krb5.conf ]; then
-      cat /etc/krb5.conf > "${secrets_dir:?}/krb5.conf"
-    fi
-    cat "${mongoc_dir:?}/.evergreen/etc/kerberos.realm" >> "${secrets_dir:?}/krb5.conf"
-    # Set up keytab:
-    echo "${keytab:?}" | base64 --decode > "${secrets_dir:?}/drivers.keytab"
-    # Initialize kerberos:
-    KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p drivers@LDAPTEST.10GEN.CC
-    echo "Setting up Kerberos ... done"
+  # Copy host config and append realm:
+  if [ -e /etc/krb5.conf ]; then
+    cat /etc/krb5.conf >"${secrets_dir:?}/krb5.conf"
+  fi
+  cat "${mongoc_dir:?}/.evergreen/etc/kerberos.realm" >>"${secrets_dir:?}/krb5.conf"
+  # Set up keytab:
+  echo "${keytab:?}" | base64 --decode >"${secrets_dir:?}/drivers.keytab"
+  # Initialize kerberos:
+  KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p drivers@LDAPTEST.10GEN.CC
+  echo "Setting up Kerberos ... done"
 else
-    echo "No 'kinit' detected"
-    echo "Setting up Kerberos ... skipping"
+  echo "No 'kinit' detected"
+  echo "Setting up Kerberos ... skipping"
 fi
 
 declare c_timeout="connectTimeoutMS=30000&serverSelectionTryOnce=false"
@@ -173,21 +173,6 @@ if [[ "${ssl}" != "OFF" ]]; then
   "${mongoc_ping:?}" "${atlas_tls12:?}&${c_timeout:?}"
   echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
   "${mongoc_ping:?}" "${atlas_tls12_srv:?}${c_timeout:?}"
-  HAS_CIPHERSUITES_FOR_SERVERLESS="YES"
-  if [[ "${OSTYPE}" == "cygwin" ]]; then
-    # Windows Server 2008 hosts do not appear to share TLS 1.2 cipher suites with Atlas Serverless.
-    WINDOWS_OSNAME="$(systeminfo | grep 'OS Name:' | awk -F ':' '{print $2}')"
-    if [[ "${WINDOWS_OSNAME}" == *"Windows Server 2008"* ]]; then
-        echo "Detected Windows Server 2008 ... skipping Atlas Serverless test due to no shared cipher suites."
-        HAS_CIPHERSUITES_FOR_SERVERLESS="NO"
-    fi
-  fi
-  if [[ "${HAS_CIPHERSUITES_FOR_SERVERLESS}" == "YES" ]]; then
-    echo "Connecting to Atlas Serverless with SRV"
-    "${mongoc_ping:?}" "${atlas_serverless_srv:?}/?${c_timeout:?}"
-    echo "Connecting to Atlas Serverless"
-    "${mongoc_ping:?}" "${atlas_serverless:?}&${c_timeout:?}"
-  fi
 
   echo "Connecting to Atlas (cloud-prod) with X509"
   "${mongoc_ping:?}" "${atlas_x509:?}&tlsCertificateKeyFile=${atlas_x509_path:?}&${c_timeout:?}"

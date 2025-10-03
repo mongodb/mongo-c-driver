@@ -7,8 +7,10 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
+check_var_req UV_INSTALL_DIR
+
 check_var_opt CC
-check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR "Ninja"
 check_var_opt CMAKE_GENERATOR_PLATFORM
 
 check_var_req C_STD_VERSION
@@ -23,6 +25,9 @@ declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
 declare libmongocrypt_install_dir="${mongoc_dir}/libmongocrypt-install-dir"
+
+. "${script_dir:?}/install-build-tools.sh"
+install_build_tools
 
 declare -a configure_flags
 
@@ -82,13 +87,6 @@ export CXXFLAGS
 
 CFLAGS+=" ${flags+${flags[*]}}"
 CXXFLAGS+=" ${flags+${flags[*]}}"
-
-# Ensure find-cmake-latest.sh is sourced *before* add-build-dirs-to-paths.sh
-# to avoid interfering with potential CMake build configuration.
-# shellcheck source=.evergreen/scripts/find-cmake-latest.sh
-. "${script_dir}/find-cmake-latest.sh"
-declare cmake_binary
-cmake_binary="$(find_cmake_latest)"
 
 declare mongoc_build_dir mongoc_install_dir
 mongoc_build_dir="cmake-build"
@@ -158,13 +156,13 @@ else()
   endif()
 endif()
 DOC
-"${cmake_binary:?}" -S . -B build
+cmake -S . -B build
 popd # "$(tmpfile -d)"
 echo "Checking requested C standard is supported... done."
 
 echo "Installing libmongocrypt..."
 # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-"${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${libmongocrypt_install_dir:?}" &>output.txt || {
+"${script_dir}/compile-libmongocrypt.sh" "$(command -v cmake)" "${mongoc_dir}" "${libmongocrypt_install_dir:?}" &>output.txt || {
   cat output.txt 1>&2
   exit 1
 }
@@ -190,13 +188,13 @@ fi
 # Ensure we're starting with a clean slate.
 rm -rf "${mongoc_build_dir:?}" "${mongoc_install_dir:?}"
 
-"${cmake_binary}" -S . -B "${mongoc_build_dir:?}" "${configure_flags[@]}"
-"${cmake_binary}" --build "${mongoc_build_dir:?}" --config Debug \
+cmake -S . -B "${mongoc_build_dir:?}" "${configure_flags[@]}"
+cmake --build "${mongoc_build_dir:?}" --config Debug \
   --target mongo_c_driver_tests \
   --target mongo_c_driver_examples \
   --target public-header-warnings \
   --target "${all_target:?}"
-"${cmake_binary}" --install "${mongoc_build_dir:?}" --config Debug
+cmake --install "${mongoc_build_dir:?}" --config Debug
 
 # "lib" vs. "lib64"
 if [[ -d "${mongoc_install_dir:?}/lib64" ]]; then
@@ -210,7 +208,7 @@ touch "${mongoc_install_dir:?}/${lib_dir:?}/canary.txt"
 
 # Linux/MacOS: uninstall.sh
 # Windows:     uninstall.cmd
-"${cmake_binary}" --build "${mongoc_build_dir:?}" --target uninstall
+cmake --build "${mongoc_build_dir:?}" --target uninstall
 
 # No files should remain except canary.txt.
 # No directories except top-level directories should remain.

@@ -21,6 +21,7 @@
 
 #include <bson/config.h>
 
+#include <mlib/ckdint.h>
 #include <mlib/config.h>
 
 #include <errno.h>
@@ -227,6 +228,79 @@ bson_aligned_alloc0(size_t alignment /* IN */, size_t num_bytes /* IN */)
       memset(mem, 0, num_bytes);
    }
 
+   return mem;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_array_alloc --
+ *
+ *       Allocates memory for an array of objects.
+ *
+ *       Libbson does not try to handle OOM conditions as it is beyond the
+ *       scope of this library to handle so appropriately.
+ *
+ * Parameters:
+ *       @num_elems: The number of objects to allocate.
+ *       @elem_size: The size of each object in bytes.
+ *
+ * Returns:
+ *       A pointer if successful; otherwise abort() is called and this
+ *       function will never return.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void *
+bson_array_alloc(size_t num_elems /* IN */, size_t elem_size /* IN */)
+{
+   void *mem = NULL;
+   size_t num_bytes = 0;
+   BSON_ASSERT(!mlib_mul(&num_bytes, num_elems, elem_size));
+
+   if (BSON_LIKELY(num_bytes)) {
+      mem = bson_malloc(num_bytes);
+   }
+   return mem;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * bson_array_alloc0--
+ *
+ *       Like bson_array_alloc() except the memory is zeroed after allocation
+ *       for convenience.
+ *
+ * Parameters:
+ *       @num_elems: The number of objects to allocate.
+ *       @elem_size: The size of each object in bytes.
+ *
+ * Returns:
+ *       A pointer if successful; otherwise abort() is called and this
+ *       function will never return.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void *
+bson_array_alloc0(size_t num_elems /* IN */, size_t elem_size /* IN */)
+{
+   void *mem = NULL;
+   size_t num_bytes = 0;
+   BSON_ASSERT(!mlib_mul(&num_bytes, num_elems, elem_size));
+
+   if (BSON_LIKELY(num_bytes)) {
+      if (BSON_UNLIKELY(!(mem = gMemVtable.calloc(num_elems, elem_size)))) {
+         fprintf(stderr, "Failure to allocate memory in bson_array_alloc0(). errno: %d.\n", errno);
+         abort();
+      }
+   }
    return mem;
 }
 

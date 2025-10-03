@@ -957,7 +957,7 @@ _append_iovec_reserve_space_for(mongoc_iovec_t **iovecs,
    BSON_ASSERT(*capacity == 4u);
 
    *capacity += additional_capacity;
-   *iovecs = bson_malloc(*capacity * sizeof(mongoc_iovec_t));
+   *iovecs = BSON_ARRAY_ALLOC(*capacity, mongoc_iovec_t);
    memcpy(*iovecs, header_iovecs, 4u * sizeof(mongoc_iovec_t));
 }
 

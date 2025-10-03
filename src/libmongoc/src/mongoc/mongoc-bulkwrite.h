@@ -89,8 +89,8 @@ mongoc_bulkwriteresult_updateresults(const mongoc_bulkwriteresult_t *self);
 MONGOC_EXPORT(const bson_t *)
 mongoc_bulkwriteresult_deleteresults(const mongoc_bulkwriteresult_t *self);
 // `mongoc_bulkwriteresult_serverid` identifies the most recently selected server. This may differ from a
-// previously set serverid if a retry occurred. This is intended for use by wrapping drivers that select a server before
-// running the operation.
+// previously set serverid if a retry occurred. A server ID of 0 indicates that no server was successfully selected.
+// This is intended for use by wrapping drivers that select a server before running the operation.
 MONGOC_EXPORT(uint32_t)
 mongoc_bulkwriteresult_serverid(const mongoc_bulkwriteresult_t *self);
 MONGOC_EXPORT(void)
@@ -258,6 +258,29 @@ mongoc_bulkwrite_set_session(mongoc_bulkwrite_t *self, mongoc_client_session_t *
 // `mongoc_bulkwrite_execute` executes a bulk write operation.
 MONGOC_EXPORT(mongoc_bulkwritereturn_t)
 mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t *opts);
+
+typedef struct {
+   bool is_ok;           // true if no error
+   bool is_acknowledged; // true if the previous call to `mongoc_bulkwrite_execute` used an acknowledged write concern
+} mongoc_bulkwrite_check_acknowledged_t;
+
+// `mongoc_bulkwrite_check_acknowledged` checks whether or not the previous call to `mongoc_bulkwrite_execute` used an
+// acknowledged write concern.
+MONGOC_EXPORT(mongoc_bulkwrite_check_acknowledged_t)
+mongoc_bulkwrite_check_acknowledged(mongoc_bulkwrite_t const *self, bson_error_t *error);
+
+typedef struct {
+   bool is_ok;        // true if no error
+   uint32_t serverid; // the server ID last used in `mongoc_bulkwrite_execute`
+} mongoc_bulkwrite_serverid_t;
+
+// `mongoc_bulkwrite_serverid` identifies the most recently selected server. This may differ from a previously set
+// serverid if a retry occurred. Unlike `mongoc_bulkwriteresult_serverid`, this can be used for unacknowledged writes.
+// For acknowledged writes, `mongoc_bulkwrite_serverid` and `mongoc_bulkwriteresult_serverid` report the same server
+// ID.
+MONGOC_EXPORT(mongoc_bulkwrite_serverid_t)
+mongoc_bulkwrite_serverid(mongoc_bulkwrite_t const *self, bson_error_t *error);
+
 MONGOC_EXPORT(void)
 mongoc_bulkwrite_destroy(mongoc_bulkwrite_t *self);
 

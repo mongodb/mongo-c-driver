@@ -34,6 +34,10 @@ typedef struct mc_kms_credentials_callback {
 /* For interacting with libmongocrypt */
 typedef struct __mongoc_crypt_t _mongoc_crypt_t;
 
+// `_mongoc_crypt_libmongocrypt_version` returns the version of the loaded libmongocrypt.
+const char *
+_mongoc_crypt_get_libmongocrypt_version(void);
+
 /*
 Creates a new handle into libmongocrypt.
 - schema_map may be NULL.

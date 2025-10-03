@@ -1,6 +1,4 @@
-from shrub.v3.evg_command import archive_targz_extract
-from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_command import s3_get
+from shrub.v3.evg_command import EvgCommandType, archive_targz_extract, s3_get
 
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
@@ -24,11 +22,11 @@ class FetchBuild(Function):
         bash_exec(
             command_type=command_type,
             working_dir='mongoc',
-            script='''\
+            script="""\
                 for file in $(find .evergreen/scripts -type f); do
                     chmod +rx "$file" || exit
                 done
-            '''
+            """,
         ),
     ]
 

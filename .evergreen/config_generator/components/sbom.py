@@ -1,7 +1,4 @@
-from config_generator.etc.distros import find_small_distro
-from config_generator.etc.function import Function, merge_defns
-from config_generator.etc.utils import bash_exec
-
+from pydantic import ConfigDict
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import (
     BuiltInCommand,
@@ -13,8 +10,9 @@ from shrub.v3.evg_command import (
 )
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
-from pydantic import ConfigDict
-
+from config_generator.etc.distros import find_small_distro
+from config_generator.etc.function import Function, merge_defns
+from config_generator.etc.utils import bash_exec
 
 TAG = 'sbom'
 
@@ -40,12 +38,12 @@ class SBOM(Function):
                     'AWS_SECRET_ACCESS_KEY',
                     'AWS_SESSION_TOKEN',
                 ],
-                script='''\
+                script="""\
                 set -o errexit
                 set -o pipefail
                 kondukto_token="$(aws secretsmanager get-secret-value --secret-id "kondukto-token" --region "us-east-1" --query 'SecretString' --output text)"
                 printf "KONDUKTO_TOKEN: %s\\n" "$kondukto_token" >|expansions.kondukto.yml
-            ''',
+                """,
             ),
             expansions_update(
                 command_type=EvgCommandType.SETUP,
@@ -57,14 +55,14 @@ class SBOM(Function):
             # Avoid inadvertently using a pre-existing and potentially conflicting Podman config.
             # Note: podman understands and uses DOCKER_CONFIG despite the name.
             expansions_update(updates=[KeyValueParam(key='DOCKER_CONFIG', value='${workdir}/.docker')]),
-            ec2_assume_role(role_arn="arn:aws:iam::901841024863:role/ecr-role-evergreen-ro"),
+            ec2_assume_role(role_arn='arn:aws:iam::901841024863:role/ecr-role-evergreen-ro'),
             bash_exec(
                 command_type=EvgCommandType.SETUP,
                 include_expansions_in_env=[
-                    "AWS_ACCESS_KEY_ID",
-                    "AWS_SECRET_ACCESS_KEY",
-                    "AWS_SESSION_TOKEN",
-                    "DOCKER_CONFIG",
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'AWS_SESSION_TOKEN',
+                    'DOCKER_CONFIG',
                 ],
                 script='aws ecr get-login-password --region us-east-1 | podman login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com',
             ),
@@ -75,7 +73,7 @@ class SBOM(Function):
             include_expansions_in_env=[
                 'branch_name',
                 'DOCKER_CONFIG',
-                "KONDUKTO_TOKEN",
+                'KONDUKTO_TOKEN',
             ],
             script='.evergreen/scripts/sbom.sh',
         ),

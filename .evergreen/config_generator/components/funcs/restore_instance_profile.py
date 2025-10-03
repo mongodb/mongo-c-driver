@@ -6,7 +6,7 @@ class RestoreInstanceProfile(Function):
     name = 'restore-instance-profile'
     commands = [
         bash_exec(
-            script='''\
+            script="""\
             # Restore the AWS Instance Profile that may have been removed in AWS tasks.
 
             if [[ ! -d drivers-evergreen-tools ]]; then
@@ -30,7 +30,7 @@ class RestoreInstanceProfile(Function):
                 exit 1
             fi
             echo "restoring instance profile ... succeeded"
-            '''
+            """
         ),
     ]
 

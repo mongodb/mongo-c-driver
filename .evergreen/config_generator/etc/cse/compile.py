@@ -1,13 +1,9 @@
 from typing import ClassVar
 
-from shrub.v3.evg_command import EvgCommand
-from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_command import expansions_update
-from shrub.v3.evg_command import KeyValueParam
-
-from config_generator.etc.utils import bash_exec
+from shrub.v3.evg_command import EvgCommand, EvgCommandType, KeyValueParam, expansions_update
 
 from config_generator.etc.function import Function
+from config_generator.etc.utils import bash_exec
 
 
 class CompileCommon(Function):

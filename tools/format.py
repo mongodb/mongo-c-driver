@@ -14,7 +14,6 @@ import argparse
 import functools
 import itertools
 import multiprocessing
-import os
 import re
 import subprocess
 import sys
@@ -32,30 +31,30 @@ def main(argv: Sequence[str]) -> int:
     # By default, add two jobs to the CPU count since some work is waiting on disk
     dflt_jobs = multiprocessing.cpu_count() + 2
     parser.add_argument(
-        "--jobs",
-        "-j",
+        '--jobs',
+        '-j',
         type=int,
-        help=f"Number of parallel jobs to run (default: {dflt_jobs})",
-        metavar="<num-jobs>",
+        help=f'Number of parallel jobs to run (default: {dflt_jobs})',
+        metavar='<num-jobs>',
         default=dflt_jobs,
     )
     parser.add_argument(
-        "--mode",
+        '--mode',
         choices=RunMode.__args__,
-        help="Whether to apply changes, or simply check for formatting violations (default: apply)",
-        default="apply",
+        help='Whether to apply changes, or simply check for formatting violations (default: apply)',
+        default='apply',
     )
     parser.add_argument(
-        "--clang-format-bin",
-        help="The clang-format executable to be used (default: “clang-format”)",
-        default="clang-format",
-        metavar="<executable>",
+        '--clang-format-bin',
+        help='The clang-format executable to be used (default: “clang-format”)',
+        default='clang-format',
+        metavar='<executable>',
     )
     parser.add_argument(
-        "files",
-        metavar="<filepath>",
-        nargs="*",
-        help="List of files to be selected for formatting. If omitted, the default set of files are selected",
+        'files',
+        metavar='<filepath>',
+        nargs='*',
+        help='List of files to be selected for formatting. If omitted, the default set of files are selected',
     )
     args = parser.parse_args(argv)
     mode: RunMode = args.mode
@@ -70,13 +69,13 @@ def main(argv: Sequence[str]) -> int:
             case patterns:
                 files = [Path(p).resolve() for p in patterns]
     except Exception as e:
-        raise RuntimeError("Failed to collect files for formatting (See above)") from e
+        raise RuntimeError('Failed to collect files for formatting (See above)') from e
     # Fail if no files matched
     assert files
     # Split the file list into groups to be dispatched
     num_jobs: int = min(args.jobs, len(files))
     groups = [files[n::num_jobs] for n in range(num_jobs)]
-    print(f"Formatting {len(files)} files with {num_jobs} workers...", file=sys.stderr)
+    print(f'Formatting {len(files)} files with {num_jobs} workers...', file=sys.stderr)
 
     # Bind the formatting arguments to the formatter function
     format_group = functools.partial(_format_files, mode=mode, clang_format=cf)
@@ -86,14 +85,14 @@ def main(argv: Sequence[str]) -> int:
     try:
         okay = all(pool.map(format_group, groups))
     except Exception as e:
-        raise RuntimeError("Unexpected error while formatting files (See above)") from e
+        raise RuntimeError('Unexpected error while formatting files (See above)') from e
     if not okay:
         return 1
     return 0
 
 
-RunMode = Literal["apply", "check"]
-"Whether we should apply changes, or just check for violations"
+RunMode = Literal['apply', 'check']
+'Whether we should apply changes, or just check for violations'
 
 #: This regex tells us which #include directives should be modified to use angle brackets
 #: The regex is written to preserve whitespace and surrounding context. re.VERBOSE
@@ -130,27 +129,27 @@ script should modify the above expression
 """
 
 SOURCE_PATTERNS = [
-    "**/*.h",
-    "**/*.hpp",
-    "**/*.c",
-    "**/*.cpp",
+    '**/*.h',
+    '**/*.hpp',
+    '**/*.c',
+    '**/*.cpp',
 ]
 """
 Recursive source file patterns, based on file extensions.
 """
 
 SOURCE_DIRS = [
-    "src/common",
-    "src/libbson",
-    "src/libmongoc",
-    "tests",
+    'src/common',
+    'src/libbson',
+    'src/libmongoc',
+    'tests',
 ]
 """
 Directories that contain our own source files (not vendored code)
 """
 
 EXCLUDE_SOURCES = [
-    "src/libbson/src/jsonsl/**/*",
+    'src/libbson/src/jsonsl/**/*',
 ]
 """
 Globbing patterns that select files that are contained in our source directories,
@@ -181,14 +180,14 @@ def _include_subst_fn(fpath: Path):
 
     def f(mat: re.Match[str]) -> str:
         # See groups in INCLUDE_RE
-        target = mat["path"]
+        target = mat['path']
         abs_target = parent_dir / target
         if abs_target.is_file():
             # This should be a relative include:
             newl = f'{mat["directive"]}"./{target}"{mat["tail"]}'
         else:
-            newl = f"{mat['directive']}<{target}>{mat['tail']}"
-        print(f" - {fpath}: update #include directive: {mat[0]!r} → {newl!r}", file=sys.stderr)
+            newl = f'{mat["directive"]}<{target}>{mat["tail"]}'
+        print(f' - {fpath}: update #include directive: {mat[0]!r} → {newl!r}', file=sys.stderr)
         return newl
 
     return f
@@ -199,7 +198,7 @@ def _fixup_includes(fpath: Path, *, mode: RunMode) -> bool:
     Apply #include-fixup to the content of the given source file.
     """
     # Split into lines
-    old_lines = fpath.read_text().split("\n")
+    old_lines = fpath.read_text().split('\n')
     # Do a regex substitution on ever line:
     rx = re.compile(INCLUDE_RE, re.VERBOSE)
     new_lines = [rx.sub(_include_subst_fn(fpath), ln) for ln in old_lines]
@@ -210,14 +209,14 @@ def _fixup_includes(fpath: Path, *, mode: RunMode) -> bool:
         case False, _:
             # No file changes. Nothing to do
             return True
-        case _, "apply":
+        case _, 'apply':
             # We are applying changes. Write the lines back into the file and tell
             # the caller that we succeeded
-            fpath.write_text("\n".join(new_lines), newline="\n")
+            fpath.write_text('\n'.join(new_lines), newline='\n')
             return True
-        case _, "check":
+        case _, 'check':
             # File changes, and we are only checking. Print an error message and indicate failure to the caller
-            print(f"File [{fpath}] contains improper #include directives", file=sys.stderr)
+            print(f'File [{fpath}] contains improper #include directives', file=sys.stderr)
             return False
 
 
@@ -230,7 +229,7 @@ def _format_files(files: Iterable[Path], *, mode: RunMode, clang_format: str) ->
         try:
             return _fixup_includes(p, mode=mode)
         except Exception as e:
-            raise RuntimeError(f"Unexpected error while fixing-up the #includes on file [{p}] (See above)") from e
+            raise RuntimeError(f'Unexpected error while fixing-up the #includes on file [{p}] (See above)') from e
 
     # First update the `#include` directives, since that can change the sort order
     # that clang-format might want to apply
@@ -239,39 +238,18 @@ def _format_files(files: Iterable[Path], *, mode: RunMode, clang_format: str) ->
 
     # Whether we check for format violations or modify the files in-place
     match mode:
-        case "apply":
-            mode_args = ["-i"]
-        case "check":
-            mode_args = ["--dry-run", "-Werror"]
+        case 'apply':
+            mode_args = ['-i']
+        case 'check':
+            mode_args = ['--dry-run', '-Werror']
     cmd = [clang_format, *mode_args, *map(str, files)]
     try:
         res = subprocess.run(cmd, check=False, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     except Exception as e:
-        raise RuntimeError(f"Failed to spawn [{clang_format}] process for formatting files (See above)") from e
+        raise RuntimeError(f'Failed to spawn [{clang_format}] process for formatting files (See above)') from e
     sys.stderr.buffer.write(res.stdout)
     return res.returncode == 0
 
 
-def _get_files_matching(pat: str) -> Sequence[Path]:
-    """
-    Obtain files according to a globbing pattern. Checks that at least one file
-    matches.
-    """
-
-    try:
-        if os.path.isabs(pat):
-            # Given an absolute path, glob relative to the root directory
-            root = Path(pat).root
-            ret = tuple(Path(root).glob(str(Path(pat).relative_to(root))))
-        else:
-            # None-relative path, glob relative to CWD
-            ret = tuple(Path.cwd().glob(pat))
-    except Exception as e:
-        raise RuntimeError(f"Failed to collect files for globbing pattern: “{pat}” (See above)") from e
-    if not ret:
-        raise RuntimeError(f"Globbing pattern “{pat}” did not match any files")
-    return ret
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

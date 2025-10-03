@@ -8,60 +8,60 @@ from typing import Final, Iterable, NamedTuple, Sequence
 def generate():
     simple_oid = OID((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
     ITEMS: list[LineItem] = [
-        Comment("This file is GENERATED! DO NOT MODIFY!"),
-        Comment("Instead, modify the content of make-dicts.py"),
+        Comment('This file is GENERATED! DO NOT MODIFY!'),
+        Comment('Instead, modify the content of make-dicts.py'),
         Line(),
-        Comment("Random values"),
-        Entry("int32_1729", encode_value(1729)),
-        Entry("int64_1729", struct.pack("<q", 1729)),
-        Entry("prefixed_string", make_string("prefixed-string")),
-        Entry("empty_obj", wrap_obj(b"")),
-        Entry("c_string", make_cstring("null-terminated-string")),
+        Comment('Random values'),
+        Entry('int32_1729', encode_value(1729)),
+        Entry('int64_1729', struct.pack('<q', 1729)),
+        Entry('prefixed_string', make_string('prefixed-string')),
+        Entry('empty_obj', wrap_obj(b'')),
+        Entry('c_string', make_cstring('null-terminated-string')),
         Line(),
-        Comment("Elements"),
-        Entry("null_elem", element("N", None)),
-        Entry("undef_elem", element("U", Undefined)),
-        Entry("string_elem", element("S", "string-value")),
-        Entry("empty_bin_elem", element("Bg", Binary(0, b""))),
-        Entry("empty_regex_elem", element("Rx0", Regex("", ""))),
-        Entry("simple_regex_elem", element("Rx1", Regex("foo", "ig"))),
-        Entry("encrypted_bin_elem", element("Be", Binary(6, b"meow"))),
-        Entry("empty_obj_elem", element("Obj0", Doc())),
+        Comment('Elements'),
+        Entry('null_elem', element('N', None)),
+        Entry('undef_elem', element('U', Undefined)),
+        Entry('string_elem', element('S', 'string-value')),
+        Entry('empty_bin_elem', element('Bg', Binary(0, b''))),
+        Entry('empty_regex_elem', element('Rx0', Regex('', ''))),
+        Entry('simple_regex_elem', element('Rx1', Regex('foo', 'ig'))),
+        Entry('encrypted_bin_elem', element('Be', Binary(6, b'meow'))),
+        Entry('empty_obj_elem', element('Obj0', Doc())),
         Entry(
-            "code_w_s_elem",
-            element("Clz", CodeWithScope("void 0;", Doc([Elem("foo", "bar")]))),
+            'code_w_s_elem',
+            element('Clz', CodeWithScope('void 0;', Doc([Elem('foo', 'bar')]))),
         ),
-        Entry("code_elem", element("Js", Code("() => 0;"))),
-        Entry("symbol_elem", element("Sym", Symbol("symbol"))),
-        Entry("oid_elem", element("OID", simple_oid)),
-        Entry("dbpointer_elem", element("dbp", DBPointer(String("db"), simple_oid))),
+        Entry('code_elem', element('Js', Code('() => 0;'))),
+        Entry('symbol_elem', element('Sym', Symbol('symbol'))),
+        Entry('oid_elem', element('OID', simple_oid)),
+        Entry('dbpointer_elem', element('dbp', DBPointer(String('db'), simple_oid))),
         Line(),
-        Comment("Embedded nul"),
-        Comment("This string contains an embedded null, which is abnormal but valid"),
-        Entry("string_with_null", element("S0", "string\0value")),
-        Comment("This regex has an embedded null, which is invalid"),
-        Entry("bad_regex_elem", element("RxB", Regex("f\0oo", "ig"))),
+        Comment('Embedded nul'),
+        Comment('This string contains an embedded null, which is abnormal but valid'),
+        Entry('string_with_null', element('S0', 'string\0value')),
+        Comment('This regex has an embedded null, which is invalid'),
+        Entry('bad_regex_elem', element('RxB', Regex('f\0oo', 'ig'))),
         Comment("This element's key contains an embedded null, which is invalid"),
-        Entry("bad_key_elem", element("foo\0bar", "string")),
+        Entry('bad_key_elem', element('foo\0bar', 'string')),
         Line(),
-        Comment("Objects"),
-        Entry("obj_with_string", wrap_obj(element("single-elem", "foo"))),
-        Entry("obj_with_null", wrap_obj(element("null", None))),
-        Entry("obj_missing_term", wrap_obj(b"")[:-1]),
+        Comment('Objects'),
+        Entry('obj_with_string', wrap_obj(element('single-elem', 'foo'))),
+        Entry('obj_with_null', wrap_obj(element('null', None))),
+        Entry('obj_missing_term', wrap_obj(b'')[:-1]),
     ]
 
     for it in ITEMS:
         emit(it)
 
 
-BytesIter = bytes | Iterable["BytesIter"]
+BytesIter = bytes | Iterable['BytesIter']
 
 
 def flatten(b: BytesIter) -> bytes:
     if isinstance(b, bytes):
         return b
     else:
-        return b"".join(map(flatten, b))
+        return b''.join(map(flatten, b))
 
 
 def len_prefix(b: BytesIter) -> bytes:
@@ -73,7 +73,7 @@ def len_prefix(b: BytesIter) -> bytes:
 
 def make_cstring(s: str) -> bytes:
     """Encode a UTF-8 string and append a null terminator"""
-    return s.encode("utf-8") + b"\0"
+    return s.encode('utf-8') + b'\0'
 
 
 def make_string(s: str) -> bytes:
@@ -85,12 +85,12 @@ def wrap_obj(items: BytesIter) -> bytes:
     """Wrap a sequence of bytes as if a BSON object (adds a header and trailing nul)"""
     bs = flatten(items)
     header = len(bs) + 5
-    return encode_value(header) + bs + b"\0"
+    return encode_value(header) + bs + b'\0'
 
 
 class UndefinedType:
     def __bytes__(self) -> bytes:
-        return b""
+        return b''
 
 
 class Binary(NamedTuple):
@@ -187,26 +187,28 @@ ValueType = (
 def encode_value(val: ValueType) -> bytes:
     match val:
         case int(n):
-            return struct.pack("<i", n)
+            return struct.pack('<i', n)
         case str(s):
             return make_string(s)
         case float(f):
-            return struct.pack("<d", f)
+            return struct.pack('<d', f)
         case (
-            Doc()
-            | Binary()
-            | Regex()
-            | UndefinedType()
-            | CodeWithScope()
-            | Code()
-            | String()
-            | Symbol()
-            | DBPointer()
-            | OID()
-        ) as d:
+            (
+                Doc()
+                | Binary()
+                | Regex()
+                | UndefinedType()
+                | CodeWithScope()
+                | Code()
+                | String()
+                | Symbol()
+                | DBPointer()
+                | OID()
+            ) as d
+        ):
             return d.__bytes__()
         case None:
-            return b""
+            return b''
 
 
 class Tag(enum.Enum):
@@ -264,9 +266,9 @@ def element(key: str, value: ValueType, *, type: None | Tag = None) -> bytes:
 
 class Entry(NamedTuple):
     key: str
-    "The key for the entry. Only for human readability"
+    'The key for the entry. Only for human readability'
     value: bytes
-    "The arbitrary bytes that make up the entry"
+    'The arbitrary bytes that make up the entry'
 
 
 class Comment(NamedTuple):
@@ -274,21 +276,21 @@ class Comment(NamedTuple):
 
 
 class Line(NamedTuple):
-    txt: str = ""
+    txt: str = ''
 
 
 LineItem = Entry | Comment | Line
 
 
 def escape(b: bytes) -> Iterable[str]:
-    s = b.decode("ascii", "backslashreplace")
+    s = b.decode('ascii', 'backslashreplace')
     for u8 in b:
         s = chr(u8)  # 0 <= u8 and u8 <= 255
         if s.isascii() and s.isprintable():
             yield s
             continue
         # Byte is not valid ASCII, or is not a printable char
-        yield f"\\x{u8:0>2x}"
+        yield f'\\x{u8:0>2x}'
 
 
 def emit(item: LineItem):
@@ -296,12 +298,12 @@ def emit(item: LineItem):
         case Line(t):
             print(t)
         case Comment(txt):
-            print(f"# {txt}")
+            print(f'# {txt}')
         case Entry(key, val):
-            s = "".join(escape(val))
-            s = s.replace('"', r"\x22")
+            s = ''.join(escape(val))
+            s = s.replace('"', r'\x22')
             print(f'{key}="{s}"')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     generate()

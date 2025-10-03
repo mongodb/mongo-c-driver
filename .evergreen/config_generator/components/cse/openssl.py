@@ -1,12 +1,10 @@
 from shrub.v3.evg_build_variant import BuildVariant
 
 from config_generator.etc.compile import generate_compile_tasks
-from config_generator.etc.function import merge_defns
-from config_generator.etc.utils import TaskRef
-
 from config_generator.etc.cse.compile import CompileCommon
 from config_generator.etc.cse.test import generate_test_tasks
-
+from config_generator.etc.function import merge_defns
+from config_generator.etc.utils import TaskRef
 
 SSL = 'openssl'
 TAG = f'cse-matrix-{SSL}'
@@ -83,7 +81,7 @@ def tasks():
 
     # PowerPC and zSeries are limited resources.
     for task in res:
-        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
+        if any(pattern in task.run_on for pattern in ['power', 'zseries']):
             task.patchable = False
 
     return res
@@ -98,11 +96,11 @@ def variants():
 
     # PowerPC and zSeries are limited resources.
     for task in TASKS:
-        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
+        if any(pattern in task.run_on for pattern in ['power', 'zseries']):
             tasks.append(
                 TaskRef(
                     name=task.name,
-                    batchtime=1440,   # 1 day
+                    batchtime=1440,  # 1 day
                 )
             )
         else:

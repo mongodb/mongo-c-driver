@@ -672,213 +672,6 @@ _mongoc_cursor_fetch_stream(mongoc_cursor_t *cursor, const mongoc_ss_log_context
    RETURN(server_stream);
 }
 
-
-bool
-_mongoc_cursor_monitor_command(mongoc_cursor_t *cursor,
-                               mongoc_server_stream_t *server_stream,
-                               const bson_t *cmd,
-                               const char *cmd_name)
-{
-   mongoc_apm_command_started_t event;
-   char *db;
-
-   ENTRY;
-
-   mongoc_client_t *client = cursor->client;
-   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
-
-   mongoc_structured_log(
-      log_and_monitor->structured_log,
-      MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command started",
-      int32("requestId", client->cluster.request_id),
-      server_description(server_stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-      utf8_n("databaseName", cursor->ns, cursor->dblen),
-      utf8("commandName", cmd_name),
-      int64("operationId", cursor->operation_id),
-      bson_as_json("command", cmd));
-
-   if (!log_and_monitor->apm_callbacks.started) {
-      /* successful */
-      RETURN(true);
-   }
-
-   db = bson_strndup(cursor->ns, cursor->dblen);
-
-   mongoc_apm_command_started_init(&event,
-                                   cmd,
-                                   db,
-                                   cmd_name,
-                                   client->cluster.request_id,
-                                   cursor->operation_id,
-                                   &server_stream->sd->host,
-                                   server_stream->sd->id,
-                                   &server_stream->sd->service_id,
-                                   server_stream->sd->server_connection_id,
-                                   NULL,
-                                   log_and_monitor->apm_context);
-
-   log_and_monitor->apm_callbacks.started(&event);
-   mongoc_apm_command_started_cleanup(&event);
-   bson_free(db);
-
-   RETURN(true);
-}
-
-
-/* append array of docs from current cursor batch */
-static void
-_mongoc_cursor_append_docs_array(mongoc_cursor_t *cursor, bson_t *docs, mongoc_cursor_response_legacy_t *response)
-{
-   bool eof = false;
-   char str[16];
-   const char *key;
-   uint32_t i = 0;
-   size_t keylen;
-   const bson_t *doc;
-
-   BSON_UNUSED(cursor);
-
-   while ((doc = bson_reader_read(response->reader, &eof))) {
-      keylen = bson_uint32_to_string(i, &key, str, sizeof str);
-      bson_append_document(docs, key, (int)keylen, doc);
-   }
-
-   bson_reader_reset(response->reader);
-}
-
-
-void
-_mongoc_cursor_monitor_succeeded(mongoc_cursor_t *cursor,
-                                 mongoc_cursor_response_legacy_t *response,
-                                 int64_t duration,
-                                 bool first_batch,
-                                 mongoc_server_stream_t *stream,
-                                 const char *cmd_name)
-{
-   bson_t docs_array;
-   mongoc_apm_command_succeeded_t event;
-
-   ENTRY;
-
-   mongoc_client_t *client = cursor->client;
-   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
-
-   /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
-    * {ok: 1, cursor: {id: 17, ns: "...", first/nextBatch: [ ... docs ... ]}}
-    */
-   bson_init(&docs_array);
-   _mongoc_cursor_append_docs_array(cursor, &docs_array, response);
-
-   bsonBuildDecl(reply,
-                 kv("ok", int32(1)),
-                 kv("cursor",
-                    doc(kv("id", int64(mongoc_cursor_get_id(cursor))),
-                        kv("ns", utf8_w_len(cursor->ns, cursor->nslen)),
-                        kv(first_batch ? "firstBatch" : "nextBatch", bsonArray(docs_array)))));
-   char *db = bson_strndup(cursor->ns, cursor->dblen);
-
-   bson_destroy(&docs_array);
-
-   mongoc_structured_log(log_and_monitor->structured_log,
-                         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-                         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-                         "Command succeeded",
-                         int32("requestId", client->cluster.request_id),
-                         server_description(stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-                         utf8("databaseName", db),
-                         utf8("commandName", cmd_name),
-                         int64("operationId", cursor->operation_id),
-                         monotonic_time_duration(duration),
-                         cmd_name_reply(cmd_name, &reply));
-
-   if (log_and_monitor->apm_callbacks.succeeded) {
-      mongoc_apm_command_succeeded_init(&event,
-                                        duration,
-                                        &reply,
-                                        cmd_name,
-                                        db,
-                                        client->cluster.request_id,
-                                        cursor->operation_id,
-                                        &stream->sd->host,
-                                        stream->sd->id,
-                                        &stream->sd->service_id,
-                                        stream->sd->server_connection_id,
-                                        false,
-                                        log_and_monitor->apm_context);
-
-      log_and_monitor->apm_callbacks.succeeded(&event);
-
-      mongoc_apm_command_succeeded_cleanup(&event);
-   }
-
-   bson_destroy(&reply);
-   bson_free(db);
-
-   EXIT;
-}
-
-
-void
-_mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
-                              int64_t duration,
-                              mongoc_server_stream_t *stream,
-                              const char *cmd_name)
-{
-   mongoc_apm_command_failed_t event;
-
-   ENTRY;
-
-   mongoc_client_t *client = cursor->client;
-   const mongoc_log_and_monitor_instance_t *log_and_monitor = &client->topology->log_and_monitor;
-
-   /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
-    * {ok: 0}
-    */
-   bsonBuildDecl(reply, kv("ok", int32(0)));
-   char *db = bson_strndup(cursor->ns, cursor->dblen);
-
-   mongoc_structured_log(log_and_monitor->structured_log,
-                         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-                         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-                         "Command failed",
-                         int32("requestId", client->cluster.request_id),
-                         server_description(stream->sd, SERVER_HOST, SERVER_PORT, SERVER_CONNECTION_ID, SERVICE_ID),
-                         utf8("databaseName", db),
-                         utf8("commandName", cmd_name),
-                         int64("operationId", cursor->operation_id),
-                         monotonic_time_duration(duration),
-                         bson_as_json("failure", &reply));
-
-   if (log_and_monitor->apm_callbacks.failed) {
-      mongoc_apm_command_failed_init(&event,
-                                     duration,
-                                     cmd_name,
-                                     db,
-                                     &cursor->error,
-                                     &reply,
-                                     client->cluster.request_id,
-                                     cursor->operation_id,
-                                     &stream->sd->host,
-                                     stream->sd->id,
-                                     &stream->sd->service_id,
-                                     stream->sd->server_connection_id,
-                                     false,
-                                     log_and_monitor->apm_context);
-
-      log_and_monitor->apm_callbacks.failed(&event);
-
-      mongoc_apm_command_failed_cleanup(&event);
-   }
-
-   bson_destroy(&reply);
-   bson_free(db);
-
-   EXIT;
-}
-
-
 #define ADD_FLAG(_flags, _value)                                     \
    do {                                                              \
       if (!BSON_ITER_HOLDS_BOOL(&iter)) {                            \
@@ -895,55 +688,12 @@ _mongoc_cursor_monitor_failed(mongoc_cursor_t *cursor,
    } while (false)
 
 bool
-_mongoc_cursor_opts_to_flags(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream, int32_t *flags /* OUT */)
+_mongoc_cursor_secondary_ok(mongoc_cursor_t *cursor, mongoc_server_stream_t *stream)
 {
-   /* CDRIVER-4722: these flags are only used in legacy OP_QUERY */
-   bson_iter_t iter;
-   const char *key;
-
-   *flags = MONGOC_OP_QUERY_FLAG_NONE;
-
-   if (!bson_iter_init(&iter, &cursor->opts)) {
-      _mongoc_set_error(&cursor->error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "Invalid 'opts' parameter.");
-      return false;
-   }
-
-   while (bson_iter_next(&iter)) {
-      key = bson_iter_key(&iter);
-
-      if (!strcmp(key, MONGOC_CURSOR_ALLOW_PARTIAL_RESULTS)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_PARTIAL);
-      } else if (!strcmp(key, MONGOC_CURSOR_AWAIT_DATA)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_AWAIT_DATA);
-      } else if (!strcmp(key, MONGOC_CURSOR_EXHAUST)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_EXHAUST);
-      } else if (!strcmp(key, MONGOC_CURSOR_NO_CURSOR_TIMEOUT)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_NO_CURSOR_TIMEOUT);
-      } else if (!strcmp(key, MONGOC_CURSOR_OPLOG_REPLAY)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_OPLOG_REPLAY);
-      } else if (!strcmp(key, MONGOC_CURSOR_TAILABLE)) {
-         ADD_FLAG(flags, MONGOC_OP_QUERY_FLAG_TAILABLE_CURSOR);
-      }
-   }
-
-   if (cursor->secondary_ok) {
-      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-   } else if (cursor->server_id &&
-              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      *flags |= MONGOC_OP_QUERY_FLAG_SECONDARY_OK;
-   }
-
-   return true;
-}
-
-bool
-_mongoc_cursor_use_op_msg(const mongoc_cursor_t *cursor, int32_t wire_version)
-{
-   /* CDRIVER-4722: always true once 4.2 is the minimum supported
-      No check needed for 3.6 as it's the current minimum */
-   return !_mongoc_cursor_get_opt_bool(cursor, MONGOC_CURSOR_EXHAUST) || wire_version >= WIRE_VERSION_4_2;
+   return cursor->secondary_ok || (cursor->server_id != 0 &&
+                                   (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+                                    stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+                                   stream->sd->type != MONGOC_SERVER_RS_PRIMARY);
 }
 
 bool
@@ -1021,15 +771,6 @@ _mongoc_cursor_run_command(
    db = bson_strndup(cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
 
-   {
-      int32_t flags;
-      if (!_mongoc_cursor_opts_to_flags(cursor, server_stream, &flags)) {
-         _mongoc_bson_init_if_set(reply);
-         GOTO(done);
-      }
-      parts.user_query_flags = (mongoc_query_flags_t)flags;
-   }
-
    if (_mongoc_cursor_get_opt_bool(cursor, MONGOC_CURSOR_EXHAUST)) {
       const bool sharded = _mongoc_topology_get_type(cursor->client->topology) == MONGOC_TOPOLOGY_SHARDED;
       const int32_t wire_version = server_stream->sd->max_wire_version;
@@ -1050,13 +791,11 @@ _mongoc_cursor_run_command(
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
-    * direct connection to a secondary (topology type "single"). with
-    * OP_QUERY we handle this by setting secondaryOk. here we use
-    * $readPreference.
+    * direct connection to a secondary (topology type "single").
     */
    is_primary = !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
 
-   if (strcmp(cmd_name, "getMore") != 0 && is_primary && parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
+   if (strcmp(cmd_name, "getMore") != 0 && is_primary && _mongoc_cursor_secondary_ok(cursor, server_stream)) {
       parts.read_prefs = prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
    } else {
       parts.read_prefs = cursor->read_prefs;
