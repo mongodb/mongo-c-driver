@@ -1217,7 +1217,7 @@ _test_int_vec(void)
 
    // Append an element
    int *el;
-   mlib_check(el = int_vec_push(&ints));
+   mlib_check((el = int_vec_push(&ints)));
    *el = 42;
    mlib_check(int_vec_begin(&ints)[0], eq, 42);
    mlib_check(ints.size, eq, 1);
