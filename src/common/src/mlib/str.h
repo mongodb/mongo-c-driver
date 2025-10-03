@@ -33,6 +33,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /**
  * @brief A simple non-owning string-view type.
@@ -697,7 +698,7 @@ mstr_resize_for_overwrite(mstr *const str, const size_t new_len)
 {
    // We need to allocate one additional char to hold the null terminator
    size_t alloc_size = new_len;
-   if (mlib_add(&alloc_size, 1) || alloc_size > SSIZE_MAX) {
+   if (mlib_add(&alloc_size, 1) || alloc_size > PTRDIFF_MAX) {
       // Allocation size is too large
       return false;
    }
