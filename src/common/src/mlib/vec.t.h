@@ -417,7 +417,7 @@ mlib_extern_c_end();
 
 #ifndef mlib_vec_foreach
 #define mlib_vec_foreach(Type, VarName, Vector) \
-   for (Type *VarName = (Vector).data; VarName != (Vector).data + (Vector).size; ++VarName)
+   for (Type *VarName = (Vector).data; VarName && (VarName != (Vector).data + (Vector).size); ++VarName)
 #endif
 
 #ifndef mlib_vec_at
