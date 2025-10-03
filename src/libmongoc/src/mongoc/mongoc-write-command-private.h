@@ -61,7 +61,7 @@ typedef struct {
    uint32_t n_documents;
    mongoc_bulk_write_flags_t flags;
    int64_t operation_id;
-   bson_t cmd_opts;
+   bson_t *cmd_opts;
 } mongoc_write_command_t;
 
 
