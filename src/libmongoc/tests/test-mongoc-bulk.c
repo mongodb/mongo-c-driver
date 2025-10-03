@@ -4768,6 +4768,55 @@ test_bulk_write_set_client_updates_operation_id_when_client_changes (void)
    mock_server_destroy (mock_server);
 }
 
+// `test_bulk_big_let` tests a bulk operation with a large let document to reproduce CDRIVER-6112:
+static void
+test_bulk_big_let (void *unused)
+{
+   BSON_UNUSED (unused);
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+   mongoc_collection_t *coll = get_test_collection (client, "test_big_let");
+   bson_error_t error;
+
+   // Create bulk operation similar to PHP driver:
+   mongoc_bulk_operation_t *bulk = mongoc_bulk_operation_new (true /* ordered */);
+
+   // Set a large `let`: { "testDocument": { "a": "aaa..." } }
+   {
+      bson_t let = BSON_INITIALIZER, testDocument;
+      bson_append_document_begin (&let, "testDocument", -1, &testDocument);
+
+      // Append big string:
+      {
+         size_t num_chars = 79;
+         char *big_string = bson_malloc0 (num_chars + 1);
+         memset (big_string, 'a', num_chars);
+         BSON_APPEND_UTF8 (&testDocument, "a", big_string);
+         bson_free (big_string);
+      }
+
+      bson_append_document_end (&let, &testDocument);
+      mongoc_bulk_operation_set_let (bulk, &let);
+      bson_destroy (&let);
+   }
+
+
+   mongoc_bulk_operation_set_client (bulk, client);
+   mongoc_bulk_operation_set_database (bulk, "db");
+   mongoc_bulk_operation_set_collection (bulk, "coll");
+
+   mongoc_bulk_operation_update (
+      bulk, tmp_bson ("{'_id': 1}"), tmp_bson ("{'$set': {'document': '$$testDocument'}}"), true);
+
+
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -4946,4 +4995,11 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/set_client_updates_operation_id_when_client_changes",
                                 test_bulk_write_set_client_updates_operation_id_when_client_changes);
+   TestSuite_AddFull (
+      suite,
+      "/BulkOperation/big_let",
+      test_bulk_big_let,
+      NULL,
+      NULL,
+      test_framework_skip_if_max_wire_version_less_than_13 /* 5.0+ for 'let' support in CRUD commands */);
 }

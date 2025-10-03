@@ -25,6 +25,9 @@
 BSON_BEGIN_DECLS
 
 
+// mongoc_array_t stores an array of objects of type T.
+//
+// T must be trivially relocatable. In particular, `bson_t` is not trivially relocatable (CDRIVER-6113).
 typedef struct _mongoc_array_t mongoc_array_t;
 
 
