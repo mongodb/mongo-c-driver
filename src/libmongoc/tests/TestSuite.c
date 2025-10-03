@@ -406,7 +406,7 @@ TestSuite_RunFuncInChild(TestSuite *suite, /* IN */
    si.cb = sizeof(si);
    ZeroMemory(&pi, sizeof(pi));
 
-   cmdline = bson_strdup_printf("%s --silent --no-fork -l %s", suite->prgname, test->name);
+   cmdline = bson_strdup_printf("%s --silent --no-fork -l %.*s", suite->prgname, MSTR_FMT(test->name));
 
    if (!CreateProcess(NULL,
                       cmdline,
