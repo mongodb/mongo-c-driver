@@ -468,6 +468,11 @@ typedef struct {
    int32_t value;
 } mc_optional_int32_t;
 
+typedef struct {
+   bool set;
+   bool value;
+} mc_optional_bool;
+
 struct _encrypt_text_per_index_opts_t {
    mc_optional_int32_t str_max_length;
    mc_optional_int32_t str_max_query_length;
@@ -475,8 +480,8 @@ struct _encrypt_text_per_index_opts_t {
 };
 
 struct _mongoc_encrypt_text_opts_t {
-   bool case_sensitive;
-   bool diacritic_sensitive;
+   mc_optional_bool case_sensitive;
+   mc_optional_bool diacritic_sensitive;
 
    mongoc_encrypt_text_substring_opts_t *substring;
    mongoc_encrypt_text_prefix_opts_t *prefix;
@@ -633,6 +638,9 @@ mongoc_encrypt_text_opts_new(void)
 void
 mongoc_encrypt_text_opts_destroy(mongoc_encrypt_text_opts_t *topts)
 {
+   if (!topts) {
+      return;
+   }
    mongoc_encrypt_text_prefix_opts_destroy(topts->prefix);
    mongoc_encrypt_text_suffix_opts_destroy(topts->suffix);
    mongoc_encrypt_text_substring_opts_destroy(topts->substring);
@@ -840,23 +848,37 @@ mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_enc
                                                     const mongoc_encrypt_text_opts_t *text_opts)
 {
    BSON_ASSERT_PARAM(opts);
-   opts->text_opts = mongoc_encrypt_text_opts_new();
-   *opts->text_opts = *text_opts;
+   mongoc_encrypt_text_opts_t *t = mongoc_encrypt_text_opts_new();
+   *t = *text_opts;
+   if (text_opts->substring) {
+      t->substring = mongoc_encrypt_text_substring_opts_new();
+      *t->substring = *text_opts->substring;
+   }
+   if (text_opts->prefix) {
+      t->prefix = mongoc_encrypt_text_prefix_opts_new();
+      *t->prefix = *text_opts->prefix;
+   }
+   if (text_opts->suffix) {
+      t->suffix = mongoc_encrypt_text_suffix_opts_new();
+      *t->suffix = *text_opts->suffix;
+   }
+   opts->text_opts = t;
 }
 
 void
-mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(mongoc_encrypt_text_opts_t *opts, bool case_sensitive)
+mongoc_encrypt_text_opts_set_case_sensitive(mongoc_encrypt_text_opts_t *opts, bool case_sensitive)
 {
    BSON_ASSERT_PARAM(opts);
-   opts->case_sensitive = case_sensitive;
+   opts->case_sensitive.set = true;
+   opts->case_sensitive.value = case_sensitive;
 }
 
 void
-mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(mongoc_encrypt_text_opts_t *opts,
-                                                                   bool diacritic_sensitive)
+mongoc_encrypt_text_opts_set_diacritic_sensitive(mongoc_encrypt_text_opts_t *opts, bool diacritic_sensitive)
 {
    BSON_ASSERT_PARAM(opts);
-   opts->diacritic_sensitive = diacritic_sensitive;
+   opts->diacritic_sensitive.set = true;
+   opts->diacritic_sensitive.value = diacritic_sensitive;
 }
 
 /*--------------------------------------------------------------------------
@@ -1247,8 +1269,12 @@ append_bson_text_opts(bson_t *bson_text_opts, const mongoc_encrypt_text_opts_t *
    BSON_ASSERT_PARAM(bson_text_opts);
    BSON_ASSERT_PARAM(opts);
 
-   BSON_ASSERT(BSON_APPEND_BOOL(bson_text_opts, "caseSensitive", opts->case_sensitive));
-   BSON_ASSERT(BSON_APPEND_BOOL(bson_text_opts, "diacriticSensitive", opts->diacritic_sensitive));
+   if (opts->case_sensitive.set) {
+      BSON_ASSERT(BSON_APPEND_BOOL(bson_text_opts, "caseSensitive", opts->case_sensitive.value));
+   }
+   if (opts->diacritic_sensitive.set) {
+      BSON_ASSERT(BSON_APPEND_BOOL(bson_text_opts, "diacriticSensitive", opts->diacritic_sensitive.value));
+   }
 
    if (opts->prefix) {
       bson_t per_index_spec;

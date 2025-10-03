@@ -1672,7 +1672,7 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
    }
 
    if (text_opts != NULL) {
-      /* mongocrypt error checks and parses range options */
+      /* mongocrypt error checks and parses text options */
       mongocrypt_binary_t *binary_text_opts =
          mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(text_opts), text_opts->len);
       if (!mongocrypt_ctx_setopt_algorithm_text(state_machine->ctx, binary_text_opts)) {

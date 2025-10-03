@@ -321,11 +321,10 @@ mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_enc
                                                     const mongoc_encrypt_text_opts_t *text_opts);
 
 MONGOC_EXPORT(void)
-mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(mongoc_encrypt_text_opts_t *opts, bool case_sensitive);
+mongoc_encrypt_text_opts_set_case_sensitive(mongoc_encrypt_text_opts_t *opts, bool case_sensitive);
 
 MONGOC_EXPORT(void)
-mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(mongoc_encrypt_text_opts_t *opts,
-                                                                   bool diacritic_sensitive);
+mongoc_encrypt_text_opts_set_diacritic_sensitive(mongoc_encrypt_text_opts_t *opts, bool diacritic_sensitive);
 
 MONGOC_EXPORT(void)
 mongoc_client_encryption_encrypt_opts_set_query_type(mongoc_client_encryption_encrypt_opts_t *opts,

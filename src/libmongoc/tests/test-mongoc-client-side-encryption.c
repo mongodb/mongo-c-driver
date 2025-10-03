@@ -4457,12 +4457,14 @@ test_explicit_encryption_text(void *unused)
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_prefix(topts, popts);
       mongoc_encrypt_text_opts_set_suffix(topts, sopts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
       ASSERT_OR_PRINT(ok, error);
 
-      ASSERT(BSON_APPEND_VALUE(&to_insert, "encrypted-textPreview", &insertPayload));
+      ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
       ok = mongoc_collection_insert_one(eef->encryptedColl, &to_insert, NULL /* opts */, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
@@ -4484,16 +4486,18 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_prefix(topts, popts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "foo";
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrStartsWith",
-                              doc(kv("input", cstr("$encrypted-textPreview")), kv("prefix", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
@@ -4502,7 +4506,7 @@ test_explicit_encryption_text(void *unused)
       cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
       ASSERT(mongoc_cursor_next(cursor, &got));
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encrypted-textPreview': 'foobarbaz' }");
+      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
       ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
 
       bson_value_destroy(&findPayload);
@@ -4523,16 +4527,18 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_suffix(topts, sopts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "baz";
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrEndsWith",
-                              doc(kv("input", cstr("$encrypted-textPreview")), kv("suffix", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
@@ -4541,7 +4547,7 @@ test_explicit_encryption_text(void *unused)
       cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
       ASSERT(mongoc_cursor_next(cursor, &got));
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encrypted-textPreview': 'foobarbaz' }");
+      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
       ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
 
       bson_value_destroy(&findPayload);
@@ -4562,16 +4568,18 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_suffix(topts, sopts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "foo";
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrEndsWith",
-                              doc(kv("input", cstr("$encrypted-textPreview")), kv("suffix", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
@@ -4599,16 +4607,18 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_prefix(topts, popts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "baz";
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrStartsWith",
-                              doc(kv("input", cstr("$encrypted-textPreview")), kv("prefix", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
@@ -4643,6 +4653,8 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_substring(topts, ssopts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "foobarbaz";
@@ -4650,7 +4662,7 @@ test_explicit_encryption_text(void *unused)
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
       ASSERT_OR_PRINT(ok, error);
 
-      ASSERT(BSON_APPEND_VALUE(&to_insert, "encrypted-textPreview", &insertPayload));
+      ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
       ok = mongoc_collection_insert_one(eef->encryptedColl, &to_insert, NULL /* opts */, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
@@ -4672,16 +4684,18 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_substring(topts, ssopts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "bar";
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrContains",
-                              doc(kv("input", cstr("$encrypted-textPreview")), kv("substring", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
@@ -4690,7 +4704,7 @@ test_explicit_encryption_text(void *unused)
       cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
       ASSERT(mongoc_cursor_next(cursor, &got));
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encrypted-textPreview': 'foobarbaz' }");
+      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
       ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
 
       bson_value_destroy(&findPayload);
@@ -4711,16 +4725,18 @@ test_explicit_encryption_text(void *unused)
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();
       mongoc_encrypt_text_opts_set_substring(topts, ssopts);
+      mongoc_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
       plaintext.value.v_utf8.str = "qux";
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrContains",
-                              doc(kv("input", cstr("$encrypted-textPreview")), kv("substring", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
