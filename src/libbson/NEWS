@@ -5,6 +5,12 @@ libbson 2.2.0 (Unreleased)
 
 - Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
 
+
+libbson 2.1.1
+=============
+
+No changes since 2.1.0. Version incremented to match the libmongoc version.
+
 libbson 2.1.0
 =============
 
