@@ -10,8 +10,6 @@ set -o errexit # Exit the script with error if any of the commands fail
 
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
-: "${UV_INSTALL_DIR:?}"
-
 DIR=$(dirname $0)
 
 . "${DIR:?}/install-build-tools.sh"

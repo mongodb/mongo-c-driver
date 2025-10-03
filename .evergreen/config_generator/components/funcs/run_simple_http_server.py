@@ -12,11 +12,10 @@ class RunSimpleHTTPServer(Function):
             command_type=command_type,
             background=True,
             working_dir='mongoc',
-            include_expansions_in_env=['UV_INSTALL_DIR'],
             script="""\
                 set -o errexit
                 echo "Starting simple HTTP server..."
-                PATH="${UV_INSTALL_DIR}:$PATH" uvx python .evergreen/scripts/simple_http_server.py
+                uvx python .evergreen/scripts/simple_http_server.py
                 echo "Starting simple HTTP server... done."
             """,
         ),
