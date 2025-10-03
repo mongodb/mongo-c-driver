@@ -13,7 +13,7 @@ Synopsis
       mongoc_encrypt_text_substring_opts_t *opts,
       int32_t str_max_length);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Sets the maximum string length for substring text search encryption options.
 

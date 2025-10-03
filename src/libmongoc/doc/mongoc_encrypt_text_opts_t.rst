@@ -10,7 +10,7 @@ Synopsis
 
   typedef struct _mongoc_encrypt_text_opts_t mongoc_encrypt_text_opts_t;
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 TextOpts specifies index options for a Queryable Encryption field supporting "textPreview" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
 

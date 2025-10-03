@@ -13,7 +13,7 @@ Synopsis
       mongoc_encrypt_text_opts_t *opts,
       mongoc_encrypt_text_prefix_opts_t *popts);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Sets the prefix options for text search encryption.
 

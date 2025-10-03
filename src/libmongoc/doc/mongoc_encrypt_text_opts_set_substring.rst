@@ -13,7 +13,7 @@ Synopsis
       mongoc_encrypt_text_opts_t *opts,
       mongoc_encrypt_text_substring_opts_t *ssopts);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Sets the substring options for text search encryption.
 

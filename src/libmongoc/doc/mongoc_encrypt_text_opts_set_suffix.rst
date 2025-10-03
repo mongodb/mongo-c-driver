@@ -13,7 +13,7 @@ Synopsis
       mongoc_encrypt_text_opts_t *opts,
       mongoc_encrypt_text_suffix_opts_t *sopts);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Sets the suffix options for text search encryption.
 

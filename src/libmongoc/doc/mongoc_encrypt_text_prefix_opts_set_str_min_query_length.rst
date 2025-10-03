@@ -13,7 +13,7 @@ Synopsis
       mongoc_encrypt_text_prefix_opts_t *opts,
       int32_t str_min_query_length);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Sets the minimum query length for prefix text search encryption options.
 

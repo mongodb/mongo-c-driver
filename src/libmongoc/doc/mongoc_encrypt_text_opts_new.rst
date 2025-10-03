@@ -11,7 +11,7 @@ Synopsis
    mongoc_encrypt_text_opts_t *
    mongoc_encrypt_text_opts_new(void);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Returns
 -------

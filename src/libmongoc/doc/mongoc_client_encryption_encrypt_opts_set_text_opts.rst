@@ -13,7 +13,7 @@ Synopsis
       mongoc_client_encryption_encrypt_opts_t *opts,
       const mongoc_encrypt_text_opts_t *text_opts);
 
-.. versionadded:: 1.26.0
+.. versionadded:: 2.2.0
 
 Sets the text search encryption options for explicit encryption.
 
