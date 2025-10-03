@@ -24,11 +24,17 @@
 
 #include <bson/bson.h>
 
+#include <subauth.h> // For SCH_CREDENTIALS
+
 /* Its mandatory to indicate to Windows who is compiling the code */
 #define SECURITY_WIN32
+#define SCHANNEL_USE_BLACKLISTS 1 // For SCH_CREDENTIALS
 #include <schannel.h>
 #include <security.h>
 
+#ifdef SCH_CREDENTIALS_VERSION
+#define HAVE_SCH_CREDENTIALS
+#endif
 
 BSON_BEGIN_DECLS
 
@@ -43,6 +49,9 @@ typedef enum {
    ssl_connect_done
 } ssl_connect_state;
 
+/* enum for underlying type cred field in mongoc_secure_channel_cred */
+typedef enum { schannel_cred, sch_credentials } schannel_credential_type;
+
 /* Structs to store Schannel handles */
 typedef struct {
    CredHandle cred_handle;
@@ -52,7 +61,8 @@ typedef struct {
 // `mongoc_secure_channel_cred` may be shared on multiple connections.
 typedef struct _mongoc_secure_channel_cred {
    PCCERT_CONTEXT cert; /* Owning. Optional client cert. */
-   SCHANNEL_CRED cred;  // TODO: switch to SCH_CREDENTIALS to support TLS v1.3
+   schannel_credential_type cred_type;
+   void *cred; /* Underlying type is specified by schannel_credential_type. */
 } mongoc_secure_channel_cred;
 
 typedef struct {
