@@ -20,6 +20,7 @@
 #include <mongoc/mongoc.h>
 
 #include <bson/bson.h>
+#include <bson/bson_t.h>
 
 #include <mlib/str.h>
 
@@ -168,6 +169,8 @@ TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_HELPTEXT;
       } else if (0 == strcmp("--list-tests", argv[i])) {
          suite->flags |= TEST_LISTTESTS;
+      } else if (0 == strcmp("--tests-cmake", argv[i])) {
+         suite->flags |= TEST_TESTS_CMAKE;
       } else if ((0 == strcmp("-s", argv[i])) || (0 == strcmp("--silent", argv[i]))) {
          suite->silent = true;
       } else if ((0 == strcmp("--ctest-run", argv[i]))) {
@@ -280,9 +283,17 @@ TestSuite_AddLive(TestSuite *suite, /* IN */
 
 
 Test *
-_V_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap)
+_V_TestSuite_AddFull(
+   TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap)
 {
-   if (suite->ctest_run.data && mstr_cmp(suite->ctest_run, !=, mstr_cstring(name))) {
+   // Split the name and tags around the first whitespace:
+   mstr_view name, tags;
+   mstr_split_around(mstr_cstring(name_and_tags), mstr_cstring(" "), &name, &tags);
+   // Trim extras:
+   tags = mstr_trim(tags);
+
+   if (suite->ctest_run.data && mstr_cmp(suite->ctest_run, !=, name)) {
+      // We are running CTest, and not running this particular test, so just skip registering it
       if (dtor) {
          dtor(ctx);
       }
@@ -290,8 +301,18 @@ _V_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFu
    }
 
    Test *test = TestVec_push(&suite->tests);
-   test->name = mstr_copy_cstring(name);
+   test->name = mstr_copy(name);
    test->func = func;
+
+   mstr_view tag, tail;
+   tail = tags;
+   while (tail.len) {
+      mlib_check(mstr_split_around(tail, mstr_cstring("["), NULL, &tag),
+                 because,
+                 "Expected an opening bracket for the next test tag");
+      mlib_check(mstr_split_around(tag, mstr_cstring("]"), &tag, &tail), because, "Expected a closing bracket for tag");
+      *mstr_vec_push(&test->tags) = mstr_copy(tag);
+   }
 
    CheckFunc check;
    while ((check = va_arg(ap, CheckFunc))) {
@@ -334,13 +355,12 @@ TestSuite_AddWC(TestSuite *suite,  /* IN */
 }
 
 
-void
-_TestSuite_AddFull(TestSuite *suite,  /* IN */
-                   const char *name,  /* IN */
-                   TestFuncWC func,   /* IN */
-                   TestFuncDtor dtor, /* IN */
-                   void *ctx,
-                   ...) /* IN */
+void(TestSuite_AddFull)(TestSuite *suite,  /* IN */
+                        const char *name,  /* IN */
+                        TestFuncWC func,   /* IN */
+                        TestFuncDtor dtor, /* IN */
+                        void *ctx,
+                        ...) /* IN */
 {
    va_list ap;
 
@@ -640,6 +660,7 @@ TestSuite_PrintHelp(TestSuite *suite) /* IN */
           "Options:\n"
           "    -h, --help            Show this help menu.\n"
           "    --list-tests          Print list of available tests.\n"
+          "    --tests-cmake         Print CMake code that defines test information.\n"
           "    -f, --no-fork         Do not spawn a process per test (abort on "
           "first error).\n"
           "    -l, --match PATTERN   Run test by name, e.g. \"/Client/command\" or "
@@ -668,6 +689,18 @@ TestSuite_PrintTests(TestSuite *suite) /* IN */
    printf("\n");
 }
 
+static void
+TestSuite_PrintCMake(TestSuite *suite)
+{
+   printf("set(MONGOC_TESTS)\n");
+   mlib_vec_foreach (Test, t, suite->tests) {
+      printf("list(APPEND MONGOC_TESTS [[%.*s]])\n", MSTR_FMT(t->name));
+      printf("set(MONGOC_TEST_%.*s_TAGS)\n", MSTR_FMT(t->name));
+      mlib_vec_foreach (mstr, tag, t->tags) {
+         printf("list(APPEND MONGOC_TEST_%.*s_TAGS [[%.*s]])\n", MSTR_FMT(t->name), MSTR_FMT(*tag));
+      }
+   }
+}
 
 static void
 TestSuite_PrintJsonSystemHeader(FILE *stream)
@@ -989,7 +1022,11 @@ TestSuite_Run(TestSuite *suite) /* IN */
       TestSuite_PrintTests(suite);
    }
 
-   if ((suite->flags & TEST_HELPTEXT) || (suite->flags & TEST_LISTTESTS)) {
+   if (suite->flags & TEST_TESTS_CMAKE) {
+      TestSuite_PrintCMake(suite);
+   }
+
+   if ((suite->flags & TEST_HELPTEXT) || (suite->flags & TEST_LISTTESTS) || (suite->flags & TEST_TESTS_CMAKE)) {
       return 0;
    }
 

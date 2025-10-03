@@ -3,46 +3,56 @@
 # allowing CTest to control the execution, parallelization, and collection of
 # test results.
 
-if (NOT EXISTS "${TEST_LIBMONGOC_EXE}")
+if(NOT EXISTS "${TEST_LIBMONGOC_EXE}")
     # This will fail if 'test-libmongoc' is not compiled yet.
-    message (WARNING "The test executable ${TEST_LIBMONGOC_EXE} is not present. "
+    message(WARNING "The test executable ${TEST_LIBMONGOC_EXE} is not present. "
                      "Its tests will not be registered")
-    add_test (mongoc/not-found NOT_FOUND)
-    return ()
-endif ()
+    add_test(mongoc/not-found NOT_FOUND)
+    return()
+endif()
 
-# Get the list of tests
-execute_process (
-    COMMAND "${TEST_LIBMONGOC_EXE}" --list-tests --no-fork
-    OUTPUT_VARIABLE tests_out
+# Get the list of tests. This command emits CMake code that defines variables for
+# all test cases defined in the suite
+execute_process(
+    COMMAND "${TEST_LIBMONGOC_EXE}" --tests-cmake --no-fork
+    OUTPUT_VARIABLE tests_cmake
     WORKING_DIRECTORY "${SRC_ROOT}"
     RESULT_VARIABLE retc
     )
-if (retc)
+if(retc)
     # Failed to list the tests. That's bad.
-    message (FATAL_ERROR "Failed to run test-libmongoc to discover tests [${retc}]:\n${tests_out}")
-endif ()
+    message(FATAL_ERROR "Failed to run test-libmongoc to discover tests [${retc}]:\n${tests_out}")
+endif()
 
-# Split lines on newlines
-string (REPLACE "\n" ";" lines "${tests_out}")
+# Execute the code that defines the test case information
+cmake_language(EVAL CODE "${tests_cmake}")
 
-# TODO: Allow individual test cases to specify the fixtures they want.
-set (all_fixtures "mongoc/fixtures/fake_kms_provider_server")
-set (all_env
+# Define environment variables that are common to all test cases
+set(all_env
     TEST_KMS_PROVIDER_HOST=localhost:14987  # Refer: Fixtures.cmake
     )
 
-# Generate the test definitions
-foreach (line IN LISTS lines)
-    if (NOT line MATCHES "^/")
-        # Only generate if the line begins with `/`, which all tests should.
-        continue ()
-    endif ()
-    # The new test name is prefixed with 'mongoc'
-    set (test "mongoc${line}")
-    # Define the test. Use `--ctest-run` to tell it that CTest is in control.
-    add_test ("${test}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${line}")
-    set_tests_properties ("${test}" PROPERTIES
+# The emitted code defines a list MONGOC_TESTS with the name of every test case
+# in the suite.
+foreach(casename IN LISTS MONGOC_TESTS)
+    set(name "mongoc${casename}")
+    # Run the program with --ctest-run to select only this one test case
+    add_test("${name}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${casename}")
+    # The emitted code defines a TAGS list for every test case that it emits. We use
+    # these as the LABELS for the test case
+    set(labels "${MONGOC_TEST_${casename}_TAGS}")
+
+    # Find what test fixtures the test wants by inspecting labels. Each "uses:"
+    # label defines the names of the test fixtures that a particular case requires
+    set(fixtures "${labels}")
+    list(FILTER fixtures INCLUDE REGEX "^uses:")
+    list(TRANSFORM fixtures REPLACE "^uses:(.*)$" "mongoc/fixtures/\\1")
+
+    # Add a label for all test cases generated via this script so that they
+    # can be (de)selected separately:
+    list(APPEND labels test-libmongoc-generated)
+    # Set up the test:
+    set_tests_properties("${name}" PROPERTIES
         # test-libmongoc expects to execute in the root of the source directory
         WORKING_DIRECTORY "${SRC_ROOT}"
         # If a test emits '@@ctest-skipped@@', this tells us that the test is
@@ -50,10 +60,11 @@ foreach (line IN LISTS lines)
         SKIP_REGULAR_EXPRESSION "@@ctest-skipped@@"
         # 45 seconds of timeout on each test.
         TIMEOUT 45
-        FIXTURES_REQUIRED "${all_fixtures}"
+        # Common environment variables:
         ENVIRONMENT "${all_env}"
-        # Mark all tests generated from the executable, so they can be (de)selected
-        # for execution separately.
-        LABELS "test-libmongoc-generated"
-        )
-endforeach ()
+        # Apply the labels
+        LABELS "${labels}"
+        # Fixture requirements:
+        FIXTURES_REQUIRED "${fixtures}"
+    )
+endforeach()

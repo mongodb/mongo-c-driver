@@ -96,6 +96,7 @@ bson_open(const char *filename, int flags, ...)
 #define TEST_DEBUGOUTPUT (1 << 3)
 #define TEST_TRACE (1 << 4)
 #define TEST_LISTTESTS (1 << 5)
+#define TEST_TESTS_CMAKE (1 << 6)
 
 
 #define CERT_CA CERT_TEST_DIR "/ca.pem"
@@ -672,6 +673,10 @@ struct Test {
     */
    mstr name;
    /**
+    * @brief Set of tags that are associated with this test case
+    */
+   mstr_vec tags;
+   /**
     * @brief The function that will be executed for the test case
     */
    TestFuncWC func;
@@ -704,6 +709,7 @@ Test_Destroy(Test *t)
       t->dtor(t->ctx);
    }
    mstr_delete(t->name);
+   mstr_vec_destroy(&t->tags);
    CheckFuncVec_destroy(&t->checks);
 }
 
@@ -764,11 +770,10 @@ struct _TestFnCtx {
    TestFuncDtor dtor;
 };
 
-
 void
 TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv);
 void
-TestSuite_Add(TestSuite *suite, const char *name, TestFunc func);
+TestSuite_Add(TestSuite *suite, const char *name_and_tags, TestFunc func);
 int
 TestSuite_CheckLive(void);
 void
@@ -779,21 +784,22 @@ void
 _TestSuite_AddMockServerTest(TestSuite *suite, const char *name, TestFunc func, ...);
 #define TestSuite_AddMockServerTest(_suite, _name, ...) _TestSuite_AddMockServerTest(_suite, _name, __VA_ARGS__, NULL)
 void
-TestSuite_AddWC(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx);
+TestSuite_AddWC(TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx);
 Test *
-_V_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap);
+_V_TestSuite_AddFull(
+   TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap);
 void
-_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, ...);
+TestSuite_AddFull(TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx, ...);
 void
 _TestSuite_TestFnCtxDtor(void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
-   _TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
-#define TestSuite_AddFullWithTestFn(_suite, _name, _func, _dtor, _test_fn, ...)                   \
-   do {                                                                                           \
-      TestFnCtx *ctx = bson_malloc(sizeof(TestFnCtx));                                            \
-      ctx->test_fn = (TestFunc)(_test_fn);                                                        \
-      ctx->dtor = _dtor;                                                                          \
-      _TestSuite_AddFull(_suite, _name, _func, _TestSuite_TestFnCtxDtor, ctx, __VA_ARGS__, NULL); \
+   (TestSuite_AddFull)(_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
+#define TestSuite_AddFullWithTestFn(_suite, _name, _func, _dtor, _test_fn, ...)                  \
+   do {                                                                                          \
+      TestFnCtx *ctx = bson_malloc(sizeof(TestFnCtx));                                           \
+      ctx->test_fn = (TestFunc)(_test_fn);                                                       \
+      ctx->dtor = _dtor;                                                                         \
+      TestSuite_AddFull(_suite, _name, _func, _TestSuite_TestFnCtxDtor, ctx, __VA_ARGS__, NULL); \
    } while (0)
 int
 TestSuite_Run(TestSuite *suite);
