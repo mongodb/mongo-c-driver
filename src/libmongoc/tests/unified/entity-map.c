@@ -1062,9 +1062,9 @@ _parse_kms_provider_aws(
          if (!_append_kms_provider_value_or_getenv(&child, key, value, envvar, error)) {
             return false;
          }
-      } else if (strcmp (key, "sessionToken") == 0) {
+      } else if (strcmp(key, "sessionToken") == 0) {
          const char *envvar = "MONGOC_TEST_AWS_TEMP_SESSION_TOKEN";
-         if (!_append_kms_provider_value_or_getenv (&child, key, value, envvar, error)) {
+         if (!_append_kms_provider_value_or_getenv(&child, key, value, envvar, error)) {
             return false;
          }
       } else {
