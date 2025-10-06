@@ -267,7 +267,9 @@ fn(resize(VecName *const self, size_t const count)) mlib_noexcept
    // Check if we aren't actually growing the vector.
    if (count <= self->size) {
       // We need to destroy elements at the tail. If `count == size`, this is a no-op.
-      fn(erase(self, fn(begin(self)) + count, fn(end(self))));
+      if (self->data) {
+         fn(erase(self, fn(begin(self)) + count, fn(end(self))));
+      }
       return true;
    }
 
