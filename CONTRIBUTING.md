@@ -165,8 +165,6 @@ Additional environment variables:
 * `MONGOC_TEST_MONITORING_VERBOSE`: set to `on` for verbose output from
   Application Performance Monitoring tests.
 * `MONGOC_TEST_COMPRESSORS=snappy,zlib`: wire protocol compressors to use
-* `MONGOC_TEST_IS_SERVERLESS` (bool): defaults to `false`. Used to indicate
-  that tests are run against a serverless cluster.
 
 If you start `mongod` with SSL, set these variables to configure how
 `test-libmongoc` connects to it:
