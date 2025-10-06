@@ -296,7 +296,6 @@ all_variants = [
         ],
         {"CC": "clang"},
     ),
-    Variant("mongohouse", "Mongohouse Test", "ubuntu2204-small", ["debug-compile-sasl-openssl", "test-mongohouse"], {}),
     Variant(
         "ocsp",
         "OCSP tests",
