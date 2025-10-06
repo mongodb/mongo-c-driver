@@ -24,6 +24,6 @@ non-null, and clears any contained value using :symbol:`bson_error_clear`.
 
 If the given pointer object is null, then the pointer is updated to point to a
 local anonymous :symbol:`bson_error_t` object. After the evaluation of this
-macro, it is gauranteed that the given pointer is non-null.
+macro, it is guaranteed that the given pointer is non-null.
 
 .. important:: This function-like macro is not valid in C++!

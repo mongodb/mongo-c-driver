@@ -99,7 +99,7 @@ main(void)
    mongoc_structured_log_opts_set_handler(log_opts, example_handler, NULL);
 
    /*
-    * By default libmongoc proceses log options from the environment first,
+    * By default libmongoc processes log options from the environment first,
     * and then allows you to apply programmatic overrides. To request the
     * opposite behavior, allowing the environment to override programmatic
     * defaults, you can ask for the environment to be re-read after setting
