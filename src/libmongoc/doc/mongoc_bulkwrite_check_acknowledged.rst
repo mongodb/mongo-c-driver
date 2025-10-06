@@ -15,5 +15,5 @@ Description
 -----------
 
 Checks whether or not the previous call to :symbol:`mongoc_bulkwrite_execute` used an acknowledged write concern. If
-an error occured, the ``is_ok`` member of :symbol:`mongoc_bulkwrite_check_acknowledged_t` will be ``false`` and
+an error occurred, the ``is_ok`` member of :symbol:`mongoc_bulkwrite_check_acknowledged_t` will be ``false`` and
 ``error`` will be set.

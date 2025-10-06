@@ -14,5 +14,5 @@ Synopsis
 Description
 -----------
 
-Gets the server ID last used in the previous call to :symbol:`mongoc_bulkwrite_execute`. If an error occured, the
+Gets the server ID last used in the previous call to :symbol:`mongoc_bulkwrite_execute`. If an error occurred, the
 ``is_ok`` member of :symbol:`mongoc_bulkwrite_serverid_t` will be ``false`` and ``error`` will be set.
