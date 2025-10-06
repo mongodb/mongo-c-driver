@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = tools-origin
+	branch = mongo-c-tools
+	commit = 7f8ff8e0a2f7f2639745c5b48ac1f9e10c0518fd
+	method = merge
+	cmdver = 0.4.6
+	parent = 291608fd93e57aed366c2483feb568f3f81c27a7
