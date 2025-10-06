@@ -144,9 +144,9 @@ _mongoc_write_command_init_bulk (
    command->flags = flags;
    command->operation_id = operation_id;
    if (!bson_empty0 (opts)) {
-      bson_copy_to (opts, &command->cmd_opts);
+      command->cmd_opts = bson_copy (opts);
    } else {
-      bson_init (&command->cmd_opts);
+      command->cmd_opts = bson_new ();
    }
 
    _mongoc_buffer_init (&command->payload, NULL, 0, NULL, NULL);
@@ -668,7 +668,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                                ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
                                : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES;
 
-   BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
+   BSON_ASSERT (bson_iter_init (&iter, command->cmd_opts));
    if (!mongoc_cmd_parts_append_opts (&parts, &iter, error)) {
       bson_destroy (&cmd);
       mongoc_cmd_parts_cleanup (&parts);
@@ -937,7 +937,7 @@ _mongoc_write_command_destroy (mongoc_write_command_t *command)
    ENTRY;
 
    if (command) {
-      bson_destroy (&command->cmd_opts);
+      bson_destroy (command->cmd_opts);
       _mongoc_buffer_destroy (&command->payload);
    }
 
