@@ -108,7 +108,7 @@ test_mcd_azure_imds_install(TestSuite *suite)
    TestSuite_Add(suite, "/azure/imds/http/parse", _test_oauth_parse);
    TestSuite_Add(suite, "/azure/imds/http/request", _test_http_req);
    TestSuite_AddFull(suite,
-                     "/azure/imds/http/talk [uses:fake_kms_provider_server]",
+                     "/azure/imds/http/talk [uses:fake_kms_provider_server][lock:fake-kms]",
                      _test_with_mock_server,
                      NULL,
                      NULL,

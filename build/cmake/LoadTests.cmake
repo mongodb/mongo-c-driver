@@ -44,9 +44,21 @@ foreach(casename IN LISTS MONGOC_TESTS)
 
     # Find what test fixtures the test wants by inspecting labels. Each "uses:"
     # label defines the names of the test fixtures that a particular case requires
-    set(fixtures "${labels}")
-    list(FILTER fixtures INCLUDE REGEX "^uses:")
-    list(TRANSFORM fixtures REPLACE "^uses:(.*)$" "mongoc/fixtures/\\1")
+    list(
+        TRANSFORM labels
+        REPLACE "^uses:(.*)$" "mongoc/fixtures/\\1"
+        REGEX "^uses:"
+        OUTPUT_VARIABLE fixtures
+    )
+
+    list(TRANSFORM labels
+        REPLACE "^lock:(.*)" "\\1"
+        REGEX "^lock:"
+        OUTPUT_VARIABLE lock
+    )
+    if("live" IN_LIST labels)
+        list(APPEND lock live-server)
+    endif()
 
     # Add a label for all test cases generated via this script so that they
     # can be (de)selected separately:
@@ -66,5 +78,7 @@ foreach(casename IN LISTS MONGOC_TESTS)
         LABELS "${labels}"
         # Fixture requirements:
         FIXTURES_REQUIRED "${fixtures}"
+        # Resources that need exclusive access by this test:
+        RESOURCE_LOCK "${lock}"
     )
 endforeach()
