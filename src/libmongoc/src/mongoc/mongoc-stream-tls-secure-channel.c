@@ -62,6 +62,7 @@
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 #include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-ssl.h>
@@ -69,11 +70,14 @@
 
 #include <bson/bson.h>
 
+#include <subauth.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure-channel"
 
 
 #define SECURITY_WIN32
+#define SCHANNEL_USE_BLACKLISTS 1
 #include <schannel.h>
 #include <schnlsp.h>
 #include <security.h>
@@ -87,6 +91,9 @@
 #define SP_PROT_TLS1_2_CLIENT 0x00000800
 #endif
 
+#ifndef SP_PROT_TLS1_3_CLIENT
+#define SP_PROT_TLS1_3_CLIENT 0x00002000
+#endif
 
 static void
 _mongoc_stream_tls_secure_channel_destroy(mongoc_stream_t *stream)
@@ -841,40 +848,96 @@ _mongoc_stream_tls_secure_channel_should_retry(mongoc_stream_t *stream)
    RETURN(mongoc_stream_should_retry(tls->base_stream));
 }
 
-mongoc_secure_channel_cred *
-mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
+static DWORD
+get_cred_flags(const mongoc_ssl_opt_t *opt)
 {
-   BSON_ASSERT_PARAM(opt);
-   mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
+   DWORD dwFlags;
 
-   cred->cred.dwVersion = SCHANNEL_CRED_VERSION;
-
-/* SCHANNEL_CRED:
- * SCH_USE_STRONG_CRYPTO is not available in VS2010
- *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
+   /* SCH_USE_STRONG_CRYPTO is not available in VS2010
+    *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
 #ifdef SCH_USE_STRONG_CRYPTO
-   cred->cred.dwFlags = SCH_USE_STRONG_CRYPTO;
+   dwFlags = SCH_USE_STRONG_CRYPTO;
 #endif
 
    /* By default, enable soft failing.
     * A certificate with no revocation check is a soft failure. */
-   cred->cred.dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+   dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
    /* An offline OCSP responder / CRL distribution list is a soft failure. */
-   cred->cred.dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+   dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
    if (opt->weak_cert_validation) {
-      cred->cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
+      dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
       TRACE("%s", "disabled server certificate checks");
    } else {
-      cred->cred.dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
+      dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
       if (!_mongoc_ssl_opts_disable_certificate_revocation_check(opt)) {
-         cred->cred.dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
+         dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
          TRACE("%s", "enabled server certificate revocation checks");
       }
       TRACE("%s", "enabled server certificate checks");
    }
 
    if (opt->allow_invalid_hostname) {
-      cred->cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
+      dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
+   }
+
+   return dwFlags;
+}
+
+#ifdef HAVE_SCH_CREDENTIALS
+
+void *
+_mongoc_secure_channel_sch_credentials_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT *cert, DWORD enabled_protocols)
+{
+   SCH_CREDENTIALS *cred = bson_malloc0(sizeof(SCH_CREDENTIALS));
+
+   cred->dwVersion = SCH_CREDENTIALS_VERSION;
+   cred->dwFlags = get_cred_flags(opt);
+
+   if (*cert) {
+      cred->cCreds = 1;
+      cred->paCred = cert;
+   }
+
+   cred->cTlsParameters = 1;
+   cred->pTlsParameters = bson_malloc0(sizeof(TLS_PARAMETERS));
+   cred->pTlsParameters->grbitDisabledProtocols = (DWORD)~enabled_protocols;
+
+   return (void *)cred;
+}
+
+#endif
+
+void *
+_mongoc_secure_channel_schannel_cred_new(const mongoc_ssl_opt_t *opt, PCCERT_CONTEXT *cert, DWORD enabled_protocols)
+{
+   SCHANNEL_CRED *cred = bson_malloc0(sizeof(SCHANNEL_CRED));
+
+   cred->dwVersion = SCHANNEL_CRED_VERSION;
+   cred->dwFlags = get_cred_flags(opt);
+
+   if (*cert) {
+      cred->cCreds = 1;
+      cred->paCred = cert;
+   }
+
+   cred->grbitEnabledProtocols = enabled_protocols;
+
+   return (void *)cred;
+}
+
+mongoc_secure_channel_cred *
+mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
+{
+   BSON_ASSERT_PARAM(opt);
+   mongoc_secure_channel_cred *cred = bson_malloc0(sizeof(mongoc_secure_channel_cred));
+
+   DWORD enabled_protocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+
+   /* TLS 1.3 is supported on Windows Server 2022 and newer.
+    * Schannel will not negotiate TLS 1.3 when SCHANNEL_CRED is used. */
+   if (_mongoc_verify_windows_version(10, 0, 20348, false)) {
+      // TODO - enable TLS 1.3 once renegotiation is supported.
+      // enabled_protocols |= SP_PROT_TLS1_3_CLIENT;
    }
 
    if (opt->ca_file) {
@@ -887,14 +950,22 @@ mongoc_secure_channel_cred_new(const mongoc_ssl_opt_t *opt)
 
    if (opt->pem_file) {
       cred->cert = mongoc_secure_channel_setup_certificate(opt);
-
-      if (cred->cert) {
-         cred->cred.cCreds = 1;
-         cred->cred.paCred = &cred->cert;
-      }
    }
 
-   cred->cred.grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
+#ifdef HAVE_SCH_CREDENTIALS
+   // SCH_CREDENTIALS is supported in Windows 10 1809 / Server 1809 and later
+   if (_mongoc_verify_windows_version(10, 0, 17763, false)) {
+      cred->cred = _mongoc_secure_channel_sch_credentials_new(opt, &cred->cert, enabled_protocols);
+      cred->cred_type = sch_credentials;
+   } else {
+      cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, &cred->cert, enabled_protocols);
+      cred->cred_type = schannel_cred;
+   }
+#else
+   cred->cred = _mongoc_secure_channel_schannel_cred_new(opt, &cred->cert, enabled_protocols);
+   cred->cred_type = schannel_cred;
+#endif
+
    return cred;
 }
 
@@ -906,6 +977,13 @@ mongoc_secure_channel_cred_deleter(void *cred_void)
       return;
    }
    CertFreeCertificateContext(cred->cert);
+#ifdef HAVE_SCH_CREDENTIALS
+   if (cred->cred_type == sch_credentials) {
+      SCH_CREDENTIALS *sch_cred = (SCH_CREDENTIALS *)cred->cred;
+      bson_free(sch_cred->pTlsParameters);
+   }
+#endif
+   bson_free(cred->cred);
    bson_free(cred);
 }
 
@@ -982,7 +1060,7 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
                                           UNISP_NAME,           /* security package */
                                           SECPKG_CRED_OUTBOUND, /* we are preparing outbound connection */
                                           NULL,                 /*  Optional logon */
-                                          &cred->cred,          /* TLS "configuration", "auth data" */
+                                          cred->cred,           /* TLS "configuration", "auth data" */
                                           NULL,                 /* unused */
                                           NULL,                 /* unused */
                                           &secure_channel->cred_handle->cred_handle, /* credential OUT param */
