@@ -7070,8 +7070,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7081,8 +7079,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7092,8 +7088,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7103,8 +7097,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7114,8 +7106,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7158,8 +7148,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7205,8 +7193,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -7217,8 +7203,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/createEncryptedCollection/"
@@ -7228,8 +7212,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/createEncryptedCollection/insert",
@@ -7238,8 +7220,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_mongocryptd_shared_library",
@@ -7296,8 +7276,6 @@ test_client_side_encryption_install (TestSuite *suite)
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
                   test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
-                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                  test_framework_skip_if_serverless,
                   test_framework_skip_if_not_replset);
             } else {
                TestSuite_AddFull (
@@ -7308,8 +7286,6 @@ test_client_side_encryption_install (TestSuite *suite)
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
                   test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
-                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                  test_framework_skip_if_serverless,
                   test_framework_skip_if_single);
             }
 
