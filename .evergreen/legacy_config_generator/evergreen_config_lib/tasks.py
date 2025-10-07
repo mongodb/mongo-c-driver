@@ -579,9 +579,7 @@ all_tasks = chain(
             tags=['authentication-tests', 'asan'],
             commands=[
                 shell_mongoc(
-                    """
-            env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
-            """,
+                    'env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh',
                     add_expansions_to_env=True,
                 ),
                 func('run auth tests', ASAN='on'),
