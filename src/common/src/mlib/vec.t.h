@@ -118,7 +118,7 @@ typedef struct VecName {
    T *
    end() noexcept
    {
-      return data + size;
+      return data ? data + size : data;
    }
 #endif
 } VecName;
@@ -140,7 +140,7 @@ fn(begin(VecName *v)) mlib_noexcept
 vec_inline_spec T *
 fn(end(VecName *v)) mlib_noexcept
 {
-   return v->data + v->size;
+   return v->data ? v->data + v->size : v->data;
 }
 
 /**
@@ -158,7 +158,7 @@ fn(cbegin(VecName const *v)) mlib_noexcept
 vec_inline_spec T const *
 fn(cend(VecName const *v)) mlib_noexcept
 {
-   return v->data + v->size;
+   return v->data ? v->data + v->size : v->data;
 }
 
 /**
