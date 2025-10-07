@@ -178,7 +178,7 @@ main(void)
    /* Create the collection with the encryption JSON Schema. */
    create_cmd = BCON_NEW("create", ENCRYPTED_COLL, "validator", "{", "$jsonSchema", BCON_DOCUMENT(schema), "}");
    wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_wmajority(wc, 0);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    create_cmd_opts = bson_new();
    mongoc_write_concern_append(wc, create_cmd_opts);
    ret = mongoc_client_command_with_opts(

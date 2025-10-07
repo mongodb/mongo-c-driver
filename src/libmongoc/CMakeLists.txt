@@ -594,6 +594,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-cache.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-callback.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-env.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
@@ -850,7 +851,7 @@ if (TARGET bson::static)
    target_include_directories (mcd_rpc PUBLIC ${PROJECT_SOURCE_DIR}/src)
    target_link_libraries (mcd_rpc PUBLIC bson::static)
    if (NOT WIN32 AND ENABLE_PIC)
-      target_compile_options (mcd_rpc PUBLIC -fPIC)
+      set_property (TARGET mcd_rpc PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    endif ()
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
@@ -935,7 +936,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    set_property(TARGET mongoc_static PROPERTY EXPORT_NAME mongoc::static)
    target_link_libraries (mongoc_static PUBLIC ${STATIC_LIBRARIES} bson::static mongo::detail::c_dependencies)
    if (NOT WIN32 AND ENABLE_PIC)
-      target_compile_options (mongoc_static PUBLIC -fPIC)
+      set_property(TARGET mongoc_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
       message (STATUS "Adding -fPIC to compilation of mongoc_static components")
    endif ()
    if(ENABLE_SRV AND RESOLVE_LIB_NAME)
@@ -1092,6 +1093,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-callback.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-cache.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c

@@ -463,9 +463,7 @@ _mongoc_write_concern_new_from_iter(const bson_iter_t *iter, bson_error_t *error
             mongoc_write_concern_set_w(write_concern, w);
          } else if (BSON_ITER_HOLDS_UTF8(&inner)) {
             if (!strcmp(bson_iter_utf8(&inner, NULL), "majority")) {
-               /* mongoc_write_concern_set_wmajority() only assigns wtimeout if
-                * it is >= 0. Since we set wtimeout below, pass -1 here. */
-               mongoc_write_concern_set_wmajority(write_concern, -1);
+               mongoc_write_concern_set_w(write_concern, MONGOC_WRITE_CONCERN_W_MAJORITY);
             } else {
                mongoc_write_concern_set_wtag(write_concern, bson_iter_utf8(&inner, NULL));
             }

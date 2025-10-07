@@ -1363,7 +1363,7 @@ mongoc_topology_select_server_id(mongoc_topology_t *topology,
    }
 
 done:
-   /* server_id set to zero indicates an error has occured and that `error` should be initialized */
+   /* server_id set to zero indicates an error has occurred and that `error` should be initialized */
    if (server_id == 0) {
       if (error && error->domain == MONGOC_ERROR_SERVER_SELECTION) {
          _mongoc_error_append(error, mcommon_str_from_append(&topology_type));
