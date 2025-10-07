@@ -1935,7 +1935,7 @@ test_bson_json_double(void)
 
 /* check that "x" is -0.0. signbit not available on FreeBSD or VS 2010 or AIX
  */
-#if !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800)) || (!defined(_AIX))
+#if !defined(__FreeBSD__) && (!defined(_MSC_VER) || (_MSC_VER >= 1800)) && (!defined(_AIX))
    BSON_ASSERT(signbit(bson_iter_double(&iter)));
 #endif
 
