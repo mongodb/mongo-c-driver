@@ -6,7 +6,7 @@
 if(NOT EXISTS "${TEST_LIBMONGOC_EXE}")
     # This will fail if 'test-libmongoc' is not compiled yet.
     message(WARNING "The test executable ${TEST_LIBMONGOC_EXE} is not present. "
-                     "Its tests will not be registered")
+                    "Its tests will not be registered")
     add_test(mongoc/not-found NOT_FOUND)
     return()
 endif()
@@ -32,6 +32,14 @@ set(all_env
     TEST_KMS_PROVIDER_HOST=localhost:14987  # Refer: Fixtures.cmake
     )
 
+function(list_select list_var)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "SELECT;REPLACE;OUT" "")
+    set(seq "${${list_var}}")
+    list(FILTER seq INCLUDE REGEX "${arg_SELECT}")
+    list(TRANSFORM seq REPLACE "${arg_SELECT}" "${arg_REPLACE}")
+    set("${arg_OUT}" "${seq}" PARENT_SCOPE)
+endfunction()
+
 # The emitted code defines a list MONGOC_TESTS with the name of every test case
 # in the suite.
 foreach(casename IN LISTS MONGOC_TESTS)
@@ -40,22 +48,24 @@ foreach(casename IN LISTS MONGOC_TESTS)
     add_test("${name}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${casename}")
     # The emitted code defines a TAGS list for every test case that it emits. We use
     # these as the LABELS for the test case
+    unset(labels)
     set(labels "${MONGOC_TEST_${casename}_TAGS}")
 
     # Find what test fixtures the test wants by inspecting labels. Each "uses:"
     # label defines the names of the test fixtures that a particular case requires
-    list(
-        TRANSFORM labels
-        REPLACE "^uses:(.*)$" "mongoc/fixtures/\\1"
-        REGEX "^uses:"
-        OUTPUT_VARIABLE fixtures
-    )
+    list_select(labels SELECT "^uses:(.*)$" REPLACE "mongoc/fixtures/\\1" OUT fixtures)
 
-    list(TRANSFORM labels
-        REPLACE "^lock:(.*)" "\\1"
-        REGEX "^lock:"
-        OUTPUT_VARIABLE lock
-    )
+    # For any "lock:..." labels, add a resource lock with the corresponding name
+    list_select(labels SELECT "^lock:(.*)$" REPLACE "\\1" OUT lock)
+
+    # Tests can set a timeout with a tag:
+    list_select(labels SELECT "^timeout:(.*)$" REPLACE "\\1" OUT timeout)
+    if(NOT timeout)
+        # Default timeout of 5 seconds
+        set(timeout 5)
+    endif()
+
+    # If a test declares that it is "live", lock exclusive access to the live server
     if("live" IN_LIST labels)
         list(APPEND lock live-server)
     endif()
@@ -70,15 +80,15 @@ foreach(casename IN LISTS MONGOC_TESTS)
         # If a test emits '@@ctest-skipped@@', this tells us that the test is
         # skipped.
         SKIP_REGULAR_EXPRESSION "@@ctest-skipped@@"
-        # 45 seconds of timeout on each test.
-        TIMEOUT 45
+        # Apply a timeout to each test, either the default or one from test tags
+        TIMEOUT "${timeout}"
         # Common environment variables:
         ENVIRONMENT "${all_env}"
         # Apply the labels
         LABELS "${labels}"
         # Fixture requirements:
         FIXTURES_REQUIRED "${fixtures}"
-        # Resources that need exclusive access by this test:
+        # Test may lock resources:
         RESOURCE_LOCK "${lock}"
     )
 endforeach()
