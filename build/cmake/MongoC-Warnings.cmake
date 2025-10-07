@@ -103,7 +103,4 @@ mongoc_add_warning_options (
 
      # Aside: Disable CRT insecurity warnings
      msvc:/D_CRT_SECURE_NO_WARNINGS
-
-     # Old Clang has an over-aggressive missing-braces warning that warns on the `foo = {0}` idiom
-     clang:clang-lt10:-Wno-missing-braces
 )

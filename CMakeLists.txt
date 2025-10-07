@@ -285,6 +285,7 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wuninitialized
       # Disabled, for now:
       gnu-like:-Wno-strict-aliasing
+      gnu-like:-Wno-missing-braces
       # Sign-comparison-mismatch:
       gnu-like:-Wsign-compare
       msvc:/we4018
