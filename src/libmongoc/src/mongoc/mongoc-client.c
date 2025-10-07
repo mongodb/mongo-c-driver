@@ -825,7 +825,8 @@ mongoc_client_connect(bool use_ssl,
             base_stream, host->host, ssl_opts, true, (SSL_CTX *)openssl_ctx_void);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
          // Use shared Secure Channel credentials.
-         base_stream = mongoc_stream_tls_new_with_secure_channel_cred(base_stream, ssl_opts, secure_channel_cred_ptr);
+         base_stream =
+            mongoc_stream_tls_new_with_secure_channel_cred(base_stream, host->host, ssl_opts, secure_channel_cred_ptr);
 #else
          base_stream = mongoc_stream_tls_new_with_hostname(base_stream, host->host, ssl_opts, true);
 #endif
