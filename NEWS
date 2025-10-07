@@ -1,3 +1,17 @@
+libmongoc 1.30.6
+================
+
+Fixes:
+
+  * Fix write command options handling.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+
+
+
 libmongoc 1.30.5
 ================
 
