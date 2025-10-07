@@ -95,7 +95,7 @@ def _create_variant():
     return Variant(
         name='testgcpkms-variant',
         display_name='GCP KMS',
-        run_on='debian12-small',  # GCP Virtual Machine is actually Debian 11.
+        run_on='debian11-latest-small',  # GCP Virtual Machine is actually Debian 11.
         tasks=['testgcpkms_task_group', 'testgcpkms-fail-task'],
         batchtime=20160,
     )  # Use a batchtime of 14 days as suggested by the CSFLE test README

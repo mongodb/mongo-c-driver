@@ -20,15 +20,15 @@ COMPILE_MATRIX = [
     ('windows-vsCurrent',  'vs2022x64', None, ['cyrus']),
 
     # For compile only.
-  # ('debian11',   'clang',    None, ['cyrus']), # No uv binary available.
-  # ('debian11',   'gcc',      None, ['cyrus']), # No uv binary available.
-    ('debian12',   'clang',    None, ['cyrus']),
-    ('debian12',   'gcc',      None, ['cyrus']),
-    ('rhel80',     'gcc',      None, ['cyrus']),
-    ('ubuntu2204', 'gcc',      None, ['cyrus']),
-    ('ubuntu2204', 'clang-12', None, ['cyrus']),
-    ('ubuntu2404', 'gcc',      None, ['cyrus']),
-    ('ubuntu2404', 'clang-14', None, ['cyrus']),
+    ('debian11-latest', 'clang',    None, ['cyrus']),
+    ('debian11-latest', 'gcc',      None, ['cyrus']),
+    ('debian12-latest', 'clang',    None, ['cyrus']),
+    ('debian12-latest', 'gcc',      None, ['cyrus']),
+    ('rhel80',          'gcc',      None, ['cyrus']),
+    ('ubuntu2204',      'gcc',      None, ['cyrus']),
+    ('ubuntu2204',      'clang-12', None, ['cyrus']),
+    ('ubuntu2404',      'gcc',      None, ['cyrus']),
+    ('ubuntu2404',      'clang-14', None, ['cyrus']),
 ]
 
 # QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.

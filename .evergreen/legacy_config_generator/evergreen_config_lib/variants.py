@@ -101,9 +101,9 @@ all_variants = [
         {'CC': 'gcc'},
     ),
     Variant(
-        'gcc12',
-        'GCC 12 (Debian 12.0)',
-        'debian12-large',
+        'gcc102',
+        'GCC 10.2 (Debian 11.0)',
+        'debian11-latest-large',
         ['release-compile', 'debug-compile-nosasl-nossl', '.latest .nossl'],
         {'CC': 'gcc'},
     ),

@@ -7,13 +7,6 @@ set -o nounset
 ROOT=$(pwd)
 INSTALL_DIR=$ROOT/install
 
-# Ubuntu 20.04 does not have uv.
-if ! command -v uv >/dev/null; then
-  prefix="$(mktemp -d)"
-  python3 -m pip install --prefix "$prefix" uv
-  PATH="$prefix/bin:$PATH"
-fi
-
 . .evergreen/scripts/install-build-tools.sh
 install_build_tools
 export CMAKE_GENERATOR="Ninja"

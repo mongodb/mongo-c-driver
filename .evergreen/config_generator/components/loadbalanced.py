@@ -24,6 +24,7 @@ def functions():
                 script="""\
                     export DRIVERS_TOOLS=./drivers-evergreen-tools
                     export MONGODB_URI="${MONGODB_URI}"
+                    export PATH="$(uv tool dir --bin):$PATH" # DEVPROD-19733
                     $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
                 """,
             ),
@@ -57,11 +58,6 @@ def make_test_task(auth: bool, ssl: bool, server_version: str):
                 }
             ),
             RunSimpleHTTPServer.call(),
-            # haproxy may not be available on the current distro.
-            bash_exec(
-                command_type=EvgCommandType.SETUP,
-                script='uv tool install haproxy-cli',
-            ),
             FunctionCall(func='start-load-balancer', vars={'MONGODB_URI': 'mongodb://localhost:27017,localhost:27018'}),
             RunTests().call(
                 vars={

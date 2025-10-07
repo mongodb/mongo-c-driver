@@ -156,8 +156,10 @@ buildvariants:
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
-      - name: cse-sasl-cyrus-openssl-debian12-clang-compile
-      - name: cse-sasl-cyrus-openssl-debian12-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian11-latest-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian11-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian12-latest-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian12-latest-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
@@ -291,7 +293,8 @@ buildvariants:
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
-      - name: sasl-cyrus-openssl-debian12-gcc-compile
+      - name: sasl-cyrus-openssl-debian11-latest-gcc-compile
+      - name: sasl-cyrus-openssl-debian12-latest-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth

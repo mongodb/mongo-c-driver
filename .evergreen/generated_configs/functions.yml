@@ -610,6 +610,7 @@ functions:
           - |
             export DRIVERS_TOOLS=./drivers-evergreen-tools
             export MONGODB_URI="${MONGODB_URI}"
+            export PATH="$(uv tool dir --bin):$PATH" # DEVPROD-19733
             $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
     - command: expansions.update
       type: setup

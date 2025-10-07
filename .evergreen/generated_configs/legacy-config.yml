@@ -820,6 +820,14 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
   - func: fetch-det
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        sudo apt install -y haproxy
   - func: start-load-balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -10061,11 +10069,11 @@ buildvariants:
   - debug-compile-sasl-openssl
   - .authentication-tests .openssl
   - .latest .nossl
-- name: gcc12
-  display_name: GCC 12 (Debian 12.0)
+- name: gcc102
+  display_name: GCC 10.2 (Debian 11.0)
   expansions:
     CC: gcc
-  run_on: debian12-large
+  run_on: debian11-latest-large
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
@@ -10279,14 +10287,14 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian11-small
+  run_on: debian11-latest-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task
   batchtime: 20160
 - name: testgcpkms-variant
   display_name: GCP KMS
-  run_on: debian12-small
+  run_on: debian11-latest-small
   tasks:
   - testgcpkms_task_group
   - testgcpkms-fail-task

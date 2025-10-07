@@ -1125,7 +1125,8 @@ tasks:
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1167,7 +1168,8 @@ tasks:
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1209,7 +1211,8 @@ tasks:
   - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1251,7 +1254,8 @@ tasks:
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1293,7 +1297,8 @@ tasks:
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1335,7 +1340,8 @@ tasks:
   - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1377,7 +1383,8 @@ tasks:
   - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1419,7 +1426,8 @@ tasks:
   - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1461,7 +1469,8 @@ tasks:
   - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1503,7 +1512,8 @@ tasks:
   - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1545,7 +1555,8 @@ tasks:
   - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1587,7 +1598,8 @@ tasks:
   - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0"
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
@@ -1963,18 +1975,36 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-openssl-debian12-clang-compile
-    run_on: debian12-large
-    tags: [cse-matrix-openssl, compile, debian12, clang, cse, sasl-cyrus]
+  - name: cse-sasl-cyrus-openssl-debian11-latest-clang-compile
+    run_on: debian11-latest-large
+    tags: [cse-matrix-openssl, compile, debian11-latest, clang, cse, sasl-cyrus]
     commands:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
           CC: clang
           CXX: clang++
       - func: upload-build
-  - name: cse-sasl-cyrus-openssl-debian12-gcc-compile
-    run_on: debian12-large
-    tags: [cse-matrix-openssl, compile, debian12, gcc, cse, sasl-cyrus]
+  - name: cse-sasl-cyrus-openssl-debian11-latest-gcc-compile
+    run_on: debian11-latest-large
+    tags: [cse-matrix-openssl, compile, debian11-latest, gcc, cse, sasl-cyrus]
+    commands:
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-debian12-latest-clang-compile
+    run_on: debian12-latest-large
+    tags: [cse-matrix-openssl, compile, debian12-latest, clang, cse, sasl-cyrus]
+    commands:
+      - func: cse-sasl-cyrus-openssl-compile
+        vars:
+          CC: clang
+          CXX: clang++
+      - func: upload-build
+  - name: cse-sasl-cyrus-openssl-debian12-latest-gcc-compile
+    run_on: debian12-latest-large
+    tags: [cse-matrix-openssl, compile, debian12-latest, gcc, cse, sasl-cyrus]
     commands:
       - func: cse-sasl-cyrus-openssl-compile
         vars:
@@ -3907,13 +3937,6 @@ tasks:
           SSL: openssl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -3940,13 +3963,6 @@ tasks:
           SSL: nossl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -3973,13 +3989,6 @@ tasks:
           SSL: openssl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4006,13 +4015,6 @@ tasks:
           SSL: nossl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4039,13 +4041,6 @@ tasks:
           SSL: openssl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4072,13 +4067,6 @@ tasks:
           SSL: nossl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4105,13 +4093,6 @@ tasks:
           SSL: openssl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4138,13 +4119,6 @@ tasks:
           SSL: nossl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4171,13 +4145,6 @@ tasks:
           SSL: openssl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4204,13 +4171,6 @@ tasks:
           SSL: nossl
           TOPOLOGY: sharded_cluster
       - func: run-simple-http-server
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - uv tool install haproxy-cli
       - func: start-load-balancer
         vars:
           MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -4677,9 +4637,18 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-cyrus-openssl-debian12-gcc-compile
-    run_on: debian12-large
-    tags: [sasl-matrix-openssl, compile, debian12, gcc, sasl-cyrus]
+  - name: sasl-cyrus-openssl-debian11-latest-gcc-compile
+    run_on: debian11-latest-large
+    tags: [sasl-matrix-openssl, compile, debian11-latest, gcc, sasl-cyrus]
+    commands:
+      - func: sasl-cyrus-openssl-compile
+        vars:
+          CC: gcc
+          CXX: g++
+      - func: upload-build
+  - name: sasl-cyrus-openssl-debian12-latest-gcc-compile
+    run_on: debian12-latest-large
+    tags: [sasl-matrix-openssl, compile, debian12-latest, gcc, sasl-cyrus]
     commands:
       - func: sasl-cyrus-openssl-compile
         vars:
@@ -6470,6 +6439,15 @@ tasks:
           CXX: clang++-12
           MARCH: i686
       - func: upload scan artifacts
+  - name: std-c11-debian11-latest-gcc-compile
+    run_on: debian11-latest-large
+    tags: [std-matrix, debian11-latest, gcc, compile, std-c11]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 11
   - name: std-c11-macos-14-arm64-clang-compile
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c11]
@@ -6500,6 +6478,24 @@ tasks:
   - name: std-c11-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [std-matrix, rhel80, gcc, compile, std-c11]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c11]
+    commands:
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 11
+  - name: std-c11-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c11]
     commands:
       - func: std-compile
         vars:
@@ -6650,6 +6646,15 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 17 2022
           CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 11
+  - name: std-c17-debian11-latest-gcc-compile
+    run_on: debian11-latest-large
+    tags: [std-matrix, debian11-latest, gcc, compile, std-c17]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 17
   - name: std-c17-macos-14-arm64-clang-compile
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c17]
@@ -6671,6 +6676,24 @@ tasks:
   - name: std-c17-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [std-matrix, rhel80, gcc, compile, std-c17]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c17]
+    commands:
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 17
+  - name: std-c17-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c17]
     commands:
       - func: std-compile
         vars:
@@ -6803,9 +6826,27 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 17 2022
           CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 17
+  - name: std-c23-debian11-latest-gcc-compile
+    run_on: debian11-latest-large
+    tags: [std-matrix, debian11-latest, gcc, compile, std-c23]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 23
   - name: std-c23-macos-14-arm64-clang-compile
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c23]
+    commands:
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 23
+  - name: std-c23-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c23]
     commands:
       - func: std-compile
         vars:
@@ -6920,6 +6961,15 @@ tasks:
           CC: gcc-13
           CXX: g++-13
           C_STD_VERSION: 23
+  - name: std-c99-debian11-latest-gcc-compile
+    run_on: debian11-latest-large
+    tags: [std-matrix, debian11-latest, gcc, compile, std-c99]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc-10
+          CXX: g++-10
+          C_STD_VERSION: 99
   - name: std-c99-macos-14-arm64-clang-compile
     run_on: macos-14-arm64
     tags: [std-matrix, macos-14-arm64, clang, compile, std-c99]
@@ -6950,6 +7000,24 @@ tasks:
   - name: std-c99-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [std-matrix, rhel80, gcc, compile, std-c99]
+    commands:
+      - func: std-compile
+        vars:
+          CC: gcc
+          CXX: g++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel84-clang-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, clang, compile, std-c99]
+    commands:
+      - func: std-compile
+        vars:
+          CC: clang
+          CXX: clang++
+          C_STD_VERSION: 99
+  - name: std-c99-rhel84-gcc-compile
+    run_on: rhel84-large
+    tags: [std-matrix, rhel84, gcc, compile, std-c99]
     commands:
       - func: std-compile
         vars:
@@ -7553,7 +7621,8 @@ tasks:
   - name: verify-headers
     run_on:
       - amazon2
-      - debian12-large
+      - debian11-latest-large
+      - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
     tags: [pr-merge-gate]
