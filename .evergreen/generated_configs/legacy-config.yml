@@ -10232,6 +10232,13 @@ buildvariants:
   - test-aws-openssl-regular-latest
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
+- name: windows-2022
+  display_name: Windows (VS 2022)
+  expansions:
+    CC: Visual Studio 17 2022 Win64
+  run_on: windows-vsCurrent-large
+  tasks:
+  - .authentication-tests .winssl
 - name: mingw-windows2016
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:
