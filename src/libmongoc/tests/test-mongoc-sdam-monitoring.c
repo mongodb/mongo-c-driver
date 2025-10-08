@@ -1194,6 +1194,141 @@ test_serverMonitoringMode(void)
    printf("'connect with serverMonitoringMode=poll' ... end\n");
 }
 
+static bson_t *
+_extract_cluster_time_from_ping_reply(const bson_t *reply)
+{
+   bson_iter_t iter;
+   ASSERT(bson_iter_init_find(&iter, reply, "$clusterTime"));
+   ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
+
+   bson_t result;
+   bson_iter_bson(&iter, &result);
+
+   return bson_copy(&result);
+}
+
+static bson_t *
+_ping_then_get_cluster_time(mongoc_client_t *client)
+{
+   bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+
+   bson_t reply = BSON_INITIALIZER;
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", ping, NULL, &reply, &error), error);
+
+   bson_t *const cluster_time = _extract_cluster_time_from_ping_reply(&reply);
+   ASSERT(cluster_time);
+
+   bson_destroy(ping);
+
+   return cluster_time;
+}
+
+typedef struct {
+   size_t n_started;
+   size_t n_succeeded;
+   size_t n_failed;
+} cluster_time_not_used_on_sdam_context_t;
+
+static void
+_cluster_time_not_used_on_sdam_heartbeat_started(const mongoc_apm_server_heartbeat_started_t *event)
+{
+   cluster_time_not_used_on_sdam_context_t *const context =
+      (cluster_time_not_used_on_sdam_context_t *)mongoc_apm_server_heartbeat_started_get_context(event);
+
+   ++context->n_started;
+}
+
+static void
+_cluster_time_not_used_on_sdam_heartbeat_succeeded(const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   cluster_time_not_used_on_sdam_context_t *const context =
+      (cluster_time_not_used_on_sdam_context_t *)mongoc_apm_server_heartbeat_succeeded_get_context(event);
+
+   ++context->n_succeeded;
+}
+
+static void
+_cluster_time_not_used_on_sdam_heartbeat_failed(const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   cluster_time_not_used_on_sdam_context_t *const context =
+      (cluster_time_not_used_on_sdam_context_t *)mongoc_apm_server_heartbeat_failed_get_context(event);
+
+   ++context->n_failed;
+}
+
+static void
+_cluster_time_not_used_on_sdam_setup_apm_callbacks(mongoc_client_t *client,
+                                                   cluster_time_not_used_on_sdam_context_t *context)
+{
+   mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+
+   mongoc_apm_set_server_heartbeat_started_cb(callbacks, _cluster_time_not_used_on_sdam_heartbeat_started);
+   mongoc_apm_set_server_heartbeat_succeeded_cb(callbacks, _cluster_time_not_used_on_sdam_heartbeat_succeeded);
+   mongoc_apm_set_server_heartbeat_failed_cb(callbacks, _cluster_time_not_used_on_sdam_heartbeat_failed);
+
+   mongoc_client_set_apm_callbacks(client, callbacks, (void *)context);
+
+   mongoc_apm_callbacks_destroy(callbacks);
+}
+
+// Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands.
+static void
+test_cluster_time_not_used_on_sdam(void)
+{
+   mongoc_client_t *client_a = NULL;
+   mongoc_client_t *client_b = NULL;
+   cluster_time_not_used_on_sdam_context_t context;
+   bson_t reply = BSON_INITIALIZER;
+   bson_error_t error;
+
+   // Create a client with a short heartbeat frequency.
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri();
+      mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+
+      client_a = test_framework_client_new_from_uri(uri, NULL);
+      ASSERT(client_a);
+
+      _cluster_time_not_used_on_sdam_setup_apm_callbacks(client_a, &context);
+
+      mongoc_uri_destroy(uri);
+   }
+
+   // Send a ping then record the cluster time.
+   bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
+
+   // Advance the cluster time on another client
+   {
+      client_b = test_framework_new_default_client();
+
+      mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
+      bson_t *const doc = BCON_NEW("advance", "$clusterTime");
+
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, doc, NULL, &reply, &error), error);
+      bson_destroy(doc);
+      mongoc_collection_destroy(coll);
+   }
+
+   context.n_started = 0;
+   context.n_succeeded = 0;
+   context.n_failed = 0;
+
+   bson_t *cluster_time_later = NULL;
+   do {
+      bson_destroy(cluster_time_later);
+      cluster_time_later = _ping_then_get_cluster_time(client_a);
+   } while (context.n_started == 0 || context.n_succeeded == 0);
+
+   ASSERT_EQUAL_BSON(cluster_time_initial, cluster_time_later);
+
+   bson_destroy(cluster_time_later);
+   bson_destroy(cluster_time_initial);
+
+   mongoc_client_destroy(client_b);
+   mongoc_client_destroy(client_a);
+}
+
 void
 test_sdam_monitoring_install(TestSuite *suite)
 {
@@ -1222,4 +1357,6 @@ test_sdam_monitoring_install(TestSuite *suite)
       suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
    TestSuite_AddLive(
       suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
+   TestSuite_AddLive(
+      suite, "/server_discovery_and_monitoring/monitoring/no_cluster_time", test_cluster_time_not_used_on_sdam);
 }
