@@ -1,3 +1,17 @@
+libmongoc 2.1.2
+===============
+
+## Fixes
+
+* Fix write command options handling.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+
+
+
 libmongoc 2.1.1
 ===============
 

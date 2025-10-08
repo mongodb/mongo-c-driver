@@ -2635,7 +2635,7 @@ mongoc_collection_create_indexes_with_opts (mongoc_collection_t *collection,
    }
    BSON_ASSERT (bson_append_array_builder_end (&cmd, indexes));
 
-   ok = mongoc_collection_write_command_with_opts(collection, &cmd, opts, reply_ptr, error);
+   ok = mongoc_collection_write_command_with_opts (collection, &cmd, opts, reply_ptr, error);
 
 fail:
    mongoc_server_stream_cleanup (server_stream);
