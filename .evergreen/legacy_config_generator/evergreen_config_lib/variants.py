@@ -55,7 +55,7 @@ all_variants = [
             OD([('name', 'link-with-cmake-windows-ssl'), ('distros', ['windows-vsCurrent-large'])]),
             OD([('name', 'link-with-cmake-windows-snappy'), ('distros', ['windows-vsCurrent-large'])]),
             OD([('name', 'link-with-cmake-mingw'), ('distros', ['windows-vsCurrent-large'])]),
-            OD([('name', 'link-with-pkg-config'), ('distros', ['ubuntu2204-test'])]),
+            OD([('name', 'link-with-pkg-config'), ('distros', ['ubuntu2204-large'])]),
             OD([('name', 'link-with-pkg-config-mac'), ('distros', ['macos-14-arm64'])]),
             'link-with-pkg-config-ssl',
             'link-with-bson',
