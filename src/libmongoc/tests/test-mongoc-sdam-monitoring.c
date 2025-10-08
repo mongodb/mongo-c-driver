@@ -1306,6 +1306,7 @@ test_cluster_time_not_used_on_sdam(void)
       bson_t *const doc = BCON_NEW("advance", "$clusterTime");
 
       ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, doc, NULL, &reply, &error), error);
+
       bson_destroy(doc);
       mongoc_collection_destroy(coll);
    }
