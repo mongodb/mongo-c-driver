@@ -218,6 +218,7 @@ all_variants = [
         'Windows (VS 2022)',
         'windows-vsCurrent-large',
         [
+            'debug-compile-sspi-winssl',
             '.authentication-tests .winssl',
         ],
         {'CC': 'Visual Studio 17 2022 Win64'},
