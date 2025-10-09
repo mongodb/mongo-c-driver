@@ -1195,10 +1195,10 @@ test_serverMonitoringMode(void)
 }
 
 static bson_t *
-_extract_cluster_time_from_ping_reply(const bson_t *reply)
+_extract_cluster_time(const bson_t *doc)
 {
    bson_iter_t iter;
-   ASSERT(bson_iter_init_find(&iter, reply, "$clusterTime"));
+   ASSERT(bson_iter_init_find(&iter, doc, "$clusterTime"));
    ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
 
    bson_t result;
@@ -1216,7 +1216,7 @@ _ping_then_get_cluster_time(mongoc_client_t *client)
    bson_error_t error;
    ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", ping, NULL, &reply, &error), error);
 
-   bson_t *const cluster_time = _extract_cluster_time_from_ping_reply(&reply);
+   bson_t *const cluster_time = _extract_cluster_time(&reply);
    ASSERT(cluster_time);
 
    bson_destroy(ping);
@@ -1228,7 +1228,21 @@ typedef struct {
    size_t n_started;
    size_t n_succeeded;
    size_t n_failed;
+   bson_t cluster_time_latest;
 } cluster_time_not_used_on_sdam_context_t;
+
+static void
+_cluster_time_not_used_on_sdam_context_init(cluster_time_not_used_on_sdam_context_t *context)
+{
+   memset(context, 0, sizeof(cluster_time_not_used_on_sdam_context_t));
+   bson_init(&context->cluster_time_latest);
+}
+
+static void
+_cluster_time_not_used_on_sdam_context_destroy(cluster_time_not_used_on_sdam_context_t *context)
+{
+   bson_destroy(&context->cluster_time_latest);
+}
 
 static void
 _cluster_time_not_used_on_sdam_heartbeat_started(const mongoc_apm_server_heartbeat_started_t *event)
@@ -1258,6 +1272,20 @@ _cluster_time_not_used_on_sdam_heartbeat_failed(const mongoc_apm_server_heartbea
 }
 
 static void
+_cluster_time_not_used_on_sdam_command_started(const mongoc_apm_command_started_t *event)
+{
+   cluster_time_not_used_on_sdam_context_t *const context =
+      (cluster_time_not_used_on_sdam_context_t *)mongoc_apm_command_started_get_context(event);
+
+   bson_t *const cluster_time = _extract_cluster_time(mongoc_apm_command_started_get_command(event));
+
+   bson_destroy(&context->cluster_time_latest);
+   bson_copy_to(cluster_time, &context->cluster_time_latest);
+
+   bson_destroy(cluster_time);
+}
+
+static void
 _cluster_time_not_used_on_sdam_setup_apm_callbacks(mongoc_client_t *client,
                                                    cluster_time_not_used_on_sdam_context_t *context)
 {
@@ -1266,6 +1294,7 @@ _cluster_time_not_used_on_sdam_setup_apm_callbacks(mongoc_client_t *client,
    mongoc_apm_set_server_heartbeat_started_cb(callbacks, _cluster_time_not_used_on_sdam_heartbeat_started);
    mongoc_apm_set_server_heartbeat_succeeded_cb(callbacks, _cluster_time_not_used_on_sdam_heartbeat_succeeded);
    mongoc_apm_set_server_heartbeat_failed_cb(callbacks, _cluster_time_not_used_on_sdam_heartbeat_failed);
+   mongoc_apm_set_command_started_cb(callbacks, _cluster_time_not_used_on_sdam_command_started);
 
    mongoc_client_set_apm_callbacks(client, callbacks, (void *)context);
 
@@ -1290,10 +1319,11 @@ test_cluster_time_not_used_on_sdam(void)
       client_a = test_framework_client_new_from_uri(uri, NULL);
       ASSERT(client_a);
 
-      _cluster_time_not_used_on_sdam_setup_apm_callbacks(client_a, &context);
-
       mongoc_uri_destroy(uri);
    }
+
+   _cluster_time_not_used_on_sdam_context_init(&context);
+   _cluster_time_not_used_on_sdam_setup_apm_callbacks(client_a, &context);
 
    // Send a ping to record the initial cluster time.
    bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
@@ -1311,32 +1341,35 @@ test_cluster_time_not_used_on_sdam(void)
       mongoc_collection_destroy(coll);
    }
 
+   bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+
    // Send pings until we detect a heartbeat.
    {
       context.n_started = 0;
       context.n_succeeded = 0;
       context.n_failed = 0;
 
-      bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+      // Sleep for the minimum heartbeat time to avoid sending more pings than necessary.
+      mlib_sleep_for(MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS, ms);
 
       do {
          // TODO: We need to send a command to trigger the topology scanner, but wouldn't that also update client_a's
          // cluster time?
-         ASSERT_OR_PRINT(mongoc_client_command_simple(client_a, "admin", ping, NULL, &reply, &error), error);
+         ASSERT_OR_PRINT(mongoc_client_command_simple(client_a, "admin", ping, NULL, NULL, &error), error);
       } while (context.n_started == 0 || context.n_succeeded == 0);
 
       // TODO: What about failed heartbeats?
-
-      bson_destroy(ping);
    }
 
    // Send another ping to record the most recent cluster time.
-   bson_t *const cluster_time_later = _ping_then_get_cluster_time(client_a);
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client_a, "admin", ping, NULL, NULL, &error), error);
 
-   ASSERT_EQUAL_BSON(cluster_time_initial, cluster_time_later);
+   ASSERT_EQUAL_BSON(cluster_time_initial, &context.cluster_time_latest);
 
-   bson_destroy(cluster_time_later);
+   bson_destroy(ping);
    bson_destroy(cluster_time_initial);
+
+   _cluster_time_not_used_on_sdam_context_destroy(&context);
 
    mongoc_client_destroy(client_b);
    mongoc_client_destroy(client_a);
