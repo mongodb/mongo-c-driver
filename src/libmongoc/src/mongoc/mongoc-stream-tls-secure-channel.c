@@ -560,7 +560,7 @@ _mongoc_stream_tls_secure_channel_decrypt(mongoc_stream_tls_secure_channel_t *se
                secure_channel->recv_renegotiate = true;
 
                /* mongoc_secure_channel_handshake_step_2 passes the received SECBUFFER_EXTRA to
-                * InitializeSecurityContext */s
+                * InitializeSecurityContext */
                secure_channel->connecting_state = ssl_connect_2_writing;
                ret = mongoc_secure_channel_handshake_step_2(secure_channel->tls, secure_channel->hostname, &error);
                if (!ret) {
