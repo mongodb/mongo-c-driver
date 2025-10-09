@@ -202,6 +202,16 @@ all_variants = [
         {'CC': 'Visual Studio 15 2017 Win64'},
     ),
     Variant(
+        'windows-2022',
+        'Windows (VS 2022)',
+        'windows-vsCurrent-large',
+        [
+            'debug-compile-sspi-winssl',
+            '.authentication-tests .winssl',
+        ],
+        {'CC': 'Visual Studio 17 2022 Win64'},
+    ),
+    Variant(
         'mingw-windows2016',
         'MinGW-W64 (Windows Server 2016)',
         'windows-vsCurrent-large',

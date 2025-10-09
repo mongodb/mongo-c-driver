@@ -22,6 +22,8 @@
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 #include <mongoc/mongoc-shared-private.h>
 
+#include <mongoc/mongoc-stream-tls.h>
+
 #include <bson/bson.h>
 
 #include <subauth.h> // For SCH_CREDENTIALS
@@ -77,6 +79,8 @@ typedef struct {
  */
 typedef struct {
    ssl_connect_state connecting_state;
+   mongoc_stream_tls_t *tls;   /* back pointer to parent */
+   char *hostname;             /* the host name the stream was created with */
    mongoc_shared_ptr cred_ptr; // Manages a mongoc_secure_channel_cred.
    mongoc_secure_channel_cred_handle *cred_handle;
    mongoc_secure_channel_ctxt *ctxt;
@@ -87,6 +91,7 @@ typedef struct {
    unsigned long req_flags, ret_flags;
    int recv_unrecoverable_err;  /* _mongoc_stream_tls_secure_channel_read had an
                                    unrecoverable err */
+   bool recv_renegotiate;       /* true if server requests renegotiation on TLS 1.3 */
    bool recv_sspi_close_notify; /* true if connection closed by close_notify */
    bool recv_connection_closed; /* true if connection closed, regardless how */
 } mongoc_stream_tls_secure_channel_t;
@@ -103,6 +108,7 @@ mongoc_secure_channel_cred_deleter(void *cred_void);
 
 struct _mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new_with_creds(struct _mongoc_stream_t *base_stream,
+                                                const char *host,
                                                 const struct _mongoc_ssl_opt_t *opt,
                                                 mongoc_shared_ptr cred_ptr /* optional */);
 

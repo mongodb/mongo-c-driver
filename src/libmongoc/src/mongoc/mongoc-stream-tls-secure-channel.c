@@ -191,6 +191,7 @@ _mongoc_stream_tls_secure_channel_destroy(mongoc_stream_t *stream)
 
    mongoc_stream_destroy(tls->base_stream);
 
+   bson_free(secure_channel->hostname);
    bson_free(secure_channel);
    bson_free(stream);
 
@@ -464,6 +465,7 @@ _mongoc_stream_tls_secure_channel_decrypt(mongoc_stream_tls_secure_channel_t *se
 {
    size_t size = 0;
    size_t remaining;
+   bool secbuf_extra_received = false;
    SecBuffer inbuf[4];
    SecBufferDesc inbuf_desc;
    SECURITY_STATUS sspi_status = SEC_E_OK;
@@ -474,6 +476,8 @@ _mongoc_stream_tls_secure_channel_decrypt(mongoc_stream_tls_secure_channel_t *se
 
    /* decrypt loop */
    while (secure_channel->encdata_offset > 0 && sspi_status == SEC_E_OK) {
+      secbuf_extra_received = false;
+
       /* prepare data buffer for DecryptMessage call */
       _mongoc_secure_channel_init_sec_buffer(&inbuf[0],
                                              SECBUFFER_DATA,
@@ -534,6 +538,8 @@ _mongoc_stream_tls_secure_channel_decrypt(mongoc_stream_tls_secure_channel_t *se
                secure_channel->encdata_offset = inbuf[3].cbBuffer;
             }
 
+            secbuf_extra_received = true;
+
             TRACE("encrypted data cached: offset %d length %d",
                   (int)secure_channel->encdata_offset,
                   (int)secure_channel->encdata_length);
@@ -546,6 +552,28 @@ _mongoc_stream_tls_secure_channel_decrypt(mongoc_stream_tls_secure_channel_t *se
          /* check if server wants to renegotiate the connection context */
          if (sspi_status == SEC_I_RENEGOTIATE) {
             TRACE("%s", "remote party requests renegotiation");
+
+            if (secbuf_extra_received) {
+               bool ret;
+               bson_error_t error;
+
+               secure_channel->recv_renegotiate = true;
+
+               /* mongoc_secure_channel_handshake_step_2 passes the received SECBUFFER_EXTRA to
+                * InitializeSecurityContext */
+               secure_channel->connecting_state = ssl_connect_2_writing;
+               ret = mongoc_secure_channel_handshake_step_2(secure_channel->tls, secure_channel->hostname, &error);
+               if (!ret) {
+                  TRACE("TLS 1.3 renegotiation failed: %s", error.message);
+                  secure_channel->recv_unrecoverable_err = true;
+                  return;
+               }
+
+               /* now continue decrypting data */
+               secure_channel->connecting_state = ssl_connect_done;
+               sspi_status = SEC_E_OK;
+               continue;
+            }
          }
          /* check if the server closed the connection */
          else if (sspi_status == SEC_I_CONTEXT_EXPIRED) {
@@ -677,6 +705,12 @@ _mongoc_stream_tls_secure_channel_readv(
       while (iov_pos < iov[i].iov_len) {
          ssize_t read_ret = _mongoc_stream_tls_secure_channel_read(
             stream, (char *)iov[i].iov_base + iov_pos, (int)(iov[i].iov_len - iov_pos));
+
+         /* used up all read bytes for tls renegotiation, try reading again to get next message */
+         if (read_ret == 0 && secure_channel->recv_renegotiate) {
+            secure_channel->recv_renegotiate = false;
+            continue;
+         }
 
          if (read_ret < 0) {
             RETURN(-1);
@@ -990,13 +1024,13 @@ mongoc_secure_channel_cred_deleter(void *cred_void)
 mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new(mongoc_stream_t *base_stream, const char *host, mongoc_ssl_opt_t *opt, int client)
 {
-   BSON_UNUSED(host);
    BSON_UNUSED(client);
-   return mongoc_stream_tls_secure_channel_new_with_creds(base_stream, opt, MONGOC_SHARED_PTR_NULL);
+   return mongoc_stream_tls_secure_channel_new_with_creds(base_stream, host, opt, MONGOC_SHARED_PTR_NULL);
 }
 
 mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
+                                                const char *host,
                                                 const mongoc_ssl_opt_t *opt,
                                                 mongoc_shared_ptr cred_ptr)
 {
@@ -1010,6 +1044,8 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
 
 
    secure_channel = (mongoc_stream_tls_secure_channel_t *)bson_malloc0(sizeof *secure_channel);
+
+   secure_channel->hostname = bson_strdup(host);
 
    secure_channel->decdata_buffer = bson_malloc(MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
    secure_channel->decdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
@@ -1034,6 +1070,8 @@ mongoc_stream_tls_secure_channel_new_with_creds(mongoc_stream_t *base_stream,
    tls->ctx = (void *)secure_channel;
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;
+
+   secure_channel->tls = tls;
 
    TRACE("%s", "SSL/TLS connection with endpoint AcquireCredentialsHandle");
 
