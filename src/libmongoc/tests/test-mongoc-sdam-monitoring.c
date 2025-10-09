@@ -1411,7 +1411,7 @@ test_cluster_time_not_used_on_sdam_pooled(void)
 
    // Advance the cluster time on another client
    {
-      mongoc_client_t *const client_b = test_framework_new_default_client();
+      mongoc_client_t *const client_b = mongoc_client_pool_pop(pool);
 
       mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
       bson_t *const doc = BCON_NEW("advance", "$clusterTime");
