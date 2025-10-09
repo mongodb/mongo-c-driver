@@ -262,6 +262,11 @@ fi
 # For mongocryptd, by integration-tests.sh.
 export PATH="${det_dir:?}/mongodb/bin:${PATH:-}"
 
+# Ensure no pre-existing and outdated coverage data is present prior to execution.
+if [[ "${COVERAGE}" == "ON" ]]; then
+  find . -name '*.gcda' -exec rm -f {} \+
+fi
+
 case "${OSTYPE}" in
 cygwin)
   check_mongocryptd
@@ -289,12 +294,17 @@ esac
 if [[ "${COVERAGE}" == "ON" ]]; then
   declare -a coverage_args=(
     "--capture"
-    "--derive-func-data"
     "--directory"
     "."
     "--output-file"
     ".coverage.lcov"
     "--no-external"
+
+    # WARNING: unexecuted block on non-branch line with non-zero hit count.
+    "--rc" "geninfo_unexecuted_blocks=1"
+
+    # ERROR: mismatched end line for ...
+    "--ignore-errors" "mismatch"
   )
 
   {
