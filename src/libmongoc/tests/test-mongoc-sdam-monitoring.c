@@ -1295,7 +1295,7 @@ test_cluster_time_not_used_on_sdam(void)
       mongoc_uri_destroy(uri);
    }
 
-   // Send a ping then record the cluster time.
+   // Send a ping to record the initial cluster time.
    bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
 
    // Advance the cluster time on another client
@@ -1311,15 +1311,27 @@ test_cluster_time_not_used_on_sdam(void)
       mongoc_collection_destroy(coll);
    }
 
-   context.n_started = 0;
-   context.n_succeeded = 0;
-   context.n_failed = 0;
+   // Send pings until we detect a heartbeat.
+   {
+      context.n_started = 0;
+      context.n_succeeded = 0;
+      context.n_failed = 0;
 
-   bson_t *cluster_time_later = NULL;
-   do {
-      bson_destroy(cluster_time_later);
-      cluster_time_later = _ping_then_get_cluster_time(client_a);
-   } while (context.n_started == 0 || context.n_succeeded == 0);
+      bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+
+      do {
+         // TODO: We need to send a command to trigger the topology scanner, but wouldn't that also update client_a's
+         // cluster time?
+         ASSERT_OR_PRINT(mongoc_client_command_simple(client_a, "admin", ping, NULL, &reply, &error), error);
+      } while (context.n_started == 0 || context.n_succeeded == 0);
+
+      // TODO: What about failed heartbeats?
+
+      bson_destroy(ping);
+   }
+
+   // Send another ping to record the most recent cluster time.
+   bson_t *const cluster_time_later = _ping_then_get_cluster_time(client_a);
 
    ASSERT_EQUAL_BSON(cluster_time_initial, cluster_time_later);
 
