@@ -66,7 +66,7 @@ sudo chroot ./trixie-chroot /bin/bash -c '(\
   git checkout debian/1.30.4-1 && \
   git checkout ${CURRENT_BRANCH} && \
   git checkout debian/1.30.4-1 -- ./debian/ && \
-  git commit -m "fetch debian directory from the debian/trixie branch" && \
+  git commit -m "fetch debian directory from the debian/unstable branch" && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
@@ -98,7 +98,7 @@ sudo chroot ./trixie-i386-chroot /bin/bash -c '(\
   git checkout debian/1.30.4-1 && \
   git checkout ${CURRENT_BRANCH} && \
   git checkout debian/1.30.4-1 -- ./debian/ && \
-  git commit -m "fetch debian directory from the debian/trixie branch" && \
+  git commit -m "fetch debian directory from the debian/unstable branch" && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
