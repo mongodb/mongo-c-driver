@@ -182,6 +182,7 @@ mongoc_gridfs_bucket_open_upload_stream_with_id(mongoc_gridfs_bucket_t *bucket,
    file->bucket = bucket;
    file->chunk_size = gridfs_opts.chunkSizeBytes;
    file->metadata = bson_copy(&gridfs_opts.metadata);
+   BSON_ASSERT(gridfs_opts.chunkSizeBytes > 0); // Validated in _mongoc_gridfs_bucket_opts_parse.
    file->buffer = bson_malloc((size_t)gridfs_opts.chunkSizeBytes);
    file->in_buffer = 0;
 
@@ -346,6 +347,16 @@ mongoc_gridfs_bucket_open_download_stream(mongoc_gridfs_bucket_t *bucket,
    }
 
    bson_destroy(&file_doc);
+
+   if (file->chunk_size <= 0) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_GRIDFS,
+                        MONGOC_ERROR_GRIDFS_CORRUPT,
+                        "File document contains invalid chunk size: %" PRId32,
+                        file->chunk_size);
+      _mongoc_gridfs_bucket_file_destroy(file);
+      return NULL;
+   }
 
    file->file_id = (bson_value_t *)bson_malloc0(sizeof *(file->file_id));
    bson_value_copy(file_id, file->file_id);
