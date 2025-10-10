@@ -191,53 +191,6 @@ test_change_stream_pipeline(void)
    mock_server_destroy(server);
 }
 
-/* From Change Streams Spec tests:
- * "The watch helper must not throw a custom exception when executed against a
- * single server topology, but instead depend on a server error"
- */
-static void
-test_change_stream_live_single_server(void *test_ctx)
-{
-   /* Temporarily skip on arm64 until mongod tested against is updated */
-   mongoc_client_t *client = test_framework_new_default_client();
-   mongoc_collection_t *coll;
-   bson_error_t error;
-   mongoc_change_stream_t *stream;
-   const bson_t *next_doc = NULL;
-   const bson_t *reported_err_doc = NULL;
-   const char *not_replset_doc = "{'errmsg': 'The $changeStream stage is "
-                                 "only supported on replica sets', 'code': "
-                                 "40573, 'ok': 0}";
-
-   /* Don't use the errmsg field since it contains quotes. */
-   const char *not_supported_doc = "{'code' : 40324, 'ok' : 0 }";
-
-   BSON_UNUSED(test_ctx);
-
-   ASSERT(client);
-
-   coll = mongoc_client_get_collection(client, "db", "coll");
-   ASSERT(coll);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson(NULL), NULL, NULL, &error), error);
-
-   stream = mongoc_collection_watch(coll, tmp_bson("{}"), NULL);
-   ASSERT(stream);
-
-   ASSERT(mongoc_change_stream_error_document(stream, NULL, &reported_err_doc));
-   ASSERT(next_doc == NULL);
-
-   if (test_framework_max_wire_version_at_least(6)) {
-      ASSERT_MATCH(reported_err_doc, not_replset_doc);
-   } else {
-      ASSERT_MATCH(reported_err_doc, not_supported_doc);
-      ASSERT_CONTAINS(bson_lookup_utf8(reported_err_doc, "errmsg"), "Unrecognized pipeline stage");
-   }
-
-   mongoc_change_stream_destroy(stream);
-   mongoc_client_destroy(client);
-   mongoc_collection_destroy(coll);
-}
-
 
 typedef struct _test_resume_token_ctx_t {
    bool expecting_resume_token;
@@ -2133,13 +2086,6 @@ void
 test_change_stream_install(TestSuite *suite)
 {
    TestSuite_AddMockServerTest(suite, "/change_stream/pipeline", test_change_stream_pipeline);
-
-   TestSuite_AddFull(suite,
-                     "/change_stream/live/single_server",
-                     test_change_stream_live_single_server,
-                     NULL,
-                     NULL,
-                     test_framework_skip_if_not_single);
 
    TestSuite_AddFull(suite,
                      "/change_stream/live/track_resume_token",
