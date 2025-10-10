@@ -358,6 +358,16 @@ mongoc_gridfs_bucket_open_download_stream(mongoc_gridfs_bucket_t *bucket,
       return NULL;
    }
 
+   if (file->length < 0) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_GRIDFS,
+                        MONGOC_ERROR_GRIDFS_CORRUPT,
+                        "File document contains invalid length: %" PRId64,
+                        file->length);
+      _mongoc_gridfs_bucket_file_destroy(file);
+      return NULL;
+   }
+
    file->file_id = (bson_value_t *)bson_malloc0(sizeof *(file->file_id));
    bson_value_copy(file_id, file->file_id);
    file->bucket = bucket;
