@@ -1048,6 +1048,110 @@ test_gridfs_bucket_opts(void)
    mongoc_client_destroy(client);
 }
 
+// Regression test for CDRIVER-6125
+static void
+test_bad_sizes(void)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   bson_error_t error;
+
+   mongoc_database_t *db = mongoc_client_get_database(client, "test_bad_sizes");
+   mongoc_database_drop(db, NULL);
+
+   // Test negative chunkSize:
+   {
+      bson_t *doc = tmp_bson(BSON_STR({
+         "_id" : 0,
+         "filename" : "foo.txt",
+         "length" : 1000,
+         "chunkSize" : -1, // Negative!
+         "uploadDate" : {"$date" : 1234567890000}
+      }));
+
+      bson_iter_t id_iter;
+      ASSERT(bson_iter_init_find(&id_iter, doc, "_id"));
+      const bson_value_t *id_value = bson_iter_value(&id_iter);
+
+      // Insert manually:
+      {
+         mongoc_collection_t *files = mongoc_database_get_collection(db, "fs.files");
+         mongoc_collection_insert_one(files, doc, NULL, NULL, &error);
+         mongoc_collection_destroy(files);
+      }
+
+      // Try to read:
+      {
+         mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+         ASSERT_OR_PRINT(bucket, error);
+         mongoc_stream_t *stream = mongoc_gridfs_bucket_open_download_stream(bucket, id_value, &error);
+         ASSERT(!stream);
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "invalid chunk size");
+         mongoc_gridfs_bucket_destroy(bucket);
+      }
+
+      // Try to write:
+      {
+         mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+         ASSERT_OR_PRINT(bucket, error);
+         bson_t *opts = tmp_bson(BSON_STR({"chunkSizeBytes" : 0}));
+         mongoc_stream_t *stream = mongoc_gridfs_bucket_open_upload_stream(bucket, "foo.txt", opts, NULL, &error);
+         ASSERT(!stream);
+         ASSERT_ERROR_CONTAINS(
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "should be greater than 0");
+         mongoc_gridfs_bucket_destroy(bucket);
+      }
+   }
+
+   mongoc_database_drop(db, NULL);
+
+   // Test zero chunkSize:
+   {
+      bson_t *doc = tmp_bson(BSON_STR({
+         "_id" : 0,
+         "filename" : "foo.txt",
+         "length" : 1000,
+         "chunkSize" : 0, // Zero!
+         "uploadDate" : {"$date" : 1234567890000}
+      }));
+
+      bson_iter_t id_iter;
+      ASSERT(bson_iter_init_find(&id_iter, doc, "_id"));
+      const bson_value_t *id_value = bson_iter_value(&id_iter);
+
+      // Insert manually:
+      {
+         mongoc_collection_t *files = mongoc_database_get_collection(db, "fs.files");
+         mongoc_collection_insert_one(files, doc, NULL, NULL, &error);
+         mongoc_collection_destroy(files);
+      }
+
+      // Try to read:
+      {
+         mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+         ASSERT_OR_PRINT(bucket, error);
+         mongoc_stream_t *stream = mongoc_gridfs_bucket_open_download_stream(bucket, id_value, &error);
+         ASSERT(!stream);
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "invalid chunk size");
+         mongoc_gridfs_bucket_destroy(bucket);
+      }
+
+      // Try to write:
+      {
+         mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+         ASSERT_OR_PRINT(bucket, error);
+         bson_t *opts = tmp_bson(BSON_STR({"chunkSizeBytes" : -1}));
+         mongoc_stream_t *stream = mongoc_gridfs_bucket_open_upload_stream(bucket, "foo.txt", opts, NULL, &error);
+         ASSERT(!stream);
+         ASSERT_ERROR_CONTAINS(
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "should be greater than 0");
+         mongoc_gridfs_bucket_destroy(bucket);
+      }
+   }
+
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+}
+
 void
 test_gridfs_bucket_install(TestSuite *suite)
 {
@@ -1070,4 +1174,5 @@ test_gridfs_bucket_install(TestSuite *suite)
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddLive(suite, "/gridfs/options", test_gridfs_bucket_opts);
+   TestSuite_AddLive(suite, "/gridfs/bad_sizes", test_bad_sizes);
 }
