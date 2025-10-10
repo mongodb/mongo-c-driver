@@ -1148,6 +1148,76 @@ test_bad_sizes(void)
       }
    }
 
+   mongoc_database_drop(db, NULL);
+
+   // Test negative length:
+   {
+      bson_t *doc = tmp_bson(BSON_STR({
+         "_id" : 0,
+         "filename" : "foo.txt",
+         "length" : -1, // Negative!
+         "chunkSize" : 10,
+         "uploadDate" : {"$date" : 1234567890000}
+      }));
+
+      bson_iter_t id_iter;
+      ASSERT(bson_iter_init_find(&id_iter, doc, "_id"));
+      const bson_value_t *id_value = bson_iter_value(&id_iter);
+
+      // Insert manually:
+      {
+         mongoc_collection_t *files = mongoc_database_get_collection(db, "fs.files");
+         mongoc_collection_insert_one(files, doc, NULL, NULL, &error);
+         mongoc_collection_destroy(files);
+      }
+
+      // Try to read:
+      {
+         mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+         mongoc_stream_t *stream = mongoc_gridfs_bucket_open_download_stream(bucket, id_value, &error);
+         ASSERT(!stream);
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "invalid length");
+         mongoc_gridfs_bucket_destroy(bucket);
+      }
+   }
+
+   mongoc_database_drop(db, NULL);
+
+   // Test a zero length (OK):
+   {
+      bson_t *doc = tmp_bson(BSON_STR({
+         "_id" : 0,
+         "filename" : "foo.txt",
+         "length" : 0, // Zero!
+         "chunkSize" : 10,
+         "uploadDate" : {"$date" : 1234567890000}
+      }));
+
+      bson_iter_t id_iter;
+      ASSERT(bson_iter_init_find(&id_iter, doc, "_id"));
+      const bson_value_t *id_value = bson_iter_value(&id_iter);
+
+      // Insert manually:
+      {
+         mongoc_collection_t *files = mongoc_database_get_collection(db, "fs.files");
+         mongoc_collection_insert_one(files, doc, NULL, NULL, &error);
+         mongoc_collection_destroy(files);
+      }
+
+      // Try to read:
+      {
+         mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+         mongoc_stream_t *stream = mongoc_gridfs_bucket_open_download_stream(bucket, id_value, &error);
+         ASSERT(stream);
+         // OK. Gets back an empty read.
+         uint8_t buf[64];
+         ssize_t r = mongoc_stream_read(stream, buf, sizeof buf, 0, 0);
+         ASSERT_CMPINT(r, ==, 0);
+         mongoc_stream_destroy(stream);
+         mongoc_gridfs_bucket_destroy(bucket);
+      }
+   }
+
    mongoc_database_destroy(db);
    mongoc_client_destroy(client);
 }
