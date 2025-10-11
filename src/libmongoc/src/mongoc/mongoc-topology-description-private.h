@@ -112,6 +112,7 @@ mongoc_topology_description_handle_hello(mongoc_topology_description_t *topology
                                          uint32_t server_id,
                                          const bson_t *hello_response,
                                          int64_t rtt_msec,
+                                         bool update_cluster_time,
                                          const bson_error_t *error /* IN */);
 
 mongoc_server_description_t const *

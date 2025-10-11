@@ -1353,7 +1353,7 @@ mongoc_topology_description_invalidate_server(mongoc_topology_description_t *td,
    }
 
    /* send NULL hello reply */
-   mongoc_topology_description_handle_hello(td, log_and_monitor, id, NULL, MONGOC_RTT_UNSET, error);
+   mongoc_topology_description_handle_hello(td, log_and_monitor, id, NULL, MONGOC_RTT_UNSET, false, error);
 }
 
 /*
@@ -2134,6 +2134,7 @@ mongoc_topology_description_handle_hello(mongoc_topology_description_t *topology
                                          uint32_t server_id,
                                          const bson_t *hello_response,
                                          int64_t rtt_msec,
+                                         bool update_cluster_time,
                                          const bson_error_t *error /* IN */)
 {
    mongoc_topology_description_t *prev_td = NULL;
@@ -2218,7 +2219,9 @@ mongoc_topology_description_handle_hello(mongoc_topology_description_t *topology
       }
    }
 
-   mongoc_topology_description_update_cluster_time(topology, hello_response);
+   if (update_cluster_time) {
+      mongoc_topology_description_update_cluster_time(topology, hello_response);
+   }
 
    if (prev_sd) {
       sd_changed = !_mongoc_server_description_equal(prev_sd, sd);

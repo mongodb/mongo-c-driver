@@ -1198,7 +1198,9 @@ static bson_t *
 _extract_cluster_time(const bson_t *doc)
 {
    bson_iter_t iter;
-   ASSERT(bson_iter_init_find(&iter, doc, "$clusterTime"));
+   if (!bson_iter_init_find(&iter, doc, "$clusterTime")) {
+      return NULL;
+   }
    ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
 
    bson_t result;
@@ -1278,6 +1280,10 @@ _cluster_time_not_used_on_sdam_command_started(const mongoc_apm_command_started_
       (cluster_time_not_used_on_sdam_context_t *)mongoc_apm_command_started_get_context(event);
 
    bson_t *const cluster_time = _extract_cluster_time(mongoc_apm_command_started_get_command(event));
+
+   if (!cluster_time) {
+      return;
+   }
 
    bson_destroy(&context->cluster_time_latest);
    bson_copy_to(cluster_time, &context->cluster_time_latest);
@@ -1382,13 +1388,17 @@ test_cluster_time_not_used_on_sdam_pooled(void)
    mongoc_client_t *client_a = NULL;
    cluster_time_not_used_on_sdam_context_t context;
 
+   mongoc_uri_t *const uri = test_framework_get_uri();
+
    {
-      mongoc_uri_t *const uri = test_framework_get_uri();
-      mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+      mongoc_uri_t *const uri_with_short_heartbeat_frequency = mongoc_uri_copy(uri);
+      mongoc_uri_set_option_as_int32(uri_with_short_heartbeat_frequency,
+                                     MONGOC_URI_HEARTBEATFREQUENCYMS,
+                                     MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
 
-      pool = test_framework_client_pool_new_from_uri(uri, NULL);
+      pool = test_framework_client_pool_new_from_uri(uri_with_short_heartbeat_frequency, NULL);
 
-      mongoc_uri_destroy(uri);
+      mongoc_uri_destroy(uri_with_short_heartbeat_frequency);
    }
 
    _cluster_time_not_used_on_sdam_context_init(&context);
@@ -1411,7 +1421,7 @@ test_cluster_time_not_used_on_sdam_pooled(void)
 
    // Advance the cluster time on another client
    {
-      mongoc_client_t *const client_b = mongoc_client_pool_pop(pool);
+      mongoc_client_t *const client_b = test_framework_client_new_from_uri(uri, NULL);
 
       mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
       bson_t *const doc = BCON_NEW("advance", "$clusterTime");
@@ -1421,7 +1431,7 @@ test_cluster_time_not_used_on_sdam_pooled(void)
 
       bson_destroy(doc);
       mongoc_collection_destroy(coll);
-      mongoc_client_pool_push(pool, client_b);
+      mongoc_client_destroy(client_b);
    }
 
    // HACK: Deterministically detect a heartbeat instead of just sleeping like this.
@@ -1438,6 +1448,8 @@ test_cluster_time_not_used_on_sdam_pooled(void)
    }
 
    ASSERT_EQUAL_BSON(cluster_time_initial, &context.cluster_time_latest);
+
+   mongoc_uri_destroy(uri);
 
    _cluster_time_not_used_on_sdam_context_destroy(&context);
 

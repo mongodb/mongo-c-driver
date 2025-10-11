@@ -123,12 +123,22 @@ test_get_servers(void)
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host(tdmod.new_td, "a");
-   mongoc_topology_description_handle_hello(
-      tdmod.new_td, &log_and_monitor, sd_a->id, tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+   mongoc_topology_description_handle_hello(tdmod.new_td,
+                                            &log_and_monitor,
+                                            sd_a->id,
+                                            tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
+                                            100,
+                                            /*update_cluster_time=*/true,
+                                            NULL);
 
    sd_c = _sd_for_host(tdmod.new_td, "c");
-   mongoc_topology_description_handle_hello(
-      tdmod.new_td, &log_and_monitor, sd_c->id, tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+   mongoc_topology_description_handle_hello(tdmod.new_td,
+                                            &log_and_monitor,
+                                            sd_c->id,
+                                            tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
+                                            100,
+                                            /*update_cluster_time=*/true,
+                                            NULL);
 
    sds = mongoc_topology_description_get_servers(tdmod.new_td, &n);
    ASSERT_CMPSIZE_T((size_t)2, ==, n);
@@ -181,15 +191,25 @@ test_topology_version_equal(void)
    mongoc_log_and_monitor_instance_set_apm_callbacks(&topology->log_and_monitor, callbacks, &num_calls);
 
    sd = _sd_for_host(tdmod.new_td, "host");
-   mongoc_topology_description_handle_hello(
-      tdmod.new_td, &topology->log_and_monitor, sd->id, tmp_bson("{'ok': 1, 'topologyVersion': " TV_2 " }"), 100, NULL);
+   mongoc_topology_description_handle_hello(tdmod.new_td,
+                                            &topology->log_and_monitor,
+                                            sd->id,
+                                            tmp_bson("{'ok': 1, 'topologyVersion': " TV_2 " }"),
+                                            100,
+                                            /*update_cluster_time=*/true,
+                                            NULL);
 
    ASSERT_CMPINT(num_calls, ==, 1);
 
    /* The subsequent hello has a topologyVersion that compares less, so the
     * hello skips. */
-   mongoc_topology_description_handle_hello(
-      tdmod.new_td, &topology->log_and_monitor, sd->id, tmp_bson("{'ok': 1, 'topologyVersion': " TV_1 " }"), 100, NULL);
+   mongoc_topology_description_handle_hello(tdmod.new_td,
+                                            &topology->log_and_monitor,
+                                            sd->id,
+                                            tmp_bson("{'ok': 1, 'topologyVersion': " TV_1 " }"),
+                                            100,
+                                            /*update_cluster_time=*/true,
+                                            NULL);
 
    ASSERT_CMPINT(num_calls, ==, 1);
 
@@ -222,12 +242,22 @@ test_topology_description_new_copy(void)
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host(tdmod.new_td, "a");
-   mongoc_topology_description_handle_hello(
-      tdmod.new_td, &log_and_monitor, sd_a->id, tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+   mongoc_topology_description_handle_hello(tdmod.new_td,
+                                            &log_and_monitor,
+                                            sd_a->id,
+                                            tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
+                                            100,
+                                            /*update_cluster_time=*/true,
+                                            NULL);
 
    sd_c = _sd_for_host(tdmod.new_td, "c");
-   mongoc_topology_description_handle_hello(
-      tdmod.new_td, &log_and_monitor, sd_c->id, tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+   mongoc_topology_description_handle_hello(tdmod.new_td,
+                                            &log_and_monitor,
+                                            sd_c->id,
+                                            tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
+                                            100,
+                                            /*update_cluster_time=*/true,
+                                            NULL);
 
    /* td was copied before original was updated */
    sds = mongoc_topology_description_get_servers(td_copy, &n);

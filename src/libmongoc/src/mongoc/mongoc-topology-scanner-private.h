@@ -238,8 +238,6 @@ void
 mongoc_topology_scanner_set_stream_initiator(mongoc_topology_scanner_t *ts, mongoc_stream_initiator_t si, void *ctx);
 bool
 _mongoc_topology_scanner_set_appname(mongoc_topology_scanner_t *ts, const char *name);
-void
-_mongoc_topology_scanner_set_cluster_time(mongoc_topology_scanner_t *ts, const bson_t *cluster_time);
 
 void
 _mongoc_topology_scanner_set_dns_cache_timeout(mongoc_topology_scanner_t *ts, int64_t timeout_ms);
