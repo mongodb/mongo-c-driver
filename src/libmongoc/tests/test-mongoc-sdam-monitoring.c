@@ -1349,7 +1349,7 @@ test_cluster_time_not_used_on_sdam_single(void)
 
    bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
 
-   // Send pings until we detect a heartbeat.
+   // Send commands until we detect a heartbeat.
    {
       context.n_started = 0;
       context.n_succeeded = 0;
@@ -1359,9 +1359,21 @@ test_cluster_time_not_used_on_sdam_single(void)
       mlib_sleep_for(MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS, ms);
 
       do {
-         // TODO: We need to send a command to trigger the topology scanner, but wouldn't that also update client_a's
-         // cluster time?
-         ASSERT_OR_PRINT(mongoc_client_command_simple(client_a, "admin", ping, NULL, NULL, &error), error);
+         // We need to send a command in order to force a heartbeat. However, we do not want a reply as that may update
+         // the client's cluster time, so we will use an unacknowledged write.
+         mongoc_write_concern_t *wc = mongoc_write_concern_new();
+         mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+
+         bson_t *const opts = bson_new();
+
+         mongoc_write_concern_append(wc, opts);
+
+         ASSERT_OR_PRINT(
+            mongoc_client_write_command_with_opts(client_a, "test", tmp_bson("{'insert': 'test'}"), opts, NULL, &error),
+            error);
+
+         bson_destroy(opts);
+         mongoc_write_concern_destroy(wc);
       } while (context.n_started == 0 || context.n_succeeded == 0);
 
       // TODO: What about failed heartbeats?
