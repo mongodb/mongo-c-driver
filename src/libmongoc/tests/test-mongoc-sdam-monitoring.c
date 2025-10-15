@@ -1,4 +1,5 @@
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-topology-description-apm-private.h>
 
 #include <mongoc/mongoc.h>
@@ -1227,6 +1228,7 @@ _ping_then_get_cluster_time(mongoc_client_t *client)
 }
 
 typedef struct {
+   mongoc_cond_t heartbeat_cond;
    bson_mutex_t heartbeat_mutex;
    size_t n_started;
    size_t n_succeeded;
@@ -1237,6 +1239,8 @@ static void
 _cluster_time_not_used_on_sdam_context_init(cluster_time_not_used_on_sdam_context_t *context)
 {
    memset(context, 0, sizeof(cluster_time_not_used_on_sdam_context_t));
+
+   mongoc_cond_init(&context->heartbeat_cond);
    bson_mutex_init(&context->heartbeat_mutex);
    bson_init(&context->cluster_time_latest);
 }
@@ -1246,6 +1250,7 @@ _cluster_time_not_used_on_sdam_context_destroy(cluster_time_not_used_on_sdam_con
 {
    bson_destroy(&context->cluster_time_latest);
    bson_mutex_destroy(&context->heartbeat_mutex);
+   mongoc_cond_destroy(&context->heartbeat_cond);
 }
 
 static void
@@ -1259,6 +1264,8 @@ _cluster_time_not_used_on_sdam_heartbeat_started(const mongoc_apm_server_heartbe
    ++context->n_started;
 
    bson_mutex_unlock(&context->heartbeat_mutex);
+
+   mongoc_cond_signal(&context->heartbeat_cond);
 }
 
 static void
@@ -1272,6 +1279,8 @@ _cluster_time_not_used_on_sdam_heartbeat_succeeded(const mongoc_apm_server_heart
    ++context->n_succeeded;
 
    bson_mutex_unlock(&context->heartbeat_mutex);
+
+   mongoc_cond_signal(&context->heartbeat_cond);
 }
 
 static void
@@ -1451,23 +1460,18 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
       bson_mutex_lock(&context.heartbeat_mutex);
 
       const size_t n_started_pre_heartbeat = context.n_started;
-      const size_t n_succeeded_pre_heartbeat = context.n_succeeded;
-
-      bson_mutex_unlock(&context.heartbeat_mutex);
-
-      size_t n_started_latest = 0;
-      size_t n_succeeded_latest = 0;
 
       do {
-         mlib_sleep_for(MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS, ms);
+         mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
+      } while (context.n_started <= n_started_pre_heartbeat);
 
-         bson_mutex_lock(&context.heartbeat_mutex);
+      const size_t n_succeeded_pre_heartbeat = context.n_succeeded;
 
-         n_started_latest = context.n_started;
-         n_succeeded_latest = context.n_succeeded;
+      do {
+         mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
+      } while (context.n_succeeded <= n_succeeded_pre_heartbeat);
 
-         bson_mutex_unlock(&context.heartbeat_mutex);
-      } while (n_started_latest <= n_started_pre_heartbeat || n_succeeded_latest <= n_succeeded_pre_heartbeat);
+      bson_mutex_unlock(&context.heartbeat_mutex);
    }
 
    // Send another ping to record the most recent cluster time.
