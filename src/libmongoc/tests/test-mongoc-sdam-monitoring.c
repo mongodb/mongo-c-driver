@@ -1294,8 +1294,10 @@ _cluster_time_not_used_on_sdam_command_started(const mongoc_apm_command_started_
 
 // Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands (single threaded).
 static void
-test_cluster_time_not_used_on_sdam_single(void)
+test_cluster_time_not_used_on_sdam_single(void *ctx)
 {
+   BSON_UNUSED(ctx);
+
    cluster_time_not_used_on_sdam_context_t context;
    mongoc_client_t *client_a = NULL;
    bson_t reply = BSON_INITIALIZER;
@@ -1390,8 +1392,10 @@ test_cluster_time_not_used_on_sdam_single(void)
 
 // Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands (pooled).
 static void
-test_cluster_time_not_used_on_sdam_pooled(void)
+test_cluster_time_not_used_on_sdam_pooled(void *ctx)
 {
+   BSON_UNUSED(ctx);
+
    cluster_time_not_used_on_sdam_context_t context;
 
    mongoc_client_pool_t *pool = NULL;
@@ -1514,10 +1518,16 @@ test_sdam_monitoring_install(TestSuite *suite)
       suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
    TestSuite_AddLive(
       suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
-   TestSuite_AddLive(suite,
+   TestSuite_AddFull(suite,
                      "/server_discovery_and_monitoring/monitoring/no_cluster_time/single",
-                     test_cluster_time_not_used_on_sdam_single);
-   TestSuite_AddLive(suite,
+                     test_cluster_time_not_used_on_sdam_single,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_cluster_time);
+   TestSuite_AddFull(suite,
                      "/server_discovery_and_monitoring/monitoring/no_cluster_time/pooled",
-                     test_cluster_time_not_used_on_sdam_pooled);
+                     test_cluster_time_not_used_on_sdam_pooled,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_cluster_time);
 }
