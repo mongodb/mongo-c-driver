@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bson/bson.h>
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
 #include <mongoc/mongoc-crypt-private.h>
@@ -1643,6 +1644,7 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
                                const char *query_type,
                                const int64_t *contention_factor,
                                const bson_t *range_opts,
+                               const bson_t *text_opts,
                                bson_error_t *error)
 {
    BSON_ASSERT_PARAM(crypt);
@@ -1652,6 +1654,7 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
    BSON_OPTIONAL_PARAM(keyaltname);
    BSON_OPTIONAL_PARAM(query_type);
    BSON_OPTIONAL_PARAM(range_opts);
+   BSON_OPTIONAL_PARAM(text_opts);
    BSON_OPTIONAL_PARAM(error);
 
    _state_machine_t *state_machine = NULL;
@@ -1681,6 +1684,18 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
          goto fail;
       }
       mongocrypt_binary_destroy(binary_range_opts);
+   }
+
+   if (text_opts != NULL) {
+      /* mongocrypt error checks and parses text options */
+      mongocrypt_binary_t *binary_text_opts =
+         mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(text_opts), text_opts->len);
+      if (!mongocrypt_ctx_setopt_algorithm_text(state_machine->ctx, binary_text_opts)) {
+         mongocrypt_binary_destroy(binary_text_opts);
+         _ctx_check_error(state_machine->ctx, error, true);
+         goto fail;
+      }
+      mongocrypt_binary_destroy(binary_text_opts);
    }
 
    if (query_type != NULL) {
@@ -1749,6 +1764,7 @@ _mongoc_crypt_explicit_encrypt(_mongoc_crypt_t *crypt,
                                const char *query_type,
                                const int64_t *contention_factor,
                                const bson_t *range_opts,
+                               const bson_t *text_opts,
                                const bson_value_t *value_in,
                                bson_value_t *value_out,
                                bson_error_t *error)
@@ -1774,7 +1790,7 @@ _mongoc_crypt_explicit_encrypt(_mongoc_crypt_t *crypt,
    value_out->value_type = BSON_TYPE_EOD;
 
    state_machine = _create_explicit_state_machine(
-      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, error);
+      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, text_opts, error);
    if (!state_machine) {
       goto fail;
    }
@@ -1824,6 +1840,7 @@ _mongoc_crypt_explicit_encrypt_expression(_mongoc_crypt_t *crypt,
                                           const char *query_type,
                                           const int64_t *contention_factor,
                                           const bson_t *range_opts,
+                                          const bson_t *text_opts,
                                           const bson_t *expr_in,
                                           bson_t *expr_out,
                                           bson_error_t *error)
@@ -1835,6 +1852,7 @@ _mongoc_crypt_explicit_encrypt_expression(_mongoc_crypt_t *crypt,
    BSON_OPTIONAL_PARAM(keyaltname);
    BSON_OPTIONAL_PARAM(query_type);
    BSON_OPTIONAL_PARAM(range_opts);
+   BSON_OPTIONAL_PARAM(text_opts);
    BSON_ASSERT_PARAM(expr_in);
    BSON_ASSERT_PARAM(expr_out);
    BSON_OPTIONAL_PARAM(error);
@@ -1849,7 +1867,7 @@ _mongoc_crypt_explicit_encrypt_expression(_mongoc_crypt_t *crypt,
    bson_init(expr_out);
 
    state_machine = _create_explicit_state_machine(
-      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, error);
+      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, text_opts, error);
    if (!state_machine) {
       goto fail;
    }
