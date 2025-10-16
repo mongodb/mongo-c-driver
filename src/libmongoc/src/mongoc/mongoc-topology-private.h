@@ -21,7 +21,6 @@
 
 #include <common-atomic-private.h>
 #include <mongoc/mongoc-client-session-private.h>
-#include <mongoc/mongoc-cluster-oidc-private.h>
 #include <mongoc/mongoc-crypt-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
@@ -34,7 +33,6 @@
 #include <mongoc/mongoc-ts-pool-private.h>
 
 #include <mongoc/mongoc-config.h>
-#include <mongoc/mongoc-oidc-callback.h>
 #include <mongoc/mongoc-sleep.h>
 #include <mongoc/mongoc-uri.h>
 
