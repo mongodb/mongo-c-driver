@@ -1331,6 +1331,8 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
       client_a = test_framework_client_new_from_uri(uri, NULL);
       ASSERT(client_a);
 
+      test_framework_set_ssl_opts(client_a);
+
       mongoc_uri_destroy(uri);
    }
 
@@ -1419,6 +1421,9 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
                                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
 
       pool = test_framework_client_pool_new_from_uri(uri_with_short_heartbeat_frequency, NULL);
+      ASSERT(pool);
+
+      test_framework_set_pool_ssl_opts(pool);
 
       mongoc_uri_destroy(uri_with_short_heartbeat_frequency);
    }
@@ -1438,6 +1443,9 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
    // Advance the cluster time on another client.
    {
       mongoc_client_t *const client_b = test_framework_client_new_from_uri(uri, NULL);
+      ASSERT(client_b);
+
+      test_framework_set_ssl_opts(client_b);
 
       mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
       bson_t *const doc = BCON_NEW("advance", "$clusterTime");
