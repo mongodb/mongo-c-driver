@@ -1215,13 +1215,14 @@ _ping_then_get_cluster_time(mongoc_client_t *client)
 {
    bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
 
-   bson_t reply = BSON_INITIALIZER;
+   bson_t reply;
    bson_error_t error;
    ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", ping, NULL, &reply, &error), error);
 
    bson_t *const cluster_time = _extract_cluster_time(&reply);
    ASSERT(cluster_time);
 
+   bson_destroy(&reply);
    bson_destroy(ping);
 
    return cluster_time;
