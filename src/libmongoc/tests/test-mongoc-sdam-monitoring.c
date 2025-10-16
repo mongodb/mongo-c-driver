@@ -1230,8 +1230,8 @@ _ping_then_get_cluster_time(mongoc_client_t *client)
 typedef struct {
    mongoc_cond_t heartbeat_cond;
    bson_mutex_t heartbeat_mutex;
-   size_t n_started;
-   size_t n_succeeded;
+   size_t n_heartbeat_started;
+   size_t n_heartbeat_succeeded;
    bson_t cluster_time_latest;
 } cluster_time_not_used_on_sdam_context_t;
 
@@ -1261,7 +1261,7 @@ _cluster_time_not_used_on_sdam_heartbeat_started(const mongoc_apm_server_heartbe
 
    bson_mutex_lock(&context->heartbeat_mutex);
 
-   ++context->n_started;
+   ++context->n_heartbeat_started;
 
    bson_mutex_unlock(&context->heartbeat_mutex);
 
@@ -1276,7 +1276,7 @@ _cluster_time_not_used_on_sdam_heartbeat_succeeded(const mongoc_apm_server_heart
 
    bson_mutex_lock(&context->heartbeat_mutex);
 
-   ++context->n_succeeded;
+   ++context->n_heartbeat_succeeded;
 
    bson_mutex_unlock(&context->heartbeat_mutex);
 
@@ -1360,8 +1360,8 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
 
    // Send commands until we detect a heartbeat.
    {
-      const size_t n_started_pre_heartbeat = context.n_started;
-      const size_t n_succeeded_pre_heartbeat = context.n_succeeded;
+      const size_t n_started_pre_heartbeat = context.n_heartbeat_started;
+      const size_t n_succeeded_pre_heartbeat = context.n_heartbeat_succeeded;
 
       // Sleep for the minimum heartbeat time to avoid sending more commands than necessary.
       mlib_sleep_for(MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS, ms);
@@ -1378,7 +1378,8 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
 
       do {
          ASSERT_OR_PRINT(mongoc_client_write_command_with_opts(client_a, "test", command, opts, NULL, &error), error);
-      } while (context.n_started <= n_started_pre_heartbeat || context.n_succeeded <= n_succeeded_pre_heartbeat);
+      } while (context.n_heartbeat_started <= n_started_pre_heartbeat ||
+               context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat);
 
       bson_destroy(command);
       bson_destroy(opts);
@@ -1452,17 +1453,17 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
    {
       bson_mutex_lock(&context.heartbeat_mutex);
 
-      const size_t n_started_pre_heartbeat = context.n_started;
+      const size_t n_started_pre_heartbeat = context.n_heartbeat_started;
 
       do {
          mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
-      } while (context.n_started <= n_started_pre_heartbeat);
+      } while (context.n_heartbeat_started <= n_started_pre_heartbeat);
 
-      const size_t n_succeeded_pre_heartbeat = context.n_succeeded;
+      const size_t n_succeeded_pre_heartbeat = context.n_heartbeat_succeeded;
 
       do {
          mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
-      } while (context.n_succeeded <= n_succeeded_pre_heartbeat);
+      } while (context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat);
 
       bson_mutex_unlock(&context.heartbeat_mutex);
    }
