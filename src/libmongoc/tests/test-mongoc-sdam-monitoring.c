@@ -1195,6 +1195,15 @@ test_serverMonitoringMode(void)
    printf("'connect with serverMonitoringMode=poll' ... end\n");
 }
 
+static mongoc_uri_t *
+_make_uri_with_fast_heartbeat_frequency()
+{
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+
+   return uri;
+}
+
 static bson_t *
 _extract_cluster_time(const bson_t *doc)
 {
@@ -1314,6 +1323,22 @@ _cluster_time_not_used_on_sdam_make_apm_callbacks(void)
    return callbacks;
 }
 
+static void
+_advance_cluster_time_on_new_client(void)
+{
+   mongoc_client_t *const client_b = test_framework_new_default_client();
+
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
+   bson_t *const doc = BCON_NEW("advance", "$clusterTime");
+
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, doc, NULL, NULL, &error), error);
+
+   bson_destroy(doc);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client_b);
+}
+
 // Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands (single threaded).
 static void
 test_cluster_time_not_used_on_sdam_single(void *ctx)
@@ -1326,8 +1351,7 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
 
    // Create a client with a short heartbeat frequency.
    {
-      mongoc_uri_t *const uri = test_framework_get_uri();
-      mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+      mongoc_uri_t *const uri = _make_uri_with_fast_heartbeat_frequency();
 
       client_a = test_framework_client_new_from_uri(uri, NULL);
       ASSERT(client_a);
@@ -1349,17 +1373,7 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
    bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
 
    // Advance the cluster time on another client.
-   {
-      mongoc_client_t *const client_b = test_framework_new_default_client();
-      mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
-      bson_t *const doc = BCON_NEW("advance", "$clusterTime");
-
-      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, doc, NULL, NULL, &error), error);
-
-      bson_destroy(doc);
-      mongoc_collection_destroy(coll);
-      mongoc_client_destroy(client_b);
-   }
+   _advance_cluster_time_on_new_client();
 
    // Send commands until we detect a heartbeat.
    {
@@ -1412,21 +1426,17 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
    cluster_time_not_used_on_sdam_context_t context;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client_a = NULL;
-   mongoc_uri_t *const uri = test_framework_get_uri();
    bson_error_t error;
 
    {
-      mongoc_uri_t *const uri_with_short_heartbeat_frequency = mongoc_uri_copy(uri);
-      mongoc_uri_set_option_as_int32(uri_with_short_heartbeat_frequency,
-                                     MONGOC_URI_HEARTBEATFREQUENCYMS,
-                                     MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+      mongoc_uri_t *const uri = _make_uri_with_fast_heartbeat_frequency();
 
-      pool = test_framework_client_pool_new_from_uri(uri_with_short_heartbeat_frequency, NULL);
+      pool = test_framework_client_pool_new_from_uri(uri, NULL);
       ASSERT(pool);
 
       test_framework_set_pool_ssl_opts(pool);
 
-      mongoc_uri_destroy(uri_with_short_heartbeat_frequency);
+      mongoc_uri_destroy(uri);
    }
 
    {
@@ -1442,21 +1452,7 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
    bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
 
    // Advance the cluster time on another client.
-   {
-      mongoc_client_t *const client_b = test_framework_client_new_from_uri(uri, NULL);
-      ASSERT(client_b);
-
-      test_framework_set_ssl_opts(client_b);
-
-      mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
-      bson_t *const doc = BCON_NEW("advance", "$clusterTime");
-
-      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, doc, NULL, NULL, &error), error);
-
-      bson_destroy(doc);
-      mongoc_collection_destroy(coll);
-      mongoc_client_destroy(client_b);
-   }
+   _advance_cluster_time_on_new_client();
 
    // Wait until we detect one full heartbeat.
    {
@@ -1487,7 +1483,6 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
    ASSERT_EQUAL_BSON(cluster_time_initial, &context.cluster_time_latest);
 
    bson_destroy(cluster_time_initial);
-   mongoc_uri_destroy(uri);
    mongoc_client_pool_push(pool, client_a);
    mongoc_client_pool_destroy(pool);
    _cluster_time_not_used_on_sdam_context_destroy(&context);
