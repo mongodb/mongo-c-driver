@@ -1510,6 +1510,8 @@ test_sdam_monitoring_install(TestSuite *suite)
       suite, "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns", test_heartbeat_fails_dns_pooled);
    TestSuite_AddMockServerTest(
       suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
+   TestSuite_AddLive(
+      suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
    TestSuite_AddFull(suite,
                      "/server_discovery_and_monitoring/monitoring/no_cluster_time/single",
                      test_cluster_time_not_used_on_sdam_single,
@@ -1524,6 +1526,4 @@ test_sdam_monitoring_install(TestSuite *suite)
                      NULL,
                      TestSuite_CheckLive,
                      test_framework_skip_if_no_cluster_time);
-   TestSuite_AddLive(
-      suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
 }
