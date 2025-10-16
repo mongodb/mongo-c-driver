@@ -23,15 +23,12 @@ from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
 
-from config_generator.components.funcs.install_uv import InstallUV
-
 
 def _create_tasks():
     # passtask is expected to run on a remote Azure VM and succeed at obtaining credentials.
     passtask = NamedTask(task_name='testazurekms-task')
     passtask.commands = [
         func('fetch-source'),
-        func(InstallUV.name),
         shell_exec(
             r"""
             echo "Building test-azurekms ... begin"
@@ -76,7 +73,6 @@ def _create_tasks():
     failtask = NamedTask(task_name='testazurekms-fail-task')
     failtask.commands = [
         func('fetch-source'),
-        func(InstallUV.name),
         shell_exec(
             r"""
             pushd mongoc
@@ -105,7 +101,7 @@ def _create_variant():
         name='testazurekms-variant',
         display_name='Azure KMS',
         # Azure Virtual Machine created is Debian 10.
-        run_on='debian11-small',
+        run_on='debian11-latest-small',
         tasks=['testazurekms_task_group', 'testazurekms-fail-task'],
         batchtime=20160,
     )  # Use a batchtime of 14 days as suggested by the CSFLE test README

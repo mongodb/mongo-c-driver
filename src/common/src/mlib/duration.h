@@ -268,7 +268,7 @@ _mlibDurationMaxBetween(mlib_duration lhs, mlib_duration rhs)
  * - `us` (microseconds)
  * - `ms` (milliseconds)
  * - `s` (seconds)
- * - `min` (minutes)
+ * - `mn` (minutes)
  * - `h` (hours)
  *
  * Other unit suffixes will generate a compile-time error
@@ -319,7 +319,7 @@ _mlibCreateDurationFromUnitCount_s(const mlib_upsized_integer n)
 }
 
 static inline mlib_duration
-_mlibCreateDurationFromUnitCount_min(const mlib_upsized_integer n)
+_mlibCreateDurationFromUnitCount_mn(const mlib_upsized_integer n)
 {
    return mlib_duration(_mlibCreateDurationFromUnitCount_us(n), mul, 60 * 1000 * 1000);
 }
@@ -327,7 +327,7 @@ _mlibCreateDurationFromUnitCount_min(const mlib_upsized_integer n)
 static inline mlib_duration
 _mlibCreateDurationFromUnitCount_h(const mlib_upsized_integer n)
 {
-   return mlib_duration(_mlibCreateDurationFromUnitCount_min(n), mul, 60);
+   return mlib_duration(_mlibCreateDurationFromUnitCount_mn(n), mul, 60);
 }
 
 /**

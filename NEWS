@@ -9,6 +9,32 @@ libmongoc 2.2.0 (unreleased)
 
 - Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
 
+libmongoc 2.1.2
+===============
+
+## Fixes
+
+* Fix write command options handling.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+
+
+libmongoc 1.30.6
+================
+
+Fixes:
+
+  * Fix write command options handling.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
+
+
 libmongoc 2.1.1
 ===============
 

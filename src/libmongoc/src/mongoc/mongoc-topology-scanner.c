@@ -850,8 +850,8 @@ _mongoc_topology_scanner_node_setup_stream_for_tls(mongoc_topology_scanner_node_
       tls_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context(
          stream, node->host.host, node->ts->ssl_opts, 1, node->ts->openssl_ctx);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-      tls_stream =
-         mongoc_stream_tls_new_with_secure_channel_cred(stream, node->ts->ssl_opts, node->ts->secure_channel_cred_ptr);
+      tls_stream = mongoc_stream_tls_new_with_secure_channel_cred(
+         stream, node->host.host, node->ts->ssl_opts, node->ts->secure_channel_cred_ptr);
 #else
       tls_stream = mongoc_stream_tls_new_with_hostname(stream, node->host.host, node->ts->ssl_opts, 1);
 #endif
