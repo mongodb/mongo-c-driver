@@ -1345,7 +1345,7 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
    // Send a ping to record the initial cluster time.
    bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
 
-   // Advance the cluster time on another client
+   // Advance the cluster time on another client.
    {
       mongoc_client_t *const client_b = test_framework_new_default_client();
       mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
@@ -1434,7 +1434,7 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
 
    bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client_a);
 
-   // Advance the cluster time on another client
+   // Advance the cluster time on another client.
    {
       mongoc_client_t *const client_b = test_framework_client_new_from_uri(uri, NULL);
 
@@ -1448,7 +1448,7 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
       mongoc_client_destroy(client_b);
    }
 
-   // Wait until we detect one full heartbeat
+   // Wait until we detect one full heartbeat.
    {
       bson_mutex_lock(&context.heartbeat_mutex);
 
