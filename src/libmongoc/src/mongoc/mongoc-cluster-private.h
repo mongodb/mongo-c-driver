@@ -82,8 +82,6 @@ mongoc_cluster_reset_sockettimeoutms(mongoc_cluster_t *cluster);
 
 void
 mongoc_cluster_disconnect_node(mongoc_cluster_t *cluster, uint32_t id);
-
-
 int32_t
 mongoc_cluster_get_max_bson_obj_size(mongoc_cluster_t *cluster);
 
