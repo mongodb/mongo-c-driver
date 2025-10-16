@@ -1517,11 +1517,13 @@ test_sdam_monitoring_install(TestSuite *suite)
                      test_cluster_time_not_used_on_sdam_single,
                      NULL,
                      NULL,
+                     TestSuite_CheckLive,
                      test_framework_skip_if_no_cluster_time);
    TestSuite_AddFull(suite,
                      "/server_discovery_and_monitoring/monitoring/no_cluster_time/pooled",
                      test_cluster_time_not_used_on_sdam_pooled,
                      NULL,
                      NULL,
+                     TestSuite_CheckLive,
                      test_framework_skip_if_no_cluster_time);
 }
