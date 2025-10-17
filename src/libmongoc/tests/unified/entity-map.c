@@ -142,8 +142,8 @@ uri_apply_options(mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
             bson_destroy(expect);
             goto done;
          }
-         
-      bson_destroy(expect);
+
+         bson_destroy(expect);
       }
 
       else {
