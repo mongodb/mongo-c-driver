@@ -116,7 +116,6 @@ typedef struct mongoc_topology_scanner {
    bson_mutex_t handshake_cmd_mtx;
    bson_t *handshake_cmd;
    handshake_state_t handshake_state;
-   bson_t cluster_time;
    bson_oid_t topology_id;
    const char *appname;
 
