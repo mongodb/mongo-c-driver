@@ -26,7 +26,6 @@ struct _mongoc_cluster_t; // Forward declare.
 
 #include <bson/error.h>
 
-// mongoc_oidc_append_speculative_auth adds speculative auth.
 bool
 mongoc_oidc_append_speculative_auth(const char *access_token, uint32_t server_id, bson_t *cmd, bson_error_t *error);
 
