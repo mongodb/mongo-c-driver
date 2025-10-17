@@ -697,34 +697,35 @@ _try_get_oidc_connection_cache(mongoc_cluster_t *cluster, uint32_t server_id, bs
 bool
 mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
-   bool ok = run_command_monitored(cluster, cmd, reply, error);
-   if (!ok) {
-      const char *mechanism = mongoc_uri_get_auth_mechanism(cluster->uri);
-      bool using_oidc = mechanism && 0 == strcasecmp(mechanism, "MONGODB-OIDC");
-
-      // From auth spec:
-      // > If any operation fails with `ReauthenticationRequired` (error code 391) and MONGODB-OIDC is in use, the
-      // > driver MUST reauthenticate the connection.
-      if (using_oidc && _mongoc_error_is_reauth(error, cluster->client->error_api_version)) {
-         if (reply) {
-            bson_destroy(reply);
-            bson_init(reply);
-         }
-
-         mongoc_oidc_connection_cache_t *oidc_connection_cache =
-            _try_get_oidc_connection_cache(cluster, cmd->server_stream->sd->id, error);
-         if (!oidc_connection_cache) {
-            return false;
-         }
-
-         if (!_mongoc_cluster_reauth_node_oidc(
-                cluster, cmd->server_stream->stream, oidc_connection_cache, cmd->server_stream->sd, error)) {
-            return false;
-         }
-         return run_command_monitored(cluster, cmd, reply, error);
-      }
+   if (run_command_monitored(cluster, cmd, reply, error)) {
+      return true;
    }
-   return ok;
+
+   const char *mechanism = mongoc_uri_get_auth_mechanism(cluster->uri);
+   bool using_oidc = mechanism && 0 == strcasecmp(mechanism, "MONGODB-OIDC");
+
+   // From auth spec:
+   // > If any operation fails with `ReauthenticationRequired` (error code 391) and MONGODB-OIDC is in use, the
+   // > driver MUST reauthenticate the connection.
+   if (using_oidc && _mongoc_error_is_reauth(error, cluster->client->error_api_version)) {
+      if (reply) {
+         bson_destroy(reply);
+         bson_init(reply);
+      }
+
+      mongoc_oidc_connection_cache_t *oidc_connection_cache =
+         _try_get_oidc_connection_cache(cluster, cmd->server_stream->sd->id, error);
+      if (!oidc_connection_cache) {
+         return false;
+      }
+
+      if (!_mongoc_cluster_reauth_node_oidc(
+             cluster, cmd->server_stream->stream, oidc_connection_cache, cmd->server_stream->sd, error)) {
+         return false;
+      }
+      return run_command_monitored(cluster, cmd, reply, error);
+   }
+   return false;
 }
 
 
