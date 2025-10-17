@@ -1322,9 +1322,9 @@ _heartbeat_no_cluster_time_make_apm_callbacks(void)
 static void
 _advance_cluster_time_on_new_client(void)
 {
-   mongoc_client_t *const client_b = test_framework_new_default_client();
+   mongoc_client_t *const client = test_framework_new_default_client();
 
-   mongoc_collection_t *const coll = mongoc_client_get_collection(client_b, "test", "test");
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "test", "test");
    bson_t *const doc = BCON_NEW("advance", "$clusterTime");
 
    bson_error_t error;
@@ -1332,7 +1332,7 @@ _advance_cluster_time_on_new_client(void)
 
    bson_destroy(doc);
    mongoc_collection_destroy(coll);
-   mongoc_client_destroy(client_b);
+   mongoc_client_destroy(client);
 }
 
 // Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands (single threaded).
