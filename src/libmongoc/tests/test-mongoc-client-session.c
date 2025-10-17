@@ -1046,9 +1046,9 @@ started(const mongoc_apm_command_started_t *event)
 
    // Since $clusterTime is no longer used with SDAM, there may not be a cluster time until the first successful
    // command completes.
-   const bool should_have_cluster_time = test->n_succeeded >= 1;
+   const bool should_have_cluster_time = test->acknowledged && test->n_succeeded >= 1;
 
-   if (test->acknowledged && !has_cluster_time && should_have_cluster_time) {
+   if (should_have_cluster_time && !has_cluster_time) {
       test_error("no $clusterTime sent with command %s", cmd_name);
    }
 
