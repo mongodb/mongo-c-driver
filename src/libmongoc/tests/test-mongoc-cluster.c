@@ -429,10 +429,11 @@ test_cluster_time_cmd_started_cb(const mongoc_apm_command_started_t *event)
     * $clusterTime, we send it to any server. In this case, we got a
     * $clusterTime during the initial handshake. */
    if (test_framework_clustertime_supported()) {
-      BSON_ASSERT(bson_iter_init_find(&iter, cmd, "$clusterTime"));
-      BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
+      // The first command may not have a cluster time since cluster time is omitted from SDAM commands.
+      if (test->calls > 1) {
+         BSON_ASSERT(bson_iter_init_find(&iter, cmd, "$clusterTime"));
+         BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
 
-      if (test->calls == 2) {
          /* previous call to cmd_succeeded_cb saved server's clusterTime */
          BSON_ASSERT(!bson_empty0(test->cluster_time));
          bson_iter_bson(&iter, &client_cluster_time);
@@ -786,13 +787,6 @@ future_ping(mongoc_client_t *client, bson_error_t *error)
 static void
 _test_cluster_time_comparison(bool pooled)
 {
-   const char *hello = tmp_str("{'ok': 1.0,"
-                               " 'isWritablePrimary': true,"
-                               " 'msg': 'isdbgrid',"
-                               " 'minWireVersion': %d,"
-                               " 'maxWireVersion': %d}",
-                               WIRE_VERSION_MIN,
-                               WIRE_VERSION_MAX);
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
@@ -803,6 +797,14 @@ _test_cluster_time_comparison(bool pooled)
    bson_t *ping = tmp_bson("{'ping': 1}");
 
    server = mock_server_new();
+   mock_server_auto_hello(server,
+                          "{'ok': 1.0,"
+                          " 'isWritablePrimary': true,"
+                          " 'msg': 'isdbgrid',"
+                          " 'minWireVersion': %d,"
+                          " 'maxWireVersion': %d}",
+                          WIRE_VERSION_MIN,
+                          WIRE_VERSION_MAX);
    mock_server_run(server);
    uri = mongoc_uri_copy(mock_server_get_uri(server));
    mongoc_uri_set_option_as_int32(uri, "heartbeatFrequencyMS", 500);
@@ -816,17 +818,7 @@ _test_cluster_time_comparison(bool pooled)
 
    future = future_ping(client, &error);
 
-   /* timestamp is 1 */
-   request = mock_server_receives_any_hello(server);
-   replies_with_cluster_time(request, 1, 1, hello);
-
-   if (pooled) {
-      /* a pooled client handshakes its own connection */
-      request = mock_server_receives_any_hello(server);
-      replies_with_cluster_time(request, 1, 1, hello);
-   }
-
-   request = receives_with_cluster_time(server, 1, 1, ping);
+   request = mock_server_receives_msg(server, 0, ping);
 
    /* timestamp is 2, increment is 2 */
    replies_with_cluster_time(request, 2, 2, "{'ok': 1.0}");
@@ -845,42 +837,6 @@ _test_cluster_time_comparison(bool pooled)
    request = receives_with_cluster_time(server, 2, 2, ping);
    reply_to_request_with_ok_and_destroy(request);
    assert_ok(future, &error);
-
-   if (pooled) {
-      /* wait for next heartbeat, it should contain newest cluster time */
-      request = mock_server_receives_any_hello_with_match(server,
-                                                          "{'$clusterTime': "
-                                                          "{'clusterTime': {'$timestamp': "
-                                                          "{'t': 2, 'i': 2}}}}",
-
-                                                          "{'$clusterTime': "
-                                                          "{'clusterTime': {'$timestamp': "
-                                                          "{'t': 2, 'i': 2}}}}");
-
-      replies_with_cluster_time(request, 2, 1, hello);
-
-      mongoc_client_pool_push(pool, client);
-      mongoc_client_pool_destroy(pool);
-   } else {
-      /* trigger next heartbeat, it should contain newest cluster time */
-      mlib_sleep_for(750, ms);
-      future = future_ping(client, &error);
-      request = mock_server_receives_any_hello_with_match(server,
-                                                          "{'$clusterTime': "
-                                                          "{'clusterTime': {'$timestamp': "
-                                                          "{'t': 2, 'i': 2}}}}",
-
-                                                          "{'$clusterTime': "
-                                                          "{'clusterTime': {'$timestamp': "
-                                                          "{'t': 2, 'i': 2}}}}");
-
-      replies_with_cluster_time(request, 2, 1, hello);
-      request = receives_with_cluster_time(server, 2, 2, ping);
-      reply_to_request_with_ok_and_destroy(request);
-      assert_ok(future, &error);
-
-      mongoc_client_destroy(client);
-   }
 
    mongoc_uri_destroy(uri);
    mock_server_destroy(server);
