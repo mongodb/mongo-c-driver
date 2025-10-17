@@ -123,7 +123,30 @@ uri_apply_options(mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_appname(uri, bson_iter_utf8(&iter, NULL));
       } else if (0 == bson_strcasecmp(MONGOC_URI_SERVERMONITORINGMODE, key)) {
          mongoc_uri_set_option_as_utf8(uri, key, bson_iter_utf8(&iter, NULL));
-      } else {
+      } else if (0 == bson_strcasecmp(MONGOC_URI_AUTHMECHANISM, key)) {
+         mongoc_uri_set_auth_mechanism(uri, bson_iter_utf8(&iter, NULL));
+      } else if (0 == bson_strcasecmp(MONGOC_URI_AUTHMECHANISMPROPERTIES, key)) {
+         bson_t props;
+         if (!_mongoc_iter_document_as_bson(&iter, &props, error)) {
+            goto done;
+         }
+         bson_t *expect = BCON_NEW("$$placeholder", BCON_INT32(1));
+         if (!bson_equal(&props, expect)) {
+            test_set_error(error, "expected authMechanismProperties to be placeholder");
+            bson_destroy(expect);
+            goto done;
+         }
+
+         if (!test_framework_is_oidc()) {
+            test_set_error(error, "expected test with authMechanismProperties to only apply to OIDC");
+            bson_destroy(expect);
+            goto done;
+         }
+
+         bson_destroy(expect);
+      }
+
+      else {
          test_set_error(error, "Unimplemented test runner support for URI option: %s", key);
          goto done;
       }
@@ -875,8 +898,14 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       test_error("Error while parsing entity object: %s", bsonParseError);
    }
 
-   /* Build the client's URI. */
-   uri = test_framework_get_uri();
+   // Build client's URI:
+   {
+      char *uri_noauth = test_framework_get_uri_str_no_auth(NULL); // Apply auth later.
+      uri = mongoc_uri_new(uri_noauth);
+      ASSERT(uri);
+      bson_free(uri_noauth);
+   }
+
    /* Apply "useMultipleMongoses" rules to URI.
     * If useMultipleMongoses is true, modify the connection string to add a
     * host. If useMultipleMongoses is false, require that the connection string
@@ -906,6 +935,21 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       }
    }
 
+   // Apply username/password (if applicable), unless URI requests OIDC.
+   const char *auth_mech = mongoc_uri_get_auth_mechanism(uri);
+   bool uri_requests_oidc = auth_mech && 0 == strcmp(auth_mech, "MONGODB-OIDC");
+   if (!uri_requests_oidc) {
+      char *test_username = test_framework_get_admin_user();
+      char *test_password = test_framework_get_admin_password();
+      if (test_username && test_password) {
+         // Test environment indicates server supports auth.
+         mongoc_uri_set_username(uri, test_username);
+         mongoc_uri_set_password(uri, test_password);
+      }
+      bson_free(test_username);
+      bson_free(test_password);
+   }
+
    if (!mongoc_uri_has_option(uri, MONGOC_URI_HEARTBEATFREQUENCYMS)) {
       can_reduce_heartbeat = true;
    }
@@ -915,6 +959,11 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
 
    client = test_framework_client_new_from_uri(uri, api);
+
+   if (uri_requests_oidc) {
+      test_framework_set_oidc_callback(client);
+   }
+
    test_framework_set_ssl_opts(client);
    mongoc_client_set_error_api(client, MONGOC_ERROR_API_VERSION_2);
    entity->value = client;

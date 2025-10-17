@@ -4206,6 +4206,21 @@ tasks:
           args:
             - -c
             - .evergreen/scripts/run-mock-server-tests.sh
+  - name: oidc-auth-test-task
+    run_on:
+      - ubuntu2404-small
+    commands:
+      - func: fetch-source
+      - func: sasl-cyrus-openssl-compile
+      - command: expansions.update
+        params:
+          updates:
+            - { key: CC, value: clang }
+            - { key: AUTH, value: auth }
+            - { key: OIDC, value: oidc }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: replica_set }
+      - func: run-tests
   - name: openssl-compat-1.0.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
     tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]

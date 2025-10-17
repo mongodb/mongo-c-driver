@@ -253,6 +253,12 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
+  - name: oidc
+    display_name: OIDC
+    run_on:
+      - ubuntu2404-small
+    tasks:
+      - name: test-oidc-task-group
   - name: openssl-compat-matrix
     display_name: OpenSSL Compatibility Matrix
     tasks:

@@ -327,6 +327,12 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
    bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
+   if (test_framework_is_oidc()) {
+      // Skip when testing OIDC to avoid authorization error trying to run killAllSessions.
+      ret = true;
+      goto done;
+   }
+
    if (0 == test_framework_skip_if_no_txns()) {
       ret = true;
       goto done;
@@ -423,7 +429,8 @@ test_runner_new(void)
       test_error("error terminating transactions: %s", error.message);
    }
 
-   {
+   // Do not check server parameters when testing OIDC to avoid authorization error running getParameter.
+   if (!test_framework_is_oidc()) {
       bson_t reply;
       /* Cache server parameters to check runOnRequirements. */
       if (!mongoc_client_command_simple(
@@ -746,6 +753,24 @@ check_run_on_requirement(test_runner_t *test_runner,
          *fail_reason = bson_strdup_printf("Server does not match auth requirement, test %s authentication.",
                                            auth_requirement ? "requires" : "forbids");
 
+         return false;
+      }
+
+      if (0 == strcmp(key, "authMechanism")) {
+         if (!BSON_ITER_HOLDS_UTF8(&req_iter)) {
+            test_error("Unexpected type for authMechanism, should be string");
+         }
+         const char *mechanism = bson_iter_utf8(&req_iter, NULL);
+
+         if (strcasecmp(mechanism, "MONGODB-OIDC") != 0) {
+            test_error("Unexpected authMechanism value: %s", mechanism);
+         }
+
+         if (test_framework_is_oidc()) {
+            continue;
+         }
+
+         *fail_reason = bson_strdup("Test requires environment to support MONGODB-OIDC");
          return false;
       }
 
@@ -2227,4 +2252,6 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "server_selection/logging");
 
    run_unified_tests(suite, JSON_DIR, "server_discovery_and_monitoring/unified");
+
+   run_unified_tests(suite, JSON_DIR, "auth/unified");
 }

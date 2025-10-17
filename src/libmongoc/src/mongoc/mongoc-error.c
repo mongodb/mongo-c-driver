@@ -313,6 +313,18 @@ _mongoc_error_is_auth(const bson_error_t *error)
    return error->domain == MONGOC_ERROR_CLIENT && error->code == MONGOC_ERROR_CLIENT_AUTHENTICATE;
 }
 
+bool
+_mongoc_error_is_reauth(const bson_error_t *error, int error_api_version)
+{
+   if (!error) {
+      return false;
+   }
+
+   uint32_t expected_domain =
+      error_api_version == MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER : MONGOC_ERROR_QUERY;
+   return error->domain == expected_domain && error->code == MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED;
+}
+
 void
 _mongoc_error_append(bson_error_t *error, const char *s)
 {
