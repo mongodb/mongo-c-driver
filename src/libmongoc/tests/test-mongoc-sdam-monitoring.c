@@ -1196,7 +1196,7 @@ test_serverMonitoringMode(void)
 }
 
 static mongoc_uri_t *
-_make_uri_with_fast_heartbeat_frequency()
+_make_uri_with_fast_heartbeat_frequency(void)
 {
    mongoc_uri_t *const uri = test_framework_get_uri();
    mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
