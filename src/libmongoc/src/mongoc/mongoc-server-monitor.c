@@ -822,7 +822,7 @@ _update_topology_description(mongoc_server_monitor_t *server_monitor, mongoc_ser
                                             server_monitor->server_id,
                                             hello_response,
                                             description->round_trip_time_msec,
-                                            /*update_cluster_time=*/false,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
                                             &description->error);
    /* Reconcile server monitors. */
    _mongoc_topology_background_monitoring_reconcile(topology, tdmod.new_td);

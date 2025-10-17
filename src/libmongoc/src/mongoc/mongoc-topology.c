@@ -95,13 +95,13 @@ static bool
 _mongoc_topology_update_no_lock(uint32_t id,
                                 const bson_t *hello_response,
                                 int64_t rtt_msec,
-                                bool update_cluster_time,
+                                mongoc_topology_description_hello_cluster_time_strategy_t cluster_time_strategy,
                                 mongoc_topology_description_t *td,
                                 const mongoc_log_and_monitor_instance_t *log_and_monitor,
                                 const bson_error_t *error /* IN */)
 {
    mongoc_topology_description_handle_hello(
-      td, log_and_monitor, id, hello_response, rtt_msec, update_cluster_time, error);
+      td, log_and_monitor, id, hello_response, rtt_msec, cluster_time_strategy, error);
 
    /* return false if server removed from topology */
    return mongoc_topology_description_server_by_id(td, id, NULL) != NULL;
@@ -137,7 +137,7 @@ _mongoc_topology_scanner_setup_err_cb(uint32_t id, void *data, const bson_error_
                                                id,
                                                NULL /* hello reply */,
                                                -1 /* rtt_msec */,
-                                               /*update_cluster_time=*/false,
+                                               MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
                                                error);
    }
 }
@@ -188,15 +188,25 @@ _mongoc_topology_scanner_cb(
     * client MUST change its type to Unknown only after it has retried the
     * server once." */
    if (!hello_response && sd && sd->type != MONGOC_SERVER_UNKNOWN) {
-      _mongoc_topology_update_no_lock(
-         id, hello_response, rtt_msec, /*update_cluster_time=*/false, td, &topology->log_and_monitor, error);
+      _mongoc_topology_update_no_lock(id,
+                                      hello_response,
+                                      rtt_msec,
+                                      MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
+                                      td,
+                                      &topology->log_and_monitor,
+                                      error);
 
       /* add another hello call to the current scan - the scan continues
        * until all commands are done */
       mongoc_topology_scanner_scan(topology->scanner, sd->id);
    } else {
-      _mongoc_topology_update_no_lock(
-         id, hello_response, rtt_msec, /*update_cluster_time=*/false, td, &topology->log_and_monitor, error);
+      _mongoc_topology_update_no_lock(id,
+                                      hello_response,
+                                      rtt_msec,
+                                      MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
+                                      td,
+                                      &topology->log_and_monitor,
+                                      error);
 
       /* The processing of the hello results above may have added, changed, or
        * removed server descriptions. We need to reconcile that with our
@@ -1451,7 +1461,7 @@ _mongoc_topology_update_from_handshake(mongoc_topology_t *topology, const mongoc
    has_server = _mongoc_topology_update_no_lock(sd->id,
                                                 &sd->last_hello_response,
                                                 sd->round_trip_time_msec,
-                                                /*update_cluster_time=*/true,
+                                                MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                                 tdmod.new_td,
                                                 &topology->log_and_monitor,
                                                 NULL);

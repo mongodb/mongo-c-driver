@@ -215,7 +215,7 @@ test_server_stream_ties_server_description_single(void *unused)
                                             1,
                                             tmp_bson(HELLO_SERVER_ONE),
                                             0,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             &error);
    mc_tpld_modify_commit(tdmod);
 

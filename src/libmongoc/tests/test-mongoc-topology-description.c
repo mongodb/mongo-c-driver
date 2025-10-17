@@ -128,7 +128,7 @@ test_get_servers(void)
                                             sd_a->id,
                                             tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
                                             100,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             NULL);
 
    sd_c = _sd_for_host(tdmod.new_td, "c");
@@ -137,7 +137,7 @@ test_get_servers(void)
                                             sd_c->id,
                                             tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
                                             100,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             NULL);
 
    sds = mongoc_topology_description_get_servers(tdmod.new_td, &n);
@@ -196,7 +196,7 @@ test_topology_version_equal(void)
                                             sd->id,
                                             tmp_bson("{'ok': 1, 'topologyVersion': " TV_2 " }"),
                                             100,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             NULL);
 
    ASSERT_CMPINT(num_calls, ==, 1);
@@ -208,7 +208,7 @@ test_topology_version_equal(void)
                                             sd->id,
                                             tmp_bson("{'ok': 1, 'topologyVersion': " TV_1 " }"),
                                             100,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             NULL);
 
    ASSERT_CMPINT(num_calls, ==, 1);
@@ -247,7 +247,7 @@ test_topology_description_new_copy(void)
                                             sd_a->id,
                                             tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
                                             100,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             NULL);
 
    sd_c = _sd_for_host(tdmod.new_td, "c");
@@ -256,7 +256,7 @@ test_topology_description_new_copy(void)
                                             sd_c->id,
                                             tmp_bson("{'ok': 1, 'msg': 'isdbgrid'}"),
                                             100,
-                                            /*update_cluster_time=*/true,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
                                             NULL);
 
    /* td was copied before original was updated */
