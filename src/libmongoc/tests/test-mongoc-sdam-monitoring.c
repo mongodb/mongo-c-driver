@@ -1393,10 +1393,10 @@ test_cluster_time_not_used_on_sdam_single(void *ctx)
 
       bson_t *const command = BCON_NEW("insert", "test");
 
-      do {
+      while (context.n_heartbeat_started <= n_started_pre_heartbeat ||
+             context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat) {
          ASSERT_OR_PRINT(mongoc_client_write_command_with_opts(client_a, "test", command, opts, NULL, &error), error);
-      } while (context.n_heartbeat_started <= n_started_pre_heartbeat ||
-               context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat);
+      }
 
       bson_destroy(command);
       bson_destroy(opts);
@@ -1460,15 +1460,15 @@ test_cluster_time_not_used_on_sdam_pooled(void *ctx)
 
       const size_t n_started_pre_heartbeat = context.n_heartbeat_started;
 
-      do {
+      while (context.n_heartbeat_started <= n_started_pre_heartbeat) {
          mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
-      } while (context.n_heartbeat_started <= n_started_pre_heartbeat);
+      }
 
       const size_t n_succeeded_pre_heartbeat = context.n_heartbeat_succeeded;
 
-      do {
+      while (context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat) {
          mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
-      } while (context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat);
+      }
 
       bson_mutex_unlock(&context.heartbeat_mutex);
    }
