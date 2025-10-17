@@ -28,4 +28,4 @@ task_groups:
           args:
             - -c
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/teardown.sh
-    teardown_group_timeout_secs: 3600
+    teardown_group_timeout_secs: 180

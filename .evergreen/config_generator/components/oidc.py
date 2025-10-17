@@ -19,7 +19,7 @@ def task_groups():
             setup_group_can_fail_task=True,
             setup_group_timeout_secs=60 * 60,  # 1 hour
             teardown_group_can_fail_task=True,
-            teardown_group_timeout_secs=60 * 60,  # 1 hour
+            teardown_group_timeout_secs=180,  # 3 minutes
             setup_group=[
                 FetchDET.call(),
                 ec2_assume_role(role_arn='${aws_test_secrets_role}'),
