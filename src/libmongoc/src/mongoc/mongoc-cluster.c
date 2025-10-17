@@ -1844,17 +1844,15 @@ _mongoc_cluster_finish_speculative_auth(mongoc_cluster_t *cluster,
 
    if (strcasecmp(mechanism, "MONGODB-OIDC") == 0) {
       // Expect successful reply to include `done: true`:
-      {
-         auth_handled = true;
+      auth_handled = true;
 
-         bsonParse(*speculative_auth_response, require(allOf(key("done"), isTrue), nop));
-         if (bsonParseError) {
-            _mongoc_set_error(
-               error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Error in OIDC reply: %s", bsonParseError);
-            ret = false;
-         } else {
-            ret = true;
-         }
+      bsonParse(*speculative_auth_response, require(allOf(key("done"), isTrue), nop));
+      if (bsonParseError) {
+         _mongoc_set_error(
+            error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Error in OIDC reply: %s", bsonParseError);
+         ret = false;
+      } else {
+         ret = true;
       }
    }
 
