@@ -2621,3 +2621,50 @@ skip_if_no_large_allocations(void)
 {
    return test_framework_getenv_bool("MONGOC_TEST_LARGE_ALLOCATIONS");
 }
+
+bool
+test_framework_is_oidc(void)
+{
+   return test_framework_getenv_bool("MONGOC_TEST_OIDC");
+}
+
+static char *
+read_test_token(void)
+{
+   FILE *token_file = fopen("/tmp/tokens/test_machine", "r");
+   ASSERT(token_file);
+
+   // Determine length of token:
+   ASSERT(0 == fseek(token_file, 0, SEEK_END));
+   long token_len = ftell(token_file);
+   ASSERT(token_len > 0);
+   ASSERT(0 == fseek(token_file, 0, SEEK_SET));
+
+   // Read file into buffer:
+   char *token = bson_malloc(token_len + 1);
+   size_t nread = fread(token, 1, token_len, token_file);
+   ASSERT(nread == (size_t)token_len);
+   token[token_len] = '\0';
+   fclose(token_file);
+   return token;
+}
+
+static mongoc_oidc_credential_t *
+oidc_callback_fn(mongoc_oidc_callback_params_t *params)
+{
+   char *token = read_test_token();
+   mongoc_oidc_credential_t *cred = mongoc_oidc_credential_new(token);
+   bson_free(token);
+   return cred;
+}
+
+void
+test_framework_set_oidc_callback(mongoc_client_t *client)
+{
+   if (!test_framework_is_oidc()) {
+      return;
+   }
+   mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new(oidc_callback_fn);
+   mongoc_client_set_oidc_callback(client, callback);
+   mongoc_oidc_callback_destroy(callback);
+}

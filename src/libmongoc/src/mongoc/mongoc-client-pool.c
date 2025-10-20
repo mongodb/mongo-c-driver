@@ -25,6 +25,7 @@
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-oidc-callback-private.h>
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
@@ -687,5 +688,25 @@ mongoc_client_pool_set_server_api(mongoc_client_pool_t *pool, const mongoc_serve
 
    _mongoc_topology_scanner_set_server_api(pool->topology->scanner, api);
 
+   return true;
+}
+
+bool
+mongoc_client_pool_set_oidc_callback(mongoc_client_pool_t *pool, const mongoc_oidc_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(pool);
+   BSON_ASSERT_PARAM(callback);
+
+   if (mongoc_oidc_cache_get_callback(pool->topology->oidc_cache)) {
+      MONGOC_ERROR("mongoc_client_pool_set_oidc_callback can only be called once per pool");
+      return false;
+   }
+
+   if (pool->client_initialized) {
+      MONGOC_ERROR("mongoc_client_pool_set_oidc_callback can only be called before mongoc_client_pool_pop");
+      return false;
+   }
+
+   mongoc_oidc_cache_set_callback(pool->topology->oidc_cache, callback);
    return true;
 }

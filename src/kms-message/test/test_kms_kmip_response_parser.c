@@ -36,6 +36,7 @@ static const int SAMPLE_KMIP_FIRST_LENGTH = 32;
 /* SAMPLE_KMIP_LARGE_LENGTH is a byte size larger than the message. */
 static const int SAMPLE_KMIP_LARGE_LENGTH = 1024;
 
+void kms_kmip_response_parser_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_parser_test (void)
 {
@@ -118,6 +119,7 @@ feed_full_response (kms_response_parser_t *parser, uint8_t *data)
    }
 }
 
+void kms_kmip_response_parser_reuse_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_parser_reuse_test (void)
 {
@@ -150,6 +152,7 @@ kms_kmip_response_parser_reuse_test (void)
    free (data);
 }
 
+void kms_kmip_response_parser_excess_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_parser_excess_test (void)
 {
@@ -171,6 +174,7 @@ kms_kmip_response_parser_excess_test (void)
    free (data);
 }
 
+void kms_kmip_response_parser_notenough_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_response_parser_notenough_test (void)
 {

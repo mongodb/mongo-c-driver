@@ -1057,11 +1057,11 @@ _test_duration(void)
    d = mlib_duration((4, s), min, (400, ms));
    mlib_check(mlib_duration_cmp(d, ==, (400, ms)));
 
-   d = mlib_duration(10, min);
+   d = mlib_duration(10, mn);
    mlib_check(mlib_duration_cmp(d, ==, (600, s)));
 
    d = mlib_duration(4, h);
-   mlib_check(mlib_duration_cmp(d, ==, (240, min)));
+   mlib_check(mlib_duration_cmp(d, ==, (240, mn)));
 
    d = mlib_duration((10, s), div, 20);
    d = mlib_duration(
@@ -1145,6 +1145,15 @@ _test_duration(void)
    ts = mlib_duration_to_timespec(mlib_duration(-5000908, us));
    mlib_check(ts.tv_sec, eq, -5);
    mlib_check(ts.tv_nsec, eq, -908000);
+
+// Test when min is defined (CDRIVER-6102)
+#pragma push_macro("min")
+#undef min
+#define min(a, b) ((a) > (b) ? (b) : (a))
+   d = mlib_duration((1, s), min, (2, s));
+   mlib_check(mlib_duration_cmp(d, ==, (1, s)));
+   d = mlib_duration(3, mn);
+#pragma pop_macro("min")
 }
 
 static void

@@ -84,6 +84,9 @@ mongoc_client_pool_set_server_api(mongoc_client_pool_t *pool, const mongoc_serve
 MONGOC_EXPORT(bool)
 mongoc_client_pool_set_structured_log_opts(mongoc_client_pool_t *pool, const mongoc_structured_log_opts_t *opts);
 
+MONGOC_EXPORT(bool)
+mongoc_client_pool_set_oidc_callback(mongoc_client_pool_t *pool, const mongoc_oidc_callback_t *callback);
+
 BSON_END_DECLS
 
 

@@ -44,6 +44,7 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-gridfs-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-oidc-callback-private.h>
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
@@ -825,7 +826,8 @@ mongoc_client_connect(bool use_ssl,
             base_stream, host->host, ssl_opts, true, (SSL_CTX *)openssl_ctx_void);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
          // Use shared Secure Channel credentials.
-         base_stream = mongoc_stream_tls_new_with_secure_channel_cred(base_stream, ssl_opts, secure_channel_cred_ptr);
+         base_stream =
+            mongoc_stream_tls_new_with_secure_channel_cred(base_stream, host->host, ssl_opts, secure_channel_cred_ptr);
 #else
          base_stream = mongoc_stream_tls_new_with_hostname(base_stream, host->host, ssl_opts, true);
 #endif
@@ -2721,4 +2723,25 @@ mongoc_client_uses_loadbalanced(const mongoc_client_t *client)
    BSON_ASSERT_PARAM(client);
 
    return mongoc_topology_uses_loadbalanced(client->topology);
+}
+
+bool
+mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(client);
+   BSON_ASSERT_PARAM(callback);
+
+   if (mongoc_oidc_cache_get_callback(client->topology->oidc_cache)) {
+      MONGOC_ERROR("mongoc_client_set_oidc_callback can only be called once per client");
+      return false;
+   }
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR("mongoc_client_set_oidc_callback must only be used for single threaded clients. "
+                   "For client pools, use mongoc_client_pool_set_oidc_callback instead.");
+      return false;
+   }
+
+   mongoc_oidc_cache_set_callback(client->topology->oidc_cache, callback);
+   return true;
 }

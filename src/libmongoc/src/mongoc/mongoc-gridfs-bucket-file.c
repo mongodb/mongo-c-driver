@@ -397,7 +397,7 @@ _mongoc_gridfs_bucket_file_readv(mongoc_gridfs_bucket_file_t *file, mongoc_iovec
             /* Everything in the current chunk has been read, so read a new
              * chunk */
             if (!_mongoc_gridfs_bucket_read_chunk(file)) {
-               /* an error occured while reading the chunk */
+               /* an error occurred while reading the chunk */
                return -1;
             }
             if (file->finished) {
