@@ -2088,7 +2088,7 @@ test_change_stream_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/change_stream/pipeline", test_change_stream_pipeline);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/track_resume_token",
+                     "/change_stream/live/track_resume_token [lock:live-server]",
                      test_change_stream_live_track_resume_token,
                      NULL,
                      NULL,

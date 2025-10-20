@@ -5044,7 +5044,7 @@ test_bulk_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/BulkOperation/multiple_execution", test_multiple_execution);
    TestSuite_AddFull(
       suite,
-      "/BulkOperation/big_let",
+      "/BulkOperation/big_let [lock:live-server]",
       test_bulk_big_let,
       NULL,
       NULL,
