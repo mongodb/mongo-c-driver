@@ -1377,42 +1377,42 @@ test_crud_install(TestSuite *suite)
    test_all_spec_tests(suite);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_1",
+                     "/crud/prose_test_1 [lock:live-server]",
                      prose_test_1,
                      NULL, /* dtor */
                      NULL, /* ctx */
                      test_framework_skip_if_no_failpoint);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_2",
+                     "/crud/prose_test_2 [lock:live-server]",
                      prose_test_2,
                      NULL, /* dtor */
                      NULL, /* ctx */
                      test_framework_skip_if_max_wire_version_less_than_13);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_3",
+                     "/crud/prose_test_3 [lock:live-server]",
                      prose_test_3,
                      NULL, /* dtor */
                      NULL, /* ctx */
                      test_framework_skip_if_max_wire_version_less_than_25 /* require 8.0+ server */);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_4",
+                     "/crud/prose_test_4 [lock:live-server]",
                      prose_test_4,
                      NULL, /* dtor */
                      NULL, /* ctx */
                      test_framework_skip_if_max_wire_version_less_than_25 /* require 8.0+ server */);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_5",
+                     "/crud/prose_test_5 [lock:live-server]",
                      prose_test_5,
                      NULL, /* dtor */
                      NULL, /* ctx */
                      test_framework_skip_if_max_wire_version_less_than_25 /* require 8.0+ server */);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_6",
+                     "/crud/prose_test_6 [lock:live-server][timeout:30]",
                      prose_test_6,
                      NULL,                                                /* dtor */
                      NULL,                                                /* ctx */
@@ -1421,7 +1421,7 @@ test_crud_install(TestSuite *suite)
 
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_7",
+                     "/crud/prose_test_7 [lock:live-server]",
                      prose_test_7,
                      NULL,                                                /* dtor */
                      NULL,                                                /* ctx */
@@ -1430,7 +1430,7 @@ test_crud_install(TestSuite *suite)
 
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_8",
+                     "/crud/prose_test_8 [lock:live-server]",
                      prose_test_8,
                      NULL,                                                 /* dtor */
                      NULL,                                                 /* ctx */
@@ -1438,7 +1438,7 @@ test_crud_install(TestSuite *suite)
                      test_framework_skip_if_no_txns);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_9",
+                     "/crud/prose_test_9 [lock:live-server]",
                      prose_test_9,
                      NULL,                                                /* dtor */
                      NULL,                                                /* ctx */
@@ -1446,14 +1446,14 @@ test_crud_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_10",
+                     "/crud/prose_test_10 [lock:live-server]",
                      prose_test_10,
                      NULL, /* dtor */
                      NULL, /* ctx */
                      test_framework_skip_if_max_wire_version_less_than_25 /* require 8.0+ server */);
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_11",
+                     "/crud/prose_test_11 [lock:live-server]",
                      prose_test_11,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -1461,7 +1461,7 @@ test_crud_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_12",
+                     "/crud/prose_test_12 [lock:live-server]",
                      prose_test_12,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -1469,7 +1469,7 @@ test_crud_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/crud/prose_test_15",
+                     "/crud/prose_test_15 [lock:live-server]",
                      prose_test_15,
                      NULL /* dtor */,
                      NULL /* ctx */,

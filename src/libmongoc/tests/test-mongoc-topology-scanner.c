@@ -710,13 +710,13 @@ test_topology_scanner_install(TestSuite *suite)
       suite, "/TOPOLOGY/dns", test_topology_scanner_dns, test_framework_skip_if_no_dual_ip_hostname);
    TestSuite_AddMockServerTest(suite, "/TOPOLOGY/retired_fails_to_initiate", test_topology_retired_fails_to_initiate);
    TestSuite_AddFull(suite,
-                     "/TOPOLOGY/scanner/renegotiate/single",
+                     "/TOPOLOGY/scanner/renegotiate/single [lock:live-server][timeout:30]",
                      test_topology_scanner_does_not_renegotiate_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/TOPOLOGY/scanner/renegotiate/pooled",
+                     "/TOPOLOGY/scanner/renegotiate/pooled [lock:live-server][timeout:30]",
                      test_topology_scanner_does_not_renegotiate_pooled,
                      NULL,
                      NULL,

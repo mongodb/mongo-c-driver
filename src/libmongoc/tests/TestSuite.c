@@ -278,7 +278,10 @@ TestSuite_AddLive(TestSuite *suite, /* IN */
                   const char *name, /* IN */
                   TestFunc func)    /* IN */
 {
-   TestSuite_AddFullWithTestFn(suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+   // Add the `lock:live-server` tag to the test.
+   mstr with_tags = mstr_sprintf("%s [lock:live-server]", name);
+   TestSuite_AddFullWithTestFn(suite, with_tags.data, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+   mstr_destroy(&with_tags);
 }
 
 

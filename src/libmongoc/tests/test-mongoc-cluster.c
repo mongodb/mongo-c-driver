@@ -1547,13 +1547,13 @@ test_cluster_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
    TestSuite_AddLive(suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
    TestSuite_AddFull(suite,
-                     "/Cluster/disconnect/single",
+                     "/Cluster/disconnect/single [timeout:30]",
                      test_cluster_node_disconnect_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Cluster/disconnect/pooled",
+                     "/Cluster/disconnect/pooled [timeout:30]",
                      test_cluster_node_disconnect_pooled,
                      NULL,
                      NULL,
@@ -1561,30 +1561,31 @@ test_cluster_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Cluster/command/timeout/single", test_cluster_command_timeout_single);
    TestSuite_AddMockServerTest(suite, "/Cluster/command/timeout/pooled", test_cluster_command_timeout_pooled);
    TestSuite_AddFull(suite,
-                     "/Cluster/write_command/disconnect",
+                     "/Cluster/write_command/disconnect [timeout:30]",
                      test_write_command_disconnect,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow);
    TestSuite_AddLive(suite, "/Cluster/cluster_time/command_simple/single", test_cluster_time_command_simple_single);
-   TestSuite_AddLive(suite, "/Cluster/cluster_time/command_simple/pooled", test_cluster_time_command_simple_pooled);
+   TestSuite_AddLive(
+      suite, "/Cluster/cluster_time/command_simple/pooled [timeout:30]", test_cluster_time_command_simple_pooled);
    TestSuite_AddLive(
       suite, "/Cluster/cluster_time/command_with_opts/single", test_cluster_time_command_with_opts_single);
    TestSuite_AddLive(
-      suite, "/Cluster/cluster_time/command_with_opts/pooled", test_cluster_time_command_with_opts_pooled);
+      suite, "/Cluster/cluster_time/command_with_opts/pooled [timeout:30]", test_cluster_time_command_with_opts_pooled);
    TestSuite_AddLive(suite, "/Cluster/cluster_time/aggregate/single", test_cluster_time_aggregate_single);
-   TestSuite_AddLive(suite, "/Cluster/cluster_time/aggregate/pooled", test_cluster_time_aggregate_pooled);
+   TestSuite_AddLive(suite, "/Cluster/cluster_time/aggregate/pooled [timeout:30]", test_cluster_time_aggregate_pooled);
    TestSuite_AddLive(suite, "/Cluster/cluster_time/cursor/single", test_cluster_time_cursor_single);
-   TestSuite_AddLive(suite, "/Cluster/cluster_time/cursor/pooled", test_cluster_time_cursor_pooled);
+   TestSuite_AddLive(suite, "/Cluster/cluster_time/cursor/pooled [timeout:30]", test_cluster_time_cursor_pooled);
    TestSuite_AddLive(suite, "/Cluster/cluster_time/insert/single", test_cluster_time_insert_single);
-   TestSuite_AddLive(suite, "/Cluster/cluster_time/insert/pooled", test_cluster_time_insert_pooled);
+   TestSuite_AddLive(suite, "/Cluster/cluster_time/insert/pooled [timeout:30]", test_cluster_time_insert_pooled);
    TestSuite_AddLive(suite, "/Cluster/command/timeout/negative", test_cluster_command_timeout_negative);
    TestSuite_AddMockServerTest(suite,
-                               "/Cluster/cluster_time/comparison/single",
+                               "/Cluster/cluster_time/comparison/single [timeout:30]",
                                test_cluster_time_comparison_single,
                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
-                               "/Cluster/cluster_time/comparison/pooled",
+                               "/Cluster/cluster_time/comparison/pooled [timeout:30]",
                                test_cluster_time_comparison_pooled,
                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
@@ -1592,13 +1593,17 @@ test_cluster_install(TestSuite *suite)
                                test_advanced_cluster_time_not_sent_to_standalone,
                                test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest(
-      suite, "/Cluster/not_primary/single", test_not_primary_single, test_framework_skip_if_slow);
+      suite, "/Cluster/not_primary/single [timeout:30]", test_not_primary_single, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(
-      suite, "/Cluster/not_primary/pooled", test_not_primary_pooled, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/Cluster/not_primary_auth/single", test_not_primary_auth_single, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/Cluster/not_primary_auth/pooled", test_not_primary_auth_pooled, test_framework_skip_if_slow);
+      suite, "/Cluster/not_primary/pooled [timeout:30]", test_not_primary_pooled, test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/Cluster/not_primary_auth/single [timeout:30]",
+                               test_not_primary_auth_single,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/Cluster/not_primary_auth/pooled [timeout:30]",
+                               test_not_primary_auth_pooled,
+                               test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite, "/Cluster/hello_fails", test_cluster_hello_fails);
    TestSuite_AddMockServerTest(suite, "/Cluster/hello_hangup", test_cluster_hello_hangup);
    TestSuite_AddMockServerTest(suite, "/Cluster/command_error/op_msg", test_cluster_command_error);

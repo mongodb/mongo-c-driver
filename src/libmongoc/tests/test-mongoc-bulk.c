@@ -4849,22 +4849,34 @@ test_bulk_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/BulkOperation/upsert_ordered", test_upsert_ordered);
    TestSuite_AddLive(suite, "/BulkOperation/upsert_unordered", test_upsert_unordered);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/upsert_unordered_oversized",
+                     "/BulkOperation/upsert_unordered_oversized [lock:live-server][timeout:30]",
                      test_upsert_unordered_oversized,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
-   TestSuite_AddFull(
-      suite, "/BulkOperation/upsert_large", test_upsert_large, NULL, NULL, test_framework_skip_if_slow_or_live);
-   TestSuite_AddFull(
-      suite, "/BulkOperation/upsert_huge", test_upsert_huge, NULL, NULL, test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull(suite,
+                     "/BulkOperation/upsert_large [lock:live-server][timeout:30]",
+                     test_upsert_large,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull(suite,
+                     "/BulkOperation/upsert_huge [lock:live-server][timeout:30]",
+                     test_upsert_huge,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_slow_or_live);
    TestSuite_AddLive(suite, "/BulkOperation/upserted_index_ordered", test_upserted_index_ordered);
    TestSuite_AddLive(suite, "/BulkOperation/upserted_index_unordered", test_upserted_index_unordered);
    TestSuite_AddLive(suite, "/BulkOperation/update_one_ordered", test_update_one_ordered);
    TestSuite_AddLive(suite, "/BulkOperation/update_one_unordered", test_update_one_unordered);
    TestSuite_AddLive(suite, "/BulkOperation/update_with_opts_validate", test_update_with_opts_validate);
-   TestSuite_AddFull(
-      suite, "/BulkOperation/update_arrayfilters", test_update_arrayfilters, NULL, NULL, TestSuite_CheckLive);
+   TestSuite_AddFull(suite,
+                     "/BulkOperation/update_arrayfilters [lock:live-server]",
+                     test_update_arrayfilters,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive);
    TestSuite_AddLive(suite, "/BulkOperation/update/hint/validate", test_update_hint_validate);
    TestSuite_AddLive(suite, "/BulkOperation/delete/hint/validate", test_delete_hint_validate);
    TestSuite_AddLive(suite, "/BulkOperation/replace_one_ordered", test_replace_one_ordered);
@@ -4882,13 +4894,13 @@ test_bulk_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/BulkOperation/single_unordered_bulk", test_single_unordered_bulk);
    TestSuite_AddLive(suite, "/BulkOperation/single_error_unordered_bulk", test_single_error_unordered_bulk);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/oversized/ordered",
+                     "/BulkOperation/oversized/ordered [lock:live-server][timeout:30]",
                      test_oversized_bulk_op_ordered,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/oversized/unordered",
+                     "/BulkOperation/oversized/unordered [lock:live-server][timeout:30]",
                      test_oversized_bulk_op_unordered,
                      NULL,
                      NULL,
@@ -4913,21 +4925,25 @@ test_bulk_install(TestSuite *suite)
                                "/BulkOperation/wtimeout_duplicate_key/write_commands",
                                test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/large_inserts_ordered",
+                     "/BulkOperation/large_inserts_ordered [lock:live-server][timeout:30]",
                      test_large_inserts_ordered,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/large_inserts_unordered",
+                     "/BulkOperation/large_inserts_unordered [lock:live-server][timeout:30]",
                      test_large_inserts_unordered,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
-   TestSuite_AddFull(
-      suite, "/BulkOperation/numerous_ordered", test_numerous_ordered, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/numerous_unordered",
+                     "/BulkOperation/numerous_ordered [lock:live-server][timeout:30]",
+                     test_numerous_ordered,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull(suite,
+                     "/BulkOperation/numerous_unordered [lock:live-server][timeout:30]",
                      test_numerous_unordered,
                      NULL,
                      NULL,
@@ -4938,13 +4954,13 @@ test_bulk_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/BulkOperation/OP_MSG/max_batch_size", test_bulk_max_batch_size);
    TestSuite_AddLive(suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/split",
+                     "/BulkOperation/split [lock:live-server]",
                      test_bulk_split,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_no_sessions);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/write_concern/split",
+                     "/BulkOperation/write_concern/split [lock:live-server]",
                      test_bulk_write_concern_split,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -4968,7 +4984,7 @@ test_bulk_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/BulkOperation/opts/let", test_bulk_let);
    TestSuite_AddMockServerTest(suite, "/BulkOperation/opts/let/multi", test_bulk_let_multi);
    TestSuite_AddFull(suite,
-                     "/BulkOperation/multiple_errors",
+                     "/BulkOperation/multiple_errors [lock:live-server]",
                      test_bulk_write_multiple_errors,
                      NULL,
                      NULL,

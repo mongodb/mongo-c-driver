@@ -1940,11 +1940,13 @@ _install_json_test_suite_with_check(TestSuite *suite, const char *base, const ch
          bson_destroy(test);
          test = modified;
       }
+      mstr name = mstr_copy_cstring(skip_json);
+      mstr_append(&name, mstr_cstring(" [lock:live-server][json][slow]"));
       /* list of "check" functions that decide whether to skip the test */
       va_start(ap, callback);
-      _V_TestSuite_AddFull(suite, skip_json, callback, &bson_destroy_vp, test, ap);
-
+      _V_TestSuite_AddFull(suite, name.data, callback, &bson_destroy_vp, test, ap);
       va_end(ap);
+      mstr_destroy(&name);
    }
 }
 

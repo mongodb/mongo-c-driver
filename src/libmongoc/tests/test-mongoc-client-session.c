@@ -2598,7 +2598,7 @@ test_session_install(TestSuite *suite)
    TestSuite_Add(
       suite, "/Session/opts/causal_consistency_and_snapshot", test_session_opts_causal_consistency_and_snapshot);
    TestSuite_AddFull(suite,
-                     "/Session/no_crypto",
+                     "/Session/no_crypto [lock:live-server]",
                      test_session_no_crypto,
                      NULL,
                      NULL,
@@ -2606,21 +2606,21 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/lifo/single",
+                     "/Session/lifo/single [lock:live-server]",
                      test_session_pool_lifo_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/lifo/pooled",
+                     "/Session/lifo/pooled [lock:live-server]",
                      test_session_pool_lifo_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/timeout/single",
+                     "/Session/timeout/single [lock:live-server][timeout:30]",
                      test_session_pool_timeout_single,
                      NULL,
                      NULL,
@@ -2628,7 +2628,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/timeout/pooled",
+                     "/Session/timeout/pooled [lock:live-server][timeout:30]",
                      test_session_pool_timeout_pooled,
                      NULL,
                      NULL,
@@ -2636,7 +2636,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/reap/single",
+                     "/Session/reap/single [lock:live-server][timeout:30]",
                      test_session_pool_reap_single,
                      NULL,
                      NULL,
@@ -2644,7 +2644,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/reap/pooled",
+                     "/Session/reap/pooled [lock:live-server][timeout:30]",
                      test_session_pool_reap_pooled,
                      NULL,
                      NULL,
@@ -2652,21 +2652,21 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/id_bad",
+                     "/Session/id_bad [lock:live-server]",
                      test_session_id_bad,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/supported/single",
+                     "/Session/supported/single [lock:live-server]",
                      test_session_supported_single,
                      NULL,
                      NULL,
                      TestSuite_CheckLive,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/supported/pooled",
+                     "/Session/supported/pooled [lock:live-server]",
                      test_session_supported_pooled,
                      NULL,
                      NULL,
@@ -2677,25 +2677,25 @@ test_session_install(TestSuite *suite)
    TestSuite_AddMockServerTest(
       suite, "/Session/end/mock/pooled", test_mock_end_sessions_pooled, test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest(suite,
-                               "/Session/end/mock/disconnected",
+                               "/Session/end/mock/disconnected [timeout:20]",
                                test_mock_end_sessions_server_disconnect,
                                test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/end/single",
+                     "/Session/end/single [lock:live-server]",
                      test_end_sessions_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_crypto,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/Session/end/pooled",
+                     "/Session/end/pooled [lock:live-server]",
                      test_end_sessions_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_crypto,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/Session/end/many/single",
+                     "/Session/end/many/single [lock:live-server][timeout:30]",
                      test_end_sessions_many_single,
                      NULL,
                      NULL,
@@ -2703,7 +2703,7 @@ test_session_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/end/many/pooled",
+                     "/Session/end/many/pooled [lock:live-server][timeout:30]",
                      test_end_sessions_many_pooled,
                      NULL,
                      NULL,
@@ -2711,14 +2711,14 @@ test_session_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/advance_cluster_time",
+                     "/Session/advance_cluster_time [lock:live-server]",
                      test_session_advance_cluster_time,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_no_sessions);
    TestSuite_AddFull(suite,
-                     "/Session/advance_operation_time",
+                     "/Session/advance_operation_time [lock:live-server]",
                      test_session_advance_operation_time,
                      NULL,
                      NULL,
@@ -2727,41 +2727,42 @@ test_session_install(TestSuite *suite)
 
    /* "true" is for tests that expect readConcern: afterClusterTime for causally
     * consistent sessions, "false" is for tests that prohibit readConcern */
-   add_session_test(suite, "/Session/cmd", test_cmd, false);
-   add_session_test(suite, "/Session/read_cmd", test_read_cmd, true);
-   add_session_test(suite, "/Session/write_cmd", test_write_cmd, false);
-   add_session_test(suite, "/Session/read_write_cmd", test_read_write_cmd, true);
-   add_session_test(suite, "/Session/db_cmd", test_db_cmd, false);
-   add_session_test(suite, "/Session/cursor", test_cursor, true);
-   add_session_test(suite, "/Session/drop", test_drop, false);
-   add_session_test(suite, "/Session/drop_index", test_drop_index, false);
-   add_session_test(suite, "/Session/create_index", test_create_index, false);
-   add_session_test(suite, "/Session/replace_one", test_replace_one, false);
-   add_session_test(suite, "/Session/update_one", test_update_one, false);
-   add_session_test(suite, "/Session/update_many", test_update_many, false);
-   add_session_test(suite, "/Session/insert_one", test_insert_one, false);
-   add_session_test(suite, "/Session/insert_many", test_insert_many, false);
-   add_session_test(suite, "/Session/delete_one", test_delete_one, false);
-   add_session_test(suite, "/Session/delete_many", test_delete_many, false);
-   add_session_test(suite, "/Session/rename", test_rename, false);
-   add_session_test(suite, "/Session/fam", test_fam, true);
-   add_session_test(suite, "/Session/db_drop", test_db_drop, false);
-   add_session_test(suite, "/Session/gridfs_find", test_gridfs_find, true);
-   add_session_test(suite, "/Session/gridfs_find_one", test_gridfs_find_one, true);
-   add_session_test_wc(suite, "/Session/watch", test_watch, true, test_framework_skip_if_not_replset);
-   add_session_test(suite, "/Session/aggregate", test_aggregate, true);
-   add_session_test(suite, "/Session/create", test_create, false);
-   add_session_test(suite, "/Session/database_names", test_database_names, true);
-   add_session_test(suite, "/Session/find_databases", test_find_databases, true);
-   add_session_test(suite, "/Session/find_collections", test_find_collections, true);
-   add_session_test(suite, "/Session/collection_names", test_collection_names, true);
-   add_session_test(suite, "/Session/bulk", test_bulk, false);
-   add_session_test(suite, "/Session/find_indexes", test_find_indexes, true);
+   add_session_test(suite, "/Session/cmd [lock:live-server]", test_cmd, false);
+   add_session_test(suite, "/Session/read_cmd [lock:live-server]", test_read_cmd, true);
+   add_session_test(suite, "/Session/write_cmd [lock:live-server]", test_write_cmd, false);
+   add_session_test(suite, "/Session/read_write_cmd [lock:live-server]", test_read_write_cmd, true);
+   add_session_test(suite, "/Session/db_cmd [lock:live-server]", test_db_cmd, false);
+   add_session_test(suite, "/Session/cursor [lock:live-server]", test_cursor, true);
+   add_session_test(suite, "/Session/drop [lock:live-server]", test_drop, false);
+   add_session_test(suite, "/Session/drop_index [lock:live-server]", test_drop_index, false);
+   add_session_test(suite, "/Session/create_index [lock:live-server]", test_create_index, false);
+   add_session_test(suite, "/Session/replace_one [lock:live-server]", test_replace_one, false);
+   add_session_test(suite, "/Session/update_one [lock:live-server]", test_update_one, false);
+   add_session_test(suite, "/Session/update_many [lock:live-server]", test_update_many, false);
+   add_session_test(suite, "/Session/insert_one [lock:live-server]", test_insert_one, false);
+   add_session_test(suite, "/Session/insert_many [lock:live-server]", test_insert_many, false);
+   add_session_test(suite, "/Session/delete_one [lock:live-server]", test_delete_one, false);
+   add_session_test(suite, "/Session/delete_many [lock:live-server]", test_delete_many, false);
+   add_session_test(suite, "/Session/rename [lock:live-server]", test_rename, false);
+   add_session_test(suite, "/Session/fam [lock:live-server]", test_fam, true);
+   add_session_test(suite, "/Session/db_drop [lock:live-server]", test_db_drop, false);
+   add_session_test(suite, "/Session/gridfs_find [lock:live-server]", test_gridfs_find, true);
+   add_session_test(suite, "/Session/gridfs_find_one [lock:live-server]", test_gridfs_find_one, true);
+   add_session_test_wc(
+      suite, "/Session/watch [lock:live-server]", test_watch, true, test_framework_skip_if_not_replset);
+   add_session_test(suite, "/Session/aggregate [lock:live-server]", test_aggregate, true);
+   add_session_test(suite, "/Session/create [lock:live-server]", test_create, false);
+   add_session_test(suite, "/Session/database_names [lock:live-server]", test_database_names, true);
+   add_session_test(suite, "/Session/find_databases [lock:live-server]", test_find_databases, true);
+   add_session_test(suite, "/Session/find_collections [lock:live-server]", test_find_collections, true);
+   add_session_test(suite, "/Session/collection_names [lock:live-server]", test_collection_names, true);
+   add_session_test(suite, "/Session/bulk [lock:live-server]", test_bulk, false);
+   add_session_test(suite, "/Session/find_indexes [lock:live-server]", test_find_indexes, true);
    {
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));
       *helper = (session_test_helper_t){.test_fn = test_bulk_set_session};
       TestSuite_AddFull(suite,
-                        "/Session/bulk_set_session",
+                        "/Session/bulk_set_session [lock:live-server]",
                         run_session_test_bulk_operation,
                         &bson_free,
                         helper,
@@ -2772,7 +2773,7 @@ test_session_install(TestSuite *suite)
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));
       *helper = (session_test_helper_t){.test_fn = test_bulk_set_client};
       TestSuite_AddFull(suite,
-                        "/Session/bulk_set_client",
+                        "/Session/bulk_set_client [lock:live-server]",
                         run_session_test_bulk_operation,
                         &bson_free,
                         helper,
@@ -2780,79 +2781,124 @@ test_session_install(TestSuite *suite)
                         test_framework_skip_if_no_crypto);
    }
    TestSuite_AddFull(suite,
-                     "/Session/cursor_implicit_session",
+                     "/Session/cursor_implicit_session [lock:live-server]",
                      test_cursor_implicit_session,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/change_stream_implicit_session",
+                     "/Session/change_stream_implicit_session [lock:live-server]",
                      test_change_stream_implicit_session,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/cmd_error",
+                     "/Session/cmd_error [lock:live-server]",
                      test_cmd_error,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/read_concern",
+                     "/Session/read_concern [lock:live-server]",
                      test_read_concern,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/insert_one/explicit_cs/inherit_wc [lock:live-server]",
+                           test_insert_one,
+                           true,
+                           true);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/insert_one/explicit_cs/explicit_wc [lock:live-server]",
+                           test_insert_one,
+                           true,
+                           false);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/insert_one/implicit_cs/inherit_wc [lock:live-server]",
+                           test_insert_one,
+                           false,
+                           true);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/insert_one/implicit_cs/explicit_wc [lock:live-server]",
+                           test_insert_one,
+                           false,
+                           false);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/insert_one/explicit_cs/inherit_wc", test_insert_one, true, true);
+      suite, "/Session/unacknowledged/bulk/explicit_cs/inherit_wc [lock:live-server]", test_bulk, true, true);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/insert_one/explicit_cs/explicit_wc", test_insert_one, true, false);
+      suite, "/Session/unacknowledged/bulk/explicit_cs/explicit_wc [lock:live-server]", test_bulk, true, false);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/insert_one/implicit_cs/inherit_wc", test_insert_one, false, true);
+      suite, "/Session/unacknowledged/bulk/implicit_cs/inherit_wc [lock:live-server]", test_bulk, false, true);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/insert_one/implicit_cs/explicit_wc", test_insert_one, false, false);
-   add_unacknowledged_test(suite, "/Session/unacknowledged/bulk/explicit_cs/inherit_wc", test_bulk, true, true);
-   add_unacknowledged_test(suite, "/Session/unacknowledged/bulk/explicit_cs/explicit_wc", test_bulk, true, false);
-   add_unacknowledged_test(suite, "/Session/unacknowledged/bulk/implicit_cs/inherit_wc", test_bulk, false, true);
-   add_unacknowledged_test(suite, "/Session/unacknowledged/bulk/implicit_cs/explicit_wc", test_bulk, false, false);
+      suite, "/Session/unacknowledged/bulk/implicit_cs/explicit_wc [lock:live-server]", test_bulk, false, false);
    /* find_and_modify_with_opts only inherits acknowledged write concerns, so
     * skip tests that inherit a write concern. Technically, an explicit
     * unacknowledged write concern doesn't make much sense with findAndModify,
     * but this is testing the common code path for command execution. */
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/find_and_modify/explicit_cs/explicit_wc", test_fam, true, false);
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/find_and_modify/implicit_cs/explicit_wc", test_fam, false, false);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/find_and_modify/explicit_cs/explicit_wc [lock:live-server]",
+                           test_fam,
+                           true,
+                           false);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/find_and_modify/implicit_cs/explicit_wc [lock:live-server]",
+                           test_fam,
+                           false,
+                           false);
    /* command_with_opts also does not inherit write concerns, but we still want
     * to test the common code path for command execution. */
-   add_unacknowledged_test(suite, "/Session/unacknowledged/db_cmd/explicit_cs/explicit_wc", test_db_cmd, true, false);
-   add_unacknowledged_test(suite, "/Session/unacknowledged/db_cmd/implicit_cs/explicit_wc", test_db_cmd, false, false);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/read_write_cmd/explicit_cs/inherit_wc", test_read_write_cmd, true, true);
+      suite, "/Session/unacknowledged/db_cmd/explicit_cs/explicit_wc [lock:live-server]", test_db_cmd, true, false);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/read_write_cmd/explicit_cs/explicit_wc", test_read_write_cmd, true, false);
+      suite, "/Session/unacknowledged/db_cmd/implicit_cs/explicit_wc [lock:live-server]", test_db_cmd, false, false);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/read_write_cmd/explicit_cs/inherit_wc [lock:live-server]",
+                           test_read_write_cmd,
+                           true,
+                           true);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/read_write_cmd/explicit_cs/explicit_wc [lock:live-server]",
+                           test_read_write_cmd,
+                           true,
+                           false);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/read_write_cmd/implicit_cs/inherit_wc [lock:live-server]",
+                           test_read_write_cmd,
+                           false,
+                           true);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/read_write_cmd/implicit_cs/explicit_wc [lock:live-server]",
+                           test_read_write_cmd,
+                           false,
+                           false);
    add_unacknowledged_test(
-      suite, "/Session/unacknowledged/read_write_cmd/implicit_cs/inherit_wc", test_read_write_cmd, false, true);
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/read_write_cmd/implicit_cs/explicit_wc", test_read_write_cmd, false, false);
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/write_cmd/explicit_cs/inherit_wc", test_write_cmd, true, true);
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/write_cmd/explicit_cs/explicit_wc", test_write_cmd, true, false);
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/write_cmd/implicit_cs/inherit_wc", test_write_cmd, false, true);
-   add_unacknowledged_test(
-      suite, "/Session/unacknowledged/write_cmd/implicit_cs/explicit_wc", test_write_cmd, false, false);
+      suite, "/Session/unacknowledged/write_cmd/explicit_cs/inherit_wc [lock:live-server]", test_write_cmd, true, true);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/write_cmd/explicit_cs/explicit_wc [lock:live-server]",
+                           test_write_cmd,
+                           true,
+                           false);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/write_cmd/implicit_cs/inherit_wc [lock:live-server]",
+                           test_write_cmd,
+                           false,
+                           true);
+   add_unacknowledged_test(suite,
+                           "/Session/unacknowledged/write_cmd/implicit_cs/explicit_wc [lock:live-server]",
+                           test_write_cmd,
+                           false,
+                           false);
 
    install_json_test_suite_with_check(
       suite, JSON_DIR, "sessions/legacy", test_sessions_spec_cb, test_framework_skip_if_no_sessions);
 
    TestSuite_AddFull(suite,
-                     "/Session/dirty",
+                     "/Session/dirty [lock:live-server]",
                      test_session_dirty,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -2862,7 +2908,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/Session/snapshot/prose_test_1",
+                     "/Session/snapshot/prose_test_1 [lock:live-server]",
                      test_sessions_snapshot_prose_test_1,
                      NULL,
                      NULL,

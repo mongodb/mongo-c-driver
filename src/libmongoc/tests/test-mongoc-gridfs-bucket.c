@@ -1054,16 +1054,17 @@ test_gridfs_bucket_install(TestSuite *suite)
    test_all_spec_tests(suite);
    TestSuite_AddLive(suite, "/gridfs/create_bucket", test_create_bucket);
    TestSuite_AddLive(suite, "/gridfs/upload_and_download", test_upload_and_download);
-   TestSuite_AddFull(suite, "/gridfs/upload_error", test_upload_error, NULL, NULL, test_framework_skip_if_no_auth);
+   TestSuite_AddFull(
+      suite, "/gridfs/upload_error [lock:live-server]", test_upload_error, NULL, NULL, test_framework_skip_if_no_auth);
    TestSuite_AddFull(suite,
-                     "/gridfs/find_w_session",
+                     "/gridfs/find_w_session [lock:live-server]",
                      test_find_w_session,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/gridfs/find",
+                     "/gridfs/find [lock:live-server]",
                      test_find,
                      NULL,
                      NULL,
