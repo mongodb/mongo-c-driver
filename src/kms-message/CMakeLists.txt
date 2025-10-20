@@ -1,14 +1,13 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.15...4.0)
 project (kms_message
    VERSION 0.0.1
    LANGUAGES C
 )
 
-set (CMAKE_C_STANDARD 90)
+set (CMAKE_C_STANDARD 99)
 
 include (CheckCCompilerFlag)
-# All targets obey visibility, not just library targets.
-cmake_policy (SET CMP0063 NEW)
+
 set (CMAKE_C_VISIBILITY_PRESET hidden)
 set (KMS_MESSAGE_SOURCES
    src/kms_b64.c
@@ -101,7 +100,7 @@ add_library (
 
 string(FIND "${CMAKE_C_FLAGS}" "-fPIC" FPIC_LOCATION)
 if (NOT WIN32 AND ENABLE_PIC AND "${FPIC_LOCATION}" EQUAL "-1")
-   target_compile_options (kms_message_static PUBLIC -fPIC)
+   set_property (TARGET kms_message_static PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    message ("Adding -fPIC to compilation of kms_message_static components")
 endif ()
 

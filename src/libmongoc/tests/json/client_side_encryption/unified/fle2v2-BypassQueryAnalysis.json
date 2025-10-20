@@ -1,16 +1,18 @@
 {
   "description": "fle2v2-BypassQueryAnalysis",
-  "schemaVersion": "1.23",
+  "schemaVersion": "1.25",
   "runOnRequirements": [
     {
       "minServerVersion": "7.0.0",
       "serverless": "forbid",
-      "csfle": true,
       "topologies": [
         "replicaset",
         "sharded",
         "load-balanced"
-      ]
+      ],
+      "csfle": {
+        "minLibmongocryptVersion": "1.15.1"
+      }
     }
   ],
   "createEntities": [
@@ -18,12 +20,12 @@
       "client": {
         "id": "client0",
         "autoEncryptOpts": {
-          "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
             "local": {
               "key": "Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZGJkTXVyZG9uSjFk"
             }
           },
+          "keyVaultNamespace": "keyvault.datakeys",
           "bypassQueryAnalysis": true
         },
         "observeEvents": [
@@ -47,16 +49,13 @@
     },
     {
       "client": {
-        "id": "unencryptedClient",
-        "observeEvents": [
-          "commandStartedEvent"
-        ]
+        "id": "client1"
       }
     },
     {
       "database": {
         "id": "unencryptedDB",
-        "client": "unencryptedClient",
+        "client": "client1",
         "databaseName": "default"
       }
     },
@@ -178,8 +177,8 @@
           ]
         },
         {
-          "name": "find",
           "object": "unencryptedColl",
+          "name": "find",
           "arguments": {
             "filter": {}
           },

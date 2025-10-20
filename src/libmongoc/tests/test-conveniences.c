@@ -392,7 +392,7 @@ bson_lookup_write_concern(const bson_t *b, const char *key)
    if (BSON_ITER_HOLDS_NUMBER(&w)) {
       mongoc_write_concern_set_w(wc, (int32_t)bson_iter_as_int64(&w));
    } else if (!strcmp(bson_iter_utf8(&w, NULL), "majority")) {
-      mongoc_write_concern_set_wmajority(wc, 0);
+      mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    } else {
       mongoc_write_concern_set_wtag(wc, bson_iter_utf8(&w, NULL));
    }

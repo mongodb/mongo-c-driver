@@ -191,53 +191,6 @@ test_change_stream_pipeline(void)
    mock_server_destroy(server);
 }
 
-/* From Change Streams Spec tests:
- * "The watch helper must not throw a custom exception when executed against a
- * single server topology, but instead depend on a server error"
- */
-static void
-test_change_stream_live_single_server(void *test_ctx)
-{
-   /* Temporarily skip on arm64 until mongod tested against is updated */
-   mongoc_client_t *client = test_framework_new_default_client();
-   mongoc_collection_t *coll;
-   bson_error_t error;
-   mongoc_change_stream_t *stream;
-   const bson_t *next_doc = NULL;
-   const bson_t *reported_err_doc = NULL;
-   const char *not_replset_doc = "{'errmsg': 'The $changeStream stage is "
-                                 "only supported on replica sets', 'code': "
-                                 "40573, 'ok': 0}";
-
-   /* Don't use the errmsg field since it contains quotes. */
-   const char *not_supported_doc = "{'code' : 40324, 'ok' : 0 }";
-
-   BSON_UNUSED(test_ctx);
-
-   ASSERT(client);
-
-   coll = mongoc_client_get_collection(client, "db", "coll");
-   ASSERT(coll);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson(NULL), NULL, NULL, &error), error);
-
-   stream = mongoc_collection_watch(coll, tmp_bson("{}"), NULL);
-   ASSERT(stream);
-
-   ASSERT(mongoc_change_stream_error_document(stream, NULL, &reported_err_doc));
-   ASSERT(next_doc == NULL);
-
-   if (test_framework_max_wire_version_at_least(6)) {
-      ASSERT_MATCH(reported_err_doc, not_replset_doc);
-   } else {
-      ASSERT_MATCH(reported_err_doc, not_supported_doc);
-      ASSERT_CONTAINS(bson_lookup_utf8(reported_err_doc, "errmsg"), "Unrecognized pipeline stage");
-   }
-
-   mongoc_change_stream_destroy(stream);
-   mongoc_client_destroy(client);
-   mongoc_collection_destroy(coll);
-}
-
 
 typedef struct _test_resume_token_ctx_t {
    bool expecting_resume_token;
@@ -309,7 +262,7 @@ test_change_stream_live_track_resume_token(void *test_ctx)
 
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
 
@@ -428,7 +381,7 @@ test_change_stream_live_batch_size(void *test_ctx)
 
    ctx.expected_getmore_batch_size = 1;
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    for (i = 0; i < 10; i++) {
       bson_t *doc = BCON_NEW("_id", BCON_INT32(i));
@@ -486,7 +439,7 @@ _test_resume_token_error(const char *id_projection)
    ASSERT(stream);
    ASSERT_OR_PRINT(!mongoc_change_stream_error_document(stream, &err, NULL), err);
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 2}"), &opts, NULL, &err), err);
 
@@ -888,7 +841,7 @@ test_change_stream_live_watch(void *test_ctx)
 
    BSON_UNUSED(test_ctx);
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
 
    coll = drop_and_get_coll(client, "db", "coll_watch");
    ASSERT(coll);
@@ -1610,7 +1563,7 @@ prose_test_11(void *ctx)
    post_batch_expected = (_data_change_stream_t *)stream->cursor->impl.data;
    ASSERT(bson_compare(resume_token, &post_batch_expected->post_batch_resume_token) == 0);
 
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
 
@@ -1661,7 +1614,7 @@ prose_test_13(void *ctx)
 
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
-   mongoc_write_concern_set_wmajority(wc, 30000);
+   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_write_concern_append(wc, &opts);
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
 
@@ -1930,6 +1883,78 @@ prose_test_18(void)
    mock_server_destroy(server);
 }
 
+// Test that a resume does not occur after an "invalidate" event.
+static void
+iterate_after_invalidate(void *test_ctx)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   bson_error_t error;
+   int64_t start_time = bson_get_monotonic_time();
+
+   BSON_UNUSED(test_ctx);
+
+   // Insert a document into the collection to ensure the collection is created.
+   bool ok = mongoc_collection_insert_one(coll, tmp_bson("{'foo': 'bar'}"), NULL /* opts */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   mongoc_change_stream_t *cs = mongoc_collection_watch(coll, tmp_bson("{}"), NULL /* opts */);
+
+   ASSERT_OR_PRINT(mongoc_collection_drop(coll, &error), error);
+
+   // Iterate until the next event. Expect "drop" event.
+   {
+      const bson_t *event;
+      bool found_event = false;
+      while (!found_event) {
+         found_event = mongoc_change_stream_next(cs, &event);
+         if (!found_event) {
+            ASSERT_OR_PRINT(!mongoc_change_stream_error_document(cs, &error, NULL /* document */), error);
+         }
+
+         int64_t delta = bson_get_monotonic_time() - start_time;
+         if (delta > 10 * 1000 * 1000) {
+            test_error("test exceeded 10 seconds");
+         }
+      }
+      ASSERT_MATCH(event, "{'operationType': 'drop'}");
+   }
+
+   // Iterate until the next event. Expect "invalidate" event.
+   {
+      const bson_t *event;
+      bool found_event = false;
+      while (!found_event) {
+         found_event = mongoc_change_stream_next(cs, &event);
+         if (!found_event) {
+            ASSERT_OR_PRINT(!mongoc_change_stream_error_document(cs, &error, NULL /* document */), error);
+         }
+
+         int64_t delta = bson_get_monotonic_time() - start_time;
+         if (delta > 10 * 1000 * 1000) {
+            test_error("test exceeded 10 seconds");
+         }
+      }
+      ASSERT_MATCH(event, "{'operationType': 'invalidate'}");
+   }
+
+   // Iterate. Expect error suggesting failure to iterate a closed cursor.
+   {
+      const bson_t *event;
+      bool found_error = false;
+      while (!found_error) {
+         ASSERT_WITH_MSG(!mongoc_change_stream_next(cs, &event), "expected no event, got: %s", tmp_json(event));
+         found_error = mongoc_change_stream_error_document(cs, &error, NULL /* document */);
+      }
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "Cannot advance a closed change stream");
+   }
+
+   mongoc_change_stream_destroy(cs);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 typedef struct {
    bson_t *commands[6];
    size_t commands_len;
@@ -2063,13 +2088,6 @@ test_change_stream_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/change_stream/pipeline", test_change_stream_pipeline);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/single_server",
-                     test_change_stream_live_single_server,
-                     NULL,
-                     NULL,
-                     test_framework_skip_if_not_single);
-
-   TestSuite_AddFull(suite,
                      "/change_stream/live/track_resume_token",
                      test_change_stream_live_track_resume_token,
                      NULL,
@@ -2176,6 +2194,12 @@ test_change_stream_install(TestSuite *suite)
                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest(suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest(suite, "/change_streams/prose_test_18", prose_test_18);
+   TestSuite_AddFull(suite,
+                     "/change_streams/iterate_after_invalidate",
+                     iterate_after_invalidate,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
                      "/change_stream/batchSize0",
                      test_change_stream_batchSize0,

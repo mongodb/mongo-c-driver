@@ -156,10 +156,29 @@ buildvariants:
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
-      - name: cse-sasl-cyrus-openssl-debian11-clang-compile
-      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
-      - name: cse-sasl-cyrus-openssl-debian12-clang-compile
-      - name: cse-sasl-cyrus-openssl-debian12-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian11-latest-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian11-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian12-latest-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian12-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
@@ -189,27 +208,6 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-sharded-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-sharded-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-sharded-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-sharded-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-sharded-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-sharded-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2204-clang-12-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2204-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2404-clang-14-compile
@@ -255,6 +253,12 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
+  - name: oidc
+    display_name: OIDC
+    run_on:
+      - ubuntu2404-small
+    tasks:
+      - name: test-oidc-task-group
   - name: openssl-compat-matrix
     display_name: OpenSSL Compatibility Matrix
     tasks:
@@ -295,8 +299,15 @@ buildvariants:
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
-      - name: sasl-cyrus-openssl-debian11-gcc-compile
-      - name: sasl-cyrus-openssl-debian12-gcc-compile
+      - name: sasl-cyrus-openssl-debian11-latest-gcc-compile
+      - name: sasl-cyrus-openssl-debian12-latest-gcc-compile
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
@@ -334,14 +345,6 @@ buildvariants:
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel80-gcc-compile
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: sasl-cyrus-openssl-ubuntu2204-clang-12-compile
       - name: sasl-cyrus-openssl-ubuntu2204-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2404-clang-14-compile

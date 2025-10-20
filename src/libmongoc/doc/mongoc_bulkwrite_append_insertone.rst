@@ -19,4 +19,4 @@ Description
 -----------
 
 Adds a document to insert into the namespace ``ns``. Returns true on success. Returns false and sets ``error`` if an
-error occured.
+error occurred.

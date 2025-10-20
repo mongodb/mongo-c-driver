@@ -277,6 +277,12 @@ int
 test_framework_skip_if_no_exhaust_cursors(void);
 
 bool
+test_framework_is_oidc(void);
+
+void
+test_framework_set_oidc_callback(mongoc_client_t *client);
+
+bool
 test_framework_is_loadbalanced(void);
 
 // `test_framework_skip_if_no_server_ssl` skips if test runner was not told to

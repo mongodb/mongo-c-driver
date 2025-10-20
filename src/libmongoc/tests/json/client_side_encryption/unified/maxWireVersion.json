@@ -14,7 +14,14 @@
         "autoEncryptOpts": {
           "keyVaultNamespace": "keyvault.datakeys",
           "kmsProviders": {
-            "aws": {}
+            "aws": {
+              "accessKeyId": {
+                "$$placeholder": 1
+              },
+              "secretAccessKey": {
+                "$$placeholder": 1
+              }
+            }
           },
           "extraOptions": {
             "mongocryptdBypassSpawn": true

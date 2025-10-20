@@ -24,6 +24,7 @@
 #include <mongoc/mongoc-crypt-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-log-and-monitor-private.h>
+#include <mongoc/mongoc-oidc-cache-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-shared-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -233,6 +234,9 @@ typedef struct _mongoc_topology_t {
    // DNS implementations are expected to try UDP first, then retry with TCP if the UDP response indicates truncation.
    // Some DNS servers truncate UDP responses without setting the truncated (TC) flag. This may result in no TCP retry.
    bool srv_prefer_tcp;
+
+   // `oidc_cache` implements the OIDC spec "Client Cache". It is shared among all pooled clients.
+   mongoc_oidc_cache_t *oidc_cache;
 } mongoc_topology_t;
 
 mongoc_topology_t *
