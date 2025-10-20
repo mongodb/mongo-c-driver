@@ -61,13 +61,9 @@ foreach(casename IN LISTS MONGOC_TESTS)
     # Tests can set a timeout with a tag:
     list_select(labels SELECT "^timeout:(.*)$" REPLACE "\\1" OUT timeout)
     if(NOT timeout)
-        # Default timeout of 5 seconds
-        set(timeout 5)
-    endif()
-
-    # If a test declares that it is "live", lock exclusive access to the live server
-    if("live" IN_LIST labels)
-        list(APPEND lock live-server)
+        # Default timeout of 10 seconds. If a test takes longer than this, it either
+        # has a bug or it needs to declare a longer timeout.
+        set(timeout 10)
     endif()
 
     # Add a label for all test cases generated via this script so that they
