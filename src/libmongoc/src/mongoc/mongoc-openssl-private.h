@@ -25,6 +25,8 @@
 
 #include <bson/bson.h>
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -55,5 +57,6 @@ _mongoc_tlsfeature_has_status_request(const uint8_t *data, int length);
 
 BSON_END_DECLS
 
+#endif // OpenSSL enabled?
 
 #endif /* MONGOC_OPENSSL_PRIVATE_H */
