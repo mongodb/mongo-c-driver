@@ -1,6 +1,7 @@
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-openssl-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -71,6 +72,7 @@ _test_topology_scanner(bool with_ssl)
       copt.weak_cert_validation = 1;
 
       mongoc_topology_scanner_set_ssl_opts(topology_scanner, &copt);
+      topology_scanner->openssl_ctx = _mongoc_openssl_ctx_new(&copt);
    }
 #endif
 
