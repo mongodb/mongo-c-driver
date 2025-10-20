@@ -31,6 +31,7 @@
 #include <mlib/loop.h>
 #include <mlib/test.h>
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -649,6 +650,13 @@ mstr_contains_any_of(mstr_view str, mstr_view needle)
  * and a size `len`. If not null, the pointer `data` points to an array of mutable
  * `char` of length `len + 1`, where the character at `data[len]` is always zero,
  * and must not be modified.
+ *
+ * @note The string MAY contain nul (zero-value) characters, so using them with
+ * C string APIs could truncate unexpectedly.
+ * @note The string itself may be "null" if the `data` member of the string is
+ * a null pointer. A zero-initialized `mstr` is null. The null string is distinct
+ * from the empty string, which has a non-null `.data` that points to an empty
+ * C string.
  */
 typedef struct mstr {
    /**
@@ -668,7 +676,7 @@ typedef struct mstr {
    char *data;
    /**
     * @brief The number of characters in the array pointed-to by `data`
-    * that preceed the null terminator.
+    * that precede the null terminator.
     */
    size_t len;
 } mstr;
@@ -738,7 +746,7 @@ mstr_resize(mstr *str, size_t new_len)
       return false;
    }
    // Check how many chars we added/removed
-   const ptrdiff_t len_diff = new_len - str->len;
+   const ptrdiff_t len_diff = mlib_assert_sub(ptrdiff_t, new_len, str->len);
    if (len_diff > 0) {
       // We added new chars. Zero-init all the new chars
       memset(str->data + old_len, 0, (size_t)len_diff);
@@ -770,17 +778,33 @@ mstr_new(size_t new_len)
 }
 
 /**
- * @brief Delete an `mstr` that was created with an allocating API, including
- * the resize APIs
+ * @brief Free the resources associated with an mstr object.
  *
- * @param s An `mstr` object. If the object is null, this function is a no-op.
+ * @param s Pointer to an `mstr` object. If pointer or the pointed-to-object is null,
+ * this function is a no-op.
  *
- * After this call, the value of the `s` object has been consumed and is invalid.
+ * After this call, the pointed-to `s` will be a null `mstr`
  */
 static inline void
-mstr_delete(mstr s)
+mstr_destroy(mstr *s)
 {
-   free(s.data);
+   if (s) {
+      free(s->data);
+      s->len = 0;
+      s->data = NULL;
+   }
+}
+
+/**
+ * @brief Obtain a null mstr string object.
+ *
+ * @return mstr A null string, with a null data pointer and zero size
+ */
+static inline mstr
+mstr_null(void)
+{
+   const mstr ret = {0};
+   return ret;
 }
 
 /**
@@ -989,5 +1013,117 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
    }
 }
 
+/**
+ * @brief Like `mstr_sprintf_append`, but accepts the va_list directly.
+ */
+MLIB_IF_GNU_LIKE(__attribute__((format(printf, 2, 0))))
+static inline bool
+mstr_vsprintf_append(mstr *string, const char *format, va_list args)
+{
+   mlib_check(string != NULL, because, "Output string parameter is required");
+   // The size of the string before we appended any characters to it. This is also
+   // the zero-based offset where we will be inserting new characters.
+   const size_t start_size = string->len;
+
+   // Try to guess the length of the added string
+   size_t added_len = strlen(format);
+   // Give use some wiggle room since we are inserting characters:
+   if (mlib_mul(&added_len, 2)) {
+      // Doubling the size overflowed. Not likely, but just use the original string
+      // size and grow as-needed.
+      added_len = strlen(format);
+   }
+
+   while (1) {
+      // Calculate the new size of the string
+      size_t new_size = 0;
+      if (mlib_add(&new_size, start_size, added_len)) {
+         // Adding more space overflows
+         return false;
+      }
+      // Try to make room
+      if (!mstr_resize(string, new_size)) {
+         // Failed to allocate the new region.
+         return false;
+      }
+      // Calc the size with the null terminator
+      size_t len_with_null = added_len;
+      if (mlib_add(&len_with_null, 1)) {
+         // Unlikely: Overflow
+         return false;
+      }
+
+      // Do the formatting
+      va_list dup_args;
+      va_copy(dup_args, args);
+      int n_chars = vsnprintf(string->data + start_size, len_with_null, format, dup_args);
+      va_end(dup_args);
+
+      // On error, returns a negative value
+      if (n_chars < 0) {
+         return false;
+      }
+
+      // Upon success, vsnprintf returns the number of chars that were written, at most
+      // as many chars as are available
+      if ((size_t)n_chars <= added_len) {
+         // Success. This add+resize never fails
+         mlib_check(!mlib_add(&new_size, start_size, (size_t)n_chars));
+         mlib_check(mstr_resize(string, new_size));
+         return true;
+      }
+
+      // Otherwise, returns the number of chars that would have been written. Update
+      // the number of chars that we expect to insert, and then try again.
+      added_len = (size_t)n_chars;
+   }
+}
+
+/**
+ * @brief Append content to a string using `printf()` style formatting.
+ *
+ * @param string Pointer to a valid or null string object which will be modified
+ * @param format A printf-style format string to append onto `string`
+ * @param args The interpolation arguments for `format`
+ *
+ * @retval true If-and-only-if the string is successfully modified
+ * @retval false If there was an error during formatting. The content of `string`
+ * is unspecified.
+ *
+ * This function maintains the existing content of `string` and only inserts
+ * additional characters at the end of the string.
+ */
+MLIB_IF_GNU_LIKE(__attribute__((format(printf, 2, 3))))
+static inline bool
+mstr_sprintf_append(mstr *string, const char *format, ...)
+{
+   va_list args;
+   va_start(args, format);
+   const bool okay = mstr_vsprintf_append(string, format, args);
+   va_end(args);
+   return okay;
+}
+
+/**
+ * @brief Format a string according to `printf` rules
+ *
+ * @param f The format string to be used.
+ * @param ... The formatting arguments to interpolate into the string
+ */
+MLIB_IF_GNU_LIKE(__attribute__((format(printf, 1, 2))))
+static inline mstr
+mstr_sprintf(const char *f, ...)
+{
+   mstr ret = mstr_null();
+   va_list args;
+   va_start(args, f);
+   const bool okay = mstr_vsprintf_append(&ret, f, args);
+   va_end(args);
+   if (!okay) {
+      mstr_destroy(&ret);
+      return mstr_null();
+   }
+   return ret;
+}
 
 #endif // MLIB_STR_H_INCLUDED

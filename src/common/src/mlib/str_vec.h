@@ -24,7 +24,7 @@
 #include <mlib/str.h>
 
 #define T mstr
-#define VecDestroyElement(Ptr) (mstr_delete(*Ptr), Ptr->data = NULL, Ptr->len = 0)
+#define VecDestroyElement(Ptr) (mstr_destroy(Ptr))
 #define VecCopyElement(Dst, Src) (*Dst = mstr_copy(*Src), Dst->data != NULL)
 #include <mlib/vec.t.h>
 

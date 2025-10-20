@@ -942,7 +942,7 @@ _test_str(void)
       mlib_check(s.data != NULL);
       // The null terminator is present:
       mlib_check(s.data[0], eq, 0);
-      mstr_delete(s);
+      mstr_destroy(&s);
    }
 
    // Simple copy of a C string
@@ -950,14 +950,14 @@ _test_str(void)
       mstr s = mstr_copy_cstring("foo bar");
       mlib_check(s.len, eq, 7);
       mlib_check(mstr_cmp(s, ==, mstr_cstring("foo bar")));
-      mstr_delete(s);
+      mstr_destroy(&s);
    }
 
    // Concat two strings
    {
       mstr s = mstr_concat(mstr_cstring("foo"), mstr_cstring("bar"));
       mlib_check(mstr_cmp(s, ==, mstr_cstring("foobar")));
-      mstr_delete(s);
+      mstr_destroy(&s);
    }
 
    // Append individual characters
@@ -967,7 +967,7 @@ _test_str(void)
       mstr_pushchar(&s, 'o');
       mstr_pushchar(&s, 'o');
       mlib_check(mstr_cmp(s, ==, mstr_cstring("foo")));
-      mstr_delete(s);
+      mstr_destroy(&s);
    }
 
    // Splice deletion
@@ -984,7 +984,7 @@ _test_str(void)
       mlib_check(mstr_splice(&s, 4, 0, mstr_cstring("quux ")));
       mlib_check(mstr_cmp(s, ==, mstr_cstring("foo quux bar baz")));
 
-      mstr_delete(s);
+      mstr_destroy(&s);
    }
 
    // Replacing
@@ -1009,10 +1009,22 @@ _test_str(void)
          mlib_check(mstr_replace(&s, mstr_cstring(""), mstr_cstring("a")));
       }
 
-      mstr_delete(s);
+      mstr_destroy(&s);
    }
 }
 
+static void
+_test_str_format(void)
+{
+   mstr s = mstr_sprintf("foo");
+   mlib_check(s.len, eq, 3);
+   mlib_check(s.data, str_eq, "foo");
+   mstr_sprintf_append(&s, " bar");
+   mlib_check(s.data, str_eq, "foo bar");
+   mstr_sprintf_append(&s, " %d", 123);
+   mlib_check(s.data, str_eq, "foo bar 123");
+   mstr_destroy(&s);
+}
 
 static void
 _test_duration(void)
@@ -1306,6 +1318,7 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
    TestSuite_Add(suite, "/mlib/str", _test_str);
+   TestSuite_Add(suite, "/mlib/str-format", _test_str_format);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
    TestSuite_Add(suite, "/mlib/sleep", _test_sleep);

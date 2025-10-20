@@ -708,7 +708,7 @@ Test_Destroy(Test *t)
    if (t->dtor) {
       t->dtor(t->ctx);
    }
-   mstr_delete(t->name);
+   mstr_destroy(&t->name);
    mstr_vec_destroy(&t->tags);
    CheckFuncVec_destroy(&t->checks);
 }
@@ -739,9 +739,9 @@ struct TestSkip {
 static inline void
 TestSkip_Destroy(TestSkip *skip)
 {
-   mstr_delete(skip->test_name);
-   mstr_delete(skip->subtest_desc);
-   mstr_delete(skip->reason);
+   mstr_destroy(&skip->test_name);
+   mstr_destroy(&skip->subtest_desc);
+   mstr_destroy(&skip->reason);
 }
 
 #define T TestSkip

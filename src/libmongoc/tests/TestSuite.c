@@ -1061,7 +1061,7 @@ TestSuite_Destroy(TestSuite *suite)
 
    bson_free(suite->name);
    bson_free(suite->prgname);
-   mstr_delete(suite->ctest_run);
+   mstr_destroy(&suite->ctest_run);
    mstr_vec_destroy(&suite->match_patterns);
    TestSkipVec_destroy(&suite->failing_flaky_skips);
 }
