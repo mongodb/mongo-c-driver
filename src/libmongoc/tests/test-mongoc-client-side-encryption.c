@@ -6635,9 +6635,10 @@ test_lookup_setup(void)
       // Create db.non_csfle_schema:
       {
          drop_coll(db, "non_csfle_schema");
-         bson_t *schema = get_bson_from_json_file(TESTDIR "schema-non-csfle.json");
-         bson_t *create_opts = BCON_NEW("validator", "{", "$jsonSchema", BCON_DOCUMENT(schema), "}");
-         mongoc_collection_t *coll = mongoc_database_create_collection(db, "non_csfle_schema", create_opts, &error);
+         bson_t *const schema = get_bson_from_json_file(TESTDIR "schema-non-csfle.json");
+         bson_t *const create_opts = BCON_NEW("validator", "{", "$jsonSchema", BCON_DOCUMENT(schema), "}");
+         mongoc_collection_t *const coll =
+            mongoc_database_create_collection(db, "non_csfle_schema", create_opts, &error);
          ASSERT_OR_PRINT(coll, error);
          mongoc_collection_destroy(coll);
          bson_destroy(create_opts);
@@ -6726,13 +6727,14 @@ test_lookup_setup(void)
 
       // Insert to db.non_csfle_schema
       {
-         mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "non_csfle_schema");
+         mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "non_csfle_schema");
          ok = mongoc_collection_insert_one(
             coll, MAKE_BSON({"non_csfle_schema" : "non_csfle_schema"}), NULL, NULL, &error);
          ASSERT_OR_PRINT(ok, error);
          mongoc_collection_destroy(coll);
          // Find document with unencrypted client to check it is not encrypted.
-         mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection(setup_client, "db", "non_csfle_schema");
+         mongoc_collection_t *const coll_unencrypted =
+            mongoc_client_get_collection(setup_client, "db", "non_csfle_schema");
          ASSERT_COLL_MATCHES_ONE(coll_unencrypted, MAKE_BSON({"non_csfle_schema" : "non_csfle_schema"}));
          mongoc_collection_destroy(coll_unencrypted);
       }
@@ -6986,10 +6988,10 @@ test_lookup_post82(void *unused)
 
    // Case 10: db.qe joins db.non_csfle_schema:
    {
-      mongoc_client_t *client = create_encrypted_client();
-      mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "qe");
+      mongoc_client_t *const client = create_encrypted_client();
+      mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "qe");
 
-      bson_t *pipeline = MAKE_BSON({
+      bson_t *const pipeline = MAKE_BSON({
          "pipeline" : [
             {"$match" : {"qe" : "qe"}},
             {
@@ -7006,7 +7008,7 @@ test_lookup_post82(void *unused)
          ]
       });
 
-      bson_t *expect = MAKE_BSON({"qe" : "qe", "matched" : [ {"non_csfle_schema" : "non_csfle_schema"} ]});
+      bson_t *const expect = MAKE_BSON({"qe" : "qe", "matched" : [ {"non_csfle_schema" : "non_csfle_schema"} ]});
       ASSERT_AGG_RETURNS_ONE(coll, pipeline, expect);
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
