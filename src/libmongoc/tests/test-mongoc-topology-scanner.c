@@ -72,7 +72,7 @@ _test_topology_scanner(bool with_ssl)
       copt.weak_cert_validation = 1;
 
       mongoc_topology_scanner_set_ssl_opts(topology_scanner, &copt);
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
       topology_scanner->openssl_ctx = _mongoc_openssl_ctx_new(&copt);
 #endif
    }
