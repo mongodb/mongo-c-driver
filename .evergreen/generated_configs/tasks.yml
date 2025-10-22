@@ -1133,20 +1133,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=r3.8.0
@@ -1157,8 +1155,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=LibreSSL
@@ -1174,20 +1176,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=LibreSSL
             - --test_mongocxx_ref=r3.9.0
@@ -1198,8 +1198,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=LibreSSL
@@ -1258,20 +1262,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u18-clang, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.8.0
@@ -1282,8 +1284,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1299,20 +1305,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r3.9.0
@@ -1323,8 +1327,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1383,20 +1391,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u18-clang, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r3.8.0
@@ -1407,8 +1413,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
@@ -1424,20 +1434,18 @@ tasks:
       - ubuntu2404-large
     tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
     commands:
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: bash
-          args:
-            - -c
-            - docker login -u "${artifactory_username}" --password-stdin artifactory.corp.mongodb.com <<<"${artifactory_password}"
+      - func: docker-login-amazon-ecr
       - command: subprocess.exec
         type: setup
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +env-warmup
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r3.9.0
@@ -1448,8 +1456,12 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
           args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
@@ -1493,53 +1505,10 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
-            - --targets=test-example
+            - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=OpenSSL
-            - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
-            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
-    run_on:
-      - amazon2
-      - debian11-large
-      - debian12-large
-      - ubuntu2204-large
-      - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, alpine3.16-clang, alpine3.16-gcc, alpine3.17-clang, alpine3.17-gcc, alpine3.18-clang, alpine3.18-gcc, alpine3.19-clang, alpine3.19-gcc, archlinux-clang, archlinux-gcc, centos7-clang, centos7-gcc, u16-clang, u16-gcc, u18-clang, u18-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
-    commands:
-      - func: docker-login-amazon-ecr
-      - command: subprocess.exec
-        type: setup
-        params:
-          binary: ./tools/earthly.sh
-          working_dir: mongoc
-          include_expansions_in_env:
-            - DOCKER_CONFIG
-          args:
-            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
-            - --sasl=off
-            - --tls=off
-            - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
-            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-      - command: subprocess.exec
-        type: test
-        params:
-          binary: ./tools/earthly.sh
-          working_dir: mongoc
-          include_expansions_in_env:
-            - DOCKER_CONFIG
-          args:
-            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
-            - --targets=test-example
-            - --sasl=off
-            - --tls=off
-            - --test_mongocxx_ref=none
+            - --test_mongocxx_ref=r3.8.0
             - --env=${MONGOC_EARTHLY_ENV}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: clang-format
@@ -3549,51 +3518,220 @@ tasks:
           args:
             - -c
             - .evergreen/scripts/run-mock-server-tests.sh
-  - name: openssl-static-compile-debian11-gcc
-    run_on: debian11-large
-    tags: [openssl-static-matrix, debian11, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-debian12-gcc
-    run_on: debian12-large
-    tags: [openssl-static-matrix, debian12, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-ubuntu2004-gcc
-    run_on: ubuntu2004-large
-    tags: [openssl-static-matrix, ubuntu2004, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-ubuntu2204-gcc
-    run_on: ubuntu2204-large
-    tags: [openssl-static-matrix, ubuntu2204, gcc]
-    commands:
-      - func: find-cmake-latest
-      - func: openssl-static-compile
-        vars:
-          CC: gcc
-          CXX: g++
-  - name: openssl-static-compile-ubuntu2404-gcc
+  - name: openssl-compat-1.0.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
-    tags: [openssl-static-matrix, ubuntu2404, gcc]
+    tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]
     commands:
+      - func: fetch-source
       - func: find-cmake-latest
-      - func: openssl-static-compile
+      - func: openssl-compat
         vars:
-          CC: gcc
-          CXX: g++
+          OPENSSL_VERSION: 1.0.2
+      - func: run auth tests
+  - name: openssl-compat-1.0.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-1.0.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 1.0.2
+      - func: run auth tests
+  - name: openssl-compat-1.1.1-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-1.1.1, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 1.1.1
+      - func: run auth tests
+  - name: openssl-compat-1.1.1-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-1.1.1, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 1.1.1
+      - func: run auth tests
+  - name: openssl-compat-3.0.9-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.0.9, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-3.0.9-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.0.9, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-3.1.2-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.1.2, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
+  - name: openssl-compat-3.1.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.1.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
+  - name: openssl-compat-3.2.5-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.2.5, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.2.5
+      - func: run auth tests
+  - name: openssl-compat-3.2.5-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.2.5, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.2.5
+      - func: run auth tests
+  - name: openssl-compat-3.3.4-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.3.4, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.3.4
+      - func: run auth tests
+  - name: openssl-compat-3.3.4-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.3.4, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.3.4
+      - func: run auth tests
+  - name: openssl-compat-3.4.2-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.4.2, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.4.2
+      - func: run auth tests
+  - name: openssl-compat-3.4.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.4.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.4.2
+      - func: run auth tests
+  - name: openssl-compat-3.5.1-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.5.1, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 3.5.1
+      - func: run auth tests
+  - name: openssl-compat-3.5.1-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-3.5.1, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.5.1
+      - func: run auth tests
+  - name: openssl-compat-fips-3.0.9-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.0.9, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-fips-3.0.9-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.0.9, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.0.9
+      - func: run auth tests
+  - name: openssl-compat-fips-3.1.2-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.1.2, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
+  - name: openssl-compat-fips-3.1.2-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-fips-3.1.2, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: find-cmake-latest
+      - func: openssl-compat
+        vars:
+          OPENSSL_ENABLE_FIPS: "ON"
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 3.1.2
+      - func: run auth tests
   - name: sasl-cyrus-darwinssl-macos-11-arm64-clang-compile
     run_on: macos-11-arm64
     tags: [sasl-matrix-darwinssl, compile, macos-11-arm64, clang, sasl-cyrus]

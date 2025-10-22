@@ -9,7 +9,6 @@ set -o igncr # Ignore CR in this script for Windows compatibility.
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_opt BYPASS_FIND_CMAKE "OFF"
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CMAKE_GENERATOR
@@ -73,23 +72,12 @@ else
   configure_flags_append "-DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 configure_flags_append "-DCMAKE_BUILD_TYPE=${build_config:?}"
+configure_flags_append "-DENABLE_SSL=${SSL:-}"
 
-if [ "${SSL}" == "OPENSSL_STATIC" ]; then
-  configure_flags_append "-DENABLE_SSL=OPENSSL" "-DOPENSSL_USE_STATIC_LIBS=ON"
-else
-  configure_flags_append "-DENABLE_SSL=${SSL}"
-fi
-
-declare cmake_binary
-if [[ "${BYPASS_FIND_CMAKE:-}" == "OFF" ]]; then
   # shellcheck source=.evergreen/scripts/find-cmake-version.sh
-  . "${script_dir}/find-cmake-latest.sh"
-
-  cmake_binary="$(find_cmake_latest)"
-else
-  cmake_binary="cmake"
-fi
-
+. "${script_dir}/find-cmake-latest.sh"
+declare cmake_binary
+cmake_binary="$(find_cmake_latest)"
 "${cmake_binary:?}" --version
 
 export CMAKE_BUILD_PARALLEL_LEVEL
