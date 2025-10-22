@@ -134,7 +134,6 @@ main (int argc, char *argv[])
    TEST_INSTALL (test_happy_eyeballs_install);
    TEST_INSTALL (test_counters_install);
    TEST_INSTALL (test_crud_install);
-   TEST_INSTALL (test_mongohouse_install);
    TEST_INSTALL (test_apm_install);
    TEST_INSTALL (test_server_description_install);
    TEST_INSTALL (test_aws_install);
