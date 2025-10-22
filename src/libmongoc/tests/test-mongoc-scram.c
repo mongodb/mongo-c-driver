@@ -753,7 +753,8 @@ test_scram_install (TestSuite *suite)
                       test_mongoc_scram_cache_invalidation,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_auth);
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_macos); // CDRIVER-6079
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
                       test_mongoc_scram_auth,
