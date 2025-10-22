@@ -44,11 +44,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
 
-   // CDRIVER-3886: serverless testing (schema version 1.4)
-   {"poc-crud", SKIP_ALL_TESTS},
-   {"db-aggregate", SKIP_ALL_TESTS},
-   {"mongos-unpin", SKIP_ALL_TESTS},
-
    // CDRIVER-2871: CMAP is not implemented
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
@@ -423,8 +418,6 @@ test_runner_new (void)
    test_runner->topology_type = get_topology_type (test_runner->internal_client);
    server_semver (test_runner->internal_client, &test_runner->server_version);
 
-   test_runner->is_serverless = test_framework_is_serverless ();
-
    /* Terminate any possible open transactions. */
    if (!test_runner_terminate_open_transactions (test_runner, &error)) {
       test_error ("error terminating transactions: %s", error.message);
@@ -739,28 +732,7 @@ check_run_on_requirement (test_runner_t *test_runner,
       }
 
       if (0 == strcmp (key, "serverless")) {
-         const char *serverless_mode = bson_iter_utf8 (&req_iter, NULL);
-
-         if (0 == strcmp (serverless_mode, "allow")) {
-            continue;
-         } else if (0 == strcmp (serverless_mode, "require")) {
-            if (!test_runner->is_serverless) {
-               *fail_reason = bson_strdup_printf ("Not running in serverless mode");
-               return false;
-            }
-
-            continue;
-         } else if (0 == strcmp (serverless_mode, "forbid")) {
-            if (test_runner->is_serverless) {
-               *fail_reason = bson_strdup_printf ("Running in serverless mode");
-               return false;
-            }
-
-            continue;
-         } else {
-            test_error ("Unexpected serverless mode: %s", serverless_mode);
-         }
-
+         // Ignore deprecated serverless runOnRequirement. Serverless is not tested.
          continue;
       }
 

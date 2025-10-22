@@ -71,7 +71,6 @@ all_variants = [
             OD([("name", "install-uninstall-check-mingw"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", "install-uninstall-check-msvc"), ("distros", ["windows-vsCurrent-large"])]),
             "debug-compile-with-warnings",
-            OD([("name", "build-and-test-with-toolchain"), ("distros", ["debian10-small"])]),
             "install-libmongoc-after-libbson",
         ],
         {
@@ -79,21 +78,6 @@ all_variants = [
             "SKIP_LEGACY_SHELL": "1"
         },
         tags=["pr-merge-gate"],
-    ),
-    Variant(
-        "openssl",
-        "OpenSSL / LibreSSL",
-        "archlinux-build",
-        [
-            "build-and-run-authentication-tests-openssl-1.0.1",
-            "build-and-run-authentication-tests-openssl-1.0.2",
-            "build-and-run-authentication-tests-openssl-1.1.0",
-            "build-and-run-authentication-tests-openssl-1.0.1-fips",
-            "build-and-run-authentication-tests-libressl-2.5",
-            "build-and-run-authentication-tests-libressl-3.0-auto",
-            "build-and-run-authentication-tests-libressl-3.0",
-        ],
-        {},
     ),
     Variant(
         "clang37",
@@ -302,16 +286,6 @@ all_variants = [
         patchable=False,
         batchtime=days(1),
     ),
-    Variant(
-        "clang100ubuntu",
-        "clang 10.0 (Ubuntu 20.04)",
-        "ubuntu2004-test",
-        [
-            "debug-compile-sasl-openssl-static",
-            ".authentication-tests .asan",
-        ],
-        {"CC": "clang"},
-    ),
     # Run AWS tests for MongoDB 4.4 and 5.0 on Ubuntu 20.04. AWS setup scripts
     # expect Ubuntu 20.04+. MongoDB 4.4 and 5.0 are not available on 22.04.
     Variant(
@@ -338,21 +312,17 @@ all_variants = [
         ],
         {"CC": "clang"},
     ),
-    Variant("mongohouse", "Mongohouse Test", "ubuntu2204-small", ["debug-compile-sasl-openssl", "test-mongohouse"], {}),
     Variant(
         "ocsp",
         "OCSP tests",
         "ubuntu2004-small",
         [
             OD([("name", "debug-compile-nosasl-openssl")]),
-            OD([("name", "debug-compile-nosasl-openssl-static")]),
             OD([("name", "debug-compile-nosasl-darwinssl"), ("distros", ["macos-14-arm64"])]),
             OD([("name", "debug-compile-nosasl-winssl"), ("distros", ["windows-vsCurrent-large"])]),
             OD([("name", ".ocsp-openssl")]),
             OD([("name", ".ocsp-darwinssl"), ("distros", ["macos-14-arm64"])]),
             OD([("name", ".ocsp-winssl"), ("distros", ["windows-vsCurrent-large"])]),
-            OD([("name", "debug-compile-nosasl-openssl-1.0.1")]),
-            OD([("name", ".ocsp-openssl-1.0.1")]),
         ],
         {},
         batchtime=days(7),
@@ -369,11 +339,7 @@ all_variants = [
                 "name": "ocsp-winssl",
                 "execution_tasks": [".ocsp-winssl"],
             },
-            {
-                "name": "ocsp-openssl-1.0.1",
-                "execution_tasks": [".ocsp-openssl-1.0.1"],
-            },
-        ]
+        ],
     ),
     Variant(
         "packaging",

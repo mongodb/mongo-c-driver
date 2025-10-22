@@ -327,16 +327,30 @@ functions:
           - |
             # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
             uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
-  openssl-static-compile:
+  openssl-compat:
     - command: subprocess.exec
-      type: test
+      type: setup
       params:
         binary: bash
         working_dir: mongoc
-        add_expansions_to_env: true
+        include_expansions_in_env:
+          - OPENSSL_VERSION
+          - OPENSSL_ENABLE_FIPS
+          - OPENSSL_USE_STATIC_LIBS
         args:
           - -c
-          - .evergreen/scripts/compile-openssl-static.sh
+          - .evergreen/scripts/openssl-compat-setup.sh
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - OPENSSL_VERSION
+          - OPENSSL_USE_STATIC_LIBS
+        args:
+          - -c
+          - .evergreen/scripts/openssl-compat-check.sh
   restore-instance-profile:
     - command: subprocess.exec
       params:

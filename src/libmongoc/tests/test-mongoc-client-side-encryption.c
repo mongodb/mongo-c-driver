@@ -486,7 +486,17 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    bson_append_utf8 (docs[0], "_id", -1, "under_16mib", -1);
    bson_append_utf8 (docs[0], "unencrypted", -1, as, exceeds_16mib_after_encryption);
    BSON_ASSERT (!mongoc_collection_insert_one (coll, docs[0], NULL /* opts */, NULL /* reply */, &error));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 2, "too large");
+   {
+      const uint32_t too_large = 10334;
+      // SERVER-104405 changed the expected error code from 2 to 10334:
+      const uint32_t too_large_old = 2;
+      ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
+      if (error.code != too_large && error.code != too_large_old) {
+         test_error (
+            "Unexpected error: %" PRIu32 ". Expected %" PRIu32 " or %" PRIu32, error.code, too_large, too_large_old);
+      }
+      ASSERT_CONTAINS (error.message, "too large");
+   }
    bson_destroy (docs[0]);
 
    bson_free (as);
@@ -6568,8 +6578,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6579,8 +6587,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6590,8 +6596,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6601,8 +6605,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6612,8 +6614,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6656,8 +6656,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6703,8 +6701,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
 
    TestSuite_AddFull (suite,
@@ -6715,8 +6711,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/createEncryptedCollection/"
@@ -6726,8 +6720,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/createEncryptedCollection/insert",
@@ -6736,8 +6728,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_21,
-                      // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                      test_framework_skip_if_serverless,
                       test_framework_skip_if_single);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_mongocryptd_shared_library",
@@ -6794,8 +6784,6 @@ test_client_side_encryption_install (TestSuite *suite)
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
                   test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
-                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                  test_framework_skip_if_serverless,
                   test_framework_skip_if_not_replset);
             } else {
                TestSuite_AddFull (
@@ -6806,8 +6794,6 @@ test_client_side_encryption_install (TestSuite *suite)
                   (void *) rangeTypes[i] /* ctx */,
                   test_framework_skip_if_no_client_side_encryption,
                   test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
-                  // Remove skip_if_serverless once DRIVERS-2589 is resolved.
-                  test_framework_skip_if_serverless,
                   test_framework_skip_if_single);
             }
 

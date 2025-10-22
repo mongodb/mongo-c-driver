@@ -1956,6 +1956,17 @@ test_framework_skip_if_windows (void)
 }
 
 
+int
+test_framework_skip_if_macos (void)
+{
+#ifdef __APPLE__
+   return 0;
+#else
+   return 1;
+#endif
+}
+
+
 /* skip if no Unix domain socket */
 int
 test_framework_skip_if_no_uds (void)
@@ -2159,21 +2170,6 @@ test_framework_skip_if_single (void)
       return 0;
    }
    return (test_framework_is_mongos () || test_framework_is_replset ());
-}
-
-bool
-test_framework_is_mongohouse (void)
-{
-   return test_framework_getenv_bool ("RUN_MONGOHOUSE_TESTS");
-}
-
-int
-test_framework_skip_if_no_mongohouse (void)
-{
-   if (!test_framework_is_mongohouse ()) {
-      return 0;
-   }
-   return 1;
 }
 
 int
@@ -2418,33 +2414,6 @@ test_framework_skip_if_no_setenv (void)
       return 0; /* do not proceed. */
    }
    bson_free (value);
-   return 1;
-}
-
-bool
-test_framework_is_serverless (void)
-{
-   return test_framework_getenv_bool ("MONGOC_TEST_IS_SERVERLESS");
-}
-
-int
-test_framework_skip_if_serverless (void)
-{
-   if (test_framework_is_serverless ()) {
-      return 0; // do not proceed
-   }
-   return 1; // proceed.
-}
-
-int
-test_framework_skip_due_to_cdriver3708 (void)
-{
-   if (0 == test_framework_skip_if_auth () && 0 == test_framework_skip_if_replset () &&
-       test_framework_get_server_version () > test_framework_str_to_version ("4.4.0")) {
-      /* If auth is enabled, we're using a replica set, and using a > 4.4
-       * server, skip test. */
-      return 0;
-   }
    return 1;
 }
 
