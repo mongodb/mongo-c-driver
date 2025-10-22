@@ -229,7 +229,7 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
                                                   sd->id,
                                                   &response,
                                                   1,
-                                                  MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
+                                                  MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
                                                   NULL);
          if (mc_tpld_servers_const(tdmod.new_td)->items_len == 0) {
             ASSERT_CAPTURED_LOG("topology", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
