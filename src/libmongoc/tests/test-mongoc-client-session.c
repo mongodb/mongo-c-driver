@@ -1043,7 +1043,12 @@ started(const mongoc_apm_command_started_t *event)
    }
 
    has_cluster_time = bson_iter_init_find(&iter, cmd, "$clusterTime");
-   if (test->acknowledged && !has_cluster_time) {
+
+   // Since $clusterTime is no longer used with SDAM, there may not be a cluster time until the first successful
+   // command completes.
+   const bool should_have_cluster_time = test->acknowledged && test->n_succeeded >= 1;
+
+   if (should_have_cluster_time && !has_cluster_time) {
       test_error("no $clusterTime sent with command %s", cmd_name);
    }
 
