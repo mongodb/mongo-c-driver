@@ -33,6 +33,9 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
 
+/* _mongoc_crypt_get_libmongocrypt_version */
+#include <mongoc/mongoc-crypt-private.h>
+
 #include <mongoc/mongoc-uri.h>
 
 #include <mlib/cmp.h>
@@ -6522,6 +6525,16 @@ drop_coll(mongoc_database_t *db, const char *collname)
    mongoc_collection_destroy(coll);
 }
 
+server_version_t
+get_libmongocrypt_version(void)
+{
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   return test_framework_str_to_version(_mongoc_crypt_get_libmongocrypt_version());
+#else
+   return 0;
+#endif
+}
+
 static void
 test_lookup_setup(void)
 {
@@ -6619,6 +6632,19 @@ test_lookup_setup(void)
          mongoc_collection_destroy(coll);
       }
 
+      // Create db.non_csfle_schema:
+      {
+         drop_coll(db, "non_csfle_schema");
+         bson_t *const schema = get_bson_from_json_file(TESTDIR "schema-non-csfle.json");
+         bson_t *const create_opts = BCON_NEW("validator", "{", "$jsonSchema", BCON_DOCUMENT(schema), "}");
+         mongoc_collection_t *const coll =
+            mongoc_database_create_collection(db, "non_csfle_schema", create_opts, &error);
+         ASSERT_OR_PRINT(coll, error);
+         mongoc_collection_destroy(coll);
+         bson_destroy(create_opts);
+         bson_destroy(schema);
+      }
+
       mongoc_database_destroy(db);
    }
 #undef TESTDIR
@@ -6696,6 +6722,20 @@ test_lookup_setup(void)
          // Find document with unencrypted client to check it is not encrypted.
          mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection(setup_client, "db", "no_schema2");
          ASSERT_COLL_MATCHES_ONE(coll_unencrypted, MAKE_BSON({"no_schema2" : "no_schema2"}));
+         mongoc_collection_destroy(coll_unencrypted);
+      }
+
+      // Insert to db.non_csfle_schema
+      {
+         mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "non_csfle_schema");
+         ok = mongoc_collection_insert_one(
+            coll, MAKE_BSON({"non_csfle_schema" : "non_csfle_schema"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT(ok, error);
+         mongoc_collection_destroy(coll);
+         // Find document with unencrypted client to check it is not encrypted.
+         mongoc_collection_t *const coll_unencrypted =
+            mongoc_client_get_collection(setup_client, "db", "non_csfle_schema");
+         ASSERT_COLL_MATCHES_ONE(coll_unencrypted, MAKE_BSON({"non_csfle_schema" : "non_csfle_schema"}));
          mongoc_collection_destroy(coll_unencrypted);
       }
 
@@ -6909,7 +6949,67 @@ test_lookup(void *unused)
          ]
       });
 
-      ASSERT_AGG_ERROR(coll, pipeline, "not supported");
+      if (test_framework_get_server_version() < test_framework_str_to_version("8.2.0") ||
+          get_libmongocrypt_version() < test_framework_str_to_version("1.17.0")) {
+         ASSERT_AGG_ERROR(coll, pipeline, "not supported");
+      } else {
+         // The error domain differs depending on the query analysis component:
+         // * `crypt_shared`: `MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION`
+         // * `mongocryptd`: `MONGOC_ERROR_QUERY`
+
+         static const char *const expected_error_substring =
+            "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless csfleEncryptionSchemas only "
+            "contains non-encryption JSON schema validators";
+
+         if (mongoc_client_get_crypt_shared_version(client)) {
+            ASSERT_AGG_ERROR(coll, pipeline, expected_error_substring);
+         } else {
+            mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
+            const bson_t *got;
+            ASSERT(!mongoc_cursor_next(cursor, &got));
+            ASSERT(mongoc_cursor_error(cursor, &error));
+            static const uint32_t expected_error_code = 10026002u;
+            ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, expected_error_code, expected_error_substring);
+            mongoc_cursor_destroy(cursor);
+         }
+      }
+
+      mongoc_collection_destroy(coll);
+      mongoc_client_destroy(client);
+   }
+}
+
+static void
+test_lookup_post82(void *unused)
+{
+   BSON_UNUSED(unused);
+   test_lookup_setup();
+   bson_error_t error;
+
+   // Case 10: db.qe joins db.non_csfle_schema:
+   {
+      mongoc_client_t *const client = create_encrypted_client();
+      mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "qe");
+
+      bson_t *const pipeline = MAKE_BSON({
+         "pipeline" : [
+            {"$match" : {"qe" : "qe"}},
+            {
+               "$lookup" : {
+                  "from" : "non_csfle_schema",
+                  "as" : "matched",
+                  "pipeline" : [
+                     {"$match" : {"non_csfle_schema" : "non_csfle_schema"}},
+                     {"$project" : {"_id" : 0, "__safeContent__" : 0}}
+                  ]
+               }
+            },
+            {"$project" : {"_id" : 0, "__safeContent__" : 0}}
+         ]
+      });
+
+      bson_t *const expect = MAKE_BSON({"qe" : "qe", "matched" : [ {"non_csfle_schema" : "non_csfle_schema"} ]});
+      ASSERT_AGG_RETURNS_ONE(coll, pipeline, expect);
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
@@ -6945,6 +7045,12 @@ test_lookup_pre81(void *unused)
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
+}
+
+int
+skip_if_libmongocrypt_less_than_1_17_0(void)
+{
+   return get_libmongocrypt_version() >= test_framework_str_to_version("1.17.0");
 }
 
 void
@@ -7387,6 +7493,15 @@ test_client_side_encryption_install(TestSuite *suite)
                         NULL,
                         test_framework_skip_if_max_wire_version_less_than_26 /* require server 8.1+ */,
                         test_framework_skip_if_single, /* QE not supported on standalone */
+                        test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/test_lookup/post-8.2",
+                        test_lookup_post82,
+                        NULL,
+                        NULL,
+                        test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ */
+                        skip_if_libmongocrypt_less_than_1_17_0,               /* require libmongocrypt 1.17.0+ */
+                        test_framework_skip_if_single,                        /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
                         "/client_side_encryption/test_lookup/pre-8.1",
