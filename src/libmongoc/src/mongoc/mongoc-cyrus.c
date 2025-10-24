@@ -112,10 +112,19 @@ _mongoc_cyrus_canon_user (sasl_conn_t *conn,
    BSON_UNUSED (sasl);
    BSON_UNUSED (flags);
    BSON_UNUSED (user_realm);
-   BSON_UNUSED (out_max);
+
+   // `inlen` is a string length (excluding trailing NULL).
+   // Cyrus-SASL passes an `out` buffer of size `out_max + 1`. Assume `out_max` is the max to be safe.
+   unsigned inlen_1 = 0;
+   if (mlib_add (&inlen_1, inlen, 1) || inlen_1 + 1 >= out_max) {
+      MONGOC_ERROR ("SASL username too large");
+      return SASL_BUFOVER;
+   }
 
    TRACE ("Canonicalizing %s (%" PRIu32 ")\n", in, inlen);
-   strcpy (out, in);
+   // Use memmove in case buffers overlap. From Cyrus-SASL: "output buffers and the input buffers may be the same"
+   memmove (out, in, inlen);
+   out[inlen] = '\0';
    *out_len = inlen;
    return SASL_OK;
 }
