@@ -115,7 +115,8 @@ _mongoc_cyrus_canon_user(sasl_conn_t *conn,
 
    // `inlen` is a string length (excluding trailing NULL).
    // Cyrus-SASL passes an `out` buffer of size `out_max + 1`. Assume `out_max` is the max to be safe.
-   if (inlen == UINT_MAX || inlen + 1 >= out_max) {
+   unsigned inlen_1;
+   if (mlib_add(&inlen_1, inlen, 1) || inlen_1 + 1 >= out_max) {
       MONGOC_ERROR("SASL username too large");
       return SASL_BUFOVER;
    }
