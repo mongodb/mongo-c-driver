@@ -312,8 +312,10 @@ _V_TestSuite_AddFull(
    while (tail.len) {
       mlib_check(mstr_split_around(tail, mstr_cstring("["), NULL, &tag),
                  because,
-                 "Expected an opening bracket for the next test tag");
-      mlib_check(mstr_split_around(tag, mstr_cstring("]"), &tag, &tail), because, "Expected a closing bracket for tag");
+                 "Invalid test specifier: Expected an opening bracket (following whitespace or closing bracket) for a "
+                 "test tag");
+      mlib_check(
+         mstr_split_around(tag, mstr_cstring("]"), &tag, &tail), because, "Expected a closing bracket for test tag");
       *mstr_vec_push(&test->tags) = mstr_copy(tag);
    }
 
