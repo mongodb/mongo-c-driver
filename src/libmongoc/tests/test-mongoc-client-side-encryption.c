@@ -4812,7 +4812,7 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_encrypt_text_opts_t *topts = mongoc_encrypt_text_opts_new();

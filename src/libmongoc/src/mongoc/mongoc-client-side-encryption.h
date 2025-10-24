@@ -108,9 +108,9 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
-typedef struct _encrypt_text_per_index_opts_t mongoc_encrypt_text_prefix_opts_t;
-typedef struct _encrypt_text_per_index_opts_t mongoc_encrypt_text_suffix_opts_t;
-typedef struct _encrypt_text_per_index_opts_t mongoc_encrypt_text_substring_opts_t;
+typedef struct _encrypt_text_prefix_opts_t mongoc_encrypt_text_prefix_opts_t;
+typedef struct _encrypt_text_suffix_opts_t mongoc_encrypt_text_suffix_opts_t;
+typedef struct _encrypt_text_substring_opts_t mongoc_encrypt_text_substring_opts_t;
 typedef struct _mongoc_encrypt_text_opts_t mongoc_encrypt_text_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t mongoc_client_encryption_datakey_opts_t;
@@ -237,13 +237,13 @@ mongoc_encrypt_text_substring_opts_set_str_min_query_length(mongoc_encrypt_text_
                                                             int32_t str_min_query_length);
 
 MONGOC_EXPORT(void)
-mongoc_encrypt_text_opts_set_prefix(mongoc_encrypt_text_opts_t *opts, mongoc_encrypt_text_prefix_opts_t *popts);
+mongoc_encrypt_text_opts_set_prefix(mongoc_encrypt_text_opts_t *opts, const mongoc_encrypt_text_prefix_opts_t *popts);
 
 MONGOC_EXPORT(void)
-mongoc_encrypt_text_opts_set_suffix(mongoc_encrypt_text_opts_t *opts, mongoc_encrypt_text_suffix_opts_t *sopts);
+mongoc_encrypt_text_opts_set_suffix(mongoc_encrypt_text_opts_t *opts, const mongoc_encrypt_text_suffix_opts_t *sopts);
 
 MONGOC_EXPORT(void)
-mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts, mongoc_encrypt_text_substring_opts_t *ssopts);
+mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts, const mongoc_encrypt_text_substring_opts_t *ssopts);
 
 MONGOC_EXPORT(mongoc_encrypt_text_opts_t *)
 mongoc_encrypt_text_opts_new(void);
