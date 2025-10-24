@@ -1,10 +1,13 @@
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-openssl-private.h>
 #include <mongoc/mongoc-socket-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-util-private.h>
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#include <mongoc/mongoc-openssl-private.h>
+#endif
 
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>

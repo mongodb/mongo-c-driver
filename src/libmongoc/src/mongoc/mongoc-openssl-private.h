@@ -21,11 +21,7 @@
 
 #include <mongoc/mongoc-stream-tls-openssl-private.h>
 
-#include <mongoc/mongoc-ssl.h>
-
 #include <bson/bson.h>
-
-#if defined(MONGOC_ENABLE_SSL_OPENSSL)
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -56,7 +52,5 @@ bool
 _mongoc_tlsfeature_has_status_request(const uint8_t *data, int length);
 
 BSON_END_DECLS
-
-#endif // OpenSSL enabled?
 
 #endif /* MONGOC_OPENSSL_PRIVATE_H */
