@@ -1889,7 +1889,9 @@ _install_json_test_suite_with_check(TestSuite *suite, const char *base, const ch
       // If we're running a specific test, only register if the directory we are scanning
       // is a prefix of the requested test pathname
       size_t where = mstr_find(suite->ctest_run, mstr_cstring(subdir));
-      if (where != 0 && where != 1) {
+      // allow where == 0 or where == 1 to allow optional leading slash in the
+      // test specifier:
+      if (where > 1) {
          return;
       }
    }
