@@ -917,8 +917,12 @@ void
 test_database_install(TestSuite *suite)
 {
    TestSuite_AddMockServerTest(suite, "/Database/aggregate/inherit/database", test_aggregate_inherit_database);
-   TestSuite_AddFull(
-      suite, "/Database/create_with_write_concern", test_create_with_write_concern, NULL, NULL, TestSuite_CheckLive);
+   TestSuite_AddFull(suite,
+                     "/Database/create_with_write_concern [lock:live-server]",
+                     test_create_with_write_concern,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive);
    TestSuite_AddLive(suite, "/Database/copy", test_copy);
    TestSuite_AddLive(suite, "/Database/has_collection", test_has_collection);
    TestSuite_AddMockServerTest(

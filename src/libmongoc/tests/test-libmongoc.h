@@ -21,14 +21,14 @@
 
 #include <stdbool.h>
 
-struct _TestSuite;
+struct TestSuite;
 struct _bson_t;
 struct _server_version_t;
 
 void
-test_libmongoc_init(struct _TestSuite *suite, int argc, char **argv);
+test_libmongoc_init(struct TestSuite *suite, int argc, char **argv);
 void
-test_libmongoc_destroy(struct _TestSuite *suite);
+test_libmongoc_destroy(struct TestSuite *suite);
 
 mongoc_database_t *
 get_test_database(mongoc_client_t *client);

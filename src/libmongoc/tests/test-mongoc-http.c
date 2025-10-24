@@ -88,9 +88,17 @@ test_mongoc_http_post(void *unused)
 void
 test_http_install(TestSuite *suite)
 {
-   TestSuite_AddFull(
-      suite, "/http/get", test_mongoc_http_get, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_offline);
+   TestSuite_AddFull(suite,
+                     "/http/get [uses:simple-http-server-18000]",
+                     test_mongoc_http_get,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_offline);
 
-   TestSuite_AddFull(
-      suite, "/http/post", test_mongoc_http_post, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_offline);
+   TestSuite_AddFull(suite,
+                     "/http/post [uses:simple-http-server-18000]",
+                     test_mongoc_http_post,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_offline);
 }

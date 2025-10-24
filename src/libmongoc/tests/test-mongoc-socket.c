@@ -459,8 +459,14 @@ void
 test_socket_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/Socket/check_closed", test_mongoc_socket_check_closed);
-   TestSuite_AddFull(suite, "/Socket/timed_out", test_mongoc_socket_timed_out, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull(suite, "/Socket/sendv", test_mongoc_socket_sendv, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull(
-      suite, "/Socket/connect_refusal", test_mongoc_socket_poll_refusal, NULL, NULL, test_framework_skip_if_slow);
+      suite, "/Socket/timed_out [timeout:30]", test_mongoc_socket_timed_out, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull(
+      suite, "/Socket/sendv [timeout:30]", test_mongoc_socket_sendv, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull(suite,
+                     "/Socket/connect_refusal [timeout:30]",
+                     test_mongoc_socket_poll_refusal,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_slow);
 }

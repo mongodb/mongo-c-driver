@@ -1377,7 +1377,7 @@ test_dns_install(TestSuite *suite)
    TestSuite_AddFull(
       suite, "/initial_dns_seedlist_discovery/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/small_initial_buffer",
+                     "/initial_dns_seedlist_discovery/small_initial_buffer [lock:live-server]",
                      test_small_initial_buffer,
                      NULL,
                      NULL,
@@ -1388,56 +1388,56 @@ test_dns_install(TestSuite *suite)
     * Records for mongos Discovery" spec, not the "Initial DNS Seedlist
     * Discovery" spec. */
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/single",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/single [lock:live-server]",
                      prose_test_9_single,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled [lock:live-server]",
                      prose_test_9_pooled,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single [lock:live-server]",
                      prose_test_10_single,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled [lock:live-server]",
                      prose_test_10_pooled,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single [lock:live-server]",
                      prose_test_11_single,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled [lock:live-server]",
                      prose_test_11_pooled,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single [lock:live-server]",
                      prose_test_12_single,
                      NULL,
                      NULL,
                      test_dns_check_srv_polling);
 
    TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled",
+                     "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled [lock:live-server]",
                      prose_test_12_pooled,
                      NULL,
                      NULL,
@@ -1445,7 +1445,7 @@ test_dns_install(TestSuite *suite)
 
    TestSuite_AddFull(
       suite,
-      "/initial_dns_seedlist_discovery/srv_polling/removing_servers_closes_connections",
+      "/initial_dns_seedlist_discovery/srv_polling/removing_servers_closes_connections [lock:live-server]",
       test_removing_servers_closes_connections,
       NULL,
       NULL,

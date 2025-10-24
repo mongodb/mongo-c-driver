@@ -175,7 +175,7 @@ test_aggregate_install(TestSuite *suite)
 {
    TestSuite_AddMockServerTest(suite, "/Aggregate/query_flags", test_query_flags);
    TestSuite_AddFull(suite,
-                     "/Aggregate/write_respects_read_prefs",
+                     "/Aggregate/write_respects_read_prefs [lock:live-server]",
                      test_write_respects_read_prefs,
                      NULL,
                      NULL,

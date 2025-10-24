@@ -92,7 +92,7 @@ test_cyrus_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/SASL/properties", test_sasl_properties);
    TestSuite_AddFull(suite,
-                     "/SASL/canonicalize",
+                     "/SASL/canonicalize [lock:live-server]",
                      test_sasl_canonicalize_hostname,
                      NULL,
                      NULL,

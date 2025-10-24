@@ -1001,28 +1001,28 @@ test_sdam_install(TestSuite *suite)
 {
    test_all_spec_tests(suite);
    TestSuite_AddFull(suite,
-                     "/server_discovery_and_monitoring/topology/discovery",
+                     "/server_discovery_and_monitoring/topology/discovery [lock:live-server]",
                      test_topology_discovery,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/server_discovery_and_monitoring/directconnection",
+                     "/server_discovery_and_monitoring/directconnection [lock:live-server]",
                      test_direct_connection,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/server_discovery_and_monitoring/existing/behavior",
+                     "/server_discovery_and_monitoring/existing/behavior [lock:live-server]",
                      test_existing_behavior,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/server_discovery_and_monitoring/prose/rtt",
+                     "/server_discovery_and_monitoring/prose/rtt [lock:live-server]",
                      test_prose_rtt,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_max_wire_version_less_than_9);
-   TestSuite_Add(suite, "/server_discovery_and_monitoring/prose/heartbeat", test_prose_heartbeat);
+   TestSuite_Add(suite, "/server_discovery_and_monitoring/prose/heartbeat [lock:live-server]", test_prose_heartbeat);
 }

@@ -1236,7 +1236,7 @@ test_retryable_writes_install(TestSuite *suite)
    test_all_spec_tests(suite);
    TestSuite_AddMockServerTest(suite, "/retryable_writes/failover", test_rs_failover, test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/command_with_opts",
+                     "/retryable_writes/command_with_opts [lock:live-server]",
                      test_command_with_opts,
                      NULL,
                      NULL,
@@ -1259,21 +1259,25 @@ test_retryable_writes_install(TestSuite *suite)
                                "/retryable_writes/bulk_operation_execute_unacknowledged",
                                test_bulk_operation_execute_unacknowledged,
                                test_framework_skip_if_no_crypto);
-   TestSuite_AddFull(
-      suite, "/retryable_writes/no_crypto", test_retry_no_crypto, NULL, NULL, test_framework_skip_if_crypto);
+   TestSuite_AddFull(suite,
+                     "/retryable_writes/no_crypto [lock:live-server]",
+                     test_retry_no_crypto,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_crypto);
    TestSuite_AddMockServerTest(suite,
                                "/retryable_writes/unsupported_storage_engine_error",
                                test_unsupported_storage_engine_error,
                                test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/bulk_tracks_new_server",
+                     "/retryable_writes/bulk_tracks_new_server [lock:live-server]",
                      test_bulk_retry_tracks_new_server,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_not_replset,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_3",
+                     "/retryable_writes/prose_test_3 [lock:live-server]",
                      retryable_writes_prose_test_3,
                      NULL,
                      NULL,
@@ -1281,7 +1285,7 @@ test_retryable_writes_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_17,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_3/find_modify",
+                     "/retryable_writes/prose_test_3/find_modify [lock:live-server]",
                      retryable_writes_original_error_find_modify,
                      NULL,
                      NULL,
@@ -1289,7 +1293,7 @@ test_retryable_writes_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_17,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_3/general_command",
+                     "/retryable_writes/prose_test_3/general_command [lock:live-server]",
                      retryable_writes_original_error_general_command,
                      NULL,
                      NULL,
@@ -1297,7 +1301,7 @@ test_retryable_writes_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_17,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_3/bulkwrite",
+                     "/retryable_writes/prose_test_3/bulkwrite [lock:live-server]",
                      retryable_writes_original_error_bulkwrite,
                      NULL,
                      NULL,
@@ -1305,7 +1309,7 @@ test_retryable_writes_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_4/insert",
+                     "/retryable_writes/prose_test_4/insert [lock:live-server]",
                      retryable_writes_sharded_on_other_mongos_insert,
                      NULL,
                      NULL,
@@ -1315,7 +1319,7 @@ test_retryable_writes_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_9,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_4/bulkwrite",
+                     "/retryable_writes/prose_test_4/bulkwrite [lock:live-server]",
                      retryable_writes_sharded_on_other_mongos_bulkWrite,
                      NULL,
                      NULL,
@@ -1324,7 +1328,7 @@ test_retryable_writes_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_25, // require server 8.0
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/retryable_writes/prose_test_5",
+                     "/retryable_writes/prose_test_5 [lock:live-server]",
                      retryable_writes_sharded_on_same_mongos,
                      NULL,
                      NULL,

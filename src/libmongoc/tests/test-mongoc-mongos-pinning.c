@@ -169,7 +169,7 @@ void
 test_mongos_pinning_install(TestSuite *suite)
 {
    TestSuite_AddFull(suite,
-                     "/mongos_pinning/new_transaction_unpins",
+                     "/mongos_pinning/new_transaction_unpins [lock:live-server]",
                      test_new_transaction_unpins,
                      NULL,
                      NULL,
@@ -178,7 +178,7 @@ test_mongos_pinning_install(TestSuite *suite)
                      test_framework_skip_if_not_mongos);
 
    TestSuite_AddFull(suite,
-                     "/mongos_pinning/non_transaction_unpins",
+                     "/mongos_pinning/non_transaction_unpins [lock:live-server]",
                      test_non_transaction_unpins,
                      NULL,
                      NULL,

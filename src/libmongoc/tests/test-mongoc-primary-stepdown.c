@@ -422,14 +422,14 @@ test_primary_stepdown_install(TestSuite *suite)
 #define TestPooledAndSingle(name, fn)                        \
    if (1) {                                                  \
       TestSuite_AddFull(suite,                               \
-                        name "/single",                      \
+                        name "/single [lock:live-server]",   \
                         fn,                                  \
                         NULL,                                \
                         &single_ctx,                         \
                         test_framework_skip_if_auth,         \
                         test_framework_skip_if_not_replset); \
       TestSuite_AddFull(suite,                               \
-                        name "/pooled",                      \
+                        name "/pooled [lock:live-server]",   \
                         fn,                                  \
                         NULL,                                \
                         &pooled_ctx,                         \

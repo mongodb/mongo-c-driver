@@ -749,14 +749,14 @@ test_scram_install(TestSuite *suite)
    TestSuite_Add(suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
 #endif
    TestSuite_AddFull(suite,
-                     "/scram/cache_invalidation",
+                     "/scram/cache_invalidation [lock:live-server]",
                      test_mongoc_scram_cache_invalidation,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_auth,
                      test_framework_skip_if_macos); // CDRIVER-6079
    TestSuite_AddFull(suite,
-                     "/scram/auth_tests",
+                     "/scram/auth_tests [lock:live-server]",
                      test_mongoc_scram_auth,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -764,7 +764,7 @@ test_scram_install(TestSuite *suite)
                      _skip_if_no_sha256,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/scram/saslprep_auth",
+                     "/scram/saslprep_auth [lock:live-server]",
                      test_mongoc_saslprep_auth,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -772,7 +772,7 @@ test_scram_install(TestSuite *suite)
                      _skip_if_no_sha256,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/scram/empty_password",
+                     "/scram/empty_password [lock:live-server]",
                      test_mongoc_scram_empty_password,
                      NULL /* dtor */,
                      NULL /* ctx */,

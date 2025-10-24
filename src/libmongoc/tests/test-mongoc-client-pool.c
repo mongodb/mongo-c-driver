@@ -613,7 +613,7 @@ test_client_pool_install(TestSuite *suite)
    TestSuite_Add(suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
    TestSuite_AddFull(suite,
-                     "/ClientPool/create_client_pool_unused_session",
+                     "/ClientPool/create_client_pool_unused_session [lock:live-server]",
                      test_client_pool_create_unused_session,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -623,11 +623,13 @@ test_client_pool_install(TestSuite *suite)
 #endif
    TestSuite_AddLive(suite, "/ClientPool/destroy_without_push", test_client_pool_destroy_without_pushing);
    TestSuite_AddLive(suite, "/ClientPool/max_pool_size_exceeded", test_client_pool_max_pool_size_exceeded);
-   TestSuite_Add(suite, "/ClientPool/can_override_sockettimeoutms", test_client_pool_can_override_sockettimeoutms);
+   TestSuite_Add(suite,
+                 "/ClientPool/can_override_sockettimeoutms [lock:live-server]",
+                 test_client_pool_can_override_sockettimeoutms);
 
    TestSuite_AddFull(
       suite,
-      "/client_pool/disconnects_removed_servers/on_push",
+      "/client_pool/disconnects_removed_servers/on_push [lock:live-server]",
       disconnects_removed_servers_on_push,
       NULL,
       NULL,
@@ -636,7 +638,7 @@ test_client_pool_install(TestSuite *suite)
 
    TestSuite_AddFull(
       suite,
-      "/client_pool/disconnects_removed_servers/in_pool",
+      "/client_pool/disconnects_removed_servers/in_pool [lock:live-server]",
       disconnects_removed_servers_in_pool,
       NULL,
       NULL,
@@ -644,7 +646,8 @@ test_client_pool_install(TestSuite *suite)
       test_framework_skip_if_max_wire_version_less_than_9 /* require server 4.4+ for streaming monitoring protocol */);
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-   TestSuite_Add(suite, "/ClientPool/openssl/change_ssl_opts", test_mongoc_client_pool_change_openssl_ctx);
+   TestSuite_Add(
+      suite, "/ClientPool/openssl/change_ssl_opts [lock:live-server]", test_mongoc_client_pool_change_openssl_ctx);
 #endif
 
 #if defined(MONGOC_ENABLE_SSL)

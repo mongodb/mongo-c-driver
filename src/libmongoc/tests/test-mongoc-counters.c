@@ -1455,14 +1455,14 @@ test_counters_install(TestSuite *suite)
    BSON_UNUSED(suite);
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
    TestSuite_AddFull(suite,
-                     "/counters/op_msg",
+                     "/counters/op_msg [lock:live-server]",
                      test_counters_op_msg,
                      NULL,
                      NULL,
                      test_framework_skip_if_compressors,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/counters/op_compressed",
+                     "/counters/op_compressed [lock:live-server]",
                      test_counters_op_compressed,
                      NULL,
                      NULL,
@@ -1470,9 +1470,10 @@ test_counters_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddLive(suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive(suite, "/counters/clients", test_counters_clients);
-   TestSuite_AddFull(suite, "/counters/streams", test_counters_streams, NULL, NULL, TestSuite_CheckLive);
+   TestSuite_AddFull(
+      suite, "/counters/streams [lock:live-server]", test_counters_streams, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/counters/auth",
+                     "/counters/auth [lock:live-server]",
                      test_counters_auth,
                      NULL,
                      NULL,
@@ -1510,14 +1511,14 @@ test_counters_install(TestSuite *suite)
 
 #if defined(MONGOC_ENABLE_SSL)
    TestSuite_AddFull(suite,
-                     "/counters/rpc/op_egress/auth/single/op_query",
+                     "/counters/rpc/op_egress/auth/single/op_query [lock:live-server]",
                      test_counters_auth_single_op_query,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_auth,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/counters/rpc/op_egress/auth/single/op_msg",
+                     "/counters/rpc/op_egress/auth/single/op_msg [lock:live-server]",
                      test_counters_auth_single_op_msg,
                      NULL,
                      NULL,
@@ -1525,14 +1526,14 @@ test_counters_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_13,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/counters/rpc/op_egress/auth/pooled/op_query",
+                     "/counters/rpc/op_egress/auth/pooled/op_query [lock:live-server]",
                      test_counters_auth_pooled_op_query,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_auth,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/counters/rpc/op_egress/auth/pooled/op_msg",
+                     "/counters/rpc/op_egress/auth/pooled/op_msg [lock:live-server]",
                      test_counters_auth_pooled_op_msg,
                      NULL,
                      NULL,

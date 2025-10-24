@@ -415,37 +415,37 @@ _make_array_cursor(mongoc_collection_t *coll)
    return mongoc_client_find_databases_with_opts(coll->client, NULL);
 }
 
-#define TEST_CURSOR_FIND(prefix, fn)                                                         \
-   if (1) {                                                                                  \
-      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                     \
-      *helper = (make_cursor_helper_t){.ctor = _make_find_cursor};                           \
-      TestSuite_AddFull(suite, prefix "/find", fn, &bson_free, helper, TestSuite_CheckLive); \
-   } else                                                                                    \
+#define TEST_CURSOR_FIND(prefix, fn)                                                                            \
+   if (1) {                                                                                                     \
+      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                                        \
+      *helper = (make_cursor_helper_t){.ctor = _make_find_cursor};                                              \
+      TestSuite_AddFull(suite, prefix "/find [lock:live-server]", fn, &bson_free, helper, TestSuite_CheckLive); \
+   } else                                                                                                       \
       ((void)0)
 
-#define TEST_CURSOR_CMD(prefix, fn)                                                         \
-   if (1) {                                                                                 \
-      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                    \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor};                           \
-      TestSuite_AddFull(suite, prefix "/cmd", fn, &bson_free, helper, TestSuite_CheckLive); \
-   } else                                                                                   \
+#define TEST_CURSOR_CMD(prefix, fn)                                                                            \
+   if (1) {                                                                                                    \
+      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                                       \
+      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor};                                              \
+      TestSuite_AddFull(suite, prefix "/cmd [lock:live-server]", fn, &bson_free, helper, TestSuite_CheckLive); \
+   } else                                                                                                      \
       ((void)0)
 
 
-#define TEST_CURSOR_ARRAY(prefix, fn)                                                         \
-   if (1) {                                                                                   \
-      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                      \
-      *helper = (make_cursor_helper_t){.ctor = _make_array_cursor};                           \
-      TestSuite_AddFull(suite, prefix "/array", fn, &bson_free, helper, TestSuite_CheckLive); \
-   } else                                                                                     \
+#define TEST_CURSOR_ARRAY(prefix, fn)                                                                            \
+   if (1) {                                                                                                      \
+      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                                         \
+      *helper = (make_cursor_helper_t){.ctor = _make_array_cursor};                                              \
+      TestSuite_AddFull(suite, prefix "/array [lock:live-server]", fn, &bson_free, helper, TestSuite_CheckLive); \
+   } else                                                                                                        \
       ((void)0)
 
-#define TEST_CURSOR_AGG(prefix, fn)                                                         \
-   if (1) {                                                                                 \
-      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                    \
-      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor_from_agg};                  \
-      TestSuite_AddFull(suite, prefix "/agg", fn, &bson_free, helper, TestSuite_CheckLive); \
-   } else                                                                                   \
+#define TEST_CURSOR_AGG(prefix, fn)                                                                            \
+   if (1) {                                                                                                    \
+      make_cursor_helper_t *const helper = bson_malloc(sizeof(*helper));                                       \
+      *helper = (make_cursor_helper_t){.ctor = _make_cmd_cursor_from_agg};                                     \
+      TestSuite_AddFull(suite, prefix "/agg [lock:live-server]", fn, &bson_free, helper, TestSuite_CheckLive); \
+   } else                                                                                                      \
       ((void)0)
 
 
@@ -2394,9 +2394,14 @@ test_cursor_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Cursor/empty_collection", test_cursor_empty_collection);
    TestSuite_AddLive(suite, "/Cursor/new_from_agg", test_cursor_new_from_aggregate);
    TestSuite_AddLive(suite, "/Cursor/new_from_agg_no_initial", test_cursor_new_from_aggregate_no_initial);
-   TestSuite_AddFull(suite, "/Cursor/new_from_find", test_cursor_new_from_find, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddFull(
-      suite, "/Cursor/new_from_find_batches", test_cursor_new_from_find_batches, NULL, NULL, TestSuite_CheckLive);
+      suite, "/Cursor/new_from_find [lock:live-server]", test_cursor_new_from_find, NULL, NULL, TestSuite_CheckLive);
+   TestSuite_AddFull(suite,
+                     "/Cursor/new_from_find_batches [lock:live-server]",
+                     test_cursor_new_from_find_batches,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive);
    TestSuite_AddLive(suite, "/Cursor/new_invalid", test_cursor_new_invalid);
    TestSuite_AddMockServerTest(suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
    TestSuite_AddMockServerTest(suite, "/Cursor/int64_t_maxtimems", test_cursor_int64_t_maxtimems);
