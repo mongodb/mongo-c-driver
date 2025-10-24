@@ -485,14 +485,14 @@ TestSuite_RunFuncInChild(TestSuite *suite, /* IN */
          dup2(pipefd[1], STDOUT_FILENO);
          close(pipefd[0]);
          close(pipefd[1]);
-         execle(suite->prgname, suite->prgname, "--no-fork", "--silent", "-l", test->name, (char *)0, envp);
+         execle(suite->prgname, suite->prgname, "--no-fork", "--silent", "-l", test->name.data, (char *)0, envp);
       } else {
          /* suppress child output */
          fd = open("/dev/null", O_WRONLY);
          dup2(fd, STDOUT_FILENO);
          close(fd);
 
-         execl(suite->prgname, suite->prgname, "--no-fork", "-l", test->name, (char *)0);
+         execl(suite->prgname, suite->prgname, "--no-fork", "-l", test->name.data, (char *)0);
       }
 
       exit(-1);
