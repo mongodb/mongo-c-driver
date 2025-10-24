@@ -820,14 +820,6 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
   - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        sudo apt install -y haproxy
   - func: start-load-balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
