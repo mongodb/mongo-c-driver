@@ -817,7 +817,7 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
            "    \"mockServerLog\": \"%s\",\n"
            "    \"futureTimeoutMS\": %" PRId64 ",\n"
            "    \"majorityReadConcern\": %s,\n"
-           "    \"skipLiveTests\": %s,\n"
+           "    \"skipLiveTests\": %s\n"
            "  },\n"
            "  \"options\": {\n"
            "    \"fork\": %s,\n"
