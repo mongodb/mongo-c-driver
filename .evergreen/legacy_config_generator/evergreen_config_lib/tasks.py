@@ -424,7 +424,6 @@ class DNSTask(MatrixTask):
         if self.settings.loadbalanced:
             dns = 'loadbalanced'
             yield func('fetch-det')
-            yield shell_mongoc('sudo apt install -y haproxy') # DEVPROD-22829
             yield func('start-load-balancer', MONGODB_URI='mongodb://localhost:27017,localhost:27018')
         elif self.settings.auth:
             dns = 'dns-auth'
