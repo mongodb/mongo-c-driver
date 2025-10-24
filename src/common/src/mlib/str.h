@@ -1121,7 +1121,7 @@ mstr_sprintf(const char *f, ...)
    va_end(args);
    if (!okay) {
       mstr_destroy(&ret);
-      return mstr_null();
+      return ret;
    }
    return ret;
 }
