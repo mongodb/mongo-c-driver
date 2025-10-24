@@ -1,7 +1,7 @@
 :man_page: mongoc_encrypt_text_substring_opts_set_str_min_query_length
 
 mongoc_encrypt_text_substring_opts_set_str_min_query_length()
-============================================================
+=============================================================
 
 Synopsis
 --------

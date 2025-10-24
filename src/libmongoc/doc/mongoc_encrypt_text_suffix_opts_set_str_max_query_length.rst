@@ -1,7 +1,7 @@
 :man_page: mongoc_encrypt_text_suffix_opts_set_str_max_query_length
 
 mongoc_encrypt_text_suffix_opts_set_str_max_query_length()
-=========================================================
+==========================================================
 
 Synopsis
 --------

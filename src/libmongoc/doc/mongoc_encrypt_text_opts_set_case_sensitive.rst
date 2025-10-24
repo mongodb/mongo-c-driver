@@ -1,7 +1,7 @@
 :man_page: mongoc_encrypt_text_opts_set_case_sensitive
 
 mongoc_encrypt_text_opts_set_case_sensitive()
-============================================
+=============================================
 
 Synopsis
 --------

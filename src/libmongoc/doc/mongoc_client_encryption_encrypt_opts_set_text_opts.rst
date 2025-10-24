@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_opts_set_text_opts
 
 mongoc_client_encryption_encrypt_opts_set_text_opts()
-====================================================
+=====================================================
 
 Synopsis
 --------

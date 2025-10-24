@@ -1,7 +1,7 @@
 :man_page: mongoc_encrypt_text_prefix_opts_destroy
 
 mongoc_encrypt_text_prefix_opts_destroy()
-========================================
+=========================================
 
 Synopsis
 --------
