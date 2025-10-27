@@ -397,6 +397,14 @@
    MLIB_IF_GNU_LIKE(mlib_gnu_warning_disable("-Wunused-parameter");) \
    MLIB_IF_MSVC(mlib_msvc_warning(disable : 4100);) mlib_static_assert(1, "")
 
+#if mlib_is_clang()
+#define mlib_printf_attribute(f, v) __attribute__((format(printf, f, v)))
+#elif mlib_is_gcc()
+#define mlib_printf_attribute(f, v) __attribute__((format(gnu_printf, f, v)))
+#else
+#define mlib_printf_attribute(f, v)
+#endif
+
 /**
  * @brief Annotate a boolean expression as "likely to be true" to guide the optimizer.
  * Use this very sparingly.

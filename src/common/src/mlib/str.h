@@ -1034,9 +1034,7 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
 /**
  * @brief Like `mstr_sprintf_append`, but accepts the va_list directly.
  */
-MLIB_IF_GNU_LIKE(__attribute__((format(printf, 2, 0))))
-static inline bool
-mstr_vsprintf_append(mstr *string, const char *format, va_list args)
+mlib_printf_attribute(2, 0) static inline bool mstr_vsprintf_append(mstr *string, const char *format, va_list args)
 {
    mlib_check(string != NULL, because, "Output string parameter is required");
    // The size of the string before we appended any characters to it. This is also
@@ -1112,9 +1110,7 @@ mstr_vsprintf_append(mstr *string, const char *format, va_list args)
  * This function maintains the existing content of `string` and only inserts
  * additional characters at the end of the string.
  */
-MLIB_IF_GNU_LIKE(__attribute__((format(printf, 2, 3))))
-static inline bool
-mstr_sprintf_append(mstr *string, const char *format, ...)
+mlib_printf_attribute(2, 3) static inline bool mstr_sprintf_append(mstr *string, const char *format, ...)
 {
    va_list args;
    va_start(args, format);
@@ -1129,9 +1125,7 @@ mstr_sprintf_append(mstr *string, const char *format, ...)
  * @param f The format string to be used.
  * @param ... The formatting arguments to interpolate into the string
  */
-MLIB_IF_GNU_LIKE(__attribute__((format(printf, 1, 2))))
-static inline mstr
-mstr_sprintf(const char *f, ...)
+mlib_printf_attribute(1, 2) static inline mstr mstr_sprintf(const char *f, ...)
 {
    mstr ret = mstr_null();
    va_list args;
