@@ -31,10 +31,13 @@
 #include <mlib/loop.h>
 #include <mlib/test.h>
 
-#include <stdarg.h>
+#include <stdarg.h> // va_list
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>  // vsnprintf
+#include <stdlib.h> // malloc/free
+#include <string.h> // memcpy
 
 /**
  * @brief A simple non-owning string-view type.
@@ -462,6 +465,21 @@ mstr_find_first_of(mstr_view hay, mstr_view const needles, mlib_upsized_integer 
 #define _mstr_find_first_of_argc_4(Hay, Needle, Pos, Len) mstr_find_first_of(Hay, Needle, mlib_upsize_integer(Pos), Len)
 
 /**
+ * @brief Test whether the given codepoint is a Basic Latin whitespace character
+ *
+ * @param c The codepoint to be tested
+ */
+static inline bool
+mlib_is_latin_whitespace(int32_t c)
+{
+   return c == 0x20   // space
+          || c == 0xa // line feed
+          || c == 0xd // carriage return
+          || c == 0x9 // horizontal tab
+      ;
+}
+
+/**
  * @brief Trim leading latin (ASCII) whitespace from the given string
  *
  * @param s The string to be inspected
@@ -470,13 +488,10 @@ mstr_find_first_of(mstr_view hay, mstr_view const needles, mlib_upsized_integer 
 static inline mstr_view
 mstr_trim_left(mstr_view s)
 {
-   while (s.len) {
-      char c = mstr_at(s, 0);
-      if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
-         s = mstr_substr(s, 1);
-      } else {
-         break;
-      }
+   // Testing arbitrary code units for whitespace is safe as only 1-byte-encoded
+   // codepoints can land within the Basic Latin range:
+   while (s.len && mlib_is_latin_whitespace(mstr_at(s, 0))) {
+      s = mstr_substr(s, 1);
    }
    return s;
 }
@@ -491,13 +506,8 @@ mstr_trim_left(mstr_view s)
 static inline mstr_view
 mstr_trim_right(mstr_view s)
 {
-   while (s.len) {
-      char c = mstr_at(s, -1);
-      if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
-         s = mstr_slice(s, 0, -1);
-      } else {
-         break;
-      }
+   while (s.len && mlib_is_latin_whitespace(mstr_at(s, -1))) {
+      s = mstr_slice(s, 0, -1);
    }
    return s;
 }
@@ -719,7 +729,7 @@ mstr_resize_for_overwrite(mstr *const str, const size_t new_len)
    // Note: We do not initialize any of the data in the newly allocated region.
    // We only set the null terminator. It is up to the caller to do the rest of
    // the init.
-   data[new_len] = 0;
+   data[new_len] = '\0';
    // Update the final object
    str->data = data;
    str->len = new_len;
@@ -803,8 +813,7 @@ mstr_destroy(mstr *s)
 static inline mstr
 mstr_null(void)
 {
-   const mstr ret = {0};
-   return ret;
+   return mlib_init(mstr){0};
 }
 
 /**
@@ -967,7 +976,7 @@ mstr_append(mstr *str, mstr_view suffix)
  * In case of failure, the string is not modified.
  */
 static inline bool
-mstr_pushchar(mstr *str, char c)
+mstr_append_char(mstr *str, char c)
 {
    mstr_view one = mstr_view_data(&c, 1);
    return mstr_append(str, one);
@@ -982,22 +991,22 @@ mstr_pushchar(mstr *str, char c)
  * @return true If the operation succeeds
  * @return false Otherwise
  *
- * @warning If the `needle` string is empty, then the program will terminate!
+ * @warning If the `needle` string is empty, then the substitution string will be inserted
+ * around and between every existing character in the string.
  * @note If the operation fails, the content of `str` is an unspecified but valid
  * string.
  */
 static inline bool
 mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
 {
-   mlib_check(needle.len, neq, 0, because, "Trying to replace an empty string will result in an infinite loop");
    // Scan forward, starting from the first position:
    size_t off = 0;
-   while (1) {
+   while (off <= str->len) {
       // Find the next occurrence, starting from the scan offset
       off = mstr_find(*str, needle, off);
       if (off == SIZE_MAX) {
          // No more occurrences.
-         return true;
+         break;
       }
       // Replace the needle string with the new value
       if (!mstr_splice(str, off, needle.len, sub)) {
@@ -1010,7 +1019,16 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
          // Integer overflow while advancing the offset. No good.
          return false;
       }
+      // Note: To support empty needles, advance one more space to avoid infinite
+      // repititions in-place.
+      // TODO: To do this properly, this should instead advance over a full UTF-8-encoded
+      // codepoint. For now, just do a single byte.
+      if (!needle.len && mlib_add(&off, 1)) {
+         // Advancing the extra distance failed
+         return false;
+      }
    }
+   return true;
 }
 
 /**
@@ -1026,12 +1044,13 @@ mstr_vsprintf_append(mstr *string, const char *format, va_list args)
    const size_t start_size = string->len;
 
    // Try to guess the length of the added string
-   size_t added_len = strlen(format);
+   const size_t format_len = strlen(format);
+   size_t added_len = format_len;
    // Give use some wiggle room since we are inserting characters:
    if (mlib_mul(&added_len, 2)) {
       // Doubling the size overflowed. Not likely, but just use the original string
       // size and grow as-needed.
-      added_len = strlen(format);
+      added_len = format_len;
    }
 
    while (1) {

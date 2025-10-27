@@ -963,9 +963,9 @@ _test_str(void)
    // Append individual characters
    {
       mstr s = mstr_new(0);
-      mstr_pushchar(&s, 'f');
-      mstr_pushchar(&s, 'o');
-      mstr_pushchar(&s, 'o');
+      mstr_append_char(&s, 'f');
+      mstr_append_char(&s, 'o');
+      mstr_append_char(&s, 'o');
       mlib_check(mstr_cmp(s, ==, mstr_cstring("foo")));
       mstr_destroy(&s);
    }
@@ -1000,14 +1000,14 @@ _test_str(void)
       // within the already-replaced content:
       mlib_check(s.data, str_eq, "foo foo bar baz baz");
 
-      // Try to replace, where the needle is an empty string. This just produces a repetition of the needle
+      // Try to replace, where the needle is an empty string.
       mstr_assign(&s, mstr_cstring("foo"));
-      mlib_assert_aborts () {
-         // A naive replacement of an empty string will result in an infinite string
-         // as it keeps matching the empty string forever, so we terminate rather than
-         // allocate forever:
-         mlib_check(mstr_replace(&s, mstr_cstring(""), mstr_cstring("a")));
-      }
+      mlib_check(mstr_replace(&s, mstr_cstring(""), mstr_cstring("bar")));
+      mlib_check(s.data, str_eq, "barfbarobarobar");
+
+      mstr_assign(&s, mstr_cstring("foofoofoo"));
+      mlib_check(mstr_replace(&s, mstr_cstring("foo"), mstr_cstring("bar")));
+      mlib_check(s.data, str_eq, "barbarbar");
 
       mstr_destroy(&s);
    }
