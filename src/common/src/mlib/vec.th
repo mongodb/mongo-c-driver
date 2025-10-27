@@ -1,5 +1,5 @@
 /**
- * @file vec.t.h
+ * @file vec.th
  * @brief Declare a new vector container data type
  * @date 2024-10-02
  *
@@ -448,3 +448,5 @@ _mlib_vec_index_adjust(size_t size, mlib_upsized_integer pos)
 // These ones we want to pop, not undefine:
 #pragma pop_macro("fn")
 #pragma pop_macro("vec_inline_spec")
+
+// vi: ft=c

@@ -1229,7 +1229,7 @@ _test_timer(void)
 // Tests for `int_vec` assert the behavior of the vector type when handling trivial
 // elements.
 #define T int
-#include <mlib/vec.t.h>
+#include <mlib/vec.th>
 static void
 _test_int_vec(void)
 {
@@ -1264,7 +1264,7 @@ _test_int_vec(void)
 #define VecName cstring_vec
 #define VecDestroyElement(CStrPtr) ((free(*CStrPtr), *CStrPtr = NULL))
 #define VecCopyElement(Dst, Src) ((*Dst = strdup(*Src)))
-#include <mlib/vec.t.h>
+#include <mlib/vec.th>
 static void
 _test_cstring_vec(void)
 {

@@ -26,6 +26,6 @@
 #define T mstr
 #define VecDestroyElement(Ptr) (mstr_destroy(Ptr))
 #define VecCopyElement(Dst, Src) (*Dst = mstr_copy(*Src), Dst->data != NULL)
-#include <mlib/vec.t.h>
+#include <mlib/vec.th>
 
 #endif // MLIB_STR_VEC_H_INCLUDED

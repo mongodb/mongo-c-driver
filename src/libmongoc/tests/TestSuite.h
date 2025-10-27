@@ -665,7 +665,7 @@ typedef struct TestSkip TestSkip;
 
 #define T CheckFunc
 #define VecName CheckFuncVec
-#include <mlib/vec.t.h>
+#include <mlib/vec.th>
 
 struct Test {
    /**
@@ -716,7 +716,7 @@ Test_Destroy(Test *t)
 #define T Test
 #define VecName TestVec
 #define VecDestroyElement Test_Destroy
-#include <mlib/vec.t.h>
+#include <mlib/vec.th>
 
 /**
  * @brief Information about a test that we plan to skip
@@ -747,7 +747,7 @@ TestSkip_Destroy(TestSkip *skip)
 #define T TestSkip
 #define VecName TestSkipVec
 #define VecDestroyElement(Skip) TestSkip_Destroy(Skip)
-#include <mlib/vec.t.h>
+#include <mlib/vec.th>
 
 
 struct TestSuite {

@@ -130,6 +130,7 @@ script should modify the above expression
 
 SOURCE_PATTERNS = [
     '**/*.h',
+    '**/*.th',
     '**/*.hpp',
     '**/*.c',
     '**/*.cpp',
