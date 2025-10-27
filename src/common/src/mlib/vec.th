@@ -93,19 +93,19 @@ typedef struct VecName {
     * @brief Pointer to the first vector element, or NULL if the vector is
     * empty.
     *
-    * @note DO NOT MODIFY
+    * @note DO NOT DIRECTLY MODIFY THIS VALUE
     */
    T *data;
    /**
     * @brief The number of elements in the vector.
     *
-    * @note DO NOT MODIFY
+    * @note DO NOT DIRECTLY MODIFY THIS VALUE
     */
    size_t size;
    /**
     * @brief The number of allocated storage elements.
     *
-    * @note DO NOT MODIFY
+    * @note DO NOT DIRECTLY MODIFY THIS VALUE
     */
    size_t capacity;
 
@@ -168,10 +168,10 @@ fn(cend(VecName const *v)) mlib_noexcept
 vec_inline_spec size_t
 fn(max_size(void)) mlib_noexcept
 {
-   // We compare against (signed) SSIZE_MAX because want to support the difference
+   // We compare against (signed) PTRDIFF_MAX because want to support the difference
    // between two pointers. If we use the unsigned size, then we could have vectors
    // with size that is too large to represent the difference between two sizes.
-   return SSIZE_MAX / sizeof(T);
+   return PTRDIFF_MAX / sizeof(T);
 }
 
 /**
