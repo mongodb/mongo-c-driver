@@ -277,7 +277,7 @@ fn(resize(VecName *const self, size_t const count)) mlib_noexcept
    // Try to auto-grow capacity. Increase capacity by ×1.5
    const size_t half_current_capacity = self->capacity / 2;
    size_t new_capacity = 0;
-   if (mlib_add(&new_capacity, self->size, half_current_capacity)) {
+   if (mlib_unlikely(mlib_add(&new_capacity, self->size, half_current_capacity))) {
       // The auto growth amount would overflow, so just cap to the max size.
       new_capacity = fn(max_size());
    }
@@ -320,7 +320,7 @@ vec_inline_spec T *
 fn(push(VecName *self)) mlib_noexcept
 {
    size_t count = self->size;
-   if (mlib_add(&count, 1)) {
+   if (mlib_unlikely(mlib_add(&count, 1))) {
       // Adding another element would overflow size_t. This is extremely unlikely,
       // but precautionary.
       return NULL;

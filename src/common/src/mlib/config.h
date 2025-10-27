@@ -397,4 +397,15 @@
    MLIB_IF_GNU_LIKE(mlib_gnu_warning_disable("-Wunused-parameter");) \
    MLIB_IF_MSVC(mlib_msvc_warning(disable : 4100);) mlib_static_assert(1, "")
 
+/**
+ * @brief Annotate a boolean expression as "likely to be true" to guide the optimizer.
+ * Use this very sparingly.
+ */
+#define mlib_likely(...) MLIB_IF_ELSE(mlib_is_gnu_like())(__builtin_expect(!!(__VA_ARGS__), 1))((__VA_ARGS__))
+/**
+ * @brief Annotate a boolean expression as "likely to be untrue" to guide the optimizer.
+ * Use this very sparingly.
+ */
+#define mlib_unlikely(...) MLIB_IF_ELSE(mlib_is_gnu_like())(__builtin_expect(!!(__VA_ARGS__), 0))((__VA_ARGS__))
+
 #endif // MLIB_CONFIG_H_INCLUDED

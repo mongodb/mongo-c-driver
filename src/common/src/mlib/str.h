@@ -716,7 +716,7 @@ mstr_resize_for_overwrite(mstr *const str, const size_t new_len)
 {
    // We need to allocate one additional char to hold the null terminator
    size_t alloc_size = new_len;
-   if (mlib_add(&alloc_size, 1) || alloc_size > PTRDIFF_MAX) {
+   if (mlib_unlikely(mlib_add(&alloc_size, 1) || alloc_size > PTRDIFF_MAX)) {
       // Allocation size is too large
       return false;
    }
@@ -868,7 +868,7 @@ mstr_concat(mstr_view a, mstr_view b)
 {
    mstr ret = {NULL, 0};
    size_t cat_len = 0;
-   if (mlib_add(&cat_len, a.len, b.len)) {
+   if (mlib_unlikely(mlib_add(&cat_len, a.len, b.len))) {
       // Size would overflow. No go.
       return ret;
    }
@@ -914,7 +914,7 @@ mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
    // This should never fail, because we should try to delete more chars than we have
    mlib_check(!mlib_sub(&new_len, n_delete));
    // Check if appending would make too big of a string
-   if (mlib_add(&new_len, insert.len)) {
+   if (mlib_unlikely(mlib_add(&new_len, insert.len))) {
       // New string will be too long
       return false;
    }
@@ -1015,7 +1015,7 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
       // Advance over the length of the replacement string, so we don't try to
       // infinitely replace content if the replacement itself contains the needle
       // string
-      if (mlib_add(&off, sub.len)) {
+      if (mlib_unlikely(mlib_add(&off, sub.len))) {
          // Integer overflow while advancing the offset. No good.
          return false;
       }
@@ -1023,7 +1023,7 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
       // repititions in-place.
       // TODO: To do this properly, this should instead advance over a full UTF-8-encoded
       // codepoint. For now, just do a single byte.
-      if (!needle.len && mlib_add(&off, 1)) {
+      if (!needle.len && mlib_unlikely(mlib_add(&off, 1))) {
          // Advancing the extra distance failed
          return false;
       }
@@ -1056,7 +1056,7 @@ mstr_vsprintf_append(mstr *string, const char *format, va_list args)
    while (1) {
       // Calculate the new size of the string
       size_t new_size = 0;
-      if (mlib_add(&new_size, start_size, added_len)) {
+      if (mlib_unlikely(mlib_add(&new_size, start_size, added_len))) {
          // Adding more space overflows
          return false;
       }
@@ -1067,7 +1067,7 @@ mstr_vsprintf_append(mstr *string, const char *format, va_list args)
       }
       // Calc the size with the null terminator
       size_t len_with_null = added_len;
-      if (mlib_add(&len_with_null, 1)) {
+      if (mlib_unlikely(mlib_add(&len_with_null, 1))) {
          // Unlikely: Overflow
          return false;
       }
