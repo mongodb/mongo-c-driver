@@ -415,16 +415,19 @@ fn(init_copy(VecName *dst_vec, VecName const *src_vec)) mlib_noexcept
 }
 #endif // VecCopyElement
 
-mlib_extern_c_end();
-
 #ifndef mlib_vec_foreach
 #define mlib_vec_foreach(Type, VarName, Vector) \
    for (Type *VarName = (Vector).data; VarName && (VarName != (Vector).data + (Vector).size); ++VarName)
 #endif
 
 #ifndef mlib_vec_at
+/**
+ * @brief Obtain a vector element at some zero-based index offset, with negative index
+ * wrapping (-1 refers to the last element in the vector)
+ *
+ * @note The `Vec` argument will be evaluated at least twice!
+ */
 #define mlib_vec_at(Vec, Pos) ((Vec).data[_mlib_vec_index_adjust((Vec).size, mlib_upsize_integer(Pos))])
-
 static inline size_t
 _mlib_vec_index_adjust(size_t size, mlib_upsized_integer pos)
 {
@@ -434,8 +437,9 @@ _mlib_vec_index_adjust(size_t size, mlib_upsized_integer pos)
    mlib_check(pos.bits.as_unsigned, lte, size, because, "the vector index must be in-bounds for mlib_vec_at()");
    return pos.bits.as_unsigned;
 }
-
 #endif
+
+mlib_extern_c_end();
 
 #undef T
 #undef VecName
