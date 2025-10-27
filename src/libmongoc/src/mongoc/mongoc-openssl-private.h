@@ -21,6 +21,8 @@
 
 #include <mongoc/mongoc-stream-tls-openssl-private.h>
 
+#include <mongoc/mongoc-ssl.h>
+
 #include <bson/bson.h>
 
 #include <openssl/bio.h>
