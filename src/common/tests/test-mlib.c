@@ -1251,11 +1251,13 @@ _test_int_vec(void)
    *int_vec_push(&ints) = 123456;
    *int_vec_push(&ints) = -7;
    mlib_check(ints.size, eq, 4, because, "We added four elements from empty");
+   mlib_check(mlib_vec_at(ints, -1), eq, -7, because, "Negative index wraps");
+
    // Erase in the middle
    int_vec_erase(&ints, ints.data + 1, ints.data + 3);
    mlib_check(ints.size, eq, 2, because, "We erased two elements");
-
-   mlib_check(mlib_vec_at(ints, -1), eq, 1729, because, "Negative index wraps");
+   mlib_check(mlib_vec_at(ints, 1), eq, -7, because, "We erased, so the back elements shifted down");
+   mlib_check(mlib_vec_at(ints, -1), eq, -7, because, "-7 is still the last element");
 
    int_vec_destroy(&ints);
 }

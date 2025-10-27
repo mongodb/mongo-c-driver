@@ -235,9 +235,19 @@ fn(reserve(VecName *const self, size_t count)) mlib_noexcept
 vec_inline_spec void
 fn(erase(VecName *const self, T *const first, T *const last))
 {
+   // Number of elements following the removed region
+   const size_t n_tail_elements = (size_t)(fn(end(self)) - last);
+   // Destroy elements in reverse order:
    for (T *r_iter = last; r_iter != first; --r_iter) {
       VecDestroyElement((r_iter - 1));
       --self->size;
+   }
+   // This mult cannot overflow because we can never contain enough elements to overflow PTRDIFF_MAX
+   const size_t n_bytes_to_shift = n_tail_elements * sizeof(T);
+   // If there are any elements to be shifted, shift them down over the removed region
+   if (n_bytes_to_shift) {
+      // Shift all tail elements down into their new position
+      memmove(first, last, n_bytes_to_shift);
    }
 }
 
