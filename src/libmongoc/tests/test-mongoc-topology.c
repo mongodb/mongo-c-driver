@@ -1772,39 +1772,24 @@ test_cluster_time_updated_during_handshake(void)
    pool = test_framework_client_pool_new_from_uri(uri, NULL);
    client = mongoc_client_pool_pop(pool);
 
-   /* ensure a topology scan has run, populating the topology description
-    * cluster time. */
+   /* ensure a topology scan has run, populating the topology description. */
    sd = mongoc_client_select_server(client, false, NULL, &error);
    ASSERT_OR_PRINT(sd, error);
    mongoc_server_description_destroy(sd);
 
-   /* check the cluster time stored on the topology description. */
-   ASSERT_MATCH(&mc_tpld_unsafe_get_const(client->topology)->cluster_time, cluster_time);
-   bson_free(cluster_time);
-   cluster_time = cluster_time_fmt(2);
-
-   /* primary changes clusterTime */
-   mock_server_auto_hello(server,
-                          "{'ok': 1,"
-                          " 'isWritablePrimary': true,"
-                          " 'setName': 'rs',"
-                          " 'minWireVersion': %d,"
-                          " 'maxWireVersion': %d,"
-                          " 'hosts': ['%s'],"
-                          " '$clusterTime': %s}",
-                          WIRE_VERSION_MIN,
-                          WIRE_VERSION_MAX,
-                          mock_server_get_host_and_port(server),
-                          cluster_time);
+   /* expect no cluster time. SDAM does not update cluster time. */
+   ASSERT(bson_empty(&mc_tpld_unsafe_get_const(client->topology)->cluster_time));
 
    /* remove the node from the cluster to trigger a hello handshake. */
    mongoc_cluster_disconnect_node(&client->cluster, 1);
 
    /* opens new stream and does a hello handshake (in pooled mode only). */
    r = mongoc_client_command_simple(client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
-
    ASSERT_OR_PRINT(r, error);
+
+   /* expect cluster time updated from handshake. */
    ASSERT_MATCH(&mc_tpld_unsafe_get_const(client->topology)->cluster_time, cluster_time);
+
    bson_free(cluster_time);
    mongoc_client_pool_push(pool, client);
    mongoc_client_pool_destroy(pool);
