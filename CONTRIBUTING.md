@@ -320,6 +320,8 @@ To run test cases with large allocations, set:
 
 * `MONGOC_TEST_LARGE_ALLOCATIONS=on` This may result in sudden test suite termination due to allocation failure. Use with caution.
 
+* `MONGOC_TEST_OIDC=on` to test OIDC using a test environment described [here](https://github.com/mongodb-labs/drivers-evergreen-tools/tree/d7a7337b384392a09fbe7fc80a7244e6f1226c18/.evergreen/auth_oidc).
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

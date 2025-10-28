@@ -353,6 +353,31 @@ test_oidc_cache_invalidate(void)
 }
 
 
+// test_oidc_connection_cache tests the connection token cache.
+static void
+test_oidc_connection_cache(void)
+{
+   mongoc_oidc_connection_cache_t *cache = mongoc_oidc_connection_cache_new();
+
+   ASSERT(!mongoc_oidc_connection_cache_get(cache));
+
+   // Can set a cached token:
+   {
+      mongoc_oidc_connection_cache_set(cache, PLACEHOLDER_TOKEN);
+      char *got = mongoc_oidc_connection_cache_get(cache);
+      ASSERT_CMPSTR(got, PLACEHOLDER_TOKEN);
+      bson_free(got);
+   }
+
+   // Can clear cached token:
+   {
+      mongoc_oidc_connection_cache_set(cache, NULL);
+      ASSERT(!mongoc_oidc_connection_cache_get(cache));
+   }
+
+   mongoc_oidc_connection_cache_destroy(cache);
+}
+
 void
 test_mongoc_oidc_install(TestSuite *suite)
 {
@@ -363,4 +388,5 @@ test_mongoc_oidc_install(TestSuite *suite)
    TestSuite_Add(suite, "/oidc/cache/propagates_error", test_oidc_cache_propagates_error);
    TestSuite_Add(suite, "/oidc/cache/invalidate", test_oidc_cache_invalidate);
    TestSuite_Add(suite, "/oidc/cache/waits_between_calls", test_oidc_cache_waits_between_calls);
+   TestSuite_Add(suite, "/oidc/connection_cache", test_oidc_connection_cache);
 }
