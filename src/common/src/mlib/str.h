@@ -467,16 +467,23 @@ mstr_find_first_of(mstr_view hay, mstr_view const needles, mlib_upsized_integer 
 /**
  * @brief Test whether the given codepoint is a Basic Latin whitespace character
  *
+ * This function does not depend on the locale and has no undefined behavior, unlike <ctype.h> functions
+ *
  * @param c The codepoint to be tested
  */
 static inline bool
 mlib_is_latin_whitespace(int32_t c)
 {
-   return c == 0x20   // space
-          || c == 0xa // line feed
-          || c == 0xd // carriage return
-          || c == 0x9 // horizontal tab
-      ;
+   switch (c) {
+   case 0x09: // horizontal tab
+   case 0x0a: // line feed
+   case 0x0d: // carriage return
+   case 0x20: // space
+      return true;
+
+   default:
+      return false;
+   }
 }
 
 /**
@@ -991,8 +998,11 @@ mstr_append_char(mstr *str, char c)
  * @return true If the operation succeeds
  * @return false Otherwise
  *
- * @warning If the `needle` string is empty, then the substitution string will be inserted
- * around and between every existing character in the string.
+ * @note If the `needle` string is empty, then the substitution string will
+ * be inserted around and between every byte in the string:
+ *
+ *    replace("foo", "", "|") -> "|f|o|o|"
+ *
  * @note If the operation fails, the content of `str` is an unspecified but valid
  * string.
  */
@@ -1021,7 +1031,7 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
       }
       // Note: To support empty needles, advance one more space to avoid infinite
       // repititions in-place.
-      // TODO: To do this properly, this should instead advance over a full UTF-8-encoded
+      // TODO: To do this "properly", this should instead advance over a full UTF-8-encoded
       // codepoint. For now, just do a single byte.
       if (!needle.len && mlib_unlikely(mlib_add(&off, 1))) {
          // Advancing the extra distance failed
