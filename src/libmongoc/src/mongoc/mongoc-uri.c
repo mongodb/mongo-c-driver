@@ -1504,7 +1504,6 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
 
    bson_iter_t iter;
 
-   const char *const mechanism = mongoc_uri_get_auth_mechanism(uri);
    const char *const username = mongoc_uri_get_username(uri);
    const char *const password = mongoc_uri_get_password(uri);
    const char *const source =
@@ -1525,7 +1524,7 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
    // `mongoc_uri_parse_userpass`.
    //
    // If neither an authentication mechanism nor a username is provided, there is nothing to do.
-   if (!mechanism && !username) {
+   if (!mongoc_uri_get_auth_mechanism(uri) && !username) {
       return true;
    } else {
       // All code below assumes authentication credentials are being configured.
@@ -1543,6 +1542,8 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
       }
    }
 
+   // Copy `mechanism` to avoid invalidation by updates to `uri->credentials`.
+   char *const mechanism = bson_strdup(mongoc_uri_get_auth_mechanism(uri));
    // Default authentication method.
    if (!mechanism) {
       // The authentication mechanism will be derived by `_mongoc_cluster_auth_node` during handshake according to
@@ -1781,6 +1782,7 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
 
 fail:
    bson_destroy(&mechanism_properties_owner);
+   bson_free(mechanism);
 
    return ret;
 }
