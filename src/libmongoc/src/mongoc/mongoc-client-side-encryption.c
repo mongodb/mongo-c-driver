@@ -1261,6 +1261,8 @@ static void
 append_bson_text_per_index_opts(bson_t *out, const struct _encrypt_text_per_index_opts_t *opts)
 {
    BSON_ASSERT_PARAM(out);
+   BSON_ASSERT_PARAM(opts);
+
    if (opts->str_max_length.set) {
       BSON_ASSERT(bson_append_int32(out, "strMaxLength", -1, opts->str_max_length.value));
    }
