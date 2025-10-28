@@ -243,7 +243,8 @@ MONGOC_EXPORT(void)
 mongoc_encrypt_text_opts_set_suffix(mongoc_encrypt_text_opts_t *opts, const mongoc_encrypt_text_suffix_opts_t *sopts);
 
 MONGOC_EXPORT(void)
-mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts, const mongoc_encrypt_text_substring_opts_t *ssopts);
+mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts,
+                                       const mongoc_encrypt_text_substring_opts_t *ssopts);
 
 MONGOC_EXPORT(mongoc_encrypt_text_opts_t *)
 mongoc_encrypt_text_opts_new(void);

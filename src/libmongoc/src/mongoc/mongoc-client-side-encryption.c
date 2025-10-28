@@ -629,7 +629,8 @@ mongoc_encrypt_text_opts_set_suffix(mongoc_encrypt_text_opts_t *opts, const mong
 }
 
 void
-mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts, const mongoc_encrypt_text_substring_opts_t *ssopts)
+mongoc_encrypt_text_opts_set_substring(mongoc_encrypt_text_opts_t *opts,
+                                       const mongoc_encrypt_text_substring_opts_t *ssopts)
 {
    BSON_ASSERT_PARAM(opts);
    BSON_ASSERT_PARAM(ssopts);
