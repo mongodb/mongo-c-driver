@@ -1375,7 +1375,7 @@ test_heartbeat_no_cluster_time_single(void *ctx)
    {
       // We need to send a command in order to force a heartbeat. However, we do not want a reply as that may update
       // the client's cluster time, so we will use an unacknowledged write.
-      mongoc_write_concern_t *wc = mongoc_write_concern_new();
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new();
       mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
 
       bson_t *const opts = bson_new();
