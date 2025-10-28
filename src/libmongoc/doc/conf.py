@@ -193,6 +193,12 @@ rst_prolog = rf"""
 .. |bson_t-opt-storage-ptr| replace::
     maybe-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
 
+.. |encrypt-text-is-experimental| replace::
+    The "TextPreview" algorithm is in preview and should be used for experimental workloads only.
+    These features are unstable and their security is not guaranteed until released as Generally
+    Available (GA). The GA version of these features may not be backwards compatible with the
+    preview version.
+
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
 .. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/queryable-encryption/
