@@ -1504,7 +1504,6 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
 
    bson_iter_t iter;
 
-   const char *const mechanism = mongoc_uri_get_auth_mechanism(uri);
    const char *const username = mongoc_uri_get_username(uri);
    const char *const password = mongoc_uri_get_password(uri);
    const char *const source =
@@ -1516,6 +1515,9 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
       MONGOC_URI_ERROR(error, "%s", "authSource may not be specified as an empty string");
       return false;
    }
+
+   // Copy `mechanism` to avoid invalidation by updates to `uri->credentials`.
+   char *const mechanism = bson_strdup(mongoc_uri_get_auth_mechanism(uri));
 
    // Authentication spec: The presence of a credential delimiter (i.e. '@') in the URI connection string is
    // evidence that the user has unambiguously specified user information and MUST be interpreted as a user
@@ -1781,6 +1783,7 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
 
 fail:
    bson_destroy(&mechanism_properties_owner);
+   bson_free(mechanism);
 
    return ret;
 }
