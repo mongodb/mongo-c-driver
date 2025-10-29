@@ -1,43 +1,39 @@
 VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
-LOCALLY
+
+# For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
+# Example use: <earthly> +build --from=ubuntu:22.04 --sasl=off --tls=OpenSSL --c_compiler=gcc
 
 # Allow setting the "default" container image registry to use for image short names (e.g. to Amazon ECR).
 ARG --global default_search_registry=docker.io
 
-IMPORT ./tools/ AS tools
+# Set a base container image at the root so that this project can be imported
+FROM $default_search_registry/alpine:3.20
 
-# For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
-# Example use: <earthly> +build --env=u22 --sasl=off --tls=OpenSSL --c_compiler=gcc
+# build-environment :
+#   A target that just presents the environment required for a mongo-c-driver build
+build-environment:
+    ARG --required from
+    FROM --pass-args $from
+    DO --pass-args +INSTALL_DEPS
 
-# COPY_SOURCE :
-#   Copy source files required for the build into the specified "--into" directory
-COPY_SOURCE:
-    FUNCTION
-    ARG --required into
-    COPY --dir \
-        build/ \
-        CMakeLists.txt \
-        COPYING \
-        NEWS \
-        README.rst \
-        src/ \
-        THIRD_PARTY_NOTICES \
-        VERSION_CURRENT \
-        "$into"
+# configure :
+#   Installs deps and configures the project without building.
+configure:
+    FROM --pass-args +build-environment
 
-# CONFIGURE :
-#   Configure the project in $source_dir into $build_dir with a common set of configuration options
-CONFIGURE:
-    FUNCTION
-    ARG --required source_dir
+    # Various important paths for the build
+    ARG source_dir = /opt/mcd/source
     ARG --required build_dir
+    DO +COPY_SOURCE --into=$source_dir
+
+    # Configure the project
     ARG --required tls
     ARG --required sasl
     RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
         -D ENABLE_MAINTAINER_FLAGS=ON \
         -D ENABLE_SHM_COUNTERS=ON \
         -D ENABLE_SASL=$(echo $sasl | __str upper) \
-        -D ENABLE_SNAPPY=ON \
+        -D ENABLE_SNAPPY=AUTO \
         -D ENABLE_SRV=ON \
         -D ENABLE_ZLIB=BUNDLED \
         -D ENABLE_SSL=$(echo $tls | __str upper) \
@@ -46,39 +42,29 @@ CONFIGURE:
         -Werror
 
 # build :
-#   Build libmongoc and libbson using the specified environment.
+#   Install deps, configures, and builds libmongoc and libbson.
 #
-# The --env argument specifies the build environment among the `+env.xyz` environment
-# targets, using --purpose=build for the build environment. Refer to the target
-# list for a list of available build environments.
+#   Building this target requires certain arguments to be specified, the most important
+#   being `--from`, which specifies the base container image that is used for the build
 build:
-    # env is an argument
-    ARG --required env
-    FROM --pass-args +env.$env --purpose=build
-    # The configuration to be built
-    ARG config=RelWithDebInfo
-    # The prefix at which to install the built result
-    ARG install_prefix=/opt/mongo-c-driver
-    # Build configuration parameters. Will be case-normalized for CMake usage.
-    ARG --required sasl
-    ARG --required tls
-    LET source_dir=/opt/mongoc/source
-    LET build_dir=/opt/mongoc/build
-    DO +COPY_SOURCE --into=$source_dir
-    ENV CCACHE_HOME=/root/.cache/ccache
-    DO --pass-args +CONFIGURE --source_dir=$source_dir --build_dir=$build_dir
-    RUN --mount=type=cache,target=$CCACHE_HOME \
-        env CCACHE_BASE="$source_dir" \
-            cmake --build $build_dir --config $config
+    ARG config          = "RelWithDebInfo"
+    LET build_dir       = "/opt/mcd/build"
+    LET install_prefix  = "/opt/mongo-c-driver"
+
+    FROM --pass-args +configure --build_dir=$build_dir
+
+    # Build the project
+    RUN cmake --build $build_dir --config $config
+    # Install to the local prefix
     RUN cmake --install $build_dir --prefix="$install_prefix" --config $config
-    SAVE ARTIFACT /opt/mongoc/build/* /build-tree/
+    # Export the build results and the install tree
+    SAVE ARTIFACT /opt/mcd/build/* /build-tree/
     SAVE ARTIFACT /opt/mongo-c-driver/* /root/
 
 # test-example will build one of the libmongoc example projects using the build
 # that comes from the +build target. Arguments for +build should also be provided
 test-example:
-    ARG --required env
-    FROM --pass-args +env.$env --purpose=build
+    FROM --pass-args +build-environment
     # Grab the built library
     COPY --pass-args +build/root /opt/mongo-c-driver
     # Add the example files
@@ -106,62 +92,28 @@ test-example:
 #
 # Arguments for +build should be provided.
 test-cxx-driver:
-    ARG --required env
-    ARG --required test_mongocxx_ref
-    FROM --pass-args +env.$env --purpose=build
-    ARG cxx_compiler
-    IF test "$cxx_compiler" = ""
-        # No cxx_compiler is set, so infer based on a possible c_compiler option
-        ARG c_compiler
-        IF test "$c_compiler" != ""
-            # ADD_CXX_COMPILER will remap the C compiler name to an appropriate C++ name
-            LET cxx_compiler="$c_compiler"
-        ELSE
-            LET cxx_compiler =  gcc
-        END
-    END
-    ARG cxx_version_current=0.0.0
-    DO tools+ADD_CXX_COMPILER --cxx_compiler=$cxx_compiler
+    FROM --pass-args +build-environment
+
+    # Copy over the C driver libary build
     COPY --pass-args +build/root /opt/mongo-c-driver
+
     LET source=/opt/mongo-cxx-driver/src
     LET build=/opt/mongo-cxx-driver/bld
     GIT CLONE --branch=$test_mongocxx_ref https://github.com/mongodb/mongo-cxx-driver.git $source
+
+    # Set the VERSION_CURRENT file
+    ARG cxx_version_current=0.0.0
     RUN echo $cxx_version_current > $source/build/VERSION_CURRENT
+
+    # Configure the project
     RUN cmake -S $source -B $build -G Ninja -D CMAKE_PREFIX_PATH=/opt/mongo-c-driver -D CMAKE_CXX_STANDARD=17
-    ENV CCACHE_HOME=/root/.cache/ccache
-    ENV CCACHE_BASE=$source
-    RUN --mount=type=cache,target=$CCACHE_HOME cmake --build $build
-
-# PREP_CMAKE "warms up" the CMake installation cache for the current environment
-PREP_CMAKE:
-    FUNCTION
-    # Run all CMake commands using uvx:
-    RUN __alias cmake uvx cmake
-    # Executing any CMake command will warm the cache:
-    RUN cmake --version | head -n 1
-
-env-warmup:
-    ARG --required env
-    BUILD --pass-args +env.$env --purpose=build
-    BUILD --pass-args +env.$env --purpose=test
-
-# Simultaneously builds and tests multiple different platforms
-multibuild:
-    BUILD +run --targets "test-example" \
-        --env=alpine3.19 --env=alpine3.20 --env=alpine3.21 --env=alpine3.22 \
-        --env=u20 --env=u22 --env=u24 \
-        --env=centos9 --env=centos10 \
-        --env=almalinux8 --env=almalinux9 --env=almalinux10 \
-        --env=archlinux \
-        --tls=OpenSSL --tls=off \
-        --sasl=Cyrus --sasl=off \
-        --c_compiler=gcc --c_compiler=clang \
-        --test_mongocxx_ref=master
+    # Build
+    RUN cmake --build $build
 
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
-    FROM $default_search_registry/library/alpine:3.20
+    FROM $default_search_registry/alpine:3.20
     RUN apk add git bash
     ARG --required prefix
     ARG --required ref
@@ -175,7 +127,7 @@ release-archive:
     LET version = $(cat VERSION_CURRENT)
 
     # Pick the waterfall project based on the tag
-    COPY tools+tools-dir/__str /usr/local/bin/__str
+    DO +INIT
     IF __str test "$version" -matches ".*\.0\$"
         # This is a minor release. Link to the build on the main project.
         LET base = "mongo_c_driver"
@@ -206,7 +158,7 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM $default_search_registry/library/alpine:3.20
+    FROM $default_search_registry/alpine:3.20
     RUN apk add curl
     RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
     SAVE ARTIFACT /c-driver.pub
@@ -236,7 +188,7 @@ sign-file:
 #   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
 #   (Refer to dev docs)
 signed-release:
-    FROM $default_search_registry/library/alpine:3.20
+    FROM $default_search_registry/alpine:3.20
     RUN apk add git
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
@@ -325,7 +277,7 @@ sbom-validate:
             --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 $default_search_registry/library/ubuntu:24.04
+    FROM --platform=linux/amd64 $default_search_registry/ubuntu:24.04
     RUN apt-get update && apt-get -y install curl
     RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
     RUN chmod a+x /usr/local/bin/snyk
@@ -397,7 +349,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM $default_search_registry/library/alpine:3.18
+    FROM $default_search_registry/alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git
@@ -416,27 +368,22 @@ vcpkg-base:
 verify-headers:
     # We test against multiple different platforms, because glibc/musl versions may
     # rearrange their header contents and requirements, so we want to check against as
-    # many as possible.
+    # many as possible. Also so set some reasonable build dep so the caller doesn't
+    # need to specify. In the future, it is possible that we will need to test
+    # other environments and build settings.
     BUILD +do-verify-headers-impl \
-        --from +env.alpine3.19 \
-        --from +env.almalinux8 \
-        --from +env.u20 \
-        --from +env.centos10 \
-        --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc
+        --from alpine:3.19 \
+        --from almalinux:8 \
+        --from ubuntu:20.04 \
+        --from quay.io/centos/centos:stream10 \
+        --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc --snappy=off
 
 do-verify-headers-impl:
-    ARG --required from
-    # We don't really care about the specifics of the build env/settings, so set some
-    # reasonable defaults so the caller doesn't need to specify. In the future, it is
-    # possible that we will need to test other environments and build settings.
-    FROM --pass-args "$from" --purpose=build
-    # Add C++ so we can test as C++ headers
-    DO --pass-args tools+ADD_CXX_COMPILER
-    DO +COPY_SOURCE --into=/s
-    DO --pass-args +CONFIGURE --source_dir /s --build_dir /s/_build
+    LET build_dir = "/opt/mcd/build"
+    FROM --pass-args +configure --build_dir=$build_dir
     # The "all_verify_interface_header_sets" target is created automatically
     # by CMake for the VERIFY_INTERFACE_HEADER_SETS target property.
-    RUN cmake --build /s/_build --target all_verify_interface_header_sets
+    RUN cmake --build $build_dir --target all_verify_interface_header_sets
 
 # run :
 #   Run one or more targets simultaneously.
@@ -452,158 +399,233 @@ run:
         BUILD +$__target
     END
 
-
-# d88888b d8b   db db    db d888888b d8888b.  .d88b.  d8b   db .88b  d88. d88888b d8b   db d888888b .d8888.
-# 88'     888o  88 88    88   `88'   88  `8D .8P  Y8. 888o  88 88'YbdP`88 88'     888o  88 `~~88~~' 88'  YP
-# 88ooooo 88V8o 88 Y8    8P    88    88oobY' 88    88 88V8o 88 88  88  88 88ooooo 88V8o 88    88    `8bo.
-# 88~~~~~ 88 V8o88 `8b  d8'    88    88`8b   88    88 88 V8o88 88  88  88 88~~~~~ 88 V8o88    88      `Y8b.
-# 88.     88  V888  `8bd8'    .88.   88 `88. `8b  d8' 88  V888 88  88  88 88.     88  V888    88    db   8D
-# Y88888P VP   V8P    YP    Y888888P 88   YD  `Y88P'  VP   V8P YP  YP  YP Y88888P VP   V8P    YP    `8888Y'
-
-env.archlinux:
-    FROM --pass-args tools+init-env --from $default_search_registry/library/archlinux
-    RUN pacman-key --init
-    ARG --required purpose
-
-    RUN __install ninja snappy uv
-
-    IF test "$purpose" = build
-        RUN __install ccache
-    END
-
-    # We don't install SASL here, because it's pre-installed on Arch
-    DO --pass-args tools+ADD_TLS
-    DO --pass-args tools+ADD_C_COMPILER
-    DO +PREP_CMAKE
-
-env.alpine3.19:
-    DO --pass-args +ALPINE_ENV --version=3.19
-
-env.alpine3.20:
-    DO --pass-args +ALPINE_ENV --version=3.20
-
-env.alpine3.21:
-    DO --pass-args +ALPINE_ENV --version=3.21
-
-env.alpine3.22:
-    DO --pass-args +ALPINE_ENV --version=3.22
-
-ALPINE_ENV:
+# COPY_SOURCE :
+#   Copy source files required for the build into the specified "--into" directory
+COPY_SOURCE:
     FUNCTION
-    ARG --required version
-    FROM --pass-args tools+init-env --from $default_search_registry/library/alpine:$version
-    RUN __install bash curl ninja musl-dev make python3
-    ARG --required purpose
+    ARG --required into
+    COPY --dir \
+        build/ \
+        CMakeLists.txt \
+        COPYING \
+        etc/ \
+        NEWS \
+        README.rst \
+        src/ \
+        THIRD_PARTY_NOTICES \
+        VERSION_CURRENT \
+        "$into"
 
-    IF test "$version" = "3.19" -o "$version" = "3.20"
-        # uv is not yet available. Install via pipx.
-        RUN __install pipx
-        ENV PATH="/opt/uv/bin:$PATH"
-        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
-    ELSE
-        RUN __install uv
-    END
-
-    IF test "$purpose" = "build"
-        RUN __install snappy-dev ccache
-    ELSE IF test "$purpose" = "test"
-        RUN __install snappy
-    END
-
-    DO --pass-args tools+ADD_SASL
-    DO --pass-args tools+ADD_TLS
-    # Add "gcc" when installing Clang, since it pulls in a lot of runtime libraries and
-    # utils that are needed for linking with Clang
-    DO --pass-args tools+ADD_C_COMPILER --clang_pkg="gcc clang compiler-rt"
-    DO +PREP_CMAKE
-
-env.u20:
-    DO --pass-args +UBUNTU_ENV --version=20.04
-
-env.u22:
-    DO --pass-args +UBUNTU_ENV --version=22.04
-
-env.u24:
-    DO --pass-args +UBUNTU_ENV --version=24.04
-
-UBUNTU_ENV:
+INIT:
     FUNCTION
-    ARG --required version
-    FROM --pass-args tools+init-env --from $default_search_registry/library/ubuntu:$version
-    RUN __install curl build-essential
-    ARG --required purpose
+    IF ! __have_command __have_command
+        COPY --chmod=755 tools/__tool /usr/local/bin/__tool
+        RUN __tool __init
+        IF __can_install epel-release
+            RUN __do "Enabling EPEL repositories..." __install epel-release
+        END
+        IF ! __have_command curl
+            RUN __do "Installing curl..." __install curl
+        END
 
-    # uv is not available via apt. Avoid snapd (systemd) by using pipx instead.
-    RUN __install python3-venv pipx
-    ENV PATH="/opt/uv/bin:$PATH"
-    RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
-
-    IF test "$purpose" = build
-        RUN __install ninja-build gcc ccache libsnappy-dev zlib1g-dev
-    ELSE IF test "$purpose" = test
-        RUN __install libsnappy1v5 ninja-build
+        ARG uv_version = "0.8.15"
+        ARG uv_install_sh_url = "https://astral.sh/uv/$uv_version/install.sh"
+        IF ! __have_command uv
+            RUN curl -LsSf "$uv_install_sh_url" \
+                    | env UV_UNMANAGED_INSTALL=/opt/uv sh - \
+                && __alias uv  /opt/uv/uv \
+                && __alias uvx /opt/uv/uvx
+        END
     END
 
-    DO --pass-args tools+ADD_SASL
-    DO --pass-args tools+ADD_TLS
-    DO --pass-args tools+ADD_C_COMPILER
-    DO +PREP_CMAKE
+# d8888b. d88888b d8888b. d88888b d8b   db d8888b. d88888b d8b   db  .o88b. db    db
+# 88  `8D 88'     88  `8D 88'     888o  88 88  `8D 88'     888o  88 d8P  Y8 `8b  d8'
+# 88   88 88ooooo 88oodD' 88ooooo 88V8o 88 88   88 88ooooo 88V8o 88 8P       `8bd8'
+# 88   88 88~~~~~ 88~~~   88~~~~~ 88 V8o88 88   88 88~~~~~ 88 V8o88 8b         88
+# 88  .8D 88.     88      88.     88  V888 88  .8D 88.     88  V888 Y8b  d8    88
+# Y8888D' Y88888P 88      Y88888P VP   V8P Y8888D' Y88888P VP   V8P  `Y88P'    YP
+#
+#
+# d888888b d8b   db .d8888. d888888b  .d8b.  db      db      .d8888.
+#   `88'   888o  88 88'  YP `~~88~~' d8' `8b 88      88      88'  YP
+#    88    88V8o 88 `8bo.      88    88ooo88 88      88      `8bo.
+#    88    88 V8o88   `Y8b.    88    88~~~88 88      88        `Y8b.
+#   .88.   88  V888 db   8D    88    88   88 88booo. 88booo. db   8D
+# Y888888P VP   V8P `8888Y'    YP    YP   YP Y88888P Y88888P `8888Y'
 
-env.centos9:
-    DO --pass-args +CENTOS_STREAM_ENV --version=9 --image=quay.io/centos/centos:stream9
-
-env.centos10:
-    DO --pass-args +CENTOS_STREAM_ENV --version=10 --image=quay.io/centos/centos:stream10
-
-env.almalinux8:
-    DO --pass-args +CENTOS_STREAM_ENV --version 8 --image=$default_search_registry/library/almalinux:8
-
-env.almalinux9:
-    DO --pass-args +CENTOS_STREAM_ENV --version 9 --image=$default_search_registry/library/almalinux:9
-
-env.almalinux10:
-    DO --pass-args +CENTOS_STREAM_ENV --version 10 --image=$default_search_registry/library/almalinux:10
-
-CENTOS_STREAM_ENV:
+INSTALL_DEPS:
     FUNCTION
-    ARG --required version
-    ARG --required image
-    FROM --pass-args tools+init-env --from "$image"
+    DO +INIT
 
-    RUN yum -y install epel-release
-    RUN yum -y install "dnf-command(config-manager)"
-    IF test "$version" = "8"
-        RUN yum config-manager --enable powertools
+    IF __can_install build-essential
+        RUN __install build-essential
+    END
+    IF test -f /etc/alpine-release
+        RUN __install pkgconfig musl-dev
+    END
+
+    RUN __do "Warming up uv caches..." uv --quiet run --with=cmake --with=ninja true && \
+        __alias cmake uvx              --with=ninja cmake && \
+        __alias ctest uvx --from=cmake --with=ninja ctest && \
+        __alias cpack uvx --from=cmake --with=ninja cpack
+
+    # Compilers
+    DO --pass-args +ADD_C_COMPILER
+    DO --pass-args +ADD_CXX_COMPILER
+    # Dev utilities
+    DO --pass-args +ADD_CCACHE
+    DO --pass-args +ADD_LLD
+    # Third-party libraries
+    DO --pass-args +ADD_SASL
+    DO --pass-args +ADD_SNAPPY
+    DO --pass-args +ADD_TLS
+
+ADD_CCACHE:
+    FUNCTION
+    ARG ccache = on
+    IF __bool "$ccache"
+        IF __can_install ccache || __have_command ccache
+            RUN __have_command ccache || __install ccache
+            ENV CCACHE_DIR = /opt/ccache/cache
+            CACHE /opt/ccache/cache
+            ENV CMAKE_C_COMPILER_LAUNCHER = ccache
+            ENV CMAKE_CXX_COMPILER_LAUNCHER = ccache
+        END
+    END
+
+ADD_LLD:
+    FUNCTION
+    ARG lld = on
+    IF __bool "$lld"
+        IF __can_install lld
+            RUN __do "Installing LLD linker..." __install lld
+        ELSE
+            RUN __fail "Do not know how to install LLD on this environment. Set --lld=false or update the ADD_LLD function."
+        END
+    END
+
+ADD_C_COMPILER:
+    FUNCTION
+    ARG --required c_compiler
+    IF test "$c_compiler" = "gcc"
+        IF __can_install gcc
+            RUN __install gcc
+        ELSE
+            RUN __fail "Unable to infer the GCC C compiler for this environment. Update ADD_C_COMPILER!"
+        END
+        ENV CC=gcc
+    ELSE IF test "$c_compiler" = "clang"
+        IF __can_install clang
+            RUN __install clang
+        ELSE
+            RUN __fail "Unable to infer the Clang C compiler package for this environment. Update ADD_CXX_COMPILER!"
+        END
+        IF __can_install compiler-rt
+            RUN __install compiler-rt
+        END
+        ENV CC=clang
     ELSE
-        RUN yum config-manager --enable crb
+        RUN __fail "Unknown C compiler specifier: “%s” (Expected one of “gcc” or “clang”)" "$c_compiler"
     END
 
-    RUN yum -y install gcc gcc-c++ make
-
-    ARG --required purpose
-    IF test "$purpose" = build
-        RUN yum -y install ninja-build ccache snappy-devel zlib-devel
-    ELSE IF test "$purpose" = test
-        RUN yum -y install ninja-build snappy
-    END
-
-    IF test "$version" = "8"
-        # Neither uv nor pipx is available via yum.
-        # uv requires Python 3.7+, but system default is Python 3.6. yum provides Python 3.8+.
-        RUN yum -y install python38
-        RUN python3 -m pip install --no-warn-script-location pipx
-        ENV PATH="/opt/uv/bin:$PATH"
-        RUN PIPX_BIN_DIR=/opt/uv/bin python3 -m pipx install uv
-    ELSE IF test "$version" = "9"
-        # uv is not available via yum. Avoid snapd (systemd) by using pipx instead.
-        RUN yum -y install pipx
-        ENV PATH="/opt/uv/bin:$PATH"
-        RUN PIPX_BIN_DIR=/opt/uv/bin pipx install uv
+ADD_CXX_COMPILER:
+    FUNCTION
+    ARG --required cxx_compiler
+    IF test "$cxx_compiler" = "gcc"
+        IF __have_command g++
+            # We already have a GCC C++ compiler installed. Nothing needs to be done.
+        ELSE IF __can_install gcc-g++
+            RUN __install gcc-g++
+        ELSE IF __can_install g++
+            RUN __install g++
+        ELSE IF __can_install gcc-c++
+            RUN __install gcc-c++
+        ELSE
+            RUN __fail "Unable to infer the GCC C++ compiler package for this environment. Update ADD_CXX_COMPILER!"
+        END
+        ENV CXX=g++
+    ELSE IF test "$cxx_compiler" = "clang"
+        IF __have_command clang++
+            # We already have Clang's C++ compiler available. Nothing to do.
+        ELSE IF __can_install clang++
+            RUN __install clang++
+        ELSE IF __can_install clang
+            RUN __install clang
+        ELSE
+            RUN __fail "Unable to infer the Clang C++ compiler package for this environment. Update ADD_CXX_COMPILER!"
+        END
+        IF __can_install compiler-rt
+            RUN __install compiler-rt
+        END
+        ENV CXX=clang++
+    ELSE IF __str test "$cxx_compiler" -ieq "none"
+        # Do not install a C++ compiler
     ELSE
-        RUN yum -y install uv
+        RUN __fail "Unknown C++ compiler specifier: “%s” (Expected one of “gcc”, “clang”, or “none”)" "$cxx_compiler"
     END
 
-    DO --pass-args tools+ADD_SASL --cyrus_dev_pkg="cyrus-sasl-devel" --cyrus_rt_pkg="cyrus-sasl-lib"
-    DO --pass-args tools+ADD_TLS --openssl_dev_pkg="openssl-devel" --openssl_rt_pkg="openssl-libs"
-    DO --pass-args tools+ADD_C_COMPILER
-    DO +PREP_CMAKE
+ADD_SNAPPY:
+    FUNCTION
+    ARG --required snappy
+    IF __bool "$snappy"
+        IF __can_install snappy-dev
+            RUN __install snappy-dev snappy
+        ELSE IF __can_install libsnappy-dev
+            RUN __install libsnappy-dev
+        ELSE IF __can_install snappy-devel
+            RUN __install snappy-devel
+        END
+    END
+
+ADD_TLS:
+    FUNCTION
+    ARG --required tls
+    IF __str test "$tls" -ieq OpenSSL
+        # Alpine
+        IF __can_install openssl-dev
+            RUN __install openssl openssl-dev
+        # Debian-based:
+        ELSE IF __can_install libssl-dev
+            # APT will handle this as a regex to match a libssl runtime package:
+            RUN __install libssl-dev
+        # RHEL-based
+        ELSE IF __can_install openssl-devel
+            RUN __install openssl-libs openssl-devel
+        # ArchLinux:
+        ELSE IF test -f /etc/arch-release
+            RUN __install openssl
+        # Otherwise, we don't recognize this system:
+        ELSE
+            RUN __fail "Cannot infer the OpenSSL TLS library package names. Please update the ADD_TLS utility"
+        END
+    ELSE IF __str test "$tls" -ieq "off"
+        # Nothing to do
+    ELSE
+        RUN __fail "Unknown --tls value “%s” (Expect one of “OpenSSL” or “off”)" "$tls"
+    END
+
+ADD_SASL:
+    FUNCTION
+    ARG --required sasl
+    IF __str test "$sasl" -ieq Cyrus
+        # Debian-based
+        IF __can_install libsasl2-dev
+            RUN __install libsasl2-2 libsasl2-dev
+        # Alpine:
+        ELSE IF __can_install cyrus-sasl-dev
+            RUN __install cyrus-sasl cyrus-sasl-dev
+        # RHEL-based:
+        ELSE IF __can_install cyrus-sasl-devel
+            RUN __install cyrus-sasl-lib cyrus-sasl-devel
+        # Archlinux
+        ELSE IF __can_install libsasl
+            RUN __install libsasl
+        # Otherwise, error:
+        ELSE
+            RUN __fail "Cannot infer the Cyrus SASL library package names. Please update the ADD_SASL utility"
+        END
+    ELSE IF __str test "$sasl" -ieq off
+        # Do nothing
+    ELSE
+        RUN __fail "Unknown value for --sasl “%s” (Expect one of “Cyrus” or “off”)" "$sasl"
+    END
