@@ -9766,6 +9766,7 @@ tasks:
 - name: testazurekms-task
   commands:
   - func: fetch-source
+  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9808,6 +9809,7 @@ tasks:
 - name: testazurekms-fail-task
   commands:
   - func: fetch-source
+  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -10287,7 +10289,7 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian11-latest-small
+  run_on: debian11-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task
