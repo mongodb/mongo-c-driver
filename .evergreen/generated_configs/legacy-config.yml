@@ -9766,7 +9766,6 @@ tasks:
 - name: testazurekms-task
   commands:
   - func: fetch-source
-  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9809,7 +9808,6 @@ tasks:
 - name: testazurekms-fail-task
   commands:
   - func: fetch-source
-  - func: install-uv
   - command: shell.exec
     params:
       add_expansions_to_env: true
