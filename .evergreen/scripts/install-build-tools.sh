@@ -16,17 +16,6 @@ export_uv_tool_dirs() {
 }
 
 install_build_tools() {
-  if [[ "${distro_id:?}" == "debian11-small" ]]; then
-    # Temporary workaround for lack of uv on `debian11`. TODO: remove after DEVPROD-23011 is resolved.
-    uv_dir="$(mktemp -d)"
-    python3 -m virtualenv "${uv_dir:?}"
-    # shellcheck source=/dev/null
-    (. "${uv_dir:?}/bin/activate" && python -m pip install uv)
-    PATH="${uv_dir:?}/bin:${PATH:-}"
-
-    command -V uv # uv is hashed (/tmp/.../bin/uv)
-    uv --version  # 0.9.5
-  fi
   export_uv_tool_dirs || return
 
   uv tool install -q cmake || return
