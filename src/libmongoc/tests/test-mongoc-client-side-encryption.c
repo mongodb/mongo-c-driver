@@ -4533,7 +4533,8 @@ test_explicit_encryption_text(void *unused)
    mongoc_client_encryption_encrypt_text_suffix_opts_t *sopts = mongoc_client_encryption_encrypt_text_suffix_opts_new();
    mongoc_client_encryption_encrypt_text_suffix_opts_set_str_max_query_length(sopts, 10);
    mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length(sopts, 2);
-   mongoc_client_encryption_encrypt_text_substring_opts_t *ssopts = mongoc_client_encryption_encrypt_text_substring_opts_new();
+   mongoc_client_encryption_encrypt_text_substring_opts_t *ssopts =
+      mongoc_client_encryption_encrypt_text_substring_opts_new();
    mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(ssopts, 10);
    mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(ssopts, 10);
    mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(ssopts, 2);
