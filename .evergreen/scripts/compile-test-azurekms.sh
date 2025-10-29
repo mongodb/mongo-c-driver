@@ -14,9 +14,7 @@ if [[ "${distro_id:?}" == "debian11-small" ]]; then
   # shellcheck source=/dev/null
   (. "${uv_dir:?}/bin/activate" && python -m pip install uv)
   PATH="${uv_dir:?}/bin:${PATH:-}"
-
-  command -V uv # uv is hashed (/tmp/.../bin/uv)
-  uv --version  # 0.9.5
+  command -V uv >/dev/null
 fi
 
 . .evergreen/scripts/install-build-tools.sh
