@@ -1516,6 +1516,9 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
       return false;
    }
 
+   // Copy `mechanism` to avoid invalidation by updates to `uri->credentials`.
+   char *const mechanism = bson_strdup(mongoc_uri_get_auth_mechanism(uri));
+
    // Authentication spec: The presence of a credential delimiter (i.e. '@') in the URI connection string is
    // evidence that the user has unambiguously specified user information and MUST be interpreted as a user
    // configuring authentication credentials (even if the username and/or password are empty strings).
@@ -1524,7 +1527,7 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
    // `mongoc_uri_parse_userpass`.
    //
    // If neither an authentication mechanism nor a username is provided, there is nothing to do.
-   if (!mongoc_uri_get_auth_mechanism(uri) && !username) {
+   if (!mechanism && !username) {
       return true;
    } else {
       // All code below assumes authentication credentials are being configured.
@@ -1542,8 +1545,6 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
       }
    }
 
-   // Copy `mechanism` to avoid invalidation by updates to `uri->credentials`.
-   char *const mechanism = bson_strdup(mongoc_uri_get_auth_mechanism(uri));
    // Default authentication method.
    if (!mechanism) {
       // The authentication mechanism will be derived by `_mongoc_cluster_auth_node` during handshake according to
