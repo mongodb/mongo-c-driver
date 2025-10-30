@@ -29,6 +29,7 @@ _CC_PARAM_NAME = 'MONGOC_EARTHLY_C_COMPILER'
 EnvImage = Literal[
     'ubuntu:20.04',
     'ubuntu:22.04',
+    'ubuntu:24.04',
     'almalinux:8',
     'almalinux:9',
     'almalinux:10',

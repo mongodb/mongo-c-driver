@@ -396,3 +396,17 @@ buildvariants:
       MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:22.04
     tasks:
       - name: .ubuntu:22.04-gcc
+  - name: ubuntu:24.04-clang
+    display_name: Ubuntu 24.04 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:24.04
+    tasks:
+      - name: .ubuntu:24.04-clang
+  - name: ubuntu:24.04-gcc
+    display_name: Ubuntu 24.04 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:24.04
+    tasks:
+      - name: .ubuntu:24.04-gcc
