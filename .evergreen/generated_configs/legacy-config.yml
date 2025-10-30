@@ -10287,7 +10287,7 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian11-latest-small
+  run_on: debian11-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task
