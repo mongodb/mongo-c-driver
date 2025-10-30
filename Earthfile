@@ -13,11 +13,15 @@ FROM $default_search_registry/alpine:3.20
 ARG --global __source_dir = "/opt/mcd/source"
 ARG --global __build_dir  = "/opt/mcd/build"
 
+init:
+    ARG --required from
+    FROM --pass-args $from
+    DO +INIT
+
 # build-environment :
 #   A target that just presents the environment required for a mongo-c-driver build
 build-environment:
-    ARG --required from
-    FROM --pass-args $from
+    FROM --pass-args +init
     DO --pass-args +INSTALL_DEPS
 
 # configure :
