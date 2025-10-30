@@ -253,10 +253,15 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
-  - name: oidc
+  - name: oidc-asan
     display_name: OIDC
     run_on:
       - ubuntu2404-small
+    expansions:
+      ASAN: "on"
+      CFLAGS: -fno-omit-frame-pointer
+      CHECK_LOG: "ON"
+      SANITIZE: address,undefined
     tasks:
       - name: test-oidc-task-group
   - name: openssl-compat-matrix

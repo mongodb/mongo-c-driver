@@ -66,9 +66,15 @@ def tasks():
 def variants():
     return [
         BuildVariant(
-            name='oidc',
+            name='oidc-asan',
             display_name='OIDC',
             run_on=[find_small_distro('ubuntu2404').name],
             tasks=[EvgTaskRef(name='test-oidc-task-group')],
+            expansions = {
+                'ASAN': 'on',
+                'CFLAGS': '-fno-omit-frame-pointer',
+                'CHECK_LOG': 'ON',
+                'SANITIZE': 'address,undefined',
+            }
         ),
     ]
