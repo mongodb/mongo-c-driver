@@ -387,9 +387,9 @@ verify-headers:
     # need to specify. In the future, it is possible that we will need to test
     # other environments and build settings.
     BUILD +do-verify-headers-impl \
-        --from alpine:3.19 \
-        --from almalinux:8 \
-        --from ubuntu:20.04 \
+        --from $default_search_registry/alpine:3.19 \
+        --from $default_search_registry/almalinux:8 \
+        --from $default_search_registry/ubuntu:20.04 \
         --from quay.io/centos/centos:stream10 \
         --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc --snappy=off
 
@@ -397,7 +397,7 @@ do-verify-headers-impl:
     FROM --pass-args +configure --build_dir=$__build_dir
     # The "all_verify_interface_header_sets" target is created automatically
     # by CMake for the VERIFY_INTERFACE_HEADER_SETS target property.
-    RUN cmake --build $build_dir --target all_verify_interface_header_sets
+    RUN cmake --build $__build_dir --target all_verify_interface_header_sets
 
 # run :
 #   Run one or more targets simultaneously.
