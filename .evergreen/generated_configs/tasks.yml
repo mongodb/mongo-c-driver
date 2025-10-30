@@ -4215,7 +4215,7 @@ tasks:
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: clang }
+            - { key: CC, value: gcc }
             - { key: AUTH, value: auth }
             - { key: OIDC, value: oidc }
             - { key: MONGODB_VERSION, value: latest }

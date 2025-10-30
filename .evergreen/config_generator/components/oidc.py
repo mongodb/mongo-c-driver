@@ -49,7 +49,7 @@ def tasks():
                 SaslCyrusOpenSSLCompile.call(),
                 expansions_update(
                     updates=[
-                        KeyValueParam(key='CC', value='clang'),
+                        KeyValueParam(key='CC', value='gcc'),
                         # OIDC test servers support both OIDC and user/password.
                         KeyValueParam(key='AUTH', value='auth'),  # Use user/password for default test clients.
                         KeyValueParam(key='OIDC', value='oidc'),  # Enable OIDC tests.
