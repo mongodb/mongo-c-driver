@@ -11,6 +11,7 @@ pipeline so that they run consistently across hosts and across time.
 .. _docker: https://www.docker.com/
 .. _podman: https://podman.io/
 
+
 Running Earthly
 ***************
 
@@ -56,11 +57,11 @@ run Earthly from the ``mongo-c-driver`` repository, use `tools/earthly.sh`.
 Testing Earthly
 ===============
 
-To verify that Earthly is running, execute the ``+env.u20`` Earthly
-target. This will exercise most Earthly functionality without requiring any
-special parameters or modifying the working directory::
+To verify that Earthly is running, execute the ``+init`` Earthly target with
+``--from=alpine``. This will exercise most Earthly functionality without
+requiring any special parameters or modifying the working directory::
 
-   $ ./tools/earthly.sh +env.u20
+   $ ./tools/earthly.sh +init --from=alpine
    Init 🚀
    ————————————————————————————————————————————————————————————————————————————————
 
@@ -159,10 +160,10 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. rubric:: Parameters
    .. option:: --file <filepath>
 
-      **Required**. Specify a path to a file (on the host) to be signed. This
-      file must be a descendant of the directory that contains the ``Earthfile``
-      and must not be excluded by an ``.earthlyignore`` file (it is copied
-      into the container using the COPY__ command.)
+      :required: Specify a path to a file (on the host) to be signed. This
+         file must be a descendant of the directory that contains the ``Earthfile``
+         and must not be excluded by an ``.earthlyignore`` file (it is copied
+         into the container using the COPY__ command.)
 
       __ https://docs.earthly.dev/docs/earthfile#copy
 
@@ -171,7 +172,7 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
       GRS_CONFIG_USER1_PASSWORD
       GRS_CONFIG_USER1_USERNAME
 
-      **Required**. [#creds]_
+      :required: [#creds]_
 
       .. seealso:: `earthly.secrets`
 
@@ -242,12 +243,12 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    .. rubric:: Parameters
    .. option:: --branch <branch>
 
-      **Required**. The name of the branch or tag to be snapshot.
+      :required: The name of the branch or tag to be snapshot.
 
    .. option:: --name <name>
 
-      **Required**. The name for the monitored snapshot ("target reference") to
-      be stored in the Snyk server.
+      :required: The name for the monitored snapshot ("target reference") to
+         be stored in the Snyk server.
 
       .. note:: If a target with this name already exists in the Snyk server,
          then executing `+snyk-monitor-snapshot` will replace that target.
@@ -311,6 +312,93 @@ enumerated using ``earthly ls`` or ``earthly doc`` in the root of the repository
    public API headers are valid. This checks against a variety of environments
    to test that we are including the necessary standard library headers in our
    public API headers.
+
+
+.. program:: +init
+.. earthly-target:: +init
+
+   Initializes basic environment properties. Requires from `--from` argument
+
+   .. option:: --from <image>
+
+      .. |--from| replace:: :option:`--from <+init --from>`
+
+      :required: Specify the basis image. Should be a valid container image
+         identifier. This target parameter is propagated to several other targets.
+
+      The first step in `+init` and any targets derived from it is to execute
+      a ``FROM <image>`` line using this image identifier.
+
+
+.. program:: +build-environment
+.. earthly-target:: +build-environment
+
+   Runs `+init` and installs all build-time dependencies for ``mongo-c-driver``.
+   Requires |--from|.
+
+   This target will automatically decide the best was to install dependencies
+   based on the container image selected using |--from|.
+
+   .. rubric:: Parmaeters
+
+   .. option:: --c_compiler {gcc,clang}
+
+      :required: Set the C compiler to be installed.
+
+   .. option:: --cxx_compiler {gcc,clang,none}
+
+      :required: Sets the C++ compiler to be installed. if ``none``, then no
+        C++ compiler will be added to the container environment.
+
+   .. option:: --snappy <boolean>
+
+      :required: Whether to install Snappy in the environment.
+
+   .. option:: --tls {OpenSSL,off}
+
+      :required: Toggle the TLS implementation to be used. Currently, only supports
+         ``OpenSSL`` or ``off`` to disable TLS support.
+
+   .. option:: --sasl {Cyrus,off}
+
+      :required: Toggle the SASL implementation to use.
+
+   .. option:: --ccache <boolean>
+
+      :default: ``on``
+      :optional: Toggle whether the build will attempt to add and use Ccache.
+
+   .. option:: --lld <boolean>
+
+      :default: ``on``
+      :optional: Toggle whether the build will attempt to install and use the
+         LLD linker.
+
+
+.. program:: +configure
+.. earthly-target:: +configure
+
+   Runs `+build-environment` and then configures the project using CMake.
+
+   Requires all the same arguments as `+build-environment`.
+
+
+.. program:: +build
+.. earthly-target:: +build
+
+   Runs `+configure` and then builds ``mongo-c-driver``.
+
+   Requires all arguments for `+configure`, transitively.
+
+   .. earthly-artifact:: +build/build-tree/
+
+      A directory containing the CMake build tree created by the task.
+
+   .. earthly-artifact:: +build/root/
+
+      A directory containing the installation result for ``mongo-c-driver``.
+      This directory contains the top-level ``include/``, ``lib/``, etc.
+      directories generated by ``cmake --install``.
 
 
 .. _earthly.secrets:
