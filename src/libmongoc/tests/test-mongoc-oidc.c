@@ -279,6 +279,28 @@ test_oidc_bad_config(void *unused)
       mongoc_oidc_callback_destroy(cb);
       mongoc_client_pool_destroy(pool);
    }
+
+   // Expect error on unsupported ENVIRONMENT passed (URI string)
+   {
+      mongoc_uri_t *uri = mongoc_uri_new_with_error(
+         "mongodb://localhost:27017/?authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:bad", &error);
+      ASSERT(!uri);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unrecognized ENVIRONMENT");
+      mongoc_uri_destroy(uri);
+   }
+
+   // Expect error on unsupported ENVIRONMENT passed (URI setter)
+   {
+      mongoc_uri_t *uri = mongoc_uri_new_with_error("mongodb://localhost:27017/?authMechanism=MONGODB-OIDC", &error);
+      ASSERT_OR_PRINT(uri, error);
+      // URI setter skips validation in URI string parsing, but is validated during client construction.
+      mongoc_uri_set_mechanism_properties(uri, tmp_bson(BSON_STR({"ENVIRONMENT" : "bad"})));
+      mongoc_client_t *client = mongoc_client_new_from_uri_with_error(uri, &error);
+      ASSERT(!client);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unrecognized ENVIRONMENT");
+      mongoc_client_destroy(client);
+      mongoc_uri_destroy(uri);
+   }
 }
 
 // test_oidc_delays tests the minimum required time between OIDC calls.
