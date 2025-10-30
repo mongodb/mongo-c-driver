@@ -9,6 +9,10 @@ ARG --global default_search_registry=docker.io
 # Set a base container image at the root so that this project can be imported
 FROM $default_search_registry/alpine:3.20
 
+# Not intended to be overridden, but provide some defaults used across targets
+ARG --global __source_dir = "/opt/mcd/source"
+ARG --global __build_dir  = "/opt/mcd/build"
+
 # build-environment :
 #   A target that just presents the environment required for a mongo-c-driver build
 build-environment:
@@ -22,8 +26,10 @@ configure:
     FROM --pass-args +build-environment
 
     # Various important paths for the build
-    ARG source_dir = /opt/mcd/source
-    ARG --required build_dir
+    ARG source_dir = $__source_dir
+    ARG build_dir  = $__build_dir
+
+    # Add the source tree into the container
     DO +COPY_SOURCE --into=$source_dir
 
     # Configure the project
@@ -48,18 +54,18 @@ configure:
 #   being `--from`, which specifies the base container image that is used for the build
 build:
     ARG config          = "RelWithDebInfo"
-    LET build_dir       = "/opt/mcd/build"
     LET install_prefix  = "/opt/mongo-c-driver"
 
-    FROM --pass-args +configure --build_dir=$build_dir
+    # Do the configure step
+    FROM --pass-args +configure
 
     # Build the project
-    RUN cmake --build $build_dir --config $config
+    RUN cmake --build $__build_dir --config $config
     # Install to the local prefix
-    RUN cmake --install $build_dir --prefix="$install_prefix" --config $config
+    RUN cmake --install $__build_dir --prefix="$install_prefix" --config $config
     # Export the build results and the install tree
-    SAVE ARTIFACT /opt/mcd/build/* /build-tree/
-    SAVE ARTIFACT /opt/mongo-c-driver/* /root/
+    SAVE ARTIFACT $__build_dir/* /build-tree/
+    SAVE ARTIFACT $install_prefix/* /root/
 
 # test-example will build one of the libmongoc example projects using the build
 # that comes from the +build target. Arguments for +build should also be provided
@@ -379,8 +385,7 @@ verify-headers:
         --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc --snappy=off
 
 do-verify-headers-impl:
-    LET build_dir = "/opt/mcd/build"
-    FROM --pass-args +configure --build_dir=$build_dir
+    FROM --pass-args +configure --build_dir=$__build_dir
     # The "all_verify_interface_header_sets" target is created automatically
     # by CMake for the VERIFY_INTERFACE_HEADER_SETS target property.
     RUN cmake --build $build_dir --target all_verify_interface_header_sets
