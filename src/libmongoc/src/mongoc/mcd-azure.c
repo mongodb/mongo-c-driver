@@ -23,17 +23,23 @@
 
 #define AZURE_API_VERSION "2018-02-01"
 
-static const char *const DEFAULT_METADATA_PATH =
-   "/metadata/identity/oauth2/"
-   "token?api-version=" AZURE_API_VERSION "&resource=https%3A%2F%2Fvault.azure.net";
+static const char *const DEFAULT_METADATA_PATH = "/metadata/identity/oauth2/token?api-version=" AZURE_API_VERSION;
 
-void
+bool
 mcd_azure_imds_request_init(mcd_azure_imds_request *req,
+                            const char *token_resource,
                             const char *const opt_imds_host,
                             int opt_port,
-                            const char *const opt_extra_headers)
+                            const char *const opt_extra_headers,
+                            const char *const opt_client_id)
 {
    BSON_ASSERT_PARAM(req);
+   BSON_ASSERT_PARAM(token_resource);
+
+   bool ok = false;
+   char *encoded_token_resource = NULL;
+   mcommon_string_append_t path = {0};
+
    _mongoc_http_request_init(&req->req);
    // The HTTP host of the IMDS server
    req->req.host = req->_owned_host = bson_strdup(opt_imds_host ? opt_imds_host : "169.254.169.254");
@@ -50,9 +56,33 @@ mcd_azure_imds_request_init(mcd_azure_imds_request *req,
    req->req.extra_headers = req->_owned_headers = bson_strdup_printf("Metadata: true\r\n"
                                                                      "Accept: application/json\r\n%s",
                                                                      opt_extra_headers ? opt_extra_headers : "");
-   // The default path is suitable. In the future, we may want to add query
-   // parameters to disambiguate a managed identity.
-   req->req.path = req->_owned_path = bson_strdup(DEFAULT_METADATA_PATH);
+   // Build the path with query parameters.
+   encoded_token_resource = mongoc_percent_encode(token_resource);
+   if (!encoded_token_resource) {
+      goto fail;
+   }
+
+   mcommon_string_new_as_append(&path);
+
+   if (!mcommon_string_append(&path, DEFAULT_METADATA_PATH) ||
+       !mcommon_string_append_printf(&path, "&resource=%s", encoded_token_resource)) {
+      goto fail;
+   }
+
+   if (opt_client_id) {
+      if (!mcommon_string_append_printf(&path, "&client_id=%s", opt_client_id)) {
+         goto fail;
+      }
+   }
+
+   req->req.path = req->_owned_path = mcommon_string_from_append_destroy_with_steal(&path);
+   path = (mcommon_string_append_t){0};
+
+   ok = true;
+fail:
+   bson_free(encoded_token_resource);
+   mcommon_string_from_append_destroy(&path);
+   return ok;
 }
 
 void
@@ -156,11 +186,15 @@ mcd_azure_access_token_destroy(mcd_azure_access_token *c)
 
 bool
 mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
+                                 const char *token_resource,
                                  const char *const opt_imds_host,
                                  int opt_port,
                                  const char *opt_extra_headers,
+                                 int opt_timeout_ms,
+                                 const char *opt_client_id,
                                  bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(token_resource);
    BSON_ASSERT_PARAM(out);
 
    bool okay = false;
@@ -172,9 +206,17 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
    _mongoc_http_response_init(&resp);
 
    mcd_azure_imds_request req = MCD_AZURE_IMDS_REQUEST_INIT;
-   mcd_azure_imds_request_init(&req, opt_imds_host, opt_port, opt_extra_headers);
+   if (!mcd_azure_imds_request_init(&req, token_resource, opt_imds_host, opt_port, opt_extra_headers, opt_client_id)) {
+      _mongoc_set_error(error, MONGOC_ERROR_AZURE, MONGOC_ERROR_KMS_SERVER_HTTP, "Failed to initialize request");
+      goto fail;
+   }
 
-   if (!_mongoc_http_send(&req.req, 3 * 1000, false, NULL, &resp, error)) {
+   int timeout_ms = 3 * 1000; // Default 3 second timeout
+   if (opt_timeout_ms > 0) {
+      timeout_ms = opt_timeout_ms;
+   }
+
+   if (!_mongoc_http_send(&req.req, timeout_ms, false, NULL, &resp, error)) {
       goto fail;
    }
 
