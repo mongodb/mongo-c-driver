@@ -1122,14 +1122,14 @@ tasks:
   - name: check-headers
     commands:
       - func: check-headers
-  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master"
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1141,13 +1141,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1158,21 +1178,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1184,13 +1206,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=none
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1201,21 +1243,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1227,13 +1271,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=Cyrus
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r4.1.0
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1244,21 +1308,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1270,13 +1336,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=master
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1287,21 +1373,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1313,13 +1401,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=none
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1330,21 +1438,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=Cyrus\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1356,13 +1466,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=Cyrus
+            - --tls=off
+            - --test_mongocxx_ref=r4.1.0
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1373,21 +1503,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=master\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1399,13 +1531,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=master
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1416,21 +1568,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=none\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1442,13 +1596,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=none
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1459,21 +1633,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=OpenSSL\_\u2022\_test_mongocxx_ref=r4.1.0\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1485,13 +1661,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=off
+            - --tls=OpenSSL
+            - --test_mongocxx_ref=r4.1.0
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1502,21 +1698,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=master\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1528,13 +1726,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=master
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1545,21 +1763,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=master
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=none\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1571,13 +1791,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=none
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1588,21 +1828,23 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
-  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0"
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+  - name: "check:sasl=off\_\u2022\_tls=off\_\u2022\_test_mongocxx_ref=r4.1.0\_\u2022\_snappy=false"
     run_on:
       - amazon2
       - debian11-latest-large
       - debian12-latest-large
       - ubuntu2204-large
       - ubuntu2404-large
-    tags: [earthly, pr-merge-gate, almalinux10-clang, almalinux10-gcc, almalinux8-clang, almalinux8-gcc, almalinux9-clang, almalinux9-gcc, alpine3.19-clang, alpine3.19-gcc, alpine3.20-clang, alpine3.20-gcc, alpine3.21-clang, alpine3.21-gcc, alpine3.22-clang, alpine3.22-gcc, archlinux-clang, archlinux-gcc, centos10-clang, centos10-gcc, centos9-clang, centos9-gcc, u20-clang, u20-gcc, u22-clang, u22-gcc]
+    tags: [earthly, pr-merge-gate, "almalinux:10-clang", "almalinux:10-gcc", "almalinux:8-clang", "almalinux:8-gcc", "almalinux:9-clang", "almalinux:9-gcc", "alpine:3.19-clang", "alpine:3.19-gcc", "alpine:3.20-clang", "alpine:3.20-gcc", "alpine:3.21-clang", "alpine:3.21-gcc", "alpine:3.22-clang", "alpine:3.22-gcc", archlinux-clang, archlinux-gcc, "quay.io/centos/centos:stream10-clang", "quay.io/centos/centos:stream10-gcc", "quay.io/centos/centos:stream9-clang", "quay.io/centos/centos:stream9-gcc", "ubuntu:20.04-clang", "ubuntu:20.04-gcc", "ubuntu:22.04-clang", "ubuntu:22.04-gcc"]
     commands:
       - func: docker-login-amazon-ecr
       - command: subprocess.exec
@@ -1614,13 +1856,33 @@ tasks:
             - DOCKER_CONFIG
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
-            - +env-warmup
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - +build-environment
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
+      - command: subprocess.exec
+        type: setup
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - +configure
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --sasl=off
+            - --tls=off
+            - --test_mongocxx_ref=r4.1.0
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
+            - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
       - command: subprocess.exec
         type: test
         params:
@@ -1631,13 +1893,15 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --targets=test-example test-cxx-driver
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=r4.1.0
-            - --env=${MONGOC_EARTHLY_ENV}
+            - --snappy=false
+            - --from=${MONGOC_EARTHLY_FROM}
             - --c_compiler=${MONGOC_EARTHLY_C_COMPILER}
+            - --cxx_compiler=${MONGOC_EARTHLY_C_COMPILER}
   - name: clang-format
     tags: [clang-format]
     commands:
@@ -7653,4 +7917,4 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +verify-headers
-            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub
+            - --default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
