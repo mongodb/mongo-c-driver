@@ -43,7 +43,7 @@ configure:
         -D ENABLE_SRV=ON \
         -D ENABLE_ZLIB=BUNDLED \
         -D ENABLE_SSL=$(echo $tls | __str upper) \
-        -D ENABLE_COVERAGE=ON \
+        -D ENABLE_COVERAGE=OFF \
         -D ENABLE_DEBUG_ASSERTIONS=ON \
         -Werror
 
@@ -56,8 +56,13 @@ build:
     ARG config          = "RelWithDebInfo"
     LET install_prefix  = "/opt/mongo-c-driver"
 
-    # Do the configure step
-    FROM --pass-args +configure
+    # Do the configure step. Force the default value for $build_dir
+    FROM --pass-args +configure --build_dir=$__build_dir
+
+    # Run the add-ccache command here. This needs to run directly within the same
+    # target that makes use of it, to ensure that the CACHE line has an effect
+    # within that target
+    DO --pass-args +ADD_CCACHE
 
     # Build the project
     RUN cmake --build $__build_dir --config $config
@@ -489,7 +494,7 @@ ADD_CCACHE:
     FUNCTION
     ARG ccache = on
     IF __bool "$ccache"
-        IF __can_install ccache || __have_command ccache
+        IF __have_command ccache || __can_install ccache
             RUN __have_command ccache || __install ccache
             ENV CCACHE_DIR = /opt/ccache/cache
             CACHE /opt/ccache/cache
