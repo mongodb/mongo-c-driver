@@ -52,7 +52,7 @@ TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
 CxxVersion = Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
-SnappyOption = Literal['false']
+SnappyOption = Literal['false', 'true']
 
 # A separator character, since we cannot use whitespace
 _SEPARATOR = '\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}'
