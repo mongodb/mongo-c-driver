@@ -20,6 +20,9 @@
 #ifndef BSON_PRIVATE_H
 #define BSON_PRIVATE_H
 
+#include <bson/bson.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson-types.h>
 #include <bson/macros.h>

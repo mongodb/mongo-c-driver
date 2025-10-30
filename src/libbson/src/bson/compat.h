@@ -28,8 +28,8 @@
 #endif
 #endif
 
-#include <bson/config.h>
-#include <bson/macros.h>
+#include <bson/config.h> // IWYU pragma: export
+#include <bson/macros.h> // IWYU pragma: export
 
 
 #ifdef BSON_OS_WIN32
@@ -42,36 +42,37 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <winsock2.h>
+#include <winsock2.h> // IWYU pragma: export
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <windows.h> // IWYU pragma: export
 #undef WIN32_LEAN_AND_MEAN
 #else
-#include <windows.h>
+#include <windows.h> // IWYU pragma: export
 #endif
-#include <direct.h>
-#include <io.h>
+#include <direct.h> // IWYU pragma: export
+#include <io.h>     // IWYU pragma: export
 #endif
 
 
 #ifdef BSON_OS_UNIX
-#include <sys/time.h>
-#include <unistd.h>
+#include <sys/time.h>  // IWYU pragma: export
+#include <sys/types.h> // IWYU pragma: export
+#include <unistd.h>    // IWYU pragma: export
 #endif
 
 
 #include <bson/macros.h>
 
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <fcntl.h>    // IWYU pragma: export
+#include <sys/stat.h> // IWYU pragma: export
 
 #include <ctype.h>
 #include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include <limits.h>  // IWYU pragma: export
+#include <stdarg.h>  // IWYU pragma: export
+#include <stdbool.h> // IWYU pragma: export
+#include <stdint.h>  // IWYU pragma: export
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +82,7 @@
 BSON_BEGIN_DECLS
 
 #if !defined(_MSC_VER) || (_MSC_VER >= 1800)
-#include <inttypes.h>
+#include <inttypes.h> // IWYU pragma: export
 #endif
 #ifdef _MSC_VER
 #ifndef __cplusplus
