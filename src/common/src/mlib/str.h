@@ -959,10 +959,13 @@ mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
    mlib_check(splice_pos <= str->len);
    // How many chars is it possible to delete from `splice_pos`?
    size_t n_chars_avail_to_delete = str->len - splice_pos;
-   mlib_check(n_delete <= n_chars_avail_to_delete);
+   // Clamp to the number of chars available for deletion:
+   if (n_delete > n_chars_avail_to_delete) {
+      n_delete = n_chars_avail_to_delete;
+   }
    // Compute the new string length
    size_t new_len = str->len;
-   // This should never fail, because we should try to delete more chars than we have
+   // This should never fail, because we should never try to delete more chars than we have
    mlib_check(!mlib_sub(&new_len, n_delete));
    // Check if appending would make too big of a string
    if (mlib_unlikely(mlib_add(&new_len, insert.len))) {
