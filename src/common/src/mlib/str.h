@@ -701,7 +701,7 @@ typedef struct mstr {
 
 /**
  * @brief Resize an existing or null `mstr`, without initializing any of the
- * added content other than the null terminator. This operation is potientially
+ * added content other than the null terminator. This operation is potentially
  * UNSAFE, because it gives uninitialized memory to the caller.
  *
  * @param str Pointer to a valid `mstr`, or a null `mstr`.
