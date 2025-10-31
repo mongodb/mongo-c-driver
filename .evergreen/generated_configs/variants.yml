@@ -255,8 +255,6 @@ buildvariants:
       - name: mock-server-test
   - name: oidc
     display_name: OIDC
-    run_on:
-      - ubuntu2404-small
     tasks:
       - name: test-oidc-task-group
       - name: test-oidc-azure-task-group

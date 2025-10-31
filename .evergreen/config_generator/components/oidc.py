@@ -115,7 +115,6 @@ def variants():
         BuildVariant(
             name='oidc',
             display_name='OIDC',
-            run_on=[find_small_distro('ubuntu2404').name],
             tasks=[EvgTaskRef(name='test-oidc-task-group'), EvgTaskRef(name='test-oidc-azure-task-group')],
         ),
     ]
