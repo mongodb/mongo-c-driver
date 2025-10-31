@@ -1094,3 +1094,64 @@ _mongoc_verify_windows_version(DWORD major_version, DWORD minor_version, DWORD b
 }
 
 #endif
+
+static bool
+needs_percent_encoding(unsigned char c)
+{
+   // Unreserved characters according to RFC 3986:
+   // ALPHA / DIGIT / "-" / "." / "_" / "~"
+   if (c >= 'A' && c <= 'Z') {
+      return false;
+   }
+   if (c >= 'a' && c <= 'z') {
+      return false;
+   }
+   if (c >= '0' && c <= '9') {
+      return false;
+   }
+   if (c == '-' || c == '.' || c == '_' || c == '~') {
+      return false;
+   }
+   return true;
+}
+
+char *
+mongoc_percent_encode(const char *str)
+{
+   BSON_ASSERT_PARAM(str);
+
+   size_t str_len = strlen(str);
+   size_t encoded_len = 0u;
+
+   for (char *i = (char *)str; *i; i++) {
+      if (needs_percent_encoding((unsigned char)*i)) {
+         encoded_len += 3u;
+      } else {
+         encoded_len += 1u;
+      }
+   }
+
+   encoded_len += 1u; // null terminator
+   if (encoded_len < str_len) {
+      // Overflow
+      return NULL;
+   }
+
+   char *encoded = bson_malloc(encoded_len);
+   char *o = encoded; // output pointer
+
+   for (char *i = (char *)str; *i; i++) {
+      if (needs_percent_encoding((unsigned char)*i)) {
+         int req = bson_snprintf(o, 4, "%%%02X", (unsigned char)*i);
+         // Expect no truncation.
+         BSON_ASSERT(req == 3);
+         o += 3u;
+      } else {
+         *o = *i;
+         o += 1;
+      }
+   }
+
+   *o = '\0';
+   return encoded;
+}

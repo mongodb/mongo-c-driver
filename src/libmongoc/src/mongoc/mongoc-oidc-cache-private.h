@@ -20,6 +20,8 @@
 #include <mongoc/mongoc-oidc-callback.h>
 #include <mongoc/mongoc-sleep.h>
 
+struct _mongoc_uri_t; // Forward declaration.
+
 // mongoc_oidc_cache_t implements the OIDC spec "Client Cache".
 // Stores the OIDC callback, cache, and lock.
 // Expected to be shared among all clients in a pool.
@@ -28,14 +30,19 @@ typedef struct mongoc_oidc_cache_t mongoc_oidc_cache_t;
 mongoc_oidc_cache_t *
 mongoc_oidc_cache_new(void);
 
-// mongoc_oidc_cache_set_callback sets the token callback.
+// mongoc_oidc_cache_apply_env_from_uri tries to set a callback if the URI includes an ENVIRONMENT.
+// Assumes `uri` was already validated with a call to `mongoc_uri_finalize_auth`.
+void
+mongoc_oidc_cache_apply_env_from_uri(mongoc_oidc_cache_t *cache, const struct _mongoc_uri_t *uri);
+
+// mongoc_oidc_cache_set_user_callback sets the token callback.
 // Not thread safe. Call before any authentication can occur.
 void
-mongoc_oidc_cache_set_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb);
+mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb);
 
-// mongoc_oidc_cache_get_callback gets the token callback.
-const mongoc_oidc_callback_t *
-mongoc_oidc_cache_get_callback(const mongoc_oidc_cache_t *cache);
+// mongoc_oidc_cache_has_user_callback returns true if a custom callback was set.
+bool
+mongoc_oidc_cache_has_user_callback(const mongoc_oidc_cache_t *cache);
 
 // mongoc_oidc_cache_set_usleep_fn sets a custom sleep function.
 // Not thread safe. Call before any authentication can occur.

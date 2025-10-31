@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+#include <common-bson-dsl-private.h>
 #include <common-macros-private.h> // MC_DISABLE_CAST_QUAL_WARNING_BEGIN
 #include <common-thread-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-oidc-cache-private.h>
 #include <mongoc/mongoc-oidc-callback-private.h>
+#include <mongoc/mongoc-oidc-env-private.h>
+
+#include <mongoc/mcd-azure.h>
 
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
@@ -26,8 +30,13 @@
 #define SET_ERROR(...) _mongoc_set_error(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, __VA_ARGS__)
 
 struct mongoc_oidc_cache_t {
-   // callback is owned. NULL if unset. Not guarded by lock. Set before requesting tokens.
-   mongoc_oidc_callback_t *callback;
+   // user_callback is owned. NULL if unset. Not guarded by lock. Set before requesting tokens.
+   // If both user_callback and env_callback are set, an error occurs when requesting a token.
+   mongoc_oidc_callback_t *user_callback;
+
+   // env_callback is owned. NULL if unset. Not guarded by lock. Set before requesting tokens.
+   // If both user_callback and env_callback are set, an error occurs when requesting a token.
+   mongoc_oidc_env_callback_t *env_callback;
 
    // usleep_fn is used to sleep between calls to the callback. Not guarded by lock. Set before requesting tokens.
    mongoc_usleep_func_t usleep_fn;
@@ -56,25 +65,67 @@ mongoc_oidc_cache_new(void)
 }
 
 void
-mongoc_oidc_cache_set_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb)
+mongoc_oidc_cache_apply_env_from_uri(mongoc_oidc_cache_t *cache, const mongoc_uri_t *uri)
+{
+   BSON_ASSERT_PARAM(cache);
+   BSON_ASSERT_PARAM(uri);
+
+   const char *mechanism = mongoc_uri_get_auth_mechanism(uri);
+   if (!mechanism || 0 != strcmp(mechanism, "MONGODB-OIDC")) {
+      // Not using OIDC.
+      return;
+   }
+
+   const char *username = mongoc_uri_get_username(uri);
+   bson_t mechanism_properties;
+   if (!mongoc_uri_get_mechanism_properties(uri, &mechanism_properties)) {
+      // Not configured with OIDC environment.
+      return;
+   }
+
+   bson_iter_t iter;
+   const char *environment = NULL;
+   if (bson_iter_init_find(&iter, &mechanism_properties, "ENVIRONMENT") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      environment = bson_iter_utf8(&iter, NULL);
+   }
+
+   const mongoc_oidc_env_t *env = mongoc_oidc_env_find(environment);
+   BSON_ASSERT(env);                                                    // Checked in mongoc_uri_finalize_auth.
+   BSON_ASSERT(!(username && !mongoc_oidc_env_supports_username(env))); // Checked in mongoc_uri_finalize_auth.
+
+   const char *token_resource = NULL;
+   if (bson_iter_init_find(&iter, &mechanism_properties, "TOKEN_RESOURCE") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
+      token_resource = bson_iter_utf8(&iter, NULL); // Checked in mongoc_uri_finalize_auth.
+   }
+
+   BSON_ASSERT((token_resource != NULL) ==
+               mongoc_oidc_env_requires_token_resource(env)); // Checked in mongoc_uri_finalize_auth.
+
+   BSON_ASSERT(!cache->env_callback); // Not set yet.
+   cache->env_callback = mongoc_oidc_env_callback_new(env, token_resource, username);
+}
+
+void
+mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb)
 {
    BSON_ASSERT_PARAM(cache);
    BSON_OPTIONAL_PARAM(cb);
 
    BSON_ASSERT(!cache->ever_called);
 
-   if (cache->callback) {
-      mongoc_oidc_callback_destroy(cache->callback);
+   if (cache->user_callback) {
+      mongoc_oidc_callback_destroy(cache->user_callback);
    }
-   cache->callback = cb ? mongoc_oidc_callback_copy(cb) : NULL;
+   cache->user_callback = cb ? mongoc_oidc_callback_copy(cb) : NULL;
 }
 
-const mongoc_oidc_callback_t *
-mongoc_oidc_cache_get_callback(const mongoc_oidc_cache_t *cache)
+bool
+mongoc_oidc_cache_has_user_callback(const mongoc_oidc_cache_t *cache)
 {
    BSON_ASSERT_PARAM(cache);
 
-   return cache->callback;
+   return cache->user_callback;
 }
 
 void
@@ -98,7 +149,8 @@ mongoc_oidc_cache_destroy(mongoc_oidc_cache_t *cache)
    }
    bson_free(cache->token);
    bson_shared_mutex_destroy(&cache->lock);
-   mongoc_oidc_callback_destroy(cache->callback);
+   mongoc_oidc_callback_destroy(cache->user_callback);
+   mongoc_oidc_env_callback_destroy(cache->env_callback);
    bson_free(cache);
 }
 
@@ -145,10 +197,19 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
 
    *found_in_cache = false;
 
-   if (!cache->callback) {
+   if (!cache->user_callback && !cache->env_callback) {
       SET_ERROR("MONGODB-OIDC requested, but no callback set");
       return NULL;
    }
+
+   // From spec: "If both ENVIRONMENT and an OIDC Callback [...] are provided the driver MUST raise an error."
+   if (cache->user_callback && cache->env_callback) {
+      SET_ERROR("MONGODB-OIDC requested with both ENVIRONMENT and an OIDC Callback. Use one or the other.");
+      return NULL;
+   }
+
+   const mongoc_oidc_callback_t *callback =
+      cache->user_callback ? cache->user_callback : mongoc_oidc_env_callback_inner(cache->env_callback);
 
    token = mongoc_oidc_cache_get_cached_token(cache);
    if (NULL != token) {
@@ -159,7 +220,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
    // Prepare to call callback outside of lock:
    mongoc_oidc_credential_t *cred = NULL;
    mongoc_oidc_callback_params_t *params = mongoc_oidc_callback_params_new();
-   mongoc_oidc_callback_params_set_user_data(params, mongoc_oidc_callback_get_user_data(cache->callback));
+   mongoc_oidc_callback_params_set_user_data(params, mongoc_oidc_callback_get_user_data(callback));
    // From spec: "If CSOT is not applied, then the driver MUST use 1 minute as the timeout."
    // The timeout parameter (when set) is meant to be directly compared against bson_get_monotonic_time(). It is a
    // time point, not a duration.
@@ -186,12 +247,16 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
       }
 
       // Call callback:
-      cred = mongoc_oidc_callback_get_fn(cache->callback)(params);
+      cred = mongoc_oidc_callback_get_fn(callback)(params);
 
       cache->last_called = mlib_now();
       cache->ever_called = true;
 
       if (!cred) {
+         if (mongoc_oidc_callback_params_get_cancelled_with_timeout(params)) {
+            SET_ERROR("MONGODB-OIDC callback was cancelled due to timeout");
+            goto unlock_and_return;
+         }
          SET_ERROR("MONGODB-OIDC callback failed");
          goto unlock_and_return;
       }

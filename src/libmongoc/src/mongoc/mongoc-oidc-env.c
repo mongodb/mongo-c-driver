@@ -16,7 +16,11 @@
 
 #include <mongoc/mongoc-oidc-env-private.h>
 
+#include <mongoc/mcd-azure.h>
 #include <mongoc/mongoc-oidc-callback.h>
+
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
 
 struct _mongoc_oidc_env_t {
    const char *name;
@@ -28,6 +32,7 @@ struct _mongoc_oidc_env_t {
 struct _mongoc_oidc_env_callback_t {
    mongoc_oidc_callback_t *inner; // Contains non-owning user_data pointer back to this mongoc_oidc_env_callback_t
    char *token_resource;
+   char *username;
 };
 
 static mongoc_oidc_credential_t *
@@ -41,9 +46,50 @@ mongoc_oidc_env_fn_test(mongoc_oidc_callback_params_t *params)
 static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
 {
-   BSON_UNUSED(params);
-   // TODO (CDRIVER-4489)
-   return NULL;
+   BSON_ASSERT_PARAM(params);
+
+   bson_error_t error;
+   mcd_azure_access_token token = {0};
+   mongoc_oidc_credential_t *ret = NULL;
+   mongoc_oidc_env_callback_t *callback = mongoc_oidc_callback_params_get_user_data(params);
+   BSON_ASSERT(callback);
+
+   int max_duration_ms = 0;
+   const int64_t *timeout_us = mongoc_oidc_callback_params_get_timeout(params);
+   if (timeout_us) {
+      int64_t remaining_ms = (*timeout_us - bson_get_monotonic_time()) / 1000;
+      if (remaining_ms <= 0) {
+         // No time remaining. Immediately fail.
+         mongoc_oidc_callback_params_cancel_with_timeout(params);
+         goto fail;
+      }
+      if (mlib_narrow(&max_duration_ms, remaining_ms)) {
+         // Requested timeout too large to fit. Cap at INT_MAX.
+         max_duration_ms = mlib_maxof(int);
+      }
+   }
+
+   if (!mcd_azure_access_token_from_imds(&token,
+                                         callback->token_resource,
+                                         NULL, // Use the default host
+                                         0,    // Default port as well
+                                         NULL, // No extra headers
+                                         max_duration_ms,
+                                         callback->username, // Optional client id
+                                         &error)) {
+      MONGOC_ERROR("Failed to obtain Azure OIDC access token: %s", error.message);
+      goto fail;
+   }
+
+   ret = mongoc_oidc_credential_new_with_expires_in(token.access_token, mcd_get_microseconds(token.expires_in));
+   if (!ret) {
+      MONGOC_ERROR("Failed to process Azure OIDC access token");
+      goto fail;
+   }
+
+fail:
+   mcd_azure_access_token_destroy(&token);
+   return ret;
 }
 
 static mongoc_oidc_credential_t *
@@ -107,16 +153,18 @@ mongoc_oidc_env_requires_token_resource(const mongoc_oidc_env_t *env)
 }
 
 mongoc_oidc_env_callback_t *
-mongoc_oidc_env_callback_new(const mongoc_oidc_env_t *env, const char *token_resource)
+mongoc_oidc_env_callback_new(const mongoc_oidc_env_t *env, const char *token_resource, const char *username)
 {
    BSON_ASSERT_PARAM(env);
    BSON_OPTIONAL_PARAM(token_resource);
+   BSON_OPTIONAL_PARAM(username);
    mongoc_oidc_env_callback_t *env_callback = bson_malloc(sizeof *env_callback);
    // Note that the callback's user_data points back to this containing mongoc_oidc_env_callback_t.
    // We expect that the inner callback can only be destroyed via mongoc_oidc_env_callback_destroy.
    *env_callback =
       (mongoc_oidc_env_callback_t){.inner = mongoc_oidc_callback_new_with_user_data(env->callback_fn, env_callback),
-                                   .token_resource = bson_strdup(token_resource)};
+                                   .token_resource = bson_strdup(token_resource),
+                                   .username = bson_strdup(username)};
    return env_callback;
 }
 
@@ -127,6 +175,7 @@ mongoc_oidc_env_callback_destroy(mongoc_oidc_env_callback_t *env_callback)
       BSON_ASSERT(mongoc_oidc_callback_get_user_data(env_callback->inner) == (void *)env_callback);
       mongoc_oidc_callback_destroy(env_callback->inner);
       bson_free(env_callback->token_resource);
+      bson_free(env_callback->username);
       bson_free(env_callback);
    }
 }

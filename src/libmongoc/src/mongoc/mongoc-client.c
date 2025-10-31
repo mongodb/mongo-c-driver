@@ -2731,7 +2731,7 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
    BSON_ASSERT_PARAM(client);
    BSON_ASSERT_PARAM(callback);
 
-   if (mongoc_oidc_cache_get_callback(client->topology->oidc_cache)) {
+   if (mongoc_oidc_cache_has_user_callback(client->topology->oidc_cache)) {
       MONGOC_ERROR("mongoc_client_set_oidc_callback can only be called once per client");
       return false;
    }
@@ -2742,6 +2742,6 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
       return false;
    }
 
-   mongoc_oidc_cache_set_callback(client->topology->oidc_cache, callback);
+   mongoc_oidc_cache_set_user_callback(client->topology->oidc_cache, callback);
    return true;
 }

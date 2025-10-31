@@ -565,6 +565,9 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
 
    if (!mongoc_uri_finalize(topology->uri, &topology->scanner->error)) {
       topology->valid = false;
+   } else {
+      // URI is valid. Try to apply to OIDC environment.
+      mongoc_oidc_cache_apply_env_from_uri(topology->oidc_cache, topology->uri);
    }
 
    td->max_hosts = mongoc_uri_get_option_as_int32(uri, MONGOC_URI_SRVMAXHOSTS, 0);

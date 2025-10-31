@@ -164,6 +164,18 @@ mcd_get_milliseconds(mcd_duration d)
 }
 
 /**
+ * @brief Obtain the count of full microseconds encoded in the given duration
+ *
+ * @param d An abstract duration
+ * @return int64_t The number of microseconds in 'd'
+ */
+static BSON_INLINE int64_t
+mcd_get_microseconds(mcd_duration d)
+{
+   return d._rep;
+}
+
+/**
  * @brief Obtain a point-in-time relative to a base time offset by the given
  * duration (which may be negative).
  *
