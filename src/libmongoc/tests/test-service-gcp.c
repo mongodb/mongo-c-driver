@@ -107,5 +107,10 @@ test_service_gcp_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/gcp/http/parse", _test_gcp_parse);
    TestSuite_Add(suite, "/gcp/http/request", _test_gcp_http_request);
-   TestSuite_AddFull(suite, "/gcp/http/talk", _test_with_mock_server, NULL, NULL, have_mock_server_env);
+   TestSuite_AddFull(suite,
+                     "/gcp/http/talk [uses:fake_kms_provider_server][lock:fake-kms]",
+                     _test_with_mock_server,
+                     NULL,
+                     NULL,
+                     have_mock_server_env);
 }
