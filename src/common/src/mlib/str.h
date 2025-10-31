@@ -1117,9 +1117,9 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
 }
 
 /**
- * @brief Like `mstr_snprintf`, but accepts a `va_list` directly.
+ * @brief Like `mstr_sprintf`, but accepts a `va_list` directly.
  */
-mlib_printf_attribute(1, 0) static inline mstr mstr_vsnprintf(const char *format, va_list args)
+mlib_printf_attribute(1, 0) static inline mstr mstr_vsprintf(const char *format, va_list args)
 {
    size_t format_strlen = strlen(format);
    size_t sz = format_strlen;
@@ -1182,7 +1182,7 @@ mlib_printf_attribute(1, 2) static inline mstr mstr_sprintf(const char *f, ...)
 {
    va_list args;
    va_start(args, f);
-   mstr ret = mstr_vsnprintf(f, args);
+   mstr ret = mstr_vsprintf(f, args);
    va_end(args);
    return ret;
 }
@@ -1193,7 +1193,7 @@ mlib_printf_attribute(1, 2) static inline mstr mstr_sprintf(const char *f, ...)
 mlib_printf_attribute(2, 0) static inline bool mstr_vsprintf_append(mstr *string, const char *format, va_list args)
 {
    mlib_check(string != NULL, because, "Output string parameter is required");
-   mstr suffix = mstr_vsnprintf(format, args);
+   mstr suffix = mstr_vsprintf(format, args);
    bool ok = mstr_append(string, suffix);
    mstr_destroy(&suffix);
    return ok;
