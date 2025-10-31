@@ -56,7 +56,7 @@ foreach(casename IN LISTS MONGOC_TESTS)
     list_select(labels SELECT "^uses:(.*)$" REPLACE "mongoc/fixtures/\\1" OUT fixtures)
 
     # For any "lock:..." labels, add a resource lock with the corresponding name
-    list_select(labels SELECT "^lock:(.*)$" REPLACE "\\1" OUT lock)
+    list_select(labels SELECT "^lock:(.*)$" REPLACE "\\1" OUT locks)
 
     # Tests can set a timeout with a tag:
     list_select(labels SELECT "^timeout:(.*)$" REPLACE "\\1" OUT timeout)
@@ -85,6 +85,6 @@ foreach(casename IN LISTS MONGOC_TESTS)
         # Fixture requirements:
         FIXTURES_REQUIRED "${fixtures}"
         # Test may lock resources:
-        RESOURCE_LOCK "${lock}"
+        RESOURCE_LOCK "${locks}"
     )
 endforeach()
