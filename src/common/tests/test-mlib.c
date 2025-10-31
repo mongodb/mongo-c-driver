@@ -1011,6 +1011,26 @@ _test_str(void)
 
       mstr_destroy(&s);
    }
+
+   // Self-assignment/insertion
+   {
+      // Use `assign()` over itself
+      mstr s = mstr_copy_cstring("foo bar baz");
+      mstr_assign(&s, s);
+      mlib_check(s.data, str_eq, "foo bar baz");
+
+      // Use splice() where the insertion string overlaps the target
+      mstr_view bar = mstr_substr(s, 4, 3);
+      mlib_check(mstr_splice(&s, 0, 3, bar));
+      mlib_check(mstr_splice(&s, 8, 3, bar));
+      mlib_check(s.data, str_eq, "bar bar bar");
+
+      // Use replace() with a needle that points into the target
+      mstr_replace(&s, bar, mstr_cstring("foo"));
+      mlib_check(s.data, str_eq, "foo foo foo");
+
+      mstr_destroy(&s);
+   }
 }
 
 static void
@@ -1023,6 +1043,11 @@ _test_str_format(void)
    mlib_check(s.data, str_eq, "foo bar");
    mstr_sprintf_append(&s, " %d", 123);
    mlib_check(s.data, str_eq, "foo bar 123");
+
+   // Attempt to format into itself:
+   mstr_sprintf_append(&s, " hey %s", s.data);
+   mlib_check(s.data, str_eq, "foo bar 123 hey foo bar 123");
+
    mstr_destroy(&s);
 }
 
