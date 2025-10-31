@@ -19,6 +19,10 @@
 #ifndef MONGOC_CURSOR_PRIVATE_H
 #define MONGOC_CURSOR_PRIVATE_H
 
+#include <mongoc/mongoc-cursor.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-rpc-private.h>

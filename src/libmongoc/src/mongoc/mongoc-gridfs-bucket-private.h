@@ -18,6 +18,10 @@
 #ifndef MONGOC_GRIDFS_BUCKET_PRIVATE_H
 #define MONGOC_GRIDFS_BUCKET_PRIVATE_H
 
+#include <mongoc/mongoc-gridfs-bucket.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-collection.h>
 
 BSON_BEGIN_DECLS

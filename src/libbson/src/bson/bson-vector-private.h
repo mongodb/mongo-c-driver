@@ -19,6 +19,10 @@
 #ifndef BSON_VECTOR_PRIVATE_H
 #define BSON_VECTOR_PRIVATE_H
 
+#include <bson/bson-vector.h> // IWYU pragma: export
+
+//
+
 #include <bson/compat.h>
 #include <bson/macros.h>
 

@@ -21,6 +21,10 @@
 #define MONGOC_RAND_PRIVATE_H
 
 
+#include <mongoc/mongoc-rand.h> // IWYU pragma: export
+
+//
+
 #include <bson/bson.h>
 
 

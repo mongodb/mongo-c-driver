@@ -20,6 +20,8 @@
 #define BSON_VECTOR_H
 
 #include <bson/bson-endian.h>
+#include <bson/bson-types.h>
+#include <bson/bson_t.h>
 #include <bson/compat.h>
 #include <bson/macros.h>
 

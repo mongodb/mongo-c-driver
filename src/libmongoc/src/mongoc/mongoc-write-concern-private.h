@@ -19,6 +19,10 @@
 #ifndef MONGOC_WRITE_CONCERN_PRIVATE_H
 #define MONGOC_WRITE_CONCERN_PRIVATE_H
 
+#include <mongoc/mongoc-write-concern.h> // IWYU pragma: export
+
+//
+
 #include <bson/bson.h>
 
 

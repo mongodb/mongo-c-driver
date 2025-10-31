@@ -19,6 +19,10 @@
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
+#include <mongoc/mongoc-util-private.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc.h>
 
 #include <bson/bson.h>

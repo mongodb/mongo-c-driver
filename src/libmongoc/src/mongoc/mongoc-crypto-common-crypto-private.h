@@ -21,6 +21,9 @@
 #ifndef MONGOC_CRYPTO_COMMON_CRYPTO_PRIVATE_H
 #define MONGOC_CRYPTO_COMMON_CRYPTO_PRIVATE_H
 
+#include <mongoc/mongoc-crypt-private.h> // IWYU pragma: export
+
+//
 
 #include <mongoc/mongoc-config.h>
 

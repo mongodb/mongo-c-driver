@@ -19,8 +19,11 @@
 #ifndef MONGOC_STREAM_PRIVATE_H
 #define MONGOC_STREAM_PRIVATE_H
 
+#include <mongoc/mongoc-stream.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-iovec.h>
-#include <mongoc/mongoc-stream.h>
 
 #include <mlib/timer.h>
 

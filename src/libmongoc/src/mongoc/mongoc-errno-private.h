@@ -21,7 +21,8 @@
 
 #include <bson/bson.h>
 
-#include <errno.h>
+#include <errno.h> // IWYU pragma: export
+
 #ifdef _WIN32
 #include <winerror.h>
 #include <winsock2.h>

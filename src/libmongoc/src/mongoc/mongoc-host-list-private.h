@@ -19,7 +19,9 @@
 #ifndef MONGOC_HOST_LIST_PRIVATE_H
 #define MONGOC_HOST_LIST_PRIVATE_H
 
-#include <mongoc/mongoc-host-list.h>
+#include <mongoc/mongoc-host-list.h> // IWYU pragma: export
+
+//
 
 #include <mlib/str.h>
 
