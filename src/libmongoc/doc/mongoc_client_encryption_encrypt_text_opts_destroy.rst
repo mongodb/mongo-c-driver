@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_text_opts_destroy
 
 mongoc_client_encryption_encrypt_text_opts_destroy()
-==================================
+====================================================
 
 Synopsis
 --------

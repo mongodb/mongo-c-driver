@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length
 
 mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length()
-==========================================================
+============================================================================
 
 Synopsis
 --------
