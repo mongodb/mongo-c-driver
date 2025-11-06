@@ -222,6 +222,7 @@ mongoc_stream_tls_new_with_hostname_and_openssl_context(
 // Returns a new stream on success. Returns `NULL` on failure.
 mongoc_stream_t *
 mongoc_stream_tls_new_with_secure_channel_cred(mongoc_stream_t *base_stream,
+                                               const char *host,
                                                mongoc_ssl_opt_t *opt,
                                                mongoc_shared_ptr secure_channel_cred_ptr)
 {
@@ -232,7 +233,7 @@ mongoc_stream_tls_new_with_secure_channel_cred(mongoc_stream_t *base_stream,
       // For compatibility with `mongoc_stream_tls_new_with_hostname`, modify `opt` directly:
       opt->allow_invalid_hostname = true;
    }
-   return mongoc_stream_tls_secure_channel_new_with_creds(base_stream, opt, secure_channel_cred_ptr);
+   return mongoc_stream_tls_secure_channel_new_with_creds(base_stream, host, opt, secure_channel_cred_ptr);
 }
 #endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
 

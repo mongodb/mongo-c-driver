@@ -10,8 +10,6 @@ set -o pipefail
 check_var_req OPENSSL_VERSION
 check_var_opt OPENSSL_USE_STATIC_LIBS
 
-check_var_req UV_INSTALL_DIR
-
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 

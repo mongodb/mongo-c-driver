@@ -1,4 +1,5 @@
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-thread-private.h>
 #include <mongoc/mongoc-topology-description-apm-private.h>
 
 #include <mongoc/mongoc.h>
@@ -1194,6 +1195,296 @@ test_serverMonitoringMode(void)
    printf("'connect with serverMonitoringMode=poll' ... end\n");
 }
 
+static mongoc_uri_t *
+_make_uri_with_fast_heartbeat_frequency(void)
+{
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+
+   return uri;
+}
+
+static bson_t *
+_extract_cluster_time(const bson_t *doc)
+{
+   bson_iter_t iter;
+   if (!bson_iter_init_find(&iter, doc, "$clusterTime")) {
+      return NULL;
+   }
+   ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
+
+   bson_t result;
+   bson_iter_bson(&iter, &result);
+
+   return bson_copy(&result);
+}
+
+static bson_t *
+_ping_then_get_cluster_time(mongoc_client_t *client)
+{
+   bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+
+   bson_t reply;
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", ping, NULL, &reply, &error), error);
+
+   bson_t *const cluster_time = _extract_cluster_time(&reply);
+   ASSERT(cluster_time);
+
+   bson_destroy(&reply);
+   bson_destroy(ping);
+
+   return cluster_time;
+}
+
+typedef struct {
+   mongoc_cond_t heartbeat_cond;
+   bson_mutex_t heartbeat_mutex;
+   size_t n_heartbeat_started;
+   size_t n_heartbeat_succeeded;
+   bson_t cluster_time_latest;
+} heartbeat_no_cluster_time_context_t;
+
+static void
+_heartbeat_no_cluster_time_context_init(heartbeat_no_cluster_time_context_t *context)
+{
+   memset(context, 0, sizeof(heartbeat_no_cluster_time_context_t));
+
+   mongoc_cond_init(&context->heartbeat_cond);
+   bson_mutex_init(&context->heartbeat_mutex);
+   bson_init(&context->cluster_time_latest);
+}
+
+static void
+_heartbeat_no_cluster_time_context_destroy(heartbeat_no_cluster_time_context_t *context)
+{
+   bson_destroy(&context->cluster_time_latest);
+   bson_mutex_destroy(&context->heartbeat_mutex);
+   mongoc_cond_destroy(&context->heartbeat_cond);
+}
+
+static void
+_heartbeat_no_cluster_time_heartbeat_started(const mongoc_apm_server_heartbeat_started_t *event)
+{
+   heartbeat_no_cluster_time_context_t *const context =
+      (heartbeat_no_cluster_time_context_t *)mongoc_apm_server_heartbeat_started_get_context(event);
+
+   bson_mutex_lock(&context->heartbeat_mutex);
+   ++context->n_heartbeat_started;
+   bson_mutex_unlock(&context->heartbeat_mutex);
+
+   mongoc_cond_signal(&context->heartbeat_cond);
+}
+
+static void
+_heartbeat_no_cluster_time_heartbeat_succeeded(const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   heartbeat_no_cluster_time_context_t *const context =
+      (heartbeat_no_cluster_time_context_t *)mongoc_apm_server_heartbeat_succeeded_get_context(event);
+
+   bson_mutex_lock(&context->heartbeat_mutex);
+   ++context->n_heartbeat_succeeded;
+   bson_mutex_unlock(&context->heartbeat_mutex);
+
+   mongoc_cond_signal(&context->heartbeat_cond);
+}
+
+static void
+_heartbeat_no_cluster_time_command_started(const mongoc_apm_command_started_t *event)
+{
+   heartbeat_no_cluster_time_context_t *const context =
+      (heartbeat_no_cluster_time_context_t *)mongoc_apm_command_started_get_context(event);
+
+   bson_t *const cluster_time = _extract_cluster_time(mongoc_apm_command_started_get_command(event));
+
+   if (!cluster_time) {
+      return;
+   }
+
+   bson_destroy(&context->cluster_time_latest);
+   bson_copy_to(cluster_time, &context->cluster_time_latest);
+
+   bson_destroy(cluster_time);
+}
+
+static mongoc_apm_callbacks_t *
+_heartbeat_no_cluster_time_make_apm_callbacks(void)
+{
+   mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+
+   mongoc_apm_set_server_heartbeat_started_cb(callbacks, _heartbeat_no_cluster_time_heartbeat_started);
+   mongoc_apm_set_server_heartbeat_succeeded_cb(callbacks, _heartbeat_no_cluster_time_heartbeat_succeeded);
+   mongoc_apm_set_command_started_cb(callbacks, _heartbeat_no_cluster_time_command_started);
+
+   return callbacks;
+}
+
+static void
+_advance_cluster_time_on_new_client(void)
+{
+   mongoc_client_t *const client = test_framework_new_default_client();
+
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "test", "test");
+   bson_t *const doc = BCON_NEW("advance", "$clusterTime");
+
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, doc, NULL, NULL, &error), error);
+
+   bson_destroy(doc);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
+// Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands (single threaded).
+static void
+test_heartbeat_no_cluster_time_single(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   heartbeat_no_cluster_time_context_t context;
+   mongoc_client_t *client = NULL;
+   bson_error_t error;
+
+   // Create a client with a fast heartbeat frequency.
+   {
+      mongoc_uri_t *const uri = _make_uri_with_fast_heartbeat_frequency();
+
+      client = test_framework_client_new_from_uri(uri, NULL);
+      ASSERT(client);
+
+      test_framework_set_ssl_opts(client);
+
+      mongoc_uri_destroy(uri);
+   }
+
+   {
+      _heartbeat_no_cluster_time_context_init(&context);
+
+      mongoc_apm_callbacks_t *const callbacks = _heartbeat_no_cluster_time_make_apm_callbacks();
+      mongoc_client_set_apm_callbacks(client, callbacks, (void *)&context);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Send a ping to record the initial cluster time.
+   bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client);
+
+   // Advance the cluster time on another client.
+   _advance_cluster_time_on_new_client();
+
+   // Send commands until we detect a heartbeat.
+   {
+      // We need to send a command in order to force a heartbeat. However, we do not want a reply as that may update
+      // the client's cluster time, so we will use an unacknowledged write.
+      mongoc_write_concern_t *const wc = mongoc_write_concern_new();
+      mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+
+      bson_t *const opts = bson_new();
+      mongoc_write_concern_append(wc, opts);
+
+      bson_t *const command = BCON_NEW("insert", "test");
+
+      // Sleep for the minimum heartbeat time to avoid sending more commands than necessary.
+      mlib_sleep_for(MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS, ms);
+
+      const size_t n_started_pre_heartbeat = context.n_heartbeat_started;
+      const size_t n_succeeded_pre_heartbeat = context.n_heartbeat_succeeded;
+
+      while (context.n_heartbeat_started <= n_started_pre_heartbeat ||
+             context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat) {
+         ASSERT_OR_PRINT(mongoc_client_write_command_with_opts(client, "test", command, opts, NULL, &error), error);
+      }
+
+      bson_destroy(command);
+      bson_destroy(opts);
+      mongoc_write_concern_destroy(wc);
+   }
+
+   // Send a ping to record the most recent cluster time.
+   {
+      bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+      ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", ping, NULL, NULL, &error), error);
+      bson_destroy(ping);
+   }
+
+   ASSERT_EQUAL_BSON(cluster_time_initial, &context.cluster_time_latest);
+
+   bson_destroy(cluster_time_initial);
+   mongoc_client_destroy(client);
+   _heartbeat_no_cluster_time_context_destroy(&context);
+}
+
+// Driver Sessions Prose Test 20: Drivers do not gossip `$clusterTime` on SDAM commands (pooled).
+static void
+test_heartbeat_no_cluster_time_pooled(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   heartbeat_no_cluster_time_context_t context;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client = NULL;
+   bson_error_t error;
+
+   // Create a pool with a fast heartbeat frequency
+   {
+      mongoc_uri_t *const uri = _make_uri_with_fast_heartbeat_frequency();
+
+      pool = test_framework_client_pool_new_from_uri(uri, NULL);
+      ASSERT(pool);
+
+      test_framework_set_pool_ssl_opts(pool);
+
+      mongoc_uri_destroy(uri);
+   }
+
+   {
+      _heartbeat_no_cluster_time_context_init(&context);
+
+      mongoc_apm_callbacks_t *const callbacks = _heartbeat_no_cluster_time_make_apm_callbacks();
+      mongoc_client_pool_set_apm_callbacks(pool, callbacks, &context);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   client = mongoc_client_pool_pop(pool);
+
+   bson_t *const cluster_time_initial = _ping_then_get_cluster_time(client);
+
+   // Advance the cluster time on another client.
+   _advance_cluster_time_on_new_client();
+
+   // Wait until we detect one full heartbeat.
+   {
+      bson_mutex_lock(&context.heartbeat_mutex);
+
+      const size_t n_started_pre_heartbeat = context.n_heartbeat_started;
+
+      while (context.n_heartbeat_started <= n_started_pre_heartbeat) {
+         mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
+      }
+
+      const size_t n_succeeded_pre_heartbeat = context.n_heartbeat_succeeded;
+
+      while (context.n_heartbeat_succeeded <= n_succeeded_pre_heartbeat) {
+         mongoc_cond_wait(&context.heartbeat_cond, &context.heartbeat_mutex);
+      }
+
+      bson_mutex_unlock(&context.heartbeat_mutex);
+   }
+
+   // Send another ping to record the most recent cluster time.
+   {
+      bson_t *const ping = BCON_NEW("ping", BCON_INT32(1));
+      ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", ping, NULL, NULL, &error), error);
+      bson_destroy(ping);
+   }
+
+   ASSERT_EQUAL_BSON(cluster_time_initial, &context.cluster_time_latest);
+
+   bson_destroy(cluster_time_initial);
+   mongoc_client_pool_push(pool, client);
+   mongoc_client_pool_destroy(pool);
+   _heartbeat_no_cluster_time_context_destroy(&context);
+}
+
 void
 test_sdam_monitoring_install(TestSuite *suite)
 {
@@ -1222,4 +1513,18 @@ test_sdam_monitoring_install(TestSuite *suite)
       suite, "/server_discovery_and_monitoring/monitoring/no_duplicates", test_no_duplicates, NULL, NULL);
    TestSuite_AddLive(
       suite, "/server_discovery_and_monitoring/monitoring/serverMonitoringMode", test_serverMonitoringMode);
+   TestSuite_AddFull(suite,
+                     "/server_discovery_and_monitoring/monitoring/no_cluster_time/single",
+                     test_heartbeat_no_cluster_time_single,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive,
+                     test_framework_skip_if_no_cluster_time);
+   TestSuite_AddFull(suite,
+                     "/server_discovery_and_monitoring/monitoring/no_cluster_time/pooled",
+                     test_heartbeat_no_cluster_time_pooled,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive,
+                     test_framework_skip_if_no_cluster_time);
 }

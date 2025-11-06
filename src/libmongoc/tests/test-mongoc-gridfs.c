@@ -1618,11 +1618,19 @@ test_gridfs_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/gridfs_old/write", test_write);
    TestSuite_AddLive(suite, "/gridfs_old/write_at_boundary", test_write_at_boundary);
    TestSuite_AddLive(suite, "/gridfs_old/write_past_end", test_write_past_end);
-   TestSuite_AddFull(
-      suite, "/gridfs_old/test_long_seek", test_long_seek, NULL, NULL, test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull(suite,
+                     "/gridfs_old/test_long_seek [lock:live-server][timeout:30]",
+                     test_long_seek,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_slow_or_live);
    TestSuite_AddLive(suite, "/gridfs_old/remove_by_filename", test_remove_by_filename);
-   TestSuite_AddFull(
-      suite, "/gridfs_old/missing_chunk", test_missing_chunk, NULL, NULL, test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull(suite,
+                     "/gridfs_old/missing_chunk [lock:live-server][timeout:30]",
+                     test_missing_chunk,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_slow_or_live);
    TestSuite_AddLive(suite, "/gridfs_old/oversize_chunk", test_oversize);
    TestSuite_AddLive(suite, "/gridfs_old/missing_file", test_missing_file);
    TestSuite_AddLive(suite, "/gridfs_old/file_set_id", test_set_id);

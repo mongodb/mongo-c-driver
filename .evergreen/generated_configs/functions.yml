@@ -4,6 +4,37 @@ functions:
       type: setup
       params:
         binary: bash
+        args:
+          - -c
+          - |
+            if [[ -n "$XDG_CACHE_DIR" ]]; then
+                cache_dir="$XDG_CACHE_DIR" # XDG Base Directory specification.
+            elif [[ -n "$LOCALAPPDATA" ]]; then
+                cache_dir="$LOCALAPPDATA" # Windows.
+            elif [[ -n "$USERPROFILE" ]]; then
+                cache_dir="$USERPROFILE/.cache" # Windows (fallback).
+            elif [[ -d "$HOME/Library/Caches" ]]; then
+                cache_dir="$HOME/Library/Caches" # MacOS.
+            elif [[ -n "$HOME" ]]; then
+                cache_dir="$HOME/.cache" # Linux-like.
+            elif [[ -d ~/.cache ]]; then
+                cache_dir="~/.cache" # Linux-like (fallback).
+            else
+                cache_dir="$(pwd)/.cache" # EVG task directory (fallback).
+            fi
+
+            mkdir -p "$cache_dir/mongo-c-driver" || exit
+            cache_dir="$(cd "$cache_dir/mongo-c-driver" && pwd)" || exit
+
+            printf "MONGO_C_DRIVER_CACHE_DIR: %s\n" "$cache_dir" >|expansions.set-cache-dir.yml
+    - command: expansions.update
+      type: setup
+      params:
+        file: expansions.set-cache-dir.yml
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
         working_dir: mongoc
         include_expansions_in_env:
           - MONGO_C_DRIVER_CACHE_DIR
@@ -18,7 +49,6 @@ functions:
         add_expansions_to_env: true
         include_expansions_in_env:
           - MONGO_C_DRIVER_CACHE_DIR
-          - UV_INSTALL_DIR
         args:
           - -c
           - .evergreen/scripts/abi-compliance-check.sh
@@ -93,7 +123,7 @@ functions:
           DRYRUN: "1"
         args:
           - -c
-          - PATH="${UV_INSTALL_DIR}:$PATH" uv run --frozen --only-group=format tools/format.py --mode=check
+          - uv run --frozen --only-group=format tools/format.py --mode=check
   cse-sasl-cyrus-darwinssl-compile:
     - command: expansions.update
       params:
@@ -251,81 +281,6 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
-  install-uv:
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        args:
-          - -c
-          - |
-            if [[ -n "$XDG_CACHE_DIR" ]]; then
-                cache_dir="$XDG_CACHE_DIR" # XDG Base Directory specification.
-            elif [[ -n "$LOCALAPPDATA" ]]; then
-                cache_dir="$LOCALAPPDATA" # Windows.
-            elif [[ -n "$USERPROFILE" ]]; then
-                cache_dir="$USERPROFILE/.cache" # Windows (fallback).
-            elif [[ -d "$HOME/Library/Caches" ]]; then
-                cache_dir="$HOME/Library/Caches" # MacOS.
-            elif [[ -n "$HOME" ]]; then
-                cache_dir="$HOME/.cache" # Linux-like.
-            elif [[ -d ~/.cache ]]; then
-                cache_dir="~/.cache" # Linux-like (fallback).
-            else
-                cache_dir="$(pwd)/.cache" # EVG task directory (fallback).
-            fi
-
-            mkdir -p "$cache_dir/mongo-c-driver" || exit
-            cache_dir="$(cd "$cache_dir/mongo-c-driver" && pwd)" || exit
-
-            printf "MONGO_C_DRIVER_CACHE_DIR: %s\n" "$cache_dir" >|expansions.set-cache-dir.yml
-    - command: expansions.update
-      type: setup
-      params:
-        file: expansions.set-cache-dir.yml
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        args:
-          - -c
-          - |
-            set -o errexit
-            set -o pipefail
-
-            version="0.8.13"
-
-            if [[ ! -n "${MONGO_C_DRIVER_CACHE_DIR}" ]]; then
-                echo "MONGO_C_DRIVER_CACHE_DIR is not defined!" 1>&2
-                exit 1
-            fi
-
-            uv_install_dir="${MONGO_C_DRIVER_CACHE_DIR}/uv-$version"
-            mkdir -p "$uv_install_dir"
-
-            if ! command -v "$uv_install_dir/uv" 2>/dev/null; then
-                script="$(mktemp)"
-                cp -f mongoc/.evergreen/scripts/uv-installer.sh "$script"
-                chmod +x "$script"
-                (
-                  . mongoc/.evergreen/scripts/patch-uv-installer.sh
-                  patch_uv_installer "$script" "$version"
-                )
-                env \
-                    UV_INSTALL_DIR="$uv_install_dir" \
-                    UV_UNMANAGED_INSTALL=1 \
-                    INSTALLER_PRINT_VERBOSE=1 \
-                    "$script"
-            fi
-
-            PATH="$uv_install_dir:$PATH" command -V uv
-            PATH="$uv_install_dir:$PATH" uv --version
-
-            printf "UV_INSTALL_DIR: %s\n" "$uv_install_dir" >|expansions.uv.yml
-    - command: expansions.update
-      type: setup
-      params:
-        file: expansions.uv.yml
   kms-divergence-check:
     - command: subprocess.exec
       type: test
@@ -347,7 +302,7 @@ functions:
           - -c
           - |
             # See SphinxBuild.cmake for EVG_DOCS_BUILD reasoning
-            PATH="${UV_INSTALL_DIR}:$PATH" uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
+            uv run --frozen --only-group docs env EVG_DOCS_BUILD=1 .evergreen/scripts/build-docs.sh
   openssl-compat:
     - command: subprocess.exec
       type: setup
@@ -369,7 +324,6 @@ functions:
         include_expansions_in_env:
           - OPENSSL_USE_STATIC_LIBS
           - OPENSSL_VERSION
-          - UV_INSTALL_DIR
         args:
           - -c
           - .evergreen/scripts/openssl-compat-check.sh
@@ -455,14 +409,12 @@ functions:
         binary: bash
         working_dir: mongoc
         background: true
-        include_expansions_in_env:
-          - UV_INSTALL_DIR
         args:
           - -c
           - |
             set -o errexit
             echo "Starting simple HTTP server..."
-            PATH="${UV_INSTALL_DIR}:$PATH" uvx python .evergreen/scripts/simple_http_server.py
+            uvx python .evergreen/scripts/simple_http_server.py
             echo "Starting simple HTTP server... done."
   run-tests:
     - command: subprocess.exec
@@ -658,6 +610,7 @@ functions:
           - |
             export DRIVERS_TOOLS=./drivers-evergreen-tools
             export MONGODB_URI="${MONGODB_URI}"
+            export PATH="$(uv tool dir --bin):$PATH" # DEVPROD-19733
             $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
     - command: expansions.update
       type: setup

@@ -63,4 +63,22 @@ mongoc_oidc_cache_invalidate_token(mongoc_oidc_cache_t *cache, const char *token
 void
 mongoc_oidc_cache_destroy(mongoc_oidc_cache_t *);
 
+// mongoc_oidc_connection_cache_t implements the OIDC spec "Connection Cache".
+// Stores a possible OIDC access token used to authenticate one mongoc_stream_t.
+typedef struct mongoc_oidc_connection_cache_t mongoc_oidc_connection_cache_t;
+
+mongoc_oidc_connection_cache_t *
+mongoc_oidc_connection_cache_new(void);
+
+// mongoc_oidc_connection_cache_set overwrites the cached token. Pass a NULL token to clear cache.
+void
+mongoc_oidc_connection_cache_set(mongoc_oidc_connection_cache_t *cache, const char *token);
+
+// mongoc_oidc_connection_cache_get returns the cached token or NULL.
+char *
+mongoc_oidc_connection_cache_get(const mongoc_oidc_connection_cache_t *cache);
+
+void
+mongoc_oidc_connection_cache_destroy(mongoc_oidc_connection_cache_t *cache);
+
 #endif // MONGOC_OIDC_CACHE_PRIVATE_H

@@ -768,17 +768,39 @@ test_exhaust_in_child(void)
 void
 test_exhaust_install(TestSuite *suite)
 {
-   TestSuite_AddFull(suite, "/Client/exhaust_cursor/works", test_exhaust_cursor_works, NULL, NULL, skip_if_no_exhaust);
-   TestSuite_AddFull(
-      suite, "/Client/exhaust_cursor/no_match", test_exhaust_cursor_no_match, NULL, NULL, skip_if_no_exhaust);
-   TestSuite_AddFull(
-      suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_no_exhaust);
-   TestSuite_AddFull(suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_no_exhaust);
-   TestSuite_AddFull(
-      suite, "/Client/exhaust_cursor/batches", test_exhaust_cursor_multi_batch, NULL, NULL, skip_if_no_exhaust);
+   TestSuite_AddFull(suite,
+                     "/Client/exhaust_cursor/works [lock:live-server]",
+                     test_exhaust_cursor_works,
+                     NULL,
+                     NULL,
+                     skip_if_no_exhaust);
+   TestSuite_AddFull(suite,
+                     "/Client/exhaust_cursor/no_match [lock:live-server]",
+                     test_exhaust_cursor_no_match,
+                     NULL,
+                     NULL,
+                     skip_if_no_exhaust);
+   TestSuite_AddFull(suite,
+                     "/Client/exhaust_cursor/single [lock:live-server]",
+                     test_exhaust_cursor_single,
+                     NULL,
+                     NULL,
+                     skip_if_no_exhaust);
+   TestSuite_AddFull(suite,
+                     "/Client/exhaust_cursor/pool [lock:live-server]",
+                     test_exhaust_cursor_pool,
+                     NULL,
+                     NULL,
+                     skip_if_no_exhaust);
+   TestSuite_AddFull(suite,
+                     "/Client/exhaust_cursor/batches [lock:live-server]",
+                     test_exhaust_cursor_multi_batch,
+                     NULL,
+                     NULL,
+                     skip_if_no_exhaust);
    TestSuite_AddLive(suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
    TestSuite_AddFull(suite,
-                     "/Client/exhaust_cursor/server_hint",
+                     "/Client/exhaust_cursor/server_hint [lock:live-server]",
                      test_cursor_server_hint_with_exhaust,
                      NULL,
                      NULL,

@@ -18,6 +18,7 @@
 #include <common-string-private.h>
 #include <mongoc/mongoc-async-cmd-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cluster-oidc-private.h>
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-error-private.h>
@@ -168,7 +169,6 @@ _init_hello(mongoc_topology_scanner_t *ts)
 {
    bson_init(&ts->hello_cmd);
    bson_init(&ts->legacy_hello_cmd);
-   bson_init(&ts->cluster_time);
    ts->handshake_cmd = NULL;
 
    _add_hello(ts);
@@ -216,10 +216,14 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism(const mongoc_uri_t *uri)
 }
 
 void
-_mongoc_topology_scanner_add_speculative_authentication(bson_t *cmd,
-                                                        const mongoc_uri_t *uri,
-                                                        mongoc_scram_t *scram /* OUT */)
+_mongoc_topology_scanner_add_speculative_authentication(
+   bson_t *cmd, const mongoc_uri_t *uri, char *oidc_access_token, uint32_t server_id, mongoc_scram_t *scram /* OUT */)
 {
+   BSON_ASSERT_PARAM(cmd);
+   BSON_ASSERT_PARAM(uri);
+   BSON_OPTIONAL_PARAM(oidc_access_token);
+   BSON_ASSERT_PARAM(scram);
+
    bson_t auth_cmd;
    bson_error_t error;
    bool has_auth = false;
@@ -258,6 +262,14 @@ _mongoc_topology_scanner_add_speculative_authentication(bson_t *cmd,
       }
    }
 #endif
+
+   if (strcasecmp(mechanism, "MONGODB-OIDC") == 0 && oidc_access_token) {
+      if (mongoc_oidc_append_speculative_auth(oidc_access_token, server_id, &auth_cmd, &error)) {
+         has_auth = true;
+      } else {
+         MONGOC_ERROR("Error adding MONGODB-OIDC speculative auth: %s", error.message);
+      }
+   }
 
    if (has_auth) {
       BSON_APPEND_DOCUMENT(cmd, "speculativeAuthenticate", &auth_cmd);
@@ -422,11 +434,10 @@ _begin_hello_cmd(mongoc_topology_scanner_node_t *node,
 
    if (node->ts->speculative_authentication && !node->has_auth && bson_empty(&node->speculative_auth_response) &&
        node->scram.step == 0) {
-      _mongoc_topology_scanner_add_speculative_authentication(&cmd, ts->uri, &node->scram);
-   }
-
-   if (!bson_empty(&ts->cluster_time)) {
-      bson_append_document(&cmd, "$clusterTime", 12, &ts->cluster_time);
+      char *oidc_access_token = mongoc_oidc_cache_get_cached_token(ts->oidc_cache);
+      _mongoc_topology_scanner_add_speculative_authentication(&cmd, ts->uri, oidc_access_token, node->id, &node->scram);
+      mongoc_oidc_connection_cache_set(node->oidc_connection_cache, oidc_access_token);
+      bson_free(oidc_access_token);
    }
 
    /* if the node should connect with a TCP socket, stream will be null, and
@@ -517,7 +528,6 @@ mongoc_topology_scanner_destroy(mongoc_topology_scanner_t *ts)
    bson_destroy(&ts->hello_cmd);
    bson_destroy(&ts->legacy_hello_cmd);
    bson_destroy(ts->handshake_cmd);
-   bson_destroy(&ts->cluster_time);
    mongoc_server_api_destroy(ts->api);
    bson_mutex_destroy(&ts->handshake_cmd_mtx);
 
@@ -558,6 +568,7 @@ mongoc_topology_scanner_add(mongoc_topology_scanner_t *ts, const mongoc_host_lis
    node->last_failed = -1;
    node->last_used = -1;
    node->hello_ok = hello_ok;
+   node->oidc_connection_cache = mongoc_oidc_connection_cache_new();
    bson_init(&node->speculative_auth_response);
 
    DL_APPEND(ts->nodes, node);
@@ -616,6 +627,7 @@ mongoc_topology_scanner_node_disconnect(mongoc_topology_scanner_node_t *node, bo
    }
    mongoc_server_description_destroy(node->handshake_sd);
    node->handshake_sd = NULL;
+   mongoc_oidc_connection_cache_set(node->oidc_connection_cache, NULL);
 }
 
 void
@@ -632,6 +644,8 @@ mongoc_topology_scanner_node_destroy(mongoc_topology_scanner_node_t *node, bool 
 #ifdef MONGOC_ENABLE_CRYPTO
    _mongoc_scram_destroy(&node->scram);
 #endif
+
+   mongoc_oidc_connection_cache_destroy(node->oidc_connection_cache);
 
    bson_free(node);
 }
@@ -856,8 +870,8 @@ _mongoc_topology_scanner_node_setup_stream_for_tls(mongoc_topology_scanner_node_
       tls_stream = mongoc_stream_tls_new_with_hostname_and_openssl_context(
          stream, node->host.host, node->ts->ssl_opts, 1, node->ts->openssl_ctx);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-      tls_stream =
-         mongoc_stream_tls_new_with_secure_channel_cred(stream, node->ts->ssl_opts, node->ts->secure_channel_cred_ptr);
+      tls_stream = mongoc_stream_tls_new_with_secure_channel_cred(
+         stream, node->host.host, node->ts->ssl_opts, node->ts->secure_channel_cred_ptr);
 #else
       tls_stream = mongoc_stream_tls_new_with_hostname(stream, node->host.host, node->ts->ssl_opts, 1);
 #endif
@@ -1323,17 +1337,6 @@ _mongoc_topology_scanner_set_appname(mongoc_topology_scanner_t *ts, const char *
    return false;
 }
 
-/*
- * Set the scanner's clusterTime unconditionally: don't compare with prior
- * @cluster_time is like {clusterTime: <timestamp>}
- */
-void
-_mongoc_topology_scanner_set_cluster_time(mongoc_topology_scanner_t *ts, const bson_t *cluster_time)
-{
-   bson_destroy(&ts->cluster_time);
-   bson_copy_to(cluster_time, &ts->cluster_time);
-}
-
 /* SDAM Monitoring Spec: send HeartbeatStartedEvent */
 static void
 _mongoc_topology_scanner_monitor_heartbeat_started(const mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host)
@@ -1505,4 +1508,12 @@ mongoc_topology_scanner_uses_loadbalanced(const mongoc_topology_scanner_t *ts)
 {
    BSON_ASSERT_PARAM(ts);
    return ts->loadbalanced;
+}
+
+void
+_mongoc_topology_scanner_set_oidc_cache(mongoc_topology_scanner_t *ts, mongoc_oidc_cache_t *oidc_cache)
+{
+   BSON_ASSERT_PARAM(ts);
+   BSON_ASSERT_PARAM(oidc_cache);
+   ts->oidc_cache = oidc_cache;
 }

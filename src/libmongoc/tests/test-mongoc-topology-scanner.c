@@ -5,6 +5,10 @@
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-util-private.h>
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#include <mongoc/mongoc-openssl-private.h>
+#endif
+
 #include <mongoc/mongoc.h>
 #include <mongoc/utlist.h>
 
@@ -71,6 +75,9 @@ _test_topology_scanner(bool with_ssl)
       copt.weak_cert_validation = 1;
 
       mongoc_topology_scanner_set_ssl_opts(topology_scanner, &copt);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+      topology_scanner->openssl_ctx = _mongoc_openssl_ctx_new(&copt);
+#endif
    }
 #endif
 
@@ -710,13 +717,13 @@ test_topology_scanner_install(TestSuite *suite)
       suite, "/TOPOLOGY/dns", test_topology_scanner_dns, test_framework_skip_if_no_dual_ip_hostname);
    TestSuite_AddMockServerTest(suite, "/TOPOLOGY/retired_fails_to_initiate", test_topology_retired_fails_to_initiate);
    TestSuite_AddFull(suite,
-                     "/TOPOLOGY/scanner/renegotiate/single",
+                     "/TOPOLOGY/scanner/renegotiate/single [lock:live-server][timeout:30]",
                      test_topology_scanner_does_not_renegotiate_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/TOPOLOGY/scanner/renegotiate/pooled",
+                     "/TOPOLOGY/scanner/renegotiate/pooled [lock:live-server][timeout:30]",
                      test_topology_scanner_does_not_renegotiate_pooled,
                      NULL,
                      NULL,

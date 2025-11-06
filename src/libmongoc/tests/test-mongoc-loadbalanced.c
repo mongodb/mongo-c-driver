@@ -832,47 +832,47 @@ void
 test_loadbalanced_install(TestSuite *suite)
 {
    TestSuite_AddFull(suite,
-                     "/loadbalanced/sessions/supported",
+                     "/loadbalanced/sessions/supported [lock:live-server]",
                      test_loadbalanced_sessions_supported,
                      NULL /* ctx */,
                      NULL /* dtor */,
                      skip_if_not_loadbalanced);
    TestSuite_AddFull(suite,
-                     "/loadbalanced/sessions/do_not_expire",
+                     "/loadbalanced/sessions/do_not_expire [lock:live-server]",
                      test_loadbalanced_sessions_do_not_expire,
                      NULL /* ctx */,
                      NULL /* dtor */,
                      skip_if_not_loadbalanced);
    TestSuite_AddFull(suite,
-                     "/loadbalanced/client_uri_validation",
+                     "/loadbalanced/client_uri_validation [lock:live-server]",
                      test_loadbalanced_client_uri_validation,
                      NULL /* ctx */,
                      NULL /* dtor */,
                      NULL);
 
    TestSuite_AddFull(suite,
-                     "/loadbalanced/connect/single",
+                     "/loadbalanced/connect/single [lock:live-server]",
                      test_loadbalanced_connect_single,
                      NULL /* ctx */,
                      NULL /* dtor */,
                      skip_if_not_loadbalanced);
 
    TestSuite_AddFull(suite,
-                     "/loadbalanced/connect/pooled",
+                     "/loadbalanced/connect/pooled [lock:live-server]",
                      test_loadbalanced_connect_pooled,
                      NULL /* ctx */,
                      NULL /* dtor */,
                      skip_if_not_loadbalanced);
 
    TestSuite_AddFull(suite,
-                     "/loadbalanced/server_selection_establishes_connection/single",
+                     "/loadbalanced/server_selection_establishes_connection/single [lock:live-server]",
                      test_loadbalanced_server_selection_establishes_connection_single,
                      NULL /* ctx */,
                      NULL /* dtor */,
                      skip_if_not_loadbalanced);
 
    TestSuite_AddFull(suite,
-                     "/loadbalanced/cooldown_is_bypassed/single",
+                     "/loadbalanced/cooldown_is_bypassed/single [lock:live-server]",
                      test_loadbalanced_cooldown_is_bypassed_single,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -892,7 +892,7 @@ test_loadbalanced_install(TestSuite *suite)
       suite, "/loadbalanced/post_handshake_error_clears_pool", test_post_handshake_error_clears_pool);
 
    TestSuite_AddFull(suite,
-                     "/loadbalanced/sends_recoveryToken",
+                     "/loadbalanced/sends_recoveryToken [lock:live-server]",
                      test_loadbalanced_sends_recoveryToken,
                      NULL /* ctx */,
                      NULL /* dtor */,

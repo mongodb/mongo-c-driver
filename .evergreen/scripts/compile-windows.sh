@@ -9,8 +9,6 @@ set -o igncr # Ignore CR in this script for Windows compatibility.
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_req UV_INSTALL_DIR
-
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CMAKE_GENERATOR

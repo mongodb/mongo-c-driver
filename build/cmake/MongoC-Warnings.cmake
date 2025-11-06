@@ -103,4 +103,4 @@ mongoc_add_warning_options (
 
      # Aside: Disable CRT insecurity warnings
      msvc:/D_CRT_SECURE_NO_WARNINGS
-     )
+)

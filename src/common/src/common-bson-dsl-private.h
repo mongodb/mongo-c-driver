@@ -275,6 +275,12 @@ BSON_IF_GNU_LIKE(_Pragma("GCC diagnostic ignored \"-Wshadow\""))
    }                                                                           \
    _bsonDSL_end
 
+#define _bsonValueOperation_binary(SubType, Data, Len)                         \
+   if (!bson_append_binary(_bsonBuildAppendArgs, (SubType), (Data), (Len))) {  \
+      bsonBuildError = "Error while appending binary(" _bsonDSL_str(Data) ")"; \
+   } else                                                                      \
+      ((void)0)
+
 /// Insert the given BSON document into the parent document in-place
 #define _bsonDocOperation_insert(OtherBSON, Pred)                                                \
    _bsonDSL_begin("Insert other document: [%s]", _bsonDSL_str(OtherBSON));                       \

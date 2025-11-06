@@ -55,7 +55,9 @@ typedef enum {
    MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK = 13435,
    MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY = 13436,
    MONGOC_SERVER_ERR_LEGACYNOTPRIMARY = 10058,
-   MONGOC_SERVER_ERR_NS_NOT_FOUND = 26
+   MONGOC_SERVER_ERR_NS_NOT_FOUND = 26,
+   MONGOC_SERVER_ERR_AUTHENTICATION = 18,
+   MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED = 391,
 } mongoc_server_err_t;
 
 mongoc_read_err_type_t
@@ -93,6 +95,9 @@ _mongoc_error_is_server(const bson_error_t *error);
 
 bool
 _mongoc_error_is_auth(const bson_error_t *error);
+
+bool
+_mongoc_error_is_reauth(const bson_error_t *error, int error_api_version);
 
 /* Try to append `s` to `error`. Truncates `s` if `error` is out of space. */
 void

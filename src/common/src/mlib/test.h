@@ -129,56 +129,98 @@ typedef struct mlib_source_location {
 #define mlib_check(...) MLIB_ARGC_PICK(_mlib_check, #__VA_ARGS__, __VA_ARGS__)
 // One arg:
 #define _mlib_check_argc_2(ArgString, Condition) \
-   _mlibCheckConditionSimple(Condition, ArgString, mlib_this_source_location())
+   _mlibCheckConditionSimple(Condition, ArgString, NULL, mlib_this_source_location())
 // Three args:
 #define _mlib_check_argc_4(ArgString, A, Operator, B) \
-   MLIB_NOTHING(#A, #B) MLIB_PASTE(_mlibCheckCondition_, Operator)(A, B)
+   MLIB_NOTHING(#A, #B) MLIB_PASTE(_mlibCheckCondition_, Operator)(A, B, NULL)
+// Five args:
+#define _mlib_check_argc_6(ArgString, A, Operator, B, Infix, Reason) \
+   MLIB_NOTHING(#A, #B) MLIB_PASTE(_mlib_check_with_suffix_, Infix)(A, Operator, B, Reason)
+#define _mlib_check_with_suffix_because(A, Operator, B, Reason) \
+   MLIB_NOTHING(#A, #B) MLIB_PASTE(_mlibCheckCondition_, Operator)(A, B, Reason)
 // String-compare:
-#define _mlibCheckCondition_str_eq(A, B) _mlibCheckStrEq(A, B, #A, #B, mlib_this_source_location())
+#define _mlibCheckCondition_str_eq(A, B, Reason) _mlibCheckStrEq(A, B, #A, #B, Reason, mlib_this_source_location())
 // Pointer-compare:
-#define _mlibCheckCondition_ptr_eq(A, B) _mlibCheckPtrEq(A, B, #A, #B, mlib_this_source_location())
+#define _mlibCheckCondition_ptr_eq(A, B, Reason) _mlibCheckPtrEq(A, B, #A, #B, Reason, mlib_this_source_location())
 // Integer-equal:
-#define _mlibCheckCondition_eq(A, B) \
-   _mlibCheckIntCmp(                 \
-      mlib_equal, true, "==", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
+#define _mlibCheckCondition_eq(A, B, Reason) \
+   _mlibCheckIntCmp(mlib_equal,              \
+                    true,                    \
+                    "==",                    \
+                    mlib_upsize_integer(A),  \
+                    mlib_upsize_integer(B),  \
+                    #A,                      \
+                    #B,                      \
+                    Reason,                  \
+                    mlib_this_source_location())
 // Integer not-equal:
-#define _mlibCheckCondition_neq(A, B) \
-   _mlibCheckIntCmp(                  \
-      mlib_equal, false, "≠", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
-// Simple assertion with an explanatory string
-#define _mlibCheckCondition_because(Cond, Msg) _mlibCheckConditionBecause(Cond, #Cond, Msg, mlib_this_source_location())
+#define _mlibCheckCondition_neq(A, B, Reason) \
+   _mlibCheckIntCmp(mlib_equal,               \
+                    false,                    \
+                    "!=",                     \
+                    mlib_upsize_integer(A),   \
+                    mlib_upsize_integer(B),   \
+                    #A,                       \
+                    #B,                       \
+                    Reason,                   \
+                    mlib_this_source_location())
 // Integer comparisons:
-#define _mlibCheckCondition_lt(A, B) \
-   _mlibCheckIntCmp(                 \
-      mlib_less, true, "<", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
-#define _mlibCheckCondition_lte(A, B) \
-   _mlibCheckIntCmp(                  \
-      mlib_greater, false, "≤", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
-#define _mlibCheckCondition_gt(A, B) \
-   _mlibCheckIntCmp(                 \
-      mlib_greater, true, ">", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
-#define _mlibCheckCondition_gte(A, B) \
-   _mlibCheckIntCmp(                  \
-      mlib_less, false, "≥", mlib_upsize_integer(A), mlib_upsize_integer(B), #A, #B, mlib_this_source_location())
+#define _mlibCheckCondition_lt(A, B, Reason) \
+   _mlibCheckIntCmp(mlib_less,               \
+                    true,                    \
+                    "<",                     \
+                    mlib_upsize_integer(A),  \
+                    mlib_upsize_integer(B),  \
+                    #A,                      \
+                    #B,                      \
+                    Reason,                  \
+                    mlib_this_source_location())
+#define _mlibCheckCondition_lte(A, B, Reason) \
+   _mlibCheckIntCmp(mlib_greater,             \
+                    false,                    \
+                    "≤",                      \
+                    mlib_upsize_integer(A),   \
+                    mlib_upsize_integer(B),   \
+                    #A,                       \
+                    #B,                       \
+                    Reason,                   \
+                    mlib_this_source_location())
+#define _mlibCheckCondition_gt(A, B, Reason) \
+   _mlibCheckIntCmp(mlib_greater,            \
+                    true,                    \
+                    ">",                     \
+                    mlib_upsize_integer(A),  \
+                    mlib_upsize_integer(B),  \
+                    #A,                      \
+                    #B,                      \
+                    Reason,                  \
+                    mlib_this_source_location())
+#define _mlibCheckCondition_gte(A, B, Reason) \
+   _mlibCheckIntCmp(mlib_less,                \
+                    false,                    \
+                    "≥",                      \
+                    mlib_upsize_integer(A),   \
+                    mlib_upsize_integer(B),   \
+                    #A,                       \
+                    #B,                       \
+                    Reason,                   \
+                    mlib_this_source_location())
 
+
+// Simple assertion with an explanatory string
+#define _mlibCheckCondition_because(Cond, Reason, _null) \
+   _mlibCheckConditionSimple(Cond, #Cond, Reason, mlib_this_source_location())
 
 /// Check evaluator when given a single boolean
 static inline void
-_mlibCheckConditionSimple(bool c, const char *expr, struct mlib_source_location here)
+_mlibCheckConditionSimple(bool c, const char *expr, const char *reason, struct mlib_source_location here)
 {
    if (!c) {
-      fprintf(stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed\n", here.file, here.lineno, here.func, expr);
-      fflush(stderr);
-      abort();
-   }
-}
-
-static inline void
-_mlibCheckConditionBecause(bool cond, const char *expr, const char *reason, mlib_source_location here)
-{
-   if (!cond) {
-      fprintf(
-         stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed (%s)\n", here.file, here.lineno, here.func, expr, reason);
+      fprintf(stderr, "%s:%d: in [%s]: Check condition ⟨%s⟩ failed", here.file, here.lineno, here.func, expr);
+      if (reason) {
+         fprintf(stderr, " (%s)", reason);
+      }
+      fprintf(stderr, "\n");
       fflush(stderr);
       abort();
    }
@@ -193,6 +235,7 @@ _mlibCheckIntCmp(enum mlib_cmp_result cres, // The cmp result to check
                  struct mlib_upsized_integer right,
                  const char *left_expr,
                  const char *right_expr,
+                 const char *reason,
                  struct mlib_source_location here)
 {
    if (((mlib_cmp)(left, right, 0) == cres) != cond) {
@@ -218,6 +261,9 @@ _mlibCheckIntCmp(enum mlib_cmp_result cres, // The cmp result to check
          fprintf(stderr, "%llu", (unsigned long long)right.bits.as_unsigned);
       }
       fprintf(stderr, " ⟨%s⟩\n", right_expr);
+      if (reason) {
+         fprintf(stderr, "Because: %s\n", reason);
+      }
       fflush(stderr);
       abort();
    }
@@ -225,8 +271,12 @@ _mlibCheckIntCmp(enum mlib_cmp_result cres, // The cmp result to check
 
 // Pointer-comparison
 static inline void
-_mlibCheckPtrEq(
-   const void *left, const void *right, const char *left_expr, const char *right_expr, struct mlib_source_location here)
+_mlibCheckPtrEq(const void *left,
+                const void *right,
+                const char *left_expr,
+                const char *right_expr,
+                const char *reason,
+                struct mlib_source_location here)
 {
    if (left != right) {
       fprintf(stderr,
@@ -243,6 +293,9 @@ _mlibCheckPtrEq(
               left_expr,
               right,
               right_expr);
+      if (reason) {
+         fprintf(stderr, "Because: %s\n", reason);
+      }
       fflush(stderr);
       abort();
    }
@@ -250,8 +303,12 @@ _mlibCheckPtrEq(
 
 // String-comparison
 static inline void
-_mlibCheckStrEq(
-   const char *left, const char *right, const char *left_expr, const char *right_expr, struct mlib_source_location here)
+_mlibCheckStrEq(const char *left,
+                const char *right,
+                const char *left_expr,
+                const char *right_expr,
+                const char *reason,
+                struct mlib_source_location here)
 {
    if (strcmp(left, right)) {
       fprintf(stderr,
@@ -268,6 +325,9 @@ _mlibCheckStrEq(
               left_expr,
               right,
               right_expr);
+      if (reason) {
+         fprintf(stderr, "Because: %s\n", reason);
+      }
       fflush(stderr);
       abort();
    }

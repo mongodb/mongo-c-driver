@@ -564,28 +564,28 @@ test_retryable_reads_install(TestSuite *suite)
 {
    test_all_spec_tests(suite);
    TestSuite_AddFull(suite,
-                     "/retryable_reads/cmd_helpers",
+                     "/retryable_reads/cmd_helpers [lock:live-server]",
                      test_cmd_helpers,
                      NULL,
                      NULL,
                      test_framework_skip_if_mongos,
                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull(suite,
-                     "/retryable_reads/retry_off",
+                     "/retryable_reads/retry_off [lock:live-server]",
                      test_retry_reads_off,
                      NULL,
                      NULL,
                      test_framework_skip_if_mongos,
                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull(suite,
-                     "/retryable_reads/sharded/on_other_mongos",
+                     "/retryable_reads/sharded/on_other_mongos [lock:live-server]",
                      test_retry_reads_sharded_on_other_mongos,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_mongos,
                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull(suite,
-                     "/retryable_reads/sharded/on_same_mongos",
+                     "/retryable_reads/sharded/on_same_mongos [lock:live-server]",
                      test_retry_reads_sharded_on_same_mongos,
                      NULL,
                      NULL,

@@ -19,6 +19,7 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/str.h>
 #include <mlib/time_point.h>
 
 #include <json-test.h>
@@ -32,6 +33,9 @@
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
+
+/* _mongoc_crypt_get_libmongocrypt_version */
+#include <mongoc/mongoc-crypt-private.h>
 
 #include <mongoc/mongoc-uri.h>
 
@@ -6522,6 +6526,16 @@ drop_coll(mongoc_database_t *db, const char *collname)
    mongoc_collection_destroy(coll);
 }
 
+server_version_t
+get_libmongocrypt_version(void)
+{
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   return test_framework_str_to_version(_mongoc_crypt_get_libmongocrypt_version());
+#else
+   return 0;
+#endif
+}
+
 static void
 test_lookup_setup(void)
 {
@@ -6619,6 +6633,19 @@ test_lookup_setup(void)
          mongoc_collection_destroy(coll);
       }
 
+      // Create db.non_csfle_schema:
+      {
+         drop_coll(db, "non_csfle_schema");
+         bson_t *const schema = get_bson_from_json_file(TESTDIR "schema-non-csfle.json");
+         bson_t *const create_opts = BCON_NEW("validator", "{", "$jsonSchema", BCON_DOCUMENT(schema), "}");
+         mongoc_collection_t *const coll =
+            mongoc_database_create_collection(db, "non_csfle_schema", create_opts, &error);
+         ASSERT_OR_PRINT(coll, error);
+         mongoc_collection_destroy(coll);
+         bson_destroy(create_opts);
+         bson_destroy(schema);
+      }
+
       mongoc_database_destroy(db);
    }
 #undef TESTDIR
@@ -6696,6 +6723,20 @@ test_lookup_setup(void)
          // Find document with unencrypted client to check it is not encrypted.
          mongoc_collection_t *coll_unencrypted = mongoc_client_get_collection(setup_client, "db", "no_schema2");
          ASSERT_COLL_MATCHES_ONE(coll_unencrypted, MAKE_BSON({"no_schema2" : "no_schema2"}));
+         mongoc_collection_destroy(coll_unencrypted);
+      }
+
+      // Insert to db.non_csfle_schema
+      {
+         mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "non_csfle_schema");
+         ok = mongoc_collection_insert_one(
+            coll, MAKE_BSON({"non_csfle_schema" : "non_csfle_schema"}), NULL, NULL, &error);
+         ASSERT_OR_PRINT(ok, error);
+         mongoc_collection_destroy(coll);
+         // Find document with unencrypted client to check it is not encrypted.
+         mongoc_collection_t *const coll_unencrypted =
+            mongoc_client_get_collection(setup_client, "db", "non_csfle_schema");
+         ASSERT_COLL_MATCHES_ONE(coll_unencrypted, MAKE_BSON({"non_csfle_schema" : "non_csfle_schema"}));
          mongoc_collection_destroy(coll_unencrypted);
       }
 
@@ -6909,7 +6950,67 @@ test_lookup(void *unused)
          ]
       });
 
-      ASSERT_AGG_ERROR(coll, pipeline, "not supported");
+      if (test_framework_get_server_version() < test_framework_str_to_version("8.2.0") ||
+          get_libmongocrypt_version() < test_framework_str_to_version("1.17.0")) {
+         ASSERT_AGG_ERROR(coll, pipeline, "not supported");
+      } else {
+         // The error domain differs depending on the query analysis component:
+         // * `crypt_shared`: `MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION`
+         // * `mongocryptd`: `MONGOC_ERROR_QUERY`
+
+         static const char *const expected_error_substring =
+            "Cannot specify both encryptionInformation and csfleEncryptionSchemas unless csfleEncryptionSchemas only "
+            "contains non-encryption JSON schema validators";
+
+         if (mongoc_client_get_crypt_shared_version(client)) {
+            ASSERT_AGG_ERROR(coll, pipeline, expected_error_substring);
+         } else {
+            mongoc_cursor_t *const cursor = mongoc_collection_aggregate(coll, 0, pipeline, NULL, NULL);
+            const bson_t *got;
+            ASSERT(!mongoc_cursor_next(cursor, &got));
+            ASSERT(mongoc_cursor_error(cursor, &error));
+            static const uint32_t expected_error_code = 10026002u;
+            ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, expected_error_code, expected_error_substring);
+            mongoc_cursor_destroy(cursor);
+         }
+      }
+
+      mongoc_collection_destroy(coll);
+      mongoc_client_destroy(client);
+   }
+}
+
+static void
+test_lookup_post82(void *unused)
+{
+   BSON_UNUSED(unused);
+   test_lookup_setup();
+   bson_error_t error;
+
+   // Case 10: db.qe joins db.non_csfle_schema:
+   {
+      mongoc_client_t *const client = create_encrypted_client();
+      mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "qe");
+
+      bson_t *const pipeline = MAKE_BSON({
+         "pipeline" : [
+            {"$match" : {"qe" : "qe"}},
+            {
+               "$lookup" : {
+                  "from" : "non_csfle_schema",
+                  "as" : "matched",
+                  "pipeline" : [
+                     {"$match" : {"non_csfle_schema" : "non_csfle_schema"}},
+                     {"$project" : {"_id" : 0, "__safeContent__" : 0}}
+                  ]
+               }
+            },
+            {"$project" : {"_id" : 0, "__safeContent__" : 0}}
+         ]
+      });
+
+      bson_t *const expect = MAKE_BSON({"qe" : "qe", "matched" : [ {"non_csfle_schema" : "non_csfle_schema"} ]});
+      ASSERT_AGG_RETURNS_ONE(coll, pipeline, expect);
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(client);
    }
@@ -6947,6 +7048,12 @@ test_lookup_pre81(void *unused)
    }
 }
 
+int
+skip_if_libmongocrypt_less_than_1_17_0(void)
+{
+   return get_libmongocrypt_version() >= test_framework_str_to_version("1.17.0");
+}
+
 void
 test_client_side_encryption_install(TestSuite *suite)
 {
@@ -6957,7 +7064,7 @@ test_client_side_encryption_install(TestSuite *suite)
                                       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/create_datakey_with_custom_key_material",
+                     "/client_side_encryption/create_datakey_with_custom_key_material [lock:live-server]",
                      test_create_datakey_with_custom_key_material,
                      NULL,
                      NULL,
@@ -6965,7 +7072,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/datakey_and_double_encryption",
+                     "/client_side_encryption/datakey_and_double_encryption [lock:live-server]",
                      test_datakey_and_double_encryption,
                      NULL,
                      NULL,
@@ -6973,7 +7080,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/external_key_vault",
+                     "/client_side_encryption/external_key_vault [lock:live-server]",
                      test_external_key_vault,
                      NULL,
                      NULL,
@@ -6981,14 +7088,14 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_no_auth /* requires auth for error check */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/bson_size_limits_and_batch_splitting",
+                     "/client_side_encryption/bson_size_limits_and_batch_splitting [lock:live-server]",
                      test_bson_size_limits_and_batch_splitting_no_qe,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/bson_size_limits_and_batch_splitting_qe",
+                     "/client_side_encryption/bson_size_limits_and_batch_splitting_qe [lock:live-server]",
                      test_bson_size_limits_and_batch_splitting_qe,
                      NULL,
                      NULL,
@@ -6996,14 +7103,14 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_25,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/views_are_prohibited",
+                     "/client_side_encryption/views_are_prohibited [lock:live-server]",
                      test_views_are_prohibited,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/corpus",
+                     "/client_side_encryption/corpus [lock:live-server]",
                      test_corpus,
                      NULL,
                      NULL,
@@ -7011,7 +7118,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/custom_endpoint",
+                     "/client_side_encryption/custom_endpoint [lock:live-server]",
                      test_custom_endpoint,
                      NULL,
                      NULL,
@@ -7020,7 +7127,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "mongocryptdBypassSpawn",
+                     "mongocryptdBypassSpawn [lock:live-server]",
                      test_bypass_spawning_via_mongocryptdBypassSpawn,
                      NULL,
                      NULL,
@@ -7028,7 +7135,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "bypassAutoEncryption",
+                     "bypassAutoEncryption [lock:live-server]",
                      test_bypass_spawning_via_bypassAutoEncryption,
                      NULL,
                      NULL,
@@ -7036,7 +7143,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "bypassQueryAnalysis",
+                     "bypassQueryAnalysis [lock:live-server]",
                      test_bypass_spawning_via_bypassQueryAnalysis,
                      NULL,
                      NULL,
@@ -7044,7 +7151,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "cryptSharedLibLoaded",
+                     "cryptSharedLibLoaded [lock:live-server]",
                      test_bypass_spawning_via_cryptSharedLibLoaded,
                      NULL,
                      NULL,
@@ -7052,35 +7159,35 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      _skip_if_no_crypt_shared);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls/valid",
+                     "/client_side_encryption/kms_tls/valid [lock:live-server]",
                      test_kms_tls_cert_valid,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls/expired",
+                     "/client_side_encryption/kms_tls/expired [lock:live-server]",
                      test_kms_tls_cert_expired,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls/wrong_host",
+                     "/client_side_encryption/kms_tls/wrong_host [lock:live-server]",
                      test_kms_tls_cert_wrong_host,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/unique_index_on_keyaltnames",
+                     "/client_side_encryption/unique_index_on_keyaltnames [lock:live-server]",
                      test_unique_index_on_keyaltnames,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/prose_test_16/case1",
+                     "/client_side_encryption/prose_test_16/case1 [lock:live-server][timeout:30]",
                      test_rewrap_with_separate_client_encryption,
                      NULL,
                      NULL,
@@ -7088,7 +7195,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/prose_test_16/case2",
+                     "/client_side_encryption/prose_test_16/case2 [lock:live-server]",
                      test_rewrap_without_provider,
                      NULL,
                      NULL,
@@ -7097,28 +7204,28 @@ test_client_side_encryption_install(TestSuite *suite)
 
    /* Other, C driver specific, tests. */
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/single_and_pool_mismatches",
+                     "/client_side_encryption/single_and_pool_mismatches [lock:live-server]",
                      test_invalid_single_and_pool_mismatches,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/multi_threaded",
+                     "/client_side_encryption/multi_threaded [lock:live-server]",
                      test_multi_threaded,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/malformed_explicit",
+                     "/client_side_encryption/malformed_explicit [lock:live-server]",
                      test_malformed_explicit,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls_options",
+                     "/client_side_encryption/kms_tls_options [lock:live-server]",
                      test_kms_tls_options,
                      NULL,
                      NULL,
@@ -7130,20 +7237,20 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_windows);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls_options/extra_rejected",
+                     "/client_side_encryption/kms_tls_options/extra_rejected [lock:live-server]",
                      test_kms_tls_options_extra_rejected,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_retry",
+                     "/client_side_encryption/kms_retry [lock:live-server]",
                      test_kms_retry,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case1",
+                     "/client_side_encryption/explicit_encryption/case1 [lock:live-server]",
                      test_explicit_encryption_case1,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7152,7 +7259,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case2",
+                     "/client_side_encryption/explicit_encryption/case2 [lock:live-server]",
                      test_explicit_encryption_case2,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7161,7 +7268,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case3",
+                     "/client_side_encryption/explicit_encryption/case3 [lock:live-server]",
                      test_explicit_encryption_case3,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7170,7 +7277,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case4",
+                     "/client_side_encryption/explicit_encryption/case4 [lock:live-server]",
                      test_explicit_encryption_case4,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7179,7 +7286,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case5",
+                     "/client_side_encryption/explicit_encryption/case5 [lock:live-server]",
                      test_explicit_encryption_case5,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7188,7 +7295,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case1",
+                     "/client_side_encryption/decryption_events/case1 [lock:live-server]",
                      test_decryption_events_case1,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7196,7 +7303,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case2",
+                     "/client_side_encryption/decryption_events/case2 [lock:live-server]",
                      test_decryption_events_case2,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7204,7 +7311,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case3",
+                     "/client_side_encryption/decryption_events/case3 [lock:live-server]",
                      test_decryption_events_case3,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7213,7 +7320,7 @@ test_client_side_encryption_install(TestSuite *suite)
 
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case4",
+                     "/client_side_encryption/decryption_events/case4 [lock:live-server]",
                      test_decryption_events_case4,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7221,7 +7328,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/qe_docs_example",
+                     "/client_side_encryption/qe_docs_example [lock:live-server]",
                      test_qe_docs_example,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7230,7 +7337,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/callback",
+                     "/client_side_encryption/kms/callback [lock:live-server]",
                      test_kms_callback,
                      NULL, // dtor
                      NULL, // ctx
@@ -7238,7 +7345,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/auto-aws/fail",
+                     "/client_side_encryption/kms/auto-aws/fail [lock:live-server]",
                      test_auto_aws_fail,
                      NULL,
                      NULL,
@@ -7247,7 +7354,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      _not_have_aws_creds_env);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/auto-aws/succeed",
+                     "/client_side_encryption/kms/auto-aws/succeed [lock:live-server]",
                      test_auto_aws_succeed,
                      NULL,
                      NULL,
@@ -7256,17 +7363,18 @@ test_client_side_encryption_install(TestSuite *suite)
                      _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/drop_qe_null_error",
+                     "/client_side_encryption/drop_qe_null_error [lock:live-server]",
                      test_drop_qe_null_error,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
 
-   TestSuite_AddFull(suite, "/client_side_encryption/auto_datakeys", test_auto_datakeys, NULL, NULL, NULL);
+   TestSuite_AddFull(
+      suite, "/client_side_encryption/auto_datakeys [lock:live-server]", test_auto_datakeys, NULL, NULL, NULL);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/createEncryptedCollection/simple",
+                     "/client_side_encryption/createEncryptedCollection/simple [lock:live-server]",
                      test_create_encrypted_collection_simple,
                      NULL,
                      NULL,
@@ -7276,7 +7384,7 @@ test_client_side_encryption_install(TestSuite *suite)
 
    TestSuite_AddFull(suite,
                      "/client_side_encryption/createEncryptedCollection/"
-                     "missing-encryptedFields",
+                     "missing-encryptedFields [lock:live-server]",
                      test_create_encrypted_collection_no_encryptedFields,
                      NULL,
                      NULL,
@@ -7285,7 +7393,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/createEncryptedCollection/"
-                     "bad-keyId",
+                     "bad-keyId [lock:live-server]",
                      test_create_encrypted_collection_bad_keyId,
                      NULL,
                      NULL,
@@ -7293,7 +7401,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_21,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/createEncryptedCollection/insert",
+                     "/client_side_encryption/createEncryptedCollection/insert [lock:live-server]",
                      test_create_encrypted_collection_insert,
                      NULL,
                      NULL,
@@ -7301,7 +7409,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_21,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/bypass_mongocryptd_shared_library",
+                     "/client_side_encryption/bypass_mongocryptd_shared_library [lock:live-server]",
                      test_bypass_mongocryptd_shared_library,
                      NULL,
                      NULL,
@@ -7344,12 +7452,14 @@ test_client_side_encryption_install(TestSuite *suite)
 
             char *test_name =
                bson_strdup_printf("/client_side_encryption/range_explicit_encryption/%s/%s", rc.name, rangeType);
+            mstr name_with_tags = mstr_copy_cstring(test_name);
+            mstr_append(&name_with_tags, mstr_cstring(" [lock:live-server]"));
 
             // Skip DecimalNoPrecision if not a replica set.
             if (0 == strcmp(rangeType, "DecimalNoPrecision")) {
                TestSuite_AddFull(
                   suite,
-                  test_name,
+                  name_with_tags.data,
                   rc.fn,
                   NULL /* dtor */,
                   (void *)rangeTypes[i] /* ctx */,
@@ -7359,7 +7469,7 @@ test_client_side_encryption_install(TestSuite *suite)
             } else {
                TestSuite_AddFull(
                   suite,
-                  test_name,
+                  name_with_tags.data,
                   rc.fn,
                   NULL /* dtor */,
                   (void *)rangeTypes[i] /* ctx */,
@@ -7367,13 +7477,14 @@ test_client_side_encryption_install(TestSuite *suite)
                   test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
                   test_framework_skip_if_single);
             }
+            mstr_destroy(&name_with_tags);
 
             bson_free(test_name);
          }
       }
 
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/range_explicit_encryption/applies_defaults",
+                        "/client_side_encryption/range_explicit_encryption/applies_defaults [lock:live-server]",
                         test_range_explicit_encryption_applies_defaults,
                         NULL,
                         NULL,
@@ -7381,7 +7492,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_no_client_side_encryption);
 
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/test_lookup",
+                        "/client_side_encryption/test_lookup [lock:live-server]",
                         test_lookup,
                         NULL,
                         NULL,
@@ -7389,7 +7500,16 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_single, /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/test_lookup/pre-8.1",
+                        "/client_side_encryption/test_lookup/post-8.2 [lock:live-server]",
+                        test_lookup_post82,
+                        NULL,
+                        NULL,
+                        test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ */
+                        skip_if_libmongocrypt_less_than_1_17_0,               /* require libmongocrypt 1.17.0+ */
+                        test_framework_skip_if_single,                        /* QE not supported on standalone */
+                        test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/test_lookup/pre-8.1 [lock:live-server]",
                         test_lookup_pre81,
                         NULL,
                         NULL,

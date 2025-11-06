@@ -25,6 +25,8 @@
 
 #include <bson/bson.h>
 
+#include <mlib/str.h>
+#include <mlib/str_vec.h>
 #include <mlib/time_point.h>
 
 #include <inttypes.h>
@@ -94,6 +96,7 @@ bson_open(const char *filename, int flags, ...)
 #define TEST_DEBUGOUTPUT (1 << 3)
 #define TEST_TRACE (1 << 4)
 #define TEST_LISTTESTS (1 << 5)
+#define TEST_TESTS_CMAKE (1 << 6)
 
 
 #define CERT_CA CERT_TEST_DIR "/ca.pem"
@@ -655,37 +658,110 @@ typedef void (*TestFunc)(void);
 typedef void (*TestFuncWC)(void *);
 typedef void (*TestFuncDtor)(void *);
 typedef int (*CheckFunc)(void);
-typedef struct _Test Test;
-typedef struct _TestSuite TestSuite;
+typedef struct Test Test;
+typedef struct TestSuite TestSuite;
 typedef struct _TestFnCtx TestFnCtx;
-typedef struct _TestSkip TestSkip;
+typedef struct TestSkip TestSkip;
 
+#define T CheckFunc
+#define VecName CheckFuncVec
+#include <mlib/vec.th>
 
-struct _Test {
-   Test *next;
-   char *name;
+struct Test {
+   /**
+    * @brief The C string that names the test case
+    */
+   mstr name;
+   /**
+    * @brief Set of tags that are associated with this test case
+    */
+   mstr_vec tags;
+   /**
+    * @brief The function that will be executed for the test case
+    */
    TestFuncWC func;
+   /**
+    * @brief The function that destroys the context data associated with the test case
+    */
    TestFuncDtor dtor;
+   /**
+    * @brief Pointer to arbitrary context data associated with the text case
+    */
    void *ctx;
+   /**
+    * @brief The exit code that was received from the test function
+    */
    int exit_code;
+   /**
+    * @brief Randomness seed for the test case
+    */
    unsigned seed;
-   CheckFunc checks[MAX_TEST_CHECK_FUNCS];
-   size_t num_checks;
+   /**
+    * @brief Array of check functions that determine whether this test case should be skipped
+    */
+   CheckFuncVec checks;
 };
 
+static inline void
+Test_Destroy(Test *t)
+{
+   if (t->dtor) {
+      t->dtor(t->ctx);
+   }
+   mstr_destroy(&t->name);
+   mstr_vec_destroy(&t->tags);
+   CheckFuncVec_destroy(&t->checks);
+}
 
-struct _TestSuite {
+#define T Test
+#define VecName TestVec
+#define VecDestroyElement Test_Destroy
+#include <mlib/vec.th>
+
+/**
+ * @brief Information about a test that we plan to skip
+ */
+struct TestSkip {
+   /**
+    * @brief The name of the test that is being skipped
+    */
+   mstr test_name;
+   /**
+    * @brief If not-null, the description of the sub-test that we are skipping.
+    */
+   mstr subtest_desc;
+   /**
+    * @brief An explanatory string for why we are skipping the test
+    */
+   mstr reason;
+};
+
+static inline void
+TestSkip_Destroy(TestSkip *skip)
+{
+   mstr_destroy(&skip->test_name);
+   mstr_destroy(&skip->subtest_desc);
+   mstr_destroy(&skip->reason);
+}
+
+#define T TestSkip
+#define VecName TestSkipVec
+#define VecDestroyElement(Skip) TestSkip_Destroy(Skip)
+#include <mlib/vec.th>
+
+
+struct TestSuite {
    char *prgname;
    char *name;
-   mongoc_array_t match_patterns;
-   char *ctest_run;
-   Test *tests;
+   mstr_vec match_patterns;
+   mstr ctest_run;
+   TestVec tests;
    FILE *outfile;
    int flags;
    int silent;
    mcommon_string_t *mock_server_log_buf;
    FILE *mock_server_log;
-   mongoc_array_t failing_flaky_skips;
+   TestSkipVec failing_flaky_skips;
 };
 
 
@@ -694,18 +770,10 @@ struct _TestFnCtx {
    TestFuncDtor dtor;
 };
 
-
-struct _TestSkip {
-   char *test_name;
-   char *subtest_desc;
-   char *reason;
-};
-
-
 void
 TestSuite_Init(TestSuite *suite, const char *name, int argc, char **argv);
 void
-TestSuite_Add(TestSuite *suite, const char *name, TestFunc func);
+TestSuite_Add(TestSuite *suite, const char *name_and_tags, TestFunc func);
 int
 TestSuite_CheckLive(void);
 void
@@ -716,21 +784,22 @@ void
 _TestSuite_AddMockServerTest(TestSuite *suite, const char *name, TestFunc func, ...);
 #define TestSuite_AddMockServerTest(_suite, _name, ...) _TestSuite_AddMockServerTest(_suite, _name, __VA_ARGS__, NULL)
 void
-TestSuite_AddWC(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx);
+TestSuite_AddWC(TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx);
 Test *
-_V_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap);
+_V_TestSuite_AddFull(
+   TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx, va_list ap);
 void
-_TestSuite_AddFull(TestSuite *suite, const char *name, TestFuncWC func, TestFuncDtor dtor, void *ctx, ...);
+TestSuite_AddFull(TestSuite *suite, const char *name_and_tags, TestFuncWC func, TestFuncDtor dtor, void *ctx, ...);
 void
 _TestSuite_TestFnCtxDtor(void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
-   _TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
-#define TestSuite_AddFullWithTestFn(_suite, _name, _func, _dtor, _test_fn, ...)                   \
-   do {                                                                                           \
-      TestFnCtx *ctx = bson_malloc(sizeof(TestFnCtx));                                            \
-      ctx->test_fn = (TestFunc)(_test_fn);                                                        \
-      ctx->dtor = _dtor;                                                                          \
-      _TestSuite_AddFull(_suite, _name, _func, _TestSuite_TestFnCtxDtor, ctx, __VA_ARGS__, NULL); \
+   (TestSuite_AddFull)(_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
+#define TestSuite_AddFullWithTestFn(_suite, _name, _func, _dtor, _test_fn, ...)                  \
+   do {                                                                                          \
+      TestFnCtx *ctx = bson_malloc(sizeof(TestFnCtx));                                           \
+      ctx->test_fn = (TestFunc)(_test_fn);                                                       \
+      ctx->dtor = _dtor;                                                                         \
+      TestSuite_AddFull(_suite, _name, _func, _TestSuite_TestFnCtxDtor, ctx, __VA_ARGS__, NULL); \
    } while (0)
 int
 TestSuite_Run(TestSuite *suite);
@@ -742,7 +811,7 @@ test_suite_debug_output(void);
 void
 test_suite_mock_server_log(const char *msg, ...);
 void
-_process_skip_file(const char *, mongoc_array_t *);
+_process_skip_file(const char *, TestSkipVec *);
 
 bool
 TestSuite_NoFork(TestSuite *suite);

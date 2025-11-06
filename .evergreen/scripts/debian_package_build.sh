@@ -50,7 +50,7 @@ export DEBOOTSTRAP_DIR=$(pwd)/debootstrap.git
 sudo -E ./debootstrap.git/debootstrap --variant=buildd unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c '(\
-  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax python3-packaging && \
+  apt-get install -y build-essential quilt git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax python3-packaging && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
@@ -62,6 +62,8 @@ sudo chroot ./unstable-chroot /bin/bash -c '(\
   git checkout upstream/debian/unstable && \
   git checkout ${CURRENT_BRANCH} && \
   git checkout upstream/debian/unstable -- ./debian/ && \
+  QUILT_PATCHES="debian/patches" quilt push -a --refresh && \
+  QUILT_PATCHES="debian/patches" quilt pop -a && rm -rf .pc/ && \
   git commit -m "fetch debian directory from the debian/unstable branch" && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
@@ -88,7 +90,7 @@ sudo chroot ./unstable-chroot /bin/bash -c "(\
 sudo -E ./debootstrap.git/debootstrap --variant=buildd --arch i386 unstable ./unstable-i386-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-i386-chroot/tmp/
 sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
-  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
+  apt-get install -y build-essential quilt git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
@@ -101,6 +103,8 @@ sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
   git checkout ${CURRENT_BRANCH} && \
   git checkout upstream/debian/unstable -- ./debian/ && \
   git commit -m "fetch debian directory from the debian/unstable branch" && \
+  QUILT_PATCHES="debian/patches" quilt push -a --refresh && \
+  QUILT_PATCHES="debian/patches" quilt pop -a && rm -rf .pc/ && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \

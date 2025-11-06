@@ -7,8 +7,6 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_req UV_INSTALL_DIR
-
 check_var_opt CC
 check_var_opt CMAKE_GENERATOR "Ninja"
 check_var_opt CMAKE_GENERATOR_PLATFORM

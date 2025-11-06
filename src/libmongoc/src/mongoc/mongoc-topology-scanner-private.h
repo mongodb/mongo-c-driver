@@ -52,6 +52,7 @@ typedef struct mongoc_topology_scanner_node {
    uint32_t id;
    /* after scanning, this is set to the successful stream if one exists. */
    mongoc_stream_t *stream;
+   mongoc_oidc_connection_cache_t *oidc_connection_cache;
 
    int64_t last_used;
    /* last_failed is set upon a network error trying to check a server.
@@ -116,7 +117,6 @@ typedef struct mongoc_topology_scanner {
    bson_mutex_t handshake_cmd_mtx;
    bson_t *handshake_cmd;
    handshake_state_t handshake_state;
-   bson_t cluster_time;
    bson_oid_t topology_id;
    const char *appname;
 
@@ -148,6 +148,10 @@ typedef struct mongoc_topology_scanner {
    mongoc_server_api_t *api;
    mongoc_log_and_monitor_instance_t *log_and_monitor; // Not null.
    bool loadbalanced;
+
+   // oidc_cache is used to create the OIDC speculative auth command.
+   mongoc_oidc_cache_t *oidc_cache;
+
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -208,9 +212,8 @@ mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node(mongoc_topology_scanner_t *ts, uint32_t id);
 
 void
-_mongoc_topology_scanner_add_speculative_authentication(bson_t *cmd,
-                                                        const mongoc_uri_t *uri,
-                                                        mongoc_scram_t *scram /* OUT */);
+_mongoc_topology_scanner_add_speculative_authentication(
+   bson_t *cmd, const mongoc_uri_t *uri, char *oidc_access_token, uint32_t server_id, mongoc_scram_t *scram /* OUT */);
 
 void
 _mongoc_topology_scanner_parse_speculative_authentication(const bson_t *hello, bson_t *speculative_authenticate);
@@ -238,8 +241,6 @@ void
 mongoc_topology_scanner_set_stream_initiator(mongoc_topology_scanner_t *ts, mongoc_stream_initiator_t si, void *ctx);
 bool
 _mongoc_topology_scanner_set_appname(mongoc_topology_scanner_t *ts, const char *name);
-void
-_mongoc_topology_scanner_set_cluster_time(mongoc_topology_scanner_t *ts, const bson_t *cluster_time);
 
 void
 _mongoc_topology_scanner_set_dns_cache_timeout(mongoc_topology_scanner_t *ts, int64_t timeout_ms);
@@ -270,6 +271,9 @@ mongoc_topology_scanner_uses_server_api(const mongoc_topology_scanner_t *ts);
 /* Returns true if load balancing mode has been selected, otherwise false. */
 bool
 mongoc_topology_scanner_uses_loadbalanced(const mongoc_topology_scanner_t *ts);
+
+void
+_mongoc_topology_scanner_set_oidc_cache(mongoc_topology_scanner_t *ts, mongoc_oidc_cache_t *oidc_cache);
 
 BSON_END_DECLS
 

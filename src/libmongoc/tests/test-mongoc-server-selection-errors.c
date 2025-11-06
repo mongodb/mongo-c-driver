@@ -293,7 +293,7 @@ test_server_selection_errors_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/server_selection/errors/dns/direct/single", test_server_selection_error_dns_direct_single);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/dns/direct/pooled",
+                     "/server_selection/errors/dns/direct/pooled [timeout:30]",
                      test_server_selection_error_dns_direct_pooled,
                      NULL,
                      NULL,
@@ -301,43 +301,43 @@ test_server_selection_errors_install(TestSuite *suite)
    TestSuite_Add(
       suite, "/server_selection/errors/dns/multi/fail/single", test_server_selection_error_dns_multi_fail_single);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/dns/multi/fail/pooled",
+                     "/server_selection/errors/dns/multi/fail/pooled [lock:live-server][timeout:30]",
                      test_server_selection_error_dns_multi_fail_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/dns/multi/success/single",
+                     "/server_selection/errors/dns/multi/success/single [lock:live-server]",
                      test_server_selection_error_dns_multi_success_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/dns/multi/success/pooled",
+                     "/server_selection/errors/dns/multi/success/pooled [lock:live-server]",
                      test_server_selection_error_dns_multi_success_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/uds/auth_failure/single",
+                     "/server_selection/errors/uds/auth_failure/single [lock:live-server]",
                      test_server_selection_uds_auth_failure_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_uds);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/uds/auth_failure/pooled",
+                     "/server_selection/errors/uds/auth_failure/pooled [lock:live-server]",
                      test_server_selection_uds_auth_failure_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_uds);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/uds/not_found/single",
+                     "/server_selection/errors/uds/not_found/single [lock:live-server]",
                      test_server_selection_uds_not_found_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_windows);
    TestSuite_AddFull(suite,
-                     "/server_selection/errors/uds/not_found/pooled",
+                     "/server_selection/errors/uds/not_found/pooled [lock:live-server]",
                      test_server_selection_uds_not_found_pooled,
                      NULL,
                      NULL,

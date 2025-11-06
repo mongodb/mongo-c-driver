@@ -261,6 +261,10 @@ Generate an integral value from the given C integer expression.
 Generate a UTF-8 value from the given null-terminated character array beginning
 at `zstr`.
 
+#### `binary(bson_subtype_t subtype, const uint8_t *binary, uint32_t length)`
+
+Generate a binary value from a subtype, pointer, and length.
+
 
 #### `oid(const bson_oid_t* oid)`
 

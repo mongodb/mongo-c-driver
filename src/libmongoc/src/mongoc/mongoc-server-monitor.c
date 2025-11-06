@@ -252,18 +252,6 @@ _server_monitor_heartbeat_failed(mongoc_server_monitor_t *server_monitor,
    bson_mutex_unlock(&log_and_monitor->apm_mutex);
 }
 
-static void
-_server_monitor_append_cluster_time(mongoc_server_monitor_t *server_monitor, bson_t *cmd)
-{
-   mc_shared_tpld td = mc_tpld_take_ref(BSON_ASSERT_PTR_INLINE(server_monitor)->topology);
-
-   /* Cluster time is updated on every reply. */
-   if (!bson_empty(&td.ptr->cluster_time)) {
-      bson_append_document(cmd, "$clusterTime", 12, &td.ptr->cluster_time);
-   }
-   mc_tpld_drop_ref(&td);
-}
-
 static bool
 _server_monitor_send_and_recv_hello_opmsg(mongoc_server_monitor_t *server_monitor,
                                           const bson_t *cmd,
@@ -520,8 +508,6 @@ _server_monitor_polling_hello(mongoc_server_monitor_t *server_monitor,
 
    hello = _mongoc_topology_scanner_get_monitoring_cmd(server_monitor->topology->scanner, hello_ok);
    bson_copy_to(hello, &cmd);
-
-   _server_monitor_append_cluster_time(server_monitor, &cmd);
 
    ret = _server_monitor_send_and_recv(server_monitor, &cmd, hello_response, error);
 
@@ -782,7 +768,6 @@ _server_monitor_awaitable_hello(mongoc_server_monitor_t *server_monitor,
    hello = _mongoc_topology_scanner_get_monitoring_cmd(server_monitor->topology->scanner, description->hello_ok);
    bson_copy_to(hello, &cmd);
 
-   _server_monitor_append_cluster_time(server_monitor, &cmd);
    bson_append_document(&cmd, "topologyVersion", 15, &description->topology_version);
    bson_append_int64(&cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8(&cmd, "$db", 3, "admin", 5);
@@ -823,10 +808,6 @@ _update_topology_description(mongoc_server_monitor_t *server_monitor, mongoc_ser
       hello_response = &description->last_hello_response;
    }
 
-   if (hello_response) {
-      _mongoc_topology_update_cluster_time(topology, hello_response);
-   }
-
    if (mcommon_atomic_int_fetch(&topology->scanner_state, mcommon_memory_order_relaxed) ==
        MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
       return;
@@ -841,6 +822,7 @@ _update_topology_description(mongoc_server_monitor_t *server_monitor, mongoc_ser
                                             server_monitor->server_id,
                                             hello_response,
                                             description->round_trip_time_msec,
+                                            MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
                                             &description->error);
    /* Reconcile server monitors. */
    _mongoc_topology_background_monitoring_reconcile(topology, tdmod.new_td);
@@ -965,7 +947,6 @@ _server_monitor_setup_connection(mongoc_server_monitor_t *server_monitor,
    /* Perform handshake. */
    bson_destroy(&cmd);
    _mongoc_topology_dup_handshake_cmd(server_monitor->topology, &cmd);
-   _server_monitor_append_cluster_time(server_monitor, &cmd);
    bson_destroy(hello_response);
 
    ret = _server_monitor_send_and_recv(server_monitor, &cmd, hello_response, error);

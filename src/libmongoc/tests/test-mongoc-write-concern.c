@@ -613,16 +613,21 @@ test_write_concern_install(TestSuite *suite)
    TestSuite_Add(suite, "/WriteConcern/wtimeout_preserved", test_write_concern_wtimeout_preserved);
    TestSuite_AddMockServerTest(suite, "/WriteConcern", test_write_concern);
    TestSuite_AddLive(suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
-   TestSuite_AddFull(suite, "/WriteConcern/inherited_fam", test_fam_no_session_no_txn, NULL, NULL, TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/WriteConcern/inherited_fam_session_no_txn",
+                     "/WriteConcern/inherited_fam [lock:live-server]",
+                     test_fam_no_session_no_txn,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive);
+   TestSuite_AddFull(suite,
+                     "/WriteConcern/inherited_fam_session_no_txn [lock:live-server]",
                      test_fam_session_no_txn,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_txns);
    TestSuite_AddFull(suite,
-                     "/WriteConcern/inherited_fam_txn",
+                     "/WriteConcern/inherited_fam_txn [lock:live-server]",
                      test_fam_session_txn,
                      NULL,
                      NULL,

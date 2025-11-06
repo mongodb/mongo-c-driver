@@ -57,7 +57,7 @@ The callback function stored by a :symbol:`mongoc_oidc_callback_t` object will b
 
        {
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&single_thread_only);
-          mongoc_client_set_oidc_callback (client, callback);
+          BSON_ASSERT (mongoc_client_set_oidc_callback (client, callback));
           mongoc_oidc_callback_destroy (callback);
        }
 
@@ -73,7 +73,7 @@ The callback function stored by a :symbol:`mongoc_oidc_callback_t` object will b
 
        {
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&single_thread_only);
-          mongoc_client_pool_set_oidc_callback (pool, callback);
+          BSON_ASSERT (mongoc_client_pool_set_oidc_callback (pool, callback));
           mongoc_oidc_callback_destroy (callback);
        }
 
@@ -102,8 +102,8 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` objec
 
        {
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&many_threads_possible);
-          mongoc_client_set_oidc_callback (client_a, callback);
-          mongoc_client_set_oidc_callback (client_b, callback);
+          BSON_ASSERT (mongoc_client_set_oidc_callback (client_a, callback));
+          BSON_ASSERT (mongoc_client_set_oidc_callback (client_b, callback));
           mongoc_oidc_callback_destroy (callback);
        }
 
@@ -130,8 +130,8 @@ If the callback is associated with more than one :symbol:`mongoc_client_t` objec
 
        {
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new (&many_threads_possible);
-          mongoc_client_pool_set_oidc_callback (pool_a, callback);
-          mongoc_client_pool_set_oidc_callback (pool_b, callback);
+          BSON_ASSERT (mongoc_client_pool_set_oidc_callback (pool_a, callback));
+          BSON_ASSERT (mongoc_client_pool_set_oidc_callback (pool_b, callback));
           mongoc_oidc_callback_destroy (callback);
        }
 

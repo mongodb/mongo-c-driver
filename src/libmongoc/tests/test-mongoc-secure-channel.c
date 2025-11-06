@@ -30,7 +30,8 @@ connect_with_secure_channel_cred(const mongoc_ssl_opt_t *ssl_opt, mongoc_shared_
       return false;
    }
 
-   mongoc_stream_t *tls_stream = mongoc_stream_tls_secure_channel_new_with_creds(tcp_stream, ssl_opt, cred_ptr);
+   mongoc_stream_t *tls_stream =
+      mongoc_stream_tls_secure_channel_new_with_creds(tcp_stream, host.host, ssl_opt, cred_ptr);
    if (!tls_stream) {
       mongoc_stream_destroy(tcp_stream);
       return false;

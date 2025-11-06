@@ -33,7 +33,7 @@ all_variants = [
     Variant(
         'abi-compliance-check',
         'ABI Compliance Check',
-        ['ubuntu2004-small', 'ubuntu2004-medium', 'ubuntu2004-large'],
+        ['ubuntu2204-small', 'ubuntu2204-medium', 'ubuntu2204-large'],
         ['abi-compliance-check'],
     ),
     Variant(
@@ -55,7 +55,7 @@ all_variants = [
             OD([('name', 'link-with-cmake-windows-ssl'), ('distros', ['windows-vsCurrent-large'])]),
             OD([('name', 'link-with-cmake-windows-snappy'), ('distros', ['windows-vsCurrent-large'])]),
             OD([('name', 'link-with-cmake-mingw'), ('distros', ['windows-vsCurrent-large'])]),
-            OD([('name', 'link-with-pkg-config'), ('distros', ['ubuntu2004-test'])]),
+            OD([('name', 'link-with-pkg-config'), ('distros', ['ubuntu2204-large'])]),
             OD([('name', 'link-with-pkg-config-mac'), ('distros', ['macos-14-arm64'])]),
             'link-with-pkg-config-ssl',
             'link-with-bson',
@@ -73,28 +73,16 @@ all_variants = [
         tags=['pr-merge-gate'],
     ),
     Variant(
-        'clang37',
-        'clang 3.7 (Archlinux)',
-        'archlinux-test',
-        [
-            'release-compile',
-            'debug-compile-sasl-openssl',
-            'debug-compile-nosasl-openssl',
-            '.authentication-tests .openssl',
-        ],
-        {'CC': 'clang'},
-    ),
-    Variant(
-        'clang100-i686',
-        'clang 10.0 (i686) (Ubuntu 20.04)',
-        'ubuntu2004-test',
+        'clang12-i686',
+        'Clang 12 (i686) (Ubuntu 22.04)',
+        'ubuntu2204-large',
         [
             'release-compile',
             'debug-compile-nosasl-nossl',
             '.debug-compile !.sspi .nossl .nosasl',
             '.latest .nossl .nosasl',
         ],
-        {'CC': 'clang', 'MARCH': 'i686'},
+        {'CC': 'clang-12', 'MARCH': 'i686'},
     ),
     Variant(
         'gcc82rhel',
@@ -115,21 +103,21 @@ all_variants = [
     Variant(
         'gcc102',
         'GCC 10.2 (Debian 11.0)',
-        'debian11-large',
+        'debian11-latest-large',
         ['release-compile', 'debug-compile-nosasl-nossl', '.latest .nossl'],
         {'CC': 'gcc'},
     ),
     Variant(
-        'gcc94-i686',
-        'GCC 9.4 (i686) (Ubuntu 20.04)',
-        'ubuntu2004-test',
+        'gcc11-i686',
+        'GCC 11 (i686) (Ubuntu 22.04)',
+        'ubuntu2204-large',
         ['release-compile', 'debug-compile-nosasl-nossl', '.latest .nossl .nosasl'],
         {'CC': 'gcc', 'MARCH': 'i686'},
     ),
     Variant(
-        'gcc94',
-        'GCC 9.4 (Ubuntu 20.04)',
-        'ubuntu2004-test',
+        'gcc13',
+        'GCC 13 (Ubuntu 24.04)',
+        'ubuntu2404-large',
         [
             '.compression !.zstd',
             'debug-compile-nosrv',
@@ -214,6 +202,16 @@ all_variants = [
         {'CC': 'Visual Studio 15 2017 Win64'},
     ),
     Variant(
+        'windows-2022',
+        'Windows (VS 2022)',
+        'windows-vsCurrent-large',
+        [
+            'debug-compile-sspi-winssl',
+            '.authentication-tests .winssl',
+        ],
+        {'CC': 'Visual Studio 17 2022 Win64'},
+    ),
+    Variant(
         'mingw-windows2016',
         'MinGW-W64 (Windows Server 2016)',
         'windows-vsCurrent-large',
@@ -236,9 +234,9 @@ all_variants = [
         batchtime=days(1),
     ),
     Variant(
-        'arm-ubuntu2004',
-        '*ARM (aarch64) (Ubuntu 20.04)',
-        'ubuntu2004-arm64-large',
+        'arm-ubuntu2204',
+        '*ARM (aarch64) (Ubuntu 22.04)',
+        'ubuntu2204-arm64-large',
         [
             '.compression !.snappy !.zstd',
             'release-compile',
@@ -298,7 +296,7 @@ all_variants = [
     Variant(
         'ocsp',
         'OCSP tests',
-        'ubuntu2004-small',
+        'ubuntu2204-small',
         [
             OD([('name', 'debug-compile-nosasl-openssl')]),
             OD([('name', 'debug-compile-nosasl-darwinssl'), ('distros', ['macos-14-arm64'])]),
@@ -335,11 +333,10 @@ all_variants = [
         {},
         tags=['pr-merge-gate'],
     ),
-    # Test 7.0+ with Ubuntu 20.04+ since MongoDB 7.0 no longer ships binaries for Ubuntu 18.04.
     Variant(
-        'versioned-api-ubuntu2004',
-        'Versioned API Tests (Ubuntu 20.04)',
-        'ubuntu2004-test',
+        'versioned-api',
+        'Versioned API Tests',
+        'rhel8-latest-large',
         [
             'debug-compile-nosasl-openssl',
             'debug-compile-nosasl-nossl',

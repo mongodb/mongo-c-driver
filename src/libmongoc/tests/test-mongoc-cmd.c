@@ -145,7 +145,7 @@ test_client_cmd_install(TestSuite *suite)
 {
    TestSuite_AddMockServerTest(suite, "/Client/cmd/options", test_client_cmd_options);
    TestSuite_AddFull(suite,
-                     "/cmd/with_two_payload1",
+                     "/cmd/with_two_payload1 [lock:live-server]",
                      test_cmd_with_two_payload1,
                      NULL /* dtor */,
                      NULL /* ctx */,

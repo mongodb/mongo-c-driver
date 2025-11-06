@@ -459,22 +459,24 @@ test_long_namespace_install(TestSuite *suite)
    /* MongoDB 4.4 (wire version 9) introduced support for long namespaces in
     * SERVER-32959 */
 
-   add_long_namespace_test("/long_namespace/crud", crud, test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test(
+      "/long_namespace/crud [lock:live-server]", crud, test_framework_skip_if_max_wire_version_less_than_9);
 
-   add_long_namespace_test("/long_namespace/getmore", getmore, test_framework_skip_if_max_wire_version_less_than_9);
+   add_long_namespace_test(
+      "/long_namespace/getmore [lock:live-server]", getmore, test_framework_skip_if_max_wire_version_less_than_9);
 
-   add_long_namespace_test("/long_namespace/change_stream",
+   add_long_namespace_test("/long_namespace/change_stream [lock:live-server]",
                            change_stream,
                            test_framework_skip_if_not_rs_version_9,
                            test_framework_skip_if_no_sessions);
 
-   add_long_namespace_test("/long_namespace/collection_rename",
+   add_long_namespace_test("/long_namespace/collection_rename [lock:live-server]",
                            collection_rename,
                            test_framework_skip_if_max_wire_version_less_than_9,
                            test_framework_skip_if_mongos);
 
    TestSuite_AddFull(suite,
-                     "/long_namespace/unsupported_long_coll",
+                     "/long_namespace/unsupported_long_coll [lock:live-server]",
                      unsupported_long_coll,
                      NULL /* dtor */,
                      NULL /* ctx */,

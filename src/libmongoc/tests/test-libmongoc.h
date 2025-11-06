@@ -21,14 +21,14 @@
 
 #include <stdbool.h>
 
-struct _TestSuite;
+struct TestSuite;
 struct _bson_t;
 struct _server_version_t;
 
 void
-test_libmongoc_init(struct _TestSuite *suite, int argc, char **argv);
+test_libmongoc_init(struct TestSuite *suite, int argc, char **argv);
 void
-test_libmongoc_destroy(struct _TestSuite *suite);
+test_libmongoc_destroy(struct TestSuite *suite);
 
 mongoc_database_t *
 get_test_database(mongoc_client_t *client);
@@ -214,6 +214,8 @@ WIRE_VERSION_CHECK_DECLS(24)
 WIRE_VERSION_CHECK_DECLS(25)
 /* wire version 26 begins with the 8.1 release. */
 WIRE_VERSION_CHECK_DECLS(26)
+/* wire version 27 begins with the 8.2 release. */
+WIRE_VERSION_CHECK_DECLS(27)
 
 #undef WIRE_VERSION_CHECK_DECLS
 
@@ -273,6 +275,12 @@ test_framework_skip_if_no_getlasterror(void);
 
 int
 test_framework_skip_if_no_exhaust_cursors(void);
+
+bool
+test_framework_is_oidc(void);
+
+void
+test_framework_set_oidc_callback(mongoc_client_t *client);
 
 bool
 test_framework_is_loadbalanced(void);

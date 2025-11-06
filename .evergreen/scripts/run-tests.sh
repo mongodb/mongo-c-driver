@@ -22,6 +22,7 @@ check_var_opt SINGLE_MONGOS_LB_URI
 check_var_opt SKIP_CRYPT_SHARED_LIB
 check_var_opt SSL "nossl"
 check_var_opt URI
+check_var_opt OIDC "nooidc"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -154,6 +155,13 @@ if [[ "${DNS}" != "nodns" ]]; then
   fi
 fi
 
+if [[ "${OIDC}" != "nooidc" ]]; then
+  export MONGOC_TEST_OIDC="ON"
+  # Only run OIDC tests.
+  test_args+=("-l" "/oidc/*")
+  test_args+=("-l" "/auth/unified/*")
+fi
+
 wait_for_server() {
   declare name="${1:?"wait_for_server requires a server name"}"
   declare port="${2:?"wait_for_server requires a server port"}"
@@ -262,6 +270,11 @@ fi
 # For mongocryptd, by integration-tests.sh.
 export PATH="${det_dir:?}/mongodb/bin:${PATH:-}"
 
+# Ensure no pre-existing and outdated coverage data is present prior to execution.
+if [[ "${COVERAGE}" == "ON" ]]; then
+  find . -name '*.gcda' -exec rm -f {} \+
+fi
+
 case "${OSTYPE}" in
 cygwin)
   check_mongocryptd
@@ -289,12 +302,17 @@ esac
 if [[ "${COVERAGE}" == "ON" ]]; then
   declare -a coverage_args=(
     "--capture"
-    "--derive-func-data"
     "--directory"
     "."
     "--output-file"
     ".coverage.lcov"
     "--no-external"
+
+    # WARNING: unexecuted block on non-branch line with non-zero hit count.
+    "--rc" "geninfo_unexecuted_blocks=1"
+
+    # ERROR: mismatched end line for ...
+    "--ignore-errors" "mismatch"
   )
 
   {

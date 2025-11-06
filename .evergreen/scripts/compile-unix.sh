@@ -7,8 +7,6 @@ set -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
-check_var_req UV_INSTALL_DIR
-
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
 check_var_opt CMAKE_GENERATOR "Ninja"
@@ -96,6 +94,12 @@ configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL:-}"
 
 if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
+
+  # Ensure no pre-existing and outdated coverage data is present prior to execution.
+  find . -name '*.gcno' -o -name '*.gcda' -exec rm -f {} \+
+
+  # Avoid confusing gcov with potentially-mismatched source files.
+  export CCACHE_DISABLE=1
 fi
 
 declare -a flags

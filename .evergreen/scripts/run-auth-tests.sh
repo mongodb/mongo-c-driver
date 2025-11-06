@@ -112,8 +112,7 @@ if [[ -d "${openssl_install_dir:?}" ]]; then
   LD_LIBRARY_PATH="${openssl_install_dir:?}/lib:${LD_LIBRARY_PATH:-}"
   export LD_LIBRARY_PATH
 
-  # Archlinux stores their trust list under /etc/ca-certificates/extracted/.
-  # Copy it into the custom OpenSSL installation's trust store.
+  # Import the system's trust list into the custom OpenSSL installation's trust store.
   declare pem_file="/etc/ca-certificates/extracted/tls-ca-bundle.pem"
   if [[ -f "${pem_file:?}" ]]; then
     cp -v "${pem_file:?}" "${openssl_install_dir:?}/ssl/cert.pem"
@@ -133,6 +132,16 @@ elif command -v otool >/dev/null; then
   # Try using otool on MacOS if ldd is not available.
   otool -L "${mongoc_ping:?}" | grep "libssl" || true
   otool -L "${test_gssapi:?}" | grep "libssl" || true
+fi
+
+# libkrb5.so.3 and libgssapi_krb5.so.2 and report memory leaks on Ubuntu.
+if [[ -n "$(grep "Ubuntu" /etc/os-release)" ]]; then
+  supps="$(pwd)/.lsan-suppressions-ubuntu"
+  cat >|"${supps:?}" <<DOC
+leak:libkrb5
+leak:libgssapi_krb5
+DOC
+  export LSAN_OPTIONS="suppressions=${supps:?}"
 fi
 
 maybe_skip() {
