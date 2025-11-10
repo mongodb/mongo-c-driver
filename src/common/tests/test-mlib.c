@@ -75,6 +75,9 @@ _test_checks(void)
    mlib_assert_aborts () {
       mlib_check(3, gte, 5);
    }
+
+   // An infix with a reason string
+   mlib_check(1, eq, 1, because, "1 = 1");
 }
 
 static void
@@ -917,6 +920,135 @@ _test_str_view(void)
       // But "Food" > "foo" when case-insensitive:
       mlib_check(mstr_latin_casecmp(mstr_cstring("Food"), >, mstr_cstring("foo")));
    }
+
+   // Trimming
+   {
+      mstr_view s = mstr_cstring("  foo bar  \n");
+      mlib_check(mstr_cmp(mstr_trim_left(s), ==, mstr_cstring("foo bar  \n")));
+      mlib_check(mstr_cmp(mstr_trim_right(s), ==, mstr_cstring("  foo bar")));
+      mlib_check(mstr_cmp(mstr_trim(s), ==, mstr_cstring("foo bar")));
+   }
+}
+
+static inline void
+_test_str(void)
+{
+   // Simple empty
+   {
+      mstr s = mstr_new(0);
+      // Length is zero
+      mlib_check(s.len, eq, 0);
+      // Data is not null for empty strings, since we want a null terminator
+      mlib_check(s.data != NULL);
+      // The null terminator is present:
+      mlib_check(s.data[0], eq, 0);
+      mstr_destroy(&s);
+   }
+
+   // Simple copy of a C string
+   {
+      mstr s = mstr_copy_cstring("foo bar");
+      mlib_check(s.len, eq, 7);
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo bar")));
+      mstr_destroy(&s);
+   }
+
+   // Concat two strings
+   {
+      mstr s = mstr_concat(mstr_cstring("foo"), mstr_cstring("bar"));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foobar")));
+      mstr_destroy(&s);
+   }
+
+   // Append individual characters
+   {
+      mstr s = mstr_new(0);
+      mstr_append_char(&s, 'f');
+      mstr_append_char(&s, 'o');
+      mstr_append_char(&s, 'o');
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo")));
+      mstr_destroy(&s);
+   }
+
+   // Splice deletion
+   {
+      mstr s = mstr_copy_cstring("foo bar baz");
+      mlib_check(mstr_splice(&s, 4, 3, mstr_cstring("")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo  baz")));
+
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_splice(&s, 4, 3, mstr_cstring("quux")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo quux baz")));
+
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_splice(&s, 4, 0, mstr_cstring("quux ")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("foo quux bar baz")));
+
+      mstr_destroy(&s);
+   }
+
+   // Replacing
+   {
+      mstr s = mstr_copy_cstring("abcd abcd");
+      mlib_check(mstr_replace(&s, mstr_cstring("b"), mstr_cstring("foo")));
+      mlib_check(mstr_cmp(s, ==, mstr_cstring("afoocd afoocd")));
+
+      // Try to replace where the replacement contains the needle
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_replace(&s, mstr_cstring("bar"), mstr_cstring("foo bar baz")));
+      // A naive impl would explode into an infinite string, but we don't try to replace
+      // within the already-replaced content:
+      mlib_check(s.data, str_eq, "foo foo bar baz baz");
+
+      // Try to replace, where the needle is an empty string.
+      mstr_assign(&s, mstr_cstring("foo"));
+      mlib_check(mstr_replace(&s, mstr_cstring(""), mstr_cstring("bar")));
+      mlib_check(s.data, str_eq, "barfbarobarobar");
+
+      mstr_assign(&s, mstr_cstring("foofoofoo"));
+      mlib_check(mstr_replace(&s, mstr_cstring("foo"), mstr_cstring("bar")));
+      mlib_check(s.data, str_eq, "barbarbar");
+
+      mstr_destroy(&s);
+   }
+
+   // Self-assignment/insertion
+   {
+      // Use `assign()` over itself
+      mstr s = mstr_copy_cstring("foo bar baz");
+      mstr_assign(&s, s);
+      mlib_check(s.data, str_eq, "foo bar baz");
+
+      // Use splice() where the insertion string overlaps the target
+      mstr_view bar = mstr_substr(s, 4, 3);
+      mlib_check(mstr_splice(&s, 0, 3, bar));
+      mlib_check(mstr_splice(&s, 8, 3, bar));
+      mlib_check(s.data, str_eq, "bar bar bar");
+
+      // Use replace() with a needle that points into the target
+      mstr_replace(&s, bar, mstr_cstring("foo"));
+      mlib_check(s.data, str_eq, "foo foo foo");
+
+      mstr_destroy(&s);
+   }
+}
+
+static void
+_test_str_format(void)
+{
+   mstr s = mstr_sprintf("foo");
+   mlib_check(s.len, eq, 3);
+   mlib_check(s.data, str_eq, "foo");
+   mstr_sprintf_append(&s, " bar");
+   mlib_check(s.data, str_eq, "foo bar");
+   mstr_sprintf_append(&s, " %d", 123);
+   mlib_check(s.data, str_eq, "foo bar 123");
+
+   // Attempt to format into itself:
+   mstr_sprintf_append(&s, " hey %s", s.data);
+   mlib_check(s.data, str_eq, "foo bar 123 hey foo bar 123");
+
+   mstr_destroy(&s);
 }
 
 static void
@@ -1119,6 +1251,92 @@ _test_timer(void)
    mlib_check(mlib_timer_is_expired(tm));
 }
 
+// Tests for `int_vec` assert the behavior of the vector type when handling trivial
+// elements.
+#define T int
+#include <mlib/vec.th>
+static void
+_test_int_vec(void)
+{
+   int_vec ints = int_vec_new();
+   mlib_check(ints.size, eq, 0, because, "Initial vector is empty");
+
+   // Append an element
+   int *el;
+   mlib_check((el = int_vec_push(&ints)));
+   *el = 42;
+   mlib_check(int_vec_begin(&ints)[0], eq, 42);
+   mlib_check(ints.size, eq, 1);
+
+   int_vec_erase_at(&ints, 0);
+   mlib_check(ints.size, eq, 0, because, "We are back to an empty vector");
+
+   *int_vec_push(&ints) = 42;
+   *int_vec_push(&ints) = 1729;
+   *int_vec_push(&ints) = 123456;
+   *int_vec_push(&ints) = -7;
+   mlib_check(ints.size, eq, 4, because, "We added four elements from empty");
+   mlib_check(mlib_vec_at(ints, -1), eq, -7, because, "Negative index wraps");
+
+   // Erase in the middle
+   int_vec_erase(&ints, ints.data + 1, ints.data + 3);
+   mlib_check(ints.size, eq, 2, because, "We erased two elements");
+   mlib_check(mlib_vec_at(ints, 1), eq, -7, because, "We erased, so the back elements shifted down");
+   mlib_check(mlib_vec_at(ints, -1), eq, -7, because, "-7 is still the last element");
+
+   int_vec_destroy(&ints);
+}
+
+#define T char *
+#define VecName cstring_vec
+#define VecDestroyElement(CStrPtr) ((free(*CStrPtr), *CStrPtr = NULL))
+#define VecCopyElement(Dst, Src) ((*Dst = strdup(*Src)))
+#include <mlib/vec.th>
+static void
+_test_cstring_vec(void)
+{
+   // Simple new and destroy
+   {
+      cstring_vec v = cstring_vec_new();
+      mlib_check(v.size, eq, 0);
+      mlib_check(v.capacity, eq, 0);
+      cstring_vec_destroy(&v);
+   }
+   // Simple new and push an element
+   {
+      cstring_vec v = cstring_vec_new();
+      *cstring_vec_push(&v) = strdup("Hey");
+      mlib_check(v.size, eq, 1);
+      mlib_check(v.capacity, eq, 1);
+      mlib_check(cstring_vec_begin(&v)[0], str_eq, "Hey");
+      cstring_vec_destroy(&v);
+   }
+   // Copy an empty
+   {
+      cstring_vec v = cstring_vec_new();
+      cstring_vec b;
+      cstring_vec_init_copy(&b, &v);
+      cstring_vec_destroy(&v);
+      cstring_vec_destroy(&b);
+   }
+   // Copy non-empty
+   {
+      cstring_vec a = cstring_vec_new();
+      *cstring_vec_push(&a) = strdup("Hello");
+      *cstring_vec_push(&a) = strdup("world!");
+      mlib_check(a.size, eq, 2);
+      mlib_check(a.capacity, eq, 2);
+      cstring_vec b;
+      mlib_check(cstring_vec_init_copy(&b, &a));
+      mlib_check(a.size, eq, 2);
+      mlib_check(a.capacity, eq, 2);
+      mlib_check(cstring_vec_begin(&a)[0], str_eq, "Hello");
+      mlib_check(cstring_vec_begin(&b)[1], str_eq, "world!");
+      cstring_vec_destroy(&b);
+      cstring_vec_destroy(&a);
+   }
+}
+
 void
 test_mlib_install(TestSuite *suite)
 {
@@ -1135,10 +1353,14 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add(suite, "/mlib/str", _test_str);
+   TestSuite_Add(suite, "/mlib/str-format", _test_str_format);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
    TestSuite_Add(suite, "/mlib/sleep", _test_sleep);
    TestSuite_Add(suite, "/mlib/timer", _test_timer);
+   TestSuite_Add(suite, "/mlib/int-vector", _test_int_vec);
+   TestSuite_Add(suite, "/mlib/string-vector", _test_cstring_vec);
 }
 
 mlib_diagnostic_pop();

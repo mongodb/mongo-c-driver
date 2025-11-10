@@ -2088,7 +2088,7 @@ test_change_stream_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/change_stream/pipeline", test_change_stream_pipeline);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/track_resume_token",
+                     "/change_stream/live/track_resume_token [lock:live-server]",
                      test_change_stream_live_track_resume_token,
                      NULL,
                      NULL,
@@ -2096,21 +2096,21 @@ test_change_stream_install(TestSuite *suite)
                      test_framework_skip_if_no_failpoint);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/batch_size",
+                     "/change_stream/live/batch_size [lock:live-server]",
                      test_change_stream_live_batch_size,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/missing_resume_token",
+                     "/change_stream/live/missing_resume_token [lock:live-server]",
                      test_change_stream_live_missing_resume_token,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/invalid_resume_token",
+                     "/change_stream/live/invalid_resume_token [lock:live-server]",
                      test_change_stream_live_invalid_resume_token,
                      NULL,
                      NULL,
@@ -2121,14 +2121,14 @@ test_change_stream_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/change_stream/options", test_change_stream_options);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/watch",
+                     "/change_stream/live/watch [lock:live-server]",
                      test_change_stream_live_watch,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/live/read_prefs",
+                     "/change_stream/live/read_prefs [lock:live-server]",
                      test_change_stream_live_read_prefs,
                      NULL,
                      NULL,
@@ -2138,28 +2138,28 @@ test_change_stream_install(TestSuite *suite)
    TestSuite_Add(suite, "/change_stream/server_selection_fails", test_change_stream_server_selection_fails);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/next_after_error",
+                     "/change_stream/next_after_error [lock:live-server]",
                      test_change_stream_next_after_error,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
 
    TestSuite_AddFull(suite,
-                     "/change_stream/accepts_array",
+                     "/change_stream/accepts_array [lock:live-server]",
                      test_change_stream_accepts_array,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest(suite, "/change_stream/getmore_errors", test_getmore_errors);
    TestSuite_AddFull(suite,
-                     "/change_stream/start_at_operation_time",
+                     "/change_stream/start_at_operation_time [lock:live-server]",
                      test_change_stream_start_at_operation_time,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/change_stream/resume_with_post_batch_resume_token",
+                     "/change_stream/resume_with_post_batch_resume_token [lock:live-server]",
                      test_change_stream_resume_with_post_batch_resume_token,
                      NULL,
                      NULL,
@@ -2167,26 +2167,42 @@ test_change_stream_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull(suite,
-                     "/change_stream/database",
+                     "/change_stream/database [lock:live-server]",
                      test_change_stream_database_watch,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
-   TestSuite_AddFull(
-      suite, "/change_stream/client", test_change_stream_client_watch, NULL, NULL, test_framework_skip_if_not_replset);
-   TestSuite_AddMockServerTest(suite, "/change_stream/resume_with_first_doc", test_resume_cases);
-   TestSuite_AddMockServerTest(suite,
-                               "/change_stream/resume_with_first_doc/post_batch_resume_token",
-                               test_resume_cases_with_post_batch_resume_token);
-   TestSuite_AddFull(
-      suite, "/change_stream/error_null_doc", test_error_null_doc, NULL, NULL, test_framework_skip_if_not_replset);
-   TestSuite_AddFull(
-      suite, "/change_stream/live/prose_test_11", prose_test_11, NULL, NULL, test_framework_skip_if_not_replset);
-   // Prose test 12 is removed. C driver does not support server 4.0.7.
-   TestSuite_AddFull(
-      suite, "/change_stream/live/prose_test_13", prose_test_13, NULL, NULL, test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/change_stream/live/prose_test_14",
+                     "/change_stream/client [lock:live-server]",
+                     test_change_stream_client_watch,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset);
+   TestSuite_AddMockServerTest(suite, "/change_stream/resume_with_first_doc [timeout:10]", test_resume_cases);
+   TestSuite_AddMockServerTest(suite,
+                               "/change_stream/resume_with_first_doc/post_batch_resume_token [timeout:10]",
+                               test_resume_cases_with_post_batch_resume_token);
+   TestSuite_AddFull(suite,
+                     "/change_stream/error_null_doc [lock:live-server]",
+                     test_error_null_doc,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset);
+   TestSuite_AddFull(suite,
+                     "/change_stream/live/prose_test_11 [lock:live-server]",
+                     prose_test_11,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset);
+   // Prose test 12 is removed. C driver does not support server 4.0.7.
+   TestSuite_AddFull(suite,
+                     "/change_stream/live/prose_test_13 [lock:live-server]",
+                     prose_test_13,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset);
+   TestSuite_AddFull(suite,
+                     "/change_stream/live/prose_test_14 [lock:live-server]",
                      prose_test_14,
                      NULL,
                      NULL,
@@ -2195,13 +2211,13 @@ test_change_stream_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest(suite, "/change_streams/prose_test_18", prose_test_18);
    TestSuite_AddFull(suite,
-                     "/change_streams/iterate_after_invalidate",
+                     "/change_streams/iterate_after_invalidate [lock:live-server]",
                      iterate_after_invalidate,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
    TestSuite_AddFull(suite,
-                     "/change_stream/batchSize0",
+                     "/change_stream/batchSize0 [lock:live-server]",
                      test_change_stream_batchSize0,
                      NULL,
                      NULL,
