@@ -953,9 +953,8 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
    char *azure_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
    const bool testing_azure_oidc = azure_resource != NULL;
    if (uri_requests_oidc && testing_azure_oidc) {
-      bson_t *mech_props = BCON_NEW("ENVIRONMENT", "azure", "TOKEN_RESOURCE", BCON_UTF8(azure_resource));
-      mongoc_uri_set_mechanism_properties(uri, mech_props);
-      bson_destroy(mech_props);
+      mongoc_uri_set_mechanism_properties(uri,
+                                          tmp_bson("{'ENVIRONMENT': 'azure', 'TOKEN_RESOURCE': '%s'}", azure_resource));
    }
    bson_free(azure_resource);
 
