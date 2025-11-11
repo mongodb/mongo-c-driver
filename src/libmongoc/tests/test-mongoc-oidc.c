@@ -821,6 +821,7 @@ PROSE_TEST(4, 5, "Reauthentication Succeeds when a Session is involved")
 
 PROSE_TEST(5, 1, "Azure With No Username")
 {
+   BSON_UNUSED(use_pool_void);
    // Create URI:
    mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost:27017/?retryReads=false");
    {
@@ -847,6 +848,7 @@ PROSE_TEST(5, 1, "Azure With No Username")
 
 PROSE_TEST(5, 2, "Azure With Bad Username")
 {
+   BSON_UNUSED(use_pool_void);
    // Create URI:
    mongoc_uri_t *uri = mongoc_uri_new("mongodb://bad@localhost:27017/?retryReads=false");
    {
