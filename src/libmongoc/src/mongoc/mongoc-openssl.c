@@ -33,6 +33,7 @@
 #include <bson/bson.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
@@ -687,7 +688,8 @@ _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts,
       http_req.port = (int)bson_ascii_strtoll(port, NULL, 10);
       http_req.body = (const char *)request_der;
       http_req.body_len = request_der_len;
-      if (!_mongoc_http_send(&http_req, MONGOC_OCSP_REQUEST_TIMEOUT_MS, ssl != 0, ssl_opts, &http_res, &error)) {
+      if (!_mongoc_http_send(
+             &http_req, mlib_duration(MONGOC_OCSP_REQUEST_TIMEOUT_MS, ms), ssl != 0, ssl_opts, &http_res, &error)) {
          MONGOC_DEBUG("Could not send HTTP request: %s", error.message);
          GOTO(retry);
       }

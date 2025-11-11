@@ -265,7 +265,7 @@ test_aws_cache(void *unused)
    valid_creds.session_token = bson_strdup("session_token");
    // Set expiration to one minute from now.
    valid_creds.expiration.set = true;
-   valid_creds.expiration.value = mcd_timer_expire_after(mcd_milliseconds(60 * 1000));
+   valid_creds.expiration.value = mlib_expires_after(mlib_duration(1, mn));
 
    _mongoc_aws_credentials_t expired_creds = MONGOC_AWS_CREDENTIALS_INIT;
    expired_creds.access_key_id = bson_strdup("access_key_id");
@@ -273,7 +273,7 @@ test_aws_cache(void *unused)
    expired_creds.session_token = bson_strdup("session_token");
    // Set expiration to one minute before.
    expired_creds.expiration.set = true;
-   expired_creds.expiration.value = mcd_timer_expire_after(mcd_milliseconds(-60 * 1000));
+   expired_creds.expiration.value = mlib_expires_after(mlib_duration(-1, mn));
 
    _mongoc_aws_credentials_cache_t *cache = &mongoc_aws_credentials_cache;
    _mongoc_aws_credentials_cache_clear();

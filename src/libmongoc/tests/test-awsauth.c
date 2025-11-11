@@ -98,7 +98,7 @@ creds_eq(_mongoc_aws_credentials_t *a, _mongoc_aws_credentials_t *b)
       return false;
    }
    if (a->expiration.set) {
-      if (mcd_time_compare(a->expiration.value.expire_at, b->expiration.value.expire_at) != 0) {
+      if (mlib_time_cmp(a->expiration.value.expires_at, b->expiration.value.expires_at) != 0) {
          return false;
       }
    }
@@ -188,7 +188,7 @@ test_cache(const mongoc_uri_t *uri)
       ASSERT(mongoc_aws_credentials_cache.cached.set);
       mongoc_aws_credentials_cache.cached.value.expiration.set = true;
       mongoc_aws_credentials_cache.cached.value.expiration.value =
-         mcd_timer_expire_after(mcd_milliseconds(60 * 1000 - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS));
+         mlib_expires_after(mlib_duration(60 * 1000 - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS, ms));
       _mongoc_aws_credentials_copy_to(&mongoc_aws_credentials_cache.cached.value, &first_cached);
    }
 

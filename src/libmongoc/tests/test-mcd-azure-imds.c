@@ -3,6 +3,8 @@
 
 #include <mongoc/mcd-azure.h>
 
+#include <mlib/duration.h>
+
 #include <TestSuite.h>
 
 #define RAW_STRING(...) #__VA_ARGS__

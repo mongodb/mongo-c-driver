@@ -30,7 +30,8 @@
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mongoc/mcd-time.h>
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
@@ -156,7 +157,8 @@ _send_http_request(bool use_tls,
    if (use_tls) {
       _mongoc_ssl_opts_copy_to(mongoc_ssl_opt_get_default(), &ssl_opt, true /* copy_internal */);
    }
-   ret = _mongoc_http_send(&req, socket_timeout_ms, use_tls /* use_tls */, use_tls ? &ssl_opt : NULL, &res, error);
+   ret = _mongoc_http_send(
+      &req, mlib_duration(socket_timeout_ms, ms), use_tls /* use_tls */, use_tls ? &ssl_opt : NULL, &res, error);
 
    if (ret) {
       *http_response_headers = bson_strndup(res.headers, res.headers_len);
@@ -276,9 +278,9 @@ fail:
 }
 
 // expiration_ms_to_timer converts milliseconds since Unix Epoch into the
-// mcd_timer `expiration_timer`.
+// mlib_timer `expiration_timer`.
 static bool
-expiration_ms_to_timer(int64_t expiration_ms, mcd_timer *expiration_timer, bson_error_t *error)
+expiration_ms_to_timer(int64_t expiration_ms, mlib_timer *expiration_timer, bson_error_t *error)
 {
    bool ret = false;
 
@@ -295,7 +297,7 @@ expiration_ms_to_timer(int64_t expiration_ms, mcd_timer *expiration_timer, bson_
    }
 
    *expiration_timer =
-      mcd_timer_expire_after(mcd_milliseconds(expiration_ms - now_ms - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS));
+      mlib_expires_after(mlib_duration(expiration_ms - now_ms - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS, ms));
    ret = true;
 fail:
    return ret;
@@ -306,7 +308,7 @@ fail:
 // string. Example: "2023-02-07T20:04:27Z". On success, `expiration_timer` is
 // set to the expiration time.
 static bool
-expiration_iso8601_to_timer(const char *expiration_str, mcd_timer *expiration_timer, bson_error_t *error)
+expiration_iso8601_to_timer(const char *expiration_str, mlib_timer *expiration_timer, bson_error_t *error)
 {
    bool ret = false;
 
@@ -1293,7 +1295,7 @@ check_expired(const _mongoc_aws_credentials_t *creds)
    if (!creds->expiration.set) {
       return true;
    }
-   return mcd_get_milliseconds(mcd_timer_remaining(creds->expiration.value)) == 0;
+   return mlib_microseconds_count(mlib_timer_remaining(creds->expiration.value)) == 0;
 }
 
 void

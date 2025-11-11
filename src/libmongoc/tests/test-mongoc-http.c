@@ -18,6 +18,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
+
 #include <TestSuite.h>
 #include <test-libmongoc.h>
 
@@ -39,7 +41,7 @@ test_mongoc_http_get(void *unused)
    req.host = "localhost";
    req.path = "get";
    req.port = 18000;
-   r = _mongoc_http_send(&req, 10000, false, NULL, &res, &error);
+   r = _mongoc_http_send(&req, mlib_duration(10, s), false, NULL, &res, &error);
    ASSERT_OR_PRINT(r, error);
 
    ASSERT_WITH_MSG(res.status == 200,
@@ -71,7 +73,7 @@ test_mongoc_http_post(void *unused)
    req.host = "localhost";
    req.path = "post";
    req.port = 18000;
-   r = _mongoc_http_send(&req, 10000, false, NULL, &res, &error);
+   r = _mongoc_http_send(&req, mlib_duration(10, s), false, NULL, &res, &error);
    ASSERT_OR_PRINT(r, error);
 
    ASSERT_WITH_MSG(res.status == 200,

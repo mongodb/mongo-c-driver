@@ -21,7 +21,6 @@
 
 #include <mongoc/mongoc-http-private.h>
 
-#include <mongoc/mcd-time.h>
 #include <mongoc/mongoc.h>
 
 /**
@@ -36,7 +35,7 @@ typedef struct mcd_azure_access_token {
    char *token_type;
    /// The duration after which it will the token will expires. This is relative
    /// to the "issue time" of the token.
-   mcd_duration expires_in;
+   mlib_duration expires_in;
 } mcd_azure_access_token;
 
 /**

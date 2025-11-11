@@ -20,6 +20,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
 
 #define AZURE_API_VERSION "2018-02-01"
 
@@ -132,7 +133,7 @@ mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
                            mlib_in_range(int, expires_in_len) ? (int)expires_in_len : INT_MAX,
                            expires_in_str);
       } else {
-         out->expires_in = mcd_seconds(s);
+         out->expires_in = mlib_duration(s, s);
          okay = true;
       }
    }
@@ -174,7 +175,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
    mcd_azure_imds_request req = MCD_AZURE_IMDS_REQUEST_INIT;
    mcd_azure_imds_request_init(&req, opt_imds_host, opt_port, opt_extra_headers);
 
-   if (!_mongoc_http_send(&req.req, 3 * 1000, false, NULL, &resp, error)) {
+   if (!_mongoc_http_send(&req.req, mlib_duration(3, s), false, NULL, &resp, error)) {
       goto fail;
    }
 
