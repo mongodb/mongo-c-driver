@@ -11,4 +11,4 @@ export MONGOC_AZURE_RESOURCE="$AZUREOIDC_RESOURCE"
 # Install required OpenSSL runtime library.
 sudo apt install -y libssl-dev
 
-./cmake-build/src/libmongoc/test-libmongoc -d --match '/auth/unified/*' --match '/oidc/*'
+./cmake-build/src/libmongoc/test-libmongoc -d -l '/auth/unified/*' -l '/oidc/*'
