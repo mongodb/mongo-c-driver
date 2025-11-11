@@ -3,11 +3,6 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-# shellcheck source=.evergreen/scripts/use-tools.sh
-. "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths # Sets MONGOC_DIR
-
-cd "$MONGOC_DIR"
-
 if [[ "${distro_id:?}" == "debian11-small" ]]; then
   # Temporary workaround for lack of uv on `debian11`. TODO: remove after DEVPROD-23011 is resolved.
   uv_dir="$(mktemp -d)"
@@ -56,5 +51,5 @@ tar -czf test-libmongoc.tar.gz "${files[@]}"
 echo "Creating test-libmongoc tarball ... end"
 
 cat <<EOT > oidc-remote-test-expansion.yml
-OIDC_TEST_TARBALL: ${MONGOC_DIR}/test-libmongoc.tar.gz
+OIDC_TEST_TARBALL: $(pwd)/test-libmongoc.tar.gz
 EOT
