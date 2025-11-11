@@ -19,7 +19,6 @@ task_groups:
             - -c
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/azure/create-and-setup-vm.sh
     setup_group_can_fail_task: true
-    setup_group_timeout_secs: 3600
     tasks:
       - oidc-azure-auth-test-task
     teardown_group:
@@ -49,7 +48,6 @@ task_groups:
             - -c
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/setup.sh
     setup_group_can_fail_task: true
-    setup_group_timeout_secs: 3600
     tasks:
       - oidc-auth-test-task
     teardown_group:

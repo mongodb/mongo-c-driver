@@ -17,7 +17,6 @@ def task_groups():
             name='test-oidc-task-group',
             tasks=['oidc-auth-test-task'],
             setup_group_can_fail_task=True,
-            setup_group_timeout_secs=60 * 60,  # 1 hour
             teardown_group_can_fail_task=True,
             teardown_group_timeout_secs=180,  # 3 minutes
             setup_group=[
@@ -40,7 +39,6 @@ def task_groups():
             name='test-oidc-azure-task-group',
             tasks=['oidc-azure-auth-test-task'],
             setup_group_can_fail_task=True,
-            setup_group_timeout_secs=60 * 60,  # 1 hour
             teardown_group_can_fail_task=True,
             teardown_group_timeout_secs=180,  # 3 minutes
             setup_group=[
