@@ -23,6 +23,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
+
 /**
  * @brief An Azure OAuth2 access token obtained from the Azure API
  */
