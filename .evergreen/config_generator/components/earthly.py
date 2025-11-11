@@ -61,18 +61,18 @@ _SEPARATOR = '\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}'
 def os_split(env: EnvImage) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
-        # Match 'alpine3.18' 'alpine53.123' etc.
+        # Match 'alpine:3.18' 'alpine:53.123' etc.
         case alp if mat := re.match(r'alpine:(\d+\.\d+)', alp):
             return ('Alpine', mat[1])
         case 'archlinux':
             return 'ArchLinux', None
-        # Match 'u22', 'u20', 'u71' etc.
+        # Match 'ubuntu:<version>'.
         case ubu if mat := re.match(r'ubuntu:(\d\d.*)', ubu):
             return 'Ubuntu', f'{mat[1]}'
-        # Match 'centos9', 'centos10', etc.
-        case cent if mat := re.match(r'.*centos:(stream)?(\d+.*)', cent):
-            return 'CentOS', f'{mat[2]}'
-        # Match 'almalinux8', 'almalinux10', etc.
+        # Match 'centos:9', 'centos:stream10', etc.
+        case cent if mat := re.match(r'.*centos:(?:stream)?(\d+)', cent):
+            return 'CentOS', f'{mat[1]}'
+        # Match 'almalinux:8', 'almalinux:10', etc.
         case alm if mat := re.match(r'almalinux:(\d+.*)', alm):
             return 'AlmaLinux', f'{mat[1]}'
         case _:
@@ -82,6 +82,8 @@ def os_split(env: EnvImage) -> tuple[str, None | str]:
 def from_container_image(img: EnvImage) -> str:
     """
     Modify an unqualified FROM container identifier to route to our ECR host
+
+    NOTE: This will be potentially unnecessary pending the completion of DEVPROD-21478
     """
     if '/' in img or img.startswith('+'):
         return img

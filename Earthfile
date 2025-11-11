@@ -1,7 +1,7 @@
 VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
 
-# For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
 # Example use: <earthly> +build --from=ubuntu:22.04 --sasl=off --tls=OpenSSL --c_compiler=gcc
+# (For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.)
 
 # Allow setting the "default" container image registry to use for image short names (e.g. to Amazon ECR).
 ARG --global default_search_registry=docker.io
@@ -19,7 +19,7 @@ init:
     DO +INIT
 
 # build-environment :
-#   A target that just presents the environment required for a mongo-c-driver build
+#   Provides an environment prepared for a mongo-c-driver build
 build-environment:
     FROM --pass-args +init
     DO --pass-args +INSTALL_DEPS
@@ -39,7 +39,7 @@ configure:
     # Configure the project
     ARG --required tls
     ARG --required sasl
-    RUN cmake -S "$source_dir" -B "$build_dir" -G "Ninja Multi-Config" \
+    RUN cmake -G "Ninja Multi-Config" \
         -D ENABLE_MAINTAINER_FLAGS=ON \
         -D ENABLE_SHM_COUNTERS=ON \
         -D ENABLE_SASL=$(echo $sasl | __str upper) \
@@ -49,7 +49,8 @@ configure:
         -D ENABLE_SSL=$(echo $tls | __str upper) \
         -D ENABLE_COVERAGE=OFF \
         -D ENABLE_DEBUG_ASSERTIONS=ON \
-        -Werror
+        -Werror \
+        -B "$build_dir" -S "$source_dir"
 
 # build :
 #   Install deps, configures, and builds libmongoc and libbson.
@@ -121,7 +122,7 @@ test-cxx-driver:
     RUN echo $cxx_version_current > $source/build/VERSION_CURRENT
 
     # Configure the project
-    RUN cmake -S $source -B $build -G Ninja -D CMAKE_PREFIX_PATH=/opt/mongo-c-driver -D CMAKE_CXX_STANDARD=17
+    RUN cmake -G Ninja -D CMAKE_PREFIX_PATH=/opt/mongo-c-driver -D CMAKE_CXX_STANDARD=17 -B $build -S $source
     # Build
     RUN cmake --build $build
 
@@ -509,6 +510,9 @@ ADD_CCACHE:
 
 ADD_LLD:
     FUNCTION
+    # NOTE: When CDRIVER-6150 is completed, the CMake configure command will
+    #       need to specificy CMAKE_LINKER_TYPE for this installation step to
+    #       have any effect.
     ARG lld = on
     IF __bool "$lld"
         IF __can_install lld
