@@ -21,6 +21,7 @@
 
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 struct _mongoc_oidc_env_t {
    const char *name;
@@ -57,13 +58,14 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
    int max_duration_ms = 0;
    const int64_t *timeout_us = mongoc_oidc_callback_params_get_timeout(params);
    if (timeout_us) {
-      int64_t remaining_ms = (*timeout_us - bson_get_monotonic_time()) / 1000;
-      if (remaining_ms <= 0) {
+      const int64_t remaining_us = *timeout_us - bson_get_monotonic_time();
+      const mlib_timer timer = mlib_expires_after(mlib_duration(remaining_us, us));
+      if (mlib_timer_is_expired(timer)) {
          // No time remaining. Immediately fail.
          mongoc_oidc_callback_params_cancel_with_timeout(params);
          goto fail;
       }
-      if (mlib_narrow(&max_duration_ms, remaining_ms)) {
+      if (mlib_narrow(&max_duration_ms, mlib_milliseconds_count(mlib_timer_remaining(timer)))) {
          // Requested timeout too large to fit. Cap at INT_MAX.
          max_duration_ms = mlib_maxof(int);
       }

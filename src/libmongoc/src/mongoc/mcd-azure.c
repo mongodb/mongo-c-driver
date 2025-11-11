@@ -20,6 +20,8 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #define AZURE_API_VERSION "2018-02-01"
 
@@ -211,12 +213,13 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
       goto fail;
    }
 
-   int timeout_ms = 3 * 1000; // Default 3 second timeout
+   const mlib_time_point now = mlib_now();
+   mlib_timer timer = mlib_expires_at(mlib_time_add(now, (3, s))); // Default 3 second timeout.
    if (opt_timeout._rep > 0) {
-      timeout_ms = mlib_milliseconds_count(opt_timeout);
+      timer = mlib_expires_at(mlib_time_add(now, opt_timeout));
    }
 
-   if (!_mongoc_http_send(&req.req, timeout_ms, false, NULL, &resp, error)) {
+   if (!_mongoc_http_send(&req.req, mlib_milliseconds_count(mlib_timer_remaining(timer)), false, NULL, &resp, error)) {
       goto fail;
    }
 
