@@ -1123,7 +1123,7 @@ mongoc_percent_encode(const char *str)
    size_t str_len = strlen(str);
    size_t encoded_len = 0u;
 
-   for (char *i = (char *)str; *i; i++) {
+   for (char const *i = (char *)str; *i; i++) {
       if (needs_percent_encoding((unsigned char)*i)) {
          encoded_len += 3u;
       } else {
@@ -1140,7 +1140,7 @@ mongoc_percent_encode(const char *str)
    char *encoded = bson_malloc(encoded_len);
    char *o = encoded; // output pointer
 
-   for (char *i = (char *)str; *i; i++) {
+   for (char const *i = (char *)str; *i; i++) {
       if (needs_percent_encoding((unsigned char)*i)) {
          int req = bson_snprintf(o, 4, "%%%02X", (unsigned char)*i);
          // Expect no truncation.
