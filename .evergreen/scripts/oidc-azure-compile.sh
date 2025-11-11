@@ -39,7 +39,7 @@ cmake_flags=(
   -DENABLE_SRV=OFF
 )
 cmake "${cmake_flags[@]}" -Bcmake-build
-cmake --build cmake-build --target test-libmongoc --parallel
+cmake --build cmake-build --target test-libmongoc
 echo "Compile test-libmongoc ... end"
 
 # Create tarball for remote testing.
