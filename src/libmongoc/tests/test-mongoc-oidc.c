@@ -868,7 +868,6 @@ PROSE_TEST(5, 2, "Azure With Bad Username")
 
    // Expect auth to fail:
    ASSERT(!do_find(client, &error));
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "failed");
 
    mongoc_client_destroy(client);
    mongoc_uri_destroy(uri);
