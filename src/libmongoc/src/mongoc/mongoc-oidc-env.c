@@ -74,7 +74,7 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
                                          NULL, // Use the default host
                                          0,    // Default port as well
                                          NULL, // No extra headers
-                                         max_duration_ms,
+                                         mlib_duration(max_duration_ms, ms),
                                          callback->username, // Optional client id
                                          &error)) {
       MONGOC_ERROR("Failed to obtain Azure OIDC access token: %s", error.message);

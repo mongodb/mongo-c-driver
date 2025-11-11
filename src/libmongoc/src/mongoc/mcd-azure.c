@@ -190,7 +190,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
                                  const char *const opt_imds_host,
                                  int opt_port,
                                  const char *opt_extra_headers,
-                                 int opt_timeout_ms,
+                                 mlib_duration opt_timeout,
                                  const char *opt_client_id,
                                  bson_error_t *error)
 {
@@ -212,8 +212,8 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
    }
 
    int timeout_ms = 3 * 1000; // Default 3 second timeout
-   if (opt_timeout_ms > 0) {
-      timeout_ms = opt_timeout_ms;
+   if (opt_timeout._rep > 0) {
+      timeout_ms = mlib_milliseconds_count(opt_timeout);
    }
 
    if (!_mongoc_http_send(&req.req, timeout_ms, false, NULL, &resp, error)) {
