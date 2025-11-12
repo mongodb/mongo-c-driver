@@ -145,7 +145,9 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
    };
    gcp_request_init(&req, opt_host, opt_port, opt_extra_headers);
 
-   if (!_mongoc_http_send(&req.req, mlib_expires_after(mlib_duration(3, s)), false, NULL, &resp, error)) {
+   const mlib_duration socket_timeout = mlib_duration(3, s);
+
+   if (!_mongoc_http_send(&req.req, mlib_expires_after(socket_timeout), false, NULL, &resp, error)) {
       goto fail;
    }
 
