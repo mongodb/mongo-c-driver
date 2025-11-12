@@ -627,7 +627,7 @@ _get_must_staple(X509 *cert)
 }
 
 #define ERR_STR (ERR_error_string(ERR_get_error(), NULL))
-#define MONGOC_OCSP_REQUEST_TIMEOUT mlib_duration(5000, ms)
+#define MONGOC_OCSP_REQUEST_TIMEOUT mlib_duration(5, s)
 
 static OCSP_RESPONSE *
 _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts, int *ocsp_uri_count)
