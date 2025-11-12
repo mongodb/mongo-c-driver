@@ -54,7 +54,7 @@ typedef struct {
       .expiration = {.value = (mlib_timer){0}, .set = false},                  \
    }
 
-#define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
+#define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW mlib_duration(5, mn)
 
 // _mongoc_aws_credentials_cache_t is a thread-safe global cache of AWS
 // credentials.
