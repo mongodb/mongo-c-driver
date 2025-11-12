@@ -3334,7 +3334,7 @@ reset_failpoints(mongoc_ssl_opt_t *ssl_opts)
    req.port = failpoint_server_port;
    req.path = "/reset";
 
-   r = _mongoc_http_send(&req, mlib_duration(10, s), true, ssl_opts, &res, &error);
+   r = _mongoc_http_send(&req, mlib_expires_after(mlib_duration(10, s)), true, ssl_opts, &res, &error);
    ASSERT_OR_PRINT(r, error);
    _mongoc_http_response_cleanup(&res);
 }
@@ -3364,7 +3364,7 @@ set_retry_failpoint(mongoc_ssl_opt_t *ssl_opts, bool network, uint32_t count)
    req.body = count_json;
    req.body_len = strlen(count_json);
 
-   r = _mongoc_http_send(&req, mlib_duration(10, s), true, ssl_opts, &res, &error);
+   r = _mongoc_http_send(&req, mlib_expires_after(mlib_duration(10, s)), true, ssl_opts, &res, &error);
    ASSERT_OR_PRINT(r, error);
    _mongoc_http_response_cleanup(&res);
 }

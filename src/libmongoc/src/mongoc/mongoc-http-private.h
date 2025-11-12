@@ -21,7 +21,7 @@
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc.h>
 
-#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #ifndef MONGOC_HTTP_PRIVATE_H
 #define MONGOC_HTTP_PRIVATE_H
@@ -76,7 +76,7 @@ _mongoc_http_render_request_head(mcommon_string_append_t *append, const mongoc_h
  *
  * @param req The request to send. Uses the "host" attribute to determine the
  * HTTP peer.
- * @param timeout A timeout for the request.
+ * @param timer A timer for the request.
  * @param use_tls Whether the connection should use TLS.
  * @param ssl_opts Options to control TLS (Required only if 'use_tls' is true)
  * @param res Output parameter for the response. Must be uninitialized.
@@ -93,7 +93,7 @@ _mongoc_http_render_request_head(mcommon_string_append_t *append, const mongoc_h
  */
 bool
 _mongoc_http_send(mongoc_http_request_t const *req,
-                  mlib_duration timeout,
+                  mlib_timer timer,
                   bool use_tls,
                   mongoc_ssl_opt_t *ssl_opts,
                   mongoc_http_response_t *res,

@@ -20,7 +20,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
-#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #define AZURE_API_VERSION "2018-02-01"
 
@@ -175,7 +175,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
    mcd_azure_imds_request req = MCD_AZURE_IMDS_REQUEST_INIT;
    mcd_azure_imds_request_init(&req, opt_imds_host, opt_port, opt_extra_headers);
 
-   if (!_mongoc_http_send(&req.req, mlib_duration(3, s), false, NULL, &resp, error)) {
+   if (!_mongoc_http_send(&req.req, mlib_expires_after(mlib_duration(3, s)), false, NULL, &resp, error)) {
       goto fail;
    }
 

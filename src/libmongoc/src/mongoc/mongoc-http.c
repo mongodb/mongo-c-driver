@@ -99,7 +99,7 @@ _mongoc_http_msec_remaining(mlib_timer timer)
 
 bool
 _mongoc_http_send(const mongoc_http_request_t *req,
-                  mlib_duration timeout,
+                  mlib_timer timer,
                   bool use_tls,
                   mongoc_ssl_opt_t *ssl_opts,
                   mongoc_http_response_t *res,
@@ -114,8 +114,6 @@ _mongoc_http_send(const mongoc_http_request_t *req,
    char *http_response_str;
    char *ptr;
    const char *header_delimiter = "\r\n\r\n";
-
-   const mlib_timer timer = mlib_expires_after(timeout);
 
    mcommon_string_append_t http_request;
    mcommon_string_new_as_append(&http_request);
