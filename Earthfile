@@ -1,7 +1,10 @@
 VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
 
-# Example use: <earthly> +build --from=ubuntu:22.04 --sasl=off --tls=OpenSSL --c_compiler=gcc
-# (For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.)
+# Example use: <earthly> +build --from=ubuntu:22.04 --sasl=off --tls=OpenSSL --compiler=gcc
+#
+# For target names, descriptions, and build parameters, run the "doc" Earthly subcommand.
+# For more detailed documentation, use to the "devdocs" target in this file (ctrl+f "devdocs:"),
+# and read the resulting "Earthly" page that is generated.
 
 # Allow setting the "default" container image registry to use for image short names (e.g. to Amazon ECR).
 ARG --global default_search_registry=docker.io
@@ -399,6 +402,29 @@ do-verify-headers-impl:
     # The "all_verify_interface_header_sets" target is created automatically
     # by CMake for the VERIFY_INTERFACE_HEADER_SETS target property.
     RUN cmake --build $__build_dir --target all_verify_interface_header_sets
+
+# devdocs :
+#   Builds the developer documentation pages as HTML, and writes the resulting pages into
+#   `_build/devdocs` on the host for browsing.
+#
+# After building the devdocs, you can read them in a browser with the following command:
+#
+#     $ python -m http.server --directory _build/devdocs/
+#
+# Which will start a local HTTP server that serves the documentation pages.
+devdocs:
+    FROM +init --from=alpine:3.20
+    # Warmup the UV cache
+    RUN uvx --from=sphinx sphinx-build --version
+    # Copy in the required files
+    COPY VERSION_CURRENT $__source_dir/
+    # Docs in the appropriate subdirectory:
+    LET docs_dir = $__source_dir/docs/dev
+    COPY --dir docs/dev $docs_dir
+    # Build the documentation, using uvx to install Sphinx on-the-fly
+    RUN uvx --from=sphinx sphinx-build $docs_dir $docs_dir/_build --builder=dirhtml
+    # Copy the build HTML pages to the host
+    SAVE ARTIFACT $docs_dir/_build AS LOCAL _build/devdocs
 
 # run :
 #   Run one or more targets simultaneously.
