@@ -590,6 +590,11 @@ ADD_COMPILER:
         RUN __fail "Unknown C compiler specifier: “%s” (Expected one of “gcc” or “clang”)" "$compiler"
     END
 
+    # Install package for the C compiler before we try to install C++, since the C package may
+    # already provide a C++ compiler
+    RUN __install $pkgs
+    SET pkgs = ""
+
     IF __bool $with_cxx
         IF test "$compiler" = "gcc"
             IF __have_command g++
