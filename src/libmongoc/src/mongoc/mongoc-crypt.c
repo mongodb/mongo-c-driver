@@ -837,7 +837,7 @@ _try_add_azure_from_env(_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error
       // The access-token is non-null, so we may have one cached.
       const mlib_time_point one_min_from_now = mlib_time_add(mlib_now(), mlib_duration(1, mn));
       const mlib_time_point expires_at = mlib_time_add(crypt->azure_token_issued_at, crypt->azure_token.expires_in);
-      if (mlib_time_cmp(expires_at, one_min_from_now) >= 0) {
+      if (mlib_time_cmp(expires_at, >=, one_min_from_now)) {
          // The token is still valid for at least another minute
       } else {
          // The token will expire soon. Destroy it, and below we will below ask
