@@ -53,6 +53,7 @@ TLSOption = Literal['OpenSSL', 'off']
 CxxVersion = Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
 SnappyOption = Literal['false', 'true']
+"""Should we enable Snappy compression in this build?"""
 
 # A separator character, since we cannot use whitespace
 _SEPARATOR = '\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}'
@@ -98,7 +99,7 @@ class EarthlyVariant(NamedTuple):
     """
 
     from_: EnvImage
-    c_compiler: CompilerName
+    compiler: CompilerName
 
     @property
     def display_name(self) -> str:
@@ -110,7 +111,7 @@ class EarthlyVariant(NamedTuple):
             case name, version:
                 base = f'{name} {version}'
         toolchain: str
-        match self.c_compiler:
+        match self.compiler:
             case 'clang':
                 toolchain = 'LLVM/Clang'
             case 'gcc':
@@ -123,7 +124,7 @@ class EarthlyVariant(NamedTuple):
         The task tag that is used to select the tasks that want to run on this
         variant.
         """
-        return f'{self.from_}-{self.c_compiler}'
+        return f'{self.from_}-{self.compiler}'
 
     @property
     def expansions(self) -> Mapping[str, str]:
@@ -132,7 +133,7 @@ class EarthlyVariant(NamedTuple):
         from this object.
         """
         return {
-            _CC_PARAM_NAME: self.c_compiler,
+            _CC_PARAM_NAME: self.compiler,
             _ENV_PARAM_NAME: from_container_image(self.from_),
         }
 
@@ -258,8 +259,9 @@ def earthly_task(
     earthly_args |= {
         # Add arguments that come from parameter expansions defined in the build variant
         'from': f'${{{_ENV_PARAM_NAME}}}',
-        'c_compiler': f'${{{_CC_PARAM_NAME}}}',
-        'cxx_compiler': f'${{{_CC_PARAM_NAME}}}',
+        'compiler': f'${{{_CC_PARAM_NAME}}}',
+        # Always include a C++ compiler in the build environment for better test coverage
+        'with_cxx': 'true',
     }
     return EvgTask(
         name=name,

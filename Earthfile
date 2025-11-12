@@ -395,7 +395,7 @@ verify-headers:
         --from $default_search_registry/almalinux:8 \
         --from $default_search_registry/ubuntu:20.04 \
         --from quay.io/centos/centos:stream10 \
-        --sasl=off --tls=off --cxx_compiler=gcc --c_compiler=gcc --snappy=off
+        --sasl=off --tls=off --compiler=gcc --with_cxx=true --snappy=off
 
 do-verify-headers-impl:
     FROM --pass-args +configure --build_dir=$__build_dir
@@ -462,21 +462,35 @@ INIT:
     IF ! __have_command __have_command
         COPY --chmod=755 tools/__tool /usr/local/bin/__tool
         RUN __tool __init
-        IF __can_install epel-release
-            RUN __do "Enabling EPEL repositories..." __install epel-release
-        END
-        IF ! __have_command curl
-            RUN __do "Installing curl..." __install curl
-        END
+    END
 
-        ARG uv_version = "0.8.15"
-        ARG uv_install_sh_url = "https://astral.sh/uv/$uv_version/install.sh"
-        IF ! __have_command uv
-            RUN curl -LsSf "$uv_install_sh_url" \
-                    | env UV_UNMANAGED_INSTALL=/opt/uv sh - \
-                && __alias uv  /opt/uv/uv \
-                && __alias uvx /opt/uv/uvx
-        END
+    IF __can_install epel-release
+        # Installing epel-release must happen separately since it can update the
+        # available repositories on certain systems
+        RUN __do "Enabling EPEL repositories..." __install epel-release
+    END
+
+    # Ensure that we have Tar, Curl, and Gzip
+    LET pkgs = ""
+    IF ! __have_command tar
+        SET pkgs = $pkgs tar
+    END
+    IF ! __have_command curl
+        SET pkgs = $pkgs curl
+    END
+    IF ! __have_command gzip
+        SET pkgs = $pkgs gzip
+    END
+    RUN __do "Installing basic packages ($pkgs)" __install $pkgs
+
+    # Ensure that we have UV
+    ARG uv_version = "0.8.15"
+    ARG uv_install_sh_url = "https://astral.sh/uv/$uv_version/install.sh"
+    IF ! __have_command uv
+        RUN curl -LsSf "$uv_install_sh_url" \
+                | env UV_UNMANAGED_INSTALL=/opt/uv sh - \
+            && __alias uv  /opt/uv/uv \
+            && __alias uvx /opt/uv/uvx
     END
 
 # d8888b. d88888b d8888b. d88888b d8b   db d8888b. d88888b d8b   db  .o88b. db    db
@@ -511,8 +525,7 @@ INSTALL_DEPS:
         __alias cpack uvx --from=cmake --with=ninja cpack
 
     # Compilers
-    DO --pass-args +ADD_C_COMPILER
-    DO --pass-args +ADD_CXX_COMPILER
+    DO --pass-args +ADD_COMPILER
     # Dev utilities
     DO --pass-args +ADD_CCACHE
     DO --pass-args +ADD_LLD
@@ -548,65 +561,70 @@ ADD_LLD:
         END
     END
 
-ADD_C_COMPILER:
+ADD_COMPILER:
     FUNCTION
-    ARG --required c_compiler
-    IF test "$c_compiler" = "gcc"
+    ARG --required compiler
+    ARG --required with_cxx
+    # Start with nothing to install
+    LET pkgs = ""
+
+    # Select the C compiler packages
+    IF test "$compiler" = "gcc"
         IF __can_install gcc
-            RUN __install gcc
+            SET pkgs = $pkgs gcc
         ELSE
-            RUN __fail "Unable to infer the GCC C compiler for this environment. Update ADD_C_COMPILER!"
+            RUN __fail "Unable to infer the GCC C compiler for this environment. Update ADD_COMPILER!"
         END
         ENV CC=gcc
-    ELSE IF test "$c_compiler" = "clang"
+    ELSE IF test "$compiler" = "clang"
         IF __can_install clang
-            RUN __install clang
+            SET pkgs = $pkgs clang
         ELSE
-            RUN __fail "Unable to infer the Clang C compiler package for this environment. Update ADD_CXX_COMPILER!"
+            RUN __fail "Unable to infer the Clang C compiler package for this environment. Update ADD_COMPILER!"
         END
         IF __can_install compiler-rt
-            RUN __install compiler-rt
+            SET pkgs = $pkgs compiler-rt
         END
         ENV CC=clang
     ELSE
-        RUN __fail "Unknown C compiler specifier: “%s” (Expected one of “gcc” or “clang”)" "$c_compiler"
+        RUN __fail "Unknown C compiler specifier: “%s” (Expected one of “gcc” or “clang”)" "$compiler"
     END
 
-ADD_CXX_COMPILER:
-    FUNCTION
-    ARG --required cxx_compiler
-    IF test "$cxx_compiler" = "gcc"
-        IF __have_command g++
-            # We already have a GCC C++ compiler installed. Nothing needs to be done.
-        ELSE IF __can_install gcc-g++
-            RUN __install gcc-g++
-        ELSE IF __can_install g++
-            RUN __install g++
-        ELSE IF __can_install gcc-c++
-            RUN __install gcc-c++
+    IF __bool $with_cxx
+        IF test "$compiler" = "gcc"
+            IF __have_command g++
+                # We already have a GCC C++ compiler installed. Nothing needs to be done.
+            ELSE IF __can_install gcc-g++
+                SET pkgs = $pkgs gcc-g++
+            ELSE IF __can_install g++
+                SET pkgs = $pkgs g++
+            ELSE IF __can_install gcc-c++
+                SET pkgs = $pkgs gcc-c++
+            ELSE
+                RUN __fail "Unable to infer the GCC C++ compiler package for this environment. Update ADD_COMPILER!"
+            END
+            ENV CXX=g++
+        ELSE IF test "$compiler" = "clang"
+            IF __have_command clang++
+                # We already have Clang's C++ compiler available. Nothing to do.
+            ELSE IF __can_install clang++
+                SET pkgs = $pkgs clang++
+            ELSE IF __can_install clang
+                SET pkgs = $pkgs clang
+            ELSE
+                RUN __fail "Unable to infer the Clang C++ compiler package for this environment. Update ADD_COMPILER!"
+            END
+            IF __can_install compiler-rt
+                SET pkgs = $pkgs compiler-rt
+            END
+            ENV CXX=clang++
         ELSE
-            RUN __fail "Unable to infer the GCC C++ compiler package for this environment. Update ADD_CXX_COMPILER!"
+            RUN __fail "should be unreachable. We already checked when installing the C compiler."
         END
-        ENV CXX=g++
-    ELSE IF test "$cxx_compiler" = "clang"
-        IF __have_command clang++
-            # We already have Clang's C++ compiler available. Nothing to do.
-        ELSE IF __can_install clang++
-            RUN __install clang++
-        ELSE IF __can_install clang
-            RUN __install clang
-        ELSE
-            RUN __fail "Unable to infer the Clang C++ compiler package for this environment. Update ADD_CXX_COMPILER!"
-        END
-        IF __can_install compiler-rt
-            RUN __install compiler-rt
-        END
-        ENV CXX=clang++
-    ELSE IF __str test "$cxx_compiler" -ieq "none"
-        # Do not install a C++ compiler
-    ELSE
-        RUN __fail "Unknown C++ compiler specifier: “%s” (Expected one of “gcc”, “clang”, or “none”)" "$cxx_compiler"
     END
+
+    # Instll the chosen packages as a single step now
+    RUN __install $pkgs
 
 ADD_SNAPPY:
     FUNCTION
