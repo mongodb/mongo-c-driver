@@ -188,7 +188,7 @@ test_cache(const mongoc_uri_t *uri)
       ASSERT(mongoc_aws_credentials_cache.cached.set);
       mongoc_aws_credentials_cache.cached.value.expiration.set = true;
       mongoc_aws_credentials_cache.cached.value.expiration.value =
-         mlib_expires_after(mlib_duration(60 * 1000 - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS, ms));
+         mlib_expires_after(mlib_duration((1, mn), minus, MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW));
       _mongoc_aws_credentials_copy_to(&mongoc_aws_credentials_cache.cached.value, &first_cached);
    }
 
