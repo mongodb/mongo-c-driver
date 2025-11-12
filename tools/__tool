@@ -134,21 +134,10 @@ __install() {
         test $# = 0 || env DEBIAN_FRONTEND=noninteractive \
             apt-get -y install -- "$@" || return
     elif test -f /etc/redhat-release || grep 'ID="amzn"' /etc/os-release >/dev/null 1>&2; then
-        if test -f /usr/bin/dnf; then
-            # 'dnf' will "do the right thing"
-            test $# = 0 || dnf install -y "$@" || return
-        elif test -f /usr/bin/yum; then
-            test $# = 0 || yum install -y -- "$@" || return
-            # 'yum' happily ignores missing packages. Use 'rpm -q' to check that
-            # everything we requested actually got installed.
-            test $# = 0 || if ! rpm -q -- "$@"; then
-                echo "$0: Failing because one or more packages requested are not available"
-                return 1
-            fi
-        else
-            echo "No package manager here?" 1>&2
-            exit 1
-        fi
+        # Install using dnf. This has been the preferred package manager command since
+        # RHEL 8, and has somewhat better behavior that Yum. If we want to support older
+        # systems, this block will need to be updated to detect Yum if dnf is unavailable.
+        test $# = 0 || dnf install -y "$@" || return
     elif test -f /etc/SuSE-brand \
         || (test -f /etc/os-release && grep "opensuse" /etc/os-release); then
         test $# = 0 || zypper --non-interactive install "$@" || return
