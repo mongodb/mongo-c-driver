@@ -126,8 +126,8 @@ _mongoc_http_send(const mongoc_http_request_t *req,
    }
 
    stream = mongoc_client_connect_tcp(
-      // +1 to prevent passing zero as a timeout
-      _mongoc_http_msec_remaining(timer) + 1,
+      // Prevent passing zero as a timeout
+      mlib_time_cmp(timer.expires_at, >, (mlib_time_point){0}) ? _mongoc_http_msec_remaining(timer) : 1,
       &host_list,
       error);
    if (!stream) {
