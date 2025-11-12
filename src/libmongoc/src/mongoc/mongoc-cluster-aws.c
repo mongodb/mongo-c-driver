@@ -284,22 +284,23 @@ expiration_ms_to_timer(int64_t expiration_ms, mlib_timer *expiration_timer, bson
 {
    bool ret = false;
 
-   // get current time in milliseconds since Unix Epoch.
-   int64_t now_ms = 0;
+   int64_t now_ms = 0;      // current time in milliseconds since Unix Epoch.
+   int64_t duration_ms = 0; // duration until expiration in milliseconds.
    {
       struct timeval now;
       if (0 != bson_gettimeofday(&now)) {
          AUTH_ERROR_AND_FAIL("bson_gettimeofday returned failure. Unable to "
                              "determine expiration.");
       } else {
-         if (mlib_mul(&now_ms, 100, now.tv_sec) || mlib_add(&now_ms, now.tv_usec / 1000)) {
+         if (mlib_mul(&now_ms, 100, now.tv_sec) || mlib_add(&now_ms, now.tv_usec / 1000) ||
+             mlib_sub(&duration_ms, expiration_ms, now_ms)) {
             AUTH_ERROR_AND_FAIL("Failed to calculate expiration.");
          }
       }
    }
 
    *expiration_timer =
-      mlib_expires_after(mlib_duration((expiration_ms - now_ms, ms), minus, MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW));
+      mlib_expires_after(mlib_duration((duration_ms, ms), minus, MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW));
    ret = true;
 fail:
    return ret;
