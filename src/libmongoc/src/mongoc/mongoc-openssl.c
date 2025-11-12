@@ -34,6 +34,7 @@
 
 #include <mlib/cmp.h>
 #include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>

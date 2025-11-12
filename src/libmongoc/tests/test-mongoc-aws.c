@@ -15,6 +15,9 @@
 
 #include <mongoc/mongoc-cluster-aws-private.h>
 
+#include <mlib/duration.h>
+#include <mlib/timer.h>
+
 #include <TestSuite.h>
 #include <test-libmongoc.h>
 

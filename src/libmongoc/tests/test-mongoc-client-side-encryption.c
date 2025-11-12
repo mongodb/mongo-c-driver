@@ -35,6 +35,7 @@
 #include <mongoc/mongoc-http-private.h>
 
 #include <mlib/duration.h>
+#include <mlib/timer.h>
 
 /* _mongoc_crypt_get_libmongocrypt_version */
 #include <mongoc/mongoc-crypt-private.h>

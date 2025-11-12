@@ -19,6 +19,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #include <TestSuite.h>
 #include <test-libmongoc.h>

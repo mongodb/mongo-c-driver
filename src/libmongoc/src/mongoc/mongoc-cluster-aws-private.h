@@ -24,6 +24,7 @@
 
 #include <bson/bson.h>
 
+#include <mlib/duration.h>
 #include <mlib/timer.h>
 
 bool

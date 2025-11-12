@@ -20,6 +20,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
 #include <mlib/timer.h>
 
 #define AZURE_API_VERSION "2018-02-01"

@@ -20,6 +20,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #define HOST "metadata.google.internal"
 

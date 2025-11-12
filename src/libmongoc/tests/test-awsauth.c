@@ -24,6 +24,10 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
+#include <mlib/time_point.h>
+#include <mlib/timer.h>
+
 // Ensure stdout and stderr are flushed prior to possible following abort().
 #define MONGOC_STDERR_PRINTF(format, ...)   \
    if (1) {                                 \
