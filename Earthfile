@@ -590,7 +590,7 @@ ADD_COMPILER:
         RUN __fail "Unknown C compiler specifier: “%s” (Expected one of “gcc” or “clang”)" "$compiler"
     END
 
-    # Install package for the C compiler before we try to install C++, since the C package may
+    # Install packages for the C compiler before we try to install C++, since the C package may
     # already provide a C++ compiler
     RUN __install $pkgs
     SET pkgs = ""
@@ -628,7 +628,7 @@ ADD_COMPILER:
         END
     END
 
-    # Instll the chosen packages as a single step now
+    # Install the C++ packages as a single step now
     RUN __install $pkgs
 
 ADD_SNAPPY:
