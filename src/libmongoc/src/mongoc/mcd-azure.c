@@ -123,7 +123,7 @@ mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
       // which the token will be valid. strtoll() will saturate on range errors
       // and return zero on parse errors.
       char *parse_end;
-      long long s = strtoll(expires_in_str, &parse_end, 0);
+      const long long expires_in = strtoll(expires_in_str, &parse_end, 0);
       if (parse_end != expires_in_str + expires_in_len) {
          // Did not parse the entire string. Bad
          _mongoc_set_error(error,
@@ -133,7 +133,7 @@ mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
                            mlib_in_range(int, expires_in_len) ? (int)expires_in_len : INT_MAX,
                            expires_in_str);
       } else {
-         out->expires_in = mlib_duration(s, s);
+         out->expires_in = mlib_duration(expires_in, s);
          okay = true;
       }
    }
