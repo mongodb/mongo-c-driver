@@ -626,7 +626,7 @@ _get_must_staple(X509 *cert)
 }
 
 #define ERR_STR (ERR_error_string(ERR_get_error(), NULL))
-#define MONGOC_OCSP_REQUEST_TIMEOUT_MS 5000
+#define MONGOC_OCSP_REQUEST_TIMEOUT mlib_duration(5000, ms)
 
 static OCSP_RESPONSE *
 _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts, int *ocsp_uri_count)
@@ -688,12 +688,8 @@ _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts,
       http_req.port = (int)bson_ascii_strtoll(port, NULL, 10);
       http_req.body = (const char *)request_der;
       http_req.body_len = request_der_len;
-      if (!_mongoc_http_send(&http_req,
-                             mlib_expires_after(mlib_duration(MONGOC_OCSP_REQUEST_TIMEOUT_MS, ms)),
-                             ssl != 0,
-                             ssl_opts,
-                             &http_res,
-                             &error)) {
+      if (!_mongoc_http_send(
+             &http_req, mlib_expires_after(MONGOC_OCSP_REQUEST_TIMEOUT), ssl != 0, ssl_opts, &http_res, &error)) {
          MONGOC_DEBUG("Could not send HTTP request: %s", error.message);
          GOTO(retry);
       }
