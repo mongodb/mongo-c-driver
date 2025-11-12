@@ -140,7 +140,7 @@ _send_http_request(bool use_tls,
 {
    mongoc_http_request_t req;
    mongoc_http_response_t res;
-   const int socket_timeout_ms = 10000;
+   const mlib_duration socket_timeout = mlib_duration(10, s);
    bool ret;
    mongoc_ssl_opt_t ssl_opt = {0};
 
@@ -157,8 +157,7 @@ _send_http_request(bool use_tls,
    if (use_tls) {
       _mongoc_ssl_opts_copy_to(mongoc_ssl_opt_get_default(), &ssl_opt, true /* copy_internal */);
    }
-   ret = _mongoc_http_send(
-      &req, mlib_duration(socket_timeout_ms, ms), use_tls /* use_tls */, use_tls ? &ssl_opt : NULL, &res, error);
+   ret = _mongoc_http_send(&req, socket_timeout, use_tls /* use_tls */, use_tls ? &ssl_opt : NULL, &res, error);
 
    if (ret) {
       *http_response_headers = bson_strndup(res.headers, res.headers_len);
