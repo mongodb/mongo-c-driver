@@ -98,7 +98,7 @@ creds_eq(_mongoc_aws_credentials_t *a, _mongoc_aws_credentials_t *b)
       return false;
    }
    if (a->expiration.set) {
-      if (mlib_time_cmp(a->expiration.value.expires_at, b->expiration.value.expires_at) != 0) {
+      if (mlib_time_cmp(a->expiration.value.expires_at, !=, b->expiration.value.expires_at)) {
          return false;
       }
    }
