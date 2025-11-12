@@ -1296,7 +1296,7 @@ check_expired(const _mongoc_aws_credentials_t *creds)
    if (!creds->expiration.set) {
       return true;
    }
-   return mlib_microseconds_count(mlib_timer_remaining(creds->expiration.value)) == 0;
+   return mlib_timer_is_expired(creds->expiration.value);
 }
 
 void
