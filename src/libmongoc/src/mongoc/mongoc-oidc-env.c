@@ -55,19 +55,15 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
    mongoc_oidc_env_callback_t *callback = mongoc_oidc_callback_params_get_user_data(params);
    BSON_ASSERT(callback);
 
-   int max_duration_ms = 0;
+   mlib_timer timer = {0};
    const int64_t *timeout_us = mongoc_oidc_callback_params_get_timeout(params);
    if (timeout_us) {
-      const int64_t remaining_us = *timeout_us - bson_get_monotonic_time();
-      const mlib_timer timer = mlib_expires_after(mlib_duration(remaining_us, us));
+      const mlib_duration remaining = mlib_duration((*timeout_us, us), minus, (bson_get_monotonic_time(), us));
+      timer = mlib_expires_after(remaining);
       if (mlib_timer_is_expired(timer)) {
          // No time remaining. Immediately fail.
          mongoc_oidc_callback_params_cancel_with_timeout(params);
          goto fail;
-      }
-      if (mlib_narrow(&max_duration_ms, mlib_milliseconds_count(mlib_timer_remaining(timer)))) {
-         // Requested timeout too large to fit. Cap at INT_MAX.
-         max_duration_ms = mlib_maxof(int);
       }
    }
 
@@ -76,7 +72,7 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
                                          NULL, // Use the default host
                                          0,    // Default port as well
                                          NULL, // No extra headers
-                                         mlib_duration(max_duration_ms, ms),
+                                         timer,
                                          callback->username, // Optional client id
                                          &error)) {
       MONGOC_ERROR("Failed to obtain Azure OIDC access token: %s", error.message);

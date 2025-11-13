@@ -25,6 +25,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #define MCD_TOKEN_RESOURCE_VAULT "https://vault.azure.net"
 
@@ -129,7 +130,7 @@ mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
- * @param opt_timeout (Optional) The timeout for the request.
+ * @param opt_timer (Optional) The timer for the request.
  * @param opt_client_id (Optional) Added as the "client_id" query parameter.
  * @param error Output parameter for errors
  * @retval true Upon success
@@ -142,7 +143,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
                                  const char *const opt_imds_host,
                                  int opt_port,
                                  const char *opt_extra_headers,
-                                 mlib_duration opt_timeout,
+                                 mlib_timer opt_timer,
                                  const char *opt_client_id,
                                  bson_error_t *error);
 

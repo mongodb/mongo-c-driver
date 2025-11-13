@@ -192,7 +192,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
                                  const char *const opt_imds_host,
                                  int opt_port,
                                  const char *opt_extra_headers,
-                                 mlib_duration opt_timeout,
+                                 mlib_timer opt_timer,
                                  const char *opt_client_id,
                                  bson_error_t *error)
 {
@@ -213,13 +213,16 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
       goto fail;
    }
 
-   const mlib_time_point now = mlib_now();
-   mlib_timer timer = mlib_expires_at(mlib_time_add(now, (3, s))); // Default 3 second timeout.
-   if (opt_timeout._rep > 0) {
-      timer = mlib_expires_at(mlib_time_add(now, opt_timeout));
+   mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, ==, (mlib_time_point){0})
+                         ? opt_timer
+                         : mlib_expires_after(mlib_duration(3, s)); // Default 3 second timeout.
+
+   int timeout_ms = 0;
+   if (mlib_narrow(&timeout_ms, mlib_milliseconds_count(mlib_timer_remaining(timer)))) {
+      timeout_ms = mlib_maxof(int); // Clamp to max int.
    }
 
-   if (!_mongoc_http_send(&req.req, mlib_milliseconds_count(mlib_timer_remaining(timer)), false, NULL, &resp, error)) {
+   if (!_mongoc_http_send(&req.req, timeout_ms, false, NULL, &resp, error)) {
       goto fail;
    }
 
