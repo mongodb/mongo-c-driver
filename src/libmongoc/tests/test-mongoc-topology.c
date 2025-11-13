@@ -2592,89 +2592,102 @@ test_topology_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_AddLive(suite, "/Topology/start_stop", test_topology_thread_start_stop);
    TestSuite_AddFull(suite,
-                     "/Topology/server_selection_try_once_option",
+                     "/Topology/server_selection_try_once_option [lock:live-server][timeout:30]",
                      test_server_selection_try_once_option,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Topology/server_selection_try_once",
+                     "/Topology/server_selection_try_once [lock:live-server][timeout:30]",
                      test_server_selection_try_once,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Topology/server_selection_try_once_false",
+                     "/Topology/server_selection_try_once_false [lock:live-server][timeout:30]",
                      test_server_selection_try_once_false,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Topology/invalidate_server/single",
+                     "/Topology/invalidate_server/single [lock:live-server][timeout:30]",
                      test_topology_invalidate_server_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/Topology/invalidate_server/pooled",
+                     "/Topology/invalidate_server/pooled [lock:live-server][timeout:30]",
                      test_topology_invalidate_server_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/Topology/invalid_cluster_node",
+                     "/Topology/invalid_cluster_node [lock:live-server][timeout:30]",
                      test_invalid_cluster_node,
                      NULL,
                      NULL,
                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull(suite,
-                     "/Topology/max_wire_version_race_condition",
+                     "/Topology/max_wire_version_race_condition [lock:live-server]",
                      test_max_wire_version_race_condition,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_auth);
+   TestSuite_AddMockServerTest(suite,
+                               "/Topology/cooldown/standalone [timeout:30]",
+                               test_cooldown_standalone,
+                               NULL,
+                               NULL,
+                               test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(
-      suite, "/Topology/cooldown/standalone", test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
+      suite, "/Topology/cooldown/rs [timeout:30]", test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(
-      suite, "/Topology/cooldown/rs", test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/Topology/cooldown/retry", test_cooldown_retry, NULL, NULL, test_framework_skip_if_slow);
+      suite, "/Topology/cooldown/retry [timeout:30]", test_cooldown_retry, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add(suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors);
    TestSuite_AddMockServerTest(suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
    TestSuite_AddMockServerTest(suite, "/Topology/try_once/succeed", test_select_after_try_once);
    TestSuite_AddLive(suite, "/Topology/invalid_server_id", test_invalid_server_id);
    TestSuite_AddMockServerTest(suite, "/Topology/server_removed/single", test_server_removed_during_handshake_single);
    TestSuite_AddMockServerTest(suite, "/Topology/server_removed/pooled", test_server_removed_during_handshake_pooled);
-   TestSuite_AddFull(suite, "/Topology/rtt", test_rtt, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull(
+      suite, "/Topology/rtt [lock:live-server][timeout:30]", test_rtt, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
-   TestSuite_AddMockServerTest(
-      suite, "/Topology/hello_retry/single/hangup", test_hello_retry_single_hangup, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/Topology/hello_retry/single/timeout", test_hello_retry_single_timeout, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
-                               "/Topology/hello_retry/single/hangup/fail",
+                               "/Topology/hello_retry/single/hangup [timeout:30]",
+                               test_hello_retry_single_hangup,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/Topology/hello_retry/single/timeout [timeout:30]",
+                               test_hello_retry_single_timeout,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/Topology/hello_retry/single/hangup/fail [timeout:30]",
                                test_hello_retry_single_hangup_fail,
                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
-                               "/Topology/hello_retry/single/timeout/fail",
+                               "/Topology/hello_retry/single/timeout/fail [timeout:30]",
                                test_hello_retry_single_timeout_fail,
                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/Topology/hello_retry/pooled/hangup", test_hello_retry_pooled_hangup, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/Topology/hello_retry/pooled/timeout", test_hello_retry_pooled_timeout, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
-                               "/Topology/hello_retry/pooled/hangup/fail",
+                               "/Topology/hello_retry/pooled/hangup [timeout:30]",
+                               test_hello_retry_pooled_hangup,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/Topology/hello_retry/pooled/timeout [timeout:30]",
+                               test_hello_retry_pooled_timeout,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/Topology/hello_retry/pooled/hangup/fail [timeout:30]",
                                test_hello_retry_pooled_hangup_fail,
                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
-                               "/Topology/hello_retry/pooled/timeout/fail",
+                               "/Topology/hello_retry/pooled/timeout/fail [timeout:30]",
                                test_hello_retry_pooled_timeout_fail,
                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(
-      suite, "/Topology/incompatible_error", test_incompatible_error, test_framework_skip_if_slow);
+      suite, "/Topology/incompatible_error [timeout:30]", test_incompatible_error, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite,
-                               "/Topology/compatible_null_error_pointer",
+                               "/Topology/compatible_null_error_pointer [timeout:30]",
                                test_compatible_null_error_pointer,
                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(
@@ -2689,5 +2702,5 @@ test_topology_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Topology/hello_ok/single", test_hello_ok_single);
    TestSuite_AddMockServerTest(suite, "/Topology/hello_ok/pooled", test_hello_ok_pooled);
    TestSuite_AddMockServerTest(suite, "/Topology/failure_to_setup_after_retry", test_failure_to_setup_after_retry);
-   TestSuite_Add(suite, "/Topology/detect_nongenuine_hosts", test_detect_nongenuine_hosts);
+   TestSuite_Add(suite, "/Topology/detect_nongenuine_hosts [lock:live-server]", test_detect_nongenuine_hosts);
 }

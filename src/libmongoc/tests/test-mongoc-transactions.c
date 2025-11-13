@@ -1044,10 +1044,18 @@ test_transactions_install(TestSuite *suite)
                                       test_framework_skip_if_no_txns,
                                       test_framework_skip_if_slow);
 
-   TestSuite_AddFull(
-      suite, "/transactions/supported", test_transactions_supported, NULL, NULL, test_framework_skip_if_no_txns);
-   TestSuite_AddFull(
-      suite, "/transactions/in_transaction", test_in_transaction, NULL, NULL, test_framework_skip_if_no_txns);
+   TestSuite_AddFull(suite,
+                     "/transactions/supported [lock:live-server]",
+                     test_transactions_supported,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_txns);
+   TestSuite_AddFull(suite,
+                     "/transactions/in_transaction [lock:live-server]",
+                     test_in_transaction,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_txns);
    TestSuite_AddMockServerTest(
       suite, "/transactions/server_selection_err", test_server_selection_error, test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest(
@@ -1055,15 +1063,19 @@ test_transactions_install(TestSuite *suite)
    TestSuite_AddMockServerTest(
       suite, "/transactions/unknown_commit_result", test_unknown_commit_result, test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/transactions/cursor_primary_read_pref",
+                     "/transactions/cursor_primary_read_pref [lock:live-server]",
                      test_cursor_primary_read_pref,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_txns);
-   TestSuite_AddFull(
-      suite, "/transactions/inherit_from_client", test_inherit_from_client, NULL, NULL, test_framework_skip_if_no_txns);
    TestSuite_AddFull(suite,
-                     "/transactions/recovery_token_cleared",
+                     "/transactions/inherit_from_client [lock:live-server]",
+                     test_inherit_from_client,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_txns);
+   TestSuite_AddFull(suite,
+                     "/transactions/recovery_token_cleared [lock:live-server]",
                      test_transaction_recovery_token_cleared,
                      NULL,
                      NULL,
@@ -1071,7 +1083,7 @@ test_transactions_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_not_mongos);
    TestSuite_AddFull(suite,
-                     "/transactions/selected_server_pinned_to_mongos",
+                     "/transactions/selected_server_pinned_to_mongos [lock:live-server]",
                      test_selected_server_is_pinned_to_mongos,
                      NULL,
                      NULL,
