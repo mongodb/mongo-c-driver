@@ -285,7 +285,7 @@ expiration_ms_to_timer(int64_t expiration_ms, mlib_timer *expiration_timer, bson
 {
    bool ret = false;
 
-   mlib_duration since_unix_epoch = {0};
+   mlib_duration since_unix_epoch;
    {
       struct timeval tv;
       if (0 != bson_gettimeofday(&tv)) {
