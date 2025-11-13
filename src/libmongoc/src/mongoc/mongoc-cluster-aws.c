@@ -30,7 +30,6 @@
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mlib/ckdint.h>
 #include <mlib/duration.h>
 #include <mlib/timer.h>
 
