@@ -67,16 +67,16 @@
 #include <fcntl.h>    // IWYU pragma: export
 #include <sys/stat.h> // IWYU pragma: export
 
-#include <ctype.h>
-#include <errno.h>
+#include <ctype.h>   // IWYU pragma: keep: to be removed.
+#include <errno.h>   // IWYU pragma: keep: to be removed.
 #include <limits.h>  // IWYU pragma: export
 #include <stdarg.h>  // IWYU pragma: export
 #include <stdbool.h> // IWYU pragma: export
 #include <stdint.h>  // IWYU pragma: export
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <stdio.h>   // IWYU pragma: keep: to be removed.
+#include <stdlib.h>  // IWYU pragma: keep: to be removed.
+#include <string.h>  // IWYU pragma: keep: to be removed.
+#include <time.h>    // IWYU pragma: keep: to be removed.
 
 
 BSON_BEGIN_DECLS
