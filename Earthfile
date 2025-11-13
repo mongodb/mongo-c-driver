@@ -19,7 +19,7 @@ ARG --global __build_dir  = "/opt/mcd/build"
 init:
     ARG --required from
     FROM --pass-args $from
-    DO +INIT
+    DO --pass-args +INIT
 
 # build-environment :
 #   Provides an environment prepared for a mongo-c-driver build
@@ -177,9 +177,8 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM $default_search_registry/alpine:3.20
-    RUN apk add curl
-    RUN curl --location --silent --fail "https://pgp.mongodb.com/c-driver.pub" -o /c-driver.pub
+    FROM +init --from=$default_search_registry/alpine:3.20 --uv_version=none
+    RUN __download --from="https://pgp.mongodb.com/c-driver.pub" --to=/c-driver.pub --hash=unchecked
     SAVE ARTIFACT /c-driver.pub
 
 # sign-file :
@@ -296,9 +295,10 @@ sbom-validate:
             --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 $default_search_registry/ubuntu:24.04
-    RUN apt-get update && apt-get -y install curl
-    RUN curl --location https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux -o /usr/local/bin/snyk
+    FROM --platform=linux/amd64 +init --from=$default_search_registry/ubuntu:24.04
+    RUN __download --from=https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux \
+        --to=/usr/local/bin/snyk \
+        --hash=md5sum=1dafaff658906ca3d0656dcd838cc09b
     RUN chmod a+x /usr/local/bin/snyk
 
 snyk-test:
@@ -464,7 +464,7 @@ INIT:
         RUN __tool __init
     END
 
-    IF __can_install epel-release
+    IF test -f /etc/redhat-release && __can_install epel-release
         # Installing epel-release must happen separately since it can update the
         # available repositories on certain systems
         RUN __do "Enabling EPEL repositories..." __install epel-release
@@ -475,20 +475,21 @@ INIT:
     IF ! __have_command tar
         SET pkgs = $pkgs tar
     END
-    IF ! __have_command curl
+    IF ! __have_command curl && ! __have_command wget
         SET pkgs = $pkgs curl
     END
     IF ! __have_command gzip
         SET pkgs = $pkgs gzip
     END
-    RUN __do "Installing basic packages ($pkgs)" __install $pkgs
+    RUN test "$pkgs" = '' || __do "Installing basic packages ($pkgs)" __install $pkgs
 
     # Ensure that we have UV
-    ARG uv_version = "0.8.15"
+    ARG uv_version        = "0.8.15"
     ARG uv_install_sh_url = "https://astral.sh/uv/$uv_version/install.sh"
-    IF ! __have_command uv
-        RUN curl -LsSf "$uv_install_sh_url" \
-                | env UV_UNMANAGED_INSTALL=/opt/uv sh - \
+    ARG uv_install_hash   = "md5sum=64a16aa1f1f9654577c9ab424eca5b01"
+    IF test "$uv_version" != "none" && ! __have_command uv
+        RUN __download --from=$uv_install_sh_url --to=/uv-install.sh --hash=$uv_install_hash
+        RUN env UV_UNMANAGED_INSTALL=/opt/uv sh /uv-install.sh \
             && __alias uv  /opt/uv/uv \
             && __alias uvx /opt/uv/uvx
     END

@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 
-# shellcheck disable=SC3043
+# shellcheck disable=SC3043,SC1111
 
 true <<EOF
-    This script is inteded for use with preparing a container environment, providing
+    This script is intended for use with preparing a container environment, providing
     a pile of common utilities that are useful for environment setup and management.
 
     Basic usage:
@@ -28,6 +28,7 @@ __init() {
     __alias __boolstr      __tool __boolstr
     __alias __can_install  __tool __can_install
     __alias __do           __tool __do
+    __alias __download     __tool __download
     __alias __fail         __tool __fail
     __alias __have_command __tool __have_command
     __alias __install      __tool __install
@@ -42,6 +43,7 @@ __init() {
 __fail() {
     # shellcheck disable=SC2059
     printf "$@" 1>&2
+    printf "\n" 1>&2
     return 1
 }
 
@@ -116,6 +118,73 @@ __do() {
     fi
 }
 
+# ? __download --from=<url> --to=<filepath> --hash=<hashspec>
+#   Download a file from the given `<url>` using Curl, saving to the filepath named by `<filepath>.
+#   If `<hashspec>` is the literal word "unchecked", then no hash verification will take place,
+#   otherwise `<hashspec>` should be in the form of `<program>=<expect-digest>`, and the __download
+#   tool will invoke `<program>` to calculate the hash digest, and compares the resulting hash to
+#   `<expect-digest>`. If the hash does not match, the download operation fails.
+#
+#   All arguments are required and must be specified in the `--foo=bar` format
+__download() {
+  # Split out the named arguments
+  local from='' to_file='' hash_arg='' hash_prog='' hash_expect='[placeholder]'
+  for arg in "$@"; do
+    case $arg in
+    --from=*) from=${arg#*=};;
+    --to=*) to_file=${arg#*=};;
+    --hash=*)
+      hash_arg="${arg#*=}"
+      hash_prog=${hash_arg%%=*}
+      hash_expect=${hash_arg#*=}
+      ;;
+    *)
+      __fail "Unkown __download argument: “%s”" "$arg" || return;;
+    esac
+  done
+
+  # Check required arguments
+  test "$from" || __fail "__download expects a --from=... argument" || return
+  test "$to_file" || __fail "__download requires a --to=... argument" || return
+  test "$hash_arg" || __fail "__download expects a --hash=<algo>=<digest> argument" || return
+
+  # We save to a temporary file while checking its hash
+  local tmp="$to_file.tmp"
+  # Create the destination directory for the file
+  local pardir
+  pardir="$(dirname "$tmp")" || return
+  mkdir -p "$pardir" || return
+
+  # Do the download now
+  if __have_command curl; then
+    curl --location --silent --fail --show-error --output "$tmp" "$from" || return
+  elif __have_command wget; then
+    wget --quiet --output-document="$tmp" "$from" || return
+  else
+    __fail "We require either Curl or Wget to be available to use __download" || return
+  fi
+
+  # If the hash argument was literal "unchecked", then we don't check the hash
+  if test "$hash_arg" != 'unchecked'; then
+    # Grab the actual hash by invoking the algorithm program:
+    local hash_actual
+    hash_actual=$("$hash_prog" "$tmp")
+    # Trim content to only the actual part that we want
+    hash_actual=${hash_actual%% *}
+
+    # Case-insensitive compare with the digest that the caller provided
+    if ! __str test "$hash_expect" -ieq "$hash_actual"; then
+      __fail "Downloaded file hash in an incorrect hash. Expected “%s”, but got “%s” (used %s)" \
+        "$hash_expect" "$hash_actual" "$hash_prog" || return
+    fi
+  fi
+
+  # Remove any possible destination file to overwrite it
+  rm -f -- "$to_file" || return
+  # Move the temporary into its final place
+  mv -- "$tmp" "$to_file" || return
+}
+
 # ? __install [pkgs...]
 #   Installs zero or more named packages using the platform's package manager.
 #   This script "just does the right thing" to install a package as a single step,
@@ -123,6 +192,9 @@ __do() {
 #   "pkg-tool install" might be insufficient or subtly broken, and we only really
 #   care about installing a list of packages
 __install() {
+    if test $# = 0; then
+      return 0
+    fi
     if test -f /etc/debian_version ; then
         # We *must* do a repo update as part of the install step in a single cache
         # layer, as a cached apt-get update can become stale and prevent a later
