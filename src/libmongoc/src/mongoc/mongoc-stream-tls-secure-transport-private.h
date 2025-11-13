@@ -20,6 +20,11 @@
 #define MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+
+#include <mongoc/mongoc-stream-tls-secure-transport.h> // IWYU pragma: export
+
+//
+
 #include <common-macros-private.h>
 
 #include <bson/bson.h>

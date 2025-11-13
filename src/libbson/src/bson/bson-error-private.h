@@ -19,7 +19,10 @@
 #ifndef BSON_ERROR_PRIVATE_H
 #define BSON_ERROR_PRIVATE_H
 
-#include <bson/error.h>
+#include <bson/error.h> // IWYU pragma: export
+
+//
+
 #include <bson/macros.h>
 
 

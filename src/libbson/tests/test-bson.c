@@ -15,7 +15,7 @@
  */
 
 
-#include <bson/bson-private.h>
+#include <bson/bson_t-private.h>
 #include <bson/validate-private.h>
 #include <common-bson-dsl-private.h>
 
