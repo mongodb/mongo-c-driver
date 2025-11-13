@@ -223,7 +223,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
    mongoc_oidc_callback_params_set_user_data(params, mongoc_oidc_callback_get_user_data(callback));
    // From spec: "If CSOT is not applied, then the driver MUST use 1 minute as the timeout."
    // The timeout parameter (when set) is meant to be directly compared against bson_get_monotonic_time(). It is a
-   // time point, not a duration.
+   // time point, not a duration. bson_get_monotonic_time() calls mlib_now(). Use mlib_now() directly.
    mongoc_oidc_callback_params_set_timeout(
       params, mlib_microseconds_count(mlib_time_add(mlib_now(), mlib_duration(60, s)).time_since_monotonic_start));
 

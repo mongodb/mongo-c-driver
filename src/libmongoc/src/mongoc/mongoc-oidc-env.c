@@ -58,8 +58,7 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
    mlib_timer timer = {0};
    const int64_t *timeout_us = mongoc_oidc_callback_params_get_timeout(params);
    if (timeout_us) {
-      const mlib_duration remaining = mlib_duration((*timeout_us, us), minus, (bson_get_monotonic_time(), us));
-      timer = mlib_expires_after(remaining);
+      timer = mlib_expires_at((mlib_time_point){.time_since_monotonic_start = mlib_duration(*timeout_us, us)});
       if (mlib_timer_is_expired(timer)) {
          // No time remaining. Immediately fail.
          mongoc_oidc_callback_params_cancel_with_timeout(params);
