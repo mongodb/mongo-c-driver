@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bson/bson_t.h"
-
 #define FAIL(...)                                           \
    fprintf(stderr, "Error [%s:%d]:\n", __FILE__, __LINE__); \
    fprintf(stderr, __VA_ARGS__);                            \
