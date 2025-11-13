@@ -50,6 +50,6 @@ files=(
 tar -czf test-libmongoc.tar.gz "${files[@]}"
 echo "Creating test-libmongoc tarball ... end"
 
-cat <<EOT > oidc-remote-test-expansion.yml
+cat <<EOT >oidc-remote-test-expansion.yml
 OIDC_TEST_TARBALL: $(pwd)/test-libmongoc.tar.gz
 EOT
