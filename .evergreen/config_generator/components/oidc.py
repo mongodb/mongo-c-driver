@@ -49,7 +49,7 @@ def tasks():
                 SaslCyrusOpenSSLCompile.call(),
                 expansions_update(
                     updates=[
-                        KeyValueParam(key='CC', value='clang'),
+                        KeyValueParam(key='CC', value='gcc'),
                         # OIDC test servers support both OIDC and user/password.
                         KeyValueParam(key='AUTH', value='auth'),  # Use user/password for default test clients.
                         KeyValueParam(key='OIDC', value='oidc'),  # Enable OIDC tests.
@@ -66,9 +66,15 @@ def tasks():
 def variants():
     return [
         BuildVariant(
-            name='oidc',
+            name='oidc-asan',
             display_name='OIDC',
             run_on=[find_small_distro('ubuntu2404').name],
             tasks=[EvgTaskRef(name='test-oidc-task-group')],
+            expansions = {
+                'ASAN': 'on',
+                'CFLAGS': '-fno-omit-frame-pointer',
+                'CHECK_LOG': 'ON',
+                'SANITIZE': 'address,undefined',
+            }
         ),
     ]
