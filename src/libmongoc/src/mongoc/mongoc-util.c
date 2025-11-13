@@ -1122,10 +1122,11 @@ mongoc_percent_encode(const char *str)
 
    size_t str_len = strlen(str);
    size_t encoded_len = 0u;
+   static const size_t percent_encoded_char_len = 3u;
 
    for (char const *i = (char *)str; *i; i++) {
       if (needs_percent_encoding((unsigned char)*i)) {
-         encoded_len += 3u;
+         encoded_len += percent_encoded_char_len;
       } else {
          encoded_len += 1u;
       }
