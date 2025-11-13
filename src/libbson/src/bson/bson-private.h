@@ -20,7 +20,7 @@
 #ifndef BSON_PRIVATE_H
 #define BSON_PRIVATE_H
 
-#include <bson/bson.h> // IWYU pragma: export
+#include <bson/bson_t.h> // IWYU pragma: export
 
 //
 
