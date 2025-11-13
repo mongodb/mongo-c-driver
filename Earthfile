@@ -405,26 +405,26 @@ do-verify-headers-impl:
 
 # devdocs :
 #   Builds the developer documentation pages as HTML, and writes the resulting pages into
-#   `_build/devdocs` on the host for browsing.
+#   `_build/docs/dev` on the host for browsing.
 #
 # After building the devdocs, you can read them in a browser with the following command:
 #
-#     $ python -m http.server --directory _build/devdocs/
+#     $ python -m http.server --directory _build/docs/dev/
 #
 # Which will start a local HTTP server that serves the documentation pages.
 devdocs:
     FROM +init --from=alpine:3.20
     # Warmup the UV cache
-    RUN uvx --from=sphinx sphinx-build --version
+    RUN uvx --from=sphinx==8.2.3 sphinx-build --version
     # Copy in the required files
     COPY VERSION_CURRENT $__source_dir/
     # Docs in the appropriate subdirectory:
     LET docs_dir = $__source_dir/docs/dev
     COPY --dir docs/dev $docs_dir
     # Build the documentation, using uvx to install Sphinx on-the-fly
-    RUN uvx --from=sphinx sphinx-build $docs_dir $docs_dir/_build --builder=dirhtml
+    RUN uvx --from=sphinx==8.2.3 sphinx-build $docs_dir $docs_dir/_build --builder=dirhtml
     # Copy the build HTML pages to the host
-    SAVE ARTIFACT $docs_dir/_build AS LOCAL _build/devdocs
+    SAVE ARTIFACT $docs_dir/_build AS LOCAL _build/docs/dev
 
 # run :
 #   Run one or more targets simultaneously.
