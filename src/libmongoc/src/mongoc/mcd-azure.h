@@ -24,6 +24,9 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/duration.h>
+#include <mlib/timer.h>
+
+#define MCD_TOKEN_RESOURCE_VAULT "https://vault.azure.net"
 
 /**
  * @brief An Azure OAuth2 access token obtained from the Azure API
@@ -89,18 +92,24 @@ typedef struct mcd_azure_imds_request {
  * @brief Initialize a new IMDS HTTP request
  *
  * @param out The object to initialize
+ * @param token_resource Percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
+ * @param opt_client_id (Optional) Added as the "client_id" query parameter.
  *
- * @note the request must later be destroyed with mcd_azure_imds_request_destroy
- * @note Currently only supports the vault.azure.net resource
+ * @note the request must later be destroyed with mcd_azure_imds_request_destroy, even on error.
+ *
+ * @retval true Upon success.
+ * @retval false Otherwise.
  */
-void
+bool
 mcd_azure_imds_request_init(mcd_azure_imds_request *req,
+                            const char *token_resource,
                             const char *const opt_imds_host,
                             int opt_port,
-                            const char *const opt_extra_headers);
+                            const char *const opt_extra_headers,
+                            const char *opt_client_id);
 
 /**
  * @brief Destroy an IMDS request created with mcd_azure_imds_request_init()
@@ -116,20 +125,25 @@ mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
  *
  * @param out The output parameter for the obtained token. Must later be
  * destroyed
+ * @param token_resource Percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
+ * @param opt_timer (Optional) The timer for the request.
+ * @param opt_client_id (Optional) Added as the "client_id" query parameter.
  * @param error Output parameter for errors
  * @retval true Upon success
  * @retval false Otherwise. Sets an error via `error`
  *
- * @note Currently only supports the vault.azure.net resource
  */
 bool
 mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
+                                 const char *token_resource,
                                  const char *const opt_imds_host,
                                  int opt_port,
                                  const char *opt_extra_headers,
+                                 mlib_timer opt_timer,
+                                 const char *opt_client_id,
                                  bson_error_t *error);
 
 #endif // MCD_AZURE_H_INCLUDED

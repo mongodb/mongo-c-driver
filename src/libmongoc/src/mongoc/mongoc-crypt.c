@@ -815,9 +815,12 @@ static bool
 _request_new_azure_token(mcd_azure_access_token *out, bson_error_t *error)
 {
    return mcd_azure_access_token_from_imds(out,
-                                           NULL, // Use the default host
-                                           0,    //  Default port as well
-                                           NULL, // No extra headers
+                                           MCD_TOKEN_RESOURCE_VAULT,
+                                           NULL,            // Use the default host
+                                           0,               //  Default port as well
+                                           NULL,            // No extra headers
+                                           (mlib_timer){0}, // Default timer.
+                                           NULL,            // No client ID.
                                            error);
 }
 

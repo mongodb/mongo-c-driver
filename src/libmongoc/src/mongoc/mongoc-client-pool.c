@@ -697,7 +697,7 @@ mongoc_client_pool_set_oidc_callback(mongoc_client_pool_t *pool, const mongoc_oi
    BSON_ASSERT_PARAM(pool);
    BSON_ASSERT_PARAM(callback);
 
-   if (mongoc_oidc_cache_get_callback(pool->topology->oidc_cache)) {
+   if (mongoc_oidc_cache_has_user_callback(pool->topology->oidc_cache)) {
       MONGOC_ERROR("mongoc_client_pool_set_oidc_callback can only be called once per pool");
       return false;
    }
@@ -707,6 +707,6 @@ mongoc_client_pool_set_oidc_callback(mongoc_client_pool_t *pool, const mongoc_oi
       return false;
    }
 
-   mongoc_oidc_cache_set_callback(pool->topology->oidc_cache, callback);
+   mongoc_oidc_cache_set_user_callback(pool->topology->oidc_cache, callback);
    return true;
 }

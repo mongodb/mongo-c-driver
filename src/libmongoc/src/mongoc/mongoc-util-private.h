@@ -270,6 +270,11 @@ _mongoc_verify_windows_version(DWORD major_version, DWORD minor_version, DWORD b
 
 #endif
 
+// mongoc_percent_encode percent encodes `str` according to RFC 3986. The caller must free the returned string.
+// Returns NULL on failure.
+char *
+mongoc_percent_encode(const char *str);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */
