@@ -55,7 +55,7 @@ def task_groups():
                 bash_exec(
                     command_type=EvgCommandType.SETUP,
                     script='./drivers-evergreen-tools/.evergreen/auth_oidc/azure/delete-vm.sh',
-                )
+                ),
             ],
         ),
     ]
