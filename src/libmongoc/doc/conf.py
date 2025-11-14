@@ -170,10 +170,12 @@ rst_prolog = rf"""
     :cmake:command:`find_package() <command:find_package>`
 
 .. |bson_t-storage-ptr| replace::
-    non-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+    non-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
 
 .. |bson_t-opt-storage-ptr| replace::
-    maybe-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+    maybe-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
+
+.. _overwritable storage: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/#overwritable-storage
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
