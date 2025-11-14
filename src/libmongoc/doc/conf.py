@@ -128,24 +128,6 @@ html_title = html_shorttitle = 'libmongoc %s' % version
 html_use_index = True
 
 rst_prolog = rf"""
-.. |qenc:is-experimental| replace::
-
-    is part of the experimental
-    `Queryable Encryption <queryable-encryption_>`_ API and may be subject
-    to breaking changes in future releases.
-
-.. |qenc:opt-is-experimental| replace::
-
-    This option |qenc:is-experimental|
-
-.. |qenc:api-is-experimental| replace::
-
-    This API |qenc:is-experimental|
-
-.. |qenc:range-is-experimental| replace::
-
-    Range algorithm is experimental only and not intended for public use. It is subject to breaking changes.
-
 .. _the findAndModify command:
     https://www.mongodb.com/docs/manual/reference/command/findAndModify/
 
