@@ -91,6 +91,9 @@ if [[ "${CC}" =~ 'gcc' ]]; then
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
+  # mingw-w64 doesn't like lld (hangs indefinitely?).
+  configure_flags_append "-DMONGO_USE_LLD=OFF"
+
   cmake "${configure_flags[@]}" "${extra_configure_flags[@]}" -B "${build_dir:?}"
 
   cmake --build "${build_dir:?}" --target all mongo_c_driver_tests mongo_c_driver_examples
