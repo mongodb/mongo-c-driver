@@ -18,6 +18,9 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
+#include <mlib/timer.h>
+
 #include <TestSuite.h>
 #include <test-libmongoc.h>
 
@@ -39,7 +42,7 @@ test_mongoc_http_get(void *unused)
    req.host = "localhost";
    req.path = "get";
    req.port = 18000;
-   r = _mongoc_http_send(&req, 10000, false, NULL, &res, &error);
+   r = _mongoc_http_send(&req, mlib_expires_after(mlib_duration(10, s)), false, NULL, &res, &error);
    ASSERT_OR_PRINT(r, error);
 
    ASSERT_WITH_MSG(res.status == 200,
@@ -71,7 +74,7 @@ test_mongoc_http_post(void *unused)
    req.host = "localhost";
    req.path = "post";
    req.port = 18000;
-   r = _mongoc_http_send(&req, 10000, false, NULL, &res, &error);
+   r = _mongoc_http_send(&req, mlib_expires_after(mlib_duration(10, s)), false, NULL, &res, &error);
    ASSERT_OR_PRINT(r, error);
 
    ASSERT_WITH_MSG(res.status == 200,
@@ -88,9 +91,17 @@ test_mongoc_http_post(void *unused)
 void
 test_http_install(TestSuite *suite)
 {
-   TestSuite_AddFull(
-      suite, "/http/get", test_mongoc_http_get, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_offline);
+   TestSuite_AddFull(suite,
+                     "/http/get [uses:simple-http-server-18000]",
+                     test_mongoc_http_get,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_offline);
 
-   TestSuite_AddFull(
-      suite, "/http/post", test_mongoc_http_post, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_offline);
+   TestSuite_AddFull(suite,
+                     "/http/post [uses:simple-http-server-18000]",
+                     test_mongoc_http_post,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_offline);
 }

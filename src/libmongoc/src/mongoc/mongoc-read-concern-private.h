@@ -19,7 +19,9 @@
 #ifndef MONGOC_READ_CONCERN_PRIVATE_H
 #define MONGOC_READ_CONCERN_PRIVATE_H
 
-#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-read-concern.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson.h>
 

@@ -19,7 +19,7 @@
 #ifndef MONGOC_SOCKET_PRIVATE_H
 #define MONGOC_SOCKET_PRIVATE_H
 
-#include <mongoc/mongoc-socket.h>
+#include <mongoc/mongoc-socket.h> // IWYU pragma: export
 
 BSON_BEGIN_DECLS
 

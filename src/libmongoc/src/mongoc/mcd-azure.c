@@ -20,6 +20,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
 #include <mlib/time_point.h>
 #include <mlib/timer.h>
 
@@ -154,7 +155,7 @@ mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
       // which the token will be valid. strtoll() will saturate on range errors
       // and return zero on parse errors.
       char *parse_end;
-      long long s = strtoll(expires_in_str, &parse_end, 0);
+      const long long expires_in = strtoll(expires_in_str, &parse_end, 0);
       if (parse_end != expires_in_str + expires_in_len) {
          // Did not parse the entire string. Bad
          _mongoc_set_error(error,
@@ -164,7 +165,7 @@ mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
                            mlib_in_range(int, expires_in_len) ? (int)expires_in_len : INT_MAX,
                            expires_in_str);
       } else {
-         out->expires_in = mcd_seconds(s);
+         out->expires_in = mlib_duration(expires_in, s);
          okay = true;
       }
    }
@@ -217,12 +218,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
                          ? opt_timer
                          : mlib_expires_after(mlib_duration(3, s)); // Default 3 second timeout.
 
-   int timeout_ms = 0;
-   if (mlib_narrow(&timeout_ms, mlib_milliseconds_count(mlib_timer_remaining(timer)))) {
-      timeout_ms = mlib_maxof(int); // Clamp to max int.
-   }
-
-   if (!_mongoc_http_send(&req.req, timeout_ms, false, NULL, &resp, error)) {
+   if (!_mongoc_http_send(&req.req, timer, false, NULL, &resp, error)) {
       goto fail;
    }
 

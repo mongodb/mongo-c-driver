@@ -1,14 +1,14 @@
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_command import EvgCommandType, ec2_assume_role, KeyValueParam, expansions_update
+from shrub.v3.evg_command import EvgCommandType, KeyValueParam, ec2_assume_role, expansions_update
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 from shrub.v3.evg_task_group import EvgTaskGroup
 
-from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.fetch_source import FetchSource
+from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.sasl.openssl import SaslCyrusOpenSSLCompile
-from config_generator.etc.utils import bash_exec
 from config_generator.etc.distros import find_small_distro
+from config_generator.etc.utils import bash_exec
 
 
 def task_groups():

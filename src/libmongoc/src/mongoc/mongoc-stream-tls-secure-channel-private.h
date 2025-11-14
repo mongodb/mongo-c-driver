@@ -20,6 +20,11 @@
 #define MONGOC_STREAM_TLS_SECURE_CHANNEL_PRIVATE_H
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+
+#include <mongoc/mongoc-stream-tls-secure-channel.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-shared-private.h>
 
 #include <mongoc/mongoc-stream-tls.h>

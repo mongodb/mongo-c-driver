@@ -1,5 +1,9 @@
-/*
- * Copyright 2009-present MongoDB, Inc.
+/**
+ * @file str_vec.h
+ * @brief This file defines mstr_vec, a common "array of strings" type
+ * @date 2025-09-30
+ *
+ * @copyright Copyright 2009-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +17,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef MLIB_STR_VEC_H_INCLUDED
+#define MLIB_STR_VEC_H_INCLUDED
 
-#include <bson/bson-prelude.h>
+#include <mlib/config.h>
+#include <mlib/str.h>
 
-#ifndef BSON_ERROR_PRIVATE_H
-#define BSON_ERROR_PRIVATE_H
+#define T mstr
+#define VecDestroyElement(Ptr) (mstr_destroy(Ptr))
+#define VecCopyElement(Dst, Src) (*Dst = mstr_copy(*Src), Dst->data != NULL)
+#include <mlib/vec.th>
 
-#include <bson/error.h> // IWYU pragma: export
-
-//
-
-#include <bson/macros.h>
-
-
-#define BSON_ERROR_CATEGORY 1
-
-
-static BSON_INLINE void
-bson_set_error_category(bson_error_t *error, uint8_t category)
-{
-   BSON_ASSERT_PARAM(error);
-   error->reserved = category;
-}
-
-#endif /* BSON_ERROR_PRIVATE_H */
+#endif // MLIB_STR_VEC_H_INCLUDED

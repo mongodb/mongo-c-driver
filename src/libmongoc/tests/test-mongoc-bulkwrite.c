@@ -904,7 +904,7 @@ void
 test_bulkwrite_install(TestSuite *suite)
 {
    TestSuite_AddFull(suite,
-                     "/bulkwrite/insert",
+                     "/bulkwrite/insert [lock:live-server]",
                      test_bulkwrite_insert,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -912,7 +912,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/upsert_with_null",
+                     "/bulkwrite/upsert_with_null [lock:live-server]",
                      test_bulkwrite_upsert_with_null,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -920,7 +920,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/writeError",
+                     "/bulkwrite/writeError [lock:live-server]",
                      test_bulkwrite_writeError,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -928,7 +928,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/session_with_unacknowledged",
+                     "/bulkwrite/session_with_unacknowledged [lock:live-server]",
                      test_bulkwrite_session_with_unacknowledged,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -936,7 +936,7 @@ test_bulkwrite_install(TestSuite *suite)
                      test_framework_skip_if_no_sessions);
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/double_execute",
+                     "/bulkwrite/double_execute [lock:live-server]",
                      test_bulkwrite_double_execute,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -944,7 +944,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/server_id",
+                     "/bulkwrite/server_id [lock:live-server]",
                      test_bulkwrite_serverid,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -952,7 +952,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/server_id/unacknowledged",
+                     "/bulkwrite/server_id/unacknowledged [lock:live-server]",
                      test_bulkwrite_serverid_unacknowledged,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -960,7 +960,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/server_id/on_retry",
+                     "/bulkwrite/server_id/on_retry [lock:live-server]",
                      test_bulkwrite_serverid_on_retry,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -970,7 +970,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/extra",
+                     "/bulkwrite/extra [lock:live-server]",
                      test_bulkwrite_extra,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -978,7 +978,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/no_verbose_results",
+                     "/bulkwrite/no_verbose_results [lock:live-server]",
                      test_bulkwrite_no_verbose_results,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -986,7 +986,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/many_namespaces",
+                     "/bulkwrite/many_namespaces [lock:live-server]",
                      test_bulkwrite_many_namespaces,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -995,7 +995,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/execute_requires_client",
+                     "/bulkwrite/execute_requires_client [lock:live-server]",
                      test_bulkwrite_execute_requires_client,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -1003,7 +1003,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/two_large_inserts",
+                     "/bulkwrite/two_large_inserts [lock:live-server]",
                      test_bulkwrite_two_large_inserts,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -1011,7 +1011,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/client_error_no_result",
+                     "/bulkwrite/client_error_no_result [lock:live-server]",
                      test_bulkwrite_client_error_no_result,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -1019,7 +1019,7 @@ test_bulkwrite_install(TestSuite *suite)
    );
 
    TestSuite_AddFull(suite,
-                     "/bulkwrite/check_acknowledged",
+                     "/bulkwrite/check_acknowledged [lock:live-server]",
                      test_bulkwrite_check_acknowledged,
                      NULL /* dtor */,
                      NULL /* ctx */,

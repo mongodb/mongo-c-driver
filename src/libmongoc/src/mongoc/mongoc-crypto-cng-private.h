@@ -16,7 +16,7 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-crypto-private.h> // IWYU pragma: export
 
 #include <bson/bson.h>
 

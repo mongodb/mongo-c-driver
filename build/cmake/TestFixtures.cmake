@@ -47,3 +47,11 @@ mongo_define_subprocess_fixture(
         "${_MONGOC_BUILD_SCRIPT_DIR}/bottle.py" fake_kms_provider_server:kms_provider
             --bind localhost:14987  # Port 14987 chosen arbitrarily
     )
+
+# Run our very simple HTTP server in a fixture process
+mongo_define_subprocess_fixture(
+    mongoc/fixtures/simple-http-server-18000
+    SPAWN_WAIT 1
+    COMMAND
+        $<TARGET_FILE:Python3::Interpreter> -u "${mongo-c-driver_SOURCE_DIR}/.evergreen/scripts/simple_http_server.py"
+    )

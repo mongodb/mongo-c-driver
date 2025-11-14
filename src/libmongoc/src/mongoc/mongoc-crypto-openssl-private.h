@@ -25,7 +25,7 @@
 #ifndef MONGOC_CRYPTO_OPENSSL_PRIVATE_H
 #define MONGOC_CRYPTO_OPENSSL_PRIVATE_H
 
-#include <mongoc/mongoc-crypto-private.h>
+#include <mongoc/mongoc-crypto-private.h> // IWYU pragma: export
 
 BSON_BEGIN_DECLS
 
