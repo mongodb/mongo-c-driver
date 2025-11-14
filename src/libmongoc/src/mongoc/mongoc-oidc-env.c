@@ -78,7 +78,7 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
       goto fail;
    }
 
-   ret = mongoc_oidc_credential_new_with_expires_in(token.access_token, mcd_get_microseconds(token.expires_in));
+   ret = mongoc_oidc_credential_new_with_expires_in(token.access_token, mlib_microseconds_count(token.expires_in));
    if (!ret) {
       MONGOC_ERROR("Failed to process Azure OIDC access token");
 
@@ -86,7 +86,7 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
          MONGOC_ERROR("missing Azure OIDC access token string");
       }
 
-      if (mcd_get_microseconds(token.expires_in) < 0) {
+      if (mlib_microseconds_count(token.expires_in) < 0) {
          MONGOC_ERROR("Azure OIDC access token expiration must not be a negative value");
       }
 
