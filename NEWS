@@ -9,6 +9,10 @@ libmongoc 2.2.0 (unreleased)
 
 - Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
 
+## Removed
+
+- Support for Visual Studio 2015. Use Visual Studio 2017 or newer.
+
 libmongoc 2.1.2
 ===============
 
