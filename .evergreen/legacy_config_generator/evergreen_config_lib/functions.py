@@ -157,7 +157,7 @@ all_functions = OD(
                     r"""
                     # Build libmongoc with CMake and compile a program that links
                     # dynamically to it, using variables from pkg-config.exe.
-                    "PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:${PATH:-}" # mingw-w64 GCC
+                    PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:${PATH:-}" # mingw-w64 GCC
                     cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
                     """,
                 )
@@ -186,7 +186,7 @@ all_functions = OD(
                     r"""
                     # Build libmongoc with CMake and compile a program that links
                     # dynamically to it, using variables from pkg-config.exe.
-                    "PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:${PATH:-}" # mingw-w64 GCC
+                    PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:${PATH:-}" # mingw-w64 GCC
                     cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
                     """,
                 )
