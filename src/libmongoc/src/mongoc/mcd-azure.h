@@ -46,8 +46,8 @@ typedef struct mcd_azure_access_token {
 /**
  * @brief Try to parse an Azure access token from an IMDS metadata JSON response
  *
- * @param out The token to initialize. Should be uninitialized. Must later be
- * destroyed by the caller.
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param json The JSON string body
  * @param len The length of 'body'
  * @param error An output parameter for errors
@@ -92,7 +92,7 @@ typedef struct mcd_azure_imds_request {
  * @brief Initialize a new IMDS HTTP request
  *
  * @param out The object to initialize
- * @param token_resource Percent encoded and passed as the "resource" query parameter.
+ * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
@@ -123,9 +123,9 @@ mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
  * @brief Attempt to obtain a new OAuth2 access token from an Azure IMDS HTTP
  * server.
  *
- * @param out The output parameter for the obtained token. Must later be
- * destroyed
- * @param token_resource Percent encoded and passed as the "resource" query parameter.
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
+ * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request

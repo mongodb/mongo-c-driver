@@ -258,6 +258,7 @@ buildvariants:
     tasks:
       - name: test-oidc-task-group
       - name: test-oidc-azure-task-group
+      - name: test-oidc-gcp-task-group
   - name: openssl-compat-matrix
     display_name: OpenSSL Compatibility Matrix
     tasks:

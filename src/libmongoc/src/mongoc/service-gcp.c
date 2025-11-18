@@ -23,13 +23,25 @@
 #include <mlib/timer.h>
 
 #define HOST "metadata.google.internal"
+static const char *const DEFAULT_METADATA_TOKEN_PATH = "/computeMetadata/v1/instance/service-accounts/default/token";
+static const char *const DEFAULT_METADATA_IDENTITY_PATH =
+   "/computeMetadata/v1/instance/service-accounts/default/identity";
 
-static const char *const DEFAULT_METADATA_PATH = "/computeMetadata/v1/instance/service-accounts/default/token";
-
-void
-gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers)
+bool
+gcp_request_init(gcp_request *req,
+                 const char *metadata_path,
+                 const char *opt_audience,
+                 const char *const opt_host,
+                 int opt_port,
+                 const char *const opt_extra_headers)
 {
    BSON_ASSERT_PARAM(req);
+   BSON_ASSERT_PARAM(metadata_path);
+
+   bool ok = false;
+   char *encoded_audience = NULL;
+   mcommon_string_append_t path = {0};
+
    _mongoc_http_request_init(&req->req);
 
    // The HTTP host of the Google metadata server
@@ -49,7 +61,31 @@ gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, con
    req->req.extra_headers = req->_owned_headers =
       bson_strdup_printf("Metadata-Flavor: Google\r\n%s", opt_extra_headers ? opt_extra_headers : "");
 
-   req->req.path = req->_owned_path = bson_strdup(DEFAULT_METADATA_PATH);
+
+   mcommon_string_new_as_append(&path);
+
+   if (!mcommon_string_append(&path, metadata_path)) {
+      goto fail;
+   }
+
+   if (opt_audience) {
+      encoded_audience = mongoc_percent_encode(opt_audience);
+      if (!encoded_audience) {
+         goto fail;
+      }
+      if (!mcommon_string_append_printf(&path, "?audience=%s", encoded_audience)) {
+         goto fail;
+      }
+   }
+
+   req->req.path = req->_owned_path = mcommon_string_from_append_destroy_with_steal(&path);
+   path = (mcommon_string_append_t){0};
+   ok = true;
+
+fail:
+   bson_free(encoded_audience);
+   mcommon_string_from_append_destroy(&path);
+   return ok;
 }
 
 void
@@ -144,7 +180,10 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
       ._owned_host = NULL,
       ._owned_headers = NULL,
    };
-   gcp_request_init(&req, opt_host, opt_port, opt_extra_headers);
+   if (!gcp_request_init(&req, DEFAULT_METADATA_TOKEN_PATH, NULL, opt_host, opt_port, opt_extra_headers)) {
+      _mongoc_set_error(error, MONGOC_ERROR_GCP, MONGOC_ERROR_KMS_SERVER_HTTP, "Failed to initialize request");
+      goto fail;
+   }
 
    const mlib_duration socket_timeout = mlib_duration(3, s);
 
@@ -164,9 +203,69 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
       goto fail;
    }
 
+   // Expect response body is JSON containing the token.
    if (!gcp_access_token_try_parse_from_json(out, resp.body, resp.body_len, error)) {
       goto fail;
    }
+   okay = true;
+
+fail:
+   gcp_request_destroy(&req);
+   _mongoc_http_response_cleanup(&resp);
+   return okay;
+}
+
+
+bool
+gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
+                                   const char *audience,
+                                   mlib_timer opt_timer,
+                                   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(out);
+   BSON_ASSERT_PARAM(audience);
+   bool okay = false;
+
+   // Clear the output
+   *out = (gcp_service_account_token){0};
+
+   mongoc_http_response_t resp;
+   _mongoc_http_response_init(&resp);
+
+   gcp_request req = {
+      .req = {0},
+      ._owned_path = NULL,
+      ._owned_host = NULL,
+      ._owned_headers = NULL,
+   };
+   if (!gcp_request_init(&req, DEFAULT_METADATA_IDENTITY_PATH, audience, NULL, 0, NULL)) {
+      _mongoc_set_error(error, MONGOC_ERROR_GCP, MONGOC_ERROR_KMS_SERVER_HTTP, "Failed to initialize request");
+      goto fail;
+   }
+
+   mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, ==, (mlib_time_point){0})
+                         ? opt_timer
+                         : mlib_expires_after(3, s); // Default 3 second timeout.
+
+   if (!_mongoc_http_send(&req.req, timer, false, NULL, &resp, error)) {
+      goto fail;
+   }
+
+   // Only accept an HTTP 200 as success
+   if (resp.status != 200) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_GCP,
+                        MONGOC_ERROR_KMS_SERVER_HTTP,
+                        "Error from the GCP metadata server while looking for access token: %.*s",
+                        resp.body_len,
+                        resp.body);
+      goto fail;
+   }
+
+   // Expect response body is the token.
+   *out = (gcp_service_account_token){0};
+   out->access_token = resp.body; // Ownership transfer.
+   resp.body = NULL;
 
    okay = true;
 
