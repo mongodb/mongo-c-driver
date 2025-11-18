@@ -124,7 +124,7 @@ mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
  * server.
  *
  * @param out Overwritten with the obtained token. Must later be destroyed.
- * @pre `*out` must be in a non-owning state (uninitialized or zero-initialized).
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
