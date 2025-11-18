@@ -264,7 +264,8 @@ gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
 
    // Expect response body is the token.
    *out = (gcp_service_account_token){0};
-   out->access_token = bson_strdup(resp.body);
+   out->access_token = resp.body; // Ownership transfer.
+   resp.body = NULL;
 
    okay = true;
 
