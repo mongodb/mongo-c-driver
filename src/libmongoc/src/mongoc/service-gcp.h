@@ -52,7 +52,7 @@ typedef struct gcp_request {
  *
  * @param req The object to initialize
  * @param metadata_path The HTTP path.
- * @param opt_audience (Optional) Percent encoded and passed as the "audience" query parameter.
+ * @param opt_audience (Optional) Will be percent encoded and passed as the "audience" query parameter.
  * @param opt_host (Optional) the IP host of the metadata server (default is
  * metadata.google.internal)
  * @param opt_port (Optional) The port of the HTTP server (default is 80)
@@ -133,7 +133,7 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
  * @brief Like @ref gcp_access_token_from_gcp_server, but requests an identity token.
  *
  * @param out The output parameter for the obtained token. Must later be destroyed
- * @param audience Percent encoded and passed as the "audience" query parameter.
+ * @param audience Will be percent encoded and passed as the "audience" query parameter.
  * @param opt_timer (Optional) The timer for the request. Set to zero for default.
  * @param error Output parameter for errors
  *

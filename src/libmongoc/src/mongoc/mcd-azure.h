@@ -92,7 +92,7 @@ typedef struct mcd_azure_imds_request {
  * @brief Initialize a new IMDS HTTP request
  *
  * @param out The object to initialize
- * @param token_resource Percent encoded and passed as the "resource" query parameter.
+ * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
@@ -125,7 +125,7 @@ mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
  *
  * @param out The output parameter for the obtained token. Must later be
  * destroyed
- * @param token_resource Percent encoded and passed as the "resource" query parameter.
+ * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
