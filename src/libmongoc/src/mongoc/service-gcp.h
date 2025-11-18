@@ -145,6 +145,6 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
 bool
 gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
                                    const char *audience,
-                                   mlib_timer timer,
+                                   mlib_timer opt_timer,
                                    bson_error_t *error);
 #endif /* SERVICE_GCP_H */
