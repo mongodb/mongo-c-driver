@@ -92,8 +92,8 @@ gcp_access_token_destroy(gcp_service_account_token *token);
 /**
  * @brief Try to parse a GCP access token from the metadata server JSON response
  *
- * @param out The token to initialize. Should be uninitialized. Must later be
- * destroyed by the caller.
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param json The JSON string body
  * @param len The length of 'body'
  * @param error An output parameter for errors
@@ -109,8 +109,8 @@ gcp_access_token_try_parse_from_json(gcp_service_account_token *out, const char 
  * @brief Attempt to obtain a new GCP service account token from a GCP metadata
  * server.
  *
- * @param out The output parameter for the obtained token. Must later be
- * destroyed
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param opt_host (Optional) Override the IP host of the GCP server (used
  * in testing)
  * @param opt_port (Optional) The port of the HTTP server (default is 80)
@@ -132,7 +132,8 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
 /**
  * @brief Like @ref gcp_access_token_from_gcp_server, but requests an identity token.
  *
- * @param out The output parameter for the obtained token. Must later be destroyed
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param audience Will be percent encoded and passed as the "audience" query parameter.
  * @param opt_timer (Optional) The timer for the request. Set to zero for default.
  * @param error Output parameter for errors
