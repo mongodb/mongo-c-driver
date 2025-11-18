@@ -245,7 +245,7 @@ gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
 
    mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, ==, (mlib_time_point){0})
                          ? opt_timer
-                         : mlib_expires_after(mlib_duration(3, s)); // Default 3 second timeout.
+                         : mlib_expires_after(3, s); // Default 3 second timeout.
 
    if (!_mongoc_http_send(&req.req, timer, false, NULL, &resp, error)) {
       goto fail;
