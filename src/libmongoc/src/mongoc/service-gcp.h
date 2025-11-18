@@ -23,6 +23,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/timer.h>
+
 /**
  * @brief A GCP access token obtained from the GCP metadata server
  */
@@ -127,4 +129,21 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
                                  const char *opt_extra_headers,
                                  bson_error_t *error);
 
+/**
+ * @brief Like @ref gcp_access_token_from_gcp_server, but requests an identity token.
+ *
+ * @param out The output parameter for the obtained token. Must later be destroyed
+ * @param audience Percent encoded and passed as the "audience" query parameter.
+ * @param opt_timer (Optional) The timer for the request. Set to zero for default.
+ * @param error Output parameter for errors
+ *
+ * @retval true Upon success
+ * @retval false Otherwise. Sets an error via `error`
+ *
+ */
+bool
+gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
+                                   const char *audience,
+                                   mlib_timer timer,
+                                   bson_error_t *error);
 #endif /* SERVICE_GCP_H */
