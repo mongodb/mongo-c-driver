@@ -18,6 +18,7 @@
 
 #include <mongoc/mcd-azure.h>
 #include <mongoc/mongoc-oidc-callback.h>
+#include <mongoc/service-gcp.h>
 
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
@@ -101,9 +102,39 @@ fail:
 static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_gcp(mongoc_oidc_callback_params_t *params)
 {
-   BSON_UNUSED(params);
-   // TODO (CDRIVER-4489)
-   return NULL;
+   BSON_ASSERT_PARAM(params);
+
+   bson_error_t error;
+   gcp_service_account_token token = {0};
+   mongoc_oidc_credential_t *ret = NULL;
+   mongoc_oidc_env_callback_t *callback = mongoc_oidc_callback_params_get_user_data(params);
+   BSON_ASSERT(callback);
+
+   mlib_timer timer = {0};
+   const int64_t *timeout_us = mongoc_oidc_callback_params_get_timeout(params);
+   if (timeout_us) {
+      timer = mlib_expires_at((mlib_time_point){.time_since_monotonic_start = mlib_duration(*timeout_us, us)});
+      if (mlib_timer_is_expired(timer)) {
+         // No time remaining. Immediately fail.
+         mongoc_oidc_callback_params_cancel_with_timeout(params);
+         goto fail;
+      }
+   }
+
+   if (!gcp_identity_token_from_gcp_server(&token, callback->token_resource, timer, &error)) {
+      MONGOC_ERROR("Failed to obtain GCP OIDC access token: %s", error.message);
+      goto fail;
+   }
+
+   ret = mongoc_oidc_credential_new(token.access_token);
+   if (!ret) {
+      MONGOC_ERROR("Failed to process GCP OIDC access token");
+      goto fail;
+   }
+
+fail:
+   gcp_access_token_destroy(&token);
+   return ret;
 }
 
 static mongoc_oidc_credential_t *
