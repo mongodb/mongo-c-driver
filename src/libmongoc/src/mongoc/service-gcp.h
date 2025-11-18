@@ -48,16 +48,26 @@ typedef struct gcp_request {
 /**
  * @brief Initialize a new GCP HTTP request
  *
- * @param out The object to initialize
+ * @param req The object to initialize
+ * @param metadata_path The HTTP path.
+ * @param opt_audience (Optional) Percent encoded and passed as the "audience" query parameter.
  * @param opt_host (Optional) the IP host of the metadata server (default is
  * metadata.google.internal)
  * @param opt_port (Optional) The port of the HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
  *
  * @note the request must later be destroyed with gcp_request_destroy
+ *
+ * @retval true Upon success
+ * @retval false Otherwise. Sets an error via `error`
  */
-void
-gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers);
+bool
+gcp_request_init(gcp_request *req,
+                 const char *metadata_path,
+                 const char *opt_audience,
+                 const char *const opt_host,
+                 int opt_port,
+                 const char *const opt_extra_headers);
 
 
 /**

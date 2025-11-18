@@ -23,13 +23,25 @@
 #include <mlib/timer.h>
 
 #define HOST "metadata.google.internal"
+static const char *const DEFAULT_METADATA_TOKEN_PATH = "/computeMetadata/v1/instance/service-accounts/default/token";
+static const char *const DEFAULT_METADATA_IDENTITY_PATH =
+   "/computeMetadata/v1/instance/service-accounts/default/identity";
 
-static const char *const DEFAULT_METADATA_PATH = "/computeMetadata/v1/instance/service-accounts/default/token";
-
-void
-gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers)
+bool
+gcp_request_init(gcp_request *req,
+                 const char *metadata_path,
+                 const char *opt_audience,
+                 const char *const opt_host,
+                 int opt_port,
+                 const char *const opt_extra_headers)
 {
    BSON_ASSERT_PARAM(req);
+   BSON_ASSERT_PARAM(metadata_path);
+
+   bool ok = false;
+   char *encoded_audience = NULL;
+   mcommon_string_append_t path = {0};
+
    _mongoc_http_request_init(&req->req);
 
    // The HTTP host of the Google metadata server
@@ -49,7 +61,31 @@ gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, con
    req->req.extra_headers = req->_owned_headers =
       bson_strdup_printf("Metadata-Flavor: Google\r\n%s", opt_extra_headers ? opt_extra_headers : "");
 
-   req->req.path = req->_owned_path = bson_strdup(DEFAULT_METADATA_PATH);
+
+   mcommon_string_new_as_append(&path);
+
+   if (!mcommon_string_append(&path, metadata_path)) {
+      goto fail;
+   }
+
+   if (opt_audience) {
+      encoded_audience = mongoc_percent_encode(opt_audience);
+      if (!encoded_audience) {
+         goto fail;
+      }
+      if (!mcommon_string_append_printf(&path, "?audience=%s", encoded_audience)) {
+         goto fail;
+      }
+   }
+
+   req->req.path = req->_owned_path = mcommon_string_from_append_destroy_with_steal(&path);
+   path = (mcommon_string_append_t){0};
+   ok = true;
+
+fail:
+   bson_free(encoded_audience);
+   mcommon_string_from_append_destroy(&path);
+   return ok;
 }
 
 void
