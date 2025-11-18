@@ -159,6 +159,10 @@ def variants():
         BuildVariant(
             name='oidc',
             display_name='OIDC',
-            tasks=[EvgTaskRef(name='test-oidc-task-group'), EvgTaskRef(name='test-oidc-azure-task-group'), EvgTaskRef(name='test-oidc-gcp-task-group')],
+            tasks=[
+                EvgTaskRef(name='test-oidc-task-group'),
+                EvgTaskRef(name='test-oidc-azure-task-group'),
+                EvgTaskRef(name='test-oidc-gcp-task-group'),
+            ],
         ),
     ]
