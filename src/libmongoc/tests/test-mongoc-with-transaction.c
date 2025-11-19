@@ -84,7 +84,7 @@ void
 test_with_transaction_install(TestSuite *suite)
 {
    TestSuite_AddFull(suite,
-                     "/with_transaction/timeout_tests",
+                     "/with_transaction/timeout_tests [lock:live-server]",
                      test_with_transaction_timeout,
                      NULL,
                      NULL,

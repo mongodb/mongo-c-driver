@@ -7,6 +7,16 @@ set -o nounset
 ROOT=$(pwd)
 INSTALL_DIR=$ROOT/install
 
+if [[ "${distro_id:?}" == "debian11-small" ]]; then
+  # Temporary workaround for lack of uv on `debian11`. TODO: remove after DEVPROD-23011 is resolved.
+  uv_dir="$(mktemp -d)"
+  python3 -m virtualenv "${uv_dir:?}"
+  # shellcheck source=/dev/null
+  (. "${uv_dir:?}/bin/activate" && python -m pip install uv)
+  PATH="${uv_dir:?}/bin:${PATH:-}"
+  command -V uv >/dev/null
+fi
+
 . .evergreen/scripts/install-build-tools.sh
 install_build_tools
 export CMAKE_GENERATOR="Ninja"

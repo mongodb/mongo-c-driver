@@ -3289,6 +3289,21 @@ test_uri_uri_in_options(void)
 #undef TEST_QUERY
 }
 
+// test_uri_bad_oidc is a regression test for CDRIVER-6137
+static void
+test_uri_bad_oidc(void)
+{
+   bson_error_t error;
+   mongoc_uri_t *uri = mongoc_uri_new_with_error(
+      "mongodb://localhost/?authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:test,TOKEN_RESOURCE:foo",
+      &error);
+   ASSERT(!uri);
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "'MONGODB-OIDC' authentication with test environment does not accept a TOKEN_RESOURCE");
+}
+
 void
 test_uri_install(TestSuite *suite)
 {
@@ -3318,4 +3333,5 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
    TestSuite_Add(suite, "/Uri/depr", test_uri_depr);
    TestSuite_Add(suite, "/Uri/uri_in_options", test_uri_uri_in_options);
+   TestSuite_Add(suite, "/Uri/bad_oidc", test_uri_bad_oidc);
 }

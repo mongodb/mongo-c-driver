@@ -1043,7 +1043,12 @@ started(const mongoc_apm_command_started_t *event)
    }
 
    has_cluster_time = bson_iter_init_find(&iter, cmd, "$clusterTime");
-   if (test->acknowledged && !has_cluster_time) {
+
+   // Since $clusterTime is no longer used with SDAM, there may not be a cluster time until the first successful
+   // command completes.
+   const bool should_have_cluster_time = test->acknowledged && test->n_succeeded >= 1;
+
+   if (should_have_cluster_time && !has_cluster_time) {
       test_error("no $clusterTime sent with command %s", cmd_name);
    }
 
@@ -2394,7 +2399,7 @@ test_unacknowledged_explicit_cs_explicit_wc(void *ctx)
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));                  \
       *helper = (session_test_helper_t){.test_fn = (_test_fn)};                            \
       TestSuite_AddFull(_suite,                                                            \
-                        _name,                                                             \
+                        _name " [lock:live-server]",                                       \
                         (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
                         &bson_free,                                                        \
                         helper,                                                            \
@@ -2408,7 +2413,7 @@ test_unacknowledged_explicit_cs_explicit_wc(void *ctx)
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));                  \
       *helper = (session_test_helper_t){.test_fn = (_test_fn)};                            \
       TestSuite_AddFull(_suite,                                                            \
-                        _name,                                                             \
+                        _name " [lock:live-server]",                                       \
                         (_allow_read_concern) ? run_session_test : run_session_test_no_rc, \
                         &bson_free,                                                        \
                         helper,                                                            \
@@ -2423,7 +2428,7 @@ test_unacknowledged_explicit_cs_explicit_wc(void *ctx)
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));                             \
       *helper = (session_test_helper_t){.test_fn = (_test_fn)};                                       \
       TestSuite_AddFull(_suite,                                                                       \
-                        _name,                                                                        \
+                        _name " [lock:live-server]",                                                  \
                         (_explicit_cs) ? (_inherit_wc ? test_unacknowledged_explicit_cs_inherit_wc    \
                                                       : test_unacknowledged_implicit_cs_explicit_wc)  \
                                        : (_inherit_wc ? test_unacknowledged_implicit_cs_inherit_wc    \
@@ -2598,7 +2603,7 @@ test_session_install(TestSuite *suite)
    TestSuite_Add(
       suite, "/Session/opts/causal_consistency_and_snapshot", test_session_opts_causal_consistency_and_snapshot);
    TestSuite_AddFull(suite,
-                     "/Session/no_crypto",
+                     "/Session/no_crypto [lock:live-server]",
                      test_session_no_crypto,
                      NULL,
                      NULL,
@@ -2606,21 +2611,21 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/lifo/single",
+                     "/Session/lifo/single [lock:live-server]",
                      test_session_pool_lifo_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/lifo/pooled",
+                     "/Session/lifo/pooled [lock:live-server]",
                      test_session_pool_lifo_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/timeout/single",
+                     "/Session/timeout/single [lock:live-server][timeout:30]",
                      test_session_pool_timeout_single,
                      NULL,
                      NULL,
@@ -2628,7 +2633,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/timeout/pooled",
+                     "/Session/timeout/pooled [lock:live-server][timeout:30]",
                      test_session_pool_timeout_pooled,
                      NULL,
                      NULL,
@@ -2636,7 +2641,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/reap/single",
+                     "/Session/reap/single [lock:live-server][timeout:30]",
                      test_session_pool_reap_single,
                      NULL,
                      NULL,
@@ -2644,7 +2649,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/reap/pooled",
+                     "/Session/reap/pooled [lock:live-server][timeout:30]",
                      test_session_pool_reap_pooled,
                      NULL,
                      NULL,
@@ -2652,21 +2657,21 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/id_bad",
+                     "/Session/id_bad [lock:live-server]",
                      test_session_id_bad,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/supported/single",
+                     "/Session/supported/single [lock:live-server]",
                      test_session_supported_single,
                      NULL,
                      NULL,
                      TestSuite_CheckLive,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/supported/pooled",
+                     "/Session/supported/pooled [lock:live-server]",
                      test_session_supported_pooled,
                      NULL,
                      NULL,
@@ -2677,25 +2682,25 @@ test_session_install(TestSuite *suite)
    TestSuite_AddMockServerTest(
       suite, "/Session/end/mock/pooled", test_mock_end_sessions_pooled, test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest(suite,
-                               "/Session/end/mock/disconnected",
+                               "/Session/end/mock/disconnected [timeout:20]",
                                test_mock_end_sessions_server_disconnect,
                                test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/end/single",
+                     "/Session/end/single [lock:live-server]",
                      test_end_sessions_single,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_crypto,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/Session/end/pooled",
+                     "/Session/end/pooled [lock:live-server]",
                      test_end_sessions_pooled,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_crypto,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/Session/end/many/single",
+                     "/Session/end/many/single [lock:live-server][timeout:30]",
                      test_end_sessions_many_single,
                      NULL,
                      NULL,
@@ -2703,7 +2708,7 @@ test_session_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/end/many/pooled",
+                     "/Session/end/many/pooled [lock:live-server][timeout:30]",
                      test_end_sessions_many_pooled,
                      NULL,
                      NULL,
@@ -2711,14 +2716,14 @@ test_session_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/Session/advance_cluster_time",
+                     "/Session/advance_cluster_time [lock:live-server]",
                      test_session_advance_cluster_time,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_crypto,
                      test_framework_skip_if_no_sessions);
    TestSuite_AddFull(suite,
-                     "/Session/advance_operation_time",
+                     "/Session/advance_operation_time [lock:live-server]",
                      test_session_advance_operation_time,
                      NULL,
                      NULL,
@@ -2761,7 +2766,7 @@ test_session_install(TestSuite *suite)
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));
       *helper = (session_test_helper_t){.test_fn = test_bulk_set_session};
       TestSuite_AddFull(suite,
-                        "/Session/bulk_set_session",
+                        "/Session/bulk_set_session [lock:live-server]",
                         run_session_test_bulk_operation,
                         &bson_free,
                         helper,
@@ -2772,7 +2777,7 @@ test_session_install(TestSuite *suite)
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));
       *helper = (session_test_helper_t){.test_fn = test_bulk_set_client};
       TestSuite_AddFull(suite,
-                        "/Session/bulk_set_client",
+                        "/Session/bulk_set_client [lock:live-server]",
                         run_session_test_bulk_operation,
                         &bson_free,
                         helper,
@@ -2780,28 +2785,28 @@ test_session_install(TestSuite *suite)
                         test_framework_skip_if_no_crypto);
    }
    TestSuite_AddFull(suite,
-                     "/Session/cursor_implicit_session",
+                     "/Session/cursor_implicit_session [lock:live-server]",
                      test_cursor_implicit_session,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/change_stream_implicit_session",
+                     "/Session/change_stream_implicit_session [lock:live-server]",
                      test_change_stream_implicit_session,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/cmd_error",
+                     "/Session/cmd_error [lock:live-server]",
                      test_cmd_error,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/Session/read_concern",
+                     "/Session/read_concern [lock:live-server]",
                      test_read_concern,
                      NULL,
                      NULL,
@@ -2852,7 +2857,7 @@ test_session_install(TestSuite *suite)
       suite, JSON_DIR, "sessions/legacy", test_sessions_spec_cb, test_framework_skip_if_no_sessions);
 
    TestSuite_AddFull(suite,
-                     "/Session/dirty",
+                     "/Session/dirty [lock:live-server]",
                      test_session_dirty,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -2862,7 +2867,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/Session/snapshot/prose_test_1",
+                     "/Session/snapshot/prose_test_1 [lock:live-server]",
                      test_sessions_snapshot_prose_test_1,
                      NULL,
                      NULL,

@@ -84,21 +84,19 @@ build_dir="cmake-build"
 find_ccache_and_export_vars "$(pwd)" || true
 
 if [[ "${CC}" =~ 'gcc' ]]; then
+  PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:${PATH:-}" # mingw-w64 GCC
+
   export CMAKE_GENERATOR="Ninja"
 
   # MinGW has trouble compiling src/cpp-check.cpp without some assistance.
   configure_flags_append "-DCMAKE_CXX_STANDARD=11"
 
-  cmake \
-    -S . \
-    -B "${build_dir:?}" \
-    -G "Ninja" \
-    "${configure_flags[@]}" \
-    "${extra_configure_flags[@]}"
+  # mingw-w64 doesn't like lld (hangs indefinitely?).
+  configure_flags_append "-DMONGO_USE_LLD=OFF"
 
-  cmake --build "${build_dir:?}"
-  cmake --build "${build_dir:?}" --target mongo_c_driver_tests
-  cmake --build "${build_dir:?}" --target mongo_c_driver_examples
+  cmake "${configure_flags[@]}" "${extra_configure_flags[@]}" -B "${build_dir:?}"
+
+  cmake --build "${build_dir:?}" --target all mongo_c_driver_tests mongo_c_driver_examples
 else
   # MSBuild task-based parallelism (VS 2019 16.3 and newer).
   export UseMultiToolTask=true

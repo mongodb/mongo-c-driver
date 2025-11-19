@@ -19,6 +19,10 @@
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 
+#include <mongoc/mongoc-topology-description.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-deprioritized-servers-private.h>
@@ -27,7 +31,6 @@
 #include <mongoc/mongoc-set-private.h>
 
 #include <mongoc/mongoc-server-description.h>
-#include <mongoc/mongoc-topology-description.h>
 
 
 typedef enum {
@@ -106,13 +109,20 @@ _mongoc_topology_description_copy_to(const mongoc_topology_description_t *src, m
 void
 mongoc_topology_description_cleanup(mongoc_topology_description_t *description);
 
+typedef enum {
+   MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_IGNORE,
+   MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE,
+} mongoc_topology_description_hello_cluster_time_strategy_t;
+
 void
-mongoc_topology_description_handle_hello(mongoc_topology_description_t *topology,
-                                         const mongoc_log_and_monitor_instance_t *log_and_monitor,
-                                         uint32_t server_id,
-                                         const bson_t *hello_response,
-                                         int64_t rtt_msec,
-                                         const bson_error_t *error /* IN */);
+mongoc_topology_description_handle_hello(
+   mongoc_topology_description_t *topology,
+   const mongoc_log_and_monitor_instance_t *log_and_monitor,
+   uint32_t server_id,
+   const bson_t *hello_response,
+   int64_t rtt_msec,
+   mongoc_topology_description_hello_cluster_time_strategy_t cluster_time_strategy,
+   const bson_error_t *error /* IN */);
 
 mongoc_server_description_t const *
 mongoc_topology_description_select(const mongoc_topology_description_t *description,

@@ -22,9 +22,10 @@
 #include <common-thread-private.h> // bson_mutex_t
 #include <mongoc/mongoc-cluster-private.h>
 
-#include <mongoc/mcd-time.h>
-
 #include <bson/bson.h>
+
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 bool
 _mongoc_cluster_auth_node_aws(mongoc_cluster_t *cluster,
@@ -42,7 +43,7 @@ typedef struct {
    // If expiration.set is false, the credentials do not have a known
    // expiration.
    struct {
-      mcd_timer value;
+      mlib_timer value;
       bool set;
    } expiration;
 } _mongoc_aws_credentials_t;
@@ -51,10 +52,10 @@ typedef struct {
    (_mongoc_aws_credentials_t)                                                 \
    {                                                                           \
       .access_key_id = NULL, .secret_access_key = NULL, .session_token = NULL, \
-      .expiration = {.value = {.expire_at = {0}}, .set = false},               \
+      .expiration = {.value = (mlib_timer){0}, .set = false},                  \
    }
 
-#define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
+#define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW mlib_duration(5, mn)
 
 // _mongoc_aws_credentials_cache_t is a thread-safe global cache of AWS
 // credentials.

@@ -33,10 +33,10 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mcd-azure.h>
-#include <mongoc/mcd-time.h>
 #include <mongoc/service-gcp.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <mongocrypt/mongocrypt.h>
@@ -139,7 +139,7 @@ struct __mongoc_crypt_t {
    /// or not yet acquired.
    mcd_azure_access_token azure_token;
    /// The time point at which the `azure_token` was acquired.
-   mcd_time_point azure_token_issued_at;
+   mlib_time_point azure_token_issued_at;
 };
 
 static void
@@ -816,9 +816,12 @@ static bool
 _request_new_azure_token(mcd_azure_access_token *out, bson_error_t *error)
 {
    return mcd_azure_access_token_from_imds(out,
-                                           NULL, // Use the default host
-                                           0,    //  Default port as well
-                                           NULL, // No extra headers
+                                           MCD_TOKEN_RESOURCE_VAULT,
+                                           NULL,            // Use the default host
+                                           0,               //  Default port as well
+                                           NULL,            // No extra headers
+                                           (mlib_timer){0}, // Default timer.
+                                           NULL,            // No client ID.
                                            error);
 }
 
@@ -836,9 +839,9 @@ _try_add_azure_from_env(_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error
 {
    if (crypt->azure_token.access_token) {
       // The access-token is non-null, so we may have one cached.
-      mcd_time_point one_min_from_now = mcd_later(mcd_now(), mcd_minutes(1));
-      mcd_time_point expires_at = mcd_later(crypt->azure_token_issued_at, crypt->azure_token.expires_in);
-      if (mcd_time_compare(expires_at, one_min_from_now) >= 0) {
+      const mlib_time_point one_min_from_now = mlib_time_add(mlib_now(), mlib_duration(1, mn));
+      const mlib_time_point expires_at = mlib_time_add(crypt->azure_token_issued_at, crypt->azure_token.expires_in);
+      if (mlib_time_cmp(expires_at, >=, one_min_from_now)) {
          // The token is still valid for at least another minute
       } else {
          // The token will expire soon. Destroy it, and below we will below ask
@@ -855,7 +858,7 @@ _try_add_azure_from_env(_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error
       // number of seconds that the token will be valid relative to its issue
       // time. Avoid reliance on system clocks by comparing the issue time to an
       // abstract monotonic "now"
-      crypt->azure_token_issued_at = mcd_now();
+      crypt->azure_token_issued_at = mlib_now();
       // Get the token:
       if (!_request_new_azure_token(&crypt->azure_token, error)) {
          return false;

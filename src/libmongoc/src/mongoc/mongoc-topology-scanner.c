@@ -169,7 +169,6 @@ _init_hello(mongoc_topology_scanner_t *ts)
 {
    bson_init(&ts->hello_cmd);
    bson_init(&ts->legacy_hello_cmd);
-   bson_init(&ts->cluster_time);
    ts->handshake_cmd = NULL;
 
    _add_hello(ts);
@@ -441,10 +440,6 @@ _begin_hello_cmd(mongoc_topology_scanner_node_t *node,
       bson_free(oidc_access_token);
    }
 
-   if (!bson_empty(&ts->cluster_time)) {
-      bson_append_document(&cmd, "$clusterTime", 12, &ts->cluster_time);
-   }
-
    /* if the node should connect with a TCP socket, stream will be null, and
     * dns_result will be set. The async loop is responsible for calling the
     * _tcp_initiator to construct TCP sockets. */
@@ -533,7 +528,6 @@ mongoc_topology_scanner_destroy(mongoc_topology_scanner_t *ts)
    bson_destroy(&ts->hello_cmd);
    bson_destroy(&ts->legacy_hello_cmd);
    bson_destroy(ts->handshake_cmd);
-   bson_destroy(&ts->cluster_time);
    mongoc_server_api_destroy(ts->api);
    bson_mutex_destroy(&ts->handshake_cmd_mtx);
 
@@ -1341,17 +1335,6 @@ _mongoc_topology_scanner_set_appname(mongoc_topology_scanner_t *ts, const char *
    MONGOC_ERROR("Cannot set appname more than once");
    bson_free(s);
    return false;
-}
-
-/*
- * Set the scanner's clusterTime unconditionally: don't compare with prior
- * @cluster_time is like {clusterTime: <timestamp>}
- */
-void
-_mongoc_topology_scanner_set_cluster_time(mongoc_topology_scanner_t *ts, const bson_t *cluster_time)
-{
-   bson_destroy(&ts->cluster_time);
-   bson_copy_to(cluster_time, &ts->cluster_time);
 }
 
 /* SDAM Monitoring Spec: send HeartbeatStartedEvent */

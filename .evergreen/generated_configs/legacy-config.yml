@@ -139,6 +139,7 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
+        PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:$PATH" # mingw-w64 GCC
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
   link sample program MSVC bson:
   - command: shell.exec
@@ -165,6 +166,7 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
+        PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:$PATH" # mingw-w64 GCC
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
   update codecov.io:
   - command: shell.exec
@@ -10287,7 +10289,7 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian11-latest-small
+  run_on: debian11-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task

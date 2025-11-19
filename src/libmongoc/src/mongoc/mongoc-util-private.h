@@ -19,6 +19,10 @@
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
+#include <mongoc/mongoc-util-private.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc.h>
 
 #include <bson/bson.h>
@@ -265,6 +269,11 @@ bool
 _mongoc_verify_windows_version(DWORD major_version, DWORD minor_version, DWORD build_number, bool strictly_equal);
 
 #endif
+
+// mongoc_percent_encode percent encodes `str` according to RFC 3986. The caller must free the returned string.
+// Returns NULL on failure.
+char *
+mongoc_percent_encode(const char *str);
 
 BSON_END_DECLS
 

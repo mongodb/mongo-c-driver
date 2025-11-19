@@ -211,7 +211,7 @@ rst_prolog = rf"""
 
 .. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
 
-.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/connection-pooling/
+.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/connect/connection-pools/.
 
 .. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
 

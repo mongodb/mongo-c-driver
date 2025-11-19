@@ -55,5 +55,4 @@ _mongoc_tlsfeature_has_status_request(const uint8_t *data, int length);
 
 BSON_END_DECLS
 
-
 #endif /* MONGOC_OPENSSL_PRIVATE_H */

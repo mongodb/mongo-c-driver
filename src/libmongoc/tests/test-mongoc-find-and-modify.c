@@ -511,7 +511,7 @@ test_find_and_modify_install(TestSuite *suite)
    TestSuite_AddMockServerTest(
       suite, "/find_and_modify/find_and_modify/write_concern", test_find_and_modify_write_concern);
    TestSuite_AddFull(suite,
-                     "/find_and_modify/find_and_modify/write_concern_failure",
+                     "/find_and_modify/find_and_modify/write_concern_failure [lock:live-server]",
                      test_find_and_modify_write_concern_failure,
                      NULL,
                      NULL,

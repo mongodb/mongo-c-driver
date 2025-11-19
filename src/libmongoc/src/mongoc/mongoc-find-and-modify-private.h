@@ -19,6 +19,10 @@
 #ifndef MONGOC_FIND_AND_MODIFY_PRIVATE_H
 #define MONGOC_FIND_AND_MODIFY_PRIVATE_H
 
+#include <mongoc/mongoc-find-and-modify.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-write-command-private.h>
 
 #include <bson/bson.h>

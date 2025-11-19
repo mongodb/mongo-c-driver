@@ -638,20 +638,28 @@ test_topology_reconcile_add_single(void)
 void
 test_topology_reconcile_install(TestSuite *suite)
 {
-   TestSuite_AddMockServerTest(
-      suite, "/TOPOLOGY/reconcile/rs/pooled", test_topology_reconcile_rs_pooled, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/TOPOLOGY/reconcile/rs/single", test_topology_reconcile_rs_single, test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/TOPOLOGY/reconcile/rs/pooled [timeout:30]",
+                               test_topology_reconcile_rs_pooled,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/TOPOLOGY/reconcile/rs/single [timeout:30]",
+                               test_topology_reconcile_rs_single,
+                               test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite, "/TOPOLOGY/reconcile/sharded/pooled", test_topology_reconcile_sharded_pooled);
    TestSuite_AddMockServerTest(suite, "/TOPOLOGY/reconcile/sharded/single", test_topology_reconcile_sharded_single);
    TestSuite_AddFull(suite,
-                     "/TOPOLOGY/reconcile/from_handshake",
+                     "/TOPOLOGY/reconcile/from_handshake [lock:live-server]",
                      test_topology_reconcile_from_handshake,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
-   TestSuite_AddMockServerTest(
-      suite, "/TOPOLOGY/reconcile/retire/single", test_topology_reconcile_retire_single, test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest(
-      suite, "/TOPOLOGY/reconcile/add/single", test_topology_reconcile_add_single, test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/TOPOLOGY/reconcile/retire/single [timeout:30]",
+                               test_topology_reconcile_retire_single,
+                               test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest(suite,
+                               "/TOPOLOGY/reconcile/add/single [timeout:30]",
+                               test_topology_reconcile_add_single,
+                               test_framework_skip_if_slow);
 }
