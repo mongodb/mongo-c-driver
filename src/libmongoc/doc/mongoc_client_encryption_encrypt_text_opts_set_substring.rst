@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_text_opts_set_substring
 
 mongoc_client_encryption_encrypt_text_opts_set_substring()
-========================================
+==========================================================
 
 Synopsis
 --------

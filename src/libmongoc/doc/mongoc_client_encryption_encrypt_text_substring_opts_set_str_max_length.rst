@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length
 
 mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length()
-=======================================================
+=========================================================================
 
 Synopsis
 --------
