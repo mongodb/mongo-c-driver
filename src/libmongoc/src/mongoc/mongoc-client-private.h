@@ -19,12 +19,15 @@
 #ifndef MONGOC_CLIENT_PRIVATE_H
 #define MONGOC_CLIENT_PRIVATE_H
 
+#include <mongoc/mongoc-client.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 
-#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-opcode.h>

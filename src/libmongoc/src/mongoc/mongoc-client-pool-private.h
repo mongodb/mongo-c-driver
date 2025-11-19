@@ -19,9 +19,12 @@
 #ifndef MONGOC_CLIENT_POOL_PRIVATE_H
 #define MONGOC_CLIENT_POOL_PRIVATE_H
 
+#include <mongoc/mongoc-client-pool.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-topology-private.h>
 
-#include <mongoc/mongoc-client-pool.h>
 #include <mongoc/mongoc-topology-description.h>
 
 #include <bson/bson.h>

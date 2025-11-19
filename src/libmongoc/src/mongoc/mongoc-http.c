@@ -22,10 +22,11 @@
 #include <mongoc/mongoc-http-private.h>
 #include <mongoc/mongoc-stream-private.h>
 
-#include <mongoc/mcd-time.h>
 #include <mongoc/mongoc-stream-tls.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 void
 _mongoc_http_request_init(mongoc_http_request_t *request)
@@ -89,16 +90,16 @@ _mongoc_http_render_request_head(mcommon_string_append_t *append, const mongoc_h
 }
 
 static int32_t
-_mongoc_http_msec_remaining(mcd_timer timer)
+_mongoc_http_msec_remaining(mlib_timer timer)
 {
-   const int64_t msec = mcd_get_milliseconds(mcd_timer_remaining(timer));
+   const int64_t msec = mlib_milliseconds_count(mlib_timer_remaining(timer));
    BSON_ASSERT(mlib_in_range(int32_t, msec));
    return (int32_t)msec;
 }
 
 bool
 _mongoc_http_send(const mongoc_http_request_t *req,
-                  int timeout_ms,
+                  mlib_timer timer,
                   bool use_tls,
                   mongoc_ssl_opt_t *ssl_opts,
                   mongoc_http_response_t *res,
@@ -114,8 +115,6 @@ _mongoc_http_send(const mongoc_http_request_t *req,
    char *ptr;
    const char *header_delimiter = "\r\n\r\n";
 
-   const mcd_timer timer = mcd_timer_expire_after(mcd_milliseconds(timeout_ms));
-
    mcommon_string_append_t http_request;
    mcommon_string_new_as_append(&http_request);
 
@@ -127,8 +126,8 @@ _mongoc_http_send(const mongoc_http_request_t *req,
    }
 
    stream = mongoc_client_connect_tcp(
-      // +1 to prevent passing zero as a timeout
-      _mongoc_http_msec_remaining(timer) + 1,
+      // Prevent passing zero as a timeout
+      BSON_MAX(_mongoc_http_msec_remaining(timer), 1),
       &host_list,
       error);
    if (!stream) {

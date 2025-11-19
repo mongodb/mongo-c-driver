@@ -950,6 +950,14 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       bson_free(test_password);
    }
 
+   char *azure_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
+   const bool testing_azure_oidc = azure_resource != NULL;
+   if (uri_requests_oidc && testing_azure_oidc) {
+      mongoc_uri_set_mechanism_properties(uri,
+                                          tmp_bson("{'ENVIRONMENT': 'azure', 'TOKEN_RESOURCE': '%s'}", azure_resource));
+   }
+   bson_free(azure_resource);
+
    if (!mongoc_uri_has_option(uri, MONGOC_URI_HEARTBEATFREQUENCYMS)) {
       can_reduce_heartbeat = true;
    }
@@ -960,7 +968,7 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    client = test_framework_client_new_from_uri(uri, api);
 
-   if (uri_requests_oidc) {
+   if (uri_requests_oidc && !testing_azure_oidc) {
       test_framework_set_oidc_callback(client);
    }
 

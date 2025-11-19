@@ -30,7 +30,8 @@
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mongoc/mcd-time.h>
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
@@ -139,7 +140,7 @@ _send_http_request(bool use_tls,
 {
    mongoc_http_request_t req;
    mongoc_http_response_t res;
-   const int socket_timeout_ms = 10000;
+   const mlib_duration socket_timeout = mlib_duration(10, s);
    bool ret;
    mongoc_ssl_opt_t ssl_opt = {0};
 
@@ -156,7 +157,8 @@ _send_http_request(bool use_tls,
    if (use_tls) {
       _mongoc_ssl_opts_copy_to(mongoc_ssl_opt_get_default(), &ssl_opt, true /* copy_internal */);
    }
-   ret = _mongoc_http_send(&req, socket_timeout_ms, use_tls /* use_tls */, use_tls ? &ssl_opt : NULL, &res, error);
+   ret = _mongoc_http_send(
+      &req, mlib_expires_after(socket_timeout), use_tls /* use_tls */, use_tls ? &ssl_opt : NULL, &res, error);
 
    if (ret) {
       *http_response_headers = bson_strndup(res.headers, res.headers_len);
@@ -276,26 +278,25 @@ fail:
 }
 
 // expiration_ms_to_timer converts milliseconds since Unix Epoch into the
-// mcd_timer `expiration_timer`.
+// mlib_timer `expiration_timer`.
 static bool
-expiration_ms_to_timer(int64_t expiration_ms, mcd_timer *expiration_timer, bson_error_t *error)
+expiration_ms_to_timer(int64_t expiration_ms, mlib_timer *expiration_timer, bson_error_t *error)
 {
    bool ret = false;
 
-   // get current time in milliseconds since Unix Epoch.
-   int64_t now_ms;
+   mlib_duration since_unix_epoch;
    {
-      struct timeval now;
-      if (0 != bson_gettimeofday(&now)) {
+      struct timeval tv;
+      if (0 != bson_gettimeofday(&tv)) {
          AUTH_ERROR_AND_FAIL("bson_gettimeofday returned failure. Unable to "
                              "determine expiration.");
       } else {
-         now_ms = (1000 * now.tv_sec) + (now.tv_usec / 1000);
+         since_unix_epoch = mlib_duration((tv.tv_sec, s), plus, (tv.tv_usec, us));
       }
    }
 
-   *expiration_timer =
-      mcd_timer_expire_after(mcd_milliseconds(expiration_ms - now_ms - MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS));
+   const mlib_duration expires_in = mlib_duration((expiration_ms, ms), minus, since_unix_epoch);
+   *expiration_timer = mlib_expires_after(expires_in, minus, MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW);
    ret = true;
 fail:
    return ret;
@@ -306,7 +307,7 @@ fail:
 // string. Example: "2023-02-07T20:04:27Z". On success, `expiration_timer` is
 // set to the expiration time.
 static bool
-expiration_iso8601_to_timer(const char *expiration_str, mcd_timer *expiration_timer, bson_error_t *error)
+expiration_iso8601_to_timer(const char *expiration_str, mlib_timer *expiration_timer, bson_error_t *error)
 {
    bool ret = false;
 
@@ -1293,7 +1294,7 @@ check_expired(const _mongoc_aws_credentials_t *creds)
    if (!creds->expiration.set) {
       return true;
    }
-   return mcd_get_milliseconds(mcd_timer_remaining(creds->expiration.value)) == 0;
+   return mlib_timer_is_expired(creds->expiration.value);
 }
 
 void

@@ -19,6 +19,10 @@
 #ifndef MONGOC_GRIDFS_FILE_LIST_PRIVATE_H
 #define MONGOC_GRIDFS_FILE_LIST_PRIVATE_H
 
+#include <mongoc/mongoc-gridfs-file-list.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-cursor.h>
 #include <mongoc/mongoc-gridfs-file.h>
 #include <mongoc/mongoc-gridfs.h>

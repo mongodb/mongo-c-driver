@@ -150,16 +150,6 @@ _mongoc_cluster_auth_node_oidc(mongoc_cluster_t *cluster,
    bool ok = false;
    char *access_token = NULL;
 
-   // From spec: "If both ENVIRONMENT and an OIDC Callback [...] are provided the driver MUST raise an error."
-   bson_t authMechanismProperties = BSON_INITIALIZER;
-   mongoc_uri_get_mechanism_properties(cluster->client->uri, &authMechanismProperties);
-   if (mongoc_oidc_cache_get_callback(cluster->client->topology->oidc_cache) &&
-       bson_has_field(&authMechanismProperties, "ENVIRONMENT")) {
-      SET_ERROR("MONGODB-OIDC requested with both ENVIRONMENT and an OIDC Callback. Use one or the other.");
-      goto done;
-   }
-
-
    bool is_cache = false;
    access_token = mongoc_oidc_cache_get_token(cluster->client->topology->oidc_cache, &is_cache, error);
    if (!access_token) {

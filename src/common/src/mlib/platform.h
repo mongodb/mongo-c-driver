@@ -37,15 +37,15 @@
         #define _WIN32_WINNT 0x601
     #endif
     // Winsock must be included before windows.h
-    #include <winsock2.h>
-    #include <windows.h>
+    #include <winsock2.h> // IWYU pragma: export
+    #include <windows.h>  // IWYU pragma: export
 #endif
 
 // POSIX headers
 #if defined(__unix__) || defined(__unix) || defined(__APPLE__)
-    #include <unistd.h>
-    #include <fcntl.h>
-    #include <sys/types.h>
+    #include <unistd.h>    // IWYU pragma: export
+    #include <fcntl.h>     // IWYU pragma: export
+    #include <sys/types.h> // IWYU pragma: export
 #endif
 
 // clang-format on

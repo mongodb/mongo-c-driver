@@ -19,6 +19,10 @@
 #ifndef MONGOC_GRIDFS_PRIVATE_H
 #define MONGOC_GRIDFS_PRIVATE_H
 
+#include <mongoc/mongoc-gridfs.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-write-concern.h>

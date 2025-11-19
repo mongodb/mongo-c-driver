@@ -21,6 +21,7 @@
 
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-server-description.h>
 
 #include <bson/bson.h>
 

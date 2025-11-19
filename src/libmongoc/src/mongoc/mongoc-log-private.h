@@ -19,8 +19,11 @@
 #ifndef MONGOC_LOG_PRIVATE_H
 #define MONGOC_LOG_PRIVATE_H
 
+#include <mongoc/mongoc-log.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-iovec.h>
-#include <mongoc/mongoc-log.h>
 
 /* just for testing */
 void

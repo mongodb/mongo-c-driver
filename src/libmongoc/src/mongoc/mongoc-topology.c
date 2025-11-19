@@ -641,6 +641,9 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
       return topology;
    }
 
+   // URI and topology are valid. Try to apply to OIDC environment.
+   mongoc_oidc_cache_apply_env_from_uri(topology->oidc_cache, topology->uri);
+
    size_t hl_array_size = 0u;
 
    BSON_ASSERT(mlib_in_range(size_t, td->max_hosts));

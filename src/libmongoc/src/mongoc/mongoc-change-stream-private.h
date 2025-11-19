@@ -19,10 +19,13 @@
 #ifndef MONGOC_CHANGE_STREAM_PRIVATE_H
 #define MONGOC_CHANGE_STREAM_PRIVATE_H
 
+#include <mongoc/mongoc-change-stream.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-opts-helpers-private.h>
 #include <mongoc/mongoc-opts-private.h>
 
-#include <mongoc/mongoc-change-stream.h>
 #include <mongoc/mongoc-client-session.h>
 #include <mongoc/mongoc-collection.h>
 #include <mongoc/mongoc-cursor.h>

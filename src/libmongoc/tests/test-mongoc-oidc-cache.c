@@ -59,7 +59,7 @@ test_oidc_cache_works(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -122,7 +122,7 @@ test_oidc_cache_waits_between_calls(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -178,20 +178,20 @@ test_oidc_cache_set_callback(void)
 {
    mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
 
-   ASSERT(!mongoc_oidc_cache_get_callback(cache));
+   ASSERT(!mongoc_oidc_cache_has_user_callback(cache));
 
    // Can set a callback:
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
-      mongoc_oidc_cache_set_callback(cache, cb);
-      ASSERT(mongoc_oidc_callback_get_fn(mongoc_oidc_cache_get_callback(cache)) == oidc_callback_fn);
+      mongoc_oidc_cache_set_user_callback(cache, cb);
+      ASSERT(mongoc_oidc_cache_has_user_callback(cache));
       mongoc_oidc_callback_destroy(cb);
    }
 
    // Can clear a callback:
    {
-      mongoc_oidc_cache_set_callback(cache, NULL);
-      ASSERT(!mongoc_oidc_cache_get_callback(cache));
+      mongoc_oidc_cache_set_user_callback(cache, NULL);
+      ASSERT(!mongoc_oidc_cache_has_user_callback(cache));
    }
 
    mongoc_oidc_cache_destroy(cache);
@@ -222,7 +222,7 @@ test_oidc_cache_set_sleep(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -300,7 +300,7 @@ test_oidc_cache_propagates_error(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 

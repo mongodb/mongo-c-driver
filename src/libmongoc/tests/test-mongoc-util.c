@@ -130,6 +130,34 @@ test_hex_to_bin(void)
    ASSERT_WITH_MSG(!hex_to_bin("ZZ", &len), "non-hex digits is an error");
 }
 
+static void
+test_percent_encode(void)
+{
+   // Simple case:
+   {
+      char *got = mongoc_percent_encode("hello world!");
+      ASSERT(got);
+      ASSERT_CMPSTR(got, "hello%20world%21");
+      bson_free(got);
+   }
+
+   // Empty string:
+   {
+      char *got = mongoc_percent_encode("");
+      ASSERT(got);
+      ASSERT_CMPSTR(got, "");
+      bson_free(got);
+   }
+
+   // All reserved characters:
+   {
+      char *got = mongoc_percent_encode("!#$");
+      ASSERT(got);
+      ASSERT_CMPSTR(got, "%21%23%24");
+      bson_free(got);
+   }
+}
+
 void
 test_util_install(TestSuite *suite)
 {
@@ -139,4 +167,5 @@ test_util_install(TestSuite *suite)
    TestSuite_Add(suite, "/Util/wire_server_versions", test_wire_server_versions);
    TestSuite_Add(suite, "/Util/bin_to_hex", test_bin_to_hex);
    TestSuite_Add(suite, "/Util/hex_to_bin", test_hex_to_bin);
+   TestSuite_Add(suite, "/Util/percent_encode", test_percent_encode);
 }

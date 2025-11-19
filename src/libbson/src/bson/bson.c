@@ -19,7 +19,7 @@
 
 #include <bson/bson-iso8601-private.h>
 #include <bson/bson-json-private.h>
-#include <bson/bson-private.h>
+#include <bson/bson_t-private.h>
 #include <bson/validate-private.h>
 #include <common-json-private.h>
 #include <common-macros-private.h>

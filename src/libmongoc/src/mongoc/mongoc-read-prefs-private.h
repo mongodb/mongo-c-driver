@@ -19,9 +19,12 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-read-prefs.h> // IWYU pragma: export
 
-#include <mongoc/mongoc-read-prefs.h>
+//
+
+
+#include <mongoc/mongoc-cluster-private.h>
 
 #include <bson/bson.h>
 

@@ -17,7 +17,7 @@
 #ifndef BSON_MACROS_H
 #define BSON_MACROS_H
 
-#include <bson/config.h>
+#include <bson/config.h> // IWYU pragma: export
 
 #include <stdio.h>
 #include <stdlib.h>
