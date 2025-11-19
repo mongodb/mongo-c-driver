@@ -28,6 +28,7 @@ TextSubstringOpts specifies options for a Queryable Encryption field supporting 
     mongoc_client_encryption_encrypt_text_substring_opts_new
     mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length
     mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length
+    mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length
 
 .. seealso::
 
