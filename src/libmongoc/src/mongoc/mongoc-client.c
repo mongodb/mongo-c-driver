@@ -2151,9 +2151,9 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
    BSON_ASSERT_PARAM(collection);
    BSON_ASSERT(cursor_id);
 
-   /* don't attempt reconnect if server unavailable, and ignore errors */
+   // Try to reconnect. Ignore error.
    server_stream =
-      mongoc_cluster_stream_for_server(&client->cluster, server_id, false /* reconnect_ok */, NULL, NULL, NULL);
+      mongoc_cluster_stream_for_server(&client->cluster, server_id, true /* reconnect_ok */, NULL, NULL, NULL);
 
    if (!server_stream) {
       return;
