@@ -11,7 +11,7 @@ libmongoc 2.2.0 (unreleased)
 
 ## Removed
 
-* Support for Visual Studio 2015. Use Visual Studio 2017 or newer.
+* Support for Visual Studio 2015 (EOL since October 2025). Use Visual Studio 2017 or newer.
 
 libmongoc 2.1.2
 ===============
