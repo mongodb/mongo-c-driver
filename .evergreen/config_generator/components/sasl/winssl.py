@@ -19,7 +19,6 @@ COMPILE_MATRIX = [
     ('windows-vsCurrent', 'vs2022x86', None, ['off', 'sspi']),
 
     # For compile only.
-    ('windows-vsCurrent', 'vs2015x64', None, ['off', 'sspi']),
     ('windows-vsCurrent', 'vs2017x64', None, ['off', 'sspi']),
     ('windows-vsCurrent', 'vs2019x64', None, ['off', 'sspi']),
 ]
