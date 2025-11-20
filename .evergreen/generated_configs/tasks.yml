@@ -6584,15 +6584,6 @@ tasks:
           CC: gcc-13
           CXX: g++-13
           C_STD_VERSION: 11
-  - name: std-c11-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c11]
-    commands:
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: vs2015x64
-          CMAKE_GENERATOR_PLATFORM: vs2015x64
-          C_STD_VERSION: 11
   - name: std-c11-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c11]
@@ -7105,15 +7096,6 @@ tasks:
         vars:
           CC: gcc-13
           CXX: g++-13
-          C_STD_VERSION: 99
-  - name: std-c99-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c99]
-    commands:
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: vs2015x64
-          CMAKE_GENERATOR_PLATFORM: vs2015x64
           C_STD_VERSION: 99
   - name: std-c99-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
