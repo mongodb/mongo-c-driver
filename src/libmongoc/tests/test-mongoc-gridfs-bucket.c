@@ -1222,6 +1222,44 @@ test_bad_sizes(void)
    mongoc_client_destroy(client);
 }
 
+// test_big_bucket_name is a regression test for CDRIVER-6157.
+static void
+test_big_bucket_name(void)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_database_t *db = mongoc_client_get_database(client, "db");
+
+   // Create options:
+   bson_t opts = BSON_INITIALIZER;
+   {
+      // Use too-big bucket name to trigger error:
+      char *big_name = bson_malloc(256);
+      memset(big_name, 'a', 255);
+      big_name[255] = '\0';
+      BSON_APPEND_UTF8(&opts, "bucketName", big_name);
+      bson_free(big_name);
+
+      // Add a write concern to reproduce memory leak:
+      mongoc_write_concern_t *wc = mongoc_write_concern_new();
+      mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      ASSERT(mongoc_write_concern_append(wc, &opts));
+      mongoc_write_concern_destroy(wc);
+   }
+
+   // Expect error creating bucket, but not a leak:
+   {
+      bson_error_t error;
+      mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, &opts, NULL, &error);
+      ASSERT(!bucket);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must have fewer");
+      mongoc_gridfs_bucket_destroy(bucket);
+   }
+
+   bson_destroy(&opts);
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+}
+
 void
 test_gridfs_bucket_install(TestSuite *suite)
 {
@@ -1246,4 +1284,5 @@ test_gridfs_bucket_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto);
    TestSuite_AddLive(suite, "/gridfs/options", test_gridfs_bucket_opts);
    TestSuite_AddLive(suite, "/gridfs/bad_sizes", test_bad_sizes);
+   TestSuite_Add(suite, "/gridfs/big_bucket_name", test_big_bucket_name);
 }
