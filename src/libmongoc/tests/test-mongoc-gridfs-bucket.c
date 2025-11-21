@@ -1284,5 +1284,5 @@ test_gridfs_bucket_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto);
    TestSuite_AddLive(suite, "/gridfs/options", test_gridfs_bucket_opts);
    TestSuite_AddLive(suite, "/gridfs/bad_sizes", test_bad_sizes);
-   TestSuite_Add(suite, "/gridfs/big_bucket_name", test_big_bucket_name);
+   TestSuite_AddLive(suite, "/gridfs/big_bucket_name", test_big_bucket_name);
 }
