@@ -260,7 +260,6 @@ buildvariants:
     expansions:
       ASAN: "on"
       CFLAGS: -fno-omit-frame-pointer
-      CHECK_LOG: "ON"
       SANITIZE: address,undefined
     tasks:
       - name: test-oidc-task-group

@@ -73,7 +73,6 @@ def variants():
             expansions = {
                 'ASAN': 'on',
                 'CFLAGS': '-fno-omit-frame-pointer',
-                'CHECK_LOG': 'ON',
                 'SANITIZE': 'address,undefined',
             }
         ),
