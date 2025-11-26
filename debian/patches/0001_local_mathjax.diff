@@ -9,10 +9,10 @@ Forwarded: not-needed
 +++ b/src/libmongoc/doc/conf.py
 @@ -50,6 +50,8 @@
  if has_sphinx_design:
-     extensions.append("sphinx_design")
+     extensions.append('sphinx_design')
  
 +mathjax_path = "file:///usr/share/javascript/mathjax/MathJax.js"
 +
  # General information about the project.
- project = "libmongoc"
- copyright = "2009-present, MongoDB, Inc."
+ project = 'libmongoc'
+ copyright = '2009-present, MongoDB, Inc.'
