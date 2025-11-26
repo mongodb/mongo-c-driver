@@ -23,6 +23,8 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/timer.h>
+
 /**
  * @brief A GCP access token obtained from the GCP metadata server
  */
@@ -48,16 +50,26 @@ typedef struct gcp_request {
 /**
  * @brief Initialize a new GCP HTTP request
  *
- * @param out The object to initialize
+ * @param req The object to initialize
+ * @param metadata_path The HTTP path.
+ * @param opt_audience (Optional) Will be percent encoded and passed as the "audience" query parameter.
  * @param opt_host (Optional) the IP host of the metadata server (default is
  * metadata.google.internal)
  * @param opt_port (Optional) The port of the HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
  *
  * @note the request must later be destroyed with gcp_request_destroy
+ *
+ * @retval true Upon success
+ * @retval false Otherwise. Sets an error via `error`
  */
-void
-gcp_request_init(gcp_request *req, const char *const opt_host, int opt_port, const char *const opt_extra_headers);
+bool
+gcp_request_init(gcp_request *req,
+                 const char *metadata_path,
+                 const char *opt_audience,
+                 const char *const opt_host,
+                 int opt_port,
+                 const char *const opt_extra_headers);
 
 
 /**
@@ -80,8 +92,8 @@ gcp_access_token_destroy(gcp_service_account_token *token);
 /**
  * @brief Try to parse a GCP access token from the metadata server JSON response
  *
- * @param out The token to initialize. Should be uninitialized. Must later be
- * destroyed by the caller.
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param json The JSON string body
  * @param len The length of 'body'
  * @param error An output parameter for errors
@@ -97,8 +109,8 @@ gcp_access_token_try_parse_from_json(gcp_service_account_token *out, const char 
  * @brief Attempt to obtain a new GCP service account token from a GCP metadata
  * server.
  *
- * @param out The output parameter for the obtained token. Must later be
- * destroyed
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param opt_host (Optional) Override the IP host of the GCP server (used
  * in testing)
  * @param opt_port (Optional) The port of the HTTP server (default is 80)
@@ -117,4 +129,22 @@ gcp_access_token_from_gcp_server(gcp_service_account_token *out,
                                  const char *opt_extra_headers,
                                  bson_error_t *error);
 
+/**
+ * @brief Like @ref gcp_access_token_from_gcp_server, but requests an identity token.
+ *
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
+ * @param audience Will be percent encoded and passed as the "audience" query parameter.
+ * @param opt_timer (Optional) The timer for the request. Set to zero for default.
+ * @param error Output parameter for errors
+ *
+ * @retval true Upon success
+ * @retval false Otherwise. Sets an error via `error`
+ *
+ */
+bool
+gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
+                                   const char *audience,
+                                   mlib_timer opt_timer,
+                                   bson_error_t *error);
 #endif /* SERVICE_GCP_H */

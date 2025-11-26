@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bson/bson.h>
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
 #include <mongoc/mongoc-crypt-private.h>
@@ -32,10 +33,10 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mcd-azure.h>
-#include <mongoc/mcd-time.h>
 #include <mongoc/service-gcp.h>
 
 #include <mlib/cmp.h>
+#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <mongocrypt/mongocrypt.h>
@@ -138,7 +139,7 @@ struct __mongoc_crypt_t {
    /// or not yet acquired.
    mcd_azure_access_token azure_token;
    /// The time point at which the `azure_token` was acquired.
-   mcd_time_point azure_token_issued_at;
+   mlib_time_point azure_token_issued_at;
 };
 
 static void
@@ -815,9 +816,12 @@ static bool
 _request_new_azure_token(mcd_azure_access_token *out, bson_error_t *error)
 {
    return mcd_azure_access_token_from_imds(out,
-                                           NULL, // Use the default host
-                                           0,    //  Default port as well
-                                           NULL, // No extra headers
+                                           MCD_TOKEN_RESOURCE_VAULT,
+                                           NULL,            // Use the default host
+                                           0,               //  Default port as well
+                                           NULL,            // No extra headers
+                                           (mlib_timer){0}, // Default timer.
+                                           NULL,            // No client ID.
                                            error);
 }
 
@@ -835,9 +839,9 @@ _try_add_azure_from_env(_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error
 {
    if (crypt->azure_token.access_token) {
       // The access-token is non-null, so we may have one cached.
-      mcd_time_point one_min_from_now = mcd_later(mcd_now(), mcd_minutes(1));
-      mcd_time_point expires_at = mcd_later(crypt->azure_token_issued_at, crypt->azure_token.expires_in);
-      if (mcd_time_compare(expires_at, one_min_from_now) >= 0) {
+      const mlib_time_point one_min_from_now = mlib_time_add(mlib_now(), mlib_duration(1, mn));
+      const mlib_time_point expires_at = mlib_time_add(crypt->azure_token_issued_at, crypt->azure_token.expires_in);
+      if (mlib_time_cmp(expires_at, >=, one_min_from_now)) {
          // The token is still valid for at least another minute
       } else {
          // The token will expire soon. Destroy it, and below we will below ask
@@ -854,7 +858,7 @@ _try_add_azure_from_env(_mongoc_crypt_t *crypt, bson_t *out, bson_error_t *error
       // number of seconds that the token will be valid relative to its issue
       // time. Avoid reliance on system clocks by comparing the issue time to an
       // abstract monotonic "now"
-      crypt->azure_token_issued_at = mcd_now();
+      crypt->azure_token_issued_at = mlib_now();
       // Get the token:
       if (!_request_new_azure_token(&crypt->azure_token, error)) {
          return false;
@@ -1643,6 +1647,7 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
                                const char *query_type,
                                const int64_t *contention_factor,
                                const bson_t *range_opts,
+                               const bson_t *text_opts,
                                bson_error_t *error)
 {
    BSON_ASSERT_PARAM(crypt);
@@ -1652,6 +1657,7 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
    BSON_OPTIONAL_PARAM(keyaltname);
    BSON_OPTIONAL_PARAM(query_type);
    BSON_OPTIONAL_PARAM(range_opts);
+   BSON_OPTIONAL_PARAM(text_opts);
    BSON_OPTIONAL_PARAM(error);
 
    _state_machine_t *state_machine = NULL;
@@ -1681,6 +1687,18 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
          goto fail;
       }
       mongocrypt_binary_destroy(binary_range_opts);
+   }
+
+   if (text_opts != NULL) {
+      /* mongocrypt error checks and parses text options */
+      mongocrypt_binary_t *binary_text_opts =
+         mongocrypt_binary_new_from_data((uint8_t *)bson_get_data(text_opts), text_opts->len);
+      if (!mongocrypt_ctx_setopt_algorithm_text(state_machine->ctx, binary_text_opts)) {
+         mongocrypt_binary_destroy(binary_text_opts);
+         _ctx_check_error(state_machine->ctx, error, true);
+         goto fail;
+      }
+      mongocrypt_binary_destroy(binary_text_opts);
    }
 
    if (query_type != NULL) {
@@ -1749,6 +1767,7 @@ _mongoc_crypt_explicit_encrypt(_mongoc_crypt_t *crypt,
                                const char *query_type,
                                const int64_t *contention_factor,
                                const bson_t *range_opts,
+                               const bson_t *text_opts,
                                const bson_value_t *value_in,
                                bson_value_t *value_out,
                                bson_error_t *error)
@@ -1774,7 +1793,7 @@ _mongoc_crypt_explicit_encrypt(_mongoc_crypt_t *crypt,
    value_out->value_type = BSON_TYPE_EOD;
 
    state_machine = _create_explicit_state_machine(
-      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, error);
+      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, text_opts, error);
    if (!state_machine) {
       goto fail;
    }
@@ -1824,6 +1843,7 @@ _mongoc_crypt_explicit_encrypt_expression(_mongoc_crypt_t *crypt,
                                           const char *query_type,
                                           const int64_t *contention_factor,
                                           const bson_t *range_opts,
+                                          const bson_t *text_opts,
                                           const bson_t *expr_in,
                                           bson_t *expr_out,
                                           bson_error_t *error)
@@ -1835,6 +1855,7 @@ _mongoc_crypt_explicit_encrypt_expression(_mongoc_crypt_t *crypt,
    BSON_OPTIONAL_PARAM(keyaltname);
    BSON_OPTIONAL_PARAM(query_type);
    BSON_OPTIONAL_PARAM(range_opts);
+   BSON_OPTIONAL_PARAM(text_opts);
    BSON_ASSERT_PARAM(expr_in);
    BSON_ASSERT_PARAM(expr_out);
    BSON_OPTIONAL_PARAM(error);
@@ -1849,7 +1870,7 @@ _mongoc_crypt_explicit_encrypt_expression(_mongoc_crypt_t *crypt,
    bson_init(expr_out);
 
    state_machine = _create_explicit_state_machine(
-      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, error);
+      crypt, keyvault_coll, algorithm, keyid, keyaltname, query_type, contention_factor, range_opts, text_opts, error);
    if (!state_machine) {
       goto fail;
    }

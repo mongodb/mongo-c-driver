@@ -20,27 +20,29 @@
 
 #define BSON_INSIDE
 
-#include <bson/bson-bcon.h>
-#include <bson/bson-clock.h>
-#include <bson/bson-context.h>
-#include <bson/bson-decimal128.h>
-#include <bson/bson-iter.h>
-#include <bson/bson-json.h>
-#include <bson/bson-keys.h>
-#include <bson/bson-oid.h>
-#include <bson/bson-reader.h>
-#include <bson/bson-string.h>
-#include <bson/bson-types.h>
-#include <bson/bson-utf8.h>
-#include <bson/bson-value.h>
-#include <bson/bson-vector.h>
-#include <bson/bson-version-functions.h>
-#include <bson/bson-writer.h>
-#include <bson/compat.h>
-#include <bson/config.h>
-#include <bson/macros.h>
-#include <bson/memory.h>
-#include <bson/version.h>
+#include <bson/bson-bcon.h>              // IWYU pragma: export
+#include <bson/bson-clock.h>             // IWYU pragma: export
+#include <bson/bson-context.h>           // IWYU pragma: export
+#include <bson/bson-decimal128.h>        // IWYU pragma: export
+#include <bson/bson-iter.h>              // IWYU pragma: export
+#include <bson/bson-json.h>              // IWYU pragma: export
+#include <bson/bson-keys.h>              // IWYU pragma: export
+#include <bson/bson-oid.h>               // IWYU pragma: export
+#include <bson/bson-reader.h>            // IWYU pragma: export
+#include <bson/bson-string.h>            // IWYU pragma: export
+#include <bson/bson-types.h>             // IWYU pragma: export
+#include <bson/bson-utf8.h>              // IWYU pragma: export
+#include <bson/bson-value.h>             // IWYU pragma: export
+#include <bson/bson-vector.h>            // IWYU pragma: export
+#include <bson/bson-version-functions.h> // IWYU pragma: export
+#include <bson/bson-writer.h>            // IWYU pragma: export
+#include <bson/bson_t.h>                 // IWYU pragma: export
+#include <bson/compat.h>                 // IWYU pragma: export
+#include <bson/config.h>                 // IWYU pragma: export
+#include <bson/error.h>                  // IWYU pragma: export
+#include <bson/macros.h>                 // IWYU pragma: export
+#include <bson/memory.h>                 // IWYU pragma: export
+#include <bson/version.h>                // IWYU pragma: export
 
 #include <string.h>
 #include <time.h>

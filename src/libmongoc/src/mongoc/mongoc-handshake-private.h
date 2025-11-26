@@ -20,6 +20,10 @@
 #ifndef MONGOC_HANDSHAKE_PRIVATE_H
 #define MONGOC_HANDSHAKE_PRIVATE_H
 
+#include <mongoc/mongoc-handshake.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc.h>
 
 BSON_BEGIN_DECLS

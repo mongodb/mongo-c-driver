@@ -44,7 +44,8 @@ _test_gcp_http_request(void)
 {
    // Test that we correctly build a http request for the GCP metadata server
    gcp_request req;
-   gcp_request_init(&req, "helloworld.com", 1234, NULL);
+   ASSERT(gcp_request_init(
+      &req, "/computeMetadata/v1/instance/service-accounts/default/token", NULL, "helloworld.com", 1234, NULL));
    mcommon_string_append_t req_str;
    mcommon_string_new_as_append(&req_str);
    _mongoc_http_render_request_head(&req_str, &req.req);
@@ -52,6 +53,21 @@ _test_gcp_http_request(void)
    ASSERT_CMPSTR(mcommon_str_from_append(&req_str),
                  "GET "
                  "/computeMetadata/v1/instance/service-accounts/default/token HTTP/1.0\r\n"
+                 "Host: helloworld.com:1234\r\n"
+                 "Connection: close\r\n"
+                 "Metadata-Flavor: Google\r\n"
+                 "\r\n");
+   mcommon_string_from_append_destroy(&req_str);
+
+   // Test an identity token request
+   ASSERT(gcp_request_init(
+      &req, "/computeMetadata/v1/instance/service-accounts/default/identity", "foobar", "helloworld.com", 1234, NULL));
+   mcommon_string_new_as_append(&req_str);
+   _mongoc_http_render_request_head(&req_str, &req.req);
+   gcp_request_destroy(&req);
+   ASSERT_CMPSTR(mcommon_str_from_append(&req_str),
+                 "GET "
+                 "/computeMetadata/v1/instance/service-accounts/default/identity?audience=foobar HTTP/1.0\r\n"
                  "Host: helloworld.com:1234\r\n"
                  "Connection: close\r\n"
                  "Metadata-Flavor: Google\r\n"
@@ -107,5 +123,10 @@ test_service_gcp_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/gcp/http/parse", _test_gcp_parse);
    TestSuite_Add(suite, "/gcp/http/request", _test_gcp_http_request);
-   TestSuite_AddFull(suite, "/gcp/http/talk", _test_with_mock_server, NULL, NULL, have_mock_server_env);
+   TestSuite_AddFull(suite,
+                     "/gcp/http/talk [uses:fake_kms_provider_server][lock:fake-kms]",
+                     _test_with_mock_server,
+                     NULL,
+                     NULL,
+                     have_mock_server_env);
 }

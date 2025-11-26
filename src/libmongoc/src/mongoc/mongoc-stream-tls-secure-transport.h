@@ -20,7 +20,10 @@
 #define MONGOC_STREAM_TLS_SECURE_TRANSPORT_H
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+
 #include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-ssl.h>
+#include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
 

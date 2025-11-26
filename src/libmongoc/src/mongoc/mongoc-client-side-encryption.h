@@ -37,10 +37,14 @@ struct _mongoc_database_t;
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGE "Range"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
+#define MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW "TextPreview"
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW "prefixPreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW "suffixPreview"
 
 
 BSON_BEGIN_DECLS
@@ -104,6 +108,10 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
+typedef struct _encrypt_text_prefix_opts_t mongoc_client_encryption_encrypt_text_prefix_opts_t;
+typedef struct _encrypt_text_suffix_opts_t mongoc_client_encryption_encrypt_text_suffix_opts_t;
+typedef struct _encrypt_text_substring_opts_t mongoc_client_encryption_encrypt_text_substring_opts_t;
+typedef struct _mongoc_client_encryption_encrypt_text_opts_t mongoc_client_encryption_encrypt_text_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_opts_t mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t mongoc_client_encryption_datakey_opts_t;
 typedef struct _mongoc_client_encryption_rewrap_many_datakey_result_t
@@ -182,6 +190,71 @@ mongoc_client_encryption_get_key(mongoc_client_encryption_t *client_encryption,
                                  bson_t *key_doc,
                                  bson_error_t *error);
 
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_text_prefix_opts_t *)
+mongoc_client_encryption_encrypt_text_prefix_opts_new(void);
+
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_text_suffix_opts_t *)
+mongoc_client_encryption_encrypt_text_suffix_opts_new(void);
+
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_text_substring_opts_t *)
+mongoc_client_encryption_encrypt_text_substring_opts_new(void);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_prefix_opts_destroy(mongoc_client_encryption_encrypt_text_prefix_opts_t *);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_suffix_opts_destroy(mongoc_client_encryption_encrypt_text_suffix_opts_t *);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_substring_opts_destroy(mongoc_client_encryption_encrypt_text_substring_opts_t *);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_prefix_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_text_prefix_opts_t *opts, int32_t str_max_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_prefix_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_text_prefix_opts_t *opts, int32_t str_min_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_suffix_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_text_suffix_opts_t *opts, int32_t str_max_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_text_suffix_opts_t *opts, int32_t str_min_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(
+   mongoc_client_encryption_encrypt_text_substring_opts_t *opts, int32_t str_max_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_text_substring_opts_t *opts, int32_t str_max_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_text_substring_opts_t *opts, int32_t str_min_query_length);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_prefix(mongoc_client_encryption_encrypt_text_opts_t *opts,
+                                                      const mongoc_client_encryption_encrypt_text_prefix_opts_t *popts);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_suffix(mongoc_client_encryption_encrypt_text_opts_t *opts,
+                                                      const mongoc_client_encryption_encrypt_text_suffix_opts_t *sopts);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_substring(
+   mongoc_client_encryption_encrypt_text_opts_t *opts,
+   const mongoc_client_encryption_encrypt_text_substring_opts_t *ssopts);
+
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_text_opts_t *)
+mongoc_client_encryption_encrypt_text_opts_new(void);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_destroy(mongoc_client_encryption_encrypt_text_opts_t *topts);
+
 MONGOC_EXPORT(struct _mongoc_cursor_t *)
 mongoc_client_encryption_get_keys(mongoc_client_encryption_t *client_encryption, bson_error_t *error);
 
@@ -246,6 +319,18 @@ mongoc_client_encryption_encrypt_opts_set_algorithm(mongoc_client_encryption_enc
 MONGOC_EXPORT(void)
 mongoc_client_encryption_encrypt_opts_set_contention_factor(mongoc_client_encryption_encrypt_opts_t *opts,
                                                             int64_t contention_factor);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_encrypt_opts_t *opts,
+                                                    const mongoc_client_encryption_encrypt_text_opts_t *text_opts);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(mongoc_client_encryption_encrypt_text_opts_t *opts,
+                                                              bool case_sensitive);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(mongoc_client_encryption_encrypt_text_opts_t *opts,
+                                                                   bool diacritic_sensitive);
 
 MONGOC_EXPORT(void)
 mongoc_client_encryption_encrypt_opts_set_query_type(mongoc_client_encryption_encrypt_opts_t *opts,

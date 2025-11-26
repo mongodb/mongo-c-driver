@@ -19,7 +19,9 @@
 #ifndef MONGOC_APM_PRIVATE_H
 #define MONGOC_APM_PRIVATE_H
 
-#include <mongoc/mongoc-apm.h>
+#include <mongoc/mongoc-apm.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson.h>
 

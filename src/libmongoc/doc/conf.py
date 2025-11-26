@@ -128,24 +128,6 @@ html_title = html_shorttitle = 'libmongoc %s' % version
 html_use_index = True
 
 rst_prolog = rf"""
-.. |qenc:is-experimental| replace::
-
-    is part of the experimental
-    `Queryable Encryption <queryable-encryption_>`_ API and may be subject
-    to breaking changes in future releases.
-
-.. |qenc:opt-is-experimental| replace::
-
-    This option |qenc:is-experimental|
-
-.. |qenc:api-is-experimental| replace::
-
-    This API |qenc:is-experimental|
-
-.. |qenc:range-is-experimental| replace::
-
-    Range algorithm is experimental only and not intended for public use. It is subject to breaking changes.
-
 .. _the findAndModify command:
     https://www.mongodb.com/docs/manual/reference/command/findAndModify/
 
@@ -188,10 +170,18 @@ rst_prolog = rf"""
     :cmake:command:`find_package() <command:find_package>`
 
 .. |bson_t-storage-ptr| replace::
-    non-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+    non-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
 
 .. |bson_t-opt-storage-ptr| replace::
-    maybe-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+    maybe-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
+
+.. _overwritable storage: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/#overwritable-storage
+
+.. |encrypt-text-is-experimental| replace::
+    The "TextPreview" algorithm is in preview and should be used for experimental workloads only.
+    These features are unstable and their security is not guaranteed until released as Generally
+    Available (GA). The GA version of these features may not be backwards compatible with the
+    preview version.
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
@@ -205,7 +195,7 @@ rst_prolog = rf"""
 
 .. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
 
-.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/connection-pooling/
+.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/connect/connection-pools/.
 
 .. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
 

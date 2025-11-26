@@ -27,6 +27,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/loop.h>
+#include <mlib/str.h>
 
 #include <TestSuite.h>
 #include <json-test-monitoring.h>
@@ -660,7 +661,7 @@ collect_tests_from_dir(char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
  *-----------------------------------------------------------------------
  */
 bson_t *
-get_bson_from_json_file(char *filename)
+get_bson_from_json_file(const char *filename)
 {
    FILE *const file = fopen(filename, "rb");
    if (!file) {
@@ -1890,9 +1891,13 @@ _install_json_test_suite_with_check(TestSuite *suite, const char *base, const ch
    bson_snprintf(joined, PATH_MAX, "%s/%s", base, subdir);
    ASSERT(realpath(joined, resolved));
 
-   if (suite->ctest_run) {
-      const char *found = strstr(suite->ctest_run, subdir);
-      if (found != suite->ctest_run && found != suite->ctest_run + 1) {
+   if (suite->ctest_run.data) {
+      // If we're running a specific test, only register if the directory we are scanning
+      // is a prefix of the requested test pathname
+      size_t where = mstr_find(suite->ctest_run, mstr_cstring(subdir));
+      // allow where == 0 or where == 1 to allow optional leading slash in the
+      // test specifier:
+      if (where > 1) {
          return;
       }
    }
@@ -1909,45 +1914,47 @@ _install_json_test_suite_with_check(TestSuite *suite, const char *base, const ch
       ext[0] = '\0';
 
       test = _skip_if_unsupported(skip_json, test);
-      for (size_t j = 0u; j < suite->failing_flaky_skips.len; j++) {
-         TestSkip *skip = _mongoc_array_index(&suite->failing_flaky_skips, TestSkip *, j);
-         if (0 == strcmp(skip_json, skip->test_name)) {
-            /* Modify the test file to give applicable entries a skipReason */
-            bson_t *modified = bson_new();
-            bson_array_builder_t *modified_tests;
-            bson_iter_t iter;
-
-            bson_copy_to_excluding_noinit(test, modified, "tests", NULL);
-            BSON_APPEND_ARRAY_BUILDER_BEGIN(modified, "tests", &modified_tests);
-            BSON_ASSERT(bson_iter_init_find(&iter, test, "tests"));
-            for (bson_iter_recurse(&iter, &iter); bson_iter_next(&iter);) {
-               bson_iter_t desc_iter;
-               uint32_t desc_len;
-               const char *desc;
-               bson_t original_test;
-               bson_t modified_test;
-
-               bson_iter_bson(&iter, &original_test);
-               bson_iter_init_find(&desc_iter, &original_test, "description");
-               desc = bson_iter_utf8(&desc_iter, &desc_len);
-
-               bson_array_builder_append_document_begin(modified_tests, &modified_test);
-               bson_concat(&modified_test, &original_test);
-               if (!skip->subtest_desc || 0 == strcmp(skip->subtest_desc, desc)) {
-                  BSON_APPEND_UTF8(&modified_test, "skipReason", skip->reason != NULL ? skip->reason : "(null)");
-               }
-               bson_array_builder_append_document_end(modified_tests, &modified_test);
-            }
-            bson_append_array_builder_end(modified, modified_tests);
-            bson_destroy(test);
-            test = modified;
+      mlib_vec_foreach (TestSkip, skip, suite->failing_flaky_skips) {
+         if (mstr_cmp(mstr_cstring(skip_json), !=, skip->test_name)) {
+            continue;
          }
+         /* Modify the test file to give applicable entries a skipReason */
+         bson_t *modified = bson_new();
+         bson_array_builder_t *modified_tests;
+         bson_iter_t iter;
+
+         bson_copy_to_excluding_noinit(test, modified, "tests", NULL);
+         BSON_APPEND_ARRAY_BUILDER_BEGIN(modified, "tests", &modified_tests);
+         BSON_ASSERT(bson_iter_init_find(&iter, test, "tests"));
+         for (bson_iter_recurse(&iter, &iter); bson_iter_next(&iter);) {
+            bson_iter_t desc_iter;
+            uint32_t desc_len;
+            const char *desc;
+            bson_t original_test;
+            bson_t modified_test;
+
+            bson_iter_bson(&iter, &original_test);
+            bson_iter_init_find(&desc_iter, &original_test, "description");
+            desc = bson_iter_utf8(&desc_iter, &desc_len);
+
+            bson_array_builder_append_document_begin(modified_tests, &modified_test);
+            bson_concat(&modified_test, &original_test);
+            if (!skip->subtest_desc.data || mstr_cmp(skip->subtest_desc, ==, mstr_cstring(desc))) {
+               BSON_APPEND_UTF8(&modified_test, "skipReason", skip->reason.data ? skip->reason.data : "(null)");
+            }
+            bson_array_builder_append_document_end(modified_tests, &modified_test);
+         }
+         bson_append_array_builder_end(modified, modified_tests);
+         bson_destroy(test);
+         test = modified;
       }
+      mstr name = mstr_copy_cstring(skip_json);
+      mstr_append(&name, mstr_cstring(" [lock:live-server]"));
       /* list of "check" functions that decide whether to skip the test */
       va_start(ap, callback);
-      _V_TestSuite_AddFull(suite, skip_json, callback, &bson_destroy_vp, test, ap);
-
+      _V_TestSuite_AddFull(suite, name.data, callback, &bson_destroy_vp, test, ap);
       va_end(ap);
+      mstr_destroy(&name);
    }
 }
 

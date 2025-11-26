@@ -19,6 +19,10 @@
 #ifndef MONGOC_FLAGS_PRIVATE_H
 #define MONGOC_FLAGS_PRIVATE_H
 
+#include <mongoc/mongoc-flags.h> // IWYU pragma: export
+
+//
+
 #include <bson/bson.h>
 
 BSON_BEGIN_DECLS

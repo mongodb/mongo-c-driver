@@ -19,6 +19,7 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/str.h>
 #include <mlib/time_point.h>
 
 #include <json-test.h>
@@ -32,6 +33,9 @@
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
+
+#include <mlib/duration.h>
+#include <mlib/timer.h>
 
 /* _mongoc_crypt_get_libmongocrypt_version */
 #include <mongoc/mongoc-crypt-private.h>
@@ -3331,7 +3335,7 @@ reset_failpoints(mongoc_ssl_opt_t *ssl_opts)
    req.port = failpoint_server_port;
    req.path = "/reset";
 
-   r = _mongoc_http_send(&req, 10000, true, ssl_opts, &res, &error);
+   r = _mongoc_http_send(&req, mlib_expires_after(mlib_duration(10, s)), true, ssl_opts, &res, &error);
    ASSERT_OR_PRINT(r, error);
    _mongoc_http_response_cleanup(&res);
 }
@@ -3361,7 +3365,7 @@ set_retry_failpoint(mongoc_ssl_opt_t *ssl_opts, bool network, uint32_t count)
    req.body = count_json;
    req.body_len = strlen(count_json);
 
-   r = _mongoc_http_send(&req, 10000, true, ssl_opts, &res, &error);
+   r = _mongoc_http_send(&req, mlib_expires_after(mlib_duration(10, s)), true, ssl_opts, &res, &error);
    ASSERT_OR_PRINT(r, error);
    _mongoc_http_response_cleanup(&res);
 }
@@ -3376,15 +3380,11 @@ typedef struct {
 } ee_fixture;
 
 static ee_fixture *
-explicit_encryption_setup(void)
+explicit_encryption_setup_full(const char *encrypted_fields_path, const char *key_path)
 {
    ee_fixture *eef = (ee_fixture *)bson_malloc0(sizeof(ee_fixture));
-   bson_t *encryptedFields =
-      get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                              "encryptedFields.json");
-   bson_t *key1Document =
-      get_bson_from_json_file("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                              "key1-document.json");
+   bson_t *encryptedFields = get_bson_from_json_file(encrypted_fields_path);
+   bson_t *key1Document = get_bson_from_json_file(key_path);
    mongoc_client_t *setupClient = test_framework_new_default_client();
 
 
@@ -3493,6 +3493,15 @@ explicit_encryption_setup(void)
    bson_destroy(key1Document);
    bson_destroy(encryptedFields);
    return eef;
+}
+
+static ee_fixture *
+explicit_encryption_setup(void)
+{
+   return explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                         "encryptedFields.json",
+                                         "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                         "key1-document.json");
 }
 
 static void
@@ -4498,6 +4507,350 @@ test_explicit_encryption_case5(void *unused)
    }
 
    bson_value_destroy(&payload);
+   explicit_encryption_destroy(eef);
+}
+
+static void
+test_explicit_encryption_text(void *unused)
+{
+   bson_error_t error;
+   bool ok;
+   bson_value_t plaintext = {0};
+   ee_fixture *eef =
+      explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                     "encryptedFields-prefix-suffix.json",
+                                     "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                     "key1-document.json");
+
+   BSON_UNUSED(unused);
+
+   plaintext.value_type = BSON_TYPE_UTF8;
+   plaintext.value.v_utf8.str = "foobarbaz";
+   plaintext.value.v_utf8.len = (uint32_t)strlen(plaintext.value.v_utf8.str);
+
+   mongoc_client_encryption_encrypt_text_prefix_opts_t *popts = mongoc_client_encryption_encrypt_text_prefix_opts_new();
+   mongoc_client_encryption_encrypt_text_prefix_opts_set_str_max_query_length(popts, 10);
+   mongoc_client_encryption_encrypt_text_prefix_opts_set_str_min_query_length(popts, 2);
+   mongoc_client_encryption_encrypt_text_suffix_opts_t *sopts = mongoc_client_encryption_encrypt_text_suffix_opts_new();
+   mongoc_client_encryption_encrypt_text_suffix_opts_set_str_max_query_length(sopts, 10);
+   mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length(sopts, 2);
+   mongoc_client_encryption_encrypt_text_substring_opts_t *ssopts =
+      mongoc_client_encryption_encrypt_text_substring_opts_new();
+   mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(ssopts, 10);
+   mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(ssopts, 10);
+   mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(ssopts, 2);
+
+   /* Prefix and suffix tests */
+   /* Insert 'foobarbaz' with both prefix and suffix indexing */
+   {
+      bson_value_t insertPayload;
+      bson_t to_insert = BSON_INITIALIZER;
+
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, popts);
+      mongoc_client_encryption_encrypt_text_opts_set_suffix(topts, sopts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
+
+      ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
+
+      ok = mongoc_collection_insert_one(eef->encryptedColl, &to_insert, NULL /* opts */, NULL /* reply */, &error);
+      ASSERT_OR_PRINT(ok, error);
+
+      bson_value_destroy(&insertPayload);
+      bson_destroy(&to_insert);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+   /* Find the document using the 'foo' prefix */
+   {
+      bson_value_t findPayload;
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, popts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "foo";
+      plaintext.value.v_utf8.len = 3;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
+
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
+      ASSERT_OR_PRINT(ok, error);
+
+      mongoc_cursor_t *cursor;
+      const bson_t *got;
+
+      cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
+      ASSERT(mongoc_cursor_next(cursor, &got));
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
+      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+
+      bson_value_destroy(&findPayload);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&expr);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+   /* Find the document using the 'baz' suffix */
+   {
+      bson_value_t findPayload;
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_suffix(topts, sopts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "baz";
+      plaintext.value.v_utf8.len = 3;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
+
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
+      ASSERT_OR_PRINT(ok, error);
+
+      mongoc_cursor_t *cursor;
+      const bson_t *got;
+
+      cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
+      ASSERT(mongoc_cursor_next(cursor, &got));
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
+      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+
+      bson_value_destroy(&findPayload);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&expr);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+   /* Ensure querying for a 'foo' suffix returns no documents */
+   {
+      bson_value_t findPayload;
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_suffix(topts, sopts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "foo";
+      plaintext.value.v_utf8.len = 3;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
+
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
+      ASSERT_OR_PRINT(ok, error);
+
+      mongoc_cursor_t *cursor;
+      const bson_t *got;
+
+      cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
+      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected no documents to be returned, got some");
+      mongoc_cursor_next(cursor, &got);
+
+      bson_value_destroy(&findPayload);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&expr);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+   /* Ensure querying for a 'baz' prefix returns no documents */
+   {
+      bson_value_t findPayload;
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, popts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "baz";
+      plaintext.value.v_utf8.len = 3;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
+
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
+      ASSERT_OR_PRINT(ok, error);
+
+      mongoc_cursor_t *cursor;
+      const bson_t *got;
+
+      cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
+      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected no documents to be returned, got some");
+
+      bson_value_destroy(&findPayload);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&expr);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+
+   /* Substring tests */
+   explicit_encryption_destroy(eef);
+   eef = explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                        "encryptedFields-substring.json",
+                                        "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                        "key1-document.json");
+   /* Insert 'foobarbaz' with substring indexing */
+   {
+      bson_value_t insertPayload;
+      bson_t to_insert = BSON_INITIALIZER;
+
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_substring(topts, ssopts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "foobarbaz";
+      plaintext.value.v_utf8.len = 9;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
+
+      ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
+
+      ok = mongoc_collection_insert_one(eef->encryptedColl, &to_insert, NULL /* opts */, NULL /* reply */, &error);
+      ASSERT_OR_PRINT(ok, error);
+
+      bson_value_destroy(&insertPayload);
+      bson_destroy(&to_insert);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+   /* Find the document using the 'bar' substring */
+   {
+      bson_value_t findPayload;
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_substring(topts, ssopts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "bar";
+      plaintext.value.v_utf8.len = 3;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
+
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
+      ASSERT_OR_PRINT(ok, error);
+
+      mongoc_cursor_t *cursor;
+      const bson_t *got;
+
+      cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
+      ASSERT(mongoc_cursor_next(cursor, &got));
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
+      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+
+      bson_value_destroy(&findPayload);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&expr);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+
+   /* Ensure querying for a 'qux' substring returns no documents */
+   {
+      bson_value_t findPayload;
+      mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
+      mongoc_client_encryption_encrypt_opts_set_keyid(eo, &eef->key1ID);
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
+      mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
+
+      mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
+      mongoc_client_encryption_encrypt_text_opts_set_substring(topts, ssopts);
+      mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
+      mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
+
+      plaintext.value.v_utf8.str = "qux";
+      plaintext.value.v_utf8.len = 3;
+      ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
+
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
+      ASSERT_OR_PRINT(ok, error);
+
+      mongoc_cursor_t *cursor;
+      const bson_t *got;
+
+      cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
+      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected no documents to be returned, got some");
+
+      bson_value_destroy(&findPayload);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&expr);
+      mongoc_client_encryption_encrypt_text_opts_destroy(topts);
+      mongoc_client_encryption_encrypt_opts_destroy(eo);
+   }
+   mongoc_client_encryption_encrypt_text_prefix_opts_destroy(popts);
+   mongoc_client_encryption_encrypt_text_suffix_opts_destroy(sopts);
+   mongoc_client_encryption_encrypt_text_substring_opts_destroy(ssopts);
    explicit_encryption_destroy(eef);
 }
 
@@ -7063,7 +7416,7 @@ test_client_side_encryption_install(TestSuite *suite)
                                       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/create_datakey_with_custom_key_material",
+                     "/client_side_encryption/create_datakey_with_custom_key_material [lock:live-server]",
                      test_create_datakey_with_custom_key_material,
                      NULL,
                      NULL,
@@ -7071,7 +7424,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/datakey_and_double_encryption",
+                     "/client_side_encryption/datakey_and_double_encryption [lock:live-server]",
                      test_datakey_and_double_encryption,
                      NULL,
                      NULL,
@@ -7079,7 +7432,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/external_key_vault",
+                     "/client_side_encryption/external_key_vault [lock:live-server]",
                      test_external_key_vault,
                      NULL,
                      NULL,
@@ -7087,14 +7440,14 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_no_auth /* requires auth for error check */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/bson_size_limits_and_batch_splitting",
+                     "/client_side_encryption/bson_size_limits_and_batch_splitting [lock:live-server]",
                      test_bson_size_limits_and_batch_splitting_no_qe,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/bson_size_limits_and_batch_splitting_qe",
+                     "/client_side_encryption/bson_size_limits_and_batch_splitting_qe [lock:live-server]",
                      test_bson_size_limits_and_batch_splitting_qe,
                      NULL,
                      NULL,
@@ -7102,14 +7455,14 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_25,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/views_are_prohibited",
+                     "/client_side_encryption/views_are_prohibited [lock:live-server]",
                      test_views_are_prohibited,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/corpus",
+                     "/client_side_encryption/corpus [lock:live-server]",
                      test_corpus,
                      NULL,
                      NULL,
@@ -7117,7 +7470,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_offline /* requires AWS */);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/custom_endpoint",
+                     "/client_side_encryption/custom_endpoint [lock:live-server]",
                      test_custom_endpoint,
                      NULL,
                      NULL,
@@ -7126,7 +7479,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "mongocryptdBypassSpawn",
+                     "mongocryptdBypassSpawn [lock:live-server]",
                      test_bypass_spawning_via_mongocryptdBypassSpawn,
                      NULL,
                      NULL,
@@ -7134,7 +7487,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "bypassAutoEncryption",
+                     "bypassAutoEncryption [lock:live-server]",
                      test_bypass_spawning_via_bypassAutoEncryption,
                      NULL,
                      NULL,
@@ -7142,7 +7495,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "bypassQueryAnalysis",
+                     "bypassQueryAnalysis [lock:live-server]",
                      test_bypass_spawning_via_bypassQueryAnalysis,
                      NULL,
                      NULL,
@@ -7150,7 +7503,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bypass_spawning_mongocryptd/"
-                     "cryptSharedLibLoaded",
+                     "cryptSharedLibLoaded [lock:live-server]",
                      test_bypass_spawning_via_cryptSharedLibLoaded,
                      NULL,
                      NULL,
@@ -7158,35 +7511,35 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      _skip_if_no_crypt_shared);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls/valid",
+                     "/client_side_encryption/kms_tls/valid [lock:live-server]",
                      test_kms_tls_cert_valid,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls/expired",
+                     "/client_side_encryption/kms_tls/expired [lock:live-server]",
                      test_kms_tls_cert_expired,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls/wrong_host",
+                     "/client_side_encryption/kms_tls/wrong_host [lock:live-server]",
                      test_kms_tls_cert_wrong_host,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/unique_index_on_keyaltnames",
+                     "/client_side_encryption/unique_index_on_keyaltnames [lock:live-server]",
                      test_unique_index_on_keyaltnames,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/prose_test_16/case1",
+                     "/client_side_encryption/prose_test_16/case1 [lock:live-server][timeout:30]",
                      test_rewrap_with_separate_client_encryption,
                      NULL,
                      NULL,
@@ -7194,7 +7547,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      test_framework_skip_if_slow);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/prose_test_16/case2",
+                     "/client_side_encryption/prose_test_16/case2 [lock:live-server]",
                      test_rewrap_without_provider,
                      NULL,
                      NULL,
@@ -7203,28 +7556,28 @@ test_client_side_encryption_install(TestSuite *suite)
 
    /* Other, C driver specific, tests. */
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/single_and_pool_mismatches",
+                     "/client_side_encryption/single_and_pool_mismatches [lock:live-server]",
                      test_invalid_single_and_pool_mismatches,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/multi_threaded",
+                     "/client_side_encryption/multi_threaded [lock:live-server]",
                      test_multi_threaded,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/malformed_explicit",
+                     "/client_side_encryption/malformed_explicit [lock:live-server]",
                      test_malformed_explicit,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls_options",
+                     "/client_side_encryption/kms_tls_options [lock:live-server]",
                      test_kms_tls_options,
                      NULL,
                      NULL,
@@ -7236,20 +7589,20 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_windows);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_tls_options/extra_rejected",
+                     "/client_side_encryption/kms_tls_options/extra_rejected [lock:live-server]",
                      test_kms_tls_options_extra_rejected,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms_retry",
+                     "/client_side_encryption/kms_retry [lock:live-server]",
                      test_kms_retry,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case1",
+                     "/client_side_encryption/explicit_encryption/case1 [lock:live-server]",
                      test_explicit_encryption_case1,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7258,7 +7611,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case2",
+                     "/client_side_encryption/explicit_encryption/case2 [lock:live-server]",
                      test_explicit_encryption_case2,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7267,7 +7620,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case3",
+                     "/client_side_encryption/explicit_encryption/case3 [lock:live-server]",
                      test_explicit_encryption_case3,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7276,7 +7629,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case4",
+                     "/client_side_encryption/explicit_encryption/case4 [lock:live-server]",
                      test_explicit_encryption_case4,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7285,7 +7638,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/explicit_encryption/case5",
+                     "/client_side_encryption/explicit_encryption/case5 [lock:live-server]",
                      test_explicit_encryption_case5,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7294,7 +7647,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case1",
+                     "/client_side_encryption/decryption_events/case1 [lock:live-server]",
                      test_decryption_events_case1,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7302,7 +7655,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case2",
+                     "/client_side_encryption/decryption_events/case2 [lock:live-server]",
                      test_decryption_events_case2,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7310,7 +7663,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case3",
+                     "/client_side_encryption/decryption_events/case3 [lock:live-server]",
                      test_decryption_events_case3,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7319,7 +7672,7 @@ test_client_side_encryption_install(TestSuite *suite)
 
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/decryption_events/case4",
+                     "/client_side_encryption/decryption_events/case4 [lock:live-server]",
                      test_decryption_events_case4,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7327,7 +7680,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/qe_docs_example",
+                     "/client_side_encryption/qe_docs_example [lock:live-server]",
                      test_qe_docs_example,
                      NULL /* dtor */,
                      NULL /* ctx */,
@@ -7336,7 +7689,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/callback",
+                     "/client_side_encryption/kms/callback [lock:live-server]",
                      test_kms_callback,
                      NULL, // dtor
                      NULL, // ctx
@@ -7344,7 +7697,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/auto-aws/fail",
+                     "/client_side_encryption/kms/auto-aws/fail [lock:live-server]",
                      test_auto_aws_fail,
                      NULL,
                      NULL,
@@ -7353,7 +7706,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      _not_have_aws_creds_env);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/auto-aws/succeed",
+                     "/client_side_encryption/kms/auto-aws/succeed [lock:live-server]",
                      test_auto_aws_succeed,
                      NULL,
                      NULL,
@@ -7362,17 +7715,18 @@ test_client_side_encryption_install(TestSuite *suite)
                      _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/drop_qe_null_error",
+                     "/client_side_encryption/drop_qe_null_error [lock:live-server]",
                      test_drop_qe_null_error,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
 
-   TestSuite_AddFull(suite, "/client_side_encryption/auto_datakeys", test_auto_datakeys, NULL, NULL, NULL);
+   TestSuite_AddFull(
+      suite, "/client_side_encryption/auto_datakeys [lock:live-server]", test_auto_datakeys, NULL, NULL, NULL);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/createEncryptedCollection/simple",
+                     "/client_side_encryption/createEncryptedCollection/simple [lock:live-server]",
                      test_create_encrypted_collection_simple,
                      NULL,
                      NULL,
@@ -7382,7 +7736,7 @@ test_client_side_encryption_install(TestSuite *suite)
 
    TestSuite_AddFull(suite,
                      "/client_side_encryption/createEncryptedCollection/"
-                     "missing-encryptedFields",
+                     "missing-encryptedFields [lock:live-server]",
                      test_create_encrypted_collection_no_encryptedFields,
                      NULL,
                      NULL,
@@ -7391,7 +7745,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/createEncryptedCollection/"
-                     "bad-keyId",
+                     "bad-keyId [lock:live-server]",
                      test_create_encrypted_collection_bad_keyId,
                      NULL,
                      NULL,
@@ -7399,7 +7753,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_21,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/createEncryptedCollection/insert",
+                     "/client_side_encryption/createEncryptedCollection/insert [lock:live-server]",
                      test_create_encrypted_collection_insert,
                      NULL,
                      NULL,
@@ -7407,7 +7761,7 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_21,
                      test_framework_skip_if_single);
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/bypass_mongocryptd_shared_library",
+                     "/client_side_encryption/bypass_mongocryptd_shared_library [lock:live-server]",
                      test_bypass_mongocryptd_shared_library,
                      NULL,
                      NULL,
@@ -7450,12 +7804,14 @@ test_client_side_encryption_install(TestSuite *suite)
 
             char *test_name =
                bson_strdup_printf("/client_side_encryption/range_explicit_encryption/%s/%s", rc.name, rangeType);
+            mstr name_with_tags = mstr_copy_cstring(test_name);
+            mstr_append(&name_with_tags, mstr_cstring(" [lock:live-server]"));
 
             // Skip DecimalNoPrecision if not a replica set.
             if (0 == strcmp(rangeType, "DecimalNoPrecision")) {
                TestSuite_AddFull(
                   suite,
-                  test_name,
+                  name_with_tags.data,
                   rc.fn,
                   NULL /* dtor */,
                   (void *)rangeTypes[i] /* ctx */,
@@ -7465,7 +7821,7 @@ test_client_side_encryption_install(TestSuite *suite)
             } else {
                TestSuite_AddFull(
                   suite,
-                  test_name,
+                  name_with_tags.data,
                   rc.fn,
                   NULL /* dtor */,
                   (void *)rangeTypes[i] /* ctx */,
@@ -7473,13 +7829,14 @@ test_client_side_encryption_install(TestSuite *suite)
                   test_framework_skip_if_max_wire_version_less_than_25, /* range queries require MongoDB 8.0+ */
                   test_framework_skip_if_single);
             }
+            mstr_destroy(&name_with_tags);
 
             bson_free(test_name);
          }
       }
 
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/range_explicit_encryption/applies_defaults",
+                        "/client_side_encryption/range_explicit_encryption/applies_defaults [lock:live-server]",
                         test_range_explicit_encryption_applies_defaults,
                         NULL,
                         NULL,
@@ -7487,7 +7844,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_no_client_side_encryption);
 
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/test_lookup",
+                        "/client_side_encryption/test_lookup [lock:live-server]",
                         test_lookup,
                         NULL,
                         NULL,
@@ -7495,7 +7852,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_single, /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/test_lookup/post-8.2",
+                        "/client_side_encryption/test_lookup/post-8.2 [lock:live-server]",
                         test_lookup_post82,
                         NULL,
                         NULL,
@@ -7504,12 +7861,20 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_single,                        /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/test_lookup/pre-8.1",
+                        "/client_side_encryption/test_lookup/pre-8.1 [lock:live-server]",
                         test_lookup_pre81,
                         NULL,
                         NULL,
                         test_framework_skip_if_max_wire_version_more_than_25 /* require server < 8.1 */,
                         test_framework_skip_if_max_wire_version_less_than_21 /* require server > 7.0 for QE support */,
+                        test_framework_skip_if_single, /* QE not supported on standalone */
+                        test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/explicit_encryption/text",
+                        test_explicit_encryption_text,
+                        NULL,
+                        NULL,
+                        test_framework_skip_if_max_wire_version_less_than_27 /* require server > 8.2 for QE support */,
                         test_framework_skip_if_single, /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
    }

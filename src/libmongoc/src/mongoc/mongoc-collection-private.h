@@ -19,6 +19,10 @@
 #ifndef MONGOC_COLLECTION_PRIVATE_H
 #define MONGOC_COLLECTION_PRIVATE_H
 
+#include <mongoc/mongoc-collection.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-client.h>
 
 #include <bson/bson.h>

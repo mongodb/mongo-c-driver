@@ -105,6 +105,7 @@ mongoc_gridfs_bucket_new(mongoc_database_t *db,
                         "bucketName \"%s\" must have fewer than %d characters",
                         gridfs_opts.bucketName,
                         (int)(sizeof(buf) - (strlen(".chunks") + 1)));
+      _mongoc_gridfs_bucket_opts_cleanup(&gridfs_opts);
       return NULL;
    }
 

@@ -3397,57 +3397,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-mock-kms-servers
       - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2015x64, cse, sasl-cyrus]
-    commands:
-      - func: cse-sasl-cyrus-winssl-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
-      - func: upload-build
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-test-4.2-sharded-auth
-    run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2015x64, sasl-cyrus, cse, auth, sharded, "4.2", winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 14 2015 }
-            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: "4.2" }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
-  - name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-test-latest-sharded-auth
-    run_on: windows-vsCurrent-small
-    tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2015x64, sasl-cyrus, cse, auth, sharded, latest, winssl]
-    depends_on: [{ name: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile }]
-    commands:
-      - func: fetch-build
-        vars:
-          BUILD_NAME: cse-sasl-cyrus-winssl-windows-2019-vs2015-x64-compile
-      - command: expansions.update
-        params:
-          updates:
-            - { key: CMAKE_GENERATOR, value: Visual Studio 14 2015 }
-            - { key: CMAKE_GENERATOR_PLATFORM, value: x64 }
-            - { key: AUTH, value: auth }
-            - { key: MONGODB_VERSION, value: latest }
-            - { key: TOPOLOGY, value: sharded_cluster }
-            - { key: SSL, value: winssl }
-      - func: fetch-det
-      - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
-      - func: run-tests
   - name: cse-sasl-cyrus-winssl-windows-2019-vs2022-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2022x64, cse, sasl-cyrus]
@@ -4221,6 +4170,62 @@ tasks:
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
       - func: run-tests
+  - name: oidc-azure-auth-test-task
+    run_on:
+      - debian11-small
+    commands:
+      - func: fetch-source
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          add_expansions_to_env: true
+          args:
+            - -c
+            - .evergreen/scripts/oidc-azure-compile.sh
+      - command: expansions.update
+        params:
+          file: mongoc/oidc-remote-test-expansion.yml
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          add_expansions_to_env: true
+          env:
+            AZUREOIDC_DRIVERS_TAR_FILE: ${OIDC_TEST_TARBALL}
+            AZUREOIDC_TEST_CMD: source ./env.sh && ./.evergreen/scripts/oidc-azure-test.sh
+          args:
+            - -c
+            - ./drivers-evergreen-tools/.evergreen/auth_oidc/azure/run-driver-test.sh
+  - name: oidc-gcp-auth-test-task
+    run_on:
+      - debian11-small
+    commands:
+      - func: fetch-source
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          add_expansions_to_env: true
+          args:
+            - -c
+            - .evergreen/scripts/oidc-gcp-compile.sh
+      - command: expansions.update
+        params:
+          file: mongoc/oidc-remote-test-expansion.yml
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          add_expansions_to_env: true
+          env:
+            GCPOIDC_DRIVERS_TAR_FILE: ${OIDC_TEST_TARBALL}
+            GCPOIDC_TEST_CMD: source ./secrets-export.sh && ./.evergreen/scripts/oidc-gcp-test.sh
+          args:
+            - -c
+            - ./drivers-evergreen-tools/.evergreen/auth_oidc/gcp/run-driver-test.sh
   - name: openssl-compat-1.0.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
     tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]
@@ -5797,15 +5802,6 @@ tasks:
           CMAKE_GENERATOR: Visual Studio 15 2017
           CMAKE_GENERATOR_PLATFORM: x64
       - func: upload-build
-  - name: sasl-off-winssl-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2015x64, sasl-off]
-    commands:
-      - func: sasl-off-winssl-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
-      - func: upload-build
   - name: sasl-off-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-off]
@@ -5893,15 +5889,6 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
-  - name: sasl-sspi-winssl-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2015x64, sasl-sspi]
-    commands:
-      - func: sasl-sspi-winssl-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
-      - func: upload-build
   - name: sasl-sspi-winssl-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [sasl-matrix-winssl, compile, windows-vsCurrent, vs2017x64, sasl-sspi]
@@ -6625,15 +6612,6 @@ tasks:
           CC: gcc-13
           CXX: g++-13
           C_STD_VERSION: 11
-  - name: std-c11-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c11]
-    commands:
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
-          C_STD_VERSION: 11
   - name: std-c11-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large
     tags: [std-matrix, windows-vsCurrent, vs2017x64, compile, std-c11]
@@ -7146,15 +7124,6 @@ tasks:
         vars:
           CC: gcc-13
           CXX: g++-13
-          C_STD_VERSION: 99
-  - name: std-c99-windows-2019-vs2015-x64-compile
-    run_on: windows-vsCurrent-large
-    tags: [std-matrix, windows-vsCurrent, vs2015x64, compile, std-c99]
-    commands:
-      - func: std-compile
-        vars:
-          CMAKE_GENERATOR: Visual Studio 14 2015
-          CMAKE_GENERATOR_PLATFORM: x64
           C_STD_VERSION: 99
   - name: std-c99-windows-2019-vs2017-x64-compile
     run_on: windows-vsCurrent-large

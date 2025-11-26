@@ -39,7 +39,7 @@ _test_http_req(void)
 {
    // Test generating an HTTP request for the IMDS server
    mcd_azure_imds_request req;
-   mcd_azure_imds_request_init(&req, "example.com", 9879, "");
+   ASSERT(mcd_azure_imds_request_init(&req, MCD_TOKEN_RESOURCE_VAULT, "example.com", 9879, "", NULL));
    mcommon_string_append_t req_str;
    mcommon_string_new_as_append(&req_str);
    _mongoc_http_render_request_head(&req_str, &req.req);
@@ -77,7 +77,8 @@ _run_http_test_case(const char *case_,
 
    mcd_azure_access_token token = {0};
    char *const header = bson_strdup_printf("X-MongoDB-HTTP-TestParams: case=%s\r\n", case_);
-   mcd_azure_access_token_from_imds(&token, host.host, host.port, header, &error);
+   mcd_azure_access_token_from_imds(
+      &token, MCD_TOKEN_RESOURCE_VAULT, host.host, host.port, header, (mlib_timer){0}, NULL, &error);
    bson_free(header);
    mcd_azure_access_token_destroy(&token);
    ASSERT_ERROR_CONTAINS(error, expect_domain, expect_code, expect_error_message);
@@ -107,5 +108,10 @@ test_mcd_azure_imds_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/azure/imds/http/parse", _test_oauth_parse);
    TestSuite_Add(suite, "/azure/imds/http/request", _test_http_req);
-   TestSuite_AddFull(suite, "/azure/imds/http/talk", _test_with_mock_server, NULL, NULL, have_mock_server_env);
+   TestSuite_AddFull(suite,
+                     "/azure/imds/http/talk [uses:fake_kms_provider_server][lock:fake-kms]",
+                     _test_with_mock_server,
+                     NULL,
+                     NULL,
+                     have_mock_server_env);
 }

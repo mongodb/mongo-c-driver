@@ -34,7 +34,6 @@ MATRIX = [
 
     ('macos-14-arm64', 'clang', None, [99, 11, 17, 23]), # Apple Clang
 
-    ('windows-vsCurrent', 'vs2015x64', None, [99, 11,   ]), # Max: C11
     ('windows-vsCurrent', 'vs2017x64', None, [99, 11,   ]), # Max: C11
     ('windows-vsCurrent', 'vs2019x64', None, [99, 11, 17]), # Max: C17
     ('windows-vsCurrent', 'vs2022x64', None, [99, 11, 17]), # Max: C17

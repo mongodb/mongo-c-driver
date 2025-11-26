@@ -19,7 +19,9 @@
 #ifndef MONGOC_CLIENT_SESSION_PRIVATE_H
 #define MONGOC_CLIENT_SESSION_PRIVATE_H
 
-#include <mongoc/mongoc-client-session.h>
+#include <mongoc/mongoc-client-session.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson.h>
 

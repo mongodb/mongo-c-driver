@@ -355,6 +355,7 @@ txt_callback(const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data_
    while (pos < total) {
       uint8_t len = data[pos++];
       if (total - pos < (uint16_t)len) {
+         mcommon_string_destroy(mcommon_string_from_append(&txt));
          DNS_ERROR("Invalid TXT string size %hu at %hu in %hu-byte TXT record for \"%s\"",
                    (uint16_t)len,
                    pos,
@@ -2731,7 +2732,7 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
    BSON_ASSERT_PARAM(client);
    BSON_ASSERT_PARAM(callback);
 
-   if (mongoc_oidc_cache_get_callback(client->topology->oidc_cache)) {
+   if (mongoc_oidc_cache_has_user_callback(client->topology->oidc_cache)) {
       MONGOC_ERROR("mongoc_client_set_oidc_callback can only be called once per client");
       return false;
    }
@@ -2742,6 +2743,6 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
       return false;
    }
 
-   mongoc_oidc_cache_set_callback(client->topology->oidc_cache, callback);
+   mongoc_oidc_cache_set_user_callback(client->topology->oidc_cache, callback);
    return true;
 }
