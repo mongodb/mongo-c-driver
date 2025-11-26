@@ -20,4 +20,4 @@ Description
 -----------
 
 Adds a replace operation for the namespace ``ns``. Returns true on success. Returns false and sets ``error`` if an
-error occured.
+error occurred.

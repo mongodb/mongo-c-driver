@@ -20,10 +20,11 @@
 #ifndef BSON_CONTEXT_PRIVATE_H
 #define BSON_CONTEXT_PRIVATE_H
 
+#include <bson/bson-context.h> // IWYU pragma: export
+
+//
 
 #include <common-thread-private.h>
-
-#include <bson/bson-context.h>
 
 
 BSON_BEGIN_DECLS
@@ -54,7 +55,7 @@ struct _bson_context_t {
  * @param oid The OID to update.
  */
 void
-_bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid);
+_bson_context_set_oid_rand(bson_context_t *context, bson_oid_t *oid);
 
 /**
  * @brief Insert the context's sequence counter into the given OID. Increments
@@ -64,7 +65,7 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid);
  * @param oid The OID to modify
  */
 void
-_bson_context_set_oid_seq32 (bson_context_t *context, bson_oid_t *oid);
+_bson_context_set_oid_seq32(bson_context_t *context, bson_oid_t *oid);
 
 BSON_END_DECLS
 

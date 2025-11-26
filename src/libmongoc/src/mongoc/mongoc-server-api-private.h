@@ -19,7 +19,7 @@
 #ifndef MONGOC_SERVER_API_PRIVATE_H
 #define MONGOC_SERVER_API_PRIVATE_H
 
-#include <mongoc/mongoc-server-api.h>
+#include <mongoc/mongoc-server-api.h> // IWYU pragma: export
 
 struct _mongoc_server_api_t {
    mongoc_server_api_version_t version;

@@ -12,13 +12,12 @@ class RunSimpleHTTPServer(Function):
             command_type=command_type,
             background=True,
             working_dir='mongoc',
-            script='''\
+            script="""\
                 set -o errexit
                 echo "Starting simple HTTP server..."
-                command -V "${PYTHON3_BINARY}" >/dev/null
-                "${PYTHON3_BINARY}" .evergreen/scripts/simple_http_server.py
+                uvx python .evergreen/scripts/simple_http_server.py
                 echo "Starting simple HTTP server... done."
-            ''',
+            """,
         ),
     ]
 

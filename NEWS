@@ -1,3 +1,49 @@
+libmongoc 2.2.0
+===============
+
+## New Features
+
+* `MONGODB-OIDC` authentication mechanism.
+  * Support a custom callback with `mongoc_client_set_oidc_callback` and `mongoc_client_pool_set_oidc_callback`.
+  * Support Azure environment with property `environment:azure`.
+  * Support GCP environment with property `environment:gcp`.
+  * Kubernetes environment is not-yet supported.
+* Add features to `mongoc_bulkwrite_t`:
+  * Add `mongoc_bulkwrite_is_acknowledged`.
+  * Add `mongoc_bulkwriteresult_serverid`.
+  * Support Queryable Encryption.
+* Support text indexes for Queryable Encryption:
+  * Add `mongoc_client_encryption_encrypt_text_opts_t`.
+  * Substring, prefix and suffix search are in preview and should be used for experimental workloads only. These features are unstable and their security is not guaranteed until released as Generally Available (GA). The GA version of these features may not be backwards compatible with the preview version
+* Support TLS v1.3 with Windows Secure Channel.
+
+## Fixed
+
+* Do not try to resume when iterating a closed change stream. 
+
+## Notes
+
+* Raise required version of libmongocrypt from 1.13.0 to 1.15.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+
+## Deprecated
+
+* Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
+
+## Removed
+
+* Support for Visual Studio 2015 (EOL since October 2025). Use Visual Studio 2017 or newer.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Connor MacDonald
+  * Julia Garland
+  * Ezra Chung
+  * Adrian Dole
+  * Colby Pike
+  * Roberto C. Sánchez
+  * shubhamhii
+
 libmongoc 2.1.2
 ===============
 
@@ -10,6 +56,18 @@ Thanks to everyone who contributed to the development of this release.
   * Ezra Chung
   * Kevin Albertson
 
+
+libmongoc 1.30.6
+================
+
+Fixes:
+
+  * Fix write command options handling.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Kevin Albertson
 
 
 libmongoc 2.1.1
@@ -33,7 +91,7 @@ libmongoc 2.1.0
 
 ## Fixes
 
-* Windows Secure Channel is fixed to support newer signatures to verify client certifictes.
+* Windows Secure Channel is fixed to support newer signatures to verify client certificates.
 * Replace use of `rand()` with thread-safe alternatives.
 * The uninstall script for Windows is fixed so it no longer "succeeds" with a non-zero `%ERRORLABEL%` value.
 * The uninstall script for non-Windows environments now calls `find "$dir" -maxdepth 1` instead of `ls --almost-all "$dir"` when detecting non-empty directories to fix macOS compatibility.

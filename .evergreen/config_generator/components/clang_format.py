@@ -1,14 +1,12 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_task import EvgTask
-from shrub.v3.evg_task import EvgTaskRef
+from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
 from config_generator.etc.distros import find_small_distro
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
 
-
-TAG = "clang-format"
+TAG = 'clang-format'
 
 
 class ClangFormat(Function):
@@ -16,11 +14,11 @@ class ClangFormat(Function):
     commands = [
         bash_exec(
             command_type=EvgCommandType.TEST,
-            working_dir="mongoc",
+            working_dir='mongoc',
             env={
-                "DRYRUN": "1",
+                'DRYRUN': '1',
             },
-            script="uv run --frozen --only-group=format tools/format.py --mode=check",
+            script='uv run --frozen --only-group=format tools/format.py --mode=check',
         ),
     ]
 
@@ -33,7 +31,9 @@ def tasks():
     yield EvgTask(
         name=TAG,
         tags=[TAG],
-        commands=[ClangFormat.call()],
+        commands=[
+            ClangFormat.call(),
+        ],
     )
 
 
@@ -42,7 +42,7 @@ def variants():
         BuildVariant(
             name=TAG,
             display_name=TAG,
-            run_on=[find_small_distro("ubuntu2204").name],
-            tasks=[EvgTaskRef(name=f".{TAG}")],
+            run_on=[find_small_distro('ubuntu2204').name],
+            tasks=[EvgTaskRef(name=f'.{TAG}')],
         ),
     ]

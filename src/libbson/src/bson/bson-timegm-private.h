@@ -43,7 +43,7 @@ struct bson_tm {
 };
 
 int64_t
-_bson_timegm (struct bson_tm *const tmp);
+_bson_timegm(struct bson_tm *const tmp);
 
 BSON_END_DECLS
 

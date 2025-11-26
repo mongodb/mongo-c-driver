@@ -1,7 +1,39 @@
+libbson 2.2.0
+=============
+
+## Improvements
+
+* Increase resolution of `bson_get_monotonic_time` on Windows.
+
+## Deprecated
+
+* Support for macOS 11 (EOL since September 2023) and macOS 12 (EOL since September 2024).
+
+## Removed
+
+* Support for Visual Studio 2015 (EOL since October 2025). Use Visual Studio 2017 or newer.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Connor MacDonald
+  * Julia Garland
+  * Ezra Chung
+  * Adrian Dole
+  * Colby Pike
+  * Roberto C. Sánchez
+  * shubhamhii
+
 libbson 2.1.2
 =============
 
 No changes since 2.1.1. Version incremented to match the libmongoc version.
+
+libbson 1.30.6
+==============
+
+No changes since 1.30.5. Version incremented to match the libmongoc version.
+
 
 libbson 2.1.1
 =============

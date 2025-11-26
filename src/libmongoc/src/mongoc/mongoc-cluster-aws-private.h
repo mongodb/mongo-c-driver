@@ -22,15 +22,16 @@
 #include <common-thread-private.h> // bson_mutex_t
 #include <mongoc/mongoc-cluster-private.h>
 
-#include <mongoc/mcd-time.h>
-
 #include <bson/bson.h>
 
+#include <mlib/duration.h>
+#include <mlib/timer.h>
+
 bool
-_mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,
-                               mongoc_stream_t *stream,
-                               mongoc_server_description_t *sd,
-                               bson_error_t *error);
+_mongoc_cluster_auth_node_aws(mongoc_cluster_t *cluster,
+                              mongoc_stream_t *stream,
+                              mongoc_server_description_t *sd,
+                              bson_error_t *error);
 
 /* The following are declared in the private header for testing. It is only used
  * in test-mongoc-aws.c, mongoc-cluster-aws.c, and test-awsauth.c */
@@ -42,7 +43,7 @@ typedef struct {
    // If expiration.set is false, the credentials do not have a known
    // expiration.
    struct {
-      mcd_timer value;
+      mlib_timer value;
       bool set;
    } expiration;
 } _mongoc_aws_credentials_t;
@@ -51,10 +52,10 @@ typedef struct {
    (_mongoc_aws_credentials_t)                                                 \
    {                                                                           \
       .access_key_id = NULL, .secret_access_key = NULL, .session_token = NULL, \
-      .expiration = {.value = {.expire_at = {0}}, .set = false},               \
+      .expiration = {.value = (mlib_timer){0}, .set = false},                  \
    }
 
-#define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW_MS 60 * 5 * 1000
+#define MONGOC_AWS_CREDENTIALS_EXPIRATION_WINDOW mlib_duration(5, mn)
 
 // _mongoc_aws_credentials_cache_t is a thread-safe global cache of AWS
 // credentials.
@@ -71,29 +72,29 @@ extern _mongoc_aws_credentials_cache_t mongoc_aws_credentials_cache;
 // _mongoc_aws_credentials_cache_init initializes the global
 // `mongoc_aws_credentials_cache. It is expected to be called by mongoc_init.
 void
-_mongoc_aws_credentials_cache_init (void);
+_mongoc_aws_credentials_cache_init(void);
 
 // _mongoc_aws_credentials_cache_lock exclusively locks the cache.
 void
-_mongoc_aws_credentials_cache_lock (void);
+_mongoc_aws_credentials_cache_lock(void);
 
 // _mongoc_aws_credentials_cache_unlock unlocks the cache.
 void
-_mongoc_aws_credentials_cache_unlock (void);
+_mongoc_aws_credentials_cache_unlock(void);
 
 // _mongoc_aws_credentials_cache_put_nolock is a non-locking variant of
 // _mongoc_aws_credentials_cache_put.
 void
-_mongoc_aws_credentials_cache_put_nolock (const _mongoc_aws_credentials_t *creds);
+_mongoc_aws_credentials_cache_put_nolock(const _mongoc_aws_credentials_t *creds);
 
 // _mongoc_aws_credentials_cache_put adds credentials into the global cache.
 void
-_mongoc_aws_credentials_cache_put (const _mongoc_aws_credentials_t *creds);
+_mongoc_aws_credentials_cache_put(const _mongoc_aws_credentials_t *creds);
 
 // _mongoc_aws_credentials_cache_get_nolock is a non-locking variant of
 // _mongoc_aws_credentials_cache_get.
 bool
-_mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds);
+_mongoc_aws_credentials_cache_get_nolock(_mongoc_aws_credentials_t *creds);
 
 // _mongoc_aws_credentials_cache_get returns true if cached credentials were
 // retrieved.
@@ -104,33 +105,33 @@ _mongoc_aws_credentials_cache_get_nolock (_mongoc_aws_credentials_t *creds);
 // `_mongoc_aws_credentials_cleanup` on `creds`.
 // Returns false and zeroes `creds` if there are no valid cached credentials.
 bool
-_mongoc_aws_credentials_cache_get (_mongoc_aws_credentials_t *creds);
+_mongoc_aws_credentials_cache_get(_mongoc_aws_credentials_t *creds);
 
 // _mongoc_aws_credentials_cache_clear_nolock is the non-locking variant of
 // _mongoc_aws_credentials_cache_clear
 void
-_mongoc_aws_credentials_cache_clear_nolock (void);
+_mongoc_aws_credentials_cache_clear_nolock(void);
 
 // _mongoc_aws_credentials_cache_clear clears credentials in the global cache
 void
-_mongoc_aws_credentials_cache_clear (void);
+_mongoc_aws_credentials_cache_clear(void);
 
 // _mongoc_aws_credentials_cache_cleanup frees data for the global cache.
 // It is expected to be called by mongoc_cleanup.
 void
-_mongoc_aws_credentials_cache_cleanup (void);
+_mongoc_aws_credentials_cache_cleanup(void);
 
 
 bool
-_mongoc_aws_credentials_obtain (mongoc_uri_t *uri, _mongoc_aws_credentials_t *creds, bson_error_t *error);
+_mongoc_aws_credentials_obtain(mongoc_uri_t *uri, _mongoc_aws_credentials_t *creds, bson_error_t *error);
 
 void
-_mongoc_aws_credentials_copy_to (const _mongoc_aws_credentials_t *src, _mongoc_aws_credentials_t *dst);
+_mongoc_aws_credentials_copy_to(const _mongoc_aws_credentials_t *src, _mongoc_aws_credentials_t *dst);
 
 void
-_mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds);
+_mongoc_aws_credentials_cleanup(_mongoc_aws_credentials_t *creds);
 
 bool
-_mongoc_validate_and_derive_region (char *sts_fqdn, size_t sts_fqdn_len, char **region, bson_error_t *error);
+_mongoc_validate_and_derive_region(char *sts_fqdn, size_t sts_fqdn_len, char **region, bson_error_t *error);
 
 #endif /* MONGOC_CLUSTER_AWS_PRIVATE_H */

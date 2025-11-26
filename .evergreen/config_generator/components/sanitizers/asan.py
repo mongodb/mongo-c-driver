@@ -1,7 +1,6 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_task import EvgTaskRef
 
-
 TAG = 'sanitizers-matrix-asan'
 
 

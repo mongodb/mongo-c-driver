@@ -15,12 +15,15 @@ API Reference
    mongoc_bulkwriteopts_t
    mongoc_bulkwriteresult_t
    mongoc_bulkwriteexception_t
+   mongoc_bulkwrite_check_acknowledged_t
+   mongoc_bulkwrite_serverid_t
    mongoc_bulk_operation_t
    mongoc_change_stream_t
    mongoc_client_encryption_t
    mongoc_client_encryption_datakey_opts_t
    mongoc_client_encryption_rewrap_many_datakey_result_t
    mongoc_client_encryption_encrypt_opts_t
+   mongoc_client_encryption_encrypt_text_opts_t
    mongoc_client_encryption_encrypt_range_opts_t
    mongoc_client_encryption_opts_t
    mongoc_client_pool_t

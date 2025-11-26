@@ -19,6 +19,10 @@
 #ifndef MONGOC_BULK_OPERATION_PRIVATE_H
 #define MONGOC_BULK_OPERATION_PRIVATE_H
 
+#include <mongoc/mongoc-bulk-operation.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-write-command-private.h>
 
@@ -45,11 +49,11 @@ struct _mongoc_bulk_operation_t {
 
 
 mongoc_bulk_operation_t *
-_mongoc_bulk_operation_new (mongoc_client_t *client,
-                            const char *database,
-                            const char *collection,
-                            mongoc_bulk_write_flags_t flags,
-                            const mongoc_write_concern_t *write_concern);
+_mongoc_bulk_operation_new(mongoc_client_t *client,
+                           const char *database,
+                           const char *collection,
+                           mongoc_bulk_write_flags_t flags,
+                           const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS

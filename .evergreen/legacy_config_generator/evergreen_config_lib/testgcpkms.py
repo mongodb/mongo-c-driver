@@ -17,20 +17,17 @@
 from collections import OrderedDict as OD
 from typing import MutableSequence
 
-from config_generator.components.funcs.find_cmake_latest import FindCMakeLatest
-
-from evergreen_config_generator.functions import shell_exec, func
+from evergreen_config_generator.functions import func, shell_exec
+from evergreen_config_generator.taskgroups import TaskGroup
 from evergreen_config_generator.tasks import NamedTask
 from evergreen_config_generator.variants import Variant
-from evergreen_config_generator.taskgroups import TaskGroup
 
 
 def _create_tasks():
     passtask = NamedTask(
-        task_name="testgcpkms-task",
+        task_name='testgcpkms-task',
         commands=[
-            func("fetch-source"),
-            func("find-cmake-latest"),
+            func('fetch-source'),
             shell_exec(
                 r"""
             echo "Building test-gcpkms ... begin"
@@ -70,9 +67,8 @@ def _create_tasks():
     )
 
     failtask = NamedTask(
-        task_name="testgcpkms-fail-task",
+        task_name='testgcpkms-fail-task',
         commands=[
-            func("find-cmake-latest"),
             shell_exec(
                 r"""
             pushd mongoc
@@ -97,21 +93,20 @@ def _create_tasks():
 
 def _create_variant():
     return Variant(
-        name="testgcpkms-variant",
-        display_name="GCP KMS",
-        # GCP Virtual Machine created is Debian 11.
-        run_on="debian11-small",
-        tasks=["testgcpkms_task_group", "testgcpkms-fail-task"],
+        name='testgcpkms-variant',
+        display_name='GCP KMS',
+        run_on='debian11-latest-small',  # GCP Virtual Machine is actually Debian 11.
+        tasks=['testgcpkms_task_group', 'testgcpkms-fail-task'],
         batchtime=20160,
     )  # Use a batchtime of 14 days as suggested by the CSFLE test README
 
 
 def _create_task_group():
-    task_group = TaskGroup(name="testgcpkms_task_group")
+    task_group = TaskGroup(name='testgcpkms_task_group')
     task_group.setup_group_can_fail_task = True
     task_group.setup_group_timeout_secs = 1800  # 30 minutes
     task_group.setup_group = [
-        func("fetch-det"),
+        func('fetch-det'),
         # Create and set up a GCE instance using driver tools script
         shell_exec(
             r"""
@@ -124,7 +119,7 @@ def _create_task_group():
             test=False,
         ),
         # Load the GCPKMS_GCLOUD, GCPKMS_INSTANCE, GCPKMS_PROJECT, and GCPKMS_ZONE expansions.
-        OD([("command", "expansions.update"), ("params", OD([("file", "testgcpkms-expansions.yml")]))]),
+        OD([('command', 'expansions.update'), ('params', OD([('file', 'testgcpkms-expansions.yml')]))]),
     ]
 
     task_group.teardown_group = [
@@ -139,7 +134,7 @@ def _create_task_group():
             test=False,
         )
     ]
-    task_group.tasks = ["testgcpkms-task"]
+    task_group.tasks = ['testgcpkms-task']
     return task_group
 
 

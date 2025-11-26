@@ -50,6 +50,7 @@ typedef struct _mongoc_cluster_node_t {
    /* handshake_sd is a server description created from the handshake on the
     * stream. */
    mongoc_server_description_t *handshake_sd;
+   mongoc_oidc_connection_cache_t *oidc_connection_cache;
 } mongoc_cluster_node_t;
 
 typedef struct _mongoc_cluster_t {
@@ -68,44 +69,43 @@ typedef struct _mongoc_cluster_t {
 
 
 void
-mongoc_cluster_init (mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *client);
+mongoc_cluster_init(mongoc_cluster_t *cluster, const mongoc_uri_t *uri, void *client);
 
 void
-mongoc_cluster_destroy (mongoc_cluster_t *cluster);
+mongoc_cluster_destroy(mongoc_cluster_t *cluster);
 
 void
-mongoc_cluster_set_sockettimeoutms (mongoc_cluster_t *cluster, int32_t sockettimeoutms);
+mongoc_cluster_set_sockettimeoutms(mongoc_cluster_t *cluster, int32_t sockettimeoutms);
 
 void
-mongoc_cluster_reset_sockettimeoutms (mongoc_cluster_t *cluster);
+mongoc_cluster_reset_sockettimeoutms(mongoc_cluster_t *cluster);
 
 void
-mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t id);
+mongoc_cluster_disconnect_node(mongoc_cluster_t *cluster, uint32_t id);
+int32_t
+mongoc_cluster_get_max_bson_obj_size(mongoc_cluster_t *cluster);
 
 int32_t
-mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);
-
-int32_t
-mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster);
+mongoc_cluster_get_max_msg_size(mongoc_cluster_t *cluster);
 
 size_t
-_mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov, size_t iovcnt, int skip, char *buffer);
+_mongoc_cluster_buffer_iovec(mongoc_iovec_t *iov, size_t iovcnt, int skip, char *buffer);
 
 bool
-mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id);
+mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id);
 
 bool
-mongoc_cluster_legacy_rpc_sendv_to_server (mongoc_cluster_t *cluster,
-                                           mcd_rpc_message *rpc,
-                                           mongoc_server_stream_t *server_stream,
-                                           bson_error_t *error);
+mongoc_cluster_legacy_rpc_sendv_to_server(mongoc_cluster_t *cluster,
+                                          mcd_rpc_message *rpc,
+                                          mongoc_server_stream_t *server_stream,
+                                          bson_error_t *error);
 
 bool
-mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mcd_rpc_message *rpc,
-                         mongoc_buffer_t *buffer,
-                         mongoc_server_stream_t *server_stream,
-                         bson_error_t *error);
+mongoc_cluster_try_recv(mongoc_cluster_t *cluster,
+                        mcd_rpc_message *rpc,
+                        mongoc_buffer_t *buffer,
+                        mongoc_server_stream_t *server_stream,
+                        bson_error_t *error);
 
 /**
  * @brief Obtain a server stream appropriate for read operations on the
@@ -120,13 +120,13 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
  * @note May add nodes and/or update the cluster's topology.
  */
 mongoc_server_stream_t *
-mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
-                                 const mongoc_ss_log_context_t *log_context,
-                                 const mongoc_read_prefs_t *read_prefs,
-                                 mongoc_client_session_t *cs,
-                                 const mongoc_deprioritized_servers_t *ds,
-                                 bson_t *reply,
-                                 bson_error_t *error);
+mongoc_cluster_stream_for_reads(mongoc_cluster_t *cluster,
+                                const mongoc_ss_log_context_t *log_context,
+                                const mongoc_read_prefs_t *read_prefs,
+                                mongoc_client_session_t *cs,
+                                const mongoc_deprioritized_servers_t *ds,
+                                bson_t *reply,
+                                bson_error_t *error);
 
 /**
  * @brief Obtain a server stream appropriate for write operations on the
@@ -140,12 +140,12 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
  * @note May add nodes and/or update the cluster's topology.
  */
 mongoc_server_stream_t *
-mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
-                                  const mongoc_ss_log_context_t *log_context,
-                                  mongoc_client_session_t *cs,
-                                  const mongoc_deprioritized_servers_t *ds,
-                                  bson_t *reply,
-                                  bson_error_t *error);
+mongoc_cluster_stream_for_writes(mongoc_cluster_t *cluster,
+                                 const mongoc_ss_log_context_t *log_context,
+                                 mongoc_client_session_t *cs,
+                                 const mongoc_deprioritized_servers_t *ds,
+                                 bson_t *reply,
+                                 bson_error_t *error);
 
 /**
  * @brief Obtain a server stream appropriate for aggregate operations with
@@ -160,12 +160,12 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
  * @note May add nodes and/or update the cluster's topology.
  */
 mongoc_server_stream_t *
-mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
-                                           const mongoc_ss_log_context_t *log_context,
-                                           const mongoc_read_prefs_t *read_prefs,
-                                           mongoc_client_session_t *cs,
-                                           bson_t *reply,
-                                           bson_error_t *error);
+mongoc_cluster_stream_for_aggr_with_write(mongoc_cluster_t *cluster,
+                                          const mongoc_ss_log_context_t *log_context,
+                                          const mongoc_read_prefs_t *read_prefs,
+                                          mongoc_client_session_t *cs,
+                                          bson_t *reply,
+                                          bson_error_t *error);
 
 /**
  * @brief Obtain a server stream associated with the cluster node associated
@@ -183,97 +183,95 @@ mongoc_cluster_stream_for_aggr_with_write (mongoc_cluster_t *cluster,
  * @note May update the cluster's topology.
  */
 mongoc_server_stream_t *
-mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
-                                  uint32_t server_id,
-                                  bool reconnect_ok,
-                                  mongoc_client_session_t *cs,
-                                  bson_t *reply,
-                                  bson_error_t *error);
+mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
+                                 uint32_t server_id,
+                                 bool reconnect_ok,
+                                 mongoc_client_session_t *cs,
+                                 bson_t *reply,
+                                 bson_error_t *error);
 
 bool
-mongoc_cluster_stream_valid (mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream);
+mongoc_cluster_stream_valid(mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream);
 
 bool
-mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
+mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
 
 // `mongoc_cluster_run_retryable_write` executes a write command and may apply retryable writes behavior.
 // `cmd->server_stream` is set to `*retry_server_stream` on retry. Otherwise, it is unmodified.
 // `*retry_server_stream` is set to a new stream on retry. The caller must call `mongoc_server_stream_cleanup`.
 // `*reply` must be uninitialized and is always initialized upon return. The caller must call `bson_destroy`.
 bool
-mongoc_cluster_run_retryable_write (mongoc_cluster_t *cluster,
-                                    mongoc_cmd_t *cmd,
-                                    bool is_retryable_write,
-                                    mongoc_server_stream_t **retry_server_stream,
-                                    bson_t *reply,
-                                    bson_error_t *error);
+mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
+                                   mongoc_cmd_t *cmd,
+                                   bool is_retryable_write,
+                                   mongoc_server_stream_t **retry_server_stream,
+                                   bson_t *reply,
+                                   bson_error_t *error);
 
 bool
-mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
-                                  mongoc_server_stream_t *server_stream,
-                                  mongoc_cmd_parts_t *parts,
-                                  bson_t *reply,
-                                  bson_error_t *error);
+mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
+                                 mongoc_server_stream_t *server_stream,
+                                 mongoc_cmd_parts_t *parts,
+                                 bson_t *reply,
+                                 bson_error_t *error);
 
 bool
-mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
-                                    const mongoc_cmd_t *cmd,
-                                    bson_t *reply,
-                                    bson_error_t *error);
+mongoc_cluster_run_command_private(mongoc_cluster_t *cluster,
+                                   const mongoc_cmd_t *cmd,
+                                   bson_t *reply,
+                                   bson_error_t *error);
 
 void
-_mongoc_cluster_build_sasl_start (bson_t *cmd, const char *mechanism, const char *buf, uint32_t buflen);
+_mongoc_cluster_build_sasl_start(bson_t *cmd, const char *mechanism, const char *buf, uint32_t buflen);
 
 void
-_mongoc_cluster_build_sasl_continue (bson_t *cmd, int conv_id, const char *buf, uint32_t buflen);
+_mongoc_cluster_build_sasl_continue(bson_t *cmd, int conv_id, const char *buf, uint32_t buflen);
 
 int
-_mongoc_cluster_get_conversation_id (const bson_t *reply);
+_mongoc_cluster_get_conversation_id(const bson_t *reply);
 
 mongoc_server_stream_t *
-_mongoc_cluster_create_server_stream (const mongoc_topology_description_t *td,
-                                      const mongoc_server_description_t *sd,
-                                      mongoc_stream_t *stream);
+_mongoc_cluster_create_server_stream(const mongoc_topology_description_t *td,
+                                     const mongoc_server_description_t *sd,
+                                     mongoc_stream_t *stream);
 
 bool
-_mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri, bson_t *cmd /* OUT */, bson_error_t *error /* OUT */);
+_mongoc_cluster_get_auth_cmd_x509(const mongoc_uri_t *uri, bson_t *cmd /* OUT */, bson_error_t *error /* OUT */);
 
 /* Returns true if a versioned server API has been selected, otherwise returns
  * false. */
 bool
-mongoc_cluster_uses_server_api (const mongoc_cluster_t *cluster);
+mongoc_cluster_uses_server_api(const mongoc_cluster_t *cluster);
 
 /* Returns true if load balancing mode has been selected, otherwise returns
  * false. */
 bool
-mongoc_cluster_uses_loadbalanced (const mongoc_cluster_t *cluster);
+mongoc_cluster_uses_loadbalanced(const mongoc_cluster_t *cluster);
 
 #ifdef MONGOC_ENABLE_CRYPTO
 void
-_mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,
-                            mongoc_scram_t *scram,
-                            mongoc_crypto_hash_algorithm_t algo);
+_mongoc_cluster_init_scram(const mongoc_cluster_t *cluster, mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
 
 bool
-_mongoc_cluster_get_auth_cmd_scram (mongoc_crypto_hash_algorithm_t algo,
-                                    mongoc_scram_t *scram,
-                                    bson_t *cmd /* OUT */,
-                                    bson_error_t *error /* OUT */);
+_mongoc_cluster_get_auth_cmd_scram(mongoc_crypto_hash_algorithm_t algo,
+                                   mongoc_scram_t *scram,
+                                   bson_t *cmd /* OUT */,
+                                   bson_error_t *error /* OUT */);
 #endif /* MONGOC_ENABLE_CRYPTO */
 
 bool
-mcd_rpc_message_compress (mcd_rpc_message *rpc,
-                          int32_t compressor_id,
-                          int32_t compression_level,
-                          void **compressed_data,
-                          size_t *compressed_data_len,
-                          bson_error_t *error);
+mcd_rpc_message_compress(mcd_rpc_message *rpc,
+                         int32_t compressor_id,
+                         int32_t compression_level,
+                         void **compressed_data,
+                         size_t *compressed_data_len,
+                         bson_error_t *error);
 
 bool
-mcd_rpc_message_decompress (mcd_rpc_message *rpc, void **data, size_t *data_len);
+mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len);
 
 bool
-mcd_rpc_message_decompress_if_necessary (mcd_rpc_message *rpc, void **data, size_t *data_len);
+mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_t *data_len);
 
 BSON_END_DECLS
 

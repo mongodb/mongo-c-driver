@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 
 compile_libmongocrypt() {
-  declare -r cmake_binary="${1:?"missing path to CMake binary"}"; shift
-  declare -r mongoc_dir="${1:?"missing path to mongoc directory"}"; shift
-  declare -r install_dir="${1:?"missing path to install directory"}"; shift
+  declare -r cmake_binary="${1:?"missing path to CMake binary"}"
+  shift
+  declare -r mongoc_dir="${1:?"missing path to mongoc directory"}"
+  shift
+  declare -r install_dir="${1:?"missing path to install directory"}"
+  shift
 
   # When updating libmongocrypt, also update openssl-compat-check.sh and the copy of libmongocrypt's kms-message in
   # `src/kms-message`.
   #
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
-  declare -r version="1.13.0"
+  declare -r version="1.15.1"
 
   git clone -q --depth=1 https://github.com/mongodb/libmongocrypt --branch "${version:?}" || return
 

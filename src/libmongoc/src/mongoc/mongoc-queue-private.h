@@ -48,17 +48,17 @@ struct _mongoc_queue_item_t {
 
 
 void
-_mongoc_queue_init (mongoc_queue_t *queue);
+_mongoc_queue_init(mongoc_queue_t *queue);
 void *
-_mongoc_queue_pop_head (mongoc_queue_t *queue);
+_mongoc_queue_pop_head(mongoc_queue_t *queue);
 void *
-_mongoc_queue_pop_tail (mongoc_queue_t *queue);
+_mongoc_queue_pop_tail(mongoc_queue_t *queue);
 void
-_mongoc_queue_push_head (mongoc_queue_t *queue, void *data);
+_mongoc_queue_push_head(mongoc_queue_t *queue, void *data);
 void
-_mongoc_queue_push_tail (mongoc_queue_t *queue, void *data);
+_mongoc_queue_push_tail(mongoc_queue_t *queue, void *data);
 uint32_t
-_mongoc_queue_get_length (const mongoc_queue_t *queue);
+_mongoc_queue_get_length(const mongoc_queue_t *queue);
 
 
 BSON_END_DECLS

@@ -19,7 +19,10 @@
 #ifndef MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H
 #define MONGOC_GRIDFS_FILE_PAGE_PRIVATE_H
 
-#include <mongoc/mongoc-gridfs-file-page.h>
+#include <mongoc/mongoc-gridfs-file-page.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-gridfs-file.h>
 
 #include <bson/bson.h>
@@ -35,25 +38,25 @@ struct _mongoc_gridfs_file_page_t {
 };
 
 mongoc_gridfs_file_page_t *
-_mongoc_gridfs_file_page_new (const uint8_t *data, uint32_t len, uint32_t chunk_size);
+_mongoc_gridfs_file_page_new(const uint8_t *data, uint32_t len, uint32_t chunk_size);
 void
-_mongoc_gridfs_file_page_destroy (mongoc_gridfs_file_page_t *page);
+_mongoc_gridfs_file_page_destroy(mongoc_gridfs_file_page_t *page);
 bool
-_mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page, uint32_t offset);
+_mongoc_gridfs_file_page_seek(mongoc_gridfs_file_page_t *page, uint32_t offset);
 int32_t
-_mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page, void *dst, uint32_t len);
+_mongoc_gridfs_file_page_read(mongoc_gridfs_file_page_t *page, void *dst, uint32_t len);
 int32_t
-_mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page, const void *src, uint32_t len);
+_mongoc_gridfs_file_page_write(mongoc_gridfs_file_page_t *page, const void *src, uint32_t len);
 uint32_t
-_mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page, uint32_t len);
+_mongoc_gridfs_file_page_memset0(mongoc_gridfs_file_page_t *page, uint32_t len);
 uint32_t
-_mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page);
+_mongoc_gridfs_file_page_tell(mongoc_gridfs_file_page_t *page);
 const uint8_t *
-_mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page);
+_mongoc_gridfs_file_page_get_data(mongoc_gridfs_file_page_t *page);
 uint32_t
-_mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page);
+_mongoc_gridfs_file_page_get_len(mongoc_gridfs_file_page_t *page);
 bool
-_mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page);
+_mongoc_gridfs_file_page_is_dirty(mongoc_gridfs_file_page_t *page);
 
 BSON_END_DECLS
 

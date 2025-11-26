@@ -27,36 +27,36 @@ chmod 700 "${secrets_dir:?}"
 
 # Create certificate to test X509 auth with Atlas on cloud-prod:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
-echo "${atlas_x509_cert_base64:?}" | base64 --decode > "${secrets_dir:?}/atlas_x509.pem"
+echo "${atlas_x509_cert_base64:?}" | base64 --decode >"${secrets_dir:?}/atlas_x509.pem"
 # Fix path on Windows:
 if $IS_WINDOWS; then
-    atlas_x509_path="$(cygpath -m "${atlas_x509_path:?}")"
+  atlas_x509_path="$(cygpath -m "${atlas_x509_path:?}")"
 fi
 
 # Create certificate to test X509 auth with Atlas on cloud-dev
 atlas_x509_dev_path="${secrets_dir:?}/atlas_x509_dev.pem"
-echo "${atlas_x509_dev_cert_base64:?}" | base64 --decode > "${atlas_x509_dev_path:?}"
+echo "${atlas_x509_dev_cert_base64:?}" | base64 --decode >"${atlas_x509_dev_path:?}"
 # Fix path on Windows:
 if $IS_WINDOWS; then
-    atlas_x509_dev_path="$(cygpath -m "${atlas_x509_dev_path}")"
+  atlas_x509_dev_path="$(cygpath -m "${atlas_x509_dev_path}")"
 fi
 
 # Create Kerberos config and keytab files.
 echo "Setting up Kerberos ... begin"
 if command -v kinit >/dev/null; then
-    # Copy host config and append realm:
-    if [ -e /etc/krb5.conf ]; then
-      cat /etc/krb5.conf > "${secrets_dir:?}/krb5.conf"
-    fi
-    cat "${mongoc_dir:?}/.evergreen/etc/kerberos.realm" >> "${secrets_dir:?}/krb5.conf"
-    # Set up keytab:
-    echo "${keytab:?}" | base64 --decode > "${secrets_dir:?}/drivers.keytab"
-    # Initialize kerberos:
-    KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p drivers@LDAPTEST.10GEN.CC
-    echo "Setting up Kerberos ... done"
+  # Copy host config and append realm:
+  if [ -e /etc/krb5.conf ]; then
+    cat /etc/krb5.conf >"${secrets_dir:?}/krb5.conf"
+  fi
+  cat "${mongoc_dir:?}/.evergreen/etc/kerberos.realm" >>"${secrets_dir:?}/krb5.conf"
+  # Set up keytab:
+  echo "${keytab:?}" | base64 --decode >"${secrets_dir:?}/drivers.keytab"
+  # Initialize kerberos:
+  KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p drivers@LDAPTEST.10GEN.CC
+  echo "Setting up Kerberos ... done"
 else
-    echo "No 'kinit' detected"
-    echo "Setting up Kerberos ... skipping"
+  echo "No 'kinit' detected"
+  echo "Setting up Kerberos ... skipping"
 fi
 
 declare c_timeout="connectTimeoutMS=30000&serverSelectionTryOnce=false"
@@ -112,8 +112,7 @@ if [[ -d "${openssl_install_dir:?}" ]]; then
   LD_LIBRARY_PATH="${openssl_install_dir:?}/lib:${LD_LIBRARY_PATH:-}"
   export LD_LIBRARY_PATH
 
-  # Archlinux stores their trust list under /etc/ca-certificates/extracted/.
-  # Copy it into the custom OpenSSL installation's trust store.
+  # Import the system's trust list into the custom OpenSSL installation's trust store.
   declare pem_file="/etc/ca-certificates/extracted/tls-ca-bundle.pem"
   if [[ -f "${pem_file:?}" ]]; then
     cp -v "${pem_file:?}" "${openssl_install_dir:?}/ssl/cert.pem"
@@ -133,6 +132,16 @@ elif command -v otool >/dev/null; then
   # Try using otool on MacOS if ldd is not available.
   otool -L "${mongoc_ping:?}" | grep "libssl" || true
   otool -L "${test_gssapi:?}" | grep "libssl" || true
+fi
+
+# libkrb5.so.3 and libgssapi_krb5.so.2 and report memory leaks on Ubuntu.
+if [[ -n "$(grep "Ubuntu" /etc/os-release)" ]]; then
+  supps="$(pwd)/.lsan-suppressions-ubuntu"
+  cat >|"${supps:?}" <<DOC
+leak:libkrb5
+leak:libgssapi_krb5
+DOC
+  export LSAN_OPTIONS="suppressions=${supps:?}"
 fi
 
 maybe_skip() {

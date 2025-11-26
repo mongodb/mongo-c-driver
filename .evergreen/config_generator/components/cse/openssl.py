@@ -1,12 +1,10 @@
 from shrub.v3.evg_build_variant import BuildVariant
 
 from config_generator.etc.compile import generate_compile_tasks
-from config_generator.etc.function import merge_defns
-from config_generator.etc.utils import TaskRef
-
 from config_generator.etc.cse.compile import CompileCommon
 from config_generator.etc.cse.test import generate_test_tasks
-
+from config_generator.etc.function import merge_defns
+from config_generator.etc.utils import TaskRef
 
 SSL = 'openssl'
 TAG = f'cse-matrix-{SSL}'
@@ -16,39 +14,34 @@ TAG = f'cse-matrix-{SSL}'
 # fmt: off
 COMPILE_MATRIX = [
     # For test matrix.
-    ('rhel8-latest',      'gcc',       None, ['cyrus']),
-    ('rhel8-zseries',     'gcc',       None, ['cyrus']),
-    ('ubuntu2004-arm64',  'gcc',       None, ['cyrus']),
-    ('windows-vsCurrent', 'vs2017x64', None, ['cyrus']),
+    ('rhel8-latest',       'gcc',       None, ['cyrus']),
+    ('rhel8-arm64-latest', 'gcc',       None, ['cyrus']),
+    ('rhel8-zseries',      'gcc',       None, ['cyrus']), # Big Endian.
+    ('windows-vsCurrent',  'vs2022x64', None, ['cyrus']),
 
     # For compile only.
-    ('debian11',   'clang',    None, ['cyrus']),
-    ('debian11',   'gcc',      None, ['cyrus']),
-    ('debian12',   'clang',    None, ['cyrus']),
-    ('debian12',   'gcc',      None, ['cyrus']),
-    ('rhel80',     'gcc',      None, ['cyrus']),
-    ('ubuntu2004', 'gcc',      None, ['cyrus']),
-    ('ubuntu2004', 'clang',    None, ['cyrus']),
-    ('ubuntu2204', 'gcc',      None, ['cyrus']),
-    ('ubuntu2204', 'clang-12', None, ['cyrus']),
-    ('ubuntu2404', 'gcc',      None, ['cyrus']),
-    ('ubuntu2404', 'clang-14', None, ['cyrus']),
+    ('debian11-latest', 'clang',    None, ['cyrus']),
+    ('debian11-latest', 'gcc',      None, ['cyrus']),
+    ('debian12-latest', 'clang',    None, ['cyrus']),
+    ('debian12-latest', 'gcc',      None, ['cyrus']),
+    ('rhel80',          'gcc',      None, ['cyrus']),
+    ('ubuntu2204',      'gcc',      None, ['cyrus']),
+    ('ubuntu2204',      'clang-12', None, ['cyrus']),
+    ('ubuntu2404',      'gcc',      None, ['cyrus']),
+    ('ubuntu2404',      'clang-14', None, ['cyrus']),
 ]
 
-# TODO (CDRIVER-3789): test cse with the 'sharded' topology.
-# CSFLE requires 4.2+. QE requires 7.0+ and are skipped on "server" tasks.
+# QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.
 TEST_MATRIX = [
-    # rhel8-latest provides 4.2+.
-    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # windows-vsCurrent provides 4.2+.
-    ('windows-vsCurrent', 'vs2017x64', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    # rhel8-arm64 only provides 4.4+.
+    ('rhel8-arm64-latest', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    # ubuntu2004-arm64 provides 4.4+.
-    ('ubuntu2004-arm64', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    # rhel8-zseries only provides 5.0+. Resource-limited: use sparingly.
+    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['sharded'], ['5.0', 'latest']),
 
-    # rhel8-zseries provides 5.0+.
-    ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['server', 'replica'], ['5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -86,7 +79,7 @@ def tasks():
 
     # PowerPC and zSeries are limited resources.
     for task in res:
-        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
+        if any(pattern in task.run_on for pattern in ['power', 'zseries']):
             task.patchable = False
 
     return res
@@ -101,11 +94,11 @@ def variants():
 
     # PowerPC and zSeries are limited resources.
     for task in TASKS:
-        if any(pattern in task.run_on for pattern in ["power", "zseries"]):
+        if any(pattern in task.run_on for pattern in ['power', 'zseries']):
             tasks.append(
                 TaskRef(
                     name=task.name,
-                    batchtime=1440,   # 1 day
+                    batchtime=1440,  # 1 day
                 )
             )
         else:

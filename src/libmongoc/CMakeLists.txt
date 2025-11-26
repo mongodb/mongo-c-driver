@@ -489,10 +489,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.13.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.15.1)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.13.0 is required to enable In-Use Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.15.1 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -557,6 +557,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-side-encryption.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-aws.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-oidc.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sasl.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-collection.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-compression.c
@@ -568,9 +569,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-change-stream.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd-deprecated.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-cmd.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find-opquery.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-legacy.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
@@ -597,6 +595,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log-and-monitor-private.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-cache.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-callback.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-oidc-env.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.c
@@ -750,6 +749,22 @@ set (HEADERS
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
+)
+
+set(MONGOC_CXX_COMPILER_ID "Unknown")
+set(MONGOC_CXX_COMPILER_VERSION "")
+
+if(DEFINED CMAKE_CXX_COMPILER_ID)
+    set(MONGOC_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+if(DEFINED CMAKE_CXX_COMPILER_VERSION)
+    set(MONGOC_CXX_COMPILER_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+endif()
+
+configure_file (
+   "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config-private.h.in"
+   "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config-private.h"
 )
 
 configure_file (
@@ -1032,6 +1047,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/mock_server/mock-server.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/request.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/sync-queue.c
+   ${PROJECT_SOURCE_DIR}/tests/stream-tracker.c
    ${PROJECT_SOURCE_DIR}/tests/test-conveniences.c
    ${PROJECT_SOURCE_DIR}/tests/test-happy-eyeballs.c
    ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
@@ -1077,7 +1093,9 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-long-namespace.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-callback.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-cache.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c

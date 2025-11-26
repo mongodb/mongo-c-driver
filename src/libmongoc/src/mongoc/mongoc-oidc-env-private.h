@@ -28,25 +28,25 @@ typedef struct _mongoc_oidc_env_t mongoc_oidc_env_t;
 typedef struct _mongoc_oidc_env_callback_t mongoc_oidc_env_callback_t;
 
 const mongoc_oidc_env_t *
-mongoc_oidc_env_find (const char *name);
+mongoc_oidc_env_find(const char *name);
 
 const char *
-mongoc_oidc_env_name (const mongoc_oidc_env_t *env);
+mongoc_oidc_env_name(const mongoc_oidc_env_t *env);
 
 bool
-mongoc_oidc_env_supports_username (const mongoc_oidc_env_t *env);
+mongoc_oidc_env_supports_username(const mongoc_oidc_env_t *env);
 
 bool
-mongoc_oidc_env_requires_token_resource (const mongoc_oidc_env_t *env);
+mongoc_oidc_env_requires_token_resource(const mongoc_oidc_env_t *env);
 
 mongoc_oidc_env_callback_t *
-mongoc_oidc_env_callback_new (const mongoc_oidc_env_t *env, const char *token_resource);
+mongoc_oidc_env_callback_new(const mongoc_oidc_env_t *env, const char *token_resource, const char *username);
 
 void
-mongoc_oidc_env_callback_destroy (mongoc_oidc_env_callback_t *env_callback);
+mongoc_oidc_env_callback_destroy(mongoc_oidc_env_callback_t *env_callback);
 
 const mongoc_oidc_callback_t *
-mongoc_oidc_env_callback_inner (const mongoc_oidc_env_callback_t *env_callback);
+mongoc_oidc_env_callback_inner(const mongoc_oidc_env_callback_t *env_callback);
 
 BSON_END_DECLS
 

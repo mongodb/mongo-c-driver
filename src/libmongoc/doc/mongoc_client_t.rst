@@ -83,6 +83,7 @@ Example
     mongoc_client_set_apm_callbacks
     mongoc_client_set_appname
     mongoc_client_set_error_api
+    mongoc_client_set_oidc_callback
     mongoc_client_set_read_concern
     mongoc_client_set_read_prefs
     mongoc_client_set_server_api

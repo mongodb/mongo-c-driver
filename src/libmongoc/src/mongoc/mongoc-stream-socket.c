@@ -34,103 +34,102 @@ struct _mongoc_stream_socket_t {
 
 
 static BSON_INLINE int64_t
-get_expiration (int32_t timeout_msec)
+get_expiration(int32_t timeout_msec)
 {
    if (timeout_msec < 0) {
       return -1;
    } else if (timeout_msec == 0) {
       return 0;
    } else {
-      return (bson_get_monotonic_time () + ((int64_t) timeout_msec * 1000L));
+      return (bson_get_monotonic_time() + ((int64_t)timeout_msec * 1000L));
    }
 }
 
 
 static int
-_mongoc_stream_socket_close (mongoc_stream_t *stream)
+_mongoc_stream_socket_close(mongoc_stream_t *stream)
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
    int ret;
 
    ENTRY;
 
-   BSON_ASSERT (ss);
+   BSON_ASSERT(ss);
 
    if (ss->sock) {
-      ret = mongoc_socket_close (ss->sock);
-      RETURN (ret);
+      ret = mongoc_socket_close(ss->sock);
+      RETURN(ret);
    }
 
-   RETURN (0);
+   RETURN(0);
 }
 
 
 static void
-_mongoc_stream_socket_destroy (mongoc_stream_t *stream)
+_mongoc_stream_socket_destroy(mongoc_stream_t *stream)
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
 
    ENTRY;
 
-   BSON_ASSERT (ss);
+   BSON_ASSERT(ss);
 
    if (ss->sock) {
-      mongoc_socket_destroy (ss->sock);
+      mongoc_socket_destroy(ss->sock);
       ss->sock = NULL;
    }
 
-   bson_free (ss);
+   bson_free(ss);
 
-   mongoc_counter_streams_active_dec ();
-   mongoc_counter_streams_disposed_inc ();
+   mongoc_counter_streams_active_dec();
+   mongoc_counter_streams_disposed_inc();
 
    EXIT;
 }
 
 
 static void
-_mongoc_stream_socket_failed (mongoc_stream_t *stream)
+_mongoc_stream_socket_failed(mongoc_stream_t *stream)
 {
    ENTRY;
 
-   _mongoc_stream_socket_destroy (stream);
+   _mongoc_stream_socket_destroy(stream);
 
    EXIT;
 }
 
 
 static int
-_mongoc_stream_socket_setsockopt (
-   mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen)
+_mongoc_stream_socket_setsockopt(mongoc_stream_t *stream, int level, int optname, void *optval, mongoc_socklen_t optlen)
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
    int ret;
 
    ENTRY;
 
-   BSON_ASSERT (ss);
-   BSON_ASSERT (ss->sock);
+   BSON_ASSERT(ss);
+   BSON_ASSERT(ss->sock);
 
-   ret = mongoc_socket_setsockopt (ss->sock, level, optname, optval, optlen);
+   ret = mongoc_socket_setsockopt(ss->sock, level, optname, optval, optlen);
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 
 static int
-_mongoc_stream_socket_flush (mongoc_stream_t *stream)
+_mongoc_stream_socket_flush(mongoc_stream_t *stream)
 {
    ENTRY;
-   BSON_UNUSED (stream);
-   RETURN (0);
+   BSON_UNUSED(stream);
+   RETURN(0);
 }
 
 
 static ssize_t
-_mongoc_stream_socket_readv (
+_mongoc_stream_socket_readv(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
    int64_t expire_at;
    ssize_t ret = 0;
    ssize_t nread;
@@ -138,10 +137,10 @@ _mongoc_stream_socket_readv (
 
    ENTRY;
 
-   BSON_ASSERT (ss);
-   BSON_ASSERT (ss->sock);
+   BSON_ASSERT(ss);
+   BSON_ASSERT(ss->sock);
 
-   expire_at = get_expiration (timeout_msec);
+   expire_at = get_expiration(timeout_msec);
 
    /*
     * This isn't ideal, we should plumb through to recvmsg(), but we
@@ -150,19 +149,19 @@ _mongoc_stream_socket_readv (
     */
 
    for (;;) {
-      nread = mongoc_socket_recv (ss->sock, iov[cur].iov_base, iov[cur].iov_len, 0, expire_at);
+      nread = mongoc_socket_recv(ss->sock, iov[cur].iov_base, iov[cur].iov_len, 0, expire_at);
 
       if (nread <= 0) {
-         if (ret >= (ssize_t) min_bytes) {
-            RETURN (ret);
+         if (ret >= (ssize_t)min_bytes) {
+            RETURN(ret);
          }
-         errno = mongoc_socket_errno (ss->sock);
-         RETURN (-1);
+         errno = mongoc_socket_errno(ss->sock);
+         RETURN(-1);
       }
 
       ret += nread;
 
-      while ((cur < iovcnt) && (nread >= (ssize_t) iov[cur].iov_len)) {
+      while ((cur < iovcnt) && (nread >= (ssize_t)iov[cur].iov_len)) {
          nread -= iov[cur++].iov_len;
       }
 
@@ -170,43 +169,43 @@ _mongoc_stream_socket_readv (
          break;
       }
 
-      if (ret >= (ssize_t) min_bytes) {
-         RETURN (ret);
+      if (ret >= (ssize_t)min_bytes) {
+         RETURN(ret);
       }
 
-      iov[cur].iov_base = ((char *) iov[cur].iov_base) + nread;
+      iov[cur].iov_base = ((char *)iov[cur].iov_base) + nread;
       iov[cur].iov_len -= nread;
 
-      BSON_ASSERT (iovcnt - cur);
-      BSON_ASSERT (iov[cur].iov_len);
+      BSON_ASSERT(iovcnt - cur);
+      BSON_ASSERT(iov[cur].iov_len);
    }
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 
 static ssize_t
-_mongoc_stream_socket_writev (mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
+_mongoc_stream_socket_writev(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
    int64_t expire_at;
    ssize_t ret;
 
    ENTRY;
 
    if (ss->sock) {
-      expire_at = get_expiration (timeout_msec);
-      ret = mongoc_socket_sendv (ss->sock, iov, iovcnt, expire_at);
-      errno = mongoc_socket_errno (ss->sock);
-      RETURN (ret);
+      expire_at = get_expiration(timeout_msec);
+      ret = mongoc_socket_sendv(ss->sock, iov, iovcnt, expire_at);
+      errno = mongoc_socket_errno(ss->sock);
+      RETURN(ret);
    }
 
-   RETURN (-1);
+   RETURN(-1);
 }
 
 
 static ssize_t
-_mongoc_stream_socket_poll (mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout_msec)
+_mongoc_stream_socket_poll(mongoc_stream_poll_t *streams, size_t nstreams, int32_t timeout_msec)
 
 {
    ssize_t ret = -1;
@@ -215,10 +214,10 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams, size_t nstreams, int3
 
    ENTRY;
 
-   sds = (mongoc_socket_poll_t *) bson_malloc (sizeof (*sds) * nstreams);
+   sds = BSON_ARRAY_ALLOC(nstreams, mongoc_socket_poll_t);
 
    for (size_t i = 0u; i < nstreams; i++) {
-      ss = (mongoc_stream_socket_t *) streams[i].stream;
+      ss = (mongoc_stream_socket_t *)streams[i].stream;
 
       if (!ss->sock) {
          goto CLEANUP;
@@ -228,7 +227,7 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams, size_t nstreams, int3
       sds[i].events = streams[i].events;
    }
 
-   ret = mongoc_socket_poll (sds, nstreams, timeout_msec);
+   ret = mongoc_socket_poll(sds, nstreams, timeout_msec);
 
    if (ret > 0) {
       for (size_t i = 0u; i < nstreams; i++) {
@@ -237,63 +236,63 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams, size_t nstreams, int3
    }
 
 CLEANUP:
-   bson_free (sds);
+   bson_free(sds);
 
-   RETURN (ret);
+   RETURN(ret);
 }
 
 
 mongoc_socket_t *
-mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream) /* IN */
+mongoc_stream_socket_get_socket(mongoc_stream_socket_t *stream) /* IN */
 {
-   BSON_ASSERT (stream);
+   BSON_ASSERT(stream);
 
    return stream->sock;
 }
 
 
 static bool
-_mongoc_stream_socket_check_closed (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_socket_check_closed(mongoc_stream_t *stream) /* IN */
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
 
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT(stream);
 
    if (ss->sock) {
-      RETURN (mongoc_socket_check_closed (ss->sock));
+      RETURN(mongoc_socket_check_closed(ss->sock));
    }
 
-   RETURN (true);
+   RETURN(true);
 }
 
 
 static bool
-_mongoc_stream_socket_timed_out (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_socket_timed_out(mongoc_stream_t *stream) /* IN */
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
 
    ENTRY;
 
-   BSON_ASSERT (ss);
-   BSON_ASSERT (ss->sock);
+   BSON_ASSERT(ss);
+   BSON_ASSERT(ss->sock);
 
-   RETURN (MONGOC_ERRNO_IS_TIMEDOUT (ss->sock->errno_));
+   RETURN(MONGOC_ERRNO_IS_TIMEDOUT(ss->sock->errno_));
 }
 
 
 static bool
-_mongoc_stream_socket_should_retry (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_socket_should_retry(mongoc_stream_t *stream) /* IN */
 {
-   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
 
    ENTRY;
 
-   BSON_ASSERT (ss);
-   BSON_ASSERT (ss->sock);
+   BSON_ASSERT(ss);
+   BSON_ASSERT(ss->sock);
 
-   RETURN (MONGOC_ERRNO_IS_AGAIN (ss->sock->errno_));
+   RETURN(MONGOC_ERRNO_IS_AGAIN(ss->sock->errno_));
 }
 
 
@@ -315,13 +314,13 @@ _mongoc_stream_socket_should_retry (mongoc_stream_t *stream) /* IN */
  */
 
 mongoc_stream_t *
-mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
+mongoc_stream_socket_new(mongoc_socket_t *sock) /* IN */
 {
    mongoc_stream_socket_t *stream;
 
-   BSON_ASSERT (sock);
+   BSON_ASSERT(sock);
 
-   stream = (mongoc_stream_socket_t *) bson_malloc0 (sizeof *stream);
+   stream = (mongoc_stream_socket_t *)bson_malloc0(sizeof *stream);
    stream->vtable.type = MONGOC_STREAM_SOCKET;
    stream->vtable.close = _mongoc_stream_socket_close;
    stream->vtable.destroy = _mongoc_stream_socket_destroy;
@@ -336,6 +335,6 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.poll = _mongoc_stream_socket_poll;
    stream->sock = sock;
 
-   mongoc_counter_streams_active_inc ();
-   return (mongoc_stream_t *) stream;
+   mongoc_counter_streams_active_inc();
+   return (mongoc_stream_t *)stream;
 }

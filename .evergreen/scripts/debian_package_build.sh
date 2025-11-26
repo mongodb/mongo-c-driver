@@ -8,7 +8,7 @@
 
 set -o errexit
 
-on_exit () {
+on_exit() {
   if [ -e ./unstable-chroot/debootstrap/debootstrap.log ]; then
     echo "Dumping debootstrap.log (64-bit)"
     cat ./unstable-chroot/debootstrap/debootstrap.log
@@ -24,7 +24,7 @@ git config user.email "evergreen-build@example.com"
 git config user.name "Evergreen Build"
 
 if [ "${IS_PATCH}" = "true" ]; then
-  git diff HEAD > ../upstream.patch
+  git diff HEAD >../upstream.patch
   git clean -fdx
   git reset --hard HEAD
   git remote add upstream https://github.com/mongodb/mongo-c-driver
@@ -36,7 +36,7 @@ if [ "${IS_PATCH}" = "true" ]; then
   if [ -s ../upstream.patch ]; then
     [ -d debian/patches ] || mkdir debian/patches
     mv ../upstream.patch debian/patches/
-    echo upstream.patch >> debian/patches/series
+    echo upstream.patch >>debian/patches/series
     git add debian/patches/*
     git commit -m 'Evergreen patch build - upstream changes'
     git log -n1 -p
@@ -46,11 +46,11 @@ fi
 cd ..
 
 git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
-export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
+export DEBOOTSTRAP_DIR=$(pwd)/debootstrap.git
 sudo -E ./debootstrap.git/debootstrap --variant=buildd unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c '(\
-  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax python3-packaging && \
+  apt-get install -y build-essential quilt git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax python3-packaging && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
@@ -62,14 +62,22 @@ sudo chroot ./unstable-chroot /bin/bash -c '(\
   git checkout upstream/debian/unstable && \
   git checkout ${CURRENT_BRANCH} && \
   git checkout upstream/debian/unstable -- ./debian/ && \
+  QUILT_PATCHES="debian/patches" quilt push -a --refresh && \
+  QUILT_PATCHES="debian/patches" quilt pop -a && rm -rf .pc/ && \
   git commit -m "fetch debian directory from the debian/unstable branch" && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
   gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c -lmongoc2 -lbson2 )'
 
-[ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
-(cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
+[ -e ./unstable-chroot/tmp/mongoc/example-client ] || (
+  echo "Example was not built!"
+  exit 1
+)
+(
+  cd ./unstable-chroot/tmp/
+  tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb
+)
 
 # Build a second time, to ensure a "double build" works
 sudo chroot ./unstable-chroot /bin/bash -c "(\
@@ -82,7 +90,7 @@ sudo chroot ./unstable-chroot /bin/bash -c "(\
 sudo -E ./debootstrap.git/debootstrap --variant=buildd --arch i386 unstable ./unstable-i386-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-i386-chroot/tmp/
 sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
-  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
+  apt-get install -y build-essential quilt git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
   chown -R root:root /tmp/mongoc && \
   cd /tmp/mongoc && \
   git clean -fdx && \
@@ -95,13 +103,21 @@ sudo chroot ./unstable-i386-chroot /bin/bash -c '(\
   git checkout ${CURRENT_BRANCH} && \
   git checkout upstream/debian/unstable -- ./debian/ && \
   git commit -m "fetch debian directory from the debian/unstable branch" && \
+  QUILT_PATCHES="debian/patches" quilt push -a --refresh && \
+  QUILT_PATCHES="debian/patches" quilt pop -a && rm -rf .pc/ && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
   debc ../*.changes && \
   dpkg -i ../*.deb && \
   gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c -lmongoc2 -lbson2 )'
 
-[ -e ./unstable-i386-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
-(cd ./unstable-i386-chroot/tmp/ ; tar zcvf ../../deb-i386.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
+[ -e ./unstable-i386-chroot/tmp/mongoc/example-client ] || (
+  echo "Example was not built!"
+  exit 1
+)
+(
+  cd ./unstable-i386-chroot/tmp/
+  tar zcvf ../../deb-i386.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb
+)
 
 # Build a second time, to ensure a "double build" works
 sudo chroot ./unstable-i386-chroot /bin/bash -c "(\

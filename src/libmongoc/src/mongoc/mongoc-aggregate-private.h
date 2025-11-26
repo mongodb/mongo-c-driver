@@ -32,18 +32,18 @@ BSON_BEGIN_DECLS
 
 
 mongoc_cursor_t *
-_mongoc_aggregate (mongoc_client_t *client,
-                   const char *ns,
-                   mongoc_query_flags_t flags,
-                   const bson_t *pipeline,
-                   const bson_t *opts,
-                   const mongoc_read_prefs_t *user_rp,
-                   const mongoc_read_prefs_t *default_rp,
-                   const mongoc_read_concern_t *default_rc,
-                   const mongoc_write_concern_t *default_wc);
+_mongoc_aggregate(mongoc_client_t *client,
+                  const char *ns,
+                  mongoc_query_flags_t flags,
+                  const bson_t *pipeline,
+                  const bson_t *opts,
+                  const mongoc_read_prefs_t *user_rp,
+                  const mongoc_read_prefs_t *default_rp,
+                  const mongoc_read_concern_t *default_rc,
+                  const mongoc_write_concern_t *default_wc);
 
 bool
-_has_write_key (bson_iter_t *iter);
+_has_write_key(bson_iter_t *iter);
 
 BSON_END_DECLS
 

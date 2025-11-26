@@ -19,7 +19,9 @@
 #ifndef MONGOC_READ_CONCERN_PRIVATE_H
 #define MONGOC_READ_CONCERN_PRIVATE_H
 
-#include <mongoc/mongoc-read-concern.h>
+#include <mongoc/mongoc-read-concern.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson.h>
 
@@ -35,11 +37,11 @@ struct _mongoc_read_concern_t {
 
 
 const bson_t *
-_mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern);
+_mongoc_read_concern_get_bson(mongoc_read_concern_t *read_concern);
 
 
 mongoc_read_concern_t *
-_mongoc_read_concern_new_from_iter (const bson_iter_t *iter, bson_error_t *error);
+_mongoc_read_concern_new_from_iter(const bson_iter_t *iter, bson_error_t *error);
 
 BSON_END_DECLS
 

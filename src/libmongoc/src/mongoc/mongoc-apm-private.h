@@ -19,7 +19,9 @@
 #ifndef MONGOC_APM_PRIVATE_H
 #define MONGOC_APM_PRIVATE_H
 
-#include <mongoc/mongoc-apm.h>
+#include <mongoc/mongoc-apm.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson.h>
 
@@ -156,65 +158,65 @@ struct _mongoc_apm_server_heartbeat_failed_t {
 };
 
 void
-mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
-                                 const bson_t *command,
-                                 const char *database_name,
-                                 const char *command_name,
-                                 int64_t request_id,
-                                 int64_t operation_id,
-                                 const mongoc_host_list_t *host,
-                                 uint32_t server_id,
-                                 const bson_oid_t *service_id,
-                                 int64_t server_connection_id,
-                                 bool *is_redacted, /* out */
-                                 void *context);
-
-void
-mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
-                                          struct _mongoc_cmd_t *cmd,
-                                          int64_t request_id,
-                                          bool *is_redacted, /* out */
-                                          void *context);
-
-void
-mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event);
-
-void
-mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
-                                   int64_t duration,
-                                   const bson_t *reply,
-                                   const char *command_name,
-                                   const char *database_name,
-                                   int64_t request_id,
-                                   int64_t operation_id,
-                                   const mongoc_host_list_t *host,
-                                   uint32_t server_id,
-                                   const bson_oid_t *service_id,
-                                   int64_t server_connection_id,
-                                   bool force_redaction,
-                                   void *context);
-
-void
-mongoc_apm_command_succeeded_cleanup (mongoc_apm_command_succeeded_t *event);
-
-void
-mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
-                                int64_t duration,
-                                const char *command_name,
+mongoc_apm_command_started_init(mongoc_apm_command_started_t *event,
+                                const bson_t *command,
                                 const char *database_name,
-                                const bson_error_t *error,
-                                const bson_t *reply,
+                                const char *command_name,
                                 int64_t request_id,
                                 int64_t operation_id,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
                                 const bson_oid_t *service_id,
                                 int64_t server_connection_id,
-                                bool force_redaction,
+                                bool *is_redacted, /* out */
                                 void *context);
 
 void
-mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
+mongoc_apm_command_started_init_with_cmd(mongoc_apm_command_started_t *event,
+                                         struct _mongoc_cmd_t *cmd,
+                                         int64_t request_id,
+                                         bool *is_redacted, /* out */
+                                         void *context);
+
+void
+mongoc_apm_command_started_cleanup(mongoc_apm_command_started_t *event);
+
+void
+mongoc_apm_command_succeeded_init(mongoc_apm_command_succeeded_t *event,
+                                  int64_t duration,
+                                  const bson_t *reply,
+                                  const char *command_name,
+                                  const char *database_name,
+                                  int64_t request_id,
+                                  int64_t operation_id,
+                                  const mongoc_host_list_t *host,
+                                  uint32_t server_id,
+                                  const bson_oid_t *service_id,
+                                  int64_t server_connection_id,
+                                  bool force_redaction,
+                                  void *context);
+
+void
+mongoc_apm_command_succeeded_cleanup(mongoc_apm_command_succeeded_t *event);
+
+void
+mongoc_apm_command_failed_init(mongoc_apm_command_failed_t *event,
+                               int64_t duration,
+                               const char *command_name,
+                               const char *database_name,
+                               const bson_error_t *error,
+                               const bson_t *reply,
+                               int64_t request_id,
+                               int64_t operation_id,
+                               const mongoc_host_list_t *host,
+                               uint32_t server_id,
+                               const bson_oid_t *service_id,
+                               int64_t server_connection_id,
+                               bool force_redaction,
+                               void *context);
+
+void
+mongoc_apm_command_failed_cleanup(mongoc_apm_command_failed_t *event);
 
 /**
  * @brief Determine whether the given command-related message is a "sensitive
@@ -224,7 +226,7 @@ mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
  * @param body The body of the command request, reply, or failure.
  */
 bool
-mongoc_apm_is_sensitive_command_message (const char *command_name, const bson_t *body);
+mongoc_apm_is_sensitive_command_message(const char *command_name, const bson_t *body);
 
 BSON_END_DECLS
 

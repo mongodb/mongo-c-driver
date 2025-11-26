@@ -119,8 +119,6 @@ functions:
     type: test
     params:
       working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -129,9 +127,6 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc.cmd
   link sample program mingw:
@@ -139,24 +134,18 @@ functions:
     type: test
     params:
       working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
       shell: bash
       script: |-
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:$PATH" # mingw-w64 GCC
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw.cmd
   link sample program MSVC bson:
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
-      include_expansions_in_env:
-      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -165,9 +154,6 @@ functions:
         # find_package command.
         export ENABLE_SSL=${ENABLE_SSL}
         export ENABLE_SNAPPY=${ENABLE_SNAPPY}
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-msvc-bson.cmd
   link sample program mingw bson:
@@ -180,9 +166,7 @@ functions:
         set -o errexit
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
-        . .evergreen/scripts/use-tools.sh paths
-        . .evergreen/scripts/find-cmake-latest.sh
-        export CMAKE="$(native-path "$(find_cmake_latest)")"
+        PATH="/cygdrive/c/ProgramData/chocolatey/lib/winlibs/tools/mingw64/bin:$PATH" # mingw-w64 GCC
         cmd.exe /c .\\.evergreen\\scripts\\link-sample-program-mingw-bson.cmd
   update codecov.io:
   - command: shell.exec
@@ -247,7 +231,6 @@ tasks:
   tags:
   - hardened
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -256,14 +239,13 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O" LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" .evergreen/scripts/compile.sh
+        env CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -O" EXTRA_CONFIGURE_FLAGS="CMAKE_POSITION_INDEPENDENT_CODE=ON" LDFLAGS="-Wl,-z,relro -Wl,-z,now" SNAPPY="OFF" ZLIB="OFF" ZSTD="OFF" .evergreen/scripts/compile.sh
   - func: upload-build
 - name: debug-compile-compression-zlib
   tags:
   - compression
   - zlib
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -279,7 +261,6 @@ tasks:
   - compression
   - snappy
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -295,7 +276,6 @@ tasks:
   - compression
   - zstd
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -312,7 +292,6 @@ tasks:
   - nosasl
   - nossl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -325,7 +304,6 @@ tasks:
   - func: upload-build
 - name: debug-compile-lto
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -338,7 +316,6 @@ tasks:
   - func: upload-build
 - name: debug-compile-lto-thin
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -354,7 +331,6 @@ tasks:
   - debug-compile
   - no-counters
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -367,7 +343,6 @@ tasks:
   - func: upload-build
 - name: compile-tracing
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -380,7 +355,6 @@ tasks:
   - func: upload-build
 - name: release-compile
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -397,7 +371,6 @@ tasks:
   - nosasl
   - openssl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -414,7 +387,6 @@ tasks:
   - debug-compile
   - nosasl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -431,7 +403,6 @@ tasks:
   - nosasl
   - winssl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -448,7 +419,6 @@ tasks:
   - openssl
   - sasl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -465,7 +435,6 @@ tasks:
   - debug-compile
   - sasl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -478,7 +447,6 @@ tasks:
   - func: upload-build
 - name: debug-compile-rdtscp
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -495,7 +463,6 @@ tasks:
   - sspi
   - winssl
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -510,7 +477,6 @@ tasks:
   tags:
   - debug-compile
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -712,7 +678,6 @@ tasks:
         .evergreen/scripts/build_snapshot_rpm.sh
 - name: debug-compile-with-warnings
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -729,6 +694,8 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      include_expansions_in_env:
+      - distro_id
       shell: bash
       script: |-
         set -o errexit
@@ -1071,7 +1038,6 @@ tasks:
   - asan
   - authentication-tests
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
@@ -1354,28 +1320,30 @@ tasks:
       URI: mongodb://localhost/
 - name: debug-compile-aws
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     type: test
     params:
       working_dir: mongoc
       redirect_standard_error_to_output: true
       include_expansions_in_env:
-      - distro_id
       - CC
       shell: bash
       script: |-
         set -o errexit
         set -o errexit
         set -o pipefail
-        . .evergreen/scripts/find-cmake-latest.sh
-        cmake_binary="$(find_cmake_latest)"
         # Use ccache if able.
         . .evergreen/scripts/find-ccache.sh
         find_ccache_and_export_vars "$(pwd)" || true
+        # Ubuntu 20.04 does not have uv.
+        if ! command -v uv >/dev/null; then
+            prefix="$(mktemp -d)"
+            python3 -m pip install --prefix "$prefix" uv
+            PATH="$prefix/bin:$PATH"
+        fi
         # Compile test-awsauth. Disable unnecessary dependencies since test-awsauth is copied to a remote Ubuntu 20.04 ECS cluster for testing, which may not have all dependent libraries.
-        "$cmake_binary" -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
-        "$cmake_binary" --build cmake-build --target test-awsauth
+        uvx cmake -DENABLE_TRACING=ON -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF -S . -B cmake-build
+        uvx cmake --build cmake-build --target test-awsauth
   - func: upload-build
 - name: test-aws-openssl-regular-latest
   tags:
@@ -9800,7 +9768,6 @@ tasks:
 - name: testazurekms-task
   commands:
   - func: fetch-source
-  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9843,7 +9810,6 @@ tasks:
 - name: testazurekms-fail-task
   commands:
   - func: fetch-source
-  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9868,7 +9834,6 @@ tasks:
 - name: testgcpkms-task
   commands:
   - func: fetch-source
-  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -9908,7 +9873,6 @@ tasks:
         GCPKMS_CMD="LD_LIBRARY_PATH=./testgcpkms MONGODB_URI='mongodb://localhost:27017' ./testgcpkms/test-gcpkms" $DRIVERS_TOOLS/.evergreen/csfle/gcpkms/run-command.sh
 - name: testgcpkms-fail-task
   commands:
-  - func: find-cmake-latest
   - command: shell.exec
     params:
       add_expansions_to_env: true
@@ -10017,9 +9981,9 @@ buildvariants:
 - name: abi-compliance-check
   display_name: ABI Compliance Check
   run_on:
-  - ubuntu2004-small
-  - ubuntu2004-medium
-  - ubuntu2004-large
+  - ubuntu2204-small
+  - ubuntu2204-medium
+  - ubuntu2204-large
   tasks:
   - abi-compliance-check
 - name: smoke
@@ -10054,7 +10018,7 @@ buildvariants:
     - windows-vsCurrent-large
   - name: link-with-pkg-config
     distros:
-    - ubuntu2004-test
+    - ubuntu2204-large
   - name: link-with-pkg-config-mac
     distros:
     - macos-14-arm64
@@ -10074,22 +10038,12 @@ buildvariants:
   - install-libmongoc-after-libbson
   tags:
   - pr-merge-gate
-- name: clang37
-  display_name: clang 3.7 (Archlinux)
+- name: clang12-i686
+  display_name: Clang 12 (i686) (Ubuntu 22.04)
   expansions:
-    CC: clang
-  run_on: archlinux-test
-  tasks:
-  - release-compile
-  - debug-compile-sasl-openssl
-  - debug-compile-nosasl-openssl
-  - .authentication-tests .openssl
-- name: clang100-i686
-  display_name: clang 10.0 (i686) (Ubuntu 20.04)
-  expansions:
-    CC: clang
+    CC: clang-12
     MARCH: i686
-  run_on: ubuntu2004-test
+  run_on: ubuntu2204-large
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
@@ -10113,26 +10067,26 @@ buildvariants:
   display_name: GCC 10.2 (Debian 11.0)
   expansions:
     CC: gcc
-  run_on: debian11-large
+  run_on: debian11-latest-large
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
   - .latest .nossl
-- name: gcc94-i686
-  display_name: GCC 9.4 (i686) (Ubuntu 20.04)
+- name: gcc11-i686
+  display_name: GCC 11 (i686) (Ubuntu 22.04)
   expansions:
     CC: gcc
     MARCH: i686
-  run_on: ubuntu2004-test
+  run_on: ubuntu2204-large
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
   - .latest .nossl .nosasl
-- name: gcc94
-  display_name: GCC 9.4 (Ubuntu 20.04)
+- name: gcc13
+  display_name: GCC 13 (Ubuntu 24.04)
   expansions:
     CC: gcc
-  run_on: ubuntu2004-test
+  run_on: ubuntu2404-large
   tasks:
   - .compression !.zstd
   - debug-compile-nosrv
@@ -10206,6 +10160,14 @@ buildvariants:
   - test-aws-openssl-regular-latest
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
+- name: windows-2022
+  display_name: Windows (VS 2022)
+  expansions:
+    CC: Visual Studio 17 2022 Win64
+  run_on: windows-vsCurrent-large
+  tasks:
+  - debug-compile-sspi-winssl
+  - .authentication-tests .winssl
 - name: mingw-windows2016
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:
@@ -10227,11 +10189,11 @@ buildvariants:
   - test-dns-openssl
   patchable: false
   batchtime: 1440
-- name: arm-ubuntu2004
-  display_name: '*ARM (aarch64) (Ubuntu 20.04)'
+- name: arm-ubuntu2204
+  display_name: '*ARM (aarch64) (Ubuntu 22.04)'
   expansions:
     CC: gcc
-  run_on: ubuntu2004-arm64-large
+  run_on: ubuntu2204-arm64-large
   tasks:
   - .compression !.snappy !.zstd
   - release-compile
@@ -10278,7 +10240,7 @@ buildvariants:
   - .test-aws .latest
 - name: ocsp
   display_name: OCSP tests
-  run_on: ubuntu2004-small
+  run_on: ubuntu2204-small
   tasks:
   - name: debug-compile-nosasl-openssl
   - name: debug-compile-nosasl-darwinssl
@@ -10315,9 +10277,9 @@ buildvariants:
     - rhel90-arm64-small
   tags:
   - pr-merge-gate
-- name: versioned-api-ubuntu2004
-  display_name: Versioned API Tests (Ubuntu 20.04)
-  run_on: ubuntu2004-test
+- name: versioned-api
+  display_name: Versioned API Tests
+  run_on: rhel8-latest-large
   tasks:
   - debug-compile-nosasl-openssl
   - debug-compile-nosasl-nossl
@@ -10334,7 +10296,7 @@ buildvariants:
   batchtime: 20160
 - name: testgcpkms-variant
   display_name: GCP KMS
-  run_on: debian11-small
+  run_on: debian11-latest-small
   tasks:
   - testgcpkms_task_group
   - testgcpkms-fail-task

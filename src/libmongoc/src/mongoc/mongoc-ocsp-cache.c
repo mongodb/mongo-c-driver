@@ -38,63 +38,63 @@ static cache_entry_list_t *cache;
 static bson_mutex_t ocsp_cache_mutex;
 
 void
-_mongoc_ocsp_cache_init (void)
+_mongoc_ocsp_cache_init(void)
 {
-   bson_mutex_init (&ocsp_cache_mutex);
+   bson_mutex_init(&ocsp_cache_mutex);
 }
 
 static int
-cache_cmp (cache_entry_list_t *out, OCSP_CERTID *id)
+cache_cmp(cache_entry_list_t *out, OCSP_CERTID *id)
 {
    ENTRY;
    if (!out || !out->id || !id) {
-      RETURN (1);
+      RETURN(1);
    }
-   RETURN (OCSP_id_cmp (out->id, id));
+   RETURN(OCSP_id_cmp(out->id, id));
 }
 
 static cache_entry_list_t *
-get_cache_entry (OCSP_CERTID *id)
+get_cache_entry(OCSP_CERTID *id)
 {
    cache_entry_list_t *iter = NULL;
    ENTRY;
 
-   LL_SEARCH (cache, iter, id, cache_cmp);
-   RETURN (iter);
+   LL_SEARCH(cache, iter, id, cache_cmp);
+   RETURN(iter);
 }
 
-#define REPLACE_ASN1_TIME(_old, _new)                                 \
-   do {                                                               \
-      if ((_new)) {                                                   \
-         if ((_old))                                                  \
-            ASN1_GENERALIZEDTIME_free ((_old));                       \
-         (_old) = ASN1_item_dup (ASN1_ITEM_rptr (ASN1_TIME), (_new)); \
-      }                                                               \
+#define REPLACE_ASN1_TIME(_old, _new)                               \
+   do {                                                             \
+      if ((_new)) {                                                 \
+         if ((_old))                                                \
+            ASN1_GENERALIZEDTIME_free((_old));                      \
+         (_old) = ASN1_item_dup(ASN1_ITEM_rptr(ASN1_TIME), (_new)); \
+      }                                                             \
    } while (0)
 
 static void
-update_entry (cache_entry_list_t *entry,
-              int cert_status,
-              int reason,
-              ASN1_GENERALIZEDTIME *this_update,
-              ASN1_GENERALIZEDTIME *next_update)
+update_entry(cache_entry_list_t *entry,
+             int cert_status,
+             int reason,
+             ASN1_GENERALIZEDTIME *this_update,
+             ASN1_GENERALIZEDTIME *next_update)
 {
    ENTRY;
-   REPLACE_ASN1_TIME (entry->next_update, next_update);
-   REPLACE_ASN1_TIME (entry->this_update, this_update);
+   REPLACE_ASN1_TIME(entry->next_update, next_update);
+   REPLACE_ASN1_TIME(entry->this_update, this_update);
    entry->cert_status = cert_status;
    entry->reason = reason;
 }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 static int
-_cmp_time (ASN1_TIME *a, ASN1_TIME *b)
+_cmp_time(ASN1_TIME *a, ASN1_TIME *b)
 {
-   return ASN1_TIME_compare (a, b);
+   return ASN1_TIME_compare(a, b);
 }
 #else
 static int
-_cmp_time (ASN1_TIME *a, ASN1_TIME *b)
+_cmp_time(ASN1_TIME *a, ASN1_TIME *b)
 {
    /* For older OpenSSL, always report that "a" is before "b". I.e. do not
     * replace the entry.
@@ -106,73 +106,73 @@ _cmp_time (ASN1_TIME *a, ASN1_TIME *b)
 #endif
 
 void
-_mongoc_ocsp_cache_set_resp (
+_mongoc_ocsp_cache_set_resp(
    OCSP_CERTID *id, int cert_status, int reason, ASN1_GENERALIZEDTIME *this_update, ASN1_GENERALIZEDTIME *next_update)
 {
    cache_entry_list_t *entry = NULL;
    ENTRY;
 
-   bson_mutex_lock (&ocsp_cache_mutex);
-   if (!(entry = get_cache_entry (id))) {
-      entry = bson_malloc0 (sizeof (cache_entry_list_t));
-      entry->id = OCSP_CERTID_dup (id);
-      LL_APPEND (cache, entry);
-      update_entry (entry, cert_status, reason, this_update, next_update);
-   } else if (next_update && _cmp_time (next_update, entry->next_update) == 1) {
-      update_entry (entry, cert_status, reason, this_update, next_update);
+   bson_mutex_lock(&ocsp_cache_mutex);
+   if (!(entry = get_cache_entry(id))) {
+      entry = bson_malloc0(sizeof(cache_entry_list_t));
+      entry->id = OCSP_CERTID_dup(id);
+      LL_APPEND(cache, entry);
+      update_entry(entry, cert_status, reason, this_update, next_update);
+   } else if (next_update && _cmp_time(next_update, entry->next_update) == 1) {
+      update_entry(entry, cert_status, reason, this_update, next_update);
    } else {
       /* Do nothing; our next_update is at a later date */
    }
-   bson_mutex_unlock (&ocsp_cache_mutex);
+   bson_mutex_unlock(&ocsp_cache_mutex);
 }
 
 int
-_mongoc_ocsp_cache_length (void)
+_mongoc_ocsp_cache_length(void)
 {
    cache_entry_list_t *iter;
    int counter;
 
-   bson_mutex_lock (&ocsp_cache_mutex);
-   LL_COUNT (cache, iter, counter);
-   bson_mutex_unlock (&ocsp_cache_mutex);
-   RETURN (counter);
+   bson_mutex_lock(&ocsp_cache_mutex);
+   LL_COUNT(cache, iter, counter);
+   bson_mutex_unlock(&ocsp_cache_mutex);
+   RETURN(counter);
 }
 
 static void
-cache_entry_destroy (cache_entry_list_t *entry)
+cache_entry_destroy(cache_entry_list_t *entry)
 {
-   OCSP_CERTID_free (entry->id);
-   ASN1_GENERALIZEDTIME_free (entry->this_update);
-   ASN1_GENERALIZEDTIME_free (entry->next_update);
-   bson_free (entry);
+   OCSP_CERTID_free(entry->id);
+   ASN1_GENERALIZEDTIME_free(entry->this_update);
+   ASN1_GENERALIZEDTIME_free(entry->next_update);
+   bson_free(entry);
 }
 bool
-_mongoc_ocsp_cache_get_status (OCSP_CERTID *id,
-                               int *cert_status,
-                               int *reason,
-                               ASN1_GENERALIZEDTIME **this_update,
-                               ASN1_GENERALIZEDTIME **next_update)
+_mongoc_ocsp_cache_get_status(OCSP_CERTID *id,
+                              int *cert_status,
+                              int *reason,
+                              ASN1_GENERALIZEDTIME **this_update,
+                              ASN1_GENERALIZEDTIME **next_update)
 {
    cache_entry_list_t *entry = NULL;
    bool ret = false;
    ENTRY;
 
-   bson_mutex_lock (&ocsp_cache_mutex);
-   if (!(entry = get_cache_entry (id))) {
-      GOTO (done);
+   bson_mutex_lock(&ocsp_cache_mutex);
+   if (!(entry = get_cache_entry(id))) {
+      GOTO(done);
    }
 
    if (entry->this_update && entry->next_update &&
-       !OCSP_check_validity (entry->this_update, entry->next_update, 0L, -1L)) {
-      LL_DELETE (cache, entry);
-      cache_entry_destroy (entry);
-      GOTO (done);
+       !OCSP_check_validity(entry->this_update, entry->next_update, 0L, -1L)) {
+      LL_DELETE(cache, entry);
+      cache_entry_destroy(entry);
+      GOTO(done);
    }
 
-   BSON_ASSERT_PARAM (cert_status);
-   BSON_ASSERT_PARAM (reason);
-   BSON_ASSERT_PARAM (this_update);
-   BSON_ASSERT_PARAM (next_update);
+   BSON_ASSERT_PARAM(cert_status);
+   BSON_ASSERT_PARAM(reason);
+   BSON_ASSERT_PARAM(this_update);
+   BSON_ASSERT_PARAM(next_update);
 
    *cert_status = entry->cert_status;
    *reason = entry->reason;
@@ -181,26 +181,26 @@ _mongoc_ocsp_cache_get_status (OCSP_CERTID *id,
 
    ret = true;
 done:
-   bson_mutex_unlock (&ocsp_cache_mutex);
-   RETURN (ret);
+   bson_mutex_unlock(&ocsp_cache_mutex);
+   RETURN(ret);
 }
 
 void
-_mongoc_ocsp_cache_cleanup (void)
+_mongoc_ocsp_cache_cleanup(void)
 {
    cache_entry_list_t *iter = NULL;
    cache_entry_list_t *next = NULL;
    ENTRY;
 
-   bson_mutex_lock (&ocsp_cache_mutex);
+   bson_mutex_lock(&ocsp_cache_mutex);
    for (iter = cache; iter != NULL; iter = next) {
       next = iter->next;
-      cache_entry_destroy (iter);
+      cache_entry_destroy(iter);
    }
 
    cache = NULL;
-   bson_mutex_unlock (&ocsp_cache_mutex);
-   bson_mutex_destroy (&ocsp_cache_mutex);
+   bson_mutex_unlock(&ocsp_cache_mutex);
+   bson_mutex_destroy(&ocsp_cache_mutex);
 }
 
 #endif /* MONGOC_ENABLE_OCSP_OPENSSL */

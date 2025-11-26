@@ -5,7 +5,7 @@ are used in lldb_bson have been transcribed from the LLDB Python API
 documentation. Refer: https://lldb.llvm.org/python_api.html
 """
 
-from typing import IO, Any, Sequence, TypeAlias, NoReturn
+from typing import IO, Any, NoReturn, Sequence, TypeAlias
 
 _Pointer: TypeAlias = int
 _Size: TypeAlias = int

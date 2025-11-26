@@ -9,7 +9,7 @@ set -o pipefail
 
 check_var_opt C_STD_VERSION # CMake default: 99.
 check_var_opt CC
-check_var_opt CMAKE_GENERATOR
+check_var_opt CMAKE_GENERATOR "Ninja"
 check_var_opt CMAKE_GENERATOR_PLATFORM
 check_var_opt CFLAGS
 check_var_opt CHECK_LOG "OFF"
@@ -43,6 +43,9 @@ declare cmake_prefix_path="${install_dir}"
 if [[ -n "${EXTRA_CMAKE_PREFIX_PATH:-}" ]]; then
   cmake_prefix_path+=";${EXTRA_CMAKE_PREFIX_PATH}"
 fi
+
+. "${script_dir:?}/install-build-tools.sh"
+install_build_tools
 
 declare -a configure_flags
 
@@ -91,6 +94,12 @@ configure_flags_append_if_not_null SSL "-DENABLE_SSL=${SSL:-}"
 
 if [[ "${COVERAGE}" == "ON" ]]; then
   configure_flags_append "-DENABLE_COVERAGE=ON" "-DENABLE_EXAMPLES=OFF"
+
+  # Ensure no pre-existing and outdated coverage data is present prior to execution.
+  find . -name '*.gcno' -o -name '*.gcda' -exec rm -f {} \+
+
+  # Avoid confusing gcov with potentially-mismatched source files.
+  export CCACHE_DISABLE=1
 fi
 
 declare -a flags
@@ -128,12 +137,6 @@ if [[ "${OSTYPE}" == darwin* && "${HOSTTYPE}" == "arm64" ]]; then
   configure_flags_append "-DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
-# shellcheck source=.evergreen/scripts/find-cmake-version.sh
-. "${script_dir}/find-cmake-latest.sh"
-declare cmake_binary
-cmake_binary="$(find_cmake_latest)"
-"${cmake_binary:?}" --version
-
 # shellcheck source=.evergreen/scripts/add-build-dirs-to-paths.sh
 . "${script_dir}/add-build-dirs-to-paths.sh"
 
@@ -155,7 +158,7 @@ IFS=' ' read -ra extra_configure_flags <<<"${EXTRA_CONFIGURE_FLAGS:-}"
 if [[ "${COMPILE_LIBMONGOCRYPT}" == "ON" ]]; then
   echo "Installing libmongocrypt..."
   # shellcheck source=.evergreen/scripts/compile-libmongocrypt.sh
-  "${script_dir}/compile-libmongocrypt.sh" "${cmake_binary}" "${mongoc_dir}" "${install_dir}" &>output.txt || {
+  "${script_dir}/compile-libmongocrypt.sh" "$(command -v cmake)" "${mongoc_dir}" "${install_dir}" &>output.txt || {
     cat output.txt 1>&2
     exit 1
   }
@@ -176,17 +179,17 @@ find_ccache_and_export_vars "$(pwd)" || true
 declare build_dir
 build_dir="cmake-build"
 
-"${cmake_binary}" -S . -B "${build_dir:?}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
-"${cmake_binary}" --build "${build_dir:?}"
-"${cmake_binary}" --install "${build_dir:?}"
+cmake -S . -B "${build_dir:?}" "${configure_flags[@]}" ${extra_configure_flags[@]+"${extra_configure_flags[@]}"} .
+cmake --build "${build_dir:?}"
+cmake --install "${build_dir:?}"
 
 # For use by test tasks, which directly use the binary directory contents.
-"${cmake_binary}" --build "${build_dir:?}" --target mongo_c_driver_tests
+cmake --build "${build_dir:?}" --target mongo_c_driver_tests
 
 # Also validate examples.
-"${cmake_binary}" --build "${build_dir:?}" --target mongo_c_driver_examples
+cmake --build "${build_dir:?}" --target mongo_c_driver_examples
 
 if [[ "$EXTRA_CONFIGURE_FLAGS" != *"ENABLE_MONGOC=OFF"* ]]; then
   # Check public headers for extra warnings.
-  "${cmake_binary}" --build "${build_dir:?}" --target public-header-warnings
+  cmake --build "${build_dir:?}" --target public-header-warnings
 fi

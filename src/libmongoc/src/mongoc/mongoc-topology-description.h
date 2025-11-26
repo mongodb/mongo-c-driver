@@ -21,6 +21,7 @@
 
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-read-prefs.h>
+#include <mongoc/mongoc-server-description.h>
 
 #include <bson/bson.h>
 
@@ -29,24 +30,24 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_topology_description_t mongoc_topology_description_t;
 
-MONGOC_EXPORT (void)
-mongoc_topology_description_destroy (mongoc_topology_description_t *description);
+MONGOC_EXPORT(void)
+mongoc_topology_description_destroy(mongoc_topology_description_t *description);
 
-MONGOC_EXPORT (mongoc_topology_description_t *)
-mongoc_topology_description_new_copy (const mongoc_topology_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
+MONGOC_EXPORT(mongoc_topology_description_t *)
+mongoc_topology_description_new_copy(const mongoc_topology_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
 
-MONGOC_EXPORT (bool)
-mongoc_topology_description_has_readable_server (const mongoc_topology_description_t *td,
-                                                 const mongoc_read_prefs_t *prefs);
+MONGOC_EXPORT(bool)
+mongoc_topology_description_has_readable_server(const mongoc_topology_description_t *td,
+                                                const mongoc_read_prefs_t *prefs);
 
-MONGOC_EXPORT (bool)
-mongoc_topology_description_has_writable_server (const mongoc_topology_description_t *td);
+MONGOC_EXPORT(bool)
+mongoc_topology_description_has_writable_server(const mongoc_topology_description_t *td);
 
-MONGOC_EXPORT (const char *)
-mongoc_topology_description_type (const mongoc_topology_description_t *td);
+MONGOC_EXPORT(const char *)
+mongoc_topology_description_type(const mongoc_topology_description_t *td);
 
-MONGOC_EXPORT (mongoc_server_description_t **)
-mongoc_topology_description_get_servers (const mongoc_topology_description_t *td, size_t *n)
+MONGOC_EXPORT(mongoc_server_description_t **)
+mongoc_topology_description_get_servers(const mongoc_topology_description_t *td, size_t *n)
    BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS

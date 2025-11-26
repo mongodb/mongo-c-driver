@@ -189,6 +189,13 @@ add_compile_definitions(_MLIB_BUILD_CONFIG=$<CONFIG>)
 if(ENABLE_COVERAGE)
    mongo_platform_link_options(--coverage)
    mongo_platform_compile_options($<BUILD_INTERFACE:--coverage>)
+
+   include(CheckCCompilerFlag)
+   check_c_compiler_flag("-fprofile-update=prefer-atomic" mongo_c_driver_prefer_atomic)
+   if("$CACHE{mongo_c_driver_prefer_atomic}")
+      # Avoid "ERROR: Unexpected negative count" errors on some newer platforms.
+      mongo_platform_compile_options($<BUILD_INTERFACE:-fprofile-update=prefer-atomic>)
+   endif()
 endif()
 
 # Enable multi-threading:
@@ -226,7 +233,7 @@ if(NOT APPLE)
    endif()
 endif()
 
-# Optionally enable C++ to do some C++-specific tests
+# Check for an optional C++ compiler. Result included in handshake metadata. Enables optional C++-specific tests.
 include (CheckLanguage)
 check_language (CXX)
 if (CMAKE_CXX_COMPILER)
@@ -285,6 +292,7 @@ if(ENABLE_MAINTAINER_FLAGS)
       gnu-like:-Wuninitialized
       # Disabled, for now:
       gnu-like:-Wno-strict-aliasing
+      gnu-like:-Wno-missing-braces
       # Sign-comparison-mismatch:
       gnu-like:-Wsign-compare
       msvc:/we4018

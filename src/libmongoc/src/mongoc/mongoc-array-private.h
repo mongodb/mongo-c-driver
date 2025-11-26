@@ -40,22 +40,22 @@ struct _mongoc_array_t {
 };
 
 
-#define mongoc_array_aligned_init(a, Type) _mongoc_array_aligned_init (a, BSON_ALIGNOF (Type), sizeof (Type))
-#define _mongoc_array_append_val(a, v) _mongoc_array_append_vals (a, &v, 1)
-#define _mongoc_array_index(a, t, i) (((t *) (a)->data)[i])
+#define mongoc_array_aligned_init(a, Type) _mongoc_array_aligned_init(a, BSON_ALIGNOF(Type), sizeof(Type))
+#define _mongoc_array_append_val(a, v) _mongoc_array_append_vals(a, &v, 1)
+#define _mongoc_array_index(a, t, i) (((t *)(a)->data)[i])
 #define _mongoc_array_clear(a) (a)->len = 0
 
 
 void
-_mongoc_array_aligned_init (mongoc_array_t *array, size_t element_alignment, size_t element_size);
+_mongoc_array_aligned_init(mongoc_array_t *array, size_t element_alignment, size_t element_size);
 void
-_mongoc_array_init (mongoc_array_t *array, size_t element_size);
+_mongoc_array_init(mongoc_array_t *array, size_t element_size);
 void
-_mongoc_array_copy (mongoc_array_t *dst, const mongoc_array_t *src);
+_mongoc_array_copy(mongoc_array_t *dst, const mongoc_array_t *src);
 void
-_mongoc_array_append_vals (mongoc_array_t *array, const void *data, uint32_t n_elements);
+_mongoc_array_append_vals(mongoc_array_t *array, const void *data, uint32_t n_elements);
 void
-_mongoc_array_destroy (mongoc_array_t *array);
+_mongoc_array_destroy(mongoc_array_t *array);
 
 
 BSON_END_DECLS

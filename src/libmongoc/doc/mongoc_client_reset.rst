@@ -20,6 +20,10 @@ Calling :symbol:`mongoc_client_reset()` prevents resource cleanup in the child p
 
 This method causes the client to clear its session pool without sending endSessions. It also increments an internal generation counter on the given client. After this method is called, cursors from previous generations will not issue a killCursors command when they are destroyed. Client sessions from previous generations cannot be used and should be destroyed.
 
+.. warning::
+
+  This method should only be called on single threaded clients. Calling :symbol:`mongoc_client_reset()` on a multi threaded client is a no-op and will result in a warning.
+
 Parameters
 ----------
 

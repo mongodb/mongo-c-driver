@@ -1,46 +1,46 @@
 buildvariants:
-  - name: alpine3.16-clang
-    display_name: Alpine 3.16 (LLVM/Clang)
+  - name: almalinux10-clang
+    display_name: AlmaLinux 10 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.16
+      MONGOC_EARTHLY_ENV: almalinux10
     tasks:
-      - name: .alpine3.16-clang
-  - name: alpine3.16-gcc
-    display_name: Alpine 3.16 (GCC)
+      - name: .almalinux10-clang
+  - name: almalinux10-gcc
+    display_name: AlmaLinux 10 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.16
+      MONGOC_EARTHLY_ENV: almalinux10
     tasks:
-      - name: .alpine3.16-gcc
-  - name: alpine3.17-clang
-    display_name: Alpine 3.17 (LLVM/Clang)
+      - name: .almalinux10-gcc
+  - name: almalinux8-clang
+    display_name: AlmaLinux 8 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.17
+      MONGOC_EARTHLY_ENV: almalinux8
     tasks:
-      - name: .alpine3.17-clang
-  - name: alpine3.17-gcc
-    display_name: Alpine 3.17 (GCC)
+      - name: .almalinux8-clang
+  - name: almalinux8-gcc
+    display_name: AlmaLinux 8 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.17
+      MONGOC_EARTHLY_ENV: almalinux8
     tasks:
-      - name: .alpine3.17-gcc
-  - name: alpine3.18-clang
-    display_name: Alpine 3.18 (LLVM/Clang)
+      - name: .almalinux8-gcc
+  - name: almalinux9-clang
+    display_name: AlmaLinux 9 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.18
+      MONGOC_EARTHLY_ENV: almalinux9
     tasks:
-      - name: .alpine3.18-clang
-  - name: alpine3.18-gcc
-    display_name: Alpine 3.18 (GCC)
+      - name: .almalinux9-clang
+  - name: almalinux9-gcc
+    display_name: AlmaLinux 9 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.18
+      MONGOC_EARTHLY_ENV: almalinux9
     tasks:
-      - name: .alpine3.18-gcc
+      - name: .almalinux9-gcc
   - name: alpine3.19-clang
     display_name: Alpine 3.19 (LLVM/Clang)
     expansions:
@@ -55,6 +55,48 @@ buildvariants:
       MONGOC_EARTHLY_ENV: alpine3.19
     tasks:
       - name: .alpine3.19-gcc
+  - name: alpine3.20-clang
+    display_name: Alpine 3.20 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: alpine3.20
+    tasks:
+      - name: .alpine3.20-clang
+  - name: alpine3.20-gcc
+    display_name: Alpine 3.20 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: alpine3.20
+    tasks:
+      - name: .alpine3.20-gcc
+  - name: alpine3.21-clang
+    display_name: Alpine 3.21 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: alpine3.21
+    tasks:
+      - name: .alpine3.21-clang
+  - name: alpine3.21-gcc
+    display_name: Alpine 3.21 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: alpine3.21
+    tasks:
+      - name: .alpine3.21-gcc
+  - name: alpine3.22-clang
+    display_name: Alpine 3.22 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: alpine3.22
+    tasks:
+      - name: .alpine3.22-clang
+  - name: alpine3.22-gcc
+    display_name: Alpine 3.22 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: alpine3.22
+    tasks:
+      - name: .alpine3.22-gcc
   - name: archlinux-clang
     display_name: ArchLinux (LLVM/Clang)
     expansions:
@@ -69,20 +111,34 @@ buildvariants:
       MONGOC_EARTHLY_ENV: archlinux
     tasks:
       - name: .archlinux-gcc
-  - name: centos7-clang
-    display_name: CentOS 7.0 (LLVM/Clang)
+  - name: centos10-clang
+    display_name: CentOS 10 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: centos7
+      MONGOC_EARTHLY_ENV: centos10
     tasks:
-      - name: .centos7-clang
-  - name: centos7-gcc
-    display_name: CentOS 7.0 (GCC)
+      - name: .centos10-clang
+  - name: centos10-gcc
+    display_name: CentOS 10 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: centos7
+      MONGOC_EARTHLY_ENV: centos10
     tasks:
-      - name: .centos7-gcc
+      - name: .centos10-gcc
+  - name: centos9-clang
+    display_name: CentOS 9 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_ENV: centos9
+    tasks:
+      - name: .centos9-clang
+  - name: centos9-gcc
+    display_name: CentOS 9 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_ENV: centos9
+    tasks:
+      - name: .centos9-gcc
   - name: clang-format
     display_name: clang-format
     run_on:
@@ -100,82 +156,84 @@ buildvariants:
     expansions:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
-      - name: cse-sasl-cyrus-openssl-debian11-clang-compile
-      - name: cse-sasl-cyrus-openssl-debian11-gcc-compile
-      - name: cse-sasl-cyrus-openssl-debian12-clang-compile
-      - name: cse-sasl-cyrus-openssl-debian12-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian11-latest-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian11-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-debian12-latest-clang-compile
+      - name: cse-sasl-cyrus-openssl-debian12-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-sharded-auth
         batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-6.0-replica-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-6.0-server-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-replica-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-7.0-server-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-replica-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-replica-auth
-        batchtime: 1440
-      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-replica-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-clang-compile
-      - name: cse-sasl-cyrus-openssl-ubuntu2004-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2204-clang-12-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2204-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2404-clang-14-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2404-gcc-compile
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.2-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.4-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-4.4-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-5.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-5.0-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-6.0-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-7.0-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-8.0-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-sharded-auth
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:
@@ -195,6 +253,12 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
+  - name: oidc
+    display_name: OIDC
+    tasks:
+      - name: test-oidc-task-group
+      - name: test-oidc-azure-task-group
+      - name: test-oidc-gcp-task-group
   - name: openssl-compat-matrix
     display_name: OpenSSL Compatibility Matrix
     tasks:
@@ -235,8 +299,15 @@ buildvariants:
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
-      - name: sasl-cyrus-openssl-debian11-gcc-compile
-      - name: sasl-cyrus-openssl-debian12-gcc-compile
+      - name: sasl-cyrus-openssl-debian11-latest-gcc-compile
+      - name: sasl-cyrus-openssl-debian12-latest-gcc-compile
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
@@ -274,14 +345,6 @@ buildvariants:
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel80-gcc-compile
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-compile
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-4.4-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-5.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-6.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-7.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-8.0-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-arm64-gcc-test-latest-server-auth
-      - name: sasl-cyrus-openssl-ubuntu2004-clang-compile
       - name: sasl-cyrus-openssl-ubuntu2204-clang-12-compile
       - name: sasl-cyrus-openssl-ubuntu2204-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2404-clang-14-compile
@@ -305,34 +368,6 @@ buildvariants:
     display_name: std-matrix
     tasks:
       - name: .std-matrix
-  - name: u16-clang
-    display_name: Ubuntu 16.04 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: u16
-    tasks:
-      - name: .u16-clang
-  - name: u16-gcc
-    display_name: Ubuntu 16.04 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: u16
-    tasks:
-      - name: .u16-gcc
-  - name: u18-clang
-    display_name: Ubuntu 18.04 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: u18
-    tasks:
-      - name: .u18-clang
-  - name: u18-gcc
-    display_name: Ubuntu 18.04 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: u18
-    tasks:
-      - name: .u18-gcc
   - name: u20-clang
     display_name: Ubuntu 20.04 (LLVM/Clang)
     expansions:

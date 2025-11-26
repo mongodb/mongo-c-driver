@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o errexit  # Exit the script with error if any of the commands fail
+set -o errexit # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 #   LINK_STATIC                Whether to statically link to libmongoc
@@ -8,18 +8,18 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #   ENABLE_SNAPPY              Set -DENABLE_SNAPPY
 #   CMAKE                      Path to cmake executable.
 
-
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 DIR=$(dirname $0)
-. $DIR/find-cmake-latest.sh
-CMAKE=$(find_cmake_latest)
-. $DIR/check-symlink.sh
+
+. "${DIR:?}/install-build-tools.sh"
+install_build_tools
+export CMAKE_GENERATOR="Ninja"
 
 # The major version of the project. Appears in certain install filenames.
 _full_version=$(cat "$DIR/../../VERSION_CURRENT")
-version="${_full_version%-*}"  # 1.2.3-dev → 1.2.3
-major="${version%%.*}"         # 1.2.3     → 1
+version="${_full_version%-*}" # 1.2.3-dev → 1.2.3
+major="${version%%.*}"        # 1.2.3     → 1
 echo "major version: $major"
 echo " full version: $version"
 
@@ -33,7 +33,7 @@ else
   LDD=ldd
 fi
 
-SRCROOT=`pwd`
+SRCROOT=$(pwd)
 SCRATCH_DIR=$(pwd)/.scratch
 rm -rf "$SCRATCH_DIR"
 mkdir -p "$SCRATCH_DIR"
@@ -49,31 +49,6 @@ mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
 
-if [ "$ENABLE_SNAPPY" ]; then
-  SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=ON"
-else
-  SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=OFF"
-fi
-
-if [ "$ENABLE_SSL" ]; then
-  if [ "$OS" = "darwin" ]; then
-     SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=DARWIN"
-  else
-     SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OPENSSL"
-  fi
-else
-  SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
-fi
-
-
-if [ "$LINK_STATIC" ]; then
-  STATIC_CMAKE_OPTION="-DENABLE_STATIC=ON -DENABLE_TESTS=ON"
-else
-  STATIC_CMAKE_OPTION="-DENABLE_STATIC=OFF -DENABLE_TESTS=OFF"
-fi
-
-ZSTD="AUTO"
-
 # Use ccache if able.
 if [[ -f $DIR/find-ccache.sh ]]; then
   . $DIR/find-ccache.sh
@@ -84,9 +59,33 @@ if [[ -f $DIR/find-ccache.sh ]]; then
   fi
 fi
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake -DBUILD_TESTING=OFF $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
-$CMAKE --build . --parallel
-$CMAKE --build . --parallel --target install
+if [ "$ENABLE_SNAPPY" ]; then
+  SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=ON"
+else
+  SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=OFF"
+fi
+
+if [ "$ENABLE_SSL" ]; then
+  if [ "$OS" = "darwin" ]; then
+    SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=DARWIN"
+  else
+    SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OPENSSL"
+  fi
+else
+  SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
+fi
+
+if [ "$LINK_STATIC" ]; then
+  STATIC_CMAKE_OPTION="-DENABLE_STATIC=ON -DENABLE_TESTS=ON"
+else
+  STATIC_CMAKE_OPTION="-DENABLE_STATIC=OFF -DENABLE_TESTS=OFF"
+fi
+
+ZSTD="AUTO"
+
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake -DBUILD_TESTING=OFF $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_ZSTD=$ZSTD "$SCRATCH_DIR"
+cmake --build . --parallel
+cmake --build . --parallel --target install
 
 # Revert ccache options, they no longer apply.
 unset CCACHE_BASEDIR CCACHE_NOHASHDIR
@@ -120,8 +119,8 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   fi
 
   cd $EXAMPLE_DIR
-  $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
-  $CMAKE --build .
+  cmake -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
+  cmake --build .
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig

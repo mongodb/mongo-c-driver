@@ -125,7 +125,7 @@ This parameter must be set in advance via :symbol:`mongoc_oidc_callback_set_user
           user_data_t *user_data = malloc (sizeof (*user_data));
           *user_data = (user_data_t){.counter = 0, .error_message = NULL};
           mongoc_oidc_callback_t *callback = mongoc_oidc_callback_new_with_user_data (&example_callback_fn, (void *) user_data);
-          mongoc_client_set_oidc_callback (client, callback);
+          BSON_ASSERT (mongoc_client_set_oidc_callback (client, callback));
           mongoc_oidc_callback_destroy (callback);
        }
 

@@ -245,20 +245,6 @@ functions:
         args:
           - -c
           - find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        args:
-          - -c
-          - |
-            set -o errexit
-            . drivers-evergreen-tools/.evergreen/find-python3.sh
-            echo "PYTHON3_BINARY: $(find_python3)" >|python3_binary.yml
-    - command: expansions.update
-      type: setup
-      params:
-        file: python3_binary.yml
   fetch-source:
     - command: git.get_project
       type: setup
@@ -295,16 +281,6 @@ functions:
             for file in $(find .evergreen/scripts -type f); do
                 chmod +rx "$file" || exit
             done
-  find-cmake-latest:
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        working_dir: mongoc
-        retry_on_failure: true
-        args:
-          - -c
-          - . .evergreen/scripts/find-cmake-latest.sh && find_cmake_latest
   kms-divergence-check:
     - command: subprocess.exec
       type: test
@@ -334,9 +310,9 @@ functions:
         binary: bash
         working_dir: mongoc
         include_expansions_in_env:
-          - OPENSSL_VERSION
           - OPENSSL_ENABLE_FIPS
           - OPENSSL_USE_STATIC_LIBS
+          - OPENSSL_VERSION
         args:
           - -c
           - .evergreen/scripts/openssl-compat-setup.sh
@@ -346,8 +322,8 @@ functions:
         binary: bash
         working_dir: mongoc
         include_expansions_in_env:
-          - OPENSSL_VERSION
           - OPENSSL_USE_STATIC_LIBS
+          - OPENSSL_VERSION
         args:
           - -c
           - .evergreen/scripts/openssl-compat-check.sh
@@ -438,8 +414,7 @@ functions:
           - |
             set -o errexit
             echo "Starting simple HTTP server..."
-            command -V "${PYTHON3_BINARY}" >/dev/null
-            "${PYTHON3_BINARY}" .evergreen/scripts/simple_http_server.py
+            uvx python .evergreen/scripts/simple_http_server.py
             echo "Starting simple HTTP server... done."
   run-tests:
     - command: subprocess.exec
@@ -635,6 +610,7 @@ functions:
           - |
             export DRIVERS_TOOLS=./drivers-evergreen-tools
             export MONGODB_URI="${MONGODB_URI}"
+            export PATH="$(uv tool dir --bin):$PATH" # DEVPROD-19733
             $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
     - command: expansions.update
       type: setup
@@ -737,7 +713,6 @@ functions:
       params:
         binary: bash
         working_dir: mongoc
-        silent: true
         args:
           - -c
           - |

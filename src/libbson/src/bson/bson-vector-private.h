@@ -19,6 +19,10 @@
 #ifndef BSON_VECTOR_PRIVATE_H
 #define BSON_VECTOR_PRIVATE_H
 
+#include <bson/bson-vector.h> // IWYU pragma: export
+
+//
+
 #include <bson/compat.h>
 #include <bson/macros.h>
 
@@ -39,19 +43,19 @@ typedef enum {
 
 
 static BSON_INLINE uint8_t
-bson_vector_header_byte_0 (bson_vector_element_type_t element_type, bson_vector_element_size_t element_size)
+bson_vector_header_byte_0(bson_vector_element_type_t element_type, bson_vector_element_size_t element_size)
 {
-   BSON_ASSERT ((unsigned) element_type <= 0x0f);
-   BSON_ASSERT ((unsigned) element_size <= 0x0f);
-   return (uint8_t) (((unsigned) element_type << 4) | (unsigned) element_size);
+   BSON_ASSERT((unsigned)element_type <= 0x0f);
+   BSON_ASSERT((unsigned)element_size <= 0x0f);
+   return (uint8_t)(((unsigned)element_type << 4) | (unsigned)element_size);
 }
 
 // See also `bson_vector_padding_from_header_byte_1` defined in <bson/bson-vector.h> for use by public inline functions.
 static BSON_INLINE uint8_t
-bson_vector_header_byte_1 (size_t padding)
+bson_vector_header_byte_1(size_t padding)
 {
-   BSON_ASSERT (padding <= 7);
-   return (uint8_t) padding;
+   BSON_ASSERT(padding <= 7);
+   return (uint8_t)padding;
 }
 
 

@@ -19,7 +19,9 @@
 #ifndef MONGOC_CLIENT_SESSION_PRIVATE_H
 #define MONGOC_CLIENT_SESSION_PRIVATE_H
 
-#include <mongoc/mongoc-client-session.h>
+#include <mongoc/mongoc-client-session.h> // IWYU pragma: export
+
+//
 
 #include <bson/bson.h>
 
@@ -89,66 +91,66 @@ struct _mongoc_client_session_t {
 };
 
 bool
-_mongoc_parse_cluster_time (const bson_t *cluster_time, uint32_t *timestamp, uint32_t *increment);
+_mongoc_parse_cluster_time(const bson_t *cluster_time, uint32_t *timestamp, uint32_t *increment);
 
 bool
-_mongoc_cluster_time_greater (const bson_t *new, const bson_t *old);
+_mongoc_cluster_time_greater(const bson_t *new, const bson_t *old);
 
 void
-_mongoc_client_session_handle_reply (mongoc_client_session_t *session,
-                                     bool is_acknowledged,
-                                     const char *cmd_name,
-                                     const bson_t *reply);
+_mongoc_client_session_handle_reply(mongoc_client_session_t *session,
+                                    bool is_acknowledged,
+                                    const char *cmd_name,
+                                    const bson_t *reply);
 
 bool
-_mongoc_server_session_init (mongoc_server_session_t *session, bson_error_t *error);
+_mongoc_server_session_init(mongoc_server_session_t *session, bson_error_t *error);
 
 void
-_mongoc_server_session_destroy (mongoc_server_session_t *session);
+_mongoc_server_session_destroy(mongoc_server_session_t *session);
 
 bool
-_mongoc_server_session_timed_out (const mongoc_server_session_t *server_session, int64_t session_timeout_minutes);
+_mongoc_server_session_timed_out(const mongoc_server_session_t *server_session, int64_t session_timeout_minutes);
 
 mongoc_client_session_t *
-_mongoc_client_session_new (mongoc_client_t *client,
-                            mongoc_server_session_t *server_session,
-                            const mongoc_session_opt_t *opts,
-                            uint32_t client_session_id);
+_mongoc_client_session_new(mongoc_client_t *client,
+                           mongoc_server_session_t *server_session,
+                           const mongoc_session_opt_t *opts,
+                           uint32_t client_session_id);
 
 bool
-_mongoc_client_session_from_iter (mongoc_client_t *client,
-                                  const bson_iter_t *iter,
-                                  mongoc_client_session_t **cs,
-                                  bson_error_t *error);
+_mongoc_client_session_from_iter(mongoc_client_t *client,
+                                 const bson_iter_t *iter,
+                                 mongoc_client_session_t **cs,
+                                 bson_error_t *error);
 
 bool
-_mongoc_client_session_in_txn (const mongoc_client_session_t *session);
+_mongoc_client_session_in_txn(const mongoc_client_session_t *session);
 
 bool
-_mongoc_client_session_in_txn_or_ending (const mongoc_client_session_t *session);
+_mongoc_client_session_in_txn_or_ending(const mongoc_client_session_t *session);
 
 bool
-_mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session);
+_mongoc_client_session_txn_in_progress(const mongoc_client_session_t *session);
 
 bool
-_mongoc_client_session_append_txn (mongoc_client_session_t *session, bson_t *cmd, bson_error_t *error);
+_mongoc_client_session_append_txn(mongoc_client_session_t *session, bson_t *cmd, bson_error_t *error);
 
 void
-_mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
-                                            const bson_t *user_read_concern,
-                                            bool is_read_command,
-                                            bson_t *cmd);
+_mongoc_client_session_append_read_concern(const mongoc_client_session_t *cs,
+                                           const bson_t *user_read_concern,
+                                           bool is_read_command,
+                                           bson_t *cmd);
 
 void
-_mongoc_client_session_unpin (mongoc_client_session_t *session);
+_mongoc_client_session_unpin(mongoc_client_session_t *session);
 
 void
-_mongoc_client_session_pin (mongoc_client_session_t *session, uint32_t server_id);
+_mongoc_client_session_pin(mongoc_client_session_t *session, uint32_t server_id);
 
 void
-_mongoc_client_session_set_snapshot_time (mongoc_client_session_t *session, uint32_t t, uint32_t i);
+_mongoc_client_session_set_snapshot_time(mongoc_client_session_t *session, uint32_t t, uint32_t i);
 
 void
-_mongoc_client_session_clear_snapshot_time (mongoc_client_session_t *session);
+_mongoc_client_session_clear_snapshot_time(mongoc_client_session_t *session);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

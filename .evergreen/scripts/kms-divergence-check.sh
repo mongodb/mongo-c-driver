@@ -16,9 +16,9 @@ LIBMONGOCRYPT_DIR="$MONGOC_DIR/libmongocrypt-for-kms-divergence-check"
 LIBMONGOCRYPT_GITREF="9fff64216c06099401e2b3b2d5becb77bc17803d"
 
 cleanup() {
-    if [ -d "$LIBMONGOCRYPT_DIR" ]; then
-        rm -rf "$LIBMONGOCRYPT_DIR"
-    fi
+  if [ -d "$LIBMONGOCRYPT_DIR" ]; then
+    rm -rf "$LIBMONGOCRYPT_DIR"
+  fi
 }
 
 cleanup
@@ -27,9 +27,9 @@ trap cleanup EXIT
 git clone -q https://github.com/mongodb/libmongocrypt "$LIBMONGOCRYPT_DIR"
 cd "$LIBMONGOCRYPT_DIR"
 git checkout "$LIBMONGOCRYPT_GITREF" --quiet
-if ! diff -uNr "$LIBMONGOCRYPT_DIR/kms-message/" "$MONGOC_DIR/src/kms-message/" ; then
-    echo "Unexpected differences found in KMS sources!"
-    exit 1
+if ! diff -uNr "$LIBMONGOCRYPT_DIR/kms-message/" "$MONGOC_DIR/src/kms-message/"; then
+  echo "Unexpected differences found in KMS sources!"
+  exit 1
 else
-    echo "No changes detected from KMS message at commit $LIBMONGOCRYPT_GITREF"
+  echo "No changes detected from KMS message at commit $LIBMONGOCRYPT_GITREF"
 fi

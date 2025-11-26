@@ -12,10 +12,9 @@ except ImportError:
     # Try importing from older Sphinx version path.
     from sphinx.builders.html import DirectoryHTMLBuilder
 
-from docutils.parsers.rst import directives, Directive
+from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
 from sphinx.application import logger as sphinx_log
-from sphinx.config import Config
 
 has_sphinx_design = False
 try:
@@ -23,6 +22,7 @@ try:
     # sphinx-design is not required for building man pages.
     # python-sphinx-design is not currently available on EPEL. The package for EPEL includes man pages.
     from sphinx_design.dropdown import DropdownDirective
+
     has_sphinx_design = True
 except ImportError:
     pass
@@ -30,40 +30,40 @@ except ImportError:
 # Ensure we can import "mongoc" extension module.
 this_path = os.path.dirname(__file__)
 sys.path.append(this_path)
-sys.path.append(os.path.normpath(os.path.join(this_path, "../../../build/sphinx")))
+sys.path.append(os.path.normpath(os.path.join(this_path, '../../../build/sphinx')))
 
-from mongoc_common import *
+from mongoc_common import *  # noqa: E402, F403
 
 extensions = [
-    "mongoc",
-    "sphinx.ext.intersphinx",
+    'mongoc',
+    'sphinx.ext.intersphinx',
     # NOTE: We use our own "minimal" CMake domain that lets us refer to external
     # objects from the CMake inventory, but provides no other features. The
     # build *could* otherwise use sphinxcontrib-moderncmakedomain, which is
     # more full-featured, but it is not (currently) available in repositories for
     # package building.
     # "sphinxcontrib.moderncmakedomain",
-    "cmakerefdomain",
-    "sphinx.ext.mathjax",
+    'cmakerefdomain',
+    'sphinx.ext.mathjax',
 ]
 
 if has_sphinx_design:
-    extensions.append("sphinx_design")
+    extensions.append('sphinx_design')
 
 # General information about the project.
-project = "libmongoc"
-copyright = "2009-present, MongoDB, Inc."
-author = "MongoDB, Inc"
+project = 'libmongoc'
+copyright = '2009-present, MongoDB, Inc.'
+author = 'MongoDB, Inc'
 
-version_path = os.path.join(os.path.dirname(__file__), "../../..", "VERSION_CURRENT")
+version_path = os.path.join(os.path.dirname(__file__), '../../..', 'VERSION_CURRENT')
 version = open(version_path).read().strip()
 
 # The extension requires the "base" to contain '%s' exactly once, but we never intend to use it though
 
-language = "en"
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-master_doc = "index"
-html_static_path = ["static"]
+language = 'en'
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+master_doc = 'index'
+html_static_path = ['static']
 
 # Set an empty list of disabled reftypes.
 # Sphinx 5.0 disables "std:doc" by default.
@@ -73,13 +73,13 @@ intersphinx_disabled_reftypes = []
 intersphinx_timeout = 30
 
 intersphinx_mapping = {
-    "sphinx": ("https://www.sphinx-doc.org/en/master", "includes/sphinx.inv"),
-    "python": ("https://docs.python.org/3", "includes/python.inv"),
-    "bson": ("https://www.mongoc.org/libbson/current", "includes/libbson.inv"),
-    "cmake": ("https://cmake.org/cmake/help/latest", "includes/cmake.inv"),
+    'sphinx': ('https://www.sphinx-doc.org/en/master', 'includes/sphinx.inv'),
+    'python': ('https://docs.python.org/3', 'includes/python.inv'),
+    'bson': ('https://www.mongoc.org/libbson/current', 'includes/libbson.inv'),
+    'cmake': ('https://cmake.org/cmake/help/latest', 'includes/cmake.inv'),
 }
 
-_UPDATE_KEY = "update_external_inventories"
+_UPDATE_KEY = 'update_external_inventories'
 
 
 def _maybe_update_inventories(app: Sphinx):
@@ -91,30 +91,30 @@ def _maybe_update_inventories(app: Sphinx):
     This function will only have an effect if the appropriate command-line config
     value is defined.
     """
-    prefix = "[libmongoc/doc/conf.py]"
+    prefix = '[libmongoc/doc/conf.py]'
     config = app.config
     if not config[_UPDATE_KEY]:
         sphinx_log.info(
-            "%s Using existing intersphinx inventories. Refresh by running with ‘-D %s=1’",
+            '%s Using existing intersphinx inventories. Refresh by running with ‘-D %s=1’',
             prefix,
             _UPDATE_KEY,
         )
         return
     for name, tup in intersphinx_mapping.items():
         urlbase, filename = tup
-        url = f"{urlbase}/objects.inv"
-        sphinx_log.info("%s Downloading external inventory for %s from [%s]", prefix, name, url)
+        url = f'{urlbase}/objects.inv'
+        sphinx_log.info('%s Downloading external inventory for %s from [%s]', prefix, name, url)
         with urllib.request.urlopen(url) as req:
             req: http.client.HTTPResponse = req
             dest = Path(app.srcdir) / filename
-            sphinx_log.info("%s Saving inventory [%s] to file [%s]", prefix, url, dest)
-            with dest.open("wb") as out:
+            sphinx_log.info('%s Saving inventory [%s] to file [%s]', prefix, url, dest)
+            with dest.open('wb') as out:
                 buf = req.read(1024 * 4)
                 while buf:
                     out.write(buf)
                     buf = req.read(1024 * 4)
         sphinx_log.info(
-            "%s Inventory file [%s] was updated. Commit the result to save it for subsequent builds.",
+            '%s Inventory file [%s] was updated. Commit the result to save it for subsequent builds.',
             prefix,
             dest,
         )
@@ -122,30 +122,12 @@ def _maybe_update_inventories(app: Sphinx):
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "furo"
-html_title = html_shorttitle = "libmongoc %s" % version
+html_theme = 'furo'
+html_title = html_shorttitle = 'libmongoc %s' % version
 # html_favicon = None
 html_use_index = True
 
 rst_prolog = rf"""
-.. |qenc:is-experimental| replace::
-
-    is part of the experimental
-    `Queryable Encryption <queryable-encryption_>`_ API and may be subject
-    to breaking changes in future releases.
-
-.. |qenc:opt-is-experimental| replace::
-
-    This option |qenc:is-experimental|
-
-.. |qenc:api-is-experimental| replace::
-
-    This API |qenc:is-experimental|
-
-.. |qenc:range-is-experimental| replace::
-
-    Range algorithm is experimental only and not intended for public use. It is subject to breaking changes.
-
 .. _the findAndModify command:
     https://www.mongodb.com/docs/manual/reference/command/findAndModify/
 
@@ -188,10 +170,18 @@ rst_prolog = rf"""
     :cmake:command:`find_package() <command:find_package>`
 
 .. |bson_t-storage-ptr| replace::
-    non-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+    non-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
 
 .. |bson_t-opt-storage-ptr| replace::
-    maybe-``NULL`` pointer to `overwritable storage <bson_lifetimes_>`_ for a :symbol:`bson_t`
+    maybe-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
+
+.. _overwritable storage: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/#overwritable-storage
+
+.. |encrypt-text-is-experimental| replace::
+    The "TextPreview" algorithm is in preview and should be used for experimental workloads only.
+    These features are unstable and their security is not guaranteed until released as Generally
+    Available (GA). The GA version of these features may not be backwards compatible with the
+    preview version.
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
@@ -205,7 +195,7 @@ rst_prolog = rf"""
 
 .. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
 
-.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/connection-pooling/
+.. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/connect/connection-pools/.
 
 .. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
 
@@ -232,50 +222,60 @@ rst_prolog = rf"""
 def add_canonical_link(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: Any):
     link = f'<link rel="canonical" href="https://www.mongoc.org/libmongoc/current/{pagename}/"/>'
 
-    context["metatags"] = context.get("metatags", "") + link
+    context['metatags'] = context.get('metatags', '') + link
 
 
 if has_sphinx_design:
+
     class AdDropdown(DropdownDirective):
         """A sphinx-design dropdown that can also be an admonition."""
 
-        option_spec = DropdownDirective.option_spec | {"admonition": directives.unchanged_required}
+        option_spec = DropdownDirective.option_spec | {'admonition': directives.unchanged_required}
 
         def run(self):
-            adm = self.options.get("admonition")
+            adm = self.options.get('admonition')
             if adm is not None:
-                self.options.setdefault("class-container", []).extend(("admonition", adm))
-                self.options.setdefault("class-title", []).append(f"admonition-title")
+                self.options.setdefault('class-container', []).extend(('admonition', adm))
+                self.options.setdefault('class-title', []).append('admonition-title')
             return super().run()
 else:
+
     class EmptyDirective(Directive):
         has_content = True
+
         def run(self):
             return []
-        
+
+
 has_add_css_file = True
-        
-def check_html_builder_requirements (app):
+
+
+def check_html_builder_requirements(app):
     if isinstance(app.builder, DirectoryHTMLBuilder):
         if not has_sphinx_design:
-            raise RuntimeError("The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.")
+            raise RuntimeError(
+                'The sphinx-design package is required to build HTML documentation but was not detected. Install sphinx-design.'
+            )
         if not has_add_css_file:
-            raise RuntimeError("A newer version of Sphinx is required to build HTML documentation with CSS files. Upgrade Sphinx to v3.5.0 or newer")
+            raise RuntimeError(
+                'A newer version of Sphinx is required to build HTML documentation with CSS files. Upgrade Sphinx to v3.5.0 or newer'
+            )
+
 
 def setup(app: Sphinx):
-    mongoc_common_setup(app)
-    app.connect("builder-inited", check_html_builder_requirements)
+    mongoc_common_setup(app)  # noqa: F405
+    app.connect('builder-inited', check_html_builder_requirements)
     if has_sphinx_design:
-        app.add_directive("ad-dropdown", AdDropdown)
+        app.add_directive('ad-dropdown', AdDropdown)
     else:
-        app.add_directive("ad-dropdown", EmptyDirective)
-        app.add_directive("tab-set", EmptyDirective)
-    app.connect("html-page-context", add_canonical_link)
-    if hasattr(app, "add_css_file"):
-        app.add_css_file("styles.css")
+        app.add_directive('ad-dropdown', EmptyDirective)
+        app.add_directive('tab-set', EmptyDirective)
+    app.connect('html-page-context', add_canonical_link)
+    if hasattr(app, 'add_css_file'):
+        app.add_css_file('styles.css')
     else:
         global has_add_css_file
         has_add_css_file = False
-        
-    app.connect("builder-inited", _maybe_update_inventories)
+
+    app.connect('builder-inited', _maybe_update_inventories)
     app.add_config_value(_UPDATE_KEY, default=False, rebuild=True, types=[bool])

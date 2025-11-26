@@ -21,8 +21,12 @@
 
 #include <mongoc/mongoc-http-private.h>
 
-#include <mongoc/mcd-time.h>
 #include <mongoc/mongoc.h>
+
+#include <mlib/duration.h>
+#include <mlib/timer.h>
+
+#define MCD_TOKEN_RESOURCE_VAULT "https://vault.azure.net"
 
 /**
  * @brief An Azure OAuth2 access token obtained from the Azure API
@@ -36,14 +40,14 @@ typedef struct mcd_azure_access_token {
    char *token_type;
    /// The duration after which it will the token will expires. This is relative
    /// to the "issue time" of the token.
-   mcd_duration expires_in;
+   mlib_duration expires_in;
 } mcd_azure_access_token;
 
 /**
  * @brief Try to parse an Azure access token from an IMDS metadata JSON response
  *
- * @param out The token to initialize. Should be uninitialized. Must later be
- * destroyed by the caller.
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
  * @param json The JSON string body
  * @param len The length of 'body'
  * @param error An output parameter for errors
@@ -54,10 +58,10 @@ typedef struct mcd_azure_access_token {
  * mcd_azure_access_token_destroy
  */
 bool
-mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
-                                               const char *json,
-                                               int len,
-                                               bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+mcd_azure_access_token_try_init_from_json_str(mcd_azure_access_token *out,
+                                              const char *json,
+                                              int len,
+                                              bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 
 /**
  * @brief Destroy and zero-fill an access token object
@@ -65,7 +69,7 @@ mcd_azure_access_token_try_init_from_json_str (mcd_azure_access_token *out,
  * @param token The access token to destroy
  */
 void
-mcd_azure_access_token_destroy (mcd_azure_access_token *token);
+mcd_azure_access_token_destroy(mcd_azure_access_token *token);
 
 /**
  * @brief An Azure IMDS HTTP request
@@ -88,18 +92,24 @@ typedef struct mcd_azure_imds_request {
  * @brief Initialize a new IMDS HTTP request
  *
  * @param out The object to initialize
+ * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
+ * @param opt_client_id (Optional) Added as the "client_id" query parameter.
  *
- * @note the request must later be destroyed with mcd_azure_imds_request_destroy
- * @note Currently only supports the vault.azure.net resource
+ * @note the request must later be destroyed with mcd_azure_imds_request_destroy, even on error.
+ *
+ * @retval true Upon success.
+ * @retval false Otherwise.
  */
-void
-mcd_azure_imds_request_init (mcd_azure_imds_request *req,
-                             const char *const opt_imds_host,
-                             int opt_port,
-                             const char *const opt_extra_headers);
+bool
+mcd_azure_imds_request_init(mcd_azure_imds_request *req,
+                            const char *token_resource,
+                            const char *const opt_imds_host,
+                            int opt_port,
+                            const char *const opt_extra_headers,
+                            const char *opt_client_id);
 
 /**
  * @brief Destroy an IMDS request created with mcd_azure_imds_request_init()
@@ -107,28 +117,33 @@ mcd_azure_imds_request_init (mcd_azure_imds_request *req,
  * @param req
  */
 void
-mcd_azure_imds_request_destroy (mcd_azure_imds_request *req);
+mcd_azure_imds_request_destroy(mcd_azure_imds_request *req);
 
 /**
  * @brief Attempt to obtain a new OAuth2 access token from an Azure IMDS HTTP
  * server.
  *
- * @param out The output parameter for the obtained token. Must later be
- * destroyed
+ * @param out Overwritten with the obtained token. Must later be destroyed.
+ * @pre `*out` must be in a non-owning state (e.g. uninitialized or zero-initialized).
+ * @param token_resource Will be percent encoded and passed as the "resource" query parameter.
  * @param opt_imds_host (Optional) Override the IP host of the IMDS server
  * @param opt_port (Optional) The port of the IMDS HTTP server (default is 80)
  * @param opt_extra_headers (Optional) Set extra HTTP headers for the request
+ * @param opt_timer (Optional) The timer for the request.
+ * @param opt_client_id (Optional) Added as the "client_id" query parameter.
  * @param error Output parameter for errors
  * @retval true Upon success
  * @retval false Otherwise. Sets an error via `error`
  *
- * @note Currently only supports the vault.azure.net resource
  */
 bool
-mcd_azure_access_token_from_imds (mcd_azure_access_token *const out,
-                                  const char *const opt_imds_host,
-                                  int opt_port,
-                                  const char *opt_extra_headers,
-                                  bson_error_t *error);
+mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
+                                 const char *token_resource,
+                                 const char *const opt_imds_host,
+                                 int opt_port,
+                                 const char *opt_extra_headers,
+                                 mlib_timer opt_timer,
+                                 const char *opt_client_id,
+                                 bson_error_t *error);
 
 #endif // MCD_AZURE_H_INCLUDED

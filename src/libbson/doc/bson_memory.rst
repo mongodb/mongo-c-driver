@@ -26,6 +26,8 @@ To aid in language binding integration, Libbson allows for setting a custom memo
     bson_malloc0
     bson_aligned_alloc
     bson_aligned_alloc0
+    bson_array_alloc
+    bson_array_alloc0
     bson_mem_restore_vtable
     bson_mem_set_vtable
     bson_realloc

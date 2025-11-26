@@ -22,6 +22,7 @@ check_var_opt SINGLE_MONGOS_LB_URI
 check_var_opt SKIP_CRYPT_SHARED_LIB
 check_var_opt SSL "nossl"
 check_var_opt URI
+check_var_opt OIDC "nooidc"
 
 declare script_dir
 script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
@@ -110,7 +111,12 @@ fi
 
 # Sanitizer environment variables.
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
-export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
+export ASAN_SYMBOLIZER_PATH
+if command -v "/opt/mongodbtoolchain/v4/bin/llvm-symbolizer" >/dev/null; then
+  ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v4/bin/llvm-symbolizer"
+elif command -v "/opt/mongodbtoolchain/v3/bin/llvm-symbolizer" >/dev/null; then
+  ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
+fi
 export TSAN_OPTIONS="suppressions=.tsan-suppressions"
 
 ubsan_opts=(
@@ -147,6 +153,13 @@ if [[ "${DNS}" != "nodns" ]]; then
   else
     export MONGOC_TEST_DNS=on
   fi
+fi
+
+if [[ "${OIDC}" != "nooidc" ]]; then
+  export MONGOC_TEST_OIDC="ON"
+  # Only run OIDC tests.
+  test_args+=("-l" "/oidc/*")
+  test_args+=("-l" "/auth/unified/*")
 fi
 
 wait_for_server() {
@@ -214,6 +227,7 @@ if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
 
   # Limit tests executed to CSE tests.
   test_args+=("-l" "/client_side_encryption/*")
+  test_args+=("-l" "/unified/*") # Includes PoC tests for CSFLE/QE.
 fi
 
 if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
@@ -256,6 +270,11 @@ fi
 # For mongocryptd, by integration-tests.sh.
 export PATH="${det_dir:?}/mongodb/bin:${PATH:-}"
 
+# Ensure no pre-existing and outdated coverage data is present prior to execution.
+if [[ "${COVERAGE}" == "ON" ]]; then
+  find . -name '*.gcda' -exec rm -f {} \+
+fi
+
 case "${OSTYPE}" in
 cygwin)
   check_mongocryptd
@@ -283,12 +302,17 @@ esac
 if [[ "${COVERAGE}" == "ON" ]]; then
   declare -a coverage_args=(
     "--capture"
-    "--derive-func-data"
     "--directory"
     "."
     "--output-file"
     ".coverage.lcov"
     "--no-external"
+
+    # WARNING: unexecuted block on non-branch line with non-zero hit count.
+    "--rc" "geninfo_unexecuted_blocks=1"
+
+    # ERROR: mismatched end line for ...
+    "--ignore-errors" "mismatch"
   )
 
   {

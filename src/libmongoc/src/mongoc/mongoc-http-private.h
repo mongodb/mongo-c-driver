@@ -21,6 +21,8 @@
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc.h>
 
+#include <mlib/timer.h>
+
 #ifndef MONGOC_HTTP_PRIVATE_H
 #define MONGOC_HTTP_PRIVATE_H
 
@@ -43,13 +45,13 @@ typedef struct {
 } mongoc_http_response_t;
 
 void
-_mongoc_http_request_init (mongoc_http_request_t *request);
+_mongoc_http_request_init(mongoc_http_request_t *request);
 
 void
-_mongoc_http_response_init (mongoc_http_response_t *response);
+_mongoc_http_response_init(mongoc_http_response_t *response);
 
 void
-_mongoc_http_response_cleanup (mongoc_http_response_t *response);
+_mongoc_http_response_cleanup(mongoc_http_response_t *response);
 
 /**
  * @brief Render the HTTP request head based on the given HTTP parameters.
@@ -62,7 +64,7 @@ _mongoc_http_response_cleanup (mongoc_http_response_t *response);
  * string.
  */
 void
-_mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_http_request_t *req);
+_mongoc_http_render_request_head(mcommon_string_append_t *append, const mongoc_http_request_t *req);
 
 
 /**
@@ -74,7 +76,7 @@ _mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_
  *
  * @param req The request to send. Uses the "host" attribute to determine the
  * HTTP peer.
- * @param timeout_ms A timeout for the request, in milliseconds
+ * @param timer A timer for the request.
  * @param use_tls Whether the connection should use TLS.
  * @param ssl_opts Options to control TLS (Required only if 'use_tls' is true)
  * @param res Output parameter for the response. Must be uninitialized.
@@ -90,11 +92,11 @@ _mongoc_http_render_request_head (mcommon_string_append_t *append, const mongoc_
  * rendered using @ref _mongo_http_render_request_head.
  */
 bool
-_mongoc_http_send (mongoc_http_request_t const *req,
-                   int timeout_ms,
-                   bool use_tls,
-                   mongoc_ssl_opt_t *ssl_opts,
-                   mongoc_http_response_t *res,
-                   bson_error_t *error);
+_mongoc_http_send(mongoc_http_request_t const *req,
+                  mlib_timer timer,
+                  bool use_tls,
+                  mongoc_ssl_opt_t *ssl_opts,
+                  mongoc_http_response_t *res,
+                  bson_error_t *error);
 
 #endif /* MONGOC_HTTP_PRIVATE */
