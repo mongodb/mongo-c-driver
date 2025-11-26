@@ -4160,15 +4160,18 @@ tasks:
       - ubuntu2404-small
     commands:
       - func: fetch-source
-      - func: sasl-cyrus-openssl-compile
       - command: expansions.update
         params:
           updates:
-            - { key: CC, value: clang }
+            - { key: ASAN, value: "on" }
+            - { key: CFLAGS, value: -fno-omit-frame-pointer }
+            - { key: SANITIZE, value: "address,undefined" }
+            - { key: CC, value: gcc }
             - { key: AUTH, value: auth }
             - { key: OIDC, value: oidc }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
+      - func: sasl-cyrus-openssl-compile
       - func: run-tests
   - name: oidc-azure-auth-test-task
     run_on:

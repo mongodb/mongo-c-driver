@@ -269,8 +269,8 @@ test_oidc_bad_config(void *unused)
 
    // Expect error if callback is set twice on pool:
    {
-      mongoc_client_pool_t *pool =
-         mongoc_client_pool_new(mongoc_uri_new("mongodb://localhost/?authMechanism=MONGODB-OIDC"));
+      mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost/?authMechanism=MONGODB-OIDC");
+      mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       ASSERT(mongoc_client_pool_set_oidc_callback(pool, cb));
       capture_logs(true);
@@ -278,6 +278,7 @@ test_oidc_bad_config(void *unused)
       ASSERT_CAPTURED_LOG("oidc", MONGOC_LOG_LEVEL_ERROR, "called once");
       mongoc_oidc_callback_destroy(cb);
       mongoc_client_pool_destroy(pool);
+      mongoc_uri_destroy(uri);
    }
 
    // Expect error on unsupported ENVIRONMENT passed (URI string)
