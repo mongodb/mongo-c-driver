@@ -90,6 +90,7 @@ def tasks():
             name='oidc-auth-test-task',
             run_on=[find_small_distro('ubuntu2404').name],
             commands=[
+                FetchSource.call(),
                 expansions_update(
                     updates=[
                         KeyValueParam(key='ASAN', value='on'),
@@ -103,7 +104,6 @@ def tasks():
                         KeyValueParam(key='TOPOLOGY', value='replica_set'),
                     ]
                 ),
-                FetchSource.call(),
                 SaslCyrusOpenSSLCompile.call(),
                 RunTests.call(),
             ],

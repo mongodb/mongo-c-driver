@@ -4159,6 +4159,7 @@ tasks:
     run_on:
       - ubuntu2404-small
     commands:
+      - func: fetch-source
       - command: expansions.update
         params:
           updates:
@@ -4170,7 +4171,6 @@ tasks:
             - { key: OIDC, value: oidc }
             - { key: MONGODB_VERSION, value: latest }
             - { key: TOPOLOGY, value: replica_set }
-      - func: fetch-source
       - func: sasl-cyrus-openssl-compile
       - func: run-tests
   - name: oidc-azure-auth-test-task
