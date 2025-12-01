@@ -2468,6 +2468,50 @@ test_cursor_timeout_killCursors(void)
    mongoc_uri_destroy(uri);
 }
 
+static void
+test_killCursors_failure_logs(void)
+{
+   bson_error_t error;
+   const bson_t *got = NULL;
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   mongoc_collection_drop(coll, NULL);
+
+   // Insert two documents:
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
+
+   // Establish cursor:
+   mongoc_cursor_t *cursor =
+      mongoc_collection_aggregate(coll, MONGOC_QUERY_NONE, tmp_bson("{}"), tmp_bson("{'batchSize': 1 }"), NULL);
+
+   // Iterate first document:
+   ASSERT(mongoc_cursor_next(cursor, &got));
+   ASSERT(mongoc_cursor_get_id(cursor)); // Cursor established.
+
+   // Simulate network error on killCursors:
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
+                                                "admin",
+                                                tmp_bson(BSON_STR({
+                                                   "configureFailPoint" : "failCommand",
+                                                   "mode" : {"times" : 1},
+                                                   "data" : {"failCommands" : ["killCursors"], "closeConnection" : true}
+                                                })),
+                                                NULL,
+                                                NULL,
+                                                &error),
+                   error);
+
+   // Expect error logged on failure:
+   capture_logs(true);
+   mongoc_cursor_destroy(cursor); // Sends killCursors.
+   ASSERT_CAPTURED_LOG("cursor", MONGOC_LOG_LEVEL_INFO, "failure to kill cursor");
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 void
 test_cursor_install(TestSuite *suite)
 {
@@ -2520,4 +2564,5 @@ test_cursor_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Cursor/batchsize_override_range_warning", test_cursor_batchsize_override_range_warning);
    TestSuite_AddLive(suite, "/Cursor/open_cursor_from_reply", test_open_cursor_from_reply);
    TestSuite_AddLive(suite, "/Cursor/timeout_killCursors", test_cursor_timeout_killCursors);
+   TestSuite_AddLive(suite, "/Cursor/killCursors_failure_logs", test_killCursors_failure_logs);
 }

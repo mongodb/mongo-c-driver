@@ -91,13 +91,14 @@
 #define MONGOC_LOG_DOMAIN "client"
 
 
-static void
+static bool
 _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
                                    mongoc_server_stream_t *server_stream,
                                    int64_t cursor_id,
                                    const char *db,
                                    const char *collection,
-                                   mongoc_client_session_t *cs);
+                                   mongoc_client_session_t *cs,
+                                   bson_error_t *error);
 
 #define DNS_ERROR(_msg, ...)                                                                                 \
    do {                                                                                                      \
@@ -2151,15 +2152,20 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
    BSON_ASSERT_PARAM(collection);
    BSON_ASSERT(cursor_id);
 
-   // Try to reconnect. Ignore error.
+   bson_error_t error;
+   // Try to reconnect. Log on error.
    server_stream =
-      mongoc_cluster_stream_for_server(&client->cluster, server_id, true /* reconnect_ok */, NULL, NULL, NULL);
+      mongoc_cluster_stream_for_server(&client->cluster, server_id, true /* reconnect_ok */, NULL, NULL, &error);
 
    if (!server_stream) {
+      MONGOC_INFO("Ignoring failure to connect to kill cursor %" PRId64 ": %s", cursor_id, error.message);
       return;
    }
 
-   _mongoc_client_killcursors_command(&client->cluster, server_stream, cursor_id, db, collection, cs);
+   if (!_mongoc_client_killcursors_command(&client->cluster, server_stream, cursor_id, db, collection, cs, &error)) {
+      MONGOC_INFO("Ignoring failure to kill cursor %" PRId64 ": %s", cursor_id, error.message);
+   }
+
 
    mongoc_server_stream_cleanup(server_stream);
 
@@ -2167,16 +2173,18 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
 }
 
 
-static void
+static bool
 _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
                                    mongoc_server_stream_t *server_stream,
                                    int64_t cursor_id,
                                    const char *db,
                                    const char *collection,
-                                   mongoc_client_session_t *cs)
+                                   mongoc_client_session_t *cs,
+                                   bson_error_t *error)
 {
    bson_t command = BSON_INITIALIZER;
    mongoc_cmd_parts_t parts;
+   bool ok = false;
 
    ENTRY;
 
@@ -2185,17 +2193,22 @@ _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
    parts.assembled.operation_id = ++cluster->operation_id;
    mongoc_cmd_parts_set_session(&parts, cs);
 
-   if (mongoc_cmd_parts_assemble(&parts, server_stream, NULL)) {
-      /* Find, getMore And killCursors Commands Spec: "The result from the
-       * killCursors command MAY be safely ignored."
-       */
-      (void)mongoc_cluster_run_command_monitored(cluster, &parts.assembled, NULL, NULL);
+   if (!mongoc_cmd_parts_assemble(&parts, server_stream, error)) {
+      GOTO(fail);
+   }
+   /* Find, getMore And killCursors Commands Spec: "The result from the
+    * killCursors command MAY be safely ignored."
+    */
+   if (!mongoc_cluster_run_command_monitored(cluster, &parts.assembled, NULL, error)) {
+      GOTO(fail);
    }
 
+   ok = true;
+fail:
    mongoc_cmd_parts_cleanup(&parts);
    bson_destroy(&command);
 
-   EXIT;
+   RETURN(ok);
 }
 
 
