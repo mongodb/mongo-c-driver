@@ -754,9 +754,19 @@ static void
 populate_client_cache(mongoc_client_t *client)
 {
    BSON_ASSERT_PARAM(client);
-   char *access_token = read_test_token();
-   mongoc_oidc_cache_set_cached_token(client->topology->oidc_cache, access_token);
-   bson_free(access_token);
+
+   // Create a temporary client to get a valid token:
+   char *valid_token;
+   {
+      test_fixture_t *tf = test_fixture_new((test_config_t){0});
+      bson_error_t error;
+      ASSERT_OR_PRINT(do_find(tf->client, &error), error);
+      valid_token = mongoc_oidc_cache_get_cached_token(tf->client->topology->oidc_cache);
+      test_fixture_destroy(tf);
+   }
+
+   mongoc_oidc_cache_set_cached_token(client->topology->oidc_cache, valid_token);
+   bson_free(valid_token);
 }
 
 PROSE_TEST(4, 4, "Speculative Authentication should be ignored on Reauthentication")
