@@ -97,6 +97,7 @@ typedef struct {
    mongoc_client_pool_t *pool; // May be NULL.
    mongoc_client_t *client;
    callback_ctx_t ctx;
+   bool using_callback;
 } test_fixture_t;
 
 typedef struct {
@@ -104,6 +105,18 @@ typedef struct {
    bool use_error_api_v1;
    callback_config_t callback_config;
 } test_config_t;
+
+static bool
+is_testing_azure_oidc(void)
+{
+   char *token_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
+   if (!token_resource) {
+      return false;
+   }
+   bson_free(token_resource);
+   return true;
+}
+
 
 static test_fixture_t *
 test_fixture_new(test_config_t cfg)
@@ -113,20 +126,37 @@ test_fixture_new(test_config_t cfg)
    mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost:27017"); // Direct connect for simpler op counters.
    mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
    mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYREADS, false); // Disable retryable reads per spec.
+   mongoc_oidc_callback_t *oidc_callback = NULL;
 
-   mongoc_oidc_callback_t *oidc_callback = mongoc_oidc_callback_new(oidc_callback_fn);
-   tf->ctx.config = cfg.callback_config;
-   mongoc_oidc_callback_set_user_data(oidc_callback, &tf->ctx);
+   if (is_testing_azure_oidc()) {
+      mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
+      bson_t props = BSON_INITIALIZER;
+      BSON_APPEND_UTF8(&props, "ENVIRONMENT", "azure");
+      char *token_resource = test_framework_getenv_required("MONGOC_AZURE_RESOURCE");
+      BSON_APPEND_UTF8(&props, "TOKEN_RESOURCE", token_resource);
+      bson_free(token_resource);
+      mongoc_uri_set_mechanism_properties(uri, &props);
+      bson_destroy(&props);
+   } else {
+      tf->using_callback = true;
+      oidc_callback = mongoc_oidc_callback_new(oidc_callback_fn);
+      tf->ctx.config = cfg.callback_config;
+      mongoc_oidc_callback_set_user_data(oidc_callback, &tf->ctx);
+   }
 
    if (cfg.use_pool) {
       tf->pool = mongoc_client_pool_new(uri);
       mongoc_client_pool_set_error_api(tf->pool, MONGOC_ERROR_API_VERSION_2);
-      ASSERT(mongoc_client_pool_set_oidc_callback(tf->pool, oidc_callback));
+      if (tf->using_callback) {
+         ASSERT(mongoc_client_pool_set_oidc_callback(tf->pool, oidc_callback));
+      }
       tf->client = mongoc_client_pool_pop(tf->pool);
    } else {
       tf->client = mongoc_client_new_from_uri(uri);
       mongoc_client_set_error_api(tf->client, MONGOC_ERROR_API_VERSION_2);
-      ASSERT(mongoc_client_set_oidc_callback(tf->client, oidc_callback));
+      if (tf->using_callback) {
+         ASSERT(mongoc_client_set_oidc_callback(tf->client, oidc_callback));
+      }
    }
 
    mongoc_oidc_callback_destroy(oidc_callback);
@@ -197,15 +227,19 @@ test_oidc_works(void *use_pool_void)
    bool use_pool = *(bool *)use_pool_void;
    test_fixture_t *tf = test_fixture_new((test_config_t){.use_pool = use_pool});
 
-   // Expect callback not-yet called:
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 0);
+   if (tf->using_callback) {
+      // Expect callback not-yet called:
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 0);
+   }
 
    // Expect auth to succeed:
    bson_error_t error;
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was called:
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   if (tf->using_callback) {
+      // Expect callback was called:
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -324,8 +358,10 @@ test_oidc_delays(void *use_pool_void)
    bson_error_t error;
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was called twice: once for initial auth, once for reauth.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice: once for initial auth, once for reauth.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
 
    int64_t end_us = bson_get_monotonic_time();
 
@@ -355,8 +391,10 @@ test_oidc_reauth_twice(void *use_pool_void)
    ASSERT(!do_find(tf->client, &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER, MONGOC_SERVER_ERR_REAUTHENTICATION_REQUIRED, "failpoint");
 
-   // Expect callback was called twice: once for initial auth, once for reauth.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice: once for initial auth, once for reauth.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
 
    int64_t end_us = bson_get_monotonic_time();
 
@@ -385,8 +423,10 @@ test_oidc_reauth_error_v1(void *use_pool_void)
    bson_error_t error;
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was called twice: once for initial auth, once for reauth.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice: once for initial auth, once for reauth.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
 
    int64_t end_us = bson_get_monotonic_time();
 
@@ -406,8 +446,10 @@ PROSE_TEST(1, 1, "Callback is called during authentication")
    bson_error_t error;
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was called.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   if (tf->using_callback) {
+      // Expect callback was called.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -442,8 +484,10 @@ PROSE_TEST(1, 2, "Callback is called once for multiple connections")
       mcommon_thread_join(threads[i]);
    }
 
-   // Expect callback was called.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   if (tf->using_callback) {
+      // Expect callback was called.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -549,8 +593,10 @@ PROSE_TEST(3, 1, "Authentication failure with cached tokens fetch a new token an
    bson_error_t error;
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was called.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   if (tf->using_callback) {
+      // Expect callback was called.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -565,9 +611,6 @@ PROSE_TEST(3, 2, "Authentication failures without cached tokens return an error"
    bson_error_t error;
    ASSERT(!do_find(tf->client, &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER, 18, "Authentication failed");
-
-   // Expect callback was called.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
 
    test_fixture_destroy(tf);
 }
@@ -589,14 +632,18 @@ PROSE_TEST(3, 3, "Unexpected error code does not clear the cache")
    ASSERT(!do_find(tf->client, &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER, 20, "Failing command");
 
-   // Expect callback was called.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   if (tf->using_callback) {
+      // Expect callback was called.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   }
 
    // Expect second attempt succeeds:
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was not called again.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   if (tf->using_callback) {
+      // Expect callback was not called again.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -617,8 +664,10 @@ PROSE_TEST(4, 1, "Reauthentication Succeeds")
    bson_error_t error;
    ASSERT_OR_PRINT(do_find(tf->client, &error), error);
 
-   // Expect callback was called twice: once for initial auth, once for reauth.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice: once for initial auth, once for reauth.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -642,8 +691,10 @@ PROSE_TEST(4, 2, "Read Commands Fail If Reauthentication Fails")
    ASSERT(!do_find(tf->client, &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER, 18, "Authentication failed");
 
-   // Expect callback was called twice: once for initial auth, once for reauth.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice: once for initial auth, once for reauth.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
    test_fixture_destroy(tf);
 }
 
@@ -683,8 +734,10 @@ PROSE_TEST(4, 3, "Write Commands Fail If Reauthentication Fails")
    ASSERT(!do_insert(tf->client, &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER, 18, "Authentication failed");
 
-   // Expect callback was called twice: once for initial auth, once for reauth.
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice: once for initial auth, once for reauth.
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
    test_fixture_destroy(tf);
 }
 
@@ -724,8 +777,10 @@ PROSE_TEST(4, 4, "Speculative Authentication should be ignored on Reauthenticati
       // Expect auth to succeed:
       ASSERT_OR_PRINT(do_insert(tf->client, &error), error);
 
-      // Expect callback was not called:
-      ASSERT_CMPINT(tf->ctx.call_count, ==, 0);
+      if (tf->using_callback) {
+         // Expect callback was not called:
+         ASSERT_CMPINT(tf->ctx.call_count, ==, 0);
+      }
 
       // Expect two commands sent: hello + insert.
       // Expect saslStart was not sent.
@@ -747,8 +802,10 @@ PROSE_TEST(4, 4, "Speculative Authentication should be ignored on Reauthenticati
       // Expect auth to succeed (after reauth):
       ASSERT_OR_PRINT(do_insert(tf->client, &error), error);
 
-      // Expect callback was called:
-      ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+      if (tf->using_callback) {
+         // Expect callback was called:
+         ASSERT_CMPINT(tf->ctx.call_count, ==, 1);
+      }
 
       // Check that three commands were sent: insert (fails) + saslStart + insert (succeeds).
       // TODO(CDRIVER-2669): check command started events instead.
@@ -814,8 +871,10 @@ PROSE_TEST(4, 5, "Reauthentication Succeeds when a Session is involved")
    bson_error_t error;
    ASSERT_OR_PRINT(do_find_with_session(tf->client, &error), error);
 
-   // Expect callback was called twice:
-   ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   if (tf->using_callback) {
+      // Expect callback was called twice:
+      ASSERT_CMPINT(tf->ctx.call_count, ==, 2);
+   }
 
    test_fixture_destroy(tf);
 }
@@ -874,23 +933,17 @@ PROSE_TEST(5, 2, "Azure With Bad Username")
    mongoc_uri_destroy(uri);
 }
 
-static bool
-is_testing_azure_oidc(void)
-{
-   char *token_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
-   if (!token_resource) {
-      return false;
-   }
-   bson_free(token_resource);
-   return true;
-}
-
 static int
 skip_if_no_oidc(void)
 {
+   return test_framework_is_oidc() ? 1 : 0;
+}
+
+static int
+skip_if_no_oidc_callback(void)
+{
    if (is_testing_azure_oidc()) {
-      // OIDC tests asserting callback counts cannot run when callback is set by environment.
-      return 0;
+      return 0; // Not using callback.
    }
    return test_framework_is_oidc() ? 1 : 0;
 }
@@ -926,24 +979,24 @@ test_oidc_auth_install(TestSuite *suite)
 
    TestSuite_AddFull(suite, "/oidc/prose/1.2", test_oidc_prose_1_2, NULL, NULL, skip_if_no_oidc);
 
-   TestSuite_AddFull(suite, "/oidc/prose/2.1/single", test_oidc_prose_2_1, NULL, &single, skip_if_no_oidc);
-   TestSuite_AddFull(suite, "/oidc/prose/2.1/pooled", test_oidc_prose_2_1, NULL, &pooled, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/2.1/single", test_oidc_prose_2_1, NULL, &single, skip_if_no_oidc_callback);
+   TestSuite_AddFull(suite, "/oidc/prose/2.1/pooled", test_oidc_prose_2_1, NULL, &pooled, skip_if_no_oidc_callback);
 
-   TestSuite_AddFull(suite, "/oidc/prose/2.2/single", test_oidc_prose_2_2, NULL, &single, skip_if_no_oidc);
-   TestSuite_AddFull(suite, "/oidc/prose/2.2/pooled", test_oidc_prose_2_2, NULL, &pooled, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/2.2/single", test_oidc_prose_2_2, NULL, &single, skip_if_no_oidc_callback);
+   TestSuite_AddFull(suite, "/oidc/prose/2.2/pooled", test_oidc_prose_2_2, NULL, &pooled, skip_if_no_oidc_callback);
 
-   TestSuite_AddFull(suite, "/oidc/prose/2.3/single", test_oidc_prose_2_3, NULL, &single, skip_if_no_oidc);
-   TestSuite_AddFull(suite, "/oidc/prose/2.3/pooled", test_oidc_prose_2_3, NULL, &pooled, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/2.3/single", test_oidc_prose_2_3, NULL, &single, skip_if_no_oidc_callback);
+   TestSuite_AddFull(suite, "/oidc/prose/2.3/pooled", test_oidc_prose_2_3, NULL, &pooled, skip_if_no_oidc_callback);
 
-   TestSuite_AddFull(suite, "/oidc/prose/2.4", test_oidc_prose_2_4, NULL, NULL, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/2.4", test_oidc_prose_2_4, NULL, NULL, skip_if_no_oidc_callback);
 
-   TestSuite_AddFull(suite, "/oidc/prose/2.5", test_oidc_prose_2_5, NULL, NULL, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/2.5", test_oidc_prose_2_5, NULL, NULL, skip_if_no_oidc_callback);
 
    TestSuite_AddFull(suite, "/oidc/prose/3.1/single", test_oidc_prose_3_1, NULL, &single, skip_if_no_oidc);
    TestSuite_AddFull(suite, "/oidc/prose/3.1/pooled", test_oidc_prose_3_1, NULL, &pooled, skip_if_no_oidc);
 
-   TestSuite_AddFull(suite, "/oidc/prose/3.2/single", test_oidc_prose_3_2, NULL, &single, skip_if_no_oidc);
-   TestSuite_AddFull(suite, "/oidc/prose/3.2/pooled", test_oidc_prose_3_2, NULL, &pooled, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/3.2/single", test_oidc_prose_3_2, NULL, &single, skip_if_no_oidc_callback);
+   TestSuite_AddFull(suite, "/oidc/prose/3.2/pooled", test_oidc_prose_3_2, NULL, &pooled, skip_if_no_oidc_callback);
 
    TestSuite_AddFull(suite, "/oidc/prose/3.3/single", test_oidc_prose_3_3, NULL, &single, skip_if_no_oidc);
    TestSuite_AddFull(suite, "/oidc/prose/3.3/pooled", test_oidc_prose_3_3, NULL, &pooled, skip_if_no_oidc);
@@ -951,11 +1004,11 @@ test_oidc_auth_install(TestSuite *suite)
    TestSuite_AddFull(suite, "/oidc/prose/4.1/single", test_oidc_prose_4_1, NULL, &single, skip_if_no_oidc);
    TestSuite_AddFull(suite, "/oidc/prose/4.1/pooled", test_oidc_prose_4_1, NULL, &pooled, skip_if_no_oidc);
 
-   TestSuite_AddFull(suite, "/oidc/prose/4.2/single", test_oidc_prose_4_2, NULL, &single, skip_if_no_oidc);
-   TestSuite_AddFull(suite, "/oidc/prose/4.2/pooled", test_oidc_prose_4_2, NULL, &pooled, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/4.2/single", test_oidc_prose_4_2, NULL, &single, skip_if_no_oidc_callback);
+   TestSuite_AddFull(suite, "/oidc/prose/4.2/pooled", test_oidc_prose_4_2, NULL, &pooled, skip_if_no_oidc_callback);
 
-   TestSuite_AddFull(suite, "/oidc/prose/4.3/single", test_oidc_prose_4_3, NULL, &single, skip_if_no_oidc);
-   TestSuite_AddFull(suite, "/oidc/prose/4.3/pooled", test_oidc_prose_4_3, NULL, &pooled, skip_if_no_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/4.3/single", test_oidc_prose_4_3, NULL, &single, skip_if_no_oidc_callback);
+   TestSuite_AddFull(suite, "/oidc/prose/4.3/pooled", test_oidc_prose_4_3, NULL, &pooled, skip_if_no_oidc_callback);
 
    TestSuite_AddFull(suite, "/oidc/prose/4.4", test_oidc_prose_4_4, NULL, NULL, skip_if_no_oidc);
 
