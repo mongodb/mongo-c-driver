@@ -269,8 +269,8 @@ test_oidc_bad_config(void *unused)
 
    // Expect error if callback is set twice on pool:
    {
-      mongoc_client_pool_t *pool =
-         mongoc_client_pool_new(mongoc_uri_new("mongodb://localhost/?authMechanism=MONGODB-OIDC"));
+      mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost/?authMechanism=MONGODB-OIDC");
+      mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       ASSERT(mongoc_client_pool_set_oidc_callback(pool, cb));
       capture_logs(true);
@@ -278,6 +278,29 @@ test_oidc_bad_config(void *unused)
       ASSERT_CAPTURED_LOG("oidc", MONGOC_LOG_LEVEL_ERROR, "called once");
       mongoc_oidc_callback_destroy(cb);
       mongoc_client_pool_destroy(pool);
+      mongoc_uri_destroy(uri);
+   }
+
+   // Expect error on unsupported ENVIRONMENT passed (URI string)
+   {
+      mongoc_uri_t *uri = mongoc_uri_new_with_error(
+         "mongodb://localhost:27017/?authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:bad", &error);
+      ASSERT(!uri);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unrecognized ENVIRONMENT");
+      mongoc_uri_destroy(uri);
+   }
+
+   // Expect error on unsupported ENVIRONMENT passed (URI setter)
+   {
+      mongoc_uri_t *uri = mongoc_uri_new_with_error("mongodb://localhost:27017/?authMechanism=MONGODB-OIDC", &error);
+      ASSERT_OR_PRINT(uri, error);
+      // URI setter skips validation in URI string parsing, but is validated during client construction.
+      mongoc_uri_set_mechanism_properties(uri, tmp_bson(BSON_STR({"ENVIRONMENT" : "bad"})));
+      mongoc_client_t *client = mongoc_client_new_from_uri_with_error(uri, &error);
+      ASSERT(!client);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "unrecognized ENVIRONMENT");
+      mongoc_client_destroy(client);
+      mongoc_uri_destroy(uri);
    }
 }
 
@@ -797,10 +820,85 @@ PROSE_TEST(4, 5, "Reauthentication Succeeds when a Session is involved")
    test_fixture_destroy(tf);
 }
 
+PROSE_TEST(5, 1, "Azure With No Username")
+{
+   BSON_UNUSED(use_pool_void);
+   // Create URI:
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost:27017/?retryReads=false");
+   {
+      mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
+      bson_t props = BSON_INITIALIZER;
+      BSON_APPEND_UTF8(&props, "ENVIRONMENT", "azure");
+      char *token_resource = test_framework_getenv_required("MONGOC_AZURE_RESOURCE");
+      BSON_APPEND_UTF8(&props, "TOKEN_RESOURCE", token_resource);
+      bson_free(token_resource);
+      mongoc_uri_set_mechanism_properties(uri, &props);
+      bson_destroy(&props);
+   }
+
+   bson_error_t error;
+   mongoc_client_t *client = mongoc_client_new_from_uri_with_error(uri, &error);
+   ASSERT_OR_PRINT(client, error);
+
+   // Expect auth to succeed:
+   ASSERT_OR_PRINT(do_find(client, &error), error);
+
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
+PROSE_TEST(5, 2, "Azure With Bad Username")
+{
+   BSON_UNUSED(use_pool_void);
+   // Create URI:
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://bad@localhost:27017/?retryReads=false");
+   {
+      mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
+      bson_t props = BSON_INITIALIZER;
+      BSON_APPEND_UTF8(&props, "ENVIRONMENT", "azure");
+      char *token_resource = test_framework_getenv_required("MONGOC_AZURE_RESOURCE");
+      BSON_APPEND_UTF8(&props, "TOKEN_RESOURCE", token_resource);
+      bson_free(token_resource);
+      mongoc_uri_set_mechanism_properties(uri, &props);
+      bson_destroy(&props);
+   }
+
+   bson_error_t error;
+   mongoc_client_t *client = mongoc_client_new_from_uri_with_error(uri, &error);
+   ASSERT_OR_PRINT(client, error);
+
+   // Expect auth to fail:
+   ASSERT(!do_find(client, &error));
+
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
+static bool
+is_testing_azure_oidc(void)
+{
+   char *token_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
+   if (!token_resource) {
+      return false;
+   }
+   bson_free(token_resource);
+   return true;
+}
+
 static int
 skip_if_no_oidc(void)
 {
+   if (is_testing_azure_oidc()) {
+      // OIDC tests asserting callback counts cannot run when callback is set by environment.
+      return 0;
+   }
    return test_framework_is_oidc() ? 1 : 0;
+}
+
+static int
+skip_if_no_azure_oidc(void)
+{
+   return is_testing_azure_oidc() ? 1 : 0;
 }
 
 void
@@ -863,4 +961,10 @@ test_oidc_auth_install(TestSuite *suite)
 
    TestSuite_AddFull(suite, "/oidc/prose/4.5/single", test_oidc_prose_4_5, NULL, &single, skip_if_no_oidc);
    TestSuite_AddFull(suite, "/oidc/prose/4.5/pooled", test_oidc_prose_4_5, NULL, &pooled, skip_if_no_oidc);
+
+   TestSuite_AddFull(suite, "/oidc/prose/5.1/single", test_oidc_prose_5_1, NULL, &single, skip_if_no_azure_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/5.1/pooled", test_oidc_prose_5_1, NULL, &pooled, skip_if_no_azure_oidc);
+
+   TestSuite_AddFull(suite, "/oidc/prose/5.2/single", test_oidc_prose_5_2, NULL, &single, skip_if_no_azure_oidc);
+   TestSuite_AddFull(suite, "/oidc/prose/5.2/pooled", test_oidc_prose_5_2, NULL, &pooled, skip_if_no_azure_oidc);
 }

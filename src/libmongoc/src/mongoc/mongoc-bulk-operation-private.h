@@ -19,6 +19,10 @@
 #ifndef MONGOC_BULK_OPERATION_PRIVATE_H
 #define MONGOC_BULK_OPERATION_PRIVATE_H
 
+#include <mongoc/mongoc-bulk-operation.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-write-command-private.h>
 

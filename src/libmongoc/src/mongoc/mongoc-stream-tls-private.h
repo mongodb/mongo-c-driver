@@ -19,6 +19,10 @@
 #ifndef MONGOC_STREAM_TLS_PRIVATE_H
 #define MONGOC_STREAM_TLS_PRIVATE_H
 
+#include <mongoc/mongoc-stream-tls.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-ssl.h>
 #include <mongoc/mongoc-stream.h>
 

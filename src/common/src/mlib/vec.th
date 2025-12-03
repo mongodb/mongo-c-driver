@@ -396,6 +396,8 @@ fn(init_copy(VecName *dst_vec, VecName const *src_vec)) mlib_noexcept
    if (!fn(reserve(&tmp, src_vec->size))) {
       // We failed to reserve capacity in the new vector
       fn(destroy(&tmp));
+      // Always leave `dst_vec` in an initialized state.
+      *dst_vec = (VecName){NULL, 0, 0};
       return false;
    }
    // Copy everything into the destination element-by-element
@@ -412,6 +414,8 @@ fn(init_copy(VecName *dst_vec, VecName const *src_vec)) mlib_noexcept
          if (!VecCopyElement((out_iter), (in_iter))) {
             // Failed copying here. Undo everything by destroying the temporary
             fn(destroy(&tmp));
+            // Always leave `dst_vec` in an initialized state.
+            *dst_vec = (VecName){NULL, 0, 0};
             return false;
          }
          // Update the size of the temporary vec to record that it is holding the new

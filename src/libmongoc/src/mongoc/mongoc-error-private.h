@@ -19,7 +19,10 @@
 #ifndef MONGOC_ERROR_PRIVATE_H
 #define MONGOC_ERROR_PRIVATE_H
 
-#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-error.h> // IWYU pragma: export
+
+//
+
 #include <mongoc/mongoc-server-description.h>
 
 #include <bson/bson.h>
