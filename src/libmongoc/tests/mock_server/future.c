@@ -396,6 +396,26 @@ future_get_mongoc_remove_flags_t (future_t *future)
    FUTURE_TIMEOUT_ABORT;
 }
 
+mongoc_bulkwrite_ptr
+future_get_mongoc_bulkwrite_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_bulkwrite_ptr (&future->return_value);
+   }
+
+   FUTURE_TIMEOUT_ABORT;
+}
+
+mongoc_bulkwritereturn_t
+future_get_mongoc_bulkwritereturn_t (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_bulkwritereturn_t (&future->return_value);
+   }
+
+   FUTURE_TIMEOUT_ABORT;
+}
+
 const_mongoc_find_and_modify_opts_ptr
 future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future)
 {
@@ -451,6 +471,16 @@ future_get_mongoc_index_model_t_ptr_const_ptr (future_t *future)
 {
    if (future_wait (future)) {
       return future_value_get_mongoc_index_model_t_ptr_const_ptr (&future->return_value);
+   }
+
+   FUTURE_TIMEOUT_ABORT;
+}
+
+const_mongoc_bulkwriteopts_ptr
+future_get_const_mongoc_bulkwriteopts_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_mongoc_bulkwriteopts_ptr (&future->return_value);
    }
 
    FUTURE_TIMEOUT_ABORT;
