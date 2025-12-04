@@ -2502,7 +2502,8 @@ void
 mongoc_cluster_reset_sockettimeoutms(mongoc_cluster_t *cluster)
 {
    BSON_ASSERT_PARAM(cluster);
-   cluster->sockettimeoutms = mongoc_uri_get_sockettimeoutms_option(cluster->uri);
+   cluster->sockettimeoutms =
+      mongoc_uri_get_option_as_int32(cluster->uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 }
 
 static uint32_t

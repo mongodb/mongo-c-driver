@@ -2573,40 +2573,27 @@ mongoc_uri_get_compressors(const mongoc_uri_t *uri)
 }
 
 
+/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
 int32_t
-_mongoc_uri_get_option_as_int32_0_is_valid(const mongoc_uri_t *uri, const char *option, int32_t fallback)
+mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri)
 {
    const bson_t *options;
    bson_iter_t iter;
-   int32_t retval = fallback;
+   int32_t retval = MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS;
 
-   if ((options = mongoc_uri_get_options(uri)) && bson_iter_init_find_case(&iter, options, option) &&
+   if ((options = mongoc_uri_get_options(uri)) && bson_iter_init_find_case(&iter, options, "localthresholdms") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
       retval = bson_iter_int32(&iter);
 
       if (retval < 0) {
-         MONGOC_WARNING("Invalid %s: %d", option, retval);
-         retval = fallback;
+         MONGOC_WARNING("Invalid localThresholdMS: %d", retval);
+         retval = MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS;
       }
    }
 
    return retval;
 }
 
-/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
-int32_t
-mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri)
-{
-   return _mongoc_uri_get_option_as_int32_0_is_valid(
-      uri, MONGOC_URI_LOCALTHRESHOLDMS, MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
-}
-
-/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
-int32_t
-mongoc_uri_get_sockettimeoutms_option(const mongoc_uri_t *uri)
-{
-   return _mongoc_uri_get_option_as_int32_0_is_valid(uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
-}
 
 const char *
 mongoc_uri_get_srv_hostname(const mongoc_uri_t *uri)

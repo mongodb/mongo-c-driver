@@ -55,9 +55,6 @@ _mongoc_uri_apply_query_string(mongoc_uri_t *uri, mstr_view options, bool from_d
 int32_t
 mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri);
 
-int32_t
-mongoc_uri_get_sockettimeoutms_option(const mongoc_uri_t *uri);
-
 bool
 _mongoc_uri_requires_auth_negotiation(const mongoc_uri_t *uri);
 
