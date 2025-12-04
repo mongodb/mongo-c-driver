@@ -214,7 +214,7 @@ mcd_azure_access_token_from_imds(mcd_azure_access_token *const out,
       goto fail;
    }
 
-   mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, ==, (mlib_time_point){0})
+   mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, !=, (mlib_time_point){0})
                          ? opt_timer
                          : mlib_expires_after(mlib_duration(3, s)); // Default 3 second timeout.
 
