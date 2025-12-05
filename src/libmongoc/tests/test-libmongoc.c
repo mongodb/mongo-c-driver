@@ -427,6 +427,42 @@ _uri_from_env(void)
    return NULL;
 }
 
+// get_first_srv_host_and_port does SRV lookup on the test URI and returns the first host and port.
+// Returns NULL if no mongodb+srv URI is configured.
+static char *
+test_framework_get_host_and_port_srv(void)
+{
+   mongoc_uri_t *uri = _uri_from_env();
+   if (!uri) {
+      return NULL;
+   }
+
+   const char *srv_hostname = mongoc_uri_get_srv_hostname(uri);
+   if (!srv_hostname) {
+      mongoc_uri_destroy(uri);
+      return NULL;
+   }
+
+   // Do SRV lookup:
+   char *first_host_and_port;
+   {
+      char *prefixed_hostname = bson_strdup_printf("_%s._tcp.%s", mongoc_uri_get_srv_service_name(uri), srv_hostname);
+      mongoc_rr_data_t rr_data = {0};
+      bson_error_t error;
+      bool ok = _mongoc_client_get_rr(
+         prefixed_hostname, MONGOC_RR_SRV, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, true /* prefer TCP */, &error);
+      ASSERT_OR_PRINT(ok, error);
+      ASSERT(rr_data.hosts);
+      bson_free(prefixed_hostname);
+
+      first_host_and_port = bson_strdup(rr_data.hosts->host_and_port);
+      _mongoc_host_list_destroy_all(rr_data.hosts);
+   }
+
+   mongoc_uri_destroy(uri);
+   return first_host_and_port;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -514,6 +550,10 @@ test_framework_get_port(void)
 char *
 test_framework_get_host_and_port(void)
 {
+   char *from_srv = test_framework_get_host_and_port_srv();
+   if (from_srv) {
+      return from_srv;
+   }
    char *host = test_framework_get_host();
    uint16_t port = test_framework_get_port();
    char *host_and_port;
