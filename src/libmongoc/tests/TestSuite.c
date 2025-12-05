@@ -794,7 +794,6 @@ static void
 TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
                           FILE *stream)     /* IN */
 {
-   char *udspath = test_framework_get_unix_domain_socket_path_escaped();
    bool ssl = test_framework_get_ssl();
 
    ASSERT(suite);
@@ -805,7 +804,6 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
            "  \"auth\": { \"user\": \"%s\", \"pass\": \"%s\" }, \n"
            "  \"addr\": { \"uri\": \"%s\" },\n"
            "  \"gssapi\": { \"host\": \"%s\", \"user\": \"%s\" }, \n"
-           "  \"uds\": \"%s\", \n"
            "  \"compressors\": \"%s\", \n"
            "  \"SSL\": {\n"
            "    \"enabled\": %s,\n"
@@ -834,7 +832,6 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
            egetenv("MONGOC_TEST_URI") ? "(set)" : "(unset)",
            egetenv("MONGOC_TEST_GSSAPI_HOST") ? "(set)" : "(unset)",
            egetenv("MONGOC_TEST_GSSAPI_USER") ? "(set)" : "(unset)",
-           udspath,
            egetenv("MONGOC_TEST_COMPRESSORS"),
            ssl ? "true" : "false",
            test_framework_getenv_bool("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION") ? "true" : "false",
@@ -852,8 +849,6 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
            (suite->flags & TEST_TRACE) ? "true" : "false",
            getenv_or("MONGODB_API_VERSION", "null"));
 
-   bson_free(hostname);
-   bson_free(udspath);
 
    fflush(stream);
 }
