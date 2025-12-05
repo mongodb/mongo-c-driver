@@ -121,7 +121,7 @@ _mongoc_stream_tls_secure_transport_write(mongoc_stream_t *stream, char *buf, si
    ENTRY;
    BSON_ASSERT(secure_transport);
 
-   if (tls->timeout_msec >= 0) {
+   if (tls->timeout_msec > 0) {
       expire = bson_get_monotonic_time() + (tls->timeout_msec * 1000UL);
    }
 
@@ -300,7 +300,7 @@ _mongoc_stream_tls_secure_transport_readv(
 
    tls->timeout_msec = timeout_msec;
 
-   if (timeout_msec >= 0) {
+   if (timeout_msec > 0) {
       expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
    }
 

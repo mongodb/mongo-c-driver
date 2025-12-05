@@ -3836,6 +3836,46 @@ test_killCursors(void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_socketTimeoutMS_zero(void)
+{
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 0);
+
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+
+   // Configure a failpoint to block on "ping" for 500ms.
+   bson_error_t error;
+   bool ok = mongoc_client_command_simple(
+      client,
+      "admin",
+      tmp_bson(BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"failCommands" : ["ping"], "blockTimeMS" : 500, "blockConnection" : true}
+      })),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   // Expect "ping" to take 500ms.
+   const mlib_time_point start = mlib_now();
+
+   // Send "ping":
+   ok = mongoc_client_command_simple(client, "admin", tmp_bson(BSON_STR({"ping" : 1})), NULL, NULL, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   const mlib_time_point end = mlib_now();
+
+   const mlib_duration elapsed = mlib_time_difference(end, start);
+
+   ASSERT_CMPINT64(mlib_microseconds_count(elapsed), >=, mlib_microseconds_count(mlib_duration(500, ms)));
+
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
 void
 test_client_install(TestSuite *suite)
 {
@@ -4051,4 +4091,5 @@ test_client_install(TestSuite *suite)
                      test_framework_skip_if_no_server_ssl);
 #endif
    TestSuite_AddLive(suite, "/Client/killCursors", test_killCursors);
+   TestSuite_AddLive(suite, "/Client/socketTimeoutMS_zero", test_socketTimeoutMS_zero);
 }
