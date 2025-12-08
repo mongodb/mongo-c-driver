@@ -2760,7 +2760,7 @@ test_mongoc_uri_dns_options(void)
 
    // test authSource in TXT does not warn when authSource is already set by `mongoc_uri_set_auth_source`.
    {
-      uri = mongoc_uri_new("mongodb+srv://host");
+      uri = mongoc_uri_new("mongodb+srv://a.b.c");
       capture_logs(true);
       ASSERT(mongoc_uri_set_auth_source(uri, "db1"));
       ASSERT(_mongoc_uri_apply_query_string(uri, mstr_cstring("authSource=db2"), true, NULL));
