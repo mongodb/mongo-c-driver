@@ -33,6 +33,20 @@
 #define MONGOC_DEFAULT_PORT 27017
 #endif
 
+#ifndef MONGOC_DEFAULT_SOCKETTIMEOUTMS
+/*
+ * NOTE: The default socket timeout for connections is 5 minutes. This
+ *       means that if your MongoDB server dies or becomes unavailable
+ *       it will take 5 minutes to detect this.
+ *
+ *       You can change this by providing sockettimeoutms= in your
+ *       connection URI.
+ *
+ *       This default may be changed to 0 (unlimited timeout)
+ */
+#define MONGOC_DEFAULT_SOCKETTIMEOUTMS (1000L * 60L * 5L)
+#endif
+
 #define MONGOC_URI_APPNAME "appname"
 #define MONGOC_URI_AUTHMECHANISM "authmechanism"
 #define MONGOC_URI_AUTHMECHANISMPROPERTIES "authmechanismproperties"
