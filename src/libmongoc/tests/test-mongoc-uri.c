@@ -2757,6 +2757,18 @@ test_mongoc_uri_dns_options(void)
    }
 
    mongoc_uri_destroy(uri);
+
+   // test authSource in TXT does not warn when authSource is already set by `mongoc_uri_set_auth_source`.
+   {
+      uri = mongoc_uri_new("mongodb+srv://host");
+      capture_logs(true);
+      ASSERT(mongoc_uri_set_auth_source(uri, "db1"));
+      ASSERT(_mongoc_uri_apply_query_string(uri, mstr_cstring("authSource=db2"), true, NULL));
+      ASSERT_NO_CAPTURED_LOGS("parsing authSource from TXT");
+      capture_logs(false);
+      ASSERT_MATCH(mongoc_uri_get_credentials(uri), "{'authsource': 'db1'}");
+      mongoc_uri_destroy(uri);
+   }
 }
 
 
