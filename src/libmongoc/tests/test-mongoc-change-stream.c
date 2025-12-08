@@ -639,6 +639,11 @@ test_change_stream_resumable_error(void)
    reply_to_request_with_hang_up(request);
    request_destroy(request);
 
+   // Expect a "killCursors" command.
+   request = mock_server_receives_msg(
+      server, MONGOC_QUERY_NONE, tmp_bson("{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
+   reply_to_request_with_ok_and_destroy(request);
+
    /* Retry command */
    request = mock_server_receives_msg(server, MONGOC_MSG_NONE, watch_cmd);
    BSON_ASSERT(request);
@@ -1314,6 +1319,10 @@ _test_resume(const char *opts,
    reply_to_request_with_hang_up(request);
    request_destroy(request);
    /* since the server closed the connection, a resume is attempted. */
+   request = mock_server_receives_msg(
+      server, MONGOC_QUERY_NONE, tmp_bson("{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
+   reply_to_request_with_ok_and_destroy(request);
+
    request = mock_server_receives_msg(server,
                                       MONGOC_QUERY_NONE,
                                       tmp_bson("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
