@@ -326,7 +326,11 @@ To run test cases with large allocations, set:
 
 All tests should pass before submitting a patch.
 
-## Configuring the test runner
+#### Test logging
+
+Though Evergreen logs are private, avoid logging any sensitive data. This is intended to limit exposure of test credentials (see [DRIVERS-2825](https://jira.mongodb.org/browse/DRIVERS-2825)).
+
+#### Configuring the test runner
 
 The test runner can be configured with command-line options. Run `test-libmongoc
 --help` for details.
