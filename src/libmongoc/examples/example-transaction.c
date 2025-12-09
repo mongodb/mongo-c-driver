@@ -41,9 +41,8 @@ main(int argc, char *argv[])
 
    uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      MONGOC_ERROR("failed to parse URI: %s\n"
-                   "error message:       %s\n",
-                   uri_string,
+      MONGOC_ERROR("failed to parse URI:\n"
+                   "error message: %s\n",
                    error.message);
       goto done;
    }

@@ -490,7 +490,7 @@ test_framework_get_host(void)
    if (env_uri) {
       /* choose first host */
       hosts = mongoc_uri_get_hosts(env_uri);
-      ASSERT_WITH_MSG(hosts, "could not obtain hosts from URI [%s]", mongoc_uri_get_string(env_uri));
+      ASSERT_WITH_MSG(hosts, "could not obtain hosts from URI");
       host = bson_strdup(hosts->host);
       mongoc_uri_destroy(env_uri);
       return host;
@@ -926,10 +926,7 @@ call_hello_with_host_and_port(const char *host_and_port, bson_t *reply)
 
       if (!mongoc_client_command_simple(
              client, "admin", tmp_bson("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, reply, &error)) {
-         test_error("error calling legacy hello: '%s'\n"
-                    "URI = %s",
-                    error.message,
-                    uri_str);
+         test_error("error calling legacy hello: '%s'\n", error.message);
       }
    }
 
@@ -987,7 +984,7 @@ uri_str_has_db(mcommon_string_t *uri_string)
    const bool is_standard = strstr(str, standard) == str;
    const bool is_srv = strstr(str, srv) == str;
 
-   ASSERT_WITH_MSG(is_standard || is_srv, "[%s] does not start with [%s] or [%s]", uri_string->str, standard, srv);
+   ASSERT_WITH_MSG(is_standard || is_srv, "URI does not start with [%s] or [%s]", standard, srv);
 
    if (is_standard) {
       return strchr(str + strlen(standard), '/') != NULL;
@@ -1230,10 +1227,7 @@ test_framework_uri_apply_multi_mongos(mongoc_uri_t *uri, bool use_multi, bson_er
 
       hosts = mongoc_uri_get_hosts(uri);
       if (hosts->next) {
-         test_set_error(error,
-                        "useMultiMongoses is false, so expected single "
-                        "host listed, but got: %s",
-                        mongoc_uri_get_string(uri));
+         test_set_error(error, "useMultiMongoses is false, so expected single host listed, but got multiple");
          goto done;
       }
    }
