@@ -1,0 +1,663 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-56KD6L3MDX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-56KD6L3MDX');
+</script>
+<link rel="canonical" href="https://www.mongoc.org/libbson/current/bson_error_reset"/><link rel="search" title="Search" href="search.html" /><link rel="next" title="bson_iter_t" href="bson_iter_t.html" /><link rel="prev" title="bson_error_clear()" href="bson_error_clear.html" />
+
+    <!-- Generated with Sphinx 8.0.2 and Furo 2023.09.10 -->
+        <title>bson_error_reset() - libbson 2.2.1</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">libbson 2.2.1</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">libbson 2.2.1</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="api.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_t.html">bson_t</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of bson_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array.html">bson_append_array()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array_begin.html">bson_append_array_begin()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array_end.html">bson_append_array_end()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_binary.html">bson_append_binary()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_binary_uninit.html">bson_append_binary_uninit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_bool.html">bson_append_bool()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_code.html">bson_append_code()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_code_with_scope.html">bson_append_code_with_scope()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_date_time.html">bson_append_date_time()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_dbpointer.html">bson_append_dbpointer()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_decimal128.html">bson_append_decimal128()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_document.html">bson_append_document()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_document_begin.html">bson_append_document_begin()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_document_end.html">bson_append_document_end()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_double.html">bson_append_double()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_int32.html">bson_append_int32()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_int64.html">bson_append_int64()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_iter.html">bson_append_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_maxkey.html">bson_append_maxkey()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_minkey.html">bson_append_minkey()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_now_utc.html">bson_append_now_utc()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_null.html">bson_append_null()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_oid.html">bson_append_oid()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_regex.html">bson_append_regex()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_regex_w_len.html">bson_append_regex_w_len()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_symbol.html">bson_append_symbol()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_time_t.html">bson_append_time_t()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_timestamp.html">bson_append_timestamp()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_timeval.html">bson_append_timeval()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_undefined.html">bson_append_undefined()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_utf8.html">bson_append_utf8()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_value.html">bson_append_value()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_as_canonical_extended_json.html">bson_array_as_canonical_extended_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_as_legacy_extended_json.html">bson_array_as_legacy_extended_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_as_relaxed_extended_json.html">bson_array_as_relaxed_extended_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_as_canonical_extended_json.html">bson_as_canonical_extended_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_as_json_with_opts.html">bson_as_json_with_opts()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_as_legacy_extended_json.html">bson_as_legacy_extended_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_as_relaxed_extended_json.html">bson_as_relaxed_extended_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_compare.html">bson_compare()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_concat.html">bson_concat()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_copy.html">bson_copy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_copy_to.html">bson_copy_to()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_copy_to_excluding_noinit.html">bson_copy_to_excluding_noinit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_copy_to_excluding_noinit_va.html">bson_copy_to_excluding_noinit_va()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_count_keys.html">bson_count_keys()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_destroy.html">bson_destroy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_destroy_with_steal.html">bson_destroy_with_steal()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_equal.html">bson_equal()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_get_data.html">bson_get_data()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_has_field.html">bson_has_field()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_init.html">bson_init()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_init_from_json.html">bson_init_from_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_init_static.html">bson_init_static()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_mode_t.html">bson_json_mode_t</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_json_opts_t.html">bson_json_opts_t</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of bson_json_opts_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_json_opts_new.html">bson_json_opts_new()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_json_opts_destroy.html">bson_json_opts_destroy()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_json_opts_set_outermost_array.html">bson_json_opts_set_outermost_array()</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bson_new.html">bson_new()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_new_from_buffer.html">bson_new_from_buffer()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_new_from_data.html">bson_new_from_data()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_new_from_json.html">bson_new_from_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reinit.html">bson_reinit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reserve_buffer.html">bson_reserve_buffer()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_sized_new.html">bson_sized_new()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_steal.html">bson_steal()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_validate.html">bson_validate()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_validate_with_error.html">bson_validate_with_error()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_validate_with_error_and_offset.html">bson_validate_with_error_and_offset()</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bson_array_builder_t.html">bson_array_builder_t</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_context_t.html">bson_context_t</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><div class="visually-hidden">Toggle navigation of bson_context_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_context_destroy.html">bson_context_destroy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_context_get_default.html">bson_context_get_default()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_context_new.html">bson_context_new()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_decimal128_t.html">bson_decimal128_t</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><div class="visually-hidden">Toggle navigation of bson_decimal128_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_decimal128_from_string.html">bson_decimal128_from_string()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_decimal128_from_string_w_len.html">bson_decimal128_from_string_w_len()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_decimal128_to_string.html">bson_decimal128_to_string()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="bson_error_t.html">bson_error_t</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><div class="visually-hidden">Toggle navigation of bson_error_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bson_set_error.html">bson_set_error()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strerror_r.html">bson_strerror_r()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_error_clear.html">bson_error_clear()</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">bson_error_reset()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_iter_t.html">bson_iter_t</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><div class="visually-hidden">Toggle navigation of bson_iter_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_array.html">bson_iter_array()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_as_bool.html">bson_iter_as_bool()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_as_double.html">bson_iter_as_double()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_as_int64.html">bson_iter_as_int64()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_binary.html">bson_iter_binary()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_binary_subtype.html">bson_iter_binary_subtype()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_binary_equal.html">bson_iter_binary_equal()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_bool.html">bson_iter_bool()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_code.html">bson_iter_code()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_codewscope.html">bson_iter_codewscope()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_date_time.html">bson_iter_date_time()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_dbpointer.html">bson_iter_dbpointer()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_decimal128.html">bson_iter_decimal128()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_document.html">bson_iter_document()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_double.html">bson_iter_double()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_dup_utf8.html">bson_iter_dup_utf8()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_find.html">bson_iter_find()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_find_case.html">bson_iter_find_case()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_find_descendant.html">bson_iter_find_descendant()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_find_w_len.html">bson_iter_find_w_len()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_init.html">bson_iter_init()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_init_find.html">bson_iter_init_find()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_init_find_case.html">bson_iter_init_find_case()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_init_find_w_len.html">bson_iter_init_find_w_len()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_init_from_data.html">bson_iter_init_from_data()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_init_from_data_at_offset.html">bson_iter_init_from_data_at_offset()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_int32.html">bson_iter_int32()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_int64.html">bson_iter_int64()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_key.html">bson_iter_key()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_key_len.html">bson_iter_key_len()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_next.html">bson_iter_next()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_offset.html">bson_iter_offset()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_oid.html">bson_iter_oid()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_bool.html">bson_iter_overwrite_bool()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_binary.html">bson_iter_overwrite_binary()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_date_time.html">bson_iter_overwrite_date_time()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_decimal128.html">bson_iter_overwrite_decimal128()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_double.html">bson_iter_overwrite_double()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_int32.html">bson_iter_overwrite_int32()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_int64.html">bson_iter_overwrite_int64()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_oid.html">bson_iter_overwrite_oid()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_overwrite_timestamp.html">bson_iter_overwrite_timestamp()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_recurse.html">bson_iter_recurse()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_regex.html">bson_iter_regex()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_symbol.html">bson_iter_symbol()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_time_t.html">bson_iter_time_t()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_timestamp.html">bson_iter_timestamp()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_timeval.html">bson_iter_timeval()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_type.html">bson_iter_type()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_utf8.html">bson_iter_utf8()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_value.html">bson_iter_value()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_iter_visit_all.html">bson_iter_visit_all()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_json_reader_t.html">bson_json_reader_t</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><div class="visually-hidden">Toggle navigation of bson_json_reader_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_data_reader_ingest.html">bson_json_data_reader_ingest()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_data_reader_new.html">bson_json_data_reader_new()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_reader_destroy.html">bson_json_reader_destroy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_reader_new.html">bson_json_reader_new()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_reader_new_from_fd.html">bson_json_reader_new_from_fd()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_reader_new_from_file.html">bson_json_reader_new_from_file()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_json_reader_read.html">bson_json_reader_read()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_oid_t.html">bson_oid_t</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><div class="visually-hidden">Toggle navigation of bson_oid_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_compare.html">bson_oid_compare()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_compare_unsafe.html">bson_oid_compare_unsafe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_copy.html">bson_oid_copy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_copy_unsafe.html">bson_oid_copy_unsafe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_equal.html">bson_oid_equal()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_equal_unsafe.html">bson_oid_equal_unsafe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_get_time_t.html">bson_oid_get_time_t()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_get_time_t_unsafe.html">bson_oid_get_time_t_unsafe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_hash.html">bson_oid_hash()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_hash_unsafe.html">bson_oid_hash_unsafe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_init.html">bson_oid_init()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_init_from_data.html">bson_oid_init_from_data()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_init_from_string.html">bson_oid_init_from_string()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_init_from_string_unsafe.html">bson_oid_init_from_string_unsafe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_is_valid.html">bson_oid_is_valid()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_oid_to_string.html">bson_oid_to_string()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_reader_t.html">bson_reader_t</a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><div class="visually-hidden">Toggle navigation of bson_reader_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_destroy.html">bson_reader_destroy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_destroy_func_t.html">bson_reader_destroy_func_t</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_new_from_data.html">bson_reader_new_from_data()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_new_from_fd.html">bson_reader_new_from_fd()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_new_from_file.html">bson_reader_new_from_file()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_new_from_handle.html">bson_reader_new_from_handle()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_read.html">bson_reader_read()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_read_func_t.html">bson_reader_read_func_t</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_reset.html">bson_reader_reset()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_set_destroy_func.html">bson_reader_set_destroy_func()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_set_read_func.html">bson_reader_set_read_func()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_reader_tell.html">bson_reader_tell()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="character_and_string_routines.html">Character and String Routines</a><input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><div class="visually-hidden">Toggle navigation of Character and String Routines</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_ascii_strtoll.html">bson_ascii_strtoll()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_isspace.html">bson_isspace()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_snprintf.html">bson_snprintf()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strcasecmp.html">bson_strcasecmp()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strdup.html">bson_strdup()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strdup_printf.html">bson_strdup_printf()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strdupv_printf.html">bson_strdupv_printf()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strfreev.html">bson_strfreev()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strncpy.html">bson_strncpy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strndup.html">bson_strndup()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_strnlen.html">bson_strnlen()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_uint32_to_string.html">bson_uint32_to_string()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_utf8_escape_for_json.html">bson_utf8_escape_for_json()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_utf8_from_unichar.html">bson_utf8_from_unichar()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_utf8_get_char.html">bson_utf8_get_char()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_utf8_next_char.html">bson_utf8_next_char()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_utf8_validate.html">bson_utf8_validate()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vsnprintf.html">bson_vsnprintf()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_subtype_t.html">bson_subtype_t</a><input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" role="switch" type="checkbox"/><label for="toctree-checkbox-12"><div class="visually-hidden">Toggle navigation of bson_subtype_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_type_t.html">bson_type_t</a><input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" role="switch" type="checkbox"/><label for="toctree-checkbox-13"><div class="visually-hidden">Toggle navigation of bson_type_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_unichar_t.html">bson_unichar_t</a><input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" role="switch" type="checkbox"/><label for="toctree-checkbox-14"><div class="visually-hidden">Toggle navigation of bson_unichar_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="bson_validate_flags_t.html">bson_validate_flags_t</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_value_t.html">bson_value_t</a><input class="toctree-checkbox" id="toctree-checkbox-15" name="toctree-checkbox-15" role="switch" type="checkbox"/><label for="toctree-checkbox-15"><div class="visually-hidden">Toggle navigation of bson_value_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_value_copy.html">bson_value_copy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_value_destroy.html">bson_value_destroy()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_visitor_t.html">bson_visitor_t</a><input class="toctree-checkbox" id="toctree-checkbox-16" name="toctree-checkbox-16" role="switch" type="checkbox"/><label for="toctree-checkbox-16"><div class="visually-hidden">Toggle navigation of bson_visitor_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_writer_t.html">bson_writer_t</a><input class="toctree-checkbox" id="toctree-checkbox-17" name="toctree-checkbox-17" role="switch" type="checkbox"/><label for="toctree-checkbox-17"><div class="visually-hidden">Toggle navigation of bson_writer_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_writer_begin.html">bson_writer_begin()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_writer_destroy.html">bson_writer_destroy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_writer_end.html">bson_writer_end()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_writer_get_length.html">bson_writer_get_length()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_writer_new.html">bson_writer_new()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_writer_rollback.html">bson_writer_rollback()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_get_monotonic_time.html">System Clock</a><input class="toctree-checkbox" id="toctree-checkbox-18" name="toctree-checkbox-18" role="switch" type="checkbox"/><label for="toctree-checkbox-18"><div class="visually-hidden">Toggle navigation of System Clock</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="bson_memory.html">Memory Management</a><input class="toctree-checkbox" id="toctree-checkbox-19" name="toctree-checkbox-19" role="switch" type="checkbox"/><label for="toctree-checkbox-19"><div class="visually-hidden">Toggle navigation of Memory Management</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_free.html">bson_free()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_malloc.html">bson_malloc()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_malloc0.html">bson_malloc0()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_aligned_alloc.html">bson_aligned_alloc()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_aligned_alloc0.html">bson_aligned_alloc0()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_alloc.html">bson_array_alloc()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_alloc0.html">bson_array_alloc0()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_mem_restore_vtable.html">bson_mem_restore_vtable()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_mem_set_vtable.html">bson_mem_set_vtable()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_realloc.html">bson_realloc()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_realloc_ctx.html">bson_realloc_ctx()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_realloc_func.html">bson_realloc_func</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_zero_free.html">bson_zero_free()</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="binary_vector.html">BSON Binary Vector subtype</a><input class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><div class="visually-hidden">Toggle navigation of BSON Binary Vector subtype</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_vector_int8_view_t.html">bson_vector_int8_view_t</a><input class="toctree-checkbox" id="toctree-checkbox-21" name="toctree-checkbox-21" role="switch" type="checkbox"/><label for="toctree-checkbox-21"><div class="visually-hidden">Toggle navigation of bson_vector_int8_view_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_init.html">bson_vector_int8_view_init()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_from_iter.html">bson_vector_int8_view_from_iter()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_as_const.html">bson_vector_int8_view_as_const()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_length.html">bson_vector_int8_view_length()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_read.html">bson_vector_int8_view_read()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_write.html">bson_vector_int8_view_write()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_view_pointer.html">bson_vector_int8_view_pointer()</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_vector_int8_const_view_t.html">bson_vector_int8_const_view_t</a><input class="toctree-checkbox" id="toctree-checkbox-22" name="toctree-checkbox-22" role="switch" type="checkbox"/><label for="toctree-checkbox-22"><div class="visually-hidden">Toggle navigation of bson_vector_int8_const_view_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_const_view_init.html">bson_vector_int8_const_view_init()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_const_view_from_iter.html">bson_vector_int8_const_view_from_iter()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_const_view_length.html">bson_vector_int8_const_view_length()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_const_view_read.html">bson_vector_int8_const_view_read()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_int8_const_view_pointer.html">bson_vector_int8_const_view_pointer()</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_vector_float32_view_t.html">bson_vector_float32_view_t</a><input class="toctree-checkbox" id="toctree-checkbox-23" name="toctree-checkbox-23" role="switch" type="checkbox"/><label for="toctree-checkbox-23"><div class="visually-hidden">Toggle navigation of bson_vector_float32_view_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_view_init.html">bson_vector_float32_view_init()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_view_from_iter.html">bson_vector_float32_view_from_iter()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_view_as_const.html">bson_vector_float32_view_as_const()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_view_length.html">bson_vector_float32_view_length()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_view_read.html">bson_vector_float32_view_read()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_view_write.html">bson_vector_float32_view_write()</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_vector_float32_const_view_t.html">bson_vector_float32_const_view_t</a><input class="toctree-checkbox" id="toctree-checkbox-24" name="toctree-checkbox-24" role="switch" type="checkbox"/><label for="toctree-checkbox-24"><div class="visually-hidden">Toggle navigation of bson_vector_float32_const_view_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_const_view_init.html">bson_vector_float32_const_view_init()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_const_view_from_iter.html">bson_vector_float32_const_view_from_iter()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_const_view_length.html">bson_vector_float32_const_view_length()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_float32_const_view_read.html">bson_vector_float32_const_view_read()</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_vector_packed_bit_view_t.html">bson_vector_packed_bit_view_t</a><input class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><div class="visually-hidden">Toggle navigation of bson_vector_packed_bit_view_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_init.html">bson_vector_packed_bit_view_init()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_from_iter.html">bson_vector_packed_bit_view_from_iter()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_as_const.html">bson_vector_packed_bit_view_as_const()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_length.html">bson_vector_packed_bit_view_length()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_length_bytes.html">bson_vector_packed_bit_view_length_bytes()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_padding.html">bson_vector_packed_bit_view_padding()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_read_packed.html">bson_vector_packed_bit_view_read_packed()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_write_packed.html">bson_vector_packed_bit_view_write_packed()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_unpack_bool.html">bson_vector_packed_bit_view_unpack_bool()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_view_pack_bool.html">bson_vector_packed_bit_view_pack_bool()</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="bson_vector_packed_bit_const_view_t.html">bson_vector_packed_bit_const_view_t</a><input class="toctree-checkbox" id="toctree-checkbox-26" name="toctree-checkbox-26" role="switch" type="checkbox"/><label for="toctree-checkbox-26"><div class="visually-hidden">Toggle navigation of bson_vector_packed_bit_const_view_t</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_init.html">bson_vector_packed_bit_const_view_init()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_from_iter.html">bson_vector_packed_bit_const_view_from_iter()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_length.html">bson_vector_packed_bit_const_view_length()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_length_bytes.html">bson_vector_packed_bit_const_view_length_bytes()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_padding.html">bson_vector_packed_bit_const_view_padding()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_read_packed.html">bson_vector_packed_bit_const_view_read_packed()</a></li>
+<li class="toctree-l4"><a class="reference internal" href="bson_vector_packed_bit_const_view_unpack_bool.html">bson_vector_packed_bit_const_view_unpack_bool()</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_vector_int8_uninit.html">bson_append_vector_int8_uninit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_vector_float32_uninit.html">bson_append_vector_float32_uninit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_vector_packed_bit_uninit.html">bson_append_vector_packed_bit_uninit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_int8_view_from_iter.html">bson_vector_int8_view_from_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_int8_const_view_from_iter.html">bson_vector_int8_const_view_from_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_float32_view_from_iter.html">bson_vector_float32_view_from_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_float32_const_view_from_iter.html">bson_vector_float32_const_view_from_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_packed_bit_view_from_iter.html">bson_vector_packed_bit_view_from_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_packed_bit_const_view_from_iter.html">bson_vector_packed_bit_const_view_from_iter()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array_from_vector.html">bson_append_array_from_vector()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array_from_vector_int8.html">bson_append_array_from_vector_int8()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array_from_vector_float32.html">bson_append_array_from_vector_float32()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_array_from_vector_packed_bit.html">bson_append_array_from_vector_packed_bit()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_builder_append_vector_int8_elements.html">bson_array_builder_append_vector_int8_elements()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_builder_append_vector_float32_elements.html">bson_array_builder_append_vector_float32_elements()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_builder_append_vector_packed_bit_elements.html">bson_array_builder_append_vector_packed_bit_elements()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_array_builder_append_vector_elements.html">bson_array_builder_append_vector_elements()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_vector_int8_from_array.html">bson_append_vector_int8_from_array()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_vector_float32_from_array.html">bson_append_vector_float32_from_array()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_append_vector_packed_bit_from_array.html">bson_append_vector_packed_bit_from_array()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_int8_binary_data_length.html">bson_vector_int8_binary_data_length()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_float32_binary_data_length.html">bson_vector_float32_binary_data_length()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_packed_bit_binary_data_length.html">bson_vector_packed_bit_binary_data_length()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_vector_error_code_t.html">bson_vector_error_code_t</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="version.html">Libbson Versioning</a><input class="toctree-checkbox" id="toctree-checkbox-27" name="toctree-checkbox-27" role="switch" type="checkbox"/><label for="toctree-checkbox-27"><div class="visually-hidden">Toggle navigation of Libbson Versioning</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="bson_check_version.html">bson_check_version()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_get_major_version.html">bson_get_major_version()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_get_micro_version.html">bson_get_micro_version()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_get_minor_version.html">bson_get_minor_version()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bson_get_version.html">bson_get_version()</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="legacy_extended_json.html">Libbson Legacy Extended JSON</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="bson-error-reset">
+<h1>bson_error_reset()<a class="headerlink" href="#bson-error-reset" title="Link to this heading">¶</a></h1>
+<section id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#define bson_error_reset(ErrorPointer)</span>
+</pre></div>
+</div>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ErrorPointer</span></code>: An l-value expression of type <code class="docutils literal notranslate"><span class="pre">bson_error_t*</span></code>. May be a
+null pointer.</p></li>
+</ul>
+</section>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<p>This function-like macro modifies a pointer to <a class="symbol reference internal" href="bson_error_t.html"><span class="doc">bson_error_t</span></a> to be
+non-null, and clears any contained value using <a class="symbol reference internal" href="bson_error_clear.html"><span class="doc">bson_error_clear()</span></a>.</p>
+<p>If the given pointer object is null, then the pointer is updated to point to a
+local anonymous <a class="symbol reference internal" href="bson_error_t.html"><span class="doc">bson_error_t</span></a> object. After the evaluation of this
+macro, it is guaranteed that the given pointer is non-null.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>This function-like macro is not valid in C++!</p>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="bson_iter_t.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">bson_iter_t</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="bson_error_clear.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">bson_error_clear()</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2009-present, MongoDB, Inc.
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">bson_error_reset()</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#parameters">Parameters</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=7f41d439"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    </body>
+</html>
