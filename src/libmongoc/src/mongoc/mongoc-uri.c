@@ -951,13 +951,18 @@ HANDLE_CONFLICT:
 }
 
 
-#define HANDLE_DUPE()                                                           \
-   if (from_dns) {                                                              \
-      MONGOC_WARNING("Cannot override URI option \"%s\" from TXT record", key); \
-      continue;                                                                 \
-   } else if (1) {                                                              \
-      MONGOC_WARNING("Overwriting previously provided value for '%s'", key);    \
-   } else                                                                       \
+#define HANDLE_DUPE()                                                                                               \
+   if (from_dns) {                                                                                                  \
+      if (0 == strcmp(key, MONGOC_URI_AUTHSOURCE)) {                                                                \
+         /* Do not warn. Atlas TXT records include authSource=admin, but some auth mechanisms require $external. */ \
+         TRACE("Cannot override URI option \"%s\" from TXT record", key);                                           \
+      } else {                                                                                                      \
+         MONGOC_WARNING("Cannot override URI option \"%s\" from TXT record", key);                                  \
+      }                                                                                                             \
+      continue;                                                                                                     \
+   } else if (1) {                                                                                                  \
+      MONGOC_WARNING("Overwriting previously provided value for '%s'", key);                                        \
+   } else                                                                                                           \
       (void)0
 
 static bool
