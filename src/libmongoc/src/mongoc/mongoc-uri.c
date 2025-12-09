@@ -22,8 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mongoc/mongoc.h"
-
 /* strcasecmp on windows */
 #include <common-bson-dsl-private.h>
 #include <common-string-private.h>
