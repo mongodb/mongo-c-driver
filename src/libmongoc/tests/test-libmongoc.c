@@ -550,9 +550,11 @@ test_framework_get_port(void)
 char *
 test_framework_get_host_and_port(void)
 {
-   char *from_srv = test_framework_get_host_and_port_srv();
-   if (from_srv) {
-      return from_srv;
+   {
+      char *const from_srv = test_framework_get_host_and_port_srv();
+      if (from_srv) {
+         return from_srv;
+      }
    }
    char *host = test_framework_get_host();
    uint16_t port = test_framework_get_port();
