@@ -3843,6 +3843,7 @@ test_socketTimeoutMS_unlimited(void)
    mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf");
 
    mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   test_framework_set_ssl_opts(client);
 
    // Configure a failpoint to block on "ping" for 500ms.
    bson_error_t error;
