@@ -949,8 +949,8 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       bson_free(test_username);
       bson_free(test_password);
    } else {
-      // "mongodb+srv://" URIs may apply an authSource=admin default in the TXT record. Override with $external if
-      // testing OIDC.
+      // Atlas URIs have a default authSource=admin in the TXT record (assuming SCRAM auth).
+      // Override with $external to test OIDC.
       mongoc_uri_set_auth_source(uri, "$external");
    }
 
