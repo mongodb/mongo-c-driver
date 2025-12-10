@@ -209,7 +209,7 @@ _mongoc_stream_tls_openssl_write(mongoc_stream_tls_t *tls, char *buf, size_t buf
    BSON_ASSERT(buf);
    BSON_ASSERT(buf_len);
 
-   if (tls->timeout_msec >= 0) {
+   if (tls->timeout_msec > 0) {
       expire = bson_get_monotonic_time() + (tls->timeout_msec * 1000);
    }
 
@@ -421,7 +421,7 @@ _mongoc_stream_tls_openssl_readv(
 
    tls->timeout_msec = timeout_msec;
 
-   if (timeout_msec >= 0) {
+   if (timeout_msec > 0) {
       expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
    }
 
