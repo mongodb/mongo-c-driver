@@ -949,8 +949,8 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       bson_free(test_username);
       bson_free(test_password);
    } else {
-      // Atlas URIs have a default authSource=admin in the TXT record (assuming SCRAM auth).
-      // Override with $external to test OIDC.
+      // Atlas URIs assume `SCRAM-SHA-*` and apply `authSource=admin` in their TXT records.
+      // Override this assumption with `authSource=$external` for MONGODB-OIDC.
       mongoc_uri_set_auth_source(uri, "$external");
    }
 
