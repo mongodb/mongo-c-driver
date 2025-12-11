@@ -1,3 +1,17 @@
+libmongoc 2.2.1
+===============
+
+## Fixed
+
+* Fix applied timeout on Azure and GCP KMS requests.
+* Do not error if server reply to bulkWrite omits `nModified`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 2.2.0
 ===============
 
