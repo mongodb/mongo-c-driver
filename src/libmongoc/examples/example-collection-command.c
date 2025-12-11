@@ -40,23 +40,24 @@ main(int argc, char **argv)
    mongoc_init();
 
    if (argc != 2) {
-      MONGOC_ERROR("Error: expected URI argument.\n"
-                   "Usage: %s <MongoDB URI>\n"
-                   "Example: %s mongodb://localhost:27017",
-                   argv[0],
-                   argv[0]);
+      fprintf(stderr,
+              "Error: expected URI argument.\n"
+              "Usage: %s <MongoDB URI>\n"
+              "Example: %s mongodb://localhost:27017\n",
+              argv[0],
+              argv[0]);
       return EXIT_FAILURE;
    }
    uri_string = argv[1];
    uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      MONGOC_ERROR("failed to parse URI\nError: %s", error.message);
+      fprintf(stderr, "failed to parse URI\nError: %s\n", error.message);
       return EXIT_FAILURE;
    }
 
    client = mongoc_client_new_from_uri(uri);
    if (!client) {
-      MONGOC_ERROR("failed to create client");
+      fprintf(stderr, "failed to create client\n");
       return EXIT_FAILURE;
    }
 

@@ -41,9 +41,10 @@ main(int argc, char *argv[])
 
    uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      MONGOC_ERROR("failed to parse URI:\n"
-                   "error message: %s\n",
-                   error.message);
+      fprintf(stderr,
+              "failed to parse URI:\n"
+              "error message: %s\n",
+              error.message);
       goto done;
    }
 
@@ -64,7 +65,7 @@ main(int argc, char *argv[])
       if (error.code == 48) {
          collection = mongoc_database_get_collection(database, "collection");
       } else {
-         MONGOC_ERROR("Failed to create collection: %s", error.message);
+         fprintf(stderr, "Failed to create collection: %s\n", error.message);
          goto done;
       }
    }
@@ -82,7 +83,7 @@ main(int argc, char *argv[])
 
    session = mongoc_client_start_session(client, session_opts, &error);
    if (!session) {
-      MONGOC_ERROR("Failed to start session: %s", error.message);
+      fprintf(stderr, "Failed to start session: %s\n", error.message);
       goto done;
    }
 
@@ -94,14 +95,14 @@ main(int argc, char *argv[])
 
    insert_opts = bson_new();
    if (!mongoc_client_session_append(session, insert_opts, &error)) {
-      MONGOC_ERROR("Could not add session to opts: %s", error.message);
+      fprintf(stderr, "Could not add session to opts: %s\n", error.message);
       goto done;
    }
 
 retry_transaction:
    r = mongoc_client_session_start_transaction(session, txn_opts, &error);
    if (!r) {
-      MONGOC_ERROR("Failed to start transaction: %s", error.message);
+      fprintf(stderr, "Failed to start transaction: %s\n", error.message);
       goto done;
    }
 
@@ -114,7 +115,7 @@ retry_transaction:
       bson_destroy(doc);
 
       if (!r) {
-         MONGOC_ERROR("Insert failed: %s", error.message);
+         fprintf(stderr, "Insert failed: %s\n", error.message);
          mongoc_client_session_abort_transaction(session, NULL);
 
          /* a network error, primary failover, or other temporary error in a
@@ -142,7 +143,7 @@ retry_transaction:
          /* success */
          break;
       } else {
-         MONGOC_ERROR("Warning: commit failed: %s", error.message);
+         fprintf(stderr, "Warning: commit failed: %s\n", error.message);
          if (mongoc_error_has_label(&reply, "TransientTransactionError")) {
             goto retry_transaction;
          } else if (mongoc_error_has_label(&reply, "UnknownTransactionCommitResult")) {

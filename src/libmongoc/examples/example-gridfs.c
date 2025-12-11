@@ -80,7 +80,7 @@ main(int argc, char *argv[])
          }
 
          if (fwrite(iov.iov_base, 1, r, stdout) != (size_t)r) {
-            MONGOC_ERROR("Failed to write to stdout. Exiting.\n");
+            fprintf(stderr, "Failed to write to stdout. Exiting.\n");
             exit(1);
          }
       }
