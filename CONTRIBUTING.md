@@ -322,10 +322,15 @@ To run test cases with large allocations, set:
 
 * `MONGOC_TEST_OIDC=on` to test OIDC using a test environment described [here](https://github.com/mongodb-labs/drivers-evergreen-tools/tree/d7a7337b384392a09fbe7fc80a7244e6f1226c18/.evergreen/auth_oidc).
 * `MONGOC_AZURE_RESOURCE=<resource>` to test OIDC using an Azure test environment described [here](https://github.com/mongodb-labs/drivers-evergreen-tools/blob/d7a7337b384392a09fbe7fc80a7244e6f1226c18/.evergreen/auth_oidc/azure/README.md).
+* `MONGOC_GCP_RESOURCE=<resource>` to test OIDC using an GCP test environment described [here](https://github.com/mongodb-labs/drivers-evergreen-tools/tree/d7a7337b384392a09fbe7fc80a7244e6f1226c18/.evergreen/auth_oidc/gcp).
 
 All tests should pass before submitting a patch.
 
-## Configuring the test runner
+#### Test logging
+
+Though Evergreen logs are private, avoid logging any sensitive data. This is intended to limit exposure of test credentials (see [DRIVERS-2825](https://jira.mongodb.org/browse/DRIVERS-2825)).
+
+#### Configuring the test runner
 
 The test runner can be configured with command-line options. Run `test-libmongoc
 --help` for details.

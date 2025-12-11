@@ -794,9 +794,6 @@ static void
 TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
                           FILE *stream)     /* IN */
 {
-   char *hostname = test_framework_get_host();
-   char *udspath = test_framework_get_unix_domain_socket_path_escaped();
-   int port = test_framework_get_port();
    bool ssl = test_framework_get_ssl();
 
    ASSERT(suite);
@@ -805,9 +802,8 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
    TestSuite_PrintJsonSystemHeader(stream);
    fprintf(stream,
            "  \"auth\": { \"user\": \"%s\", \"pass\": \"%s\" }, \n"
-           "  \"addr\": { \"host\": \"%s\", \"port\": %d, \"uri\": \"%s\" },\n"
+           "  \"addr\": { \"uri\": \"%s\" },\n"
            "  \"gssapi\": { \"host\": \"%s\", \"user\": \"%s\" }, \n"
-           "  \"uds\": \"%s\", \n"
            "  \"compressors\": \"%s\", \n"
            "  \"SSL\": {\n"
            "    \"enabled\": %s,\n"
@@ -831,19 +827,16 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
            "    \"apiVersion\": %s\n"
            "  },\n"
            "  \"results\": [\n",
-           egetenv("MONGOC_TEST_USER"),
-           egetenv("MONGOC_TEST_PASSWORD"),
-           hostname,
-           port,
-           egetenv("MONGOC_TEST_URI"),
-           egetenv("MONGOC_TEST_GSSAPI_HOST"),
-           egetenv("MONGOC_TEST_GSSAPI_USER"),
-           udspath,
+           egetenv("MONGOC_TEST_USER") ? "(set)" : "(unset)",
+           egetenv("MONGOC_TEST_PASSWORD") ? "(set)" : "(unset)",
+           egetenv("MONGOC_TEST_URI") ? "(set)" : "(unset)",
+           egetenv("MONGOC_TEST_GSSAPI_HOST") ? "(set)" : "(unset)",
+           egetenv("MONGOC_TEST_GSSAPI_USER") ? "(set)" : "(unset)",
            egetenv("MONGOC_TEST_COMPRESSORS"),
            ssl ? "true" : "false",
            test_framework_getenv_bool("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION") ? "true" : "false",
            egetenv("MONGOC_TEST_SSL_PEM_FILE"),
-           egetenv("MONGOC_TEST_SSL_PEM_PWD"),
+           egetenv("MONGOC_TEST_SSL_PEM_PWD") ? "(set)" : "(unset)",
            egetenv("MONGOC_TEST_SSL_CA_FILE"),
            egetenv("MONGOC_TEST_SSL_CA_DIR"),
            egetenv("MONGOC_TEST_SSL_CRL_FILE"),
@@ -856,8 +849,6 @@ TestSuite_PrintJsonHeader(TestSuite *suite, /* IN */
            (suite->flags & TEST_TRACE) ? "true" : "false",
            getenv_or("MONGODB_API_VERSION", "null"));
 
-   bson_free(hostname);
-   bson_free(udspath);
 
    fflush(stream);
 }

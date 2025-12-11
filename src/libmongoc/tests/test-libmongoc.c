@@ -427,6 +427,42 @@ _uri_from_env(void)
    return NULL;
 }
 
+// get_first_srv_host_and_port does SRV lookup on the test URI and returns the first host and port.
+// Returns NULL if no mongodb+srv URI is configured.
+static char *
+test_framework_get_host_and_port_srv(void)
+{
+   mongoc_uri_t *uri = _uri_from_env();
+   if (!uri) {
+      return NULL;
+   }
+
+   const char *srv_hostname = mongoc_uri_get_srv_hostname(uri);
+   if (!srv_hostname) {
+      mongoc_uri_destroy(uri);
+      return NULL;
+   }
+
+   // Do SRV lookup:
+   char *first_host_and_port;
+   {
+      char *prefixed_hostname = bson_strdup_printf("_%s._tcp.%s", mongoc_uri_get_srv_service_name(uri), srv_hostname);
+      mongoc_rr_data_t rr_data = {0};
+      bson_error_t error;
+      bool ok = _mongoc_client_get_rr(
+         prefixed_hostname, MONGOC_RR_SRV, &rr_data, MONGOC_RR_DEFAULT_BUFFER_SIZE, true /* prefer TCP */, &error);
+      ASSERT_OR_PRINT(ok, error);
+      ASSERT(rr_data.hosts);
+      bson_free(prefixed_hostname);
+
+      first_host_and_port = bson_strdup(rr_data.hosts->host_and_port);
+      _mongoc_host_list_destroy_all(rr_data.hosts);
+   }
+
+   mongoc_uri_destroy(uri);
+   return first_host_and_port;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -454,7 +490,7 @@ test_framework_get_host(void)
    if (env_uri) {
       /* choose first host */
       hosts = mongoc_uri_get_hosts(env_uri);
-      ASSERT_WITH_MSG(hosts, "could not obtain hosts from URI [%s]", mongoc_uri_get_string(env_uri));
+      ASSERT_WITH_MSG(hosts, "could not obtain hosts from URI");
       host = bson_strdup(hosts->host);
       mongoc_uri_destroy(env_uri);
       return host;
@@ -514,6 +550,12 @@ test_framework_get_port(void)
 char *
 test_framework_get_host_and_port(void)
 {
+   {
+      char *const from_srv = test_framework_get_host_and_port_srv();
+      if (from_srv) {
+         return from_srv;
+      }
+   }
    char *host = test_framework_get_host();
    uint16_t port = test_framework_get_port();
    char *host_and_port;
@@ -662,6 +704,9 @@ test_framework_get_user_password(char **user, char **password)
 char *
 test_framework_add_user_password(const char *uri_str, const char *user, const char *password)
 {
+   if (strstr(uri_str, "mongodb+srv://") == uri_str) {
+      return bson_strdup_printf("mongodb+srv://%s:%s@%s", user, password, uri_str + strlen("mongodb+srv://"));
+   }
    return bson_strdup_printf("mongodb://%s:%s@%s", user, password, uri_str + strlen("mongodb://"));
 }
 
@@ -883,10 +928,7 @@ call_hello_with_host_and_port(const char *host_and_port, bson_t *reply)
 
       if (!mongoc_client_command_simple(
              client, "admin", tmp_bson("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"), NULL, reply, &error)) {
-         test_error("error calling legacy hello: '%s'\n"
-                    "URI = %s",
-                    error.message,
-                    uri_str);
+         test_error("error calling legacy hello: '%s'\n", error.message);
       }
    }
 
@@ -944,7 +986,7 @@ uri_str_has_db(mcommon_string_t *uri_string)
    const bool is_standard = strstr(str, standard) == str;
    const bool is_srv = strstr(str, srv) == str;
 
-   ASSERT_WITH_MSG(is_standard || is_srv, "[%s] does not start with [%s] or [%s]", uri_string->str, standard, srv);
+   ASSERT_WITH_MSG(is_standard || is_srv, "URI does not start with [%s] or [%s]", standard, srv);
 
    if (is_standard) {
       return strchr(str + strlen(standard), '/') != NULL;
@@ -1187,10 +1229,7 @@ test_framework_uri_apply_multi_mongos(mongoc_uri_t *uri, bool use_multi, bson_er
 
       hosts = mongoc_uri_get_hosts(uri);
       if (hosts->next) {
-         test_set_error(error,
-                        "useMultiMongoses is false, so expected single "
-                        "host listed, but got: %s",
-                        mongoc_uri_get_string(uri));
+         test_set_error(error, "useMultiMongoses is false, so expected single host listed, but got multiple");
          goto done;
       }
    }
