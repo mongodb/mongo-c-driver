@@ -70,9 +70,9 @@ main(int argc, char *argv[])
    mongoc_collection_t *collection = NULL;
    mongoc_client_session_t *session = NULL;
    bson_t *insert_opts = NULL;
-   bson_t reply;
+   bson_t reply = BSON_INITIALIZER;
    ctx_t ctx;
-   char *str;
+   char *str = NULL;
    bson_error_t error;
 
    /*
