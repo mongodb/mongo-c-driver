@@ -36,7 +36,9 @@ struct _mongoc_stream_socket_t {
 static BSON_INLINE int64_t
 get_expiration(int32_t timeout_msec)
 {
-   if (timeout_msec <= 0) {
+   if (timeout_msec == MONGOC_SOCKET_TIMEOUT_NON_BLOCKING) {
+      return 0;
+   } else if (timeout_msec <= 0) {
       return -1;
    } else {
       return (bson_get_monotonic_time() + ((int64_t)timeout_msec * 1000L));

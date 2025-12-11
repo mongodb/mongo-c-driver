@@ -23,9 +23,13 @@
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-socket.h>
 
+#include <stdint.h>
+
 
 BSON_BEGIN_DECLS
 
+
+#define MONGOC_SOCKET_TIMEOUT_NON_BLOCKING INT32_MIN
 
 typedef struct _mongoc_stream_t mongoc_stream_t;
 
