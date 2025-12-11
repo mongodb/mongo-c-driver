@@ -557,5 +557,13 @@ future_collection_estimated_document_count (
 );
 
 
+future_t *
+future_bulkwrite_execute (
+
+   mongoc_bulkwrite_ptr bw,
+   const_mongoc_bulkwriteopts_ptr opts
+);
+
+
 
 #endif /* FUTURE_FUNCTIONS_H */

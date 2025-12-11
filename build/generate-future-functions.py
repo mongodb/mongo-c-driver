@@ -89,6 +89,8 @@ typedef_list = [
     typedef('mongoc_write_concern_ptr', 'mongoc_write_concern_t *'),
     typedef('mongoc_change_stream_ptr', 'mongoc_change_stream_t *'),
     typedef('mongoc_remove_flags_t', None),
+    typedef('mongoc_bulkwrite_ptr', 'mongoc_bulkwrite_t *'),
+    typedef('mongoc_bulkwritereturn_t', None),
     # Const libmongoc.
     typedef('const_mongoc_find_and_modify_opts_ptr', 'const mongoc_find_and_modify_opts_t *'),
     typedef('const_mongoc_iovec_ptr', 'const mongoc_iovec_t *'),
@@ -96,6 +98,7 @@ typedef_list = [
     typedef('const_mongoc_write_concern_ptr', 'const mongoc_write_concern_t *'),
     typedef('const_mongoc_ss_log_context_ptr', 'const mongoc_ss_log_context_t *'),
     typedef('mongoc_index_model_t_ptr_const_ptr', 'mongoc_index_model_t *const *'),
+    typedef('const_mongoc_bulkwriteopts_ptr', 'const mongoc_bulkwriteopts_t *'),
 ]
 
 type_list = [T.name for T in typedef_list]
@@ -574,6 +577,14 @@ future_functions = [
             param('const_mongoc_read_prefs_ptr', 'read_prefs'),
             param('bson_ptr', 'reply'),
             param('bson_error_ptr', 'error'),
+        ],
+    ),
+    future_function(
+        'mongoc_bulkwritereturn_t',
+        'mongoc_bulkwrite_execute',
+        [
+            param('mongoc_bulkwrite_ptr', 'bw'),
+            param('const_mongoc_bulkwriteopts_ptr', 'opts'),
         ],
     ),
 ]
