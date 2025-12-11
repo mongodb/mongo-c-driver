@@ -695,7 +695,7 @@ _mongoc_stream_tls_secure_channel_readv(
 
    tls->timeout_msec = timeout_msec;
 
-   if (timeout_msec >= 0) {
+   if (timeout_msec > 0) {
       expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
    }
 
