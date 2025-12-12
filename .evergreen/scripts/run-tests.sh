@@ -162,8 +162,6 @@ if [[ "${OIDC}" != "nooidc" ]]; then
   test_args+=("-l" "/auth/unified/*")
 fi
 
-test_args+=("-l" "/change_stream/*")
-
 wait_for_server() {
   declare name="${1:?"wait_for_server requires a server name"}"
   declare port="${2:?"wait_for_server requires a server port"}"
@@ -297,9 +295,7 @@ cygwin)
     openssl_lib_prefix="${openssl_install_dir}/lib:${openssl_lib_prefix:-}"
   fi
 
-  for i in $(seq 0 20); do
   LD_LIBRARY_PATH="${openssl_lib_prefix}" LD_PRELOAD="${ld_preload:-}" ./cmake-build/src/libmongoc/test-libmongoc --no-fork "${test_args[@]}"
-  done
   ;;
 esac
 
