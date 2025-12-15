@@ -491,7 +491,9 @@ _set_compiler_info(mongoc_handshake_t *handshake)
    mcommon_string_append_printf(&append, " %s", MONGOC_COMPILER_VERSION);
 #endif
 
-   mcommon_string_append(&append, " CXX=" MONGOC_CXX_COMPILER_ID);
+   if (0 != strlen(MONGOC_CXX_COMPILER_ID)) {
+      mcommon_string_append(&append, " CXX=" MONGOC_CXX_COMPILER_ID);
+   }
 
    if (0 != strlen(MONGOC_CXX_COMPILER_VERSION)) {
       mcommon_string_append(&append, " " MONGOC_CXX_COMPILER_VERSION);
