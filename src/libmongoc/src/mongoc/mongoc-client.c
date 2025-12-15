@@ -2160,13 +2160,10 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
 
    if (!server_stream) {
       MONGOC_INFO("Ignoring failure to connect to kill cursor %" PRId64 ": %s", cursor_id, error.message);
-      return;
-   }
-
-   if (!_mongoc_client_killcursors_command(&client->cluster, server_stream, cursor_id, db, collection, cs, &error)) {
+   } else if (!_mongoc_client_killcursors_command(
+                 &client->cluster, server_stream, cursor_id, db, collection, cs, &error)) {
       MONGOC_INFO("Ignoring failure to kill cursor %" PRId64 ": %s", cursor_id, error.message);
    }
-
 
    mongoc_server_stream_cleanup(server_stream);
 
