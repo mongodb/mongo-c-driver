@@ -2152,7 +2152,7 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
    BSON_ASSERT_PARAM(collection);
    BSON_ASSERT(cursor_id);
 
-   bson_error_t error;
+   bson_error_t error = {0};
    bool reconnect_ok = true;
    if (_mongoc_topology_get_type(client->topology) == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       // Do not attempt to reconnect when in load balanced mode. Cursors are pinned to connections in load balanced
