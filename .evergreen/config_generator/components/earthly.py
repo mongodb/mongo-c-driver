@@ -21,26 +21,27 @@ from ..etc.utils import all_possible
 
 T = TypeVar('T')
 
-_ENV_PARAM_NAME = 'MONGOC_EARTHLY_ENV'
+_ENV_PARAM_NAME = 'MONGOC_EARTHLY_FROM'
+_ECR_HOST = '901841024863.dkr.ecr.us-east-1.amazonaws.com'
 _CC_PARAM_NAME = 'MONGOC_EARTHLY_C_COMPILER'
 'The name of the EVG expansion for the Earthly c_compiler argument'
 
-
-EnvKey = Literal[
-    'u20',
-    'u22',
-    'almalinux8',
-    'almalinux9',
-    'almalinux10',
-    'alpine3.19',
-    'alpine3.20',
-    'alpine3.21',
-    'alpine3.22',
+EnvImage = Literal[
+    'ubuntu:20.04',
+    'ubuntu:22.04',
+    'ubuntu:24.04',
+    'almalinux:8',
+    'almalinux:9',
+    'almalinux:10',
+    'alpine:3.19',
+    'alpine:3.20',
+    'alpine:3.21',
+    'alpine:3.22',
     'archlinux',
-    'centos9',
-    'centos10',
+    'quay.io/centos/centos:stream9',
+    'quay.io/centos/centos:stream10',
 ]
-"Identifiers for environments. These correspond to special 'env.*' targets in the Earthfile."
+'Base environment images to be built.'
 CompilerName = Literal['gcc', 'clang']
 'The name of the compiler program that is used for the build. Passed via --c_compiler to Earthly.'
 
@@ -51,30 +52,43 @@ TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
 CxxVersion = Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
+SnappyOption = Literal['false', 'true']
+"""Should we enable Snappy compression in this build?"""
 
 # A separator character, since we cannot use whitespace
 _SEPARATOR = '\N{NO-BREAK SPACE}\N{BULLET}\N{NO-BREAK SPACE}'
 
 
-def os_split(env: EnvKey) -> tuple[str, None | str]:
+def os_split(env: EnvImage) -> tuple[str, None | str]:
     """Convert the environment key into a pretty name+version pair"""
     match env:
-        # Match 'alpine3.18' 'alpine53.123' etc.
-        case alp if mat := re.match(r'alpine(\d+\.\d+)', alp):
+        # Match 'alpine:3.18' 'alpine:53.123' etc.
+        case alp if mat := re.match(r'alpine:(\d+\.\d+)', alp):
             return ('Alpine', mat[1])
         case 'archlinux':
             return 'ArchLinux', None
-        # Match 'u22', 'u20', 'u71' etc.
-        case ubu if mat := re.match(r'u(\d\d)', ubu):
-            return 'Ubuntu', f'{mat[1]}.04'
-        # Match 'centos9', 'centos10', etc.
-        case cent if mat := re.match(r'centos(\d+)', cent):
+        # Match 'ubuntu:<version>'.
+        case ubu if mat := re.match(r'ubuntu:(\d\d.*)', ubu):
+            return 'Ubuntu', f'{mat[1]}'
+        # Match 'centos:9', 'centos:stream10', etc.
+        case cent if mat := re.match(r'.*centos:(?:stream)?(\d+)', cent):
             return 'CentOS', f'{mat[1]}'
-        # Match 'almalinux8', 'almalinux10', etc.
-        case alm if mat := re.match(r'almalinux(\d+)', alm):
+        # Match 'almalinux:8', 'almalinux:10', etc.
+        case alm if mat := re.match(r'almalinux:(\d+.*)', alm):
             return 'AlmaLinux', f'{mat[1]}'
         case _:
             raise ValueError(f'Failed to split OS env key {env=} into a name+version pair (unrecognized)')
+
+
+def from_container_image(img: EnvImage) -> str:
+    """
+    Modify an unqualified FROM container identifier to route to our ECR host
+
+    NOTE: This will be potentially unnecessary pending the completion of DEVPROD-21478
+    """
+    if '/' in img or img.startswith('+'):
+        return img
+    return f'{_ECR_HOST}/dockerhub/library/{img}'
 
 
 class EarthlyVariant(NamedTuple):
@@ -84,20 +98,20 @@ class EarthlyVariant(NamedTuple):
     expansion parameters.
     """
 
-    env: EnvKey
-    c_compiler: CompilerName
+    from_: EnvImage
+    compiler: CompilerName
 
     @property
     def display_name(self) -> str:
         """The pretty name for this variant"""
         base: str
-        match os_split(self.env):
+        match os_split(self.from_):
             case name, None:
                 base = name
             case name, version:
                 base = f'{name} {version}'
         toolchain: str
-        match self.c_compiler:
+        match self.compiler:
             case 'clang':
                 toolchain = 'LLVM/Clang'
             case 'gcc':
@@ -110,7 +124,7 @@ class EarthlyVariant(NamedTuple):
         The task tag that is used to select the tasks that want to run on this
         variant.
         """
-        return f'{self.env}-{self.c_compiler}'
+        return f'{self.from_}-{self.compiler}'
 
     @property
     def expansions(self) -> Mapping[str, str]:
@@ -119,8 +133,8 @@ class EarthlyVariant(NamedTuple):
         from this object.
         """
         return {
-            _CC_PARAM_NAME: self.c_compiler,
-            _ENV_PARAM_NAME: self.env,
+            _CC_PARAM_NAME: self.compiler,
+            _ENV_PARAM_NAME: from_container_image(self.from_),
         }
 
     def as_evg_variant(self) -> BuildVariant:
@@ -145,6 +159,7 @@ class Configuration(NamedTuple):
     sasl: SASLOption
     tls: TLSOption
     test_mongocxx_ref: CxxVersion
+    snappy: SnappyOption
 
     @property
     def suffix(self) -> str:
@@ -169,7 +184,7 @@ class DockerLoginAmazonECR(Function):
             ],
             args=[
                 '-c',
-                'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 901841024863.dkr.ecr.us-east-1.amazonaws.com',
+                f'aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin {_ECR_HOST}',
             ],
         ),
     ]
@@ -206,11 +221,11 @@ def earthly_exec(
         './tools/earthly.sh',
         args=[
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            '--buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3',
+            f'--buildkit-image={_ECR_HOST}/dockerhub/earthly/buildkitd:v0.8.3',
             *(f'--secret={k}' for k in (secrets or ())),
             f'+{target}',
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            '--default_search_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub',
+            f'--default_search_registry={_ECR_HOST}/dockerhub/library',
             *(f'--{arg}={val}' for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),
@@ -243,20 +258,27 @@ def earthly_task(
     earthly_args = config._asdict()
     earthly_args |= {
         # Add arguments that come from parameter expansions defined in the build variant
-        'env': f'${{{_ENV_PARAM_NAME}}}',
-        'c_compiler': f'${{{_CC_PARAM_NAME}}}',
+        'from': f'${{{_ENV_PARAM_NAME}}}',
+        'compiler': f'${{{_CC_PARAM_NAME}}}',
+        # Always include a C++ compiler in the build environment for better test coverage
+        'with_cxx': 'true',
     }
     return EvgTask(
         name=name,
         commands=[
             DockerLoginAmazonECR.call(),
-            # First, just build the "env-warmup" which will prepare the build environment.
+            # First, just build the "build-environment" which will prepare the build environment.
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
             # warmed-up build environments.
             earthly_exec(
                 kind='setup',
-                target='env-warmup',
+                target='build-environment',
+                args=earthly_args,
+            ),
+            earthly_exec(
+                kind='setup',
+                target='configure',
                 args=earthly_args,
             ),
             # Now execute the main tasks:

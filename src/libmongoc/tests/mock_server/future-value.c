@@ -533,6 +533,34 @@ future_value_get_mongoc_remove_flags_t (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_bulkwrite_ptr (future_value_t *future_value, mongoc_bulkwrite_ptr value)
+{
+   future_value->type = future_value_mongoc_bulkwrite_ptr_type;
+   future_value->value.mongoc_bulkwrite_ptr_value = value;
+}
+
+mongoc_bulkwrite_ptr
+future_value_get_mongoc_bulkwrite_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_mongoc_bulkwrite_ptr_type);
+   return future_value->value.mongoc_bulkwrite_ptr_value;
+}
+
+void
+future_value_set_mongoc_bulkwritereturn_t (future_value_t *future_value, mongoc_bulkwritereturn_t value)
+{
+   future_value->type = future_value_mongoc_bulkwritereturn_t_type;
+   future_value->value.mongoc_bulkwritereturn_t_value = value;
+}
+
+mongoc_bulkwritereturn_t
+future_value_get_mongoc_bulkwritereturn_t (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_mongoc_bulkwritereturn_t_type);
+   return future_value->value.mongoc_bulkwritereturn_t_value;
+}
+
+void
 future_value_set_const_mongoc_find_and_modify_opts_ptr (future_value_t *future_value, const_mongoc_find_and_modify_opts_ptr value)
 {
    future_value->type = future_value_const_mongoc_find_and_modify_opts_ptr_type;
@@ -614,4 +642,18 @@ future_value_get_mongoc_index_model_t_ptr_const_ptr (future_value_t *future_valu
 {
    BSON_ASSERT (future_value->type == future_value_mongoc_index_model_t_ptr_const_ptr_type);
    return future_value->value.mongoc_index_model_t_ptr_const_ptr_value;
+}
+
+void
+future_value_set_const_mongoc_bulkwriteopts_ptr (future_value_t *future_value, const_mongoc_bulkwriteopts_ptr value)
+{
+   future_value->type = future_value_const_mongoc_bulkwriteopts_ptr_type;
+   future_value->value.const_mongoc_bulkwriteopts_ptr_value = value;
+}
+
+const_mongoc_bulkwriteopts_ptr
+future_value_get_const_mongoc_bulkwriteopts_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_const_mongoc_bulkwriteopts_ptr_type);
+   return future_value->value.const_mongoc_bulkwriteopts_ptr_value;
 }

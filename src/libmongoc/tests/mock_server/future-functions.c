@@ -1176,6 +1176,26 @@ BSON_THREAD_FUN (background_mongoc_collection_estimated_document_count, data)
    BSON_THREAD_RETURN;
 }
 
+static
+BSON_THREAD_FUN (background_mongoc_bulkwrite_execute, data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_mongoc_bulkwritereturn_t_type;
+
+   future_value_set_mongoc_bulkwritereturn_t (
+      &return_value,
+      mongoc_bulkwrite_execute (
+         future_value_get_mongoc_bulkwrite_ptr (future_get_param (future, 0)),
+         future_value_get_const_mongoc_bulkwriteopts_ptr (future_get_param (future, 1))
+      ));
+
+   future_resolve (future, return_value);
+
+   BSON_THREAD_RETURN;
+}
+
 
 
 future_t *
@@ -2611,5 +2631,23 @@ future_collection_estimated_document_count (
       future_get_param (future, 4), error);
    
    future_start (future, background_mongoc_collection_estimated_document_count);
+   return future;
+}
+
+future_t *
+future_bulkwrite_execute (
+   mongoc_bulkwrite_ptr bw,
+   const_mongoc_bulkwriteopts_ptr opts)
+{
+   future_t *future = future_new (future_value_mongoc_bulkwritereturn_t_type,
+                                  2);
+   
+   future_value_set_mongoc_bulkwrite_ptr (
+      future_get_param (future, 0), bw);
+   
+   future_value_set_const_mongoc_bulkwriteopts_ptr (
+      future_get_param (future, 1), opts);
+   
+   future_start (future, background_mongoc_bulkwrite_execute);
    return future;
 }

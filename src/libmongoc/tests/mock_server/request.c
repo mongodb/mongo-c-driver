@@ -636,7 +636,7 @@ request_from_op_msg(request_t *request)
 
    const size_t sections_count = mcd_rpc_op_msg_get_sections_count(request->rpc);
 
-   BSON_ASSERT(sections_count <= 2u);
+   BSON_ASSERT(sections_count <= 3u);
    for (size_t index = 0; index < sections_count; ++index) {
       mcommon_string_append(&msg_as_str, (index > 0 ? ", " : " "));
       const uint8_t kind = mcd_rpc_op_msg_section_get_kind(request->rpc, index);

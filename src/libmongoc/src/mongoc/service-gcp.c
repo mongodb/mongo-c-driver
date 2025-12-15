@@ -243,7 +243,7 @@ gcp_identity_token_from_gcp_server(gcp_service_account_token *out,
       goto fail;
    }
 
-   mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, ==, (mlib_time_point){0})
+   mlib_timer timer = mlib_time_cmp(opt_timer.expires_at, !=, (mlib_time_point){0})
                          ? opt_timer
                          : mlib_expires_after(3, s); // Default 3 second timeout.
 

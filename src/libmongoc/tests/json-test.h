@@ -54,7 +54,7 @@ typedef struct _json_test_config_t {
 #define JSON_TEST_CONFIG_INIT {NULL, NULL, NULL, NULL, NULL, NULL, false, false, NULL, NULL}
 
 bson_t *
-get_bson_from_json_file(char *filename);
+get_bson_from_json_file(const char *filename);
 
 int
 collect_tests_from_dir(char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,

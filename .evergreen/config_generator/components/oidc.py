@@ -91,10 +91,12 @@ def tasks():
             run_on=[find_small_distro('ubuntu2404').name],
             commands=[
                 FetchSource.call(),
-                SaslCyrusOpenSSLCompile.call(),
                 expansions_update(
                     updates=[
-                        KeyValueParam(key='CC', value='clang'),
+                        KeyValueParam(key='ASAN', value='on'),
+                        KeyValueParam(key='CFLAGS', value='-fno-omit-frame-pointer'),
+                        KeyValueParam(key='SANITIZE', value='address,undefined'),
+                        KeyValueParam(key='CC', value='gcc'),
                         # OIDC test servers support both OIDC and user/password.
                         KeyValueParam(key='AUTH', value='auth'),  # Use user/password for default test clients.
                         KeyValueParam(key='OIDC', value='oidc'),  # Enable OIDC tests.
@@ -102,6 +104,7 @@ def tasks():
                         KeyValueParam(key='TOPOLOGY', value='replica_set'),
                     ]
                 ),
+                SaslCyrusOpenSSLCompile.call(),
                 RunTests.call(),
             ],
         ),

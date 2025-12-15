@@ -948,6 +948,10 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       }
       bson_free(test_username);
       bson_free(test_password);
+   } else {
+      // Atlas URIs assume `SCRAM-SHA-*` and apply `authSource=admin` in their TXT records.
+      // Override this assumption with `authSource=$external` for MONGODB-OIDC.
+      mongoc_uri_set_auth_source(uri, "$external");
    }
 
    char *azure_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
@@ -957,6 +961,14 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
                                           tmp_bson("{'ENVIRONMENT': 'azure', 'TOKEN_RESOURCE': '%s'}", azure_resource));
    }
    bson_free(azure_resource);
+
+   char *gcp_resource = test_framework_getenv("MONGOC_GCP_RESOURCE");
+   const bool testing_gcp_oidc = gcp_resource != NULL;
+   if (uri_requests_oidc && testing_gcp_oidc) {
+      mongoc_uri_set_mechanism_properties(uri,
+                                          tmp_bson("{'ENVIRONMENT': 'gcp', 'TOKEN_RESOURCE': '%s'}", gcp_resource));
+   }
+   bson_free(gcp_resource);
 
    if (!mongoc_uri_has_option(uri, MONGOC_URI_HEARTBEATFREQUENCYMS)) {
       can_reduce_heartbeat = true;
@@ -968,7 +980,7 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    client = test_framework_client_new_from_uri(uri, api);
 
-   if (uri_requests_oidc && !testing_azure_oidc) {
+   if (uri_requests_oidc && !testing_azure_oidc && !testing_gcp_oidc) {
       test_framework_set_oidc_callback(client);
    }
 

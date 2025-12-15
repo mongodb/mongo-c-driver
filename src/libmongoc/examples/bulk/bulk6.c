@@ -59,9 +59,8 @@ main(void)
    uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
       fprintf(stderr,
-              "failed to parse URI: %s\n"
-              "error message:       %s\n",
-              uri_string,
+              "failed to parse URI:\n"
+              "error message: %s\n",
               error.message);
       return EXIT_FAILURE;
    }

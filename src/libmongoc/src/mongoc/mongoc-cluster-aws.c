@@ -502,6 +502,7 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
             // EOF.
             break;
          } else {
+            mcommon_string_destroy(mcommon_string_from_append(&append));
             AUTH_ERROR_AND_FAIL("failed to read AWS_WEB_IDENTITY_TOKEN_FILE: %s. Reason: %s",
                                 aws_web_identity_token_file,
                                 strerror(errno));

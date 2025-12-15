@@ -355,6 +355,7 @@ txt_callback(const char *hostname, ns_msg *ns_answer, ns_rr *rr, mongoc_rr_data_
    while (pos < total) {
       uint8_t len = data[pos++];
       if (total - pos < (uint16_t)len) {
+         mcommon_string_destroy(mcommon_string_from_append(&txt));
          DNS_ERROR("Invalid TXT string size %hu at %hu in %hu-byte TXT record for \"%s\"",
                    (uint16_t)len,
                    pos,

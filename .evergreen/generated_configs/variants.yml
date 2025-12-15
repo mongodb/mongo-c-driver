@@ -1,144 +1,116 @@
 buildvariants:
-  - name: almalinux10-clang
+  - name: almalinux:10-clang
     display_name: AlmaLinux 10 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: almalinux10
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/almalinux:10
     tasks:
-      - name: .almalinux10-clang
-  - name: almalinux10-gcc
+      - name: .almalinux:10-clang
+  - name: almalinux:10-gcc
     display_name: AlmaLinux 10 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: almalinux10
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/almalinux:10
     tasks:
-      - name: .almalinux10-gcc
-  - name: almalinux8-clang
+      - name: .almalinux:10-gcc
+  - name: almalinux:8-clang
     display_name: AlmaLinux 8 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: almalinux8
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/almalinux:8
     tasks:
-      - name: .almalinux8-clang
-  - name: almalinux8-gcc
+      - name: .almalinux:8-clang
+  - name: almalinux:8-gcc
     display_name: AlmaLinux 8 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: almalinux8
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/almalinux:8
     tasks:
-      - name: .almalinux8-gcc
-  - name: almalinux9-clang
+      - name: .almalinux:8-gcc
+  - name: almalinux:9-clang
     display_name: AlmaLinux 9 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: almalinux9
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/almalinux:9
     tasks:
-      - name: .almalinux9-clang
-  - name: almalinux9-gcc
+      - name: .almalinux:9-clang
+  - name: almalinux:9-gcc
     display_name: AlmaLinux 9 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: almalinux9
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/almalinux:9
     tasks:
-      - name: .almalinux9-gcc
-  - name: alpine3.19-clang
+      - name: .almalinux:9-gcc
+  - name: alpine:3.19-clang
     display_name: Alpine 3.19 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.19
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.19
     tasks:
-      - name: .alpine3.19-clang
-  - name: alpine3.19-gcc
+      - name: .alpine:3.19-clang
+  - name: alpine:3.19-gcc
     display_name: Alpine 3.19 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.19
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.19
     tasks:
-      - name: .alpine3.19-gcc
-  - name: alpine3.20-clang
+      - name: .alpine:3.19-gcc
+  - name: alpine:3.20-clang
     display_name: Alpine 3.20 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.20
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.20
     tasks:
-      - name: .alpine3.20-clang
-  - name: alpine3.20-gcc
+      - name: .alpine:3.20-clang
+  - name: alpine:3.20-gcc
     display_name: Alpine 3.20 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.20
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.20
     tasks:
-      - name: .alpine3.20-gcc
-  - name: alpine3.21-clang
+      - name: .alpine:3.20-gcc
+  - name: alpine:3.21-clang
     display_name: Alpine 3.21 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.21
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.21
     tasks:
-      - name: .alpine3.21-clang
-  - name: alpine3.21-gcc
+      - name: .alpine:3.21-clang
+  - name: alpine:3.21-gcc
     display_name: Alpine 3.21 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.21
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.21
     tasks:
-      - name: .alpine3.21-gcc
-  - name: alpine3.22-clang
+      - name: .alpine:3.21-gcc
+  - name: alpine:3.22-clang
     display_name: Alpine 3.22 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: alpine3.22
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.22
     tasks:
-      - name: .alpine3.22-clang
-  - name: alpine3.22-gcc
+      - name: .alpine:3.22-clang
+  - name: alpine:3.22-gcc
     display_name: Alpine 3.22 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: alpine3.22
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/alpine:3.22
     tasks:
-      - name: .alpine3.22-gcc
+      - name: .alpine:3.22-gcc
   - name: archlinux-clang
     display_name: ArchLinux (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: archlinux
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/archlinux
     tasks:
       - name: .archlinux-clang
   - name: archlinux-gcc
     display_name: ArchLinux (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: archlinux
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/archlinux
     tasks:
       - name: .archlinux-gcc
-  - name: centos10-clang
-    display_name: CentOS 10 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: centos10
-    tasks:
-      - name: .centos10-clang
-  - name: centos10-gcc
-    display_name: CentOS 10 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: centos10
-    tasks:
-      - name: .centos10-gcc
-  - name: centos9-clang
-    display_name: CentOS 9 (LLVM/Clang)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: centos9
-    tasks:
-      - name: .centos9-clang
-  - name: centos9-gcc
-    display_name: CentOS 9 (GCC)
-    expansions:
-      MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: centos9
-    tasks:
-      - name: .centos9-gcc
   - name: clang-format
     display_name: clang-format
     run_on:
@@ -263,6 +235,34 @@ buildvariants:
     display_name: OpenSSL Compatibility Matrix
     tasks:
       - name: .openssl-compat
+  - name: quay.io/centos/centos:stream10-clang
+    display_name: CentOS 10 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream10
+    tasks:
+      - name: .quay.io/centos/centos:stream10-clang
+  - name: quay.io/centos/centos:stream10-gcc
+    display_name: CentOS 10 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream10
+    tasks:
+      - name: .quay.io/centos/centos:stream10-gcc
+  - name: quay.io/centos/centos:stream9-clang
+    display_name: CentOS 9 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream9
+    tasks:
+      - name: .quay.io/centos/centos:stream9-clang
+  - name: quay.io/centos/centos:stream9-gcc
+    display_name: CentOS 9 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream9
+    tasks:
+      - name: .quay.io/centos/centos:stream9-gcc
   - name: sanitizers-matrix-asan
     display_name: sanitizers-matrix-asan
     expansions:
@@ -368,31 +368,45 @@ buildvariants:
     display_name: std-matrix
     tasks:
       - name: .std-matrix
-  - name: u20-clang
+  - name: ubuntu:20.04-clang
     display_name: Ubuntu 20.04 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: u20
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:20.04
     tasks:
-      - name: .u20-clang
-  - name: u20-gcc
+      - name: .ubuntu:20.04-clang
+  - name: ubuntu:20.04-gcc
     display_name: Ubuntu 20.04 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: u20
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:20.04
     tasks:
-      - name: .u20-gcc
-  - name: u22-clang
+      - name: .ubuntu:20.04-gcc
+  - name: ubuntu:22.04-clang
     display_name: Ubuntu 22.04 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_ENV: u22
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:22.04
     tasks:
-      - name: .u22-clang
-  - name: u22-gcc
+      - name: .ubuntu:22.04-clang
+  - name: ubuntu:22.04-gcc
     display_name: Ubuntu 22.04 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_ENV: u22
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:22.04
     tasks:
-      - name: .u22-gcc
+      - name: .ubuntu:22.04-gcc
+  - name: ubuntu:24.04-clang
+    display_name: Ubuntu 24.04 (LLVM/Clang)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: clang
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:24.04
+    tasks:
+      - name: .ubuntu:24.04-clang
+  - name: ubuntu:24.04-gcc
+    display_name: Ubuntu 24.04 (GCC)
+    expansions:
+      MONGOC_EARTHLY_C_COMPILER: gcc
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:24.04
+    tasks:
+      - name: .ubuntu:24.04-gcc

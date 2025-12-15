@@ -1441,7 +1441,11 @@ _bulkwritereturn_apply_result(mongoc_bulkwritereturn_t *self,
 
          // Parse `nModified`.
          int64_t nModified;
-         if (!lookup_as_int64(result, "nModified", &nModified, "result", self->exc)) {
+         bson_iter_t nModified_iter;
+         if (!bson_iter_init_find(&nModified_iter, result, "nModified")) {
+            // `nModified` is expected for update results, but may be missing due to SERVER-113026. Default to 0.
+            nModified = 0;
+         } else if (!lookup_as_int64(result, "nModified", &nModified, "result", self->exc)) {
             return false;
          }
 

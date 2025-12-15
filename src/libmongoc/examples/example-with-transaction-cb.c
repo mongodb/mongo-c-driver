@@ -70,9 +70,9 @@ main(int argc, char *argv[])
    mongoc_collection_t *collection = NULL;
    mongoc_client_session_t *session = NULL;
    bson_t *insert_opts = NULL;
-   bson_t reply;
+   bson_t reply = BSON_INITIALIZER;
    ctx_t ctx;
-   char *str;
+   char *str = NULL;
    bson_error_t error;
 
    /*
@@ -92,10 +92,10 @@ main(int argc, char *argv[])
     */
    uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
-      MONGOC_ERROR("failed to parse URI: %s\n"
-                   "error message:       %s\n",
-                   uri_string,
-                   error.message);
+      fprintf(stderr,
+              "failed to parse URI:\n"
+              "error message: %s\n",
+              error.message);
       goto done;
    }
 
@@ -124,7 +124,7 @@ main(int argc, char *argv[])
       if (error.code == 48) {
          collection = mongoc_database_get_collection(database, "collection");
       } else {
-         MONGOC_ERROR("Failed to create collection: %s", error.message);
+         fprintf(stderr, "Failed to create collection: %s\n", error.message);
          goto done;
       }
    }
@@ -134,7 +134,7 @@ main(int argc, char *argv[])
     */
    session = mongoc_client_start_session(client, NULL, &error);
    if (!session) {
-      MONGOC_ERROR("Failed to start session: %s", error.message);
+      fprintf(stderr, "Failed to start session: %s\n", error.message);
       goto done;
    }
 
@@ -143,7 +143,7 @@ main(int argc, char *argv[])
     */
    insert_opts = bson_new();
    if (!mongoc_client_session_append(session, insert_opts, &error)) {
-      MONGOC_ERROR("Could not add session to opts: %s", error.message);
+      fprintf(stderr, "Could not add session to opts: %s\n", error.message);
       goto done;
    }
 
@@ -156,7 +156,7 @@ main(int argc, char *argv[])
     * commit the transaction.
     */
    if (!mongoc_client_session_with_transaction(session, &create_and_insert_doc, NULL, &ctx, &reply, &error)) {
-      MONGOC_ERROR("Insert failed: %s", error.message);
+      fprintf(stderr, "Insert failed: %s\n", error.message);
       goto done;
    }
 
