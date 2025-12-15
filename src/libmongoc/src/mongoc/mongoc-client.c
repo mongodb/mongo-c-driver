@@ -2143,8 +2143,6 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
                            const char *collection,
                            mongoc_client_session_t *cs)
 {
-   mongoc_server_stream_t *server_stream;
-
    ENTRY;
 
    BSON_ASSERT_PARAM(client);
@@ -2157,7 +2155,8 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
    // new connection might not connect to the same backing server.
    const bool reconnect_ok = _mongoc_topology_get_type(client->topology) != MONGOC_TOPOLOGY_LOAD_BALANCED;
    // Try to reconnect. Log on error.
-   server_stream = mongoc_cluster_stream_for_server(&client->cluster, server_id, reconnect_ok, NULL, NULL, &error);
+   mongoc_server_stream_t *server_stream =
+      mongoc_cluster_stream_for_server(&client->cluster, server_id, reconnect_ok, NULL, NULL, &error);
 
    if (!server_stream) {
       MONGOC_INFO("Ignoring failure to connect to kill cursor %" PRId64 ": %s", cursor_id, error.message);
