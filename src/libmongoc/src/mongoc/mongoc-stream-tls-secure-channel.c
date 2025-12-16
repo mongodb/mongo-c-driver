@@ -721,7 +721,9 @@ _mongoc_stream_tls_secure_channel_readv(
          if (expire) {
             now = bson_get_monotonic_time();
 
-            if ((expire - now) < 0) {
+            const int64_t remaining_msec = (expire - now) / 1000L;
+
+            if (remaining_msec <= 0) {
                if (read_ret == 0) {
                   mongoc_counter_streams_timeout_inc();
                   errno = ETIMEDOUT;
@@ -730,7 +732,7 @@ _mongoc_stream_tls_secure_channel_readv(
 
                tls->timeout_msec = MONGOC_SOCKET_TIMEOUT_NON_BLOCKING;
             } else {
-               tls->timeout_msec = (expire - now) / 1000L;
+               tls->timeout_msec = remaining_msec;
             }
          }
 
