@@ -697,6 +697,8 @@ _mongoc_stream_tls_secure_channel_readv(
 
    if (timeout_msec > 0) {
       expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
+   } else if (timeout_msec == MONGOC_SOCKET_TIMEOUT_NON_BLOCKING) {
+      expire = bson_get_monotonic_time();
    }
 
    for (i = 0; i < iovcnt; i++) {
@@ -726,7 +728,7 @@ _mongoc_stream_tls_secure_channel_readv(
                   RETURN(-1);
                }
 
-               tls->timeout_msec = 0;
+               tls->timeout_msec = MONGOC_SOCKET_TIMEOUT_NON_BLOCKING;
             } else {
                tls->timeout_msec = (expire - now) / 1000L;
             }
