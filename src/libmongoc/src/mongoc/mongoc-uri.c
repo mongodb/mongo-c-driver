@@ -2615,7 +2615,24 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
       return MONGOC_SOCKET_TIMEOUT_INFINITE;
    }
 
-   return mongoc_uri_get_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+   const bson_t *const options = mongoc_uri_get_options(uri);
+   bson_iter_t iter;
+
+   if (options && bson_iter_init_find_case(&iter, options, MONGOC_URI_SOCKETTIMEOUTMS) &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      int32_t const value = bson_iter_int32(&iter);
+
+      if (value == 0) {
+         MONGOC_WARNING("`socketTimeoutMS=0` cannot be used to disable socket timeouts. The default of %" PRId64
+                        " will be used instead. To disable socket timeouts, use `socketTimeoutMS=inf`.",
+                        (int64_t)MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+         return MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+      } else {
+         return value;
+      }
+   }
+
+   return MONGOC_DEFAULT_SOCKETTIMEOUTMS;
 }
 
 const char *
