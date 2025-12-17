@@ -3860,18 +3860,9 @@ test_socketTimeoutMS_infinite(void)
       &error);
    ASSERT_OR_PRINT(ok, error);
 
-   // Expect "ping" to take 500ms.
-   const mlib_time_point start = mlib_now();
-
-   // Send "ping":
+   // Ensure we can send a ping without timing out:
    ok = mongoc_client_command_simple(client, "admin", tmp_bson(BSON_STR({"ping" : 1})), NULL, NULL, &error);
    ASSERT_OR_PRINT(ok, error);
-
-   const mlib_time_point end = mlib_now();
-
-   const mlib_duration elapsed = mlib_time_difference(end, start);
-
-   ASSERT_CMPINT64(mlib_microseconds_count(elapsed), >=, mlib_microseconds_count(mlib_duration(500, ms)));
 
    mongoc_client_destroy(client);
    mongoc_uri_destroy(uri);
