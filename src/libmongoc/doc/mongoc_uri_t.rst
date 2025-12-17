@@ -115,6 +115,8 @@ MONGOC_URI_SRVMAXHOSTS                     srvmaxhosts                       0  
   The meaning of a timeout of ``0`` or a negative value may vary depending on the operation being executed, even when specified by the same URI option.
   To specify the documented default value for a \*timeoutMS option, use the `MONGOC_DEFAULT_*` constants defined in ``mongoc-client.h`` instead.
 
+  In the case of socketTimeoutMS, to disable the timeout completely (i.e., an infinite timeout), use ``socketTimeoutMS=inf``.
+
 Authentication Options
 ----------------------
 
