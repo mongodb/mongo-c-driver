@@ -91,13 +91,14 @@
 #define MONGOC_LOG_DOMAIN "client"
 
 
-static void
+static bool
 _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
                                    mongoc_server_stream_t *server_stream,
                                    int64_t cursor_id,
                                    const char *db,
                                    const char *collection,
-                                   mongoc_client_session_t *cs);
+                                   mongoc_client_session_t *cs,
+                                   bson_error_t *error);
 
 #define DNS_ERROR(_msg, ...)                                                                                 \
    do {                                                                                                      \
@@ -2142,8 +2143,6 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
                            const char *collection,
                            mongoc_client_session_t *cs)
 {
-   mongoc_server_stream_t *server_stream;
-
    ENTRY;
 
    BSON_ASSERT_PARAM(client);
@@ -2151,15 +2150,20 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
    BSON_ASSERT_PARAM(collection);
    BSON_ASSERT(cursor_id);
 
-   /* don't attempt reconnect if server unavailable, and ignore errors */
-   server_stream =
-      mongoc_cluster_stream_for_server(&client->cluster, server_id, false /* reconnect_ok */, NULL, NULL, NULL);
+   bson_error_t error = {0};
+   // Do not attempt to reconnect when in load balanced mode. Cursors are pinned to connections in load balanced mode. A
+   // new connection might not connect to the same backing server.
+   const bool reconnect_ok = _mongoc_topology_get_type(client->topology) != MONGOC_TOPOLOGY_LOAD_BALANCED;
+   // Try to reconnect. Log on error.
+   mongoc_server_stream_t *server_stream =
+      mongoc_cluster_stream_for_server(&client->cluster, server_id, reconnect_ok, NULL, NULL, &error);
 
    if (!server_stream) {
-      return;
+      MONGOC_INFO("Ignoring failure to connect to kill cursor %" PRId64 ": %s", cursor_id, error.message);
+   } else if (!_mongoc_client_killcursors_command(
+                 &client->cluster, server_stream, cursor_id, db, collection, cs, &error)) {
+      MONGOC_INFO("Ignoring failure to kill cursor %" PRId64 ": %s", cursor_id, error.message);
    }
-
-   _mongoc_client_killcursors_command(&client->cluster, server_stream, cursor_id, db, collection, cs);
 
    mongoc_server_stream_cleanup(server_stream);
 
@@ -2167,16 +2171,18 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
 }
 
 
-static void
+static bool
 _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
                                    mongoc_server_stream_t *server_stream,
                                    int64_t cursor_id,
                                    const char *db,
                                    const char *collection,
-                                   mongoc_client_session_t *cs)
+                                   mongoc_client_session_t *cs,
+                                   bson_error_t *error)
 {
    bson_t command = BSON_INITIALIZER;
    mongoc_cmd_parts_t parts;
+   bool ok = false;
 
    ENTRY;
 
@@ -2185,17 +2191,22 @@ _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
    parts.assembled.operation_id = ++cluster->operation_id;
    mongoc_cmd_parts_set_session(&parts, cs);
 
-   if (mongoc_cmd_parts_assemble(&parts, server_stream, NULL)) {
-      /* Find, getMore And killCursors Commands Spec: "The result from the
-       * killCursors command MAY be safely ignored."
-       */
-      (void)mongoc_cluster_run_command_monitored(cluster, &parts.assembled, NULL, NULL);
+   if (!mongoc_cmd_parts_assemble(&parts, server_stream, error)) {
+      GOTO(fail);
+   }
+   /* Find, getMore And killCursors Commands Spec: "The result from the
+    * killCursors command MAY be safely ignored."
+    */
+   if (!mongoc_cluster_run_command_monitored(cluster, &parts.assembled, NULL, error)) {
+      GOTO(fail);
    }
 
+   ok = true;
+fail:
    mongoc_cmd_parts_cleanup(&parts);
    bson_destroy(&command);
 
-   EXIT;
+   RETURN(ok);
 }
 
 
