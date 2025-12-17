@@ -86,7 +86,7 @@ mongoc_async_cmd_tls_setup(mongoc_stream_t *stream, int *events, void *ctx, mlib
    const mlib_duration_rep_t remain_ms = //
       use_non_blocking
          // Pass sentinel value for the timeout to begin / continue a non-blocking handshake
-         ? MONGOC_SOCKET_TIMEOUT_NON_BLOCKING
+         ? MONGOC_SOCKET_TIMEOUT_IMMEDIATE
          // Otherwise, use the deadline
          : mlib_milliseconds_count(mlib_timer_remaining(deadline));
    if (mongoc_stream_tls_handshake(tls_stream, host, mlib_assert_narrow(int32_t, remain_ms), &retry_events, error)) {

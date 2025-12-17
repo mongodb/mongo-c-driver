@@ -2611,7 +2611,7 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
 
    if (str_maybe && strcasecmp(str_maybe, "inf") == 0) {
       // TODO: log and refer to ticket number
-      return 0;
+      return MONGOC_SOCKET_TIMEOUT_INFINITE;
    }
 
    return mongoc_uri_get_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);

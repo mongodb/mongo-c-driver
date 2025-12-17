@@ -2624,7 +2624,7 @@ test_mongoc_uri_socket_timeout_ms(void)
 
    // TODO:link to ticket explaining "inf"
    ASSERT(mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf"));
-   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, 0);
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_SOCKET_TIMEOUT_INFINITE);
 
    mongoc_uri_destroy(uri);
 
@@ -2638,7 +2638,7 @@ test_mongoc_uri_socket_timeout_ms(void)
    uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=inf");
    ASSERT(uri);
 
-   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, 0);
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_SOCKET_TIMEOUT_INFINITE);
 
    mongoc_uri_destroy(uri);
 
@@ -2646,7 +2646,7 @@ test_mongoc_uri_socket_timeout_ms(void)
    ASSERT(uri);
 
    // TODO:link to ticket explaining "inf"
-   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), !=, 0);
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), !=, MONGOC_SOCKET_TIMEOUT_INFINITE);
    ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
    mongoc_uri_destroy(uri);

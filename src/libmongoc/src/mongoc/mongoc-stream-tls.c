@@ -237,4 +237,34 @@ mongoc_stream_tls_new_with_secure_channel_cred(mongoc_stream_t *base_stream,
 }
 #endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
+mlib_timer
+_mongoc_stream_tls_timer_from_timeout_msec(int64_t timeout_msec)
+{
+   if (timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE) {
+      return mlib_expires_after(0, ms);
+   } else if (timeout_msec <= 0) {
+      return mlib_expires_never();
+   } else {
+      return mlib_expires_after(timeout_msec, ms);
+   }
+}
+
+int64_t
+_mongoc_stream_tls_timer_to_timeout_msec(mlib_timer timer)
+{
+   const mlib_timer never = mlib_expires_never();
+
+   if (mlib_time_cmp(timer.expires_at, never.expires_at) == mlib_equal) {
+      return MONGOC_SOCKET_TIMEOUT_INFINITE;
+   }
+
+   const int64_t remaining_msec = mlib_milliseconds_count(mlib_timer_remaining(timer));
+
+   if (remaining_msec <= 0) {
+      return MONGOC_SOCKET_TIMEOUT_IMMEDIATE;
+   } else {
+      return remaining_msec;
+   }
+}
+
 #endif

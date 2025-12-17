@@ -115,17 +115,11 @@ _mongoc_stream_tls_secure_transport_write(mongoc_stream_t *stream, char *buf, si
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *)tls->ctx;
    ssize_t write_ret;
-   int64_t now;
-   int64_t expire = 0;
 
    ENTRY;
    BSON_ASSERT(secure_transport);
 
-   if (tls->timeout_msec > 0) {
-      expire = bson_get_monotonic_time() + (tls->timeout_msec * 1000UL);
-   } else if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_NON_BLOCKING) {
-      expire = bson_get_monotonic_time();
-   }
+   const mlib_timer timer = _mongoc_stream_tls_timer_from_timeout_msec(tls->timeout_msec);
 
    status = SSLWrite(secure_transport->ssl_ctx_ref, buf, buf_len, (size_t *)&write_ret);
 
@@ -141,20 +135,10 @@ _mongoc_stream_tls_secure_transport_write(mongoc_stream_t *stream, char *buf, si
       RETURN(-1);
    }
 
-   if (expire) {
-      now = bson_get_monotonic_time();
+   tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-      const int64_t remaining_msec = (expire - now) / 1000L;
-
-      if (remaining_msec <= 0) {
-         if (write_ret < (ssize_t)buf_len) {
-            mongoc_counter_streams_timeout_inc();
-         }
-
-         tls->timeout_msec = MONGOC_SOCKET_TIMEOUT_NON_BLOCKING;
-      } else {
-         tls->timeout_msec = remaining_msec;
-      }
+   if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && write_ret < (ssize_t)buf_len) {
+      mongoc_counter_streams_timeout_inc();
    }
 
    RETURN(write_ret);
@@ -291,8 +275,6 @@ _mongoc_stream_tls_secure_transport_readv(
    size_t i;
    size_t read_ret;
    size_t iov_pos = 0;
-   int64_t now;
-   int64_t expire = 0;
    size_t to_read;
    size_t remaining_buf_size;
    size_t remaining_to_read;
@@ -304,11 +286,7 @@ _mongoc_stream_tls_secure_transport_readv(
 
    tls->timeout_msec = timeout_msec;
 
-   if (timeout_msec > 0) {
-      expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
-   } else if (timeout_msec == MONGOC_SOCKET_TIMEOUT_NON_BLOCKING) {
-      expire = bson_get_monotonic_time();
-   }
+   const mlib_timer timer = _mongoc_stream_tls_timer_from_timeout_msec(timeout_msec);
 
    for (i = 0; i < iovcnt; i++) {
       iov_pos = 0;
@@ -334,22 +312,12 @@ _mongoc_stream_tls_secure_transport_readv(
             RETURN(-1);
          }
 
-         if (expire) {
-            now = bson_get_monotonic_time();
+         tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-            const int64_t remaining_msec = (expire - now) / 1000L;
-
-            if (remaining_msec <= 0) {
-               if (read_ret == 0) {
-                  mongoc_counter_streams_timeout_inc();
-                  errno = ETIMEDOUT;
-                  RETURN(-1);
-               }
-
-               tls->timeout_msec = MONGOC_SOCKET_TIMEOUT_NON_BLOCKING;
-            } else {
-               tls->timeout_msec = remaining_msec;
-            }
+         if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && read_ret == 0) {
+            mongoc_counter_streams_timeout_inc();
+            errno = ETIMEDOUT;
+            RETURN(-1);
          }
 
          ret += read_ret;
