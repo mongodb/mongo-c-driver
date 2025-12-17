@@ -42,7 +42,7 @@
  *       You can change this by providing sockettimeoutms= in your
  *       connection URI.
  *
- *       This default may be changed to 0 (unlimited timeout)
+ *       CDRIVER-6177: This default is not spec compliant.
  */
 #define MONGOC_DEFAULT_SOCKETTIMEOUTMS (1000L * 60L * 5L)
 #endif

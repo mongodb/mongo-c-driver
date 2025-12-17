@@ -734,7 +734,7 @@ mongoc_uri_option_is_utf8(const char *key)
           !strcasecmp(key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
           !strcasecmp(key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
           !strcasecmp(key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE) ||
-          // temporarily allow `socketTimeoutMS=inf` to support unlimited timeouts
+          // CDRIVER-6177: Temporarily allow `socketTimeoutMS=inf` to support unlimited timeouts.
           !strcasecmp(key, MONGOC_URI_SOCKETTIMEOUTMS);
 }
 
@@ -1004,7 +1004,7 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
             MONGOC_WARNING("Empty value provided for \"%s\"", key);
          }
       } else if (mongoc_uri_option_is_int32(key)) {
-         // temporarily allow `socketTimeoutMS=inf` to support unlimited timeouts
+         // CDRIVER-6177: Temporarily allow `socketTimeoutMS=inf` to support unlimited timeouts.
          if (strcasecmp(key, MONGOC_URI_SOCKETTIMEOUTMS) == 0 && strcasecmp(value, "inf") == 0) {
             _bson_upsert_utf8_icase(&uri->options, mstr_cstring(MONGOC_URI_SOCKETTIMEOUTMS), "inf");
          } else if (0 < strlen(value)) {
@@ -2610,7 +2610,8 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
    const char *const str_maybe = mongoc_uri_get_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, NULL);
 
    if (str_maybe && strcasecmp(str_maybe, "inf") == 0) {
-      // TODO: log and refer to ticket number
+      // CDRIVER-6177: To avoid a breaking change, use `socketTimeoutMS=inf` to specify an infinite timeout instead of
+      // `socketTimeoutMS=0`.
       return MONGOC_SOCKET_TIMEOUT_INFINITE;
    }
 

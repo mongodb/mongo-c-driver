@@ -3840,6 +3840,7 @@ static void
 test_socketTimeoutMS_infinite(void)
 {
    mongoc_uri_t *const uri = test_framework_get_uri();
+   // CDRIVER-6177: We must use "inf" instead of 0 to disable the timeout.
    mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf");
 
    mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);

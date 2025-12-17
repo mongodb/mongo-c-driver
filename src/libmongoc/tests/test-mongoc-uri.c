@@ -2616,13 +2616,13 @@ test_mongoc_uri_socket_timeout_ms(void)
    mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost/");
    ASSERT(uri);
 
-   // If sockettimeoutms is not set, return the C Driver's default
+   // If `socketTimeoutMS` is not set, return the C Driver's default.
    ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
    ASSERT(mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 99));
    ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, 99);
 
-   // TODO:link to ticket explaining "inf"
+   // CDRIVER-6177: `socketTimeoutMS=inf` is used to specify an infinite timeout instead of `socketTimeoutMS=0`.
    ASSERT(mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf"));
    ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_SOCKET_TIMEOUT_INFINITE);
 
@@ -2645,8 +2645,7 @@ test_mongoc_uri_socket_timeout_ms(void)
    uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=0");
    ASSERT(uri);
 
-   // TODO:link to ticket explaining "inf"
-   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), !=, MONGOC_SOCKET_TIMEOUT_INFINITE);
+   // CDRIVER-6177: `socketTimeoutMS=0` is treated as unset, so the default is used instead.
    ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
    mongoc_uri_destroy(uri);
