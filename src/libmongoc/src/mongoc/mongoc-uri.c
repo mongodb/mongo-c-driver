@@ -2623,6 +2623,7 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
       int32_t const value = bson_iter_int32(&iter);
 
       if (value == 0) {
+         // See CDRIVER-6177.
          MONGOC_WARNING("`socketTimeoutMS=0` cannot be used to disable socket timeouts. The default of %" PRId64
                         " will be used instead. To disable socket timeouts, use `socketTimeoutMS=inf`.",
                         (int64_t)MONGOC_DEFAULT_SOCKETTIMEOUTMS);
