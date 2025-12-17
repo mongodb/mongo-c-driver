@@ -3837,7 +3837,7 @@ test_killCursors(void)
 }
 
 static void
-test_socketTimeoutMS_unlimited(void)
+test_socketTimeoutMS_infinite(void)
 {
    mongoc_uri_t *const uri = test_framework_get_uri();
    mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf");
@@ -4092,5 +4092,5 @@ test_client_install(TestSuite *suite)
                      test_framework_skip_if_no_server_ssl);
 #endif
    TestSuite_AddLive(suite, "/Client/killCursors", test_killCursors);
-   TestSuite_AddLive(suite, "/Client/socketTimeoutMS_unlimited", test_socketTimeoutMS_unlimited);
+   TestSuite_AddLive(suite, "/Client/socketTimeoutMS_infinite", test_socketTimeoutMS_infinite);
 }
