@@ -28,6 +28,8 @@
 
 #include <bson/bson.h>
 
+#include <mlib/timer.h>
+
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #endif
@@ -66,6 +68,12 @@ mongoc_stream_tls_new_with_secure_channel_cred(mongoc_stream_t *base_stream,
                                                mongoc_ssl_opt_t *opt,
                                                mongoc_shared_ptr secure_channel_cred_ptr) BSON_GNUC_WARN_UNUSED_RESULT;
 #endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
+
+mlib_timer
+_mongoc_stream_tls_timer_from_timeout_msec(int64_t timeout_msec);
+
+int64_t
+_mongoc_stream_tls_timer_to_timeout_msec(mlib_timer timer);
 
 BSON_END_DECLS
 

@@ -3836,6 +3836,39 @@ test_killCursors(void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_socketTimeoutMS_infinite(void)
+{
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   // CDRIVER-6177: We must use "inf" instead of 0 to disable the timeout.
+   mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf");
+
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   test_framework_set_ssl_opts(client);
+
+   // Configure a failpoint to block on "ping" for 500ms.
+   bson_error_t error;
+   bool ok = mongoc_client_command_simple(
+      client,
+      "admin",
+      tmp_bson(BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"failCommands" : ["ping"], "blockTimeMS" : 500, "blockConnection" : true}
+      })),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   // Ensure we can send a ping without timing out:
+   ok = mongoc_client_command_simple(client, "admin", tmp_bson(BSON_STR({"ping" : 1})), NULL, NULL, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
 void
 test_client_install(TestSuite *suite)
 {
@@ -4051,4 +4084,5 @@ test_client_install(TestSuite *suite)
                      test_framework_skip_if_no_server_ssl);
 #endif
    TestSuite_AddLive(suite, "/Client/killCursors", test_killCursors);
+   TestSuite_AddLive(suite, "/Client/socketTimeoutMS_infinite", test_socketTimeoutMS_infinite);
 }

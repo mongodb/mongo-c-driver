@@ -685,8 +685,6 @@ _mongoc_stream_tls_secure_channel_readv(
    ssize_t ret = 0;
    size_t i;
    size_t iov_pos = 0;
-   int64_t now;
-   int64_t expire = 0;
 
    BSON_ASSERT(iov);
    BSON_ASSERT(iovcnt);
@@ -695,9 +693,7 @@ _mongoc_stream_tls_secure_channel_readv(
 
    tls->timeout_msec = timeout_msec;
 
-   if (timeout_msec >= 0) {
-      expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
-   }
+   const mlib_timer timer = _mongoc_stream_tls_timer_from_timeout_msec(timeout_msec);
 
    for (i = 0; i < iovcnt; i++) {
       iov_pos = 0;
@@ -716,20 +712,12 @@ _mongoc_stream_tls_secure_channel_readv(
             RETURN(-1);
          }
 
-         if (expire) {
-            now = bson_get_monotonic_time();
+         tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-            if ((expire - now) < 0) {
-               if (read_ret == 0) {
-                  mongoc_counter_streams_timeout_inc();
-                  errno = ETIMEDOUT;
-                  RETURN(-1);
-               }
-
-               tls->timeout_msec = 0;
-            } else {
-               tls->timeout_msec = (expire - now) / 1000L;
-            }
+         if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && read_ret == 0) {
+            mongoc_counter_streams_timeout_inc();
+            errno = ETIMEDOUT;
+            RETURN(-1);
          }
 
          ret += read_ret;

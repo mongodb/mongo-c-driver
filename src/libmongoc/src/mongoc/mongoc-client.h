@@ -62,6 +62,8 @@ BSON_BEGIN_DECLS
  *
  *       You can change this by providing sockettimeoutms= in your
  *       connection URI.
+ *
+ *       CDRIVER-6177: This default is not spec compliant.
  */
 #define MONGOC_DEFAULT_SOCKETTIMEOUTMS (1000L * 60L * 5L)
 #endif
