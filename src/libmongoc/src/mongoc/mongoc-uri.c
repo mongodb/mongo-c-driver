@@ -31,6 +31,7 @@
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-oidc-env-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-uri-private.h>

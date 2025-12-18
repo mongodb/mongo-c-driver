@@ -39,6 +39,9 @@ BSON_BEGIN_DECLS
 #define MONGOC_STREAM_GRIDFS_UPLOAD 6
 #define MONGOC_STREAM_GRIDFS_DOWNLOAD 7
 
+#define MONGOC_SOCKET_TIMEOUT_INFINITE 0
+#define MONGOC_SOCKET_TIMEOUT_IMMEDIATE INT32_MIN
+
 bool
 mongoc_stream_wait(mongoc_stream_t *stream, int64_t expire_at);
 

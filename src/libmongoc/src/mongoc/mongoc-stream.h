@@ -29,9 +29,6 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_SOCKET_TIMEOUT_INFINITE 0
-#define MONGOC_SOCKET_TIMEOUT_IMMEDIATE INT32_MIN
-
 typedef struct _mongoc_stream_t mongoc_stream_t;
 
 typedef struct _mongoc_stream_poll_t {
