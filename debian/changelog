@@ -1,3 +1,9 @@
+mongo-c-driver (1.23.1-1+deb12u2) UNRELEASED; urgency=medium
+
+  * 
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 18 Dec 2025 14:51:44 -0500
+
 mongo-c-driver (1.23.1-1+deb12u1) bookworm; urgency=medium
 
   * Fix CVE-2023-0437: When calling bson_utf8_validate on some inputs a loop
