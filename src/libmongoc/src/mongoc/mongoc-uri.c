@@ -2623,7 +2623,7 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
 
    if (options && bson_iter_init_find_case(&iter, options, MONGOC_URI_SOCKETTIMEOUTMS) &&
        BSON_ITER_HOLDS_INT32(&iter)) {
-      int32_t const value = bson_iter_int32(&iter);
+      const int32_t value = bson_iter_int32(&iter);
 
       if (value == 0) {
          // See CDRIVER-6177.
