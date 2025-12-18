@@ -1,9 +1,9 @@
-mongo-c-driver (1.30.4-1+deb13u1) UNRELEASED; urgency=medium
+mongo-c-driver (1.30.4-1+deb13u1) trixie; urgency=medium
 
   * Fix CVE-2025-12119: mongoc_bulk_operation_t may read invalid memory if
     large options are passed.
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 18 Dec 2025 13:57:29 -0500
+ -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 18 Dec 2025 14:50:07 -0500
 
 mongo-c-driver (1.30.4-1) unstable; urgency=medium
 
