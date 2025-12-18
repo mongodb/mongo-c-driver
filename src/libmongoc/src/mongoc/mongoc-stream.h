@@ -23,8 +23,6 @@
 #include <mongoc/mongoc-macros.h>
 #include <mongoc/mongoc-socket.h>
 
-#include <stdint.h>
-
 
 BSON_BEGIN_DECLS
 

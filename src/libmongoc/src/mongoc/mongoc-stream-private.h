@@ -27,6 +27,8 @@
 
 #include <mlib/timer.h>
 
+#include <stdint.h>
+
 
 BSON_BEGIN_DECLS
 
