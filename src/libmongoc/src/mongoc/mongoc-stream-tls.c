@@ -254,7 +254,7 @@ _mongoc_stream_tls_timer_to_timeout_msec(mlib_timer timer)
 {
    const mlib_timer never = mlib_expires_never();
 
-   if (mlib_time_cmp(timer.expires_at, never.expires_at) == mlib_equal) {
+   if (mlib_time_cmp(timer.expires_at, ==, never.expires_at)) {
       return MONGOC_SOCKET_TIMEOUT_INFINITE;
    }
 
