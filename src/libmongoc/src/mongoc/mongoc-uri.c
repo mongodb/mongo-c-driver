@@ -38,6 +38,8 @@
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 
+// CDRIVER-6179: Including mongoc-client.h for MONGOC_DEFAULT_SOCKETTIMEOUTMS.
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-log.h>

@@ -54,6 +54,21 @@ BSON_BEGIN_DECLS
 #endif
 
 
+#ifndef MONGOC_DEFAULT_SOCKETTIMEOUTMS
+/*
+ * NOTE: The default socket timeout for connections is 5 minutes. This
+ *       means that if your MongoDB server dies or becomes unavailable
+ *       it will take 5 minutes to detect this.
+ *
+ *       You can change this by providing sockettimeoutms= in your
+ *       connection URI.
+ *
+ *       CDRIVER-6177: This default is not spec compliant.
+ */
+#define MONGOC_DEFAULT_SOCKETTIMEOUTMS (1000L * 60L * 5L)
+#endif
+
+
 /**
  * mongoc_client_t:
  *
