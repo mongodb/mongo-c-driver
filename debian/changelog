@@ -1,9 +1,9 @@
-mongo-c-driver (1.23.1-1+deb12u2) UNRELEASED; urgency=medium
+mongo-c-driver (1.23.1-1+deb12u2) bookworm; urgency=medium
 
   * Fix CVE-2025-12119: mongoc_bulk_operation_t may read invalid memory if
     large options are passed.
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 18 Dec 2025 14:51:44 -0500
+ -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 18 Dec 2025 15:54:33 -0500
 
 mongo-c-driver (1.23.1-1+deb12u1) bookworm; urgency=medium
 
