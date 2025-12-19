@@ -2380,6 +2380,138 @@ test_open_cursor_from_reply(void)
    mongoc_client_destroy(client);
 }
 
+typedef struct {
+   char *commands[16];
+   size_t commands_len;
+} test_events_t;
+
+static void
+test_events_started_cb(const mongoc_apm_command_started_t *e)
+{
+   test_events_t *te = mongoc_apm_command_started_get_context(e);
+   ASSERT_CMPSIZE_T(te->commands_len, <, sizeof(te->commands) / sizeof(te->commands[0]));
+   te->commands[te->commands_len++] = bson_strdup(mongoc_apm_command_started_get_command_name(e));
+}
+
+static void
+test_cursor_timeout_killCursors(void)
+{
+   bson_error_t error;
+   const bson_t *got = NULL;
+
+   mongoc_uri_t *uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 500);
+   mongoc_client_t *client = test_framework_client_new_from_uri(uri, NULL /* use API version if configured */);
+   test_framework_set_ssl_opts(client);
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   bson_t *pipeline = tmp_bson("{}");
+   mongoc_collection_drop(coll, NULL);
+
+   // Capture events:
+   test_events_t te = {.commands_len = 0};
+   {
+      mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(cbs, test_events_started_cb);
+      ASSERT(mongoc_client_set_apm_callbacks(client, cbs, &te));
+      mongoc_apm_callbacks_destroy(cbs);
+   }
+
+   // Configure failpoint to delay getMore:
+   {
+      bson_t *cmd = tmp_bson(BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]}
+      }));
+      bool ok = mongoc_client_command_simple(client, "admin", cmd, NULL, NULL, &error);
+      ASSERT_OR_PRINT(ok, error);
+   }
+
+   // Insert documents to trigger a slow getMore later:
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
+
+   // Establish cursor:
+   {
+      mongoc_cursor_t *cursor =
+         mongoc_collection_aggregate(coll, MONGOC_QUERY_NONE, pipeline, tmp_bson("{'batchSize': 1 }"), NULL);
+
+      // First document returned fast from "aggregate":
+      ASSERT(mongoc_cursor_next(cursor, &got));
+      ASSERT(mongoc_cursor_get_id(cursor)); // Cursor established.
+
+      // Second document triggers timeout on "getMore":
+      ASSERT(!mongoc_cursor_next(cursor, &got));
+      ASSERT(mongoc_cursor_error(cursor, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
+      ASSERT(mongoc_cursor_get_id(cursor)); // Cursor ID still known.
+
+      mongoc_cursor_destroy(cursor); // Sends killCursors.
+   }
+
+   // Check events:
+   {
+      ASSERT_CMPSTR(te.commands[0], "configureFailPoint");
+      ASSERT_CMPSTR(te.commands[1], "insert");
+      ASSERT_CMPSTR(te.commands[2], "insert");
+      ASSERT_CMPSTR(te.commands[3], "aggregate");
+      ASSERT_CMPSTR(te.commands[4], "getMore");
+      ASSERT_CMPSTR(te.commands[5], "killCursors");
+   }
+
+   for (size_t i = 0; i < te.commands_len; i++) {
+      bson_free(te.commands[i]);
+   }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
+static void
+test_killCursors_failure_logs(void)
+{
+   bson_error_t error;
+   const bson_t *got = NULL;
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   mongoc_collection_drop(coll, NULL);
+
+   // Insert two documents:
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
+
+   // Establish cursor:
+   mongoc_cursor_t *cursor =
+      mongoc_collection_aggregate(coll, MONGOC_QUERY_NONE, tmp_bson("{}"), tmp_bson("{'batchSize': 1 }"), NULL);
+
+   // Iterate first document:
+   ASSERT(mongoc_cursor_next(cursor, &got));
+   ASSERT(mongoc_cursor_get_id(cursor)); // Cursor established.
+
+   // Simulate network error on killCursors:
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
+                                                "admin",
+                                                tmp_bson(BSON_STR({
+                                                   "configureFailPoint" : "failCommand",
+                                                   "mode" : {"times" : 1},
+                                                   "data" : {"failCommands" : ["killCursors"], "closeConnection" : true}
+                                                })),
+                                                NULL,
+                                                NULL,
+                                                &error),
+                   error);
+
+   // Expect error logged on failure:
+   capture_logs(true);
+   mongoc_cursor_destroy(cursor); // Sends killCursors.
+   ASSERT_CAPTURED_LOG("cursor", MONGOC_LOG_LEVEL_INFO, "failure to kill cursor");
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 void
 test_cursor_install(TestSuite *suite)
 {
@@ -2431,4 +2563,6 @@ test_cursor_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Cursor/batchsize_override_decimal128", test_cursor_batchsize_override_decimal128);
    TestSuite_AddLive(suite, "/Cursor/batchsize_override_range_warning", test_cursor_batchsize_override_range_warning);
    TestSuite_AddLive(suite, "/Cursor/open_cursor_from_reply", test_open_cursor_from_reply);
+   TestSuite_AddLive(suite, "/Cursor/timeout_killCursors", test_cursor_timeout_killCursors);
+   TestSuite_AddLive(suite, "/Cursor/killCursors_failure_logs", test_killCursors_failure_logs);
 }

@@ -20,6 +20,8 @@
 // clang-format off
 
 // MONGOC_CXX_COMPILER_ID identifies the (optional) C++ compiler detected by CMake.
+// Set to "" to if no check attempted.
+// Set to "Unknown" if check attempted and no C++ compiler was found.
 #define MONGOC_CXX_COMPILER_ID "@MONGOC_CXX_COMPILER_ID@"
 #define MONGOC_CXX_COMPILER_VERSION "@MONGOC_CXX_COMPILER_VERSION@"
 
