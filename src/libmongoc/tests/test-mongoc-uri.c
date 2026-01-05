@@ -2655,9 +2655,8 @@ test_mongoc_uri_socket_timeout_ms(void)
 
    uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=garbage");
    ASSERT(!uri);
-   ASSERT_CAPTURED_LOG("mongoc_uri_get_socket_timeout_ms_option",
-                       MONGOC_LOG_LEVEL_WARNING,
-                       "Unsupported value for \"sockettimeoutms\": \"garbage\"");
+   ASSERT_CAPTURED_LOG(
+      "mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"sockettimeoutms\": \"garbage\"");
 }
 
 
