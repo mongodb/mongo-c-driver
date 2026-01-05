@@ -2629,15 +2629,7 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
        BSON_ITER_HOLDS_INT32(&iter)) {
       const int32_t value = bson_iter_int32(&iter);
 
-      if (value == 0) {
-         // See CDRIVER-6177.
-         MONGOC_WARNING("`socketTimeoutMS=0` cannot be used to disable socket timeouts. The default of %" PRId32
-                        " will be used instead. To disable socket timeouts, use `socketTimeoutMS=inf`.",
-                        fallback);
-         return fallback;
-      } else {
-         return value;
-      }
+      return value == 0 ? fallback : value;
    }
 
    return fallback;
@@ -3047,6 +3039,13 @@ _mongoc_uri_set_option_as_int32_with_error(mongoc_uri_t *uri,
       MONGOC_URI_ERROR(error, "Failed to set URI option \"%s\" to %d", option_orig, value);
 
       return false;
+   }
+
+   if (strcmp(option_lowercase, MONGOC_URI_SOCKETTIMEOUTMS) == 0 && value == 0) {
+      // See CDRIVER-6177.
+      MONGOC_WARNING("`socketTimeoutMS=0` cannot be used to disable socket timeouts. The default of %" PRId32
+                     " will be used instead. To disable socket timeouts, use `socketTimeoutMS=inf`.",
+                     (int32_t)MONGOC_DEFAULT_SOCKETTIMEOUTMS);
    }
 
    bson_free(option_lowercase);
