@@ -226,7 +226,8 @@ mongoc_stream_tls_openssl_bio_read(BIO *b, char *buf, int len)
    openssl = (mongoc_stream_tls_openssl_t *)tls->ctx;
 
    errno = 0;
-   const ssize_t ret = mongoc_stream_read(tls->base_stream, buf, (size_t)len, 0, (int32_t)tls->timeout_msec);
+   const ssize_t ret = _mongoc_stream_read_with_socket_timeout_convention(
+      tls->base_stream, buf, (size_t)len, 0, (int32_t)tls->timeout_msec);
    BIO_clear_retry_flags(b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN(errno)) {
@@ -292,8 +293,9 @@ mongoc_stream_tls_openssl_bio_write(BIO *b, const char *buf, int len)
    }
 
    errno = 0;
-   TRACE("mongoc_stream_writev is expected to write: %d", len);
-   const ssize_t ret = mongoc_stream_writev(tls->base_stream, &iov, 1, (int32_t)tls->timeout_msec);
+   TRACE("_mongoc_stream_writev_with_socket_timeout_convention is expected to write: %d", len);
+   const ssize_t ret =
+      _mongoc_stream_writev_with_socket_timeout_convention(tls->base_stream, &iov, 1, (int32_t)tls->timeout_msec);
    BIO_clear_retry_flags(b);
 
    if (len > ret) {

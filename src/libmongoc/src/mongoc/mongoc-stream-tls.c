@@ -66,7 +66,7 @@ mongoc_stream_tls_handshake(
    BSON_ASSERT(stream_tls);
    BSON_ASSERT(stream_tls->handshake);
 
-   stream_tls->timeout_msec = timeout_msec;
+   stream_tls->timeout_msec = _mongoc_stream_timeout_to_socket_timeout_convention(timeout_msec);
 
    return stream_tls->handshake(stream, host, events, error);
 }

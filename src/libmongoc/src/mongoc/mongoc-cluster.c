@@ -296,7 +296,8 @@ _mongoc_cluster_run_command_opquery_send(
    }
 
    mcd_rpc_message_egress(rpc);
-   if (!_mongoc_stream_writev_full(stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
+   if (!_mongoc_stream_writev_full_with_socket_timeout_convention(
+          stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR_DECORATE;
       _handle_network_error(cluster, cmd->server_stream, error);
       goto done;
@@ -3014,7 +3015,8 @@ mongoc_cluster_legacy_rpc_sendv_to_server(mongoc_cluster_t *cluster,
    BSON_ASSERT(iovecs);
 
    mcd_rpc_message_egress(rpc);
-   if (!_mongoc_stream_writev_full(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
+   if (!_mongoc_stream_writev_full_with_socket_timeout_convention(
+          server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
       GOTO(done);
    }
 
@@ -3233,8 +3235,8 @@ _mongoc_cluster_run_opmsg_send(
    BSON_ASSERT(iovecs);
 
    mcd_rpc_message_egress(rpc);
-   const bool res =
-      _mongoc_stream_writev_full(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error);
+   const bool res = _mongoc_stream_writev_full_with_socket_timeout_convention(
+      server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error);
 
    if (!res) {
       RUN_CMD_ERR_DECORATE;

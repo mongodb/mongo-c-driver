@@ -17,6 +17,7 @@
 
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-error-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-trace-private.h>
 
 #include <bson/bson.h>
@@ -198,7 +199,7 @@ _mongoc_buffer_append_from_stream(
       RETURN(false);
    }
 
-   ret = mongoc_stream_read(stream, buf, size, size, (int32_t)timeout_msec);
+   ret = _mongoc_stream_read_with_socket_timeout_convention(stream, buf, size, size, (int32_t)timeout_msec);
    if (mlib_cmp(ret, !=, size)) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_STREAM,
@@ -261,7 +262,8 @@ _mongoc_buffer_fill(
       RETURN(false);
    }
 
-   ret = mongoc_stream_read(stream, &buffer->data[buffer->len], avail_bytes, min_bytes, (int32_t)timeout_msec);
+   ret = _mongoc_stream_read_with_socket_timeout_convention(
+      stream, &buffer->data[buffer->len], avail_bytes, min_bytes, (int32_t)timeout_msec);
 
    if (ret < 0) {
       _mongoc_set_error(
@@ -328,7 +330,7 @@ _mongoc_buffer_try_append_from_stream(mongoc_buffer_t *buffer,
       RETURN(-1);
    }
 
-   ret = mongoc_stream_read(stream, buf, size, 0, (int32_t)timeout_msec);
+   ret = _mongoc_stream_read_with_socket_timeout_convention(stream, buf, size, 0, (int32_t)timeout_msec);
 
    if (ret > 0) {
       buffer->len += (size_t)ret;

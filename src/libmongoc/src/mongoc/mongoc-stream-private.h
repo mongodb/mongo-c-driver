@@ -51,8 +51,55 @@ bool
 _mongoc_stream_writev_full(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error);
 
+/*
+ * The public API for `mongoc_stream_t` uses a convention for interpreting non-positive integer timeouts that is
+ * different from the convention used for socket timeouts. To reduce the incidence of errors from mixing these two
+ * conventions, there are analogues of the public `mongoc_stream_t` API that expect the socket timeout convention:
+ *
+ * - `mongoc_stream_writev_full_with_socket_timeout_convention`
+ * - `mongoc_stream_writev_with_socket_timeout_convention`
+ * - `mongoc_stream_write_with_socket_timeout_convention`
+ * - `mongoc_stream_readv_with_socket_timeout_convention`
+ * - `mongoc_stream_read_with_socket_timeout_convention`
+ *
+ * The `mongoc_stream_t` public API timeout convention:
+ *   - 0: immediate timeout
+ *   - <0: default timeout (MONGOC_DEFAULT_TIMEOUT_MSEC)
+ *
+ * The socket timeout convention:
+ *   - INT32_MIN (MONGOC_SOCKET_TIMEOUT_IMMEDIATE): immediate timeout
+ *   - [INT32_MIN + 1, 0]: infinite timeout
+ *
+ * The stream API convention is kept for backwards compatibility. The socket timeout analogues are exclusively for
+ * internal use in functions that already use the socket timeout convention.
+ */
+
+bool
+_mongoc_stream_writev_full_with_socket_timeout_convention(
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error);
+
 mongoc_stream_t *
 mongoc_stream_get_root_stream(mongoc_stream_t *stream);
+
+ssize_t
+_mongoc_stream_writev_with_socket_timeout_convention(mongoc_stream_t *stream,
+                                                     mongoc_iovec_t *iov,
+                                                     size_t iovcnt,
+                                                     int32_t timeout_msec);
+
+ssize_t
+_mongoc_stream_write_with_socket_timeout_convention(mongoc_stream_t *stream,
+                                                    void *buf,
+                                                    size_t count,
+                                                    int32_t timeout_msec);
+
+ssize_t
+_mongoc_stream_readv_with_socket_timeout_convention(
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec);
+
+ssize_t
+_mongoc_stream_read_with_socket_timeout_convention(
+   mongoc_stream_t *stream, void *buf, size_t count, size_t min_bytes, int32_t timeout_msec);
 
 /**
  * @brief Poll the given set of streams
@@ -63,6 +110,9 @@ mongoc_stream_get_root_stream(mongoc_stream_t *stream);
  */
 ssize_t
 _mongoc_stream_poll_internal(mongoc_stream_poll_t *streams, size_t nstreams, mlib_timer until);
+
+int32_t
+_mongoc_stream_timeout_to_socket_timeout_convention(int32_t timeout_msec);
 
 BSON_END_DECLS
 

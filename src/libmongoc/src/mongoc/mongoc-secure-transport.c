@@ -21,6 +21,7 @@
 #include <common-macros-private.h>
 #include <common-string-private.h>
 #include <mongoc/mongoc-secure-transport-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-secure-transport-private.h>
 #include <mongoc/mongoc-trace-private.h>
@@ -329,7 +330,8 @@ mongoc_secure_transport_read(SSLConnectionRef connection, void *data, size_t *da
    /* 4 arguments is *min_bytes* -- This is not a negotiation.
     * Secure Transport wants all or nothing. We must continue reading until
     * we get this amount, or timeout */
-   length = mongoc_stream_read(tls->base_stream, data, *data_length, *data_length, tls->timeout_msec);
+   length = _mongoc_stream_readv_with_socket_timeout_convention(
+      tls->base_stream, data, *data_length, *data_length, tls->timeout_msec);
 
    if (length > 0) {
       *data_length = length;
@@ -364,7 +366,8 @@ mongoc_secure_transport_write(SSLConnectionRef connection, const void *data, siz
    ENTRY;
 
    errno = 0;
-   length = mongoc_stream_write(tls->base_stream, (void *)data, *data_length, tls->timeout_msec);
+   length = _mongoc_stream_write_with_socket_timeout_convention(
+      tls->base_stream, (void *)data, *data_length, tls->timeout_msec);
 
    if (length >= 0) {
       *data_length = length;

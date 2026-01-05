@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-stream-private.h>
 
 #include <mongoc/mongoc.h>
 
@@ -78,14 +79,16 @@ static ssize_t
 _mongoc_stream_debug_readv(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
-   return mongoc_stream_readv(((mongoc_stream_debug_t *)stream)->wrapped, iov, iovcnt, min_bytes, timeout_msec);
+   return _mongoc_stream_readv_with_socket_timeout_convention(
+      ((mongoc_stream_debug_t *)stream)->wrapped, iov, iovcnt, min_bytes, timeout_msec);
 }
 
 
 static ssize_t
 _mongoc_stream_debug_writev(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
-   return mongoc_stream_writev(((mongoc_stream_debug_t *)stream)->wrapped, iov, iovcnt, timeout_msec);
+   return _mongoc_stream_writev_with_socket_timeout_convention(
+      ((mongoc_stream_debug_t *)stream)->wrapped, iov, iovcnt, timeout_msec);
 }
 
 
