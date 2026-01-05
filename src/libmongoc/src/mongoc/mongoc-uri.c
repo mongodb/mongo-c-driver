@@ -2612,12 +2612,14 @@ mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri)
 int32_t
 mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
 {
-   const char *const str_maybe = mongoc_uri_get_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, NULL);
+   {
+      const char *const str_maybe = mongoc_uri_get_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, NULL);
 
-   if (str_maybe && strcasecmp(str_maybe, "inf") == 0) {
-      // CDRIVER-6177: To avoid a breaking change, use `socketTimeoutMS=inf` to specify an infinite timeout instead of
-      // `socketTimeoutMS=0`.
-      return MONGOC_SOCKET_TIMEOUT_INFINITE;
+      if (str_maybe && strcasecmp(str_maybe, "inf") == 0) {
+         // CDRIVER-6177: To avoid a breaking change, use `socketTimeoutMS=inf` to specify an infinite timeout instead
+         // of `socketTimeoutMS=0`.
+         return MONGOC_SOCKET_TIMEOUT_INFINITE;
+      }
    }
 
    const int32_t fallback = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
