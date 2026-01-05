@@ -23,6 +23,7 @@
 #include <mongoc/mongoc-errno-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-secure-channel-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-stream-tls-private.h>
 #include <mongoc/mongoc-stream-tls-secure-channel-private.h>
 #include <mongoc/mongoc-trace-private.h>
