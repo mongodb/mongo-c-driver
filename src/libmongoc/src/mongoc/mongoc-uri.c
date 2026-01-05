@@ -2624,7 +2624,7 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
 
    const int32_t fallback = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
 
-   bson_iter_t iter;
+   bson_iter_t iter = {0};
 
    if (bson_iter_init_find_case(&iter, mongoc_uri_get_options(uri), MONGOC_URI_SOCKETTIMEOUTMS) &&
        BSON_ITER_HOLDS_INT32(&iter)) {
