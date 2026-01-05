@@ -2646,9 +2646,15 @@ test_mongoc_uri_socket_timeout_ms(void)
    uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=0");
    ASSERT(uri);
 
-   // CDRIVER-6177: `socketTimeoutMS=0` is treated as unset, so the default is used instead.
-   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+   capture_logs(true);
 
+   //  CDRIVER-6177: `socketTimeoutMS=0` is treated as unset, so the default is used instead.
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+   ASSERT_CAPTURED_LOG("mongo_uri_get_socket_timeout_ms_option",
+                       MONGOC_LOG_LEVEL_WARNING,
+                       "`socketTimeoutMS=0` cannot be used to disable socket timeouts");
+
+   capture_logs(false);
    mongoc_uri_destroy(uri);
 
    capture_logs(true);
