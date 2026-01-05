@@ -2663,6 +2663,8 @@ test_mongoc_uri_socket_timeout_ms(void)
    ASSERT(!uri);
    ASSERT_CAPTURED_LOG(
       "mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"sockettimeoutms\": \"garbage\"");
+
+   capture_logs(false);
 }
 
 
