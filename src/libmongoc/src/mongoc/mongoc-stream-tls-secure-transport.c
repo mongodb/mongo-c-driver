@@ -299,6 +299,7 @@ _mongoc_stream_tls_secure_transport_readv(
    ENTRY;
 
    tls->timeout_msec = timeout_msec;
+   tls->timed_out = false;
 
    if (timeout_msec >= 0) {
       expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
@@ -334,6 +335,7 @@ _mongoc_stream_tls_secure_transport_readv(
             if ((expire - now) < 0) {
                if (read_ret == 0) {
                   mongoc_counter_streams_timeout_inc();
+                  tls->timed_out = true;
                   errno = ETIMEDOUT;
                   RETURN(-1);
                }
@@ -601,7 +603,7 @@ _mongoc_stream_tls_secure_channel_timed_out(mongoc_stream_t *stream)
 
    ENTRY;
 
-   RETURN(mongoc_stream_timed_out(tls->base_stream));
+   RETURN(tls->timed_out || mongoc_stream_timed_out(tls->base_stream));
 }
 
 static bool

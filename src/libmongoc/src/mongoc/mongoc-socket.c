@@ -188,12 +188,14 @@ _mongoc_socket_wait(mongoc_socket_t *sock, /* IN */
 
    for (;;) {
       if (expire_at < 0) {
-         timeout = -1;
+         timeout = -1; // Block indefinitely.
       } else if (expire_at == 0) {
-         timeout = 0;
+         timeout = 0; // Return immediately without blocking.
       } else {
+         // Caller specified expiration.
          timeout = (int)((expire_at - now) / 1000L);
          if (timeout < 0) {
+            // Time expired. Poll once more without blocking.
             timeout = 0;
          }
       }
@@ -243,13 +245,14 @@ _mongoc_socket_wait(mongoc_socket_t *sock, /* IN */
          }
       } else {
          /* ret == 0, poll timed out */
-         if (timeout) {
+         const bool has_expiration = expire_at > 0;
+         if (has_expiration) {
             mongoc_counter_streams_timeout_inc();
          }
 #ifdef _WIN32
-         sock->errno_ = timeout ? WSAETIMEDOUT : EAGAIN;
+         sock->errno_ = has_expiration ? WSAETIMEDOUT : EAGAIN;
 #else
-         sock->errno_ = timeout ? ETIMEDOUT : EAGAIN;
+         sock->errno_ = has_expiration ? ETIMEDOUT : EAGAIN;
 #endif
          RETURN(false);
       }
