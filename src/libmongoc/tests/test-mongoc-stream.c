@@ -262,7 +262,7 @@ test_stream_timeout(void)
    mongoc_stream_t *stream = mongoc_client_default_stream_initiator(uri, host, client, &error);
    ASSERT_OR_PRINT(stream, error);
 
-   // Read to trigger a timeout:
+   // The server is not sending any data. Read to trigger a timeout:
    char buf[16];
    ssize_t got = mongoc_stream_read(stream, buf, sizeof(buf), 1 /* Request 1 byte */, 10 /* 10ms timeout */);
    ASSERT_CMPSSIZE_T(got, <, 0);
