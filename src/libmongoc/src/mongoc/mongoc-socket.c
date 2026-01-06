@@ -157,7 +157,6 @@ _mongoc_socket_wait(mongoc_socket_t *sock, /* IN */
    struct pollfd pfd;
 #endif
    int ret;
-   bool has_expiration = expire_at > 0;
    int timeout;
    int64_t now;
 
@@ -246,6 +245,7 @@ _mongoc_socket_wait(mongoc_socket_t *sock, /* IN */
          }
       } else {
          /* ret == 0, poll timed out */
+         const bool has_expiration = expire_at > 0;
          if (has_expiration) {
             mongoc_counter_streams_timeout_inc();
          }
