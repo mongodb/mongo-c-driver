@@ -452,14 +452,14 @@ _mongoc_stream_writev_full_with_socket_timeout_convention(
    }
 
    if (mlib_cmp(r, !=, total_bytes)) {
-      char timeout_str[32] = "";
+      char *timeout_str = NULL;
 
       if (timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE) {
-         bson_strncpy(timeout_str, "with an immediate timeout", sizeof(timeout_str));
+         timeout_str = bson_strdup("with an immediate timeout");
       } else if (timeout_msec == MONGOC_SOCKET_TIMEOUT_INFINITE) {
-         bson_strncpy(timeout_str, "with an infinite timeout", sizeof(timeout_str));
+         timeout_str = bson_strdup("with an infinite timeout");
       } else {
-         snprintf(timeout_str, sizeof(timeout_str), "in %" PRId64 "ms", timeout_msec);
+         timeout_str = bson_strdup_printf("in %" PRId64 "ms", timeout_msec);
       }
 
       _mongoc_set_error(error,
@@ -469,6 +469,8 @@ _mongoc_stream_writev_full_with_socket_timeout_convention(
                         (uint64_t)r,
                         total_bytes,
                         timeout_str);
+
+      bson_free(timeout_str);
 
       RETURN(false);
    }
