@@ -712,6 +712,8 @@ _mongoc_cursor_run_command(
 
    ENTRY;
 
+   cursor->had_stream_timeout = false; // Reset before running next command.
+
    const char *cmd_name = _mongoc_get_command_name(command);
 
    mongoc_cmd_parts_init(&parts, cursor->client, db, MONGOC_QUERY_NONE, command);
@@ -834,6 +836,8 @@ retry:
    if (ret) {
       memset(&cursor->error, 0, sizeof(bson_error_t));
    }
+
+   cursor->had_stream_timeout = server_stream->timed_out;
 
    if (is_retryable && _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY) {
       is_retryable = false;

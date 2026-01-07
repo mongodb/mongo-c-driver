@@ -507,6 +507,7 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
       }
 
       resumable = _is_resumable_error(stream, err_doc);
+      int iteration_timeout_count = 0;
       while (resumable) {
          /* recreate the cursor. */
          mongoc_cursor_destroy(stream->cursor);
@@ -523,7 +524,16 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
          }
          if (err_doc) {
             resumable = _is_resumable_error(stream, err_doc);
+            if (stream->cursor->had_stream_timeout) {
+               iteration_timeout_count++;
+            }
          } else {
+            resumable = false;
+         }
+
+         if (iteration_timeout_count >= 2) {
+            // CDRIVER-6182: Do not resume if two iteration timeouts occur. Intended to avoid a possible resume loop
+            // when `aggregate` succeeds but `getMore` consistently times out.
             resumable = false;
          }
       }
