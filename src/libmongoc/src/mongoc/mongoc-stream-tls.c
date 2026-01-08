@@ -16,9 +16,6 @@
 
 #include <mongoc/mongoc-config.h>
 
-#include "mlib/duration.h"
-#include "mlib/timer.h"
-
 #ifdef MONGOC_ENABLE_SSL
 
 #include <mongoc/mongoc-error-private.h>
