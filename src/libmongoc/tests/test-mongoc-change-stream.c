@@ -639,6 +639,11 @@ test_change_stream_resumable_error(void)
    reply_to_request_with_hang_up(request);
    request_destroy(request);
 
+   // Expect a "killCursors" command that tries to cleanup the server-side cursor despite the previous (network) error.
+   request = mock_server_receives_msg(
+      server, MONGOC_QUERY_NONE, tmp_bson("{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
+   reply_to_request_with_ok_and_destroy(request);
+
    /* Retry command */
    request = mock_server_receives_msg(server, MONGOC_MSG_NONE, watch_cmd);
    BSON_ASSERT(request);
@@ -1314,6 +1319,10 @@ _test_resume(const char *opts,
    reply_to_request_with_hang_up(request);
    request_destroy(request);
    /* since the server closed the connection, a resume is attempted. */
+   request = mock_server_receives_msg(
+      server, MONGOC_QUERY_NONE, tmp_bson("{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
+   reply_to_request_with_ok_and_destroy(request);
+
    request = mock_server_receives_msg(server,
                                       MONGOC_QUERY_NONE,
                                       tmp_bson("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
@@ -1691,10 +1700,21 @@ prose_test_14(void *test_ctx)
     * time. */
    BSON_ASSERT(optime.timestamp != 0);
 
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &opts, NULL, &error), error);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 1}"), &opts, NULL, &error), error);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 2}"), &opts, NULL, &error), error);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 3}"), &opts, NULL, &error), error);
+   // Insert with majority write concern so events are immediately visible to change stream.
+   {
+      bson_t insert_opts = BSON_INITIALIZER;
+      mongoc_write_concern_t *wc = mongoc_write_concern_new();
+      mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      mongoc_write_concern_append(wc, &insert_opts);
+
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 0}"), &insert_opts, NULL, &error), error);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 1}"), &insert_opts, NULL, &error), error);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 2}"), &insert_opts, NULL, &error), error);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 3}"), &insert_opts, NULL, &error), error);
+
+      mongoc_write_concern_destroy(wc);
+      bson_destroy(&insert_opts);
+   }
 
    ASSERT(mongoc_change_stream_next(stream, &doc));
    resume_token = mongoc_change_stream_get_resume_token(stream);

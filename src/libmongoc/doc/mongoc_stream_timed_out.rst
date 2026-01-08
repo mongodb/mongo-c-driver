@@ -16,6 +16,10 @@ Parameters
 
 * ``stream``: A :symbol:`mongoc_stream_t`.
 
+.. warning::
+
+   Not all stream implementations consistently report timeouts. :symbol:`mongoc_stream_timed_out` may return false even if a timeout occurred.
+
 Returns
 -------
 

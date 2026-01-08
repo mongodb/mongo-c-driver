@@ -50,6 +50,8 @@ struct _mongoc_stream_tls_t {
    mongoc_stream_t *base_stream; /* The underlying actual stream */
    void *ctx;                    /* TLS lib specific configuration or wrappers */
    int64_t timeout_msec;
+   // `timed_out` reports a timeout in `mongoc_stream_timed_out`. If false, the timeout is reported from `base_stream`.
+   bool timed_out;
    mongoc_ssl_opt_t ssl_opts;
    bool (*handshake)(mongoc_stream_t *stream, const char *host, int *events /* OUT*/, bson_error_t *error);
 };

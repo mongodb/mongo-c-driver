@@ -139,6 +139,7 @@ _mongoc_stream_tls_secure_transport_write(mongoc_stream_t *stream, char *buf, si
 
    if (tls->timeout_msec == 0 && write_ret < (ssize_t)buf_len) {
       mongoc_counter_streams_timeout_inc();
+      tls->timed_out = true;
    }
 
    RETURN(write_ret);
@@ -285,6 +286,7 @@ _mongoc_stream_tls_secure_transport_readv(
    ENTRY;
 
    tls->timeout_msec = timeout_msec;
+   tls->timed_out = false;
 
    const mlib_timer timer = _mongoc_stream_tls_timer_from_timeout_msec(timeout_msec);
 
@@ -577,7 +579,7 @@ _mongoc_stream_tls_secure_channel_timed_out(mongoc_stream_t *stream)
 
    ENTRY;
 
-   RETURN(mongoc_stream_timed_out(tls->base_stream));
+   RETURN(tls->timed_out || mongoc_stream_timed_out(tls->base_stream));
 }
 
 static bool

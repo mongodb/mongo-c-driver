@@ -42,9 +42,8 @@ main(int argc, char *argv[])
    uri = mongoc_uri_new_with_error(uri_string, &error);
    if (!uri) {
       fprintf(stderr,
-              "failed to parse URI: %s\n"
-              "error message:       %s\n",
-              uri_string,
+              "failed to parse URI:\n"
+              "error message: %s\n",
               error.message);
       return EXIT_FAILURE;
    }
@@ -81,7 +80,7 @@ main(int argc, char *argv[])
          }
 
          if (fwrite(iov.iov_base, 1, r, stdout) != (size_t)r) {
-            MONGOC_ERROR("Failed to write to stdout. Exiting.\n");
+            fprintf(stderr, "Failed to write to stdout. Exiting.\n");
             exit(1);
          }
       }

@@ -405,7 +405,7 @@ required for it to succeed:
 3. Download an augmented SBOM from a recent execution of the ``sbom`` task in
    an Evergreen patch or commit build and save it to ``etc/augmented-sbom.json``.
 
-Once these prerequesites are met, creating the release archive can be done using
+Once these prerequisites are met, creating the release archive can be done using
 the :any:`+signed-release` target.::
 
    $ ./tools/earthly.sh --artifact +signed-release/dist dist --version=$NEW_VERSION
