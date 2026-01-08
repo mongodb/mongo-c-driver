@@ -1,8 +1,10 @@
+#include <mongoc/mongoc-client-private.h> // mongoc_client_default_stream_initiator
 #include <mongoc/mongoc-stream-private.h>
 
 #include <mongoc/mongoc.h>
 
 #include <TestSuite.h>
+#include <test-libmongoc.h>
 
 #include <fcntl.h>
 
@@ -249,6 +251,26 @@ test_stream_writev_timeout(void)
    }
 }
 
+static void
+test_stream_timeout(void)
+{
+   // Get a stream to the first test host:
+   mongoc_client_t *client = test_framework_new_default_client();
+   const mongoc_uri_t *uri = mongoc_client_get_uri(client);
+   const mongoc_host_list_t *host = mongoc_uri_get_hosts(uri);
+   bson_error_t error;
+   mongoc_stream_t *stream = mongoc_client_default_stream_initiator(uri, host, client, &error);
+   ASSERT_OR_PRINT(stream, error);
+
+   // The server is not sending any data. Read to trigger a timeout:
+   char buf[1];
+   ssize_t got = mongoc_stream_read(stream, buf, sizeof(buf), 1 /* Request 1 byte */, 10 /* 10ms timeout */);
+   ASSERT_CMPSSIZE_T(got, <, 0);
+   ASSERT(mongoc_stream_timed_out(stream));
+
+   mongoc_stream_destroy(stream);
+   mongoc_client_destroy(client);
+}
 
 void
 test_stream_install(TestSuite *suite)
@@ -257,4 +279,5 @@ test_stream_install(TestSuite *suite)
    TestSuite_Add(suite, "/Stream/buffered/oversized", test_buffered_oversized);
    TestSuite_Add(suite, "/Stream/writev/full", test_stream_writev_full);
    TestSuite_Add(suite, "/Stream/writev/timeout", test_stream_writev_timeout);
+   TestSuite_AddLive(suite, "/Stream/timeout", test_stream_timeout);
 }
