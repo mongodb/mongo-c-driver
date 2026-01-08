@@ -37,11 +37,10 @@ fi
 
 run-earthly() {
   if ! "$EARTHLY_EXE" --version; then
-    echo "Failed to execute Earthly executable:"
-    ls -ail "$EARTHLY_EXE" # Print executable permissions.
-    id # Print current user and group.
-    echo "Adding execute permissions:"
-    chmod a+x "$EARTHLY_EXE"
+    echo "Failed to execute Earthly executable, removing and re-downloading"
+    rm "$EARTHLY_EXE"
+    url="https://github.com/earthly/earthly/releases/download/v$EARTHLY_VERSION/$exe_filename"
+    curl --retry 5 -LsS --max-time 120 --fail "$url" --output "$EARTHLY_EXE"
   fi
   "$EARTHLY_EXE" "$@"
 }
