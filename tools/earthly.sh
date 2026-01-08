@@ -36,6 +36,13 @@ if ! is-file "$EARTHLY_EXE"; then
 fi
 
 run-earthly() {
+  if ! "$EARTHLY_EXE" --version; then
+    echo "Failed to execute Earthly executable:"
+    ls -ail "$EARTHLY_EXE" # Print executable permissions.
+    id # Print current user and group.
+    echo "Adding execute permissions:"
+    chmod a+x "$EARTHLY_EXE"
+  fi
   "$EARTHLY_EXE" "$@"
 }
 
