@@ -221,7 +221,7 @@ test_stream_writev_timeout(void)
       mongoc_stream_destroy((mongoc_stream_t *)stream);
    }
 
-   // A timeout value of 0 should be coverted to socket timeout convention then forwarded to the writev function.
+   // A timeout value of 0 should be forwarded as-is to the writev function.
    {
       writev_timeout_stream_t *const stream = _writev_timeout_stream_new();
 
