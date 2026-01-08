@@ -16,6 +16,9 @@
 
 #include <mongoc/mongoc-config.h>
 
+#include "mlib/duration.h"
+#include "mlib/timer.h"
+
 #ifdef MONGOC_ENABLE_SSL
 
 #include <mongoc/mongoc-error-private.h>
@@ -66,7 +69,7 @@ mongoc_stream_tls_handshake(
    BSON_ASSERT(stream_tls);
    BSON_ASSERT(stream_tls->handshake);
 
-   stream_tls->timeout_msec = _mongoc_stream_timeout_to_socket_timeout_convention(timeout_msec);
+   stream_tls->timeout_msec = _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec);
 
    return stream_tls->handshake(stream, host, events, error);
 }
@@ -240,9 +243,7 @@ mongoc_stream_tls_new_with_secure_channel_cred(mongoc_stream_t *base_stream,
 mlib_timer
 _mongoc_stream_tls_timer_from_timeout_msec(int64_t timeout_msec)
 {
-   if (timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE) {
-      return mlib_expires_after(0, ms);
-   } else if (timeout_msec <= 0) {
+   if (timeout_msec < 0) {
       return mlib_expires_never();
    } else {
       return mlib_expires_after(timeout_msec, ms);
@@ -255,16 +256,10 @@ _mongoc_stream_tls_timer_to_timeout_msec(mlib_timer timer)
    const mlib_timer never = mlib_expires_never();
 
    if (mlib_time_cmp(timer.expires_at, ==, never.expires_at)) {
-      return MONGOC_SOCKET_TIMEOUT_INFINITE;
+      return -1;
    }
 
-   const int64_t remaining_msec = mlib_milliseconds_count(mlib_timer_remaining(timer));
-
-   if (remaining_msec <= 0) {
-      return MONGOC_SOCKET_TIMEOUT_IMMEDIATE;
-   } else {
-      return remaining_msec;
-   }
+   return mlib_milliseconds_count(mlib_timer_remaining(timer));
 }
 
 #endif

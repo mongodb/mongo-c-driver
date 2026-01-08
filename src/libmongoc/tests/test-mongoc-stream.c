@@ -226,7 +226,7 @@ test_stream_writev_timeout(void)
       ssize_t const res = _mongoc_stream_writev_full((mongoc_stream_t *)stream, &iov, 1u, 0, &error);
       ASSERT_CMPSSIZE_T(res, ==, 0);
       ASSERT_WITH_MSG(stream->is_set, "expected _writev_timeout_stream_writev() to be invoked");
-      ASSERT_CMPINT32(stream->timeout_msec, ==, _mongoc_stream_timeout_to_socket_timeout_convention(0));
+      ASSERT_CMPINT32(stream->timeout_msec, ==, 0);
 
       mongoc_stream_destroy((mongoc_stream_t *)stream);
    }

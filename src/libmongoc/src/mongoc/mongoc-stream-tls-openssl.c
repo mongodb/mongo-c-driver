@@ -218,7 +218,7 @@ _mongoc_stream_tls_openssl_write(mongoc_stream_tls_t *tls, char *buf, size_t buf
 
    tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-   if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && mlib_cmp(ret, <, buf_len)) {
+   if (tls->timeout_msec == 0 && mlib_cmp(ret, <, buf_len)) {
       mongoc_counter_streams_timeout_inc();
    }
 
@@ -429,7 +429,7 @@ _mongoc_stream_tls_openssl_readv(
 
          tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-         if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && read_ret == 0) {
+         if (tls->timeout_msec == 0 && read_ret == 0) {
             mongoc_counter_streams_timeout_inc();
 #ifdef _WIN32
             errno = WSAETIMEDOUT;

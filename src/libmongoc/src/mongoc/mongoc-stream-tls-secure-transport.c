@@ -137,7 +137,7 @@ _mongoc_stream_tls_secure_transport_write(mongoc_stream_t *stream, char *buf, si
 
    tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-   if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && write_ret < (ssize_t)buf_len) {
+   if (tls->timeout_msec == 0 && write_ret < (ssize_t)buf_len) {
       mongoc_counter_streams_timeout_inc();
    }
 

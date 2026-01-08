@@ -717,8 +717,7 @@ mongoc_secure_channel_read(mongoc_stream_tls_t *tls, void *data, size_t data_len
     * size of the buffer. We are totally fine with just one TLS record (few
     *bytes)
     **/
-   const ssize_t length = _mongoc_stream_read_with_socket_timeout_convention(
-      tls->base_stream, data, data_length, 0, (int32_t)tls->timeout_msec);
+   const ssize_t length = _mongoc_stream_read_impl(tls->base_stream, data, data_length, 0, (int32_t)tls->timeout_msec);
 
    TRACE("Got %zd", length);
 
@@ -742,8 +741,8 @@ mongoc_secure_channel_write(mongoc_stream_tls_t *tls, const void *data, size_t d
 
    errno = 0;
    TRACE("Wanting to write: %zu", data_length);
-   const ssize_t length = _mongoc_stream_write_with_socket_timeout_convention(
-      tls->base_stream, (void *)data, data_length, (int32_t)tls->timeout_msec);
+   const ssize_t length =
+      _mongoc_stream_write_impl(tls->base_stream, (void *)data, data_length, (int32_t)tls->timeout_msec);
    TRACE("Wrote: %zd", length);
 
    return length;

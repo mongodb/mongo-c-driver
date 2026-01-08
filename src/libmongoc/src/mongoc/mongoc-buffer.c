@@ -159,7 +159,7 @@ _mongoc_buffer_append(mongoc_buffer_t *buffer, const uint8_t *data, size_t data_
  * @buffer; A mongoc_buffer_t.
  * @stream: The stream to read from.
  * @size: The number of bytes to read.
- * @timeout_msec: The number of milliseconds to wait or -1 for the default
+ * @timeout_msec: The number of milliseconds to wait in socket timeout convention
  * @error: A location for a bson_error_t, or NULL.
  *
  * Reads from stream @size bytes and stores them in @buffer. This can be used
@@ -293,7 +293,7 @@ _mongoc_buffer_fill(
  * @buffer; A mongoc_buffer_t.
  * @stream: The stream to read from.
  * @size: The number of bytes to read.
- * @timeout_msec: The number of milliseconds to wait or -1 for the default
+ * @timeout_msec: The number of milliseconds to wait in socket timeout convention
  *
  * Reads from stream @size bytes and stores them in @buffer. This can be used
  * in conjunction with reading RPCs from a stream. You read from the stream

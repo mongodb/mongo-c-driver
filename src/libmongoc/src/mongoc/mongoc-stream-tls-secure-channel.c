@@ -714,7 +714,7 @@ _mongoc_stream_tls_secure_channel_readv(
 
          tls->timeout_msec = _mongoc_stream_tls_timer_to_timeout_msec(timer);
 
-         if (tls->timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE && read_ret == 0) {
+         if (tls->timeout_msec == 0 && read_ret == 0) {
             mongoc_counter_streams_timeout_inc();
             errno = ETIMEDOUT;
             RETURN(-1);
