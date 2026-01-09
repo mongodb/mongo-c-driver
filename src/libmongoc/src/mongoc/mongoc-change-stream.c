@@ -522,13 +522,10 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
          if (!mongoc_cursor_error_document(stream->cursor, &err, &err_doc)) {
             goto end;
          }
-         if (err_doc) {
-            resumable = _is_resumable_error(stream, err_doc);
-            if (stream->cursor->had_stream_timeout) {
-               iteration_timeout_count++;
-            }
-         } else {
-            resumable = false;
+         BSON_ASSERT(err_doc);
+         resumable = _is_resumable_error(stream, err_doc);
+         if (stream->cursor->had_stream_timeout) {
+            iteration_timeout_count++;
          }
 
          if (iteration_timeout_count >= 2) {
