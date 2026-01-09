@@ -2618,7 +2618,7 @@ mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
       if (str_maybe && strcasecmp(str_maybe, "inf") == 0) {
          // CDRIVER-6177: To avoid a breaking change, use `socketTimeoutMS=inf` to specify an infinite timeout instead
          // of `socketTimeoutMS=0`.
-         return MONGOC_SOCKET_TIMEOUT_INFINITE;
+         return -1;
       }
    }
 

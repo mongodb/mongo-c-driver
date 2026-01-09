@@ -621,7 +621,7 @@ _state_need_kms(_state_machine_t *state_machine, bson_error_t *error)
       iov.iov_base = (char *)mongocrypt_binary_data(http_req);
       iov.iov_len = mongocrypt_binary_len(http_req);
 
-      if (!_mongoc_stream_writev_full_with_socket_timeout_convention(tls_stream, &iov, 1, sockettimeout, error)) {
+      if (!_mongoc_stream_writev_full_impl(tls_stream, &iov, 1, sockettimeout, error)) {
          if (mongocrypt_kms_ctx_fail(kms_ctx)) {
             continue;
          } else {
@@ -649,8 +649,7 @@ _state_need_kms(_state_machine_t *state_machine, bson_error_t *error)
             bytes_needed = BUFFER_SIZE;
          }
 
-         read_ret = _mongoc_stream_read_with_socket_timeout_convention(
-            tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
+         read_ret = _mongoc_stream_read_impl(tls_stream, buf, bytes_needed, 1 /* min_bytes. */, sockettimeout);
          if (read_ret <= 0) {
             if (mongocrypt_kms_ctx_fail(kms_ctx)) {
                break; // Stop reading reply.

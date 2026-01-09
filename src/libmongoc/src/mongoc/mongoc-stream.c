@@ -388,30 +388,6 @@ _mongoc_stream_writev_full(
    RETURN(ret);
 }
 
-ssize_t
-_mongoc_stream_read_with_socket_timeout_convention(
-   mongoc_stream_t *stream, void *buf, size_t count, size_t min_bytes, int32_t timeout_msec)
-{
-   ENTRY;
-
-   const ssize_t ret = _mongoc_stream_read_impl(
-      stream, buf, count, min_bytes, _mongoc_socket_timeout_ms_to_posix_timeout_convention(timeout_msec));
-
-   RETURN(ret);
-}
-
-bool
-_mongoc_stream_writev_full_with_socket_timeout_convention(
-   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error)
-{
-   ENTRY;
-
-   const bool ret = _mongoc_stream_writev_full_impl(
-      stream, iov, iovcnt, _mongoc_socket_timeout_ms_to_posix_timeout_convention(timeout_msec), error);
-
-   RETURN(ret);
-}
-
 bool
 _mongoc_stream_writev_full_impl(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error)
@@ -568,16 +544,4 @@ int32_t
 _mongoc_stream_timeout_ms_to_posix_timeout_convention(int32_t timeout_msec)
 {
    return timeout_msec >= 0 ? timeout_msec : MONGOC_DEFAULT_TIMEOUT_MSEC;
-}
-
-int32_t
-_mongoc_socket_timeout_ms_to_posix_timeout_convention(int32_t timeout_msec)
-{
-   if (timeout_msec == MONGOC_SOCKET_TIMEOUT_IMMEDIATE) {
-      return 0;
-   } else if (timeout_msec <= 0) {
-      return -1;
-   } else {
-      return timeout_msec;
-   }
 }
