@@ -529,6 +529,7 @@ mongoc_change_stream_next(mongoc_change_stream_t *stream, const bson_t **bson)
          if (iteration_timeout_count >= 2) {
             // CDRIVER-6182: Do not resume if two iteration timeouts occur. Intended to avoid a possible resume loop
             // when `aggregate` succeeds but `getMore` consistently times out.
+            MONGOC_WARNING("Breaking change stream resume loop after two timeouts");
             resumable = false;
          } else {
             resumable = _is_resumable_error(stream, err_doc);
