@@ -14,10 +14,11 @@ TAG = f'cse-matrix-{SSL}'
 # fmt: off
 COMPILE_MATRIX = [
     # For test matrix.
-    ('rhel8-latest',       'gcc',       None, ['cyrus']),
-    ('rhel8-arm64-latest', 'gcc',       None, ['cyrus']),
-    ('rhel8-zseries',      'gcc',       None, ['cyrus']), # Big Endian.
-    ('windows-vsCurrent',  'vs2022x64', None, ['cyrus']),
+    ('rhel8-latest',        'gcc',       None, ['cyrus']),
+    ('rhel8-arm64-latest',  'gcc',       None, ['cyrus']),
+    ('rhel8-zseries',       'gcc',       None, ['cyrus']), # Big Endian.
+    ('windows-vsCurrent',   'vs2022x64', None, ['cyrus']),
+    ('windows-2022-latest', 'vs2022x64', None, ['cyrus']),
 
     # For compile only.
     ('debian11-latest', 'clang',    None, ['cyrus']),
@@ -41,7 +42,8 @@ TEST_MATRIX = [
     # rhel8-zseries only provides 5.0+. Resource-limited: use sparingly.
     ('rhel8-zseries', 'gcc', None, 'cyrus', ['auth'], ['sharded'], ['5.0', 'latest']),
 
-    ('windows-vsCurrent', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent',   'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0',                ]),
+    ('windows-2022-latest', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], [                                   '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

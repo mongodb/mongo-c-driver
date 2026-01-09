@@ -96,6 +96,7 @@ UBUNTU_ARM64_DISTROS = [
 
 WINDOWS_DISTROS = [
     *ls_distro(name='windows-vsCurrent', os='windows', os_type='windows', vs_ver='vsCurrent'),  # Windows Server 2019
+    *ls_distro(name='windows-2022-latest', os='windows', os_type='windows', vs_ver='vsCurrent'),  # Windows Server 2022
 ]
 
 GRAVITON_DISTROS = [

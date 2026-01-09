@@ -200,12 +200,13 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-replica-auth
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-server-auth
       - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-8.0-sharded-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-replica-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-server-auth
-      - name: cse-sasl-cyrus-openssl-windows-2019-vs2022-x64-test-latest-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-compile
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-8.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-8.0-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-8.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
+      - name: cse-sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:
@@ -350,7 +351,10 @@ buildvariants:
       - name: sasl-cyrus-openssl-ubuntu2404-clang-14-compile
       - name: sasl-cyrus-openssl-ubuntu2404-gcc-compile
       - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-compile
-      - name: sasl-cyrus-openssl-windows-2019-vs2017-x64-test-latest-server-auth
+      - name: sasl-cyrus-openssl-windows-2019-vs2019-x64-compile
+      - name: sasl-cyrus-openssl-windows-2019-vs2022-x64-compile
+      - name: sasl-cyrus-openssl-windows-2022-latest-vs2022x64-compile
+      - name: sasl-cyrus-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
   - name: sasl-matrix-winssl
     display_name: sasl-matrix-winssl
     expansions: {}

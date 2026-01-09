@@ -15,20 +15,23 @@ TAG = f'sasl-matrix-{SSL}'
 COMPILE_MATRIX = [
     # For test matrix.
     ('amazon2023-arm64-latest-large-m8g', 'gcc', None, ['cyrus']),
-    ('rhel8-latest',       'gcc',        None, ['cyrus']),
-    ('rhel8-arm64-latest', 'gcc',        None, ['cyrus']),
-    ('rhel8-power',        'gcc',        None, ['cyrus']),
-    ('rhel8-zseries',      'gcc',        None, ['cyrus']),
-    ('windows-vsCurrent',  'vs2017x64',  None, ['cyrus']),
+    ('rhel8-latest',        'gcc',        None, ['cyrus']),
+    ('rhel8-arm64-latest',  'gcc',        None, ['cyrus']),
+    ('rhel8-power',         'gcc',        None, ['cyrus']),
+    ('rhel8-zseries',       'gcc',        None, ['cyrus']),
+    ('windows-2022-latest', 'vs2022x64',  None, ['cyrus']),
 
     # For compile only.
-    ('debian11-latest', 'gcc',      None, ['cyrus']),
-    ('debian12-latest', 'gcc',      None, ['cyrus']),
-    ('rhel80',          'gcc',      None, ['cyrus']),
-    ('ubuntu2204',      'gcc',      None, ['cyrus']),
-    ('ubuntu2204',      'clang-12', None, ['cyrus']),
-    ('ubuntu2404',      'gcc',      None, ['cyrus']),
-    ('ubuntu2404',      'clang-14', None, ['cyrus']),
+    ('debian11-latest',   'gcc',        None, ['cyrus']),
+    ('debian12-latest',   'gcc',        None, ['cyrus']),
+    ('rhel80',            'gcc',        None, ['cyrus']),
+    ('ubuntu2204',        'gcc',        None, ['cyrus']),
+    ('ubuntu2204',        'clang-12',   None, ['cyrus']),
+    ('ubuntu2404',        'gcc',        None, ['cyrus']),
+    ('ubuntu2404',        'clang-14',   None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2017x64',  None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2019x64',  None, ['cyrus']),
+    ('windows-vsCurrent', 'vs2022x64',  None, ['cyrus']),
 ]
 
 TEST_MATRIX = [
@@ -37,7 +40,7 @@ TEST_MATRIX = [
     ('rhel8-power',        'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
     ('rhel8-zseries',      'gcc', None, 'cyrus', ['auth'], ['server'], [              '5.0', '6.0', '7.0', '8.0', 'latest']),
 
-    ('windows-vsCurrent',  'vs2017x64', None, 'cyrus', ['auth'], ['server'], ['latest']),
+    ('windows-2022-latest',  'vs2022x64', None, 'cyrus', ['auth'], ['server'], ['latest']),
 
     # Test with Graviton processor:
     ('amazon2023-arm64-latest-large-m8g', 'gcc',  None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['latest']),
