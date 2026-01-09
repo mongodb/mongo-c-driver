@@ -12,14 +12,14 @@ TAG = f'cse-matrix-{SSL}'
 # pylint: disable=line-too-long
 # fmt: off
 COMPILE_MATRIX = [
-    ('windows-vsCurrent',   'vs2022x64', None, ['cyrus']),
-    ('windows-2022-latest', 'vs2022x64', None, ['cyrus']),
+    ('windows-vsCurrent',   'vs2022x64', None, ['sspi']),
+    ('windows-2022-latest', 'vs2022x64', None, ['sspi']),
 ]
 
 # QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.
 TEST_MATRIX = [
-    ('windows-vsCurrent',   'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0',                ]),
-    ('windows-2022-latest', 'vs2022x64', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], [                                   '8.0', 'latest']),
+    ('windows-vsCurrent',   'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0',                ]),
+    ('windows-2022-latest', 'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], [                                   '8.0', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
@@ -29,20 +29,20 @@ class WinSSLCompileCommon(CompileCommon):
     ssl = 'WINDOWS'
 
 
-class SaslCyrusWinSSLCompile(WinSSLCompileCommon):
-    name = 'cse-sasl-cyrus-winssl-compile'
-    commands = WinSSLCompileCommon.compile_commands(sasl='CYRUS')
+class SaslSspiWinSSLCompile(WinSSLCompileCommon):
+    name = 'cse-sasl-sspi-winssl-compile'
+    commands = WinSSLCompileCommon.compile_commands(sasl='SSPI')
 
 
 def functions():
-    return SaslCyrusWinSSLCompile.defn()
+    return SaslSspiWinSSLCompile.defn()
 
 
 def tasks():
     res = []
 
     SASL_TO_FUNC = {
-        'cyrus': SaslCyrusWinSSLCompile,
+        'sspi': SaslSspiWinSSLCompile,
     }
 
     MORE_TAGS = ['cse']
