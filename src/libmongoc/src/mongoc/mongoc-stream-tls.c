@@ -66,7 +66,7 @@ mongoc_stream_tls_handshake(
    BSON_ASSERT(stream_tls);
    BSON_ASSERT(stream_tls->handshake);
 
-   stream_tls->timeout_msec = timeout_msec;
+   stream_tls->timeout_msec = _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec);
 
    return stream_tls->handshake(stream, host, events, error);
 }
@@ -236,5 +236,27 @@ mongoc_stream_tls_new_with_secure_channel_cred(mongoc_stream_t *base_stream,
    return mongoc_stream_tls_secure_channel_new_with_creds(base_stream, host, opt, secure_channel_cred_ptr);
 }
 #endif // MONGOC_ENABLE_SSL_SECURE_CHANNEL
+
+mlib_timer
+_mongoc_stream_tls_timer_from_timeout_msec(int64_t timeout_msec)
+{
+   if (timeout_msec < 0) {
+      return mlib_expires_never();
+   } else {
+      return mlib_expires_after(timeout_msec, ms);
+   }
+}
+
+int64_t
+_mongoc_stream_tls_timer_to_timeout_msec(mlib_timer timer)
+{
+   const mlib_timer never = mlib_expires_never();
+
+   if (mlib_time_cmp(timer.expires_at, ==, never.expires_at)) {
+      return -1;
+   }
+
+   return mlib_milliseconds_count(mlib_timer_remaining(timer));
+}
 
 #endif

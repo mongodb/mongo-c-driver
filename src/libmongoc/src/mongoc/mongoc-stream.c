@@ -36,6 +36,8 @@
 #include <mlib/duration.h>
 #include <mlib/timer.h>
 
+#include <stdio.h>
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream"
@@ -150,23 +152,10 @@ mongoc_stream_flush(mongoc_stream_t *stream)
 ssize_t
 mongoc_stream_writev(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
 {
-   ssize_t ret;
-
    ENTRY;
 
-   BSON_ASSERT_PARAM(stream);
-   BSON_ASSERT_PARAM(iov);
-   BSON_ASSERT(iovcnt);
-
-   BSON_ASSERT(stream->writev);
-
-   // CDRIVER-4781: for backward compatibility.
-   if (timeout_msec < 0) {
-      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
-   }
-
-   DUMP_IOVEC(writev, iov, iovcnt);
-   ret = stream->writev(stream, iov, iovcnt, timeout_msec);
+   const ssize_t ret = _mongoc_stream_writev_impl(
+      stream, iov, iovcnt, _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec));
 
    RETURN(ret);
 }
@@ -185,20 +174,10 @@ mongoc_stream_writev(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt
 ssize_t
 mongoc_stream_write(mongoc_stream_t *stream, void *buf, size_t count, int32_t timeout_msec)
 {
-   mongoc_iovec_t iov;
-   ssize_t ret;
-
    ENTRY;
 
-   BSON_ASSERT_PARAM(stream);
-   BSON_ASSERT_PARAM(buf);
-
-   iov.iov_base = buf;
-   iov.iov_len = count;
-
-   BSON_ASSERT(stream->writev);
-
-   ret = mongoc_stream_writev(stream, &iov, 1, timeout_msec);
+   const ssize_t ret = _mongoc_stream_write_impl(
+      stream, buf, count, _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec));
 
    RETURN(ret);
 }
@@ -221,20 +200,10 @@ mongoc_stream_write(mongoc_stream_t *stream, void *buf, size_t count, int32_t ti
 ssize_t
 mongoc_stream_readv(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
 {
-   ssize_t ret;
-
    ENTRY;
 
-   BSON_ASSERT_PARAM(stream);
-   BSON_ASSERT_PARAM(iov);
-   BSON_ASSERT(iovcnt);
-
-   BSON_ASSERT(stream->readv);
-
-   ret = stream->readv(stream, iov, iovcnt, min_bytes, timeout_msec);
-   if (ret >= 0) {
-      DUMP_IOVEC(readv, iov, iovcnt);
-   }
+   const ssize_t ret = _mongoc_stream_readv_impl(
+      stream, iov, iovcnt, min_bytes, _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec));
 
    RETURN(ret);
 }
@@ -258,20 +227,10 @@ mongoc_stream_readv(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt,
 ssize_t
 mongoc_stream_read(mongoc_stream_t *stream, void *buf, size_t count, size_t min_bytes, int32_t timeout_msec)
 {
-   mongoc_iovec_t iov;
-   ssize_t ret;
-
    ENTRY;
 
-   BSON_ASSERT_PARAM(stream);
-   BSON_ASSERT_PARAM(buf);
-
-   iov.iov_base = buf;
-   iov.iov_len = count;
-
-   BSON_ASSERT(stream->readv);
-
-   ret = mongoc_stream_readv(stream, &iov, 1, min_bytes, timeout_msec);
+   const ssize_t ret = _mongoc_stream_read_impl(
+      stream, buf, count, min_bytes, _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec));
 
    RETURN(ret);
 }
@@ -421,6 +380,18 @@ bool
 _mongoc_stream_writev_full(
    mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error)
 {
+   ENTRY;
+
+   const bool ret = _mongoc_stream_writev_full_impl(
+      stream, iov, iovcnt, _mongoc_stream_timeout_ms_to_posix_timeout_convention(timeout_msec), error);
+
+   RETURN(ret);
+}
+
+bool
+_mongoc_stream_writev_full_impl(
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int64_t timeout_msec, bson_error_t *error)
+{
    size_t total_bytes = 0;
    ssize_t r;
    ENTRY;
@@ -439,7 +410,7 @@ _mongoc_stream_writev_full(
       RETURN(false);
    }
 
-   r = mongoc_stream_writev(stream, iov, iovcnt, (int32_t)timeout_msec);
+   r = _mongoc_stream_writev_impl(stream, iov, iovcnt, (int32_t)timeout_msec);
    TRACE("writev returned: %zd", r);
 
    if (r < 0) {
@@ -461,17 +432,116 @@ _mongoc_stream_writev_full(
    }
 
    if (mlib_cmp(r, !=, total_bytes)) {
+      char *timeout_str = NULL;
+
+      if (timeout_msec == 0) {
+         timeout_str = bson_strdup("with an immediate timeout");
+      } else if (timeout_msec < 0) {
+         timeout_str = bson_strdup("with an infinite timeout");
+      } else {
+         timeout_str = bson_strdup_printf("in %" PRId64 "ms", timeout_msec);
+      }
+
       _mongoc_set_error(error,
                         MONGOC_ERROR_STREAM,
                         MONGOC_ERROR_STREAM_SOCKET,
-                        "Failure to send all requested bytes (only sent: %" PRIu64 "/%zu in %" PRId64
-                        "ms) during socket delivery",
+                        "Failure to send all requested bytes (only sent: %" PRIu64 "/%zu %s) during socket delivery",
                         (uint64_t)r,
                         total_bytes,
-                        timeout_msec);
+                        timeout_str);
+
+      bson_free(timeout_str);
 
       RETURN(false);
    }
 
    RETURN(true);
+}
+
+ssize_t
+_mongoc_stream_writev_impl(mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
+{
+   ssize_t ret;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM(stream);
+   BSON_ASSERT_PARAM(iov);
+   BSON_ASSERT(iovcnt);
+   BSON_ASSERT(stream->writev);
+
+   DUMP_IOVEC(writev, iov, iovcnt);
+   ret = stream->writev(stream, iov, iovcnt, timeout_msec);
+
+   RETURN(ret);
+}
+
+ssize_t
+_mongoc_stream_write_impl(mongoc_stream_t *stream, void *buf, size_t count, int32_t timeout_msec)
+{
+   mongoc_iovec_t iov;
+   ssize_t ret;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM(stream);
+   BSON_ASSERT_PARAM(buf);
+
+   iov.iov_base = buf;
+   iov.iov_len = count;
+
+   BSON_ASSERT(stream->writev);
+
+   ret = _mongoc_stream_writev_impl(stream, &iov, 1, timeout_msec);
+
+   RETURN(ret);
+}
+
+ssize_t
+_mongoc_stream_readv_impl(
+   mongoc_stream_t *stream, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
+{
+   ssize_t ret;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM(stream);
+   BSON_ASSERT_PARAM(iov);
+   BSON_ASSERT(iovcnt);
+
+   BSON_ASSERT(stream->readv);
+
+   ret = stream->readv(stream, iov, iovcnt, min_bytes, timeout_msec);
+   if (ret >= 0) {
+      DUMP_IOVEC(readv, iov, iovcnt);
+   }
+
+   RETURN(ret);
+}
+
+ssize_t
+_mongoc_stream_read_impl(mongoc_stream_t *stream, void *buf, size_t count, size_t min_bytes, int32_t timeout_msec)
+{
+   mongoc_iovec_t iov;
+   ssize_t ret;
+
+   ENTRY;
+
+   BSON_ASSERT_PARAM(stream);
+   BSON_ASSERT_PARAM(buf);
+
+   iov.iov_base = buf;
+   iov.iov_len = count;
+
+   BSON_ASSERT(stream->readv);
+
+   ret = _mongoc_stream_readv_impl(stream, &iov, 1, min_bytes, timeout_msec);
+
+   RETURN(ret);
+}
+
+int32_t
+_mongoc_stream_timeout_ms_to_posix_timeout_convention(int32_t timeout_msec)
+{
+   return timeout_msec >= 0 ? timeout_msec : MONGOC_DEFAULT_TIMEOUT_MSEC;
 }

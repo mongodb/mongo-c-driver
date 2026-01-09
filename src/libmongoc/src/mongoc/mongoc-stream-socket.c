@@ -37,7 +37,7 @@ static BSON_INLINE int64_t
 get_expiration(int32_t timeout_msec)
 {
    if (timeout_msec < 0) {
-      return -1;
+      return -1; // Infinite.
    } else if (timeout_msec == 0) {
       return 0;
    } else {

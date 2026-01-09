@@ -296,7 +296,7 @@ _mongoc_cluster_run_command_opquery_send(
    }
 
    mcd_rpc_message_egress(rpc);
-   if (!_mongoc_stream_writev_full(stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
+   if (!_mongoc_stream_writev_full_impl(stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR_DECORATE;
       _handle_network_error(cluster, cmd->server_stream, error);
       goto done;
@@ -2502,8 +2502,7 @@ void
 mongoc_cluster_reset_sockettimeoutms(mongoc_cluster_t *cluster)
 {
    BSON_ASSERT_PARAM(cluster);
-   cluster->sockettimeoutms =
-      mongoc_uri_get_option_as_int32(cluster->uri, MONGOC_URI_SOCKETTIMEOUTMS, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+   cluster->sockettimeoutms = mongoc_uri_get_socket_timeout_ms_option(cluster->uri);
 }
 
 static uint32_t
@@ -3015,7 +3014,7 @@ mongoc_cluster_legacy_rpc_sendv_to_server(mongoc_cluster_t *cluster,
    BSON_ASSERT(iovecs);
 
    mcd_rpc_message_egress(rpc);
-   if (!_mongoc_stream_writev_full(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
+   if (!_mongoc_stream_writev_full_impl(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
       GOTO(done);
    }
 
@@ -3235,7 +3234,7 @@ _mongoc_cluster_run_opmsg_send(
 
    mcd_rpc_message_egress(rpc);
    const bool res =
-      _mongoc_stream_writev_full(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error);
+      _mongoc_stream_writev_full_impl(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error);
 
    if (!res) {
       RUN_CMD_ERR_DECORATE;

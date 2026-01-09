@@ -18,7 +18,9 @@
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <inttypes.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,12 +33,15 @@
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-oidc-env-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 
+// CDRIVER-6179: Including mongoc-client.h for MONGOC_DEFAULT_SOCKETTIMEOUTMS.
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
 #include <mongoc/mongoc-log.h>
@@ -733,7 +738,9 @@ mongoc_uri_option_is_utf8(const char *key)
           /* deprecated options with canonical equivalents */
           !strcasecmp(key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
           !strcasecmp(key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
-          !strcasecmp(key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE);
+          !strcasecmp(key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE) ||
+          // CDRIVER-6177: Temporarily allow `socketTimeoutMS=inf` to support unlimited timeouts.
+          !strcasecmp(key, MONGOC_URI_SOCKETTIMEOUTMS);
 }
 
 const char *
@@ -1002,7 +1009,10 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
             MONGOC_WARNING("Empty value provided for \"%s\"", key);
          }
       } else if (mongoc_uri_option_is_int32(key)) {
-         if (0 < strlen(value)) {
+         // CDRIVER-6177: Temporarily allow `socketTimeoutMS=inf` to support unlimited timeouts.
+         if (strcasecmp(key, MONGOC_URI_SOCKETTIMEOUTMS) == 0 && strcasecmp(value, "inf") == 0) {
+            _bson_upsert_utf8_icase(&uri->options, mstr_cstring(MONGOC_URI_SOCKETTIMEOUTMS), "inf");
+         } else if (0 < strlen(value)) {
             int32_t i32 = 42424242;
             if (mlib_i32_parse(mstr_cstring(value), &i32)) {
                goto UNSUPPORTED_VALUE;
@@ -2599,6 +2609,32 @@ mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri)
    return retval;
 }
 
+int32_t
+mongoc_uri_get_socket_timeout_ms_option(const mongoc_uri_t *uri)
+{
+   {
+      const char *const str_maybe = mongoc_uri_get_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, NULL);
+
+      if (str_maybe && strcasecmp(str_maybe, "inf") == 0) {
+         // CDRIVER-6177: To avoid a breaking change, use `socketTimeoutMS=inf` to specify an infinite timeout instead
+         // of `socketTimeoutMS=0`.
+         return -1;
+      }
+   }
+
+   const int32_t fallback = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+
+   bson_iter_t iter = {0};
+
+   if (bson_iter_init_find_case(&iter, mongoc_uri_get_options(uri), MONGOC_URI_SOCKETTIMEOUTMS) &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      const int32_t value = bson_iter_int32(&iter);
+
+      return value == 0 ? fallback : value;
+   }
+
+   return fallback;
+}
 
 const char *
 mongoc_uri_get_srv_hostname(const mongoc_uri_t *uri)
@@ -3004,6 +3040,13 @@ _mongoc_uri_set_option_as_int32_with_error(mongoc_uri_t *uri,
       MONGOC_URI_ERROR(error, "Failed to set URI option \"%s\" to %d", option_orig, value);
 
       return false;
+   }
+
+   if (strcmp(option_lowercase, MONGOC_URI_SOCKETTIMEOUTMS) == 0 && value == 0) {
+      // See CDRIVER-6177.
+      MONGOC_WARNING("`socketTimeoutMS=0` cannot be used to disable socket timeouts. The default of %" PRId32
+                     " will be used instead. To disable socket timeouts, use `socketTimeoutMS=inf`.",
+                     (int32_t)MONGOC_DEFAULT_SOCKETTIMEOUTMS);
    }
 
    bson_free(option_lowercase);

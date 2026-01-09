@@ -1,6 +1,7 @@
 #include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -2610,6 +2611,62 @@ test_mongoc_uri_local_threshold_ms(void)
    mongoc_uri_destroy(uri);
 }
 
+static void
+test_mongoc_uri_socket_timeout_ms(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost/");
+   ASSERT(uri);
+
+   // If `socketTimeoutMS` is not set, return the C Driver's default.
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+
+   ASSERT(mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 99));
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, 99);
+
+   // CDRIVER-6177: `socketTimeoutMS=inf` is used to specify an infinite timeout instead of `socketTimeoutMS=0`.
+   ASSERT(mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SOCKETTIMEOUTMS, "inf"));
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, -1);
+
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=99");
+   ASSERT(uri);
+
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, 99);
+
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=inf");
+   ASSERT(uri);
+
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, -1);
+
+   mongoc_uri_destroy(uri);
+
+   capture_logs(true);
+
+   uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=0");
+   ASSERT(uri);
+   ASSERT_CAPTURED_LOG(
+      "mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "`socketTimeoutMS=0` cannot be used to disable socket timeouts");
+
+   capture_logs(false);
+
+   //  CDRIVER-6177: `socketTimeoutMS=0` is treated as unset, so the default is used instead.
+   ASSERT_CMPINT32(mongoc_uri_get_socket_timeout_ms_option(uri), ==, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+
+   mongoc_uri_destroy(uri);
+
+   capture_logs(true);
+
+   uri = mongoc_uri_new("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS "=garbage");
+   ASSERT(!uri);
+   ASSERT_CAPTURED_LOG(
+      "mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "Unsupported value for \"sockettimeoutms\": \"garbage\"");
+
+   capture_logs(false);
+}
+
 
 #define INVALID(_uri, _host)                                                                             \
    ASSERT_WITH_MSG(!mongoc_uri_upsert_host((_uri), (_host), 1, &error), "expected host upsert to fail"); \
@@ -3335,6 +3392,7 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
    TestSuite_Add(suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
    TestSuite_Add(suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
+   TestSuite_Add(suite, "/Uri/socket_timeout_ms", test_mongoc_uri_socket_timeout_ms);
    TestSuite_Add(suite, "/Uri/srv", test_mongoc_uri_srv);
    TestSuite_Add(suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add(suite, "/Uri/utf8", test_mongoc_uri_utf8);
