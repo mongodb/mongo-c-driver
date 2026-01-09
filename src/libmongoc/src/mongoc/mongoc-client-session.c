@@ -1596,6 +1596,23 @@ _mongoc_client_session_clear_snapshot_time(mongoc_client_session_t *session)
    session->snapshot_time_set = false;
 }
 
+void
+_mongoc_jitter_source_destroy(mongoc_jitter_source_t *source)
+{
+   if (!(source && source->destroy)) {
+      return;
+   }
+
+   source->destroy(source);
+}
+
+void
+_mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongoc_jitter_source_t *source)
+{
+   _mongoc_jitter_source_destroy(session->jitter_source);
+   session->jitter_source = source;
+}
+
 bool
 mongoc_client_session_get_dirty(mongoc_client_session_t *session)
 {

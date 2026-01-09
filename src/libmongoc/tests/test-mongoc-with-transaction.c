@@ -8,6 +8,8 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
+#include <stdint.h>
+
 /* Note, the with_transaction spec tests are in test-mongoc-transactions.c,
  * since it shares the same test runner with the transactions test runner. */
 
@@ -80,6 +82,133 @@ test_with_transaction_timeout(void *ctx)
    mongoc_client_destroy(client);
 }
 
+typedef struct {
+   mongoc_jitter_source_t vtable;
+   uint32_t value;
+} fixed_value_jitter_source_t;
+
+static void
+fixed_value_jitter_source_destroy(mongoc_jitter_source_t *source)
+{
+   bson_free((fixed_value_jitter_source_t *)source);
+}
+
+static uint32_t
+fixed_value_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   return ((fixed_value_jitter_source_t *)source)->value;
+}
+
+static mongoc_jitter_source_t *
+fixed_value_jitter_source_create(uint32_t value)
+{
+   fixed_value_jitter_source_t *const source =
+      (fixed_value_jitter_source_t *)bson_malloc0(sizeof(fixed_value_jitter_source_t));
+
+   source->vtable.destroy = fixed_value_jitter_source_destroy;
+   source->vtable.generate = fixed_value_jitter_source_generate;
+
+   source->value = value;
+
+   return (mongoc_jitter_source_t *)source;
+}
+
+static void
+retry_backoff_set_fail_point(mongoc_client_t *client)
+{
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
+                                                "admin",
+                                                tmp_bson(BSON_STR({
+                                                   "configureFailPoint" : "failCommand",
+                                                   "mode" : {"times" : 13},
+                                                   "data" : {"failCommands" : ["commitTransaction"], "errorCode" : 251}
+                                                })),
+                                                NULL,
+                                                NULL,
+                                                &error),
+                   error);
+}
+
+static bool
+retry_backoff_with_transaction_cb(mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error)
+{
+   BSON_UNUSED(ctx);
+
+   mongoc_client_t *const client = mongoc_client_session_get_client(session);
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+
+   bson_t *const opts = bson_new();
+   BSON_ASSERT(mongoc_client_session_append(session, opts, error));
+
+   const bool ret = mongoc_collection_insert_one(coll, tmp_bson("{}"), opts, *reply, error);
+
+   bson_destroy(opts);
+   mongoc_collection_destroy(coll);
+
+   return ret;
+}
+
+static void
+test_with_transaction_retry_backoff_is_enforced(void *ctx)
+{
+   // 1
+   mongoc_client_t *const client = test_framework_new_default_client();
+
+   // 2
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+
+   bson_error_t error;
+   mongoc_client_session_t *const no_backoff_session = mongoc_client_start_session(client, NULL, &error);
+   ASSERT_OR_PRINT(no_backoff_session, error);
+
+   // 3.1
+   _mongoc_client_session_set_jitter_source(no_backoff_session, fixed_value_jitter_source_create(0u));
+
+   // 3.2
+   retry_backoff_set_fail_point(client);
+
+   // 3.3
+   // 3.4
+   const mlib_time_point no_backoff_start = mlib_now();
+   ASSERT_OR_PRINT(mongoc_client_session_with_transaction(
+                      no_backoff_session, retry_backoff_with_transaction_cb, NULL, NULL, NULL, &error),
+                   error);
+   const mlib_duration no_backoff_time = mlib_elapsed_since(no_backoff_start);
+
+   mongoc_client_session_destroy(no_backoff_session);
+
+   mongoc_client_session_t *const with_backoff_session = mongoc_client_start_session(client, NULL, &error);
+   ASSERT_OR_PRINT(with_backoff_session, error);
+
+   // 4.1
+   _mongoc_client_session_set_jitter_source(with_backoff_session, fixed_value_jitter_source_create(UINT32_MAX));
+
+   // 4.2
+   retry_backoff_set_fail_point(client);
+
+   // 4.3
+   // 4.4
+   const mlib_time_point with_backoff_start = mlib_now();
+   ASSERT_OR_PRINT(mongoc_client_session_with_transaction(
+                      with_backoff_session, retry_backoff_with_transaction_cb, NULL, NULL, NULL, &error),
+                   error);
+   const mlib_duration with_backoff_time = mlib_elapsed_since(with_backoff_start);
+
+   mongoc_client_session_destroy(with_backoff_session);
+
+   // 5
+   const mlib_duration estimated_backoff_wait_time = mlib_duration(2200, ms);
+   const mlib_duration estimated_with_backoff_non_wait_time =
+      mlib_duration(with_backoff_time, minus, estimated_backoff_wait_time);
+   const mlib_duration diff = mlib_duration(estimated_with_backoff_non_wait_time, minus, no_backoff_time);
+   const int64_t abs_diff_raw_us = imaxabs(mlib_microseconds_count(diff));
+   ASSERT_CMPINT64(abs_diff_raw_us, <, mlib_microseconds_count(mlib_duration(1, s)));
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 void
 test_with_transaction_install(TestSuite *suite)
 {
@@ -90,4 +219,10 @@ test_with_transaction_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull(suite,
+                     "/with_transaction/retry_backoff_is_enforced",
+                     test_with_transaction_retry_backoff_is_enforced,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_txns);
 }
