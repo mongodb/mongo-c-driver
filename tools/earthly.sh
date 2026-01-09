@@ -27,7 +27,7 @@ mkdir -p "$cache_dir"
 exe_filename="earthly-$OS_FAMILY-$arch$EXE_SUFFIX"
 EARTHLY_EXE="$cache_dir/$exe_filename"
 
-if ! "$EARTHLY_EXE" --version; then
+if is-file "$EARTHLY_EXE" && ! "$EARTHLY_EXE" --version; then
   echo "Failed to execute Earthly executable, removing and re-downloading"
   rm "$EARTHLY_EXE"
 fi
