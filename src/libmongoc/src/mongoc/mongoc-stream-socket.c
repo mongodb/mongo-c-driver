@@ -38,6 +38,8 @@ get_expiration(int32_t timeout_msec)
 {
    if (timeout_msec < 0) {
       return -1; // Infinite.
+   } else if (timeout_msec == 0) {
+      return 0;
    } else {
       return (bson_get_monotonic_time() + ((int64_t)timeout_msec * 1000L));
    }
