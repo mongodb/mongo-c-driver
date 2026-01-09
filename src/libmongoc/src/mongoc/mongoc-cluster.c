@@ -130,6 +130,7 @@ _handle_network_error(mongoc_cluster_t *cluster, mongoc_server_stream_t *server_
    type = MONGOC_SDAM_APP_ERROR_NETWORK;
    if (mongoc_stream_timed_out(server_stream->stream)) {
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
+      server_stream->timed_out = true;
    }
 
    _mongoc_topology_handle_app_error(topology,
