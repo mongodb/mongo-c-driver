@@ -712,8 +712,6 @@ _mongoc_cursor_run_command(
 
    ENTRY;
 
-   cursor->had_stream_timeout = false; // Reset before running next command.
-
    const char *cmd_name = _mongoc_get_command_name(command);
 
    mongoc_cmd_parts_init(&parts, cursor->client, db, MONGOC_QUERY_NONE, command);
@@ -742,6 +740,8 @@ _mongoc_cursor_run_command(
          GOTO(done);
       }
    }
+
+   cursor->had_stream_timeout = false; // Reset before running next command.
 
    if (parts.assembled.session) {
       /* initial query/aggregate/etc, and opts contains "sessionId" */
