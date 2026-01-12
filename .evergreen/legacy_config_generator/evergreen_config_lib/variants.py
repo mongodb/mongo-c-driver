@@ -206,16 +206,18 @@ all_variants = [
         'Windows (VS 2022)',
         'windows-vsCurrent-large',
         [
+            'debug-compile-nosasl-nossl',
             'debug-compile-sspi-winssl',
             '.authentication-tests .winssl',
+            '.latest .nossl .nosasl .server',
         ],
         {'CC': 'Visual Studio 17 2022 Win64'},
     ),
     Variant(
-        'mingw-windows2016',
-        'MinGW-W64 (Windows Server 2016)',
+        'mingw-windows2019',
+        'MinGW-W64 (Windows Server 2019)',
         'windows-vsCurrent-large',
-        ['debug-compile-nosasl-nossl', '.latest .nossl .nosasl .server'],
+        ['debug-compile-nosasl-nossl', '.7.0 .nossl .nosasl .server'],
         {'CC': 'gcc'},
     ),
     Variant(
