@@ -2520,17 +2520,20 @@ test_change_stream_install(TestSuite *suite)
                      test_change_stream_socket_timeouts,
                      NULL,
                      NULL,
-                     test_framework_skip_if_not_replset);
+                     test_framework_skip_if_not_replset,
+                     skip_if_high_server_runtime_variance);
    TestSuite_AddFull(suite,
                      "/change_stream/socket_timeouts/recovers [lock:live-server]",
                      test_change_stream_socket_timeouts_recovers,
                      NULL,
                      NULL,
-                     test_framework_skip_if_not_replset);
+                     test_framework_skip_if_not_replset,
+                     skip_if_high_server_runtime_variance);
    TestSuite_AddFull(suite,
                      "/change_stream/socket_timeouts/nonconsecutive [lock:live-server]",
                      test_change_stream_socket_timeouts_nonconsecutive,
                      NULL,
                      NULL,
-                     test_framework_skip_if_not_replset);
+                     test_framework_skip_if_not_replset,
+                     skip_if_high_server_runtime_variance);
 }
