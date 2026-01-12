@@ -296,4 +296,9 @@ test_framework_skip_if_no_server_ssl(void);
 int
 skip_if_no_large_allocations(void);
 
+// `skip_if_high_server_runtime_variance` skips if the environment indicates there is high runtime variance in the
+// server. Useful to skip time sensitive tests on macOS in Evergreen.
+int
+skip_if_high_server_runtime_variance(void);
+
 #endif
