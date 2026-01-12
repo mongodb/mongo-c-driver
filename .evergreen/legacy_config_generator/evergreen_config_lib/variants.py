@@ -200,7 +200,7 @@ all_variants = [
     Variant(
         'windows-2022',
         'Windows (VS 2022)',
-        'windows-vsCurrent-large',
+        'windows-2022-latest-large',
         [
             'debug-compile-aws',
             'debug-compile-nosasl-nossl',

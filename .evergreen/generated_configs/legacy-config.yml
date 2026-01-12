@@ -10252,7 +10252,7 @@ buildvariants:
   display_name: Windows (VS 2022)
   expansions:
     CC: Visual Studio 17 2022 Win64
-  run_on: windows-vsCurrent-large
+  run_on: windows-2022-latest-large
   tasks:
   - debug-compile-aws
   - debug-compile-nosasl-nossl
