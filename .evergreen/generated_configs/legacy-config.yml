@@ -10098,16 +10098,16 @@ buildvariants:
     - macos-14-arm64
   - name: link-with-cmake-windows
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-cmake-windows-ssl
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-cmake-windows-snappy
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-cmake-mingw
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-pkg-config
     distros:
     - ubuntu2204-large
@@ -10118,13 +10118,13 @@ buildvariants:
   - link-with-bson
   - name: link-with-bson-windows
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-bson-mac
     distros:
     - macos-14-arm64
   - name: link-with-bson-mingw
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - check-headers
   - debug-compile-with-warnings
   - install-libmongoc-after-libbson
