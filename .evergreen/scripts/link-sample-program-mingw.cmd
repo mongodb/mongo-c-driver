@@ -6,7 +6,7 @@ echo on
 echo
 
 rem Use DENABLE_SSL=OFF. Windows hosts do not have a MinGW ABI compatible OpenSSL install.
-set CMAKE_FLAGS=-DENABLE_SSL=OFF -DENABLE_SASL=CYRUS
+set CMAKE_FLAGS=-DENABLE_SSL=OFF -DENABLE_SASL=SSPI
 set TAR=C:\cygwin\bin\tar
 
 set SRCROOT=%CD%
