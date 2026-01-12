@@ -33,7 +33,7 @@ if "%ENABLE_SNAPPY%"=="1" (
   curl -sS --retry 5 -LO https://github.com/google/snappy/archive/1.1.7.tar.gz || goto :error
   %TAR% xzf 1.1.7.tar.gz || goto :error
   cd snappy-1.1.7 || goto :error
-  uvx cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -S snappy-1.1.7 -B snappy-1.1.7-build || goto :error
+  uvx cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -S snappy-1.1.7 -B snappy-1.1.7-build || goto :error
   uvx cmake --build snappy-1.1.7-build --config "Debug" --target ALL_BUILD -- /m || goto :error
   uvx cmake --build snappy-1.1.7-build --config "Debug" --target INSTALL -- /m || goto :error
   set SNAPPY_OPTION=-DENABLE_SNAPPY=ON
@@ -44,9 +44,9 @@ if "%ENABLE_SNAPPY%"=="1" (
 cd %BUILD_DIR% || goto :error
 rem Build libmongoc
 if "%ENABLE_SSL%"=="1" (
-  uvx cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS %ENABLE_SNAPPY_OPTION% .. || goto :error
+  uvx cmake -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS %ENABLE_SNAPPY_OPTION% .. || goto :error
 ) else (
-  uvx cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF %ENABLE_SNAPPY_OPTION% .. || goto :error
+  uvx cmake -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF %ENABLE_SNAPPY_OPTION% .. || goto :error
 )
 
 uvx cmake --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
@@ -67,7 +67,7 @@ if "%ENABLE_SSL%"=="1" (
   set MONGODB_EXAMPLE_URI="mongodb://localhost/?ssl=true&sslclientcertificatekeyfile=client.pem&sslcertificateauthorityfile=ca.pem&sslallowinvalidhostnames=true"
 )
 
-uvx cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
+uvx cmake -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
 uvx cmake --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
 
 rem Yes, they should've named it "dependencies".
