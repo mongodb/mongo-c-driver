@@ -324,6 +324,10 @@ To run test cases with large allocations, set:
 * `MONGOC_AZURE_RESOURCE=<resource>` to test OIDC using an Azure test environment described [here](https://github.com/mongodb-labs/drivers-evergreen-tools/blob/d7a7337b384392a09fbe7fc80a7244e6f1226c18/.evergreen/auth_oidc/azure/README.md).
 * `MONGOC_GCP_RESOURCE=<resource>` to test OIDC using an GCP test environment described [here](https://github.com/mongodb-labs/drivers-evergreen-tools/tree/d7a7337b384392a09fbe7fc80a7244e6f1226c18/.evergreen/auth_oidc/gcp).
 
+To skip tests sensitive to high runtime variance on the server:
+
+* `MONGOC_TEST_SKIP_TIMEOUT_SENSITIVE=on` Useful in macOS Evergreen test environments. See [DEVPROD-1167](https://jira.mongodb.org/browse/DEVPROD-1167).
+
 All tests should pass before submitting a patch.
 
 #### Test logging

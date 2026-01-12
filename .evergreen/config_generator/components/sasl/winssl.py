@@ -14,9 +14,12 @@ TAG = f'sasl-matrix-{SSL}'
 # fmt: off
 COMPILE_MATRIX = [
     # For test matrix.
-    ('windows-vsCurrent', 'mingw',     None, [       'sspi']),
-    ('windows-vsCurrent', 'vs2022x64', None, ['off', 'sspi']),
-    ('windows-vsCurrent', 'vs2022x86', None, ['off', 'sspi']),
+    ('windows-vsCurrent',   'mingw',     None, ['sspi']),
+    ('windows-vsCurrent',   'vs2022x64', None, ['sspi']),
+    ('windows-vsCurrent',   'vs2022x86', None, ['sspi']),
+    ('windows-2022-latest', 'mingw',     None, ['sspi']),
+    ('windows-2022-latest', 'vs2022x64', None, ['sspi']),
+    ('windows-2022-latest', 'vs2022x86', None, ['sspi']),
 
     # For compile only.
     ('windows-vsCurrent', 'vs2017x64', None, ['off', 'sspi']),
@@ -24,11 +27,16 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('windows-vsCurrent', 'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('windows-vsCurrent',   'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0',                ]),
+    ('windows-2022-latest', 'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], [                                   '8.0', 'latest']),
 
-    # sharded + min + latest only.
-    ('windows-vsCurrent', 'mingw',     None, 'sspi',  ['auth'], ['sharded'], ['4.2', 'latest']),
-    ('windows-vsCurrent', 'vs2022x86', None, 'sspi',  ['auth'], ['sharded'], ['4.2', 'latest']),
+    # sharded + min only.
+    ('windows-vsCurrent',   'mingw',     None, 'sspi',  ['auth'], ['sharded'], ['4.2']),
+    ('windows-vsCurrent',   'vs2022x86', None, 'sspi',  ['auth'], ['sharded'], ['4.2']),
+
+    # sharded + latest only.
+    ('windows-2022-latest', 'mingw',     None, 'sspi',  ['auth'], ['sharded'], ['latest']),
+    ('windows-2022-latest', 'vs2022x86', None, 'sspi',  ['auth'], ['sharded'], ['latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
