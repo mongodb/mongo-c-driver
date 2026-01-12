@@ -2713,7 +2713,7 @@ test_framework_set_oidc_callback(mongoc_client_t *client)
 int
 skip_if_high_server_runtime_variance(void)
 {
-   if (test_framework_getenv_bool("MONGOC_TEST_HIGH_SERVER_RUNTIME_VARIANCE")) {
+   if (test_framework_getenv_bool("MONGOC_TEST_SKIP_TIMEOUT_SENSITIVE")) {
       return 0; // Skip.
    }
    return 1; // Proceed.

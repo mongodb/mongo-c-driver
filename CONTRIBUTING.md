@@ -326,7 +326,7 @@ To run test cases with large allocations, set:
 
 To skip tests sensitive to high runtime variance on the server:
 
-* `MONGOC_TEST_HIGH_SERVER_RUNTIME_VARIANCE=on` Useful in macOS Evergreen test environments. See [DEVPROD-1167](https://jira.mongodb.org/browse/DEVPROD-1167).
+* `MONGOC_TEST_SKIP_TIMEOUT_SENSITIVE=on` Useful in macOS Evergreen test environments. See [DEVPROD-1167](https://jira.mongodb.org/browse/DEVPROD-1167).
 
 All tests should pass before submitting a patch.
 

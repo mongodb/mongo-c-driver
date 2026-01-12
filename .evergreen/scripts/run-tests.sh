@@ -131,7 +131,7 @@ fi
 
 # DEVPROD-1167: high variance observed when running MongoDB server on macOS distros:
 if [[ "${distro_id:?}" == macos-* ]]; then
-  export MONGOC_TEST_HIGH_SERVER_RUNTIME_VARIANCE="on"
+  export MONGOC_TEST_SKIP_TIMEOUT_SENSITIVE="on"
 fi
 
 export UBSAN_OPTIONS="${ubsan_opts[*]}"
