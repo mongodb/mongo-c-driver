@@ -741,6 +741,8 @@ _mongoc_cursor_run_command(
       }
    }
 
+   cursor->had_stream_timeout = false; // Reset before running next command.
+
    if (parts.assembled.session) {
       /* initial query/aggregate/etc, and opts contains "sessionId" */
       BSON_ASSERT(!cursor->client_session);
@@ -834,6 +836,8 @@ retry:
    if (ret) {
       memset(&cursor->error, 0, sizeof(bson_error_t));
    }
+
+   cursor->had_stream_timeout = server_stream->timed_out;
 
    if (is_retryable && _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY) {
       is_retryable = false;
