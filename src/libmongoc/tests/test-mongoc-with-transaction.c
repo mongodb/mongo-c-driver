@@ -198,12 +198,12 @@ test_with_transaction_retry_backoff_is_enforced(void *ctx)
    mongoc_client_session_destroy(with_backoff_session);
 
    // 5
-   const mlib_duration estimated_backoff_wait_time = mlib_duration(2200, ms);
+   const mlib_duration estimated_backoff_wait_time = mlib_duration(1800, ms);
    const mlib_duration estimated_with_backoff_non_wait_time =
       mlib_duration(with_backoff_time, minus, estimated_backoff_wait_time);
    const mlib_duration diff = mlib_duration(estimated_with_backoff_non_wait_time, minus, no_backoff_time);
    const int64_t abs_diff_raw_us = imaxabs(mlib_microseconds_count(diff));
-   ASSERT_CMPINT64(abs_diff_raw_us, <, mlib_microseconds_count(mlib_duration(1, s)));
+   ASSERT_CMPINT64(abs_diff_raw_us, <, mlib_microseconds_count(mlib_duration(500, ms)));
 
    mongoc_collection_destroy(coll);
    mongoc_client_destroy(client);
