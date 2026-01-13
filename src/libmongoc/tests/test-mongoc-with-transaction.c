@@ -150,29 +150,29 @@ retry_backoff_with_transaction_cb(mongoc_client_session_t *session, void *ctx, b
 }
 
 static void
-test_with_transaction_retry_backoff_is_enforced(void *ctx)
+test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
 {
-   // 1
+   // Step 1
    mongoc_client_t *const client = test_framework_new_default_client();
 
    mongoc_database_t *const db = mongoc_client_get_database(client, "db");
 
-   // 2
+   // Step 2
    bson_error_t error;
    mongoc_collection_t *const coll = mongoc_database_create_collection(db, "coll", NULL, &error);
 
    mongoc_client_session_t *const no_backoff_session = mongoc_client_start_session(client, NULL, &error);
    ASSERT_OR_PRINT(no_backoff_session, error);
 
-   // 3.1
+   // Step 3.1
    // `0u` maps to a jitter value of `0.0f`, so this will effectively disable retry backoff.
    _mongoc_client_session_set_jitter_source(no_backoff_session, fixed_value_jitter_source_create(0u));
 
-   // 3.2
+   // Step 3.2
    retry_backoff_set_fail_point(client);
 
-   // 3.3
-   // 3.4
+   // Step 3.3 (see `retry_backoff_with_transaction_cb`)
+   // Step 3.4
    const mlib_time_point no_backoff_start = mlib_now();
    ASSERT_OR_PRINT(mongoc_client_session_with_transaction(
                       no_backoff_session, retry_backoff_with_transaction_cb, NULL, NULL, NULL, &error),
@@ -184,15 +184,15 @@ test_with_transaction_retry_backoff_is_enforced(void *ctx)
    mongoc_client_session_t *const with_backoff_session = mongoc_client_start_session(client, NULL, &error);
    ASSERT_OR_PRINT(with_backoff_session, error);
 
-   // 4.1
+   // Step 4.1
    // `UINT32_MAX` maps to a jitter value of `1.0f`, so this will result in maximum retry wait times.
    _mongoc_client_session_set_jitter_source(with_backoff_session, fixed_value_jitter_source_create(UINT32_MAX));
 
-   // 4.2
+   // Step 4.2
    retry_backoff_set_fail_point(client);
 
-   // 4.3
-   // 4.4
+   // Step 4.3 (see `retry_backoff_with_transaction_cb`)
+   // Step 4.4
    const mlib_time_point with_backoff_start = mlib_now();
    ASSERT_OR_PRINT(mongoc_client_session_with_transaction(
                       with_backoff_session, retry_backoff_with_transaction_cb, NULL, NULL, NULL, &error),
@@ -201,7 +201,7 @@ test_with_transaction_retry_backoff_is_enforced(void *ctx)
 
    mongoc_client_session_destroy(with_backoff_session);
 
-   // 5
+   // Step 5
    const mlib_duration estimated_backoff_wait_time = mlib_duration(1800, ms);
    const mlib_duration estimated_with_backoff_non_wait_time =
       mlib_duration(with_backoff_time, minus, estimated_backoff_wait_time);
@@ -225,8 +225,8 @@ test_with_transaction_install(TestSuite *suite)
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
-                     "/with_transaction/retry_backoff_is_enforced",
-                     test_with_transaction_retry_backoff_is_enforced,
+                     "/with_transaction/retry_backoff_is_enforced_prose",
+                     test_with_transaction_retry_backoff_is_enforced_prose,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_txns);
