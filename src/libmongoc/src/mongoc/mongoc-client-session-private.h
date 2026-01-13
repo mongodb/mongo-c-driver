@@ -164,4 +164,10 @@ _mongoc_client_session_clear_snapshot_time(mongoc_client_session_t *session);
 void
 _mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongoc_jitter_source_t *source);
 
+void
+_mongoc_jitter_source_destroy(mongoc_jitter_source_t *source);
+
+float
+_mongoc_jitter_source_generate(mongoc_jitter_source_t *source);
+
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

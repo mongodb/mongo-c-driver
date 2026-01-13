@@ -29,6 +29,8 @@
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
 
+#include <math.h>
+
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
 static void
@@ -718,6 +720,31 @@ _mongoc_server_session_destroy(mongoc_server_session_t *self)
 }
 
 
+static void
+default_jitter_source_destroy(mongoc_jitter_source_t *source)
+{
+   bson_free(source);
+}
+
+static uint32_t
+default_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   BSON_UNUSED(source);
+   return _mongoc_simple_rand_uint32_t();
+}
+
+static mongoc_jitter_source_t *
+default_jitter_source_new(void)
+{
+   mongoc_jitter_source_t *const source = (mongoc_jitter_source_t *)bson_malloc0(sizeof(mongoc_jitter_source_t));
+
+   source->destroy = default_jitter_source_destroy;
+   source->generate = default_jitter_source_generate;
+
+   return source;
+}
+
+
 mongoc_client_session_t *
 _mongoc_client_session_new(mongoc_client_t *client,
                            mongoc_server_session_t *server_session,
@@ -762,6 +789,8 @@ _mongoc_client_session_new(mongoc_client_t *client,
    /* these values are used for testing only. */
    session->with_txn_timeout_ms = 0;
    session->fail_commit_label = NULL;
+
+   session->jitter_source = default_jitter_source_new();
 
    RETURN(session);
 }
@@ -864,10 +893,9 @@ mongoc_client_session_advance_operation_time(mongoc_client_session_t *session, u
 }
 
 static bool
-timeout_exceeded(int64_t expire_at)
+timeout_exceeded(mlib_time_point expire_at)
 {
-   int64_t current_time = bson_get_monotonic_time();
-   return current_time >= expire_at;
+   return mlib_time_cmp(mlib_now(), >=, expire_at);
 }
 
 static bool
@@ -898,6 +926,22 @@ _max_time_ms_failure(bson_t *reply)
    return false;
 }
 
+#define MONGOC_BACKOFF_MAX mlib_duration(500, ms)
+#define MONGOC_BACKOFF_INITIAL mlib_duration(5, ms)
+
+static mlib_duration
+_compute_backoff_duration(int transaction_attempt, mongoc_jitter_source_t *jitter_source)
+{
+   BSON_ASSERT(jitter_source);
+
+   const float jitter = _mongoc_jitter_source_generate(jitter_source);
+   const float backoff_factor = powf(1.5f, (float)(transaction_attempt - 1));
+   const float backoff_uncapped_us = (float)mlib_microseconds_count(MONGOC_BACKOFF_INITIAL) * backoff_factor;
+   const float backoff_us = jitter * fminf(backoff_uncapped_us, (float)mlib_microseconds_count(MONGOC_BACKOFF_MAX));
+
+   return mlib_duration((mlib_duration_rep_t)roundf(backoff_us), us);
+}
+
 bool
 mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                                        mongoc_client_session_with_transaction_cb_t cb,
@@ -908,7 +952,6 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 {
    mongoc_internal_transaction_state_t state;
    int64_t timeout;
-   int64_t expire_at;
    bson_t local_reply;
    bson_t *active_reply = NULL;
    bool res;
@@ -917,7 +960,9 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
    timeout = session->with_txn_timeout_ms > 0 ? session->with_txn_timeout_ms : WITH_TXN_TIMEOUT_MS;
 
-   expire_at = bson_get_monotonic_time() + ((int64_t)timeout * 1000);
+   const mlib_time_point expire_at = mlib_time_add(mlib_now(), (timeout, ms));
+
+   int transaction_attempt = 0;
 
    /* Attempt to wrap a user callback in start- and end- transaction semantics.
       If this fails for transient reasons, restart, either from the very
@@ -927,6 +972,23 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       At the top of this loop, active_reply should always be NULL, and
       local_reply should always be uninitialized. */
    while (true) {
+      if (transaction_attempt > 0) {
+         const mlib_duration backoff_duration = _compute_backoff_duration(transaction_attempt, session->jitter_source);
+
+         const mlib_time_point backoff_wake_time = mlib_time_add(mlib_now(), backoff_duration);
+
+         const bool backoff_would_exceed_timeout = mlib_time_cmp(backoff_wake_time, >=, expire_at);
+
+         if (backoff_would_exceed_timeout) {
+            res = false;
+            GOTO(done);
+         }
+
+         mlib_sleep_until(backoff_wake_time);
+      }
+
+      ++transaction_attempt;
+
       res = mongoc_client_session_start_transaction(session, opts, error);
 
       if (!res) {
@@ -1554,6 +1616,8 @@ mongoc_client_session_destroy(mongoc_client_session_t *session)
    txn_opts_cleanup(&session->opts.default_txn_opts);
    txn_opts_cleanup(&session->txn.opts);
 
+   _mongoc_jitter_source_destroy(session->jitter_source);
+
    bson_destroy(&session->cluster_time);
    bson_destroy(session->recovery_token);
    bson_free(session);
@@ -1597,6 +1661,13 @@ _mongoc_client_session_clear_snapshot_time(mongoc_client_session_t *session)
 }
 
 void
+_mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongoc_jitter_source_t *source)
+{
+   _mongoc_jitter_source_destroy(session->jitter_source);
+   session->jitter_source = source;
+}
+
+void
 _mongoc_jitter_source_destroy(mongoc_jitter_source_t *source)
 {
    if (!(source && source->destroy)) {
@@ -1606,11 +1677,13 @@ _mongoc_jitter_source_destroy(mongoc_jitter_source_t *source)
    source->destroy(source);
 }
 
-void
-_mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongoc_jitter_source_t *source)
+float
+_mongoc_jitter_source_generate(mongoc_jitter_source_t *source)
 {
-   _mongoc_jitter_source_destroy(session->jitter_source);
-   session->jitter_source = source;
+   BSON_ASSERT(source);
+   BSON_ASSERT(source->generate);
+
+   return (float)source->generate(source) / (float)UINT32_MAX;
 }
 
 bool
