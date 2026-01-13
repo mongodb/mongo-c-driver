@@ -155,10 +155,12 @@ test_with_transaction_retry_backoff_is_enforced(void *ctx)
    // 1
    mongoc_client_t *const client = test_framework_new_default_client();
 
-   // 2
-   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+   mongoc_database_t *const db = mongoc_client_get_database(client, "db");
 
+   // 2
    bson_error_t error;
+   mongoc_collection_t *const coll = mongoc_database_create_collection(db, "coll", NULL, &error);
+
    mongoc_client_session_t *const no_backoff_session = mongoc_client_start_session(client, NULL, &error);
    ASSERT_OR_PRINT(no_backoff_session, error);
 
@@ -206,6 +208,7 @@ test_with_transaction_retry_backoff_is_enforced(void *ctx)
    ASSERT_CMPINT64(abs_diff_raw_us, <, mlib_microseconds_count(mlib_duration(500, ms)));
 
    mongoc_collection_destroy(coll);
+   mongoc_database_destroy(db);
    mongoc_client_destroy(client);
 }
 
