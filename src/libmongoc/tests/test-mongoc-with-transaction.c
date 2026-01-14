@@ -104,7 +104,10 @@ retry_backoff_set_fail_point(mongoc_client_t *client)
                                                 tmp_bson(BSON_STR({
                                                    "configureFailPoint" : "failCommand",
                                                    "mode" : {"times" : 13},
-                                                   "data" : {"failCommands" : ["commitTransaction"], "errorCode" : 251}
+                                                   "data" : {
+                                                      "failCommands" : ["commitTransaction"],
+                                                      "errorCode" : 251 // NoSuchTransaction
+                                                   }
                                                 })),
                                                 NULL,
                                                 NULL,
