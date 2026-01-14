@@ -119,6 +119,7 @@ static bool
 retry_backoff_with_transaction_cb(mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error_t *error)
 {
    BSON_UNUSED(ctx);
+   BSON_UNUSED(reply);
 
    mongoc_client_t *const client = mongoc_client_session_get_client(session);
    mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
@@ -126,7 +127,7 @@ retry_backoff_with_transaction_cb(mongoc_client_session_t *session, void *ctx, b
    bson_t *const opts = bson_new();
    ASSERT_OR_PRINT(mongoc_client_session_append(session, opts, error), (*error));
 
-   const bool ret = mongoc_collection_insert_one(coll, tmp_bson("{}"), opts, *reply, error);
+   const bool ret = mongoc_collection_insert_one(coll, tmp_bson("{}"), opts, NULL, error);
    ASSERT_OR_PRINT(ret, (*error));
 
    bson_destroy(opts);
