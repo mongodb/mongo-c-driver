@@ -1670,10 +1670,11 @@ _mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongo
 void
 _mongoc_jitter_source_destroy(mongoc_jitter_source_t *source)
 {
-   if (!(source && source->destroy)) {
+   if (!source) {
       return;
    }
 
+   BSON_ASSERT(source->destroy);
    source->destroy(source);
 }
 
