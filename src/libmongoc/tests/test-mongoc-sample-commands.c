@@ -3993,6 +3993,7 @@ callback(mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error
    bool ret = false;
 
    BSON_UNUSED(ctx);
+   BSON_UNUSED(reply);
 
    // Important::  You must pass the session to the operations.
    ret = mongoc_client_session_append(session, opts, error);
@@ -4003,7 +4004,7 @@ callback(mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error
    client = mongoc_client_session_get_client(session);
    coll = mongoc_client_get_collection(client, "mydb1", "foo");
    doc = BCON_NEW("abc", BCON_INT32(1));
-   ret = mongoc_collection_insert_one(coll, doc, opts, *reply, error);
+   ret = mongoc_collection_insert_one(coll, doc, opts, NULL, error);
    if (!ret) {
       goto fail;
    }
@@ -4011,7 +4012,7 @@ callback(mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error
    mongoc_collection_destroy(coll);
    coll = mongoc_client_get_collection(client, "mydb2", "bar");
    doc = BCON_NEW("xyz", BCON_INT32(999));
-   ret = mongoc_collection_insert_one(coll, doc, opts, *reply, error);
+   ret = mongoc_collection_insert_one(coll, doc, opts, NULL, error);
    if (!ret) {
       goto fail;
    }
