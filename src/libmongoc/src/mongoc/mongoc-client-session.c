@@ -926,8 +926,15 @@ _max_time_ms_failure(bson_t *reply)
    return false;
 }
 
+#define MONGOC_BACKOFF_ATTEMPT_LIMIT 13
 #define MONGOC_BACKOFF_MAX mlib_duration(500, ms)
 #define MONGOC_BACKOFF_INITIAL mlib_duration(5, ms)
+
+static mlib_duration
+_duration_float_mulitply(mlib_duration duration, float factor)
+{
+   return mlib_duration((mlib_duration_rep_t)roundf((float)mlib_microseconds_count(duration) * factor), us);
+}
 
 static mlib_duration
 _compute_backoff_duration(int transaction_attempt, mongoc_jitter_source_t *jitter_source)
@@ -935,11 +942,14 @@ _compute_backoff_duration(int transaction_attempt, mongoc_jitter_source_t *jitte
    BSON_ASSERT(jitter_source);
 
    const float jitter = _mongoc_jitter_source_generate(jitter_source);
-   const float backoff_factor = powf(1.5f, (float)(transaction_attempt - 1));
-   const float backoff_uncapped_us = (float)mlib_microseconds_count(MONGOC_BACKOFF_INITIAL) * backoff_factor;
-   const float backoff_us = jitter * fminf(backoff_uncapped_us, (float)mlib_microseconds_count(MONGOC_BACKOFF_MAX));
 
-   return mlib_duration((mlib_duration_rep_t)roundf(backoff_us), us);
+   if (transaction_attempt >= MONGOC_BACKOFF_ATTEMPT_LIMIT) {
+      return _duration_float_mulitply(MONGOC_BACKOFF_MAX, jitter);
+   }
+
+   const float backoff_factor = powf(1.5f, (float)(transaction_attempt - 1));
+
+   return _duration_float_mulitply(MONGOC_BACKOFF_INITIAL, jitter * backoff_factor);
 }
 
 bool
@@ -987,13 +997,13 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
          mlib_sleep_until(backoff_wake_time);
       }
 
-      ++transaction_attempt;
-
       res = mongoc_client_session_start_transaction(session, opts, error);
 
       if (!res) {
          GOTO(done);
       }
+
+      transaction_attempt = BSON_MIN(transaction_attempt + 1, MONGOC_BACKOFF_ATTEMPT_LIMIT);
 
       res = cb(session, ctx, &active_reply, error);
       state = session->txn.state;
