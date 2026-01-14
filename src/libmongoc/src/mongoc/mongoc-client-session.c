@@ -901,32 +901,6 @@ _max_time_ms_failure(bson_t *reply)
    return false;
 }
 
-#define MONGOC_BACKOFF_ATTEMPT_LIMIT 13
-#define MONGOC_BACKOFF_MAX mlib_duration(500, ms)
-#define MONGOC_BACKOFF_INITIAL mlib_duration(5, ms)
-
-static mlib_duration
-_duration_float_mulitply(mlib_duration duration, float factor)
-{
-   return mlib_duration((mlib_duration_rep_t)roundf((float)mlib_microseconds_count(duration) * factor), us);
-}
-
-static mlib_duration
-_compute_backoff_duration(int transaction_attempt, mongoc_jitter_source_t *jitter_source)
-{
-   BSON_ASSERT(jitter_source);
-
-   const float jitter = _mongoc_jitter_source_generate(jitter_source);
-
-   if (transaction_attempt >= MONGOC_BACKOFF_ATTEMPT_LIMIT) {
-      return _duration_float_mulitply(MONGOC_BACKOFF_MAX, jitter);
-   }
-
-   const float backoff_factor = powf(1.5f, (float)(transaction_attempt - 1));
-
-   return _duration_float_mulitply(MONGOC_BACKOFF_INITIAL, jitter * backoff_factor);
-}
-
 bool
 mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                                        mongoc_client_session_with_transaction_cb_t cb,
@@ -958,7 +932,9 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       local_reply should always be uninitialized. */
    while (true) {
       if (transaction_attempt > 0) {
-         const mlib_duration backoff_duration = _compute_backoff_duration(transaction_attempt, session->jitter_source);
+         const float jitter = _mongoc_jitter_source_generate(session->jitter_source);
+
+         const mlib_duration backoff_duration = _mongoc_compute_backoff_duration(jitter, transaction_attempt);
 
          const mlib_time_point backoff_wake_time = mlib_time_add(mlib_now(), backoff_duration);
 
