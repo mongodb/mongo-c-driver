@@ -3995,7 +3995,7 @@ callback(mongoc_client_session_t *session, void *ctx, bson_t **reply, bson_error
    BSON_UNUSED(ctx);
    BSON_UNUSED(reply);
 
-   // Important::  You must pass the session to the operations.
+   // Important::  The logical session ID MUST be applied to all associated operations.
    ret = mongoc_client_session_append(session, opts, error);
    if (!ret) {
       goto fail;
