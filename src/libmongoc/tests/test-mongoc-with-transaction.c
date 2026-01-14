@@ -8,8 +8,6 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
-#include <stdint.h>
-
 /* Note, the with_transaction spec tests are in test-mongoc-transactions.c,
  * since it shares the same test runner with the transactions test runner. */
 
