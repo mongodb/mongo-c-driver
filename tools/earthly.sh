@@ -27,6 +27,11 @@ mkdir -p "$cache_dir"
 exe_filename="earthly-$OS_FAMILY-$arch$EXE_SUFFIX"
 EARTHLY_EXE="$cache_dir/$exe_filename"
 
+if is-file "$EARTHLY_EXE" && ! "$EARTHLY_EXE" --version; then
+  echo "Failed to execute Earthly executable, removing and re-downloading"
+  rm "$EARTHLY_EXE"
+fi
+
 # Download if it isn't already present
 if ! is-file "$EARTHLY_EXE"; then
   echo "Downloading $exe_filename $EARTHLY_VERSION"

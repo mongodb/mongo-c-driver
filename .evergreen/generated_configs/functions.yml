@@ -158,12 +158,29 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
-  cse-sasl-cyrus-winssl-compile:
+  cse-sasl-sspi-openssl-compile:
+    - command: expansions.update
+      params:
+        updates:
+          - { key: SSL, value: OPENSSL }
+          - { key: SASL, value: SSPI }
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          COMPILE_LIBMONGOCRYPT: "ON"
+        args:
+          - -c
+          - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+  cse-sasl-sspi-winssl-compile:
     - command: expansions.update
       params:
         updates:
           - { key: SSL, value: WINDOWS }
-          - { key: SASL, value: CYRUS }
+          - { key: SASL, value: SSPI }
     - command: subprocess.exec
       type: test
       params:
@@ -475,6 +492,19 @@ functions:
         env:
           SASL: "OFF"
           SSL: WINDOWS
+        args:
+          - -c
+          - .evergreen/scripts/compile.sh
+  sasl-sspi-openssl-compile:
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        working_dir: mongoc
+        add_expansions_to_env: true
+        env:
+          SASL: SSPI
+          SSL: OPENSSL
         args:
           - -c
           - .evergreen/scripts/compile.sh
