@@ -726,11 +726,11 @@ default_jitter_source_destroy(mongoc_jitter_source_t *source)
    bson_free(source);
 }
 
-static uint32_t
-default_jitter_source_generate_bits(mongoc_jitter_source_t *source)
+static float
+default_jitter_source_generate(mongoc_jitter_source_t *source)
 {
    BSON_UNUSED(source);
-   return _mongoc_simple_rand_uint32_t();
+   return (float)_mongoc_simple_rand_uint32_t() / (float)UINT32_MAX;
 }
 
 static mongoc_jitter_source_t *
@@ -739,7 +739,7 @@ default_jitter_source_new(void)
    mongoc_jitter_source_t *const source = (mongoc_jitter_source_t *)bson_malloc0(sizeof(mongoc_jitter_source_t));
 
    source->destroy = default_jitter_source_destroy;
-   source->generate_bits = default_jitter_source_generate_bits;
+   source->generate = default_jitter_source_generate;
 
    return source;
 }
@@ -1681,9 +1681,9 @@ float
 _mongoc_jitter_source_generate(mongoc_jitter_source_t *source)
 {
    BSON_ASSERT(source);
-   BSON_ASSERT(source->generate_bits);
+   BSON_ASSERT(source->generate);
 
-   return (float)source->generate_bits(source) / (float)UINT32_MAX;
+   return source->generate(source);
 }
 
 bool

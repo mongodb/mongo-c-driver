@@ -84,7 +84,7 @@ test_with_transaction_timeout(void *ctx)
 
 typedef struct {
    mongoc_jitter_source_t vtable;
-   uint32_t value;
+   float value;
 } fixed_value_jitter_source_t;
 
 static void
@@ -93,8 +93,8 @@ fixed_value_jitter_source_destroy(mongoc_jitter_source_t *source)
    bson_free((fixed_value_jitter_source_t *)source);
 }
 
-static uint32_t
-fixed_value_jitter_source_generate_bits(mongoc_jitter_source_t *source)
+static float
+fixed_value_jitter_source_generate(mongoc_jitter_source_t *source)
 {
    return ((fixed_value_jitter_source_t *)source)->value;
 }
@@ -106,7 +106,7 @@ fixed_value_jitter_source_create(uint32_t value)
       (fixed_value_jitter_source_t *)bson_malloc0(sizeof(fixed_value_jitter_source_t));
 
    source->vtable.destroy = fixed_value_jitter_source_destroy;
-   source->vtable.generate_bits = fixed_value_jitter_source_generate_bits;
+   source->vtable.generate = fixed_value_jitter_source_generate;
 
    source->value = value;
 
@@ -165,8 +165,7 @@ test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
    ASSERT_OR_PRINT(no_backoff_session, error);
 
    // Step 3.1
-   // `0u` maps to a jitter value of `0.0f`, so this will effectively disable retry backoff.
-   _mongoc_client_session_set_jitter_source(no_backoff_session, fixed_value_jitter_source_create(0u));
+   _mongoc_client_session_set_jitter_source(no_backoff_session, fixed_value_jitter_source_create(0.0f));
 
    // Step 3.2
    retry_backoff_set_fail_point(client);
@@ -185,8 +184,7 @@ test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
    ASSERT_OR_PRINT(with_backoff_session, error);
 
    // Step 4.1
-   // `UINT32_MAX` maps to a jitter value of `1.0f`, so this will result in maximum retry wait times.
-   _mongoc_client_session_set_jitter_source(with_backoff_session, fixed_value_jitter_source_create(UINT32_MAX));
+   _mongoc_client_session_set_jitter_source(with_backoff_session, fixed_value_jitter_source_create(1.0f));
 
    // Step 4.2
    retry_backoff_set_fail_point(client);

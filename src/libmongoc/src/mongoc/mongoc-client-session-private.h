@@ -68,11 +68,8 @@ typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
 
 struct _mongoc_jitter_source_t {
    void(MONGOC_CALL *destroy)(mongoc_jitter_source_t *source);
-   // `generate_bits` is a callback to generate a random 32-bit unsigned integer, which is used to compute jitter
-   // values. Jitter values are computed by scaling the range of 32-bit unsigned integers uniformly between 0.0f
-   // and `1.0f`. In other words, `0u` maps to `0.0f` and `UINT32_MAX` maps to `1.0f`. Typically, this should be a
-   // uniform random bit generator, but non-random generators may be used for testing purposes.
-   uint32_t(MONGOC_CALL *generate_bits)(mongoc_jitter_source_t *source);
+   // `generate_bits` is a callback to generate a random float between 0.0f and 1.0f.
+   float(MONGOC_CALL *generate)(mongoc_jitter_source_t *source);
 };
 
 typedef struct _mongoc_transaction_t {
