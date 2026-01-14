@@ -1,4 +1,4 @@
-mongo-c-driver (1.17.6-1+deb11u2) UNRELEASED; urgency=medium
+mongo-c-driver (1.17.6-1+deb11u2) bullseye-security; urgency=medium
 
   * Upload by the maintainer and LTS Security Team.
   * Fix CVE-2025-12119: mongoc_bulk_operation_t may read invalid memory if
