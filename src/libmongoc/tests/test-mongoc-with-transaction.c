@@ -80,35 +80,19 @@ test_with_transaction_timeout(void *ctx)
    mongoc_client_destroy(client);
 }
 
-typedef struct {
-   mongoc_jitter_source_t vtable;
-   float value;
-} fixed_value_jitter_source_t;
 
-static void
-fixed_value_jitter_source_destroy(mongoc_jitter_source_t *source)
+static float
+always_0_jitter_source_generate(mongoc_jitter_source_t *source)
 {
-   bson_free((fixed_value_jitter_source_t *)source);
+   BSON_UNUSED(source);
+   return 0.0f;
 }
 
 static float
-fixed_value_jitter_source_generate(mongoc_jitter_source_t *source)
+always_1_jitter_source_generate(mongoc_jitter_source_t *source)
 {
-   return ((fixed_value_jitter_source_t *)source)->value;
-}
-
-static mongoc_jitter_source_t *
-fixed_value_jitter_source_create(uint32_t value)
-{
-   fixed_value_jitter_source_t *const source =
-      (fixed_value_jitter_source_t *)bson_malloc0(sizeof(fixed_value_jitter_source_t));
-
-   source->vtable.destroy = fixed_value_jitter_source_destroy;
-   source->vtable.generate = fixed_value_jitter_source_generate;
-
-   source->value = value;
-
-   return (mongoc_jitter_source_t *)source;
+   BSON_UNUSED(source);
+   return 1.0f;
 }
 
 static void
@@ -163,7 +147,8 @@ test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
    ASSERT_OR_PRINT(no_backoff_session, error);
 
    // Step 3.1
-   _mongoc_client_session_set_jitter_source(no_backoff_session, fixed_value_jitter_source_create(0.0f));
+   _mongoc_client_session_set_jitter_source(no_backoff_session,
+                                            _mongoc_jitter_source_new(always_0_jitter_source_generate));
 
    // Step 3.2
    retry_backoff_set_fail_point(client);
@@ -182,7 +167,8 @@ test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
    ASSERT_OR_PRINT(with_backoff_session, error);
 
    // Step 4.1
-   _mongoc_client_session_set_jitter_source(with_backoff_session, fixed_value_jitter_source_create(1.0f));
+   _mongoc_client_session_set_jitter_source(with_backoff_session,
+                                            _mongoc_jitter_source_new(always_1_jitter_source_generate));
 
    // Step 4.2
    retry_backoff_set_fail_point(client);

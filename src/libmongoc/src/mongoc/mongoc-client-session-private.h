@@ -23,6 +23,8 @@
 
 //
 
+#include <mongoc/mongoc-jitter-source-private.h>
+
 #include <bson/bson.h>
 
 /* error labels: see Transactions Spec */
@@ -63,14 +65,6 @@ typedef enum {
    MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY,
    MONGOC_INTERNAL_TRANSACTION_ABORTED,
 } mongoc_internal_transaction_state_t;
-
-typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
-
-struct _mongoc_jitter_source_t {
-   void(MONGOC_CALL *destroy)(mongoc_jitter_source_t *source);
-   // `generate` is a callback to generate a random float between 0.0f and 1.0f.
-   float(MONGOC_CALL *generate)(mongoc_jitter_source_t *source);
-};
 
 typedef struct _mongoc_transaction_t {
    mongoc_internal_transaction_state_t state;
@@ -164,11 +158,5 @@ _mongoc_client_session_clear_snapshot_time(mongoc_client_session_t *session);
 
 void
 _mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongoc_jitter_source_t *source);
-
-void
-_mongoc_jitter_source_destroy(mongoc_jitter_source_t *source);
-
-float
-_mongoc_jitter_source_generate(mongoc_jitter_source_t *source);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

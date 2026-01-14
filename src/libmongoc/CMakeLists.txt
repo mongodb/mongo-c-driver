@@ -589,6 +589,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-http.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
@@ -1086,6 +1087,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-hedged-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-http.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c

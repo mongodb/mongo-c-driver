@@ -720,31 +720,6 @@ _mongoc_server_session_destroy(mongoc_server_session_t *self)
 }
 
 
-static void
-default_jitter_source_destroy(mongoc_jitter_source_t *source)
-{
-   bson_free(source);
-}
-
-static float
-default_jitter_source_generate(mongoc_jitter_source_t *source)
-{
-   BSON_UNUSED(source);
-   return (float)_mongoc_simple_rand_uint32_t() / (float)UINT32_MAX;
-}
-
-static mongoc_jitter_source_t *
-default_jitter_source_new(void)
-{
-   mongoc_jitter_source_t *const source = (mongoc_jitter_source_t *)bson_malloc0(sizeof(mongoc_jitter_source_t));
-
-   source->destroy = default_jitter_source_destroy;
-   source->generate = default_jitter_source_generate;
-
-   return source;
-}
-
-
 mongoc_client_session_t *
 _mongoc_client_session_new(mongoc_client_t *client,
                            mongoc_server_session_t *server_session,
@@ -790,7 +765,7 @@ _mongoc_client_session_new(mongoc_client_t *client,
    session->with_txn_timeout_ms = 0;
    session->fail_commit_label = NULL;
 
-   session->jitter_source = default_jitter_source_new();
+   session->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
 
    RETURN(session);
 }
@@ -1675,26 +1650,6 @@ _mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongo
 {
    _mongoc_jitter_source_destroy(session->jitter_source);
    session->jitter_source = source;
-}
-
-void
-_mongoc_jitter_source_destroy(mongoc_jitter_source_t *source)
-{
-   if (!source) {
-      return;
-   }
-
-   BSON_ASSERT(source->destroy);
-   source->destroy(source);
-}
-
-float
-_mongoc_jitter_source_generate(mongoc_jitter_source_t *source)
-{
-   BSON_ASSERT(source);
-   BSON_ASSERT(source->generate);
-
-   return source->generate(source);
 }
 
 bool
