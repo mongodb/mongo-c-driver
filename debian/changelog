@@ -1,7 +1,8 @@
 mongo-c-driver (1.17.6-1+deb11u2) UNRELEASED; urgency=medium
 
   * Upload by the maintainer and LTS Security Team.
-  * 
+  * Fix CVE-2025-12119: mongoc_bulk_operation_t may read invalid memory if
+    large options are passed.
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 14 Jan 2026 10:02:37 -0500
 
