@@ -68,7 +68,7 @@ typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
 
 struct _mongoc_jitter_source_t {
    void(MONGOC_CALL *destroy)(mongoc_jitter_source_t *source);
-   // `generate_bits` is a callback to generate a random float between 0.0f and 1.0f.
+   // `generate` is a callback to generate a random float between 0.0f and 1.0f.
    float(MONGOC_CALL *generate)(mongoc_jitter_source_t *source);
 };
 
