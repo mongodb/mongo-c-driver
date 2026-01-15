@@ -19,17 +19,19 @@
       }                                                                                  \
    } while (false)
 
-#define ASSERT_DURATION_ALMOST_EQUAL(a, b)                                                              \
+#define ASSERT_DURATION_ALMOST_EQUAL(lhs, rhs)                                                          \
    do {                                                                                                 \
-      const mlib_duration_rep_t _a = mlib_microseconds_count(a);                                        \
-      const mlib_duration_rep_t _b = mlib_microseconds_count(b);                                        \
-      const double _af = fabs((double)_a);                                                              \
-      const double _bf = fabs((double)_b);                                                              \
-      if (!(_af >= _bf * 0.99 && _af <= _bf * 1.01)) {                                                  \
+      const mlib_duration_rep_t _lhs = mlib_microseconds_count(lhs);                                    \
+      const mlib_duration_rep_t _rhs = mlib_microseconds_count(rhs);                                    \
+      ASSERT_CMPINT64(_lhs, >=, 0);                                                                     \
+      ASSERT_CMPINT64(_rhs, >=, 0);                                                                     \
+      const double _lhs_d = (double)_lhs;                                                               \
+      const double _rhs_d = (double)_rhs;                                                               \
+      if (!(_lhs_d >= _rhs_d * 0.99 && _lhs_d <= _rhs_d * 1.01)) {                                      \
          MONGOC_STDERR_PRINTF("FAIL\n\nAssert Failure: %" PRId64 "us not within 1%% of %" PRId64 "us\n" \
                               "%s:%d  %s()\n",                                                          \
-                              _a,                                                                       \
-                              _b,                                                                       \
+                              _lhs,                                                                     \
+                              _rhs,                                                                     \
                               __FILE__,                                                                 \
                               (int)(__LINE__),                                                          \
                               BSON_FUNC);                                                               \
