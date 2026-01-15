@@ -45,7 +45,7 @@ _mongoc_jitter_source_destroy(mongoc_jitter_source_t *source)
 float
 _mongoc_jitter_source_generate(mongoc_jitter_source_t *source)
 {
-   BSON_ASSERT(source);
+   BSON_ASSERT_PARAM(source);
    BSON_ASSERT(source->generate);
 
    return source->generate(source);
