@@ -27,7 +27,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/duration.h>
-#include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
@@ -866,12 +866,6 @@ mongoc_client_session_advance_operation_time(mongoc_client_session_t *session, u
 }
 
 static bool
-timeout_exceeded(mlib_time_point expire_at)
-{
-   return mlib_time_cmp(mlib_now(), >=, expire_at);
-}
-
-static bool
 _max_time_ms_failure(bson_t *reply)
 {
    bson_iter_t iter;
@@ -917,7 +911,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
    timeout = session->with_txn_timeout_ms > 0 ? session->with_txn_timeout_ms : WITH_TXN_TIMEOUT_MS;
 
-   const mlib_time_point expire_at = mlib_time_add(mlib_now(), (timeout, ms));
+   const mlib_timer timer = mlib_expires_after(timeout, ms);
 
    int transaction_attempt = 0;
 
@@ -934,16 +928,16 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
          const mlib_duration backoff_duration = _mongoc_compute_backoff_duration(jitter, transaction_attempt);
 
-         const mlib_time_point backoff_wake_time = mlib_time_add(mlib_now(), backoff_duration);
+         const mlib_timer backoff_timer = mlib_expires_after(backoff_duration);
 
-         const bool backoff_would_exceed_timeout = mlib_time_cmp(backoff_wake_time, >=, expire_at);
+         const bool backoff_would_exceed_timeout = mlib_time_cmp(backoff_timer.expires_at, >=, timer.expires_at);
 
          if (backoff_would_exceed_timeout) {
             res = false;
             GOTO(done);
          }
 
-         mlib_sleep_until(backoff_wake_time);
+         mlib_sleep_until(backoff_timer.expires_at);
       }
 
       res = mongoc_client_session_start_transaction(session, opts, error);
@@ -969,7 +963,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
             BSON_ASSERT(mongoc_client_session_abort_transaction(session, NULL));
          }
 
-         if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !timeout_exceeded(expire_at)) {
+         if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer, NULL)) {
             bson_destroy(active_reply);
             active_reply = NULL;
             continue;
@@ -1006,7 +1000,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                GOTO(done);
             }
 
-            if (mongoc_error_has_label(active_reply, UNKNOWN_COMMIT_RESULT) && !timeout_exceeded(expire_at)) {
+            if (mongoc_error_has_label(active_reply, UNKNOWN_COMMIT_RESULT) && !mlib_timer_is_expired(timer, NULL)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
                 *
@@ -1017,7 +1011,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                continue;
             }
 
-            if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !timeout_exceeded(expire_at)) {
+            if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer, NULL)) {
                /* In the case of a transient txn error, go back to outside loop.
                   We must set the reply to NULL so it may be used by the cb. */
                bson_destroy(active_reply);
