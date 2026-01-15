@@ -51,6 +51,28 @@ test_compute_backoff_duration(void)
       ASSERT_CMPDURATION(_mongoc_compute_backoff_duration(0.0, 3), ==, duration_zero);
    }
 
+   // jitter=0.5
+   {
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 1),
+                                   mlib_duration(MONGOC_BACKOFF_INITIAL, div, 2));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 2), mlib_duration(3750, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 3), mlib_duration(5625, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 4), mlib_duration(8438, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 5), mlib_duration(12657, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 6), mlib_duration(18985, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 7), mlib_duration(28477, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 8), mlib_duration(42715, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 9), mlib_duration(64073, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 10), mlib_duration(96109, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 11), mlib_duration(144163, us));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 12), mlib_duration(216244, us));
+      // After 13 retries, backoff should saturate to `MONGOC_BACKOFF_MAX / 2`.
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 13),
+                                   mlib_duration(MONGOC_BACKOFF_MAX, div, 2));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(0.5, 14),
+                                   mlib_duration(MONGOC_BACKOFF_MAX, div, 2));
+   }
+
    // jitter=1
    {
       ASSERT_DURATION_ALMOST_EQUAL(_mongoc_compute_backoff_duration(1.0, 1), MONGOC_BACKOFF_INITIAL);
