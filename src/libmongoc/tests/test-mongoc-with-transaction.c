@@ -139,6 +139,8 @@ retry_backoff_with_transaction_cb(mongoc_client_session_t *session, void *ctx, b
 static void
 test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
 {
+   BSON_UNUSED(ctx);
+
    // Step 1
    mongoc_client_t *const client = test_framework_new_default_client();
 
