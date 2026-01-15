@@ -68,6 +68,9 @@ _duration_double_multiply(mlib_duration duration, double factor)
 mlib_duration
 _mongoc_compute_backoff_duration(double jitter, int transaction_attempt)
 {
+   BSON_ASSERT(0.0 <= jitter && jitter <= 1.0);
+   BSON_ASSERT(transaction_attempt > 0);
+
    if (transaction_attempt >= MONGOC_BACKOFF_ATTEMPT_LIMIT) {
       return _duration_double_multiply(MONGOC_BACKOFF_MAX, jitter);
    }
