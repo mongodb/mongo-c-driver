@@ -963,7 +963,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
             BSON_ASSERT(mongoc_client_session_abort_transaction(session, NULL));
          }
 
-         if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer, NULL)) {
+         if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer)) {
             bson_destroy(active_reply);
             active_reply = NULL;
             continue;
@@ -1000,7 +1000,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                GOTO(done);
             }
 
-            if (mongoc_error_has_label(active_reply, UNKNOWN_COMMIT_RESULT) && !mlib_timer_is_expired(timer, NULL)) {
+            if (mongoc_error_has_label(active_reply, UNKNOWN_COMMIT_RESULT) && !mlib_timer_is_expired(timer)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
                 *
@@ -1011,7 +1011,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                continue;
             }
 
-            if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer, NULL)) {
+            if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer)) {
                /* In the case of a transient txn error, go back to outside loop.
                   We must set the reply to NULL so it may be used by the cb. */
                bson_destroy(active_reply);
