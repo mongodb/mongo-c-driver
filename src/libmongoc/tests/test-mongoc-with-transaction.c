@@ -189,7 +189,7 @@ test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
    mongoc_client_session_destroy(with_backoff_session);
 
    // Step 5
-   const mlib_duration diff = mlib_duration(with_backoff_time, minus, (no_backoff_time, plus, mlib_duration(1800, ms)));
+   const mlib_duration diff = mlib_duration(with_backoff_time, minus, (no_backoff_time, plus, (1800, ms)));
    ASSERT_CMPINT64(imaxabs(mlib_microseconds_count(diff)), <, mlib_microseconds_count(mlib_duration(500, ms)));
 
    mongoc_collection_destroy(coll);
