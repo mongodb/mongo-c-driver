@@ -21,9 +21,9 @@
 
 #include <mlib/duration.h>
 
-#define MONGOC_BACKOFF_ATTEMPT_LIMIT 13
 #define MONGOC_BACKOFF_MAX mlib_duration(500, ms)
 #define MONGOC_BACKOFF_INITIAL mlib_duration(5, ms)
+#define MONGOC_BACKOFF_ATTEMPT_LIMIT 13 // `5 * 1.5 ^ (n - 1) >= 500` when `n >= 13`.
 
 typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
 
