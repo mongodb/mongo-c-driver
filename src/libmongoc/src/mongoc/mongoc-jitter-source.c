@@ -58,7 +58,7 @@ _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source)
 }
 
 static mlib_duration
-_duration_float_mulitply(mlib_duration duration, float factor)
+_duration_float_multiply(mlib_duration duration, float factor)
 {
    return mlib_duration((mlib_duration_rep_t)roundf((float)mlib_microseconds_count(duration) * factor), us);
 }
@@ -67,10 +67,10 @@ mlib_duration
 _mongoc_compute_backoff_duration(float jitter, int transaction_attempt)
 {
    if (transaction_attempt >= MONGOC_BACKOFF_ATTEMPT_LIMIT) {
-      return _duration_float_mulitply(MONGOC_BACKOFF_MAX, jitter);
+      return _duration_float_multiply(MONGOC_BACKOFF_MAX, jitter);
    }
 
    const float backoff_factor = powf(1.5f, (float)(transaction_attempt - 1));
 
-   return _duration_float_mulitply(MONGOC_BACKOFF_INITIAL, jitter * backoff_factor);
+   return _duration_float_multiply(MONGOC_BACKOFF_INITIAL, jitter * backoff_factor);
 }
