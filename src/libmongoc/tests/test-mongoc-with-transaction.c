@@ -81,18 +81,18 @@ test_with_transaction_timeout(void *ctx)
 }
 
 
-static float
+static double
 always_0_jitter_source_generate(mongoc_jitter_source_t *source)
 {
    BSON_UNUSED(source);
-   return 0.0f;
+   return 0.0;
 }
 
-static float
+static double
 always_1_jitter_source_generate(mongoc_jitter_source_t *source)
 {
    BSON_UNUSED(source);
-   return 1.0f;
+   return 1.0;
 }
 
 static void

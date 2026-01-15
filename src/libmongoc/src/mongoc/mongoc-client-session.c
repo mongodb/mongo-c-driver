@@ -924,7 +924,7 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       local_reply should always be uninitialized. */
    while (true) {
       if (transaction_attempt > 0) {
-         const float jitter = _mongoc_jitter_source_generate(session->jitter_source);
+         const double jitter = _mongoc_jitter_source_generate(session->jitter_source);
 
          const mlib_duration backoff_duration = _mongoc_compute_backoff_duration(jitter, transaction_attempt);
 

@@ -27,8 +27,8 @@
 
 typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
 
-// A function that returns nearly-uniformly-distributed values in the range `[0.0f, 1.0f]`.
-typedef float (*mongoc_jitter_source_generate_fn_t)(mongoc_jitter_source_t *);
+// A function that returns nearly-uniformly-distributed values in the range `[0.0, 1.0]`.
+typedef double (*mongoc_jitter_source_generate_fn_t)(mongoc_jitter_source_t *);
 
 mongoc_jitter_source_t *
 _mongoc_jitter_source_new(mongoc_jitter_source_generate_fn_t generate);
@@ -36,13 +36,13 @@ _mongoc_jitter_source_new(mongoc_jitter_source_generate_fn_t generate);
 void
 _mongoc_jitter_source_destroy(mongoc_jitter_source_t *source);
 
-float
+double
 _mongoc_jitter_source_generate(mongoc_jitter_source_t *source);
 
-float
+double
 _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source);
 
 mlib_duration
-_mongoc_compute_backoff_duration(float jitter, int transaction_attempt);
+_mongoc_compute_backoff_duration(double jitter, int transaction_attempt);
 
 #endif
