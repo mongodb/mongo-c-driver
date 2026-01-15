@@ -44,7 +44,7 @@ test_compute_backoff_duration(void)
 {
    // jitter=0
    {
-      const mlib_duration duration_zero = mlib_duration(0, us);
+      const mlib_duration duration_zero = mlib_duration();
 
       ASSERT_CMPDURATION(_mongoc_compute_backoff_duration(0.0, 1), ==, duration_zero);
       ASSERT_CMPDURATION(_mongoc_compute_backoff_duration(0.0, 2), ==, duration_zero);
