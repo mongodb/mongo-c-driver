@@ -27,7 +27,7 @@ struct _mongoc_jitter_source_t {
 mongoc_jitter_source_t *
 _mongoc_jitter_source_new(mongoc_jitter_source_generate_fn_t generate)
 {
-   mongoc_jitter_source_t *const source = (mongoc_jitter_source_t *)bson_malloc0(sizeof(mongoc_jitter_source_t));
+   mongoc_jitter_source_t *const source = (mongoc_jitter_source_t *)bson_malloc(sizeof(mongoc_jitter_source_t));
 
    *source = (mongoc_jitter_source_t){
       .generate = generate,
