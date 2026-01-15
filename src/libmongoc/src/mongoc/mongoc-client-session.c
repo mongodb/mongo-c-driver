@@ -29,8 +29,6 @@
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
 
-#include <math.h>
-
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
 static void
