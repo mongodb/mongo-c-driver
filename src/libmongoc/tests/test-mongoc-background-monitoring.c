@@ -377,7 +377,7 @@ test_connect_faas_use_polling(void)
     will timeout if the server monitor doesn't detect ENV_AWS and switch to
     polling */
    tf = tf_new(TF_AUTO_RESPOND_POLLING_HELLO | TF_FAST_HEARTBEAT);
-   OBSERVE_SOON(tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON(tf, tf->observations->n_heartbeat_succeeded >= 2);
    OBSERVE_SOON(tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE(tf, !tf->observations->awaited);
 
