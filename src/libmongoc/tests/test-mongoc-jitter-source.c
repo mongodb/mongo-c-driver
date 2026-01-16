@@ -10,7 +10,7 @@
          MONGOC_STDERR_PRINTF("FAIL\n\nAssert Failure: %" PRId64 "us %s %" PRId64 "us\n" \
                               "%s:%d  %s()\n",                                           \
                               mlib_microseconds_count(_a),                               \
-                              BSON_STR(eq),                                              \
+                              BSON_STR(op),                                              \
                               mlib_microseconds_count(_b),                               \
                               __FILE__,                                                  \
                               (int)(__LINE__),                                           \
