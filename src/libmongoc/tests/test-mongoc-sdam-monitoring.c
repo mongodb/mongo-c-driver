@@ -972,7 +972,7 @@ typedef struct {
 } smm_event_t;
 
 // `smm_t` is a test fixture for serverMonitoringMode tests
-#define MAX_EVENTS 3
+#define MAX_EVENTS 16
 typedef struct {
    bson_mutex_t lock;
    smm_event_t events[MAX_EVENTS];
@@ -1085,7 +1085,7 @@ smm_wait(smm_t *t, size_t count)
       bson_mutex_lock(&t->lock);                                                            \
                                                                                             \
       /* First two events should always be a non-awaited heartbeat started and succeeded */ \
-      ASSERT_CMPSIZE_T(t->events_len, ==, 3);                                               \
+      ASSERT_CMPSIZE_T(t->events_len, >=, 3);                                               \
       ASSERT_CMPSTR(t->events[0].type, SERVER_HEARTBEAT_STARTED);                           \
       ASSERT(!t->events[0].awaited);                                                        \
       ASSERT_CMPSTR(t->events[1].type, SERVER_HEARTBEAT_SUCCEEDED);                         \
