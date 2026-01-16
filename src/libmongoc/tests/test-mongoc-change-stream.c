@@ -1976,17 +1976,25 @@ iterate_after_invalidate(void *test_ctx)
 }
 
 typedef struct {
-   bson_t *commands[6];
+#define TEST_EVENTS_MAX 16
+   bson_t *commands[TEST_EVENTS_MAX];
    size_t commands_len;
-   bson_t *replies[6];
+   bson_t *replies[TEST_EVENTS_MAX];
    size_t replies_len;
+   // failed_failpoints are used to configure failpoints in a failed callback.
+   // Useful to test a sequence of different errors during a resume.
+   struct {
+      const char *cmds[TEST_EVENTS_MAX];
+      size_t len;
+      size_t index;
+   } failed_failpoints;
 } test_events_t;
 
 static void
 test_events_started_cb(const mongoc_apm_command_started_t *e)
 {
    test_events_t *te = mongoc_apm_command_started_get_context(e);
-   ASSERT_CMPSIZE_T(te->commands_len, <, sizeof(te->commands) / sizeof(te->commands[0]));
+   ASSERT_CMPSIZE_T(te->commands_len, <, TEST_EVENTS_MAX);
    te->commands[te->commands_len++] = bson_copy(mongoc_apm_command_started_get_command(e));
 }
 
@@ -1994,8 +2002,55 @@ static void
 test_events_succeeded_cb(const mongoc_apm_command_succeeded_t *e)
 {
    test_events_t *te = mongoc_apm_command_succeeded_get_context(e);
-   ASSERT_CMPSIZE_T(te->replies_len, <, sizeof(te->replies) / sizeof(te->replies[0]));
+   ASSERT_CMPSIZE_T(te->replies_len, <, TEST_EVENTS_MAX);
    te->replies[te->replies_len++] = bson_copy(mongoc_apm_command_succeeded_get_reply(e));
+}
+
+// send_command sends a command on a new default test client.
+// Useful to set failpoints. Due to SERVER-93077, blockTimeMS blocks other calls to configureFailPoint. This can timeout
+// a test client with a low socketTimeoutMS.
+static void
+send_command(const char *cmd)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   bson_error_t error;
+   bool ok = mongoc_client_command_simple(client, "admin", tmp_bson(cmd), NULL, NULL, &error);
+   ASSERT_OR_PRINT(ok, error);
+   mongoc_client_destroy(client);
+}
+
+static void
+test_events_failed_cb(const mongoc_apm_command_failed_t *e)
+{
+   test_events_t *te = mongoc_apm_command_failed_get_context(e);
+   ASSERT_CMPSIZE_T(te->replies_len, <, TEST_EVENTS_MAX);
+   te->replies[te->replies_len++] = bson_new();
+   if (te->failed_failpoints.cmds[te->failed_failpoints.index]) {
+      send_command(te->failed_failpoints.cmds[te->failed_failpoints.index]);
+      te->failed_failpoints.index++;
+   }
+}
+
+static void
+test_events_set_callbacks(test_events_t *te, mongoc_client_t *client)
+{
+   mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new();
+   mongoc_apm_set_command_started_cb(cbs, test_events_started_cb);
+   mongoc_apm_set_command_succeeded_cb(cbs, test_events_succeeded_cb);
+   mongoc_apm_set_command_failed_cb(cbs, test_events_failed_cb);
+   ASSERT(mongoc_client_set_apm_callbacks(client, cbs, te));
+   mongoc_apm_callbacks_destroy(cbs);
+}
+
+static void
+test_events_cleanup(test_events_t *te)
+{
+   for (size_t i = 0; i < te->commands_len; i++) {
+      bson_destroy(te->commands[i]);
+   }
+   for (size_t i = 0; i < te->replies_len; i++) {
+      bson_destroy(te->replies[i]);
+   }
 }
 
 // Test that batchSize:0 is applied to the `aggregate` command.
@@ -2034,13 +2089,7 @@ test_change_stream_batchSize0(void *test_ctx)
    {
       mongoc_client_t *client = test_framework_new_default_client();
       // Capture events.
-      {
-         mongoc_apm_callbacks_t *cbs = mongoc_apm_callbacks_new();
-         mongoc_apm_set_command_started_cb(cbs, test_events_started_cb);
-         mongoc_apm_set_command_succeeded_cb(cbs, test_events_succeeded_cb);
-         ASSERT(mongoc_client_set_apm_callbacks(client, cbs, &te));
-         mongoc_apm_callbacks_destroy(cbs);
-      }
+      test_events_set_callbacks(&te, client);
       mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
       // Iterate change stream.
       {
@@ -2093,12 +2142,236 @@ test_change_stream_batchSize0(void *test_ctx)
    }
 
    bson_destroy(resumeToken);
-   for (size_t i = 0; i < te.commands_len; i++) {
-      bson_destroy(te.commands[i]);
+   test_events_cleanup(&te);
+}
+
+static void
+test_change_stream_socket_timeouts(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_uri_t *uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 500);
+   mongoc_uri_set_appname(uri, "test_change_stream_socket_timeouts");
+   mongoc_client_t *client = mongoc_client_new_from_uri(uri);
+   test_framework_set_ssl_opts(client);
+   mongoc_collection_t *coll = drop_and_get_coll(client, "db", "coll");
+
+   // Capture events:
+   test_events_t te = {.commands_len = 0};
+   test_events_set_callbacks(&te, client);
+
+   // Configure failpoint to delay getMore three times:
+   send_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 3},
+      "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]},
+      "appName" : "test_change_stream_socket_timeouts"
+   }));
+
+   // Establish change stream:
+   mongoc_change_stream_t *cs = mongoc_collection_watch(coll, tmp_bson("{}"), tmp_bson("{}"));
+
+   // Iterate change stream:
+   {
+      const bson_t *got = NULL;
+      if (mongoc_change_stream_next(cs, &got)) {
+         test_error("expected timeout, but got document: %s", tmp_json(got));
+      }
+      bson_error_t error;
+      ASSERT(mongoc_change_stream_error_document(cs, &error, NULL));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "timeout");
+
+      mongoc_change_stream_destroy(cs);
    }
-   for (size_t i = 0; i < te.replies_len; i++) {
-      bson_destroy(te.replies[i]);
+
+   // Check events:
+   {
+      size_t idx = 0;
+      // Initial iteration attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // First resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // Second resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout (stops resuming).
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      if (te.commands[idx]) {
+         test_error("unexpected extra event: %s", tmp_json(te.commands[idx]));
+      }
    }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+
+   // Free observed commands after `mongoc_client_destroy`. `mongoc_client_destroy` sends `endSessions`.
+   test_events_cleanup(&te);
+}
+
+static void
+test_change_stream_socket_timeouts_recovers(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_uri_t *uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 500);
+   mongoc_uri_set_appname(uri, "test_change_stream_socket_timeouts_recovers");
+   mongoc_client_t *client = mongoc_client_new_from_uri(uri);
+   test_framework_set_ssl_opts(client);
+   mongoc_collection_t *coll = drop_and_get_coll(client, "db", "coll");
+
+   // Capture events:
+   test_events_t te = {.commands_len = 0};
+   test_events_set_callbacks(&te, client);
+
+   // Configure failpoint to delay getMore two times:
+   send_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 2},
+      "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]},
+      "appName" : "test_change_stream_socket_timeouts_recovers"
+   }));
+
+   // Establish change stream. Use maxAwaitTimeMS less than socket timeout so a successful getMore does not timeout.
+   mongoc_change_stream_t *cs = mongoc_collection_watch(coll, tmp_bson("{}"), tmp_bson("{'maxAwaitTimeMS': 100}"));
+
+   // Iterate change stream:
+   {
+      const bson_t *got = NULL;
+      if (mongoc_change_stream_next(cs, &got)) {
+         test_error("expected no document, but got: %s", tmp_json(got));
+      }
+      bson_error_t error;
+      ASSERT_OR_PRINT(!mongoc_change_stream_error_document(cs, &error, NULL), error);
+      mongoc_change_stream_destroy(cs);
+   }
+
+   // Check events:
+   {
+      size_t idx = 0;
+      // Initial iteration attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // First resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // Second resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Succeeds.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      if (te.commands[idx]) {
+         test_error("unexpected extra event: %s", tmp_json(te.commands[idx]));
+      }
+   }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+
+   // Free observed commands after `mongoc_client_destroy`. `mongoc_client_destroy` sends `endSessions`.
+   test_events_cleanup(&te);
+}
+
+static void
+test_change_stream_socket_timeouts_nonconsecutive(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_uri_t *uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 500);
+   mongoc_uri_set_appname(uri, "test_change_stream_socket_timeouts_nonconsecutive");
+   mongoc_client_t *client = mongoc_client_new_from_uri(uri);
+   test_framework_set_ssl_opts(client);
+   mongoc_collection_t *coll = drop_and_get_coll(client, "db", "coll");
+
+   // Capture events:
+   test_events_t te = {.commands_len = 0};
+
+   // Set failpoints to interleave network timeouts with a non-timeout network error:
+   te.failed_failpoints.cmds[te.failed_failpoints.len++] = BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]}, // Timeout.
+      "appName" : "test_change_stream_socket_timeouts_nonconsecutive"
+   });
+   te.failed_failpoints.cmds[te.failed_failpoints.len++] = BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" : {"closeConnection" : true, "failCommands" : ["getMore"]}, // Non-timeout network error.
+      "appName" : "test_change_stream_socket_timeouts_nonconsecutive"
+   });
+   te.failed_failpoints.cmds[te.failed_failpoints.len++] = BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]}, // Timeout.
+      "appName" : "test_change_stream_socket_timeouts_nonconsecutive"
+   });
+
+   test_events_set_callbacks(&te, client);
+
+   // Configure failpoint to trigger getMore timeout:
+   send_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]},
+      "appName" : "test_change_stream_socket_timeouts_nonconsecutive"
+   }));
+
+   // Establish change stream:
+   mongoc_change_stream_t *cs = mongoc_collection_watch(coll, tmp_bson("{}"), tmp_bson("{}"));
+
+   // Iterate change stream.
+   {
+      const bson_t *got = NULL;
+      if (mongoc_change_stream_next(cs, &got)) {
+         test_error("expected timeout, but got document: %s", tmp_json(got));
+      }
+      bson_error_t error;
+      ASSERT(mongoc_change_stream_error_document(cs, &error, NULL));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "timeout");
+   }
+
+   mongoc_change_stream_destroy(cs); // Does not send killCursors!
+
+
+   // Check events:
+   {
+      size_t idx = 0;
+
+      // Initial iteration:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // First resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // Second resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Network error.
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      // Third resume attempt:
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"aggregate" : "coll"}));
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"getMore" : {"$$type" : "long"}})); // Timeout (stops resuming).
+      ASSERT_MATCH(te.commands[idx++], BSON_STR({"killCursors" : "coll"}));
+      if (te.commands[idx]) {
+         test_error("unexpected extra event: %s", tmp_json(te.commands[idx]));
+      }
+   }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+
+   // Free observed commands after `mongoc_client_destroy`. `mongoc_client_destroy` sends `endSessions`.
+   test_events_cleanup(&te);
 }
 
 
@@ -2242,4 +2515,25 @@ test_change_stream_install(TestSuite *suite)
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull(suite,
+                     "/change_stream/socket_timeouts [lock:live-server]",
+                     test_change_stream_socket_timeouts,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset,
+                     skip_if_high_server_runtime_variance);
+   TestSuite_AddFull(suite,
+                     "/change_stream/socket_timeouts/recovers [lock:live-server]",
+                     test_change_stream_socket_timeouts_recovers,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset,
+                     skip_if_high_server_runtime_variance);
+   TestSuite_AddFull(suite,
+                     "/change_stream/socket_timeouts/nonconsecutive [lock:live-server]",
+                     test_change_stream_socket_timeouts_nonconsecutive,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset,
+                     skip_if_high_server_runtime_variance);
 }

@@ -721,7 +721,8 @@ match_json(const bson_t *doc,
    }
 
    ctx.is_command = is_command;
-   matches = match_bson_with_ctx(doc, pattern, &ctx);
+   bson_t empty = BSON_INITIALIZER;
+   matches = match_bson_with_ctx(doc ? doc : &empty, pattern, &ctx);
 
    if (!matches) {
       char *as_string = doc ? bson_as_canonical_extended_json(doc, NULL) : NULL;
