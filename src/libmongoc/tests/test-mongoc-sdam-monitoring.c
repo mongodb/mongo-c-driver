@@ -1057,7 +1057,7 @@ smm_new(const char *mode)
    return t;
 }
 
-// `smm_wait` waits for `count` heartbeat events.
+// `smm_wait` waits for at least `count` heartbeat events.
 static bool
 smm_wait(smm_t *t, size_t count)
 {
