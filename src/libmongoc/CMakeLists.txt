@@ -589,6 +589,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-http.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
@@ -947,6 +948,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(SASL_BACKEND STREQUAL "Cyrus")
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
    endif()
+   if(M_LIBRARY)
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lm")
+   endif()
 
    set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
@@ -1086,6 +1090,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-hedged-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-http.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c
