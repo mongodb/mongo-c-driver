@@ -1074,7 +1074,7 @@ smm_wait(smm_t *t, size_t count)
       if (mlib_timer_is_expired(deadline)) {
          break;
       }
-      mlib_sleep_for(500, ms);
+      mlib_sleep_for(50, ms);
    }
    return false;
 }
