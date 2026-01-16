@@ -972,7 +972,7 @@ typedef struct {
 } smm_event_t;
 
 // `smm_t` is a test fixture for serverMonitoringMode tests
-#define MAX_EVENTS 3
+#define MAX_EVENTS 16
 typedef struct {
    bson_mutex_t lock;
    smm_event_t events[MAX_EVENTS];
@@ -1057,7 +1057,7 @@ smm_new(const char *mode)
    return t;
 }
 
-// `smm_wait` waits for `count` heartbeat events.
+// `smm_wait` waits for at least `count` heartbeat events.
 static bool
 smm_wait(smm_t *t, size_t count)
 {
@@ -1074,7 +1074,7 @@ smm_wait(smm_t *t, size_t count)
       if (mlib_timer_is_expired(deadline)) {
          break;
       }
-      mlib_sleep_for(500, ms);
+      mlib_sleep_for(50, ms);
    }
    return false;
 }
@@ -1085,7 +1085,7 @@ smm_wait(smm_t *t, size_t count)
       bson_mutex_lock(&t->lock);                                                            \
                                                                                             \
       /* First two events should always be a non-awaited heartbeat started and succeeded */ \
-      ASSERT_CMPSIZE_T(t->events_len, ==, 3);                                               \
+      ASSERT_CMPSIZE_T(t->events_len, >=, 3);                                               \
       ASSERT_CMPSTR(t->events[0].type, SERVER_HEARTBEAT_STARTED);                           \
       ASSERT(!t->events[0].awaited);                                                        \
       ASSERT_CMPSTR(t->events[1].type, SERVER_HEARTBEAT_SUCCEEDED);                         \
@@ -1193,6 +1193,21 @@ test_serverMonitoringMode(void)
    smm_destroy(t);
 
    printf("'connect with serverMonitoringMode=poll' ... end\n");
+
+   printf("'regression test for CDRIVER-6205' ... begin\n");
+
+   t = smm_new("poll");
+   mlib_sleep_for(mlib_duration(500, ms));
+   // CDRIVER-6205 caused serverMonitoringMode=poll to repeatedly send heartbeats.
+   // One heartbeat every heartbeatFrequencyMS (500ms) is expected. Expect less than 5 to account for time variance.
+   size_t events_len;
+   bson_mutex_lock(&t->lock);
+   events_len = t->events_len;
+   bson_mutex_unlock(&t->lock);
+   ASSERT_CMPSIZE_T(events_len, <=, 5);
+   smm_destroy(t);
+
+   printf("'regression test for CDRIVER-6205' ... begin\n");
 }
 
 static mongoc_uri_t *
