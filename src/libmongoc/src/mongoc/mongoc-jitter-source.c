@@ -56,7 +56,7 @@ _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source)
 {
    BSON_UNUSED(source);
 
-   return (double)_mongoc_simple_rand_uint64_t() / (double)UINT64_MAX;
+   return (double)_mongoc_simple_rand_uint32_t() / (double)UINT32_MAX;
 }
 
 static mlib_duration
