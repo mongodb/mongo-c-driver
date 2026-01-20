@@ -357,15 +357,14 @@ test_server_selection_logic_cb(void *test_vp)
                                      ? bson_iter_int32(&iter)
                                      : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED;
 
-   // pull out topology description field
-   bson_t test_topology;
-   BSON_ASSERT(bson_iter_init_find(&iter, test, "topology_description"));
-   bson_iter_bson(&iter, &test_topology);
-
    // set topology state from test
    mongoc_topology_description_t topology;
    bson_t test_servers;
    {
+      bson_t test_topology;
+      BSON_ASSERT(bson_iter_init_find(&iter, test, "topology_description"));
+      bson_iter_bson(&iter, &test_topology);
+
       bson_iter_t topology_iter;
       BSON_ASSERT(bson_iter_init_find(&topology_iter, &test_topology, "type"));
 
@@ -426,24 +425,19 @@ test_server_selection_logic_cb(void *test_vp)
    }
 
    // create read preference document from test
-   bson_t test_read_pref;
-   mongoc_read_mode_t read_mode;
+   mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    {
+      bson_t test_read_pref;
       BSON_ASSERT(bson_iter_init_find(&iter, test, "read_preference"));
       bson_iter_bson(&iter, &test_read_pref);
 
       bson_iter_t read_pref_iter;
       if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "mode")) {
-         read_mode = read_mode_from_test(bson_iter_utf8(&read_pref_iter, NULL));
+         const mongoc_read_mode_t read_mode = read_mode_from_test(bson_iter_utf8(&read_pref_iter, NULL));
          ASSERT_CMPINT((int)read_mode, !=, 0);
-      } else {
-         read_mode = MONGOC_READ_PRIMARY;
+         mongoc_read_prefs_set_mode(read_prefs, read_mode);
       }
-   }
 
-   mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(read_mode);
-   {
-      bson_iter_t read_pref_iter;
       if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tag_sets")) {
          // ignore  "tag_sets: [{}]"
          bson_iter_t tag_sets_iter;
@@ -488,7 +482,11 @@ test_server_selection_logic_cb(void *test_vp)
    mongoc_topology_description_suitable_servers(
       &selected_servers, op, &topology, read_prefs, NULL, NULL, MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
-   // check each server in expected_servers is in in_latency_window
+   // Server Selection Tests Spec: Drivers implementing server selection MUST test that their implementations correctly
+   // return one of the servers in `in_latency_window`. Drivers SHOULD test against the full set of servers in
+   // `in_latency_window` and against `suitable_servers` if possible.
+   //
+   // Only `in_latency_windows` is used here, which is the result of `mongoc_topology_description_suitable_servers`.
    BSON_ASSERT(bson_iter_init_find(&iter, test, "in_latency_window"));
    bool matched_servers[50] = {0};
    bson_iter_t expected_servers_iter;
