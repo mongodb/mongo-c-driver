@@ -2596,6 +2596,74 @@ test_sessions_snapshot_prose_test_1(void *ctx)
    mongoc_client_destroy(client);
 }
 
+
+typedef struct {
+   bson_t *last_sent_clusterTime;
+   bson_t *last_received_clusterTime;
+} prose3_fixture_t;
+
+static void
+prose3_command_started(const mongoc_apm_command_started_t *event)
+{
+   prose3_fixture_t *fixture = (prose3_fixture_t *)mongoc_apm_command_started_get_context(event);
+
+   const bson_t *cmd = mongoc_apm_command_started_get_command(event);
+   bson_iter_t iter;
+   if (bson_iter_init_find(&iter, cmd, "$clusterTime")) {
+      bson_destroy(fixture->last_sent_clusterTime);
+      bson_t got;
+      bson_iter_bson(&iter, &got);
+      fixture->last_sent_clusterTime = bson_copy(&got);
+   }
+}
+
+static void
+prose3_command_succeeded(const mongoc_apm_command_succeeded_t *event)
+{
+   prose3_fixture_t *fixture = (prose3_fixture_t *)mongoc_apm_command_succeeded_get_context(event);
+
+   const bson_t *reply = mongoc_apm_command_succeeded_get_reply(event);
+   bson_iter_t iter;
+   if (bson_iter_init_find(&iter, reply, "$clusterTime")) {
+      bson_destroy(fixture->last_received_clusterTime);
+      bson_t got;
+      bson_iter_bson(&iter, &got);
+      fixture->last_received_clusterTime = bson_copy(&got);
+   }
+}
+
+void
+test_sessions_prose3(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   prose3_fixture_t f = {0};
+   bool ok;
+   bson_error_t error;
+
+   // Set APM callbacks to capture $clusterTime
+   {
+      mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(callbacks, prose3_command_started);
+      mongoc_apm_set_command_succeeded_cb(callbacks, prose3_command_succeeded);
+      mongoc_client_set_apm_callbacks(client, callbacks, &f);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Send a "ping"
+   {
+      ok = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+      ASSERT_OR_PRINT(ok, error);
+      ASSERT(f.last_sent_clusterTime); // Fails!
+   }
+
+   // TODO: implement remaining test steps.
+   mongoc_client_destroy(client);
+   bson_destroy(f.last_sent_clusterTime);
+   bson_destroy(f.last_received_clusterTime);
+}
+
 void
 test_session_install(TestSuite *suite)
 {
@@ -2873,4 +2941,10 @@ test_session_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull(suite,
+                     "/Session/prose_test_3 [lock:live-server]",
+                     test_sessions_prose3,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_sessions);
 }
