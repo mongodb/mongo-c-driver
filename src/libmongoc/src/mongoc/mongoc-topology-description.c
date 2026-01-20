@@ -29,6 +29,18 @@
 
 #include <mongoc/utlist.h>
 
+#include <bson/bson.h>
+#include <bson/bson_t.h>
+#include <bson/error.h>
+#include <bson/macros.h>
+#include <bson/memory.h>
+
+#include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 
 static bool
 _is_data_node(const mongoc_server_description_t *sd)
