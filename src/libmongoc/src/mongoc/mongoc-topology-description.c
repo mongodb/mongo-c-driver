@@ -497,30 +497,6 @@ _mongoc_replica_set_read_suitable_cb(const void *item, void *ctx)
 }
 
 
-static void
-_mongoc_try_mode_secondary(mongoc_array_t *set, /* OUT */
-                           const mongoc_topology_description_t *topology,
-                           const mongoc_read_prefs_t *read_pref,
-                           bool *must_use_primary,
-                           const mongoc_deprioritized_servers_t *ds,
-                           int64_t local_threshold_ms)
-{
-   BSON_ASSERT_PARAM(set);
-   BSON_ASSERT_PARAM(topology);
-   BSON_OPTIONAL_PARAM(read_pref);
-   BSON_OPTIONAL_PARAM(must_use_primary);
-   BSON_OPTIONAL_PARAM(ds);
-
-   mongoc_read_prefs_t *const secondary = mongoc_read_prefs_copy(read_pref);
-   mongoc_read_prefs_set_mode(secondary, MONGOC_READ_SECONDARY);
-
-   mongoc_topology_description_suitable_servers(
-      set, MONGOC_SS_READ, topology, secondary, must_use_primary, ds, local_threshold_ms);
-
-   mongoc_read_prefs_destroy(secondary);
-}
-
-
 static bool
 _mongoc_td_servers_to_candidates_array(const void *item, void *ctx)
 {
@@ -809,8 +785,41 @@ _filter_suitable_servers_by_rtt(mongoc_array_t *set, /* OUT */
    }
 }
 
+// [a, NULL, b, NULL, ..., c] -> [a, b, ..., c, NULL, ..., NULL]
+static void
+_partition_sort_candidates(const mongoc_server_description_t **candidates, size_t *candidates_len)
+{
+   BSON_ASSERT_PARAM(candidates);
+   BSON_ASSERT_PARAM(candidates_len);
 
-static bool
+   const size_t old_len = *candidates_len;
+
+   size_t new_len = 0u;
+   const mongoc_server_description_t **insert_iter = candidates;
+
+   for (const mongoc_server_description_t **iter = candidates; iter < candidates + old_len; ++iter) {
+      if (*iter) {
+         if (*iter != *insert_iter) {
+            *insert_iter = *iter;
+            *iter = NULL;
+         }
+
+         ++insert_iter;
+         ++new_len;
+      }
+   }
+
+   *candidates_len = new_len;
+}
+
+
+typedef enum _filter_suitable_servers_by_topology_result {
+   retry_without_deprioritization = false,
+   filter_is_done = true,
+} _filter_suitable_servers_by_topology_result;
+
+
+static _filter_suitable_servers_by_topology_result
 _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
                                      const mongoc_ss_optype_t optype,
                                      const mongoc_topology_description_t *const topology,
@@ -842,7 +851,7 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
                   server->host.host_and_port,
                   _mongoc_read_mode_as_str(data->read_mode));
          }
-         return true;
+         return filter_is_done;
       }
 
    case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
@@ -854,42 +863,95 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
          case MONGOC_SS_READ: {
             mongoc_set_for_each_const(td_servers, _mongoc_replica_set_read_suitable_cb, data);
 
+            const bool primary_is_deprioritized =
+               data->primary && ds && mongoc_deprioritized_servers_contains(ds, data->primary);
+
             switch (data->read_mode) {
             case MONGOC_READ_PRIMARY: {
+               // Either the one and only primary server is suitable or isn't.
                if (data->primary) {
                   _mongoc_array_append_val(set, data->primary);
                }
 
-               return true;
+               return filter_is_done;
             }
 
             case MONGOC_READ_PRIMARY_PREFERRED: {
-               if (data->primary) {
+               if (data->primary && !primary_is_deprioritized) {
                   _mongoc_array_append_val(set, data->primary);
-                  return true;
+                  return filter_is_done;
+               }
+
+               if (ds) {
+                  _mongoc_filter_deprioritized_servers(data, ds);
+
+                  // Short-circuit: no candidates -> no suitable servers.
+                  if (data->candidates_len == 0u) {
+                     return retry_without_deprioritization;
+                  }
                }
 
                mongoc_server_description_filter_stale(
                   data->candidates, data->candidates_len, data->primary, topology->heartbeat_msec, read_pref);
                mongoc_server_description_filter_tags(data->candidates, data->candidates_len, read_pref);
+               _partition_sort_candidates(data->candidates, &data->candidates_len);
+
+               if (ds && data->candidates_len == 0) {
+                  return retry_without_deprioritization;
+               }
+
                _filter_suitable_servers_by_rtt(set, data->candidates, data->candidates_len, local_threshold_ms);
 
-               return true;
+               return filter_is_done;
             }
 
             case MONGOC_READ_SECONDARY_PREFERRED: {
-               /* try read_mode SECONDARY */
-               _mongoc_try_mode_secondary(set, topology, read_pref, must_use_primary, NULL, local_threshold_ms);
+               // First search for a suitable server using SECONDARY read mode.
+               mongoc_suitable_data_t inner_data = {
+                  .primary = data->primary,
+                  .topology_type = data->topology_type,
+                  .has_secondary = data->has_secondary,
+                  .candidates_len = 0,
+                  .candidates = data->candidates,     // Reuse existing candidates array.
+                  .read_mode = MONGOC_READ_SECONDARY, // Recurse into `MONGOC_READ_SECONDARY` case below.
+               };
 
-               /* otherwise fall back to primary */
-               if (!set->len && data->primary) {
-                  _mongoc_array_append_val(set, data->primary);
+               // Only staleness and tags are needed by `MONGOC_READ_SECONDARY` below.
+               // The read mode is communicated by `inner_data.read_mode`, not `read_prefs`.
+               (void)_filter_suitable_servers_by_topology(set,
+                                                          MONGOC_SS_READ,
+                                                          topology,
+                                                          read_pref,
+                                                          must_use_primary,
+                                                          ds,
+                                                          local_threshold_ms,
+                                                          td_servers,
+                                                          &inner_data);
+
+               // Found a secondary.
+               if (set->len > 0u) {
+                  return filter_is_done;
                }
 
-               return true;
+               // Fallback to primary when one is available.
+               if (inner_data.primary && !primary_is_deprioritized) {
+                  _mongoc_array_append_val(set, inner_data.primary);
+                  return filter_is_done;
+               }
+
+               return ds ? retry_without_deprioritization : filter_is_done;
             }
 
             case MONGOC_READ_SECONDARY: {
+               if (ds) {
+                  _mongoc_filter_deprioritized_servers(data, ds);
+
+                  // Short-circuit: no candidates -> no suitable servers.
+                  if (data->candidates_len == 0u) {
+                     return retry_without_deprioritization;
+                  }
+               }
+
                for (size_t i = 0u; i < data->candidates_len; i++) {
                   if (data->candidates[i] && data->candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
                      TRACE("Rejected [%s] [%s] for mode [%s] with RS topology",
@@ -903,17 +965,39 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
                mongoc_server_description_filter_stale(
                   data->candidates, data->candidates_len, data->primary, topology->heartbeat_msec, read_pref);
                mongoc_server_description_filter_tags(data->candidates, data->candidates_len, read_pref);
+               _partition_sort_candidates(data->candidates, &data->candidates_len);
+
+               if (ds && data->candidates_len == 0) {
+                  return retry_without_deprioritization;
+               }
+
                _filter_suitable_servers_by_rtt(set, data->candidates, data->candidates_len, local_threshold_ms);
 
-               return true;
+               return filter_is_done;
             }
 
             case MONGOC_READ_NEAREST: {
+               if (ds) {
+                  _mongoc_filter_deprioritized_servers(data, ds);
+
+                  // Short-circuit: no candidates -> no suitable servers.
+                  if (data->candidates_len == 0u) {
+                     return retry_without_deprioritization;
+                  }
+               }
+
                mongoc_server_description_filter_stale(
                   data->candidates, data->candidates_len, data->primary, topology->heartbeat_msec, read_pref);
                mongoc_server_description_filter_tags(data->candidates, data->candidates_len, read_pref);
+               _partition_sort_candidates(data->candidates, &data->candidates_len);
+
+               if (ds && data->candidates_len == 0) {
+                  return retry_without_deprioritization;
+               }
+
                _filter_suitable_servers_by_rtt(set, data->candidates, data->candidates_len, local_threshold_ms);
-               return true;
+
+               return filter_is_done;
             }
 
             default:
@@ -921,22 +1005,21 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
             }
          }
 
+         // Either the one and only primary server is suitable or it isn't.
          case MONGOC_SS_WRITE: {
-            BSON_ASSERT(topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY ||
-                        topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
-
-            if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
-               mongoc_set_for_each_const(
-                  td_servers, _mongoc_topology_description_has_primary_cb, (void *)&data->primary);
-               if (data->primary) {
-                  _mongoc_array_append_val(set, data->primary);
-                  return true;
-               }
+            if (topology->type != MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
+               return filter_is_done;
             }
 
-            _filter_suitable_servers_by_rtt(set, data->candidates, data->candidates_len, local_threshold_ms);
+            BSON_ASSERT(topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
 
-            return true;
+            mongoc_set_for_each_const(td_servers, _mongoc_topology_description_has_primary_cb, (void *)&data->primary);
+
+            if (data->primary) {
+               _mongoc_array_append_val(set, data->primary);
+            }
+
+            return filter_is_done;
          }
 
          default:
@@ -948,20 +1031,20 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
       // All mongos are candidates.
       {
          mongoc_set_for_each_const(td_servers, _mongoc_td_servers_to_candidates_array, data);
+         _mongoc_filter_suitable_mongos(data);
 
          if (ds) {
             _mongoc_filter_deprioritized_servers(data, ds);
-         }
 
-         _mongoc_filter_suitable_mongos(data);
-
-         if (ds && data->candidates_len == 0u) {
-            return false;
+            // Short-circuit: no candidates -> no suitable servers.
+            if (data->candidates_len == 0u) {
+               return retry_without_deprioritization;
+            }
          }
 
          _filter_suitable_servers_by_rtt(set, data->candidates, data->candidates_len, local_threshold_ms);
 
-         return true;
+         return filter_is_done;
       }
 
    case MONGOC_TOPOLOGY_LOAD_BALANCED:
@@ -971,12 +1054,12 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
          BSON_ASSERT(td_servers->items_len == 1);
          server = mongoc_set_get_item_const(td_servers, 0);
          _mongoc_array_append_val(set, server);
-         return true;
+         return filter_is_done;
       }
 
    case MONGOC_TOPOLOGY_UNKNOWN: {
       _filter_suitable_servers_by_rtt(set, data->candidates, data->candidates_len, local_threshold_ms);
-      return true;
+      return filter_is_done;
    }
 
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
@@ -1054,7 +1137,12 @@ mongoc_topology_description_suitable_servers(mongoc_array_t *set, /* OUT */
    if (!_filter_suitable_servers_by_topology(
           set, optype, topology, read_pref, must_use_primary, ds, local_threshold_ms, td_servers, &data)) {
       TRACE("%s", "deprioritization: retrying suitable servers filter without deprioritization");
-      _filter_suitable_servers_by_topology(
+
+      BSON_ASSERT(set->len == 0u);
+
+      data.candidates_len = 0u; // Clear previous candidates for next attempt.
+
+      (void)_filter_suitable_servers_by_topology(
          set, optype, topology, read_pref, must_use_primary, NULL, local_threshold_ms, td_servers, &data);
    }
 
