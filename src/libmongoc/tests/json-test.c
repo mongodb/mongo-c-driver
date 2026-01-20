@@ -347,156 +347,151 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
 void
 test_server_selection_logic_cb(void *test_vp)
 {
-   bool expected_error;
-   bson_error_t error;
-   int32_t heartbeat_msec;
-   mongoc_topology_description_t topology;
-   mongoc_server_description_t *sd;
-   mongoc_read_prefs_t *read_prefs;
-   mongoc_read_mode_t read_mode;
-   mongoc_ss_optype_t op;
-   bson_iter_t iter;
-   bson_iter_t topology_iter;
-   bson_iter_t server_iter;
-   bson_iter_t sd_iter;
-   bson_iter_t read_pref_iter;
-   bson_iter_t tag_sets_iter;
-   bson_iter_t last_write_iter;
-   bson_iter_t expected_servers_iter;
-   bson_t first_tag_set;
-   bson_t test_topology;
-   bson_t test_servers;
-   bson_t server;
-   bson_t test_read_pref;
-   bson_t test_tag_sets;
-   uint32_t i = 0;
-   bool matched_servers[50];
-   mongoc_array_t selected_servers;
-
-   _mongoc_array_init(&selected_servers, sizeof(mongoc_server_description_t *));
-
-   BSON_ASSERT(test_vp);
+   BSON_ASSERT_PARAM(test_vp);
    const bson_t *const test = test_vp;
 
-   expected_error = bson_iter_init_find(&iter, test, "error") && bson_iter_as_bool(&iter);
+   bson_iter_t iter;
+   bson_error_t error;
 
-   heartbeat_msec = MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED;
+   const int32_t heartbeat_msec = bson_iter_init_find(&iter, test, "heartbeatFrequencyMS")
+                                     ? bson_iter_int32(&iter)
+                                     : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED;
 
-   if (bson_iter_init_find(&iter, test, "heartbeatFrequencyMS")) {
-      heartbeat_msec = bson_iter_int32(&iter);
-   }
-
-   /* pull out topology description field */
+   // pull out topology description field
+   bson_t test_topology;
    BSON_ASSERT(bson_iter_init_find(&iter, test, "topology_description"));
    bson_iter_bson(&iter, &test_topology);
 
-   /* set topology state from test */
-   BSON_ASSERT(bson_iter_init_find(&topology_iter, &test_topology, "type"));
+   // set topology state from test
+   mongoc_topology_description_t topology;
+   bson_t test_servers;
+   {
+      bson_iter_t topology_iter;
+      BSON_ASSERT(bson_iter_init_find(&topology_iter, &test_topology, "type"));
 
-   mongoc_topology_description_init(&topology, heartbeat_msec);
-   topology.type = topology_type_from_test(bson_iter_utf8(&topology_iter, NULL));
+      mongoc_topology_description_init(&topology, heartbeat_msec);
+      topology.type = topology_type_from_test(bson_iter_utf8(&topology_iter, NULL));
 
-   /* for each server description in test, add server to our topology */
-   BSON_ASSERT(bson_iter_init_find(&topology_iter, &test_topology, "servers"));
-   bson_iter_bson(&topology_iter, &test_servers);
+      // for each server description in test, add server to our topology
+      BSON_ASSERT(bson_iter_init_find(&topology_iter, &test_topology, "servers"));
+      bson_iter_bson(&topology_iter, &test_servers);
 
-   bson_iter_init(&server_iter, &test_servers);
-   while (bson_iter_next(&server_iter)) {
-      bson_iter_bson(&server_iter, &server);
+      uint32_t server_id = 0u;
+      bson_iter_t server_iter;
+      bson_iter_init(&server_iter, &test_servers);
+      while (bson_iter_next(&server_iter)) {
+         bson_t server;
+         bson_iter_bson(&server_iter, &server);
 
-      /* initialize new server description with given address */
-      sd = (mongoc_server_description_t *)bson_malloc0(sizeof *sd);
-      BSON_ASSERT(bson_iter_init_find(&sd_iter, &server, "address"));
-      mongoc_server_description_init(sd, bson_iter_utf8(&sd_iter, NULL), i++);
+         bson_iter_t sd_iter;
 
-      BSON_ASSERT(bson_iter_init_find(&sd_iter, &server, "type"));
-      sd->type = server_type_from_test(bson_iter_utf8(&sd_iter, NULL));
+         // initialize new server description with given address
+         mongoc_server_description_t *const sd = (mongoc_server_description_t *)bson_malloc0(sizeof *sd);
 
-      if (bson_iter_init_find(&sd_iter, &server, "avg_rtt_ms")) {
-         sd->round_trip_time_msec = bson_iter_int32(&sd_iter);
-      } else if (sd->type != MONGOC_SERVER_UNKNOWN) {
-         test_error("%s has no avg_rtt_ms", sd->host.host_and_port);
+         BSON_ASSERT(bson_iter_init_find(&sd_iter, &server, "address"));
+         mongoc_server_description_init(sd, bson_iter_utf8(&sd_iter, NULL), server_id++);
+
+         BSON_ASSERT(bson_iter_init_find(&sd_iter, &server, "type"));
+         sd->type = server_type_from_test(bson_iter_utf8(&sd_iter, NULL));
+
+         if (bson_iter_init_find(&sd_iter, &server, "avg_rtt_ms")) {
+            sd->round_trip_time_msec = bson_iter_int32(&sd_iter);
+         } else if (sd->type != MONGOC_SERVER_UNKNOWN) {
+            test_error("%s has no avg_rtt_ms", sd->host.host_and_port);
+         }
+
+         if (bson_iter_init_find(&sd_iter, &server, "maxWireVersion")) {
+            sd->max_wire_version = (int32_t)bson_iter_as_int64(&sd_iter);
+         }
+
+         if (bson_iter_init_find(&sd_iter, &server, "lastUpdateTime")) {
+            sd->last_update_time_usec = bson_iter_as_int64(&sd_iter) * 1000;
+         }
+
+         if (bson_iter_init_find(&sd_iter, &server, "lastWrite")) {
+            bson_iter_t last_write_iter;
+            BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&sd_iter) && bson_iter_recurse(&sd_iter, &last_write_iter) &&
+                        bson_iter_find(&last_write_iter, "lastWriteDate") && BSON_ITER_HOLDS_INT(&last_write_iter));
+            sd->last_write_date_ms = bson_iter_as_int64(&last_write_iter);
+         }
+
+         if (bson_iter_init_find(&sd_iter, &server, "tags")) {
+            bson_destroy(&sd->tags);
+            bson_iter_bson(&sd_iter, &sd->tags);
+         }
+
+         // add new server to our topology description
+         mongoc_set_add(mc_tpld_servers(&topology), sd->id, sd); // Ownership transfer.
       }
-
-      if (bson_iter_init_find(&sd_iter, &server, "maxWireVersion")) {
-         sd->max_wire_version = (int32_t)bson_iter_as_int64(&sd_iter);
-      }
-
-      if (bson_iter_init_find(&sd_iter, &server, "lastUpdateTime")) {
-         sd->last_update_time_usec = bson_iter_as_int64(&sd_iter) * 1000;
-      }
-
-      if (bson_iter_init_find(&sd_iter, &server, "lastWrite")) {
-         BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&sd_iter) && bson_iter_recurse(&sd_iter, &last_write_iter) &&
-                     bson_iter_find(&last_write_iter, "lastWriteDate") && BSON_ITER_HOLDS_INT(&last_write_iter));
-         sd->last_write_date_ms = bson_iter_as_int64(&last_write_iter);
-      }
-
-      if (bson_iter_init_find(&sd_iter, &server, "tags")) {
-         bson_destroy(&sd->tags);
-         bson_iter_bson(&sd_iter, &sd->tags);
-      }
-
-      /* add new server to our topology description */
-      mongoc_set_add(mc_tpld_servers(&topology), sd->id, sd);
    }
 
-   /* create read preference document from test */
-   BSON_ASSERT(bson_iter_init_find(&iter, test, "read_preference"));
-   bson_iter_bson(&iter, &test_read_pref);
+   // create read preference document from test
+   bson_t test_read_pref;
+   mongoc_read_mode_t read_mode;
+   {
+      BSON_ASSERT(bson_iter_init_find(&iter, test, "read_preference"));
+      bson_iter_bson(&iter, &test_read_pref);
 
-   if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "mode")) {
-      read_mode = read_mode_from_test(bson_iter_utf8(&read_pref_iter, NULL));
-      ASSERT_CMPINT(read_mode, !=, 0);
-   } else {
-      read_mode = MONGOC_READ_PRIMARY;
+      bson_iter_t read_pref_iter;
+      if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "mode")) {
+         read_mode = read_mode_from_test(bson_iter_utf8(&read_pref_iter, NULL));
+         ASSERT_CMPINT((int)read_mode, !=, 0);
+      } else {
+         read_mode = MONGOC_READ_PRIMARY;
+      }
    }
 
-   read_prefs = mongoc_read_prefs_new(read_mode);
-
-   if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tag_sets")) {
-      /* ignore  "tag_sets: [{}]" */
-      if (bson_iter_recurse(&read_pref_iter, &tag_sets_iter) && bson_iter_next(&tag_sets_iter) &&
-          BSON_ITER_HOLDS_DOCUMENT(&tag_sets_iter)) {
-         bson_iter_bson(&tag_sets_iter, &first_tag_set);
-         if (!bson_empty(&first_tag_set)) {
-            /* not empty */
-            bson_iter_bson(&read_pref_iter, &test_tag_sets);
-            mongoc_read_prefs_set_tags(read_prefs, &test_tag_sets);
+   mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(read_mode);
+   {
+      bson_iter_t read_pref_iter;
+      if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tag_sets")) {
+         // ignore  "tag_sets: [{}]"
+         bson_iter_t tag_sets_iter;
+         if (bson_iter_recurse(&read_pref_iter, &tag_sets_iter) && bson_iter_next(&tag_sets_iter) &&
+             BSON_ITER_HOLDS_DOCUMENT(&tag_sets_iter)) {
+            bson_t first_tag_set;
+            bson_iter_bson(&tag_sets_iter, &first_tag_set);
+            if (!bson_empty(&first_tag_set)) {
+               // not empty
+               bson_t test_tag_sets;
+               bson_iter_bson(&read_pref_iter, &test_tag_sets);
+               mongoc_read_prefs_set_tags(read_prefs, &test_tag_sets);
+            }
          }
       }
+
+      if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "maxStalenessSeconds")) {
+         mongoc_read_prefs_set_max_staleness_seconds(read_prefs, bson_iter_as_int64(&read_pref_iter));
+      }
    }
 
-   if (bson_iter_init_find(&read_pref_iter, &test_read_pref, "maxStalenessSeconds")) {
-      mongoc_read_prefs_set_max_staleness_seconds(read_prefs, bson_iter_as_int64(&read_pref_iter));
+   // get operation type
+   const mongoc_ss_optype_t op =
+      bson_iter_init_find(&iter, test, "operation") ? optype_from_test(bson_iter_utf8(&iter, NULL)) : MONGOC_SS_READ;
+
+   mongoc_array_t selected_servers;
+   _mongoc_array_init(&selected_servers, sizeof(mongoc_server_description_t *));
+
+   {
+      const bool expected_error = bson_iter_init_find(&iter, test, "error") && bson_iter_as_bool(&iter);
+
+      if (expected_error) {
+         BSON_ASSERT(!mongoc_read_prefs_is_valid(read_prefs) ||
+                     !mongoc_topology_compatible(&topology, read_prefs, &error));
+         goto DONE;
+      } else {
+         BSON_ASSERT(mongoc_read_prefs_is_valid(read_prefs));
+         BSON_ASSERT(mongoc_topology_compatible(&topology, read_prefs, &error));
+      }
    }
 
-   /* get operation type */
-   op = MONGOC_SS_READ;
-
-   if (bson_iter_init_find(&iter, test, "operation")) {
-      op = optype_from_test(bson_iter_utf8(&iter, NULL));
-   }
-
-   if (expected_error) {
-      BSON_ASSERT(!mongoc_read_prefs_is_valid(read_prefs) ||
-                  !mongoc_topology_compatible(&topology, read_prefs, &error));
-      goto DONE;
-   }
-
-   /* no expected error */
-   BSON_ASSERT(mongoc_read_prefs_is_valid(read_prefs));
-   BSON_ASSERT(mongoc_topology_compatible(&topology, read_prefs, &error));
-
-   /* read in latency window servers */
-   BSON_ASSERT(bson_iter_init_find(&iter, test, "in_latency_window"));
-
-   /* TODO: use topology_select instead? */
    mongoc_topology_description_suitable_servers(
       &selected_servers, op, &topology, read_prefs, NULL, NULL, MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
-   /* check each server in expected_servers is in selected_servers */
-   memset(matched_servers, 0, sizeof(matched_servers));
+   // check each server in expected_servers is in in_latency_window
+   BSON_ASSERT(bson_iter_init_find(&iter, test, "in_latency_window"));
+   bool matched_servers[50] = {0};
+   bson_iter_t expected_servers_iter;
    bson_iter_recurse(&iter, &expected_servers_iter);
    while (bson_iter_next(&expected_servers_iter)) {
       bool found = false;
@@ -505,8 +500,10 @@ test_server_selection_logic_cb(void *test_vp)
       BSON_ASSERT(bson_iter_recurse(&expected_servers_iter, &host));
       BSON_ASSERT(bson_iter_find(&host, "address"));
 
-      for (i = 0; i < selected_servers.len; i++) {
-         sd = _mongoc_array_index(&selected_servers, mongoc_server_description_t *, i);
+      uint32_t i = 0u;
+      for ((void)0; i < selected_servers.len; i++) {
+         const mongoc_server_description_t *const sd =
+            _mongoc_array_index(&selected_servers, mongoc_server_description_t *, i);
 
          if (strcmp(sd->host.host_and_port, bson_iter_utf8(&host, NULL)) == 0) {
             found = true;
@@ -521,11 +518,11 @@ test_server_selection_logic_cb(void *test_vp)
       matched_servers[i] = true;
    }
 
-   /* check each server in selected_servers is in expected_servers */
-   for (i = 0; i < selected_servers.len; i++) {
+   // check each server in selected_servers is in expected_servers
+   for (uint32_t i = 0; i < selected_servers.len; i++) {
       if (!matched_servers[i]) {
-         sd = _mongoc_array_index(&selected_servers, mongoc_server_description_t *, i);
-
+         const mongoc_server_description_t *const sd =
+            _mongoc_array_index(&selected_servers, mongoc_server_description_t *, i);
          test_error("Shouldn't have been selected but was: %s", sd->host.host_and_port);
       }
    }
