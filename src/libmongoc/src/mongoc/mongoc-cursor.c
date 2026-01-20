@@ -35,6 +35,8 @@
 
 #include <mlib/cmp.h>
 
+#include <inttypes.h>
+
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor"
 
@@ -830,22 +832,26 @@ _mongoc_cursor_run_command(
       GOTO(done);
    }
 
-retry:
-   ret = mongoc_cluster_run_command_monitored(&cursor->client->cluster, &parts.assembled, reply, &cursor->error);
+   {
+      mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
 
-   if (ret) {
-      memset(&cursor->error, 0, sizeof(bson_error_t));
-   }
+   retry:
+      ret = mongoc_cluster_run_command_monitored(&cursor->client->cluster, &parts.assembled, reply, &cursor->error);
 
-   cursor->had_stream_timeout = server_stream->timed_out;
+      if (ret) {
+         memset(&cursor->error, 0, sizeof(bson_error_t));
+      }
 
-   if (is_retryable && _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY) {
-      is_retryable = false;
+      cursor->had_stream_timeout = server_stream->timed_out;
 
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
+      if (is_retryable && _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY) {
+         is_retryable = false;
 
-         mongoc_deprioritized_servers_add_if_sharded(ds, server_stream->topology_type, server_stream->sd);
+         {
+            mongoc_server_description_t const *const sd = server_stream->sd;
+            TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
+            mongoc_deprioritized_servers_add(ds, sd);
+         }
 
          mongoc_server_stream_cleanup(server_stream);
 
@@ -859,15 +865,15 @@ retry:
                                                          reply,
                                                          &cursor->error);
 
-         mongoc_deprioritized_servers_destroy(ds);
+         if (server_stream) {
+            cursor->server_id = server_stream->sd->id;
+            parts.assembled.server_stream = server_stream;
+            bson_destroy(reply);
+            GOTO(retry);
+         }
       }
 
-      if (server_stream) {
-         cursor->server_id = server_stream->sd->id;
-         parts.assembled.server_stream = server_stream;
-         bson_destroy(reply);
-         GOTO(retry);
-      }
+      mongoc_deprioritized_servers_destroy(ds);
    }
 
    if (cursor->error.domain) {

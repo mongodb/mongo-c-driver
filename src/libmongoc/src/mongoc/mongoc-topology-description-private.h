@@ -205,11 +205,6 @@ _mongoc_topology_description_clear_connection_pool(mongoc_topology_description_t
                                                    uint32_t server_id,
                                                    const bson_oid_t *service_id);
 
-void
-mongoc_deprioritized_servers_add_if_sharded(mongoc_deprioritized_servers_t *ds,
-                                            mongoc_topology_description_type_t topology_type,
-                                            const mongoc_server_description_t *sd);
-
 typedef enum {
    MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_TYPE = (1 << 0),
    MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SET_NAME = (1 << 1),

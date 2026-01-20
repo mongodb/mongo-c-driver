@@ -2557,20 +2557,6 @@ _mongoc_topology_description_clear_connection_pool(mongoc_topology_description_t
 }
 
 
-void
-mongoc_deprioritized_servers_add_if_sharded(mongoc_deprioritized_servers_t *ds,
-                                            mongoc_topology_description_type_t topology_type,
-                                            const mongoc_server_description_t *sd)
-{
-   // In a sharded cluster, the server on which the operation failed MUST
-   // be provided to the server selection mechanism as a deprioritized
-   // server.
-   if (topology_type == MONGOC_TOPOLOGY_SHARDED) {
-      TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
-      mongoc_deprioritized_servers_add(ds, sd);
-   }
-}
-
 bool
 mongoc_topology_description_append_contents_to_bson(const mongoc_topology_description_t *td,
                                                     bson_t *bson,

@@ -3643,49 +3643,52 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    // Ensure `*retry_server_stream` is always valid or null.
    *retry_server_stream = NULL;
 
-retry:
-   ret = mongoc_cluster_run_command_monitored(cluster, cmd, reply, error);
+   {
+      mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
 
-   if (is_retryable_write) {
-      _mongoc_write_error_handle_labels(ret, error, reply, cmd->server_stream->sd);
-      _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
-   }
+   retry:
+      ret = mongoc_cluster_run_command_monitored(cluster, cmd, reply, error);
 
-   // If a retryable error is encountered and the write is retryable, select a new writable stream and retry. If server
-   // selection fails or the selected server does not support retryable writes, fall through and allow the original
-   // error to be reported.
-   if (can_retry && _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY) {
-      can_retry = false; // Only retry once.
+      if (is_retryable_write) {
+         _mongoc_write_error_handle_labels(ret, error, reply, cmd->server_stream->sd);
+         _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
+      }
 
-      // Select a server.
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
+      // If a retryable error is encountered and the write is retryable, select a new writable stream and retry. If
+      // server selection fails or the selected server does not support retryable writes, fall through and allow the
+      // original error to be reported.
+      if (can_retry && _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY) {
+         can_retry = false; // Only retry once.
 
-         // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
-         mongoc_deprioritized_servers_add_if_sharded(ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
+         {
+            mongoc_server_description_t const *const sd = cmd->server_stream->sd;
+            TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
+            mongoc_deprioritized_servers_add(ds, sd);
+         }
 
+         // Select a server.
          const mongoc_ss_log_context_t ss_log_context = {
             .operation = cmd->command_name, .has_operation_id = true, .operation_id = cmd->operation_id};
          *retry_server_stream = mongoc_cluster_stream_for_writes(
             cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, NULL /* error */);
 
-         mongoc_deprioritized_servers_destroy(ds);
+         if (*retry_server_stream) {
+            cmd->server_stream = *retry_server_stream; // Non-owning.
+            {
+               // Store the original error and reply before retry.
+               BSON_ASSERT(!original_error.set); // Retry only happens once.
+               original_error.set = true;
+               bson_copy_to(reply, &original_error.reply);
+               if (error) {
+                  original_error.error = *error;
+               }
+            }
+            bson_destroy(reply);
+            GOTO(retry);
+         }
       }
 
-      if (*retry_server_stream) {
-         cmd->server_stream = *retry_server_stream; // Non-owning.
-         {
-            // Store the original error and reply before retry.
-            BSON_ASSERT(!original_error.set); // Retry only happens once.
-            original_error.set = true;
-            bson_copy_to(reply, &original_error.reply);
-            if (error) {
-               original_error.error = *error;
-            }
-         }
-         bson_destroy(reply);
-         GOTO(retry);
-      }
+      mongoc_deprioritized_servers_destroy(ds);
    }
 
    // If a retry attempt fails with an error labeled NoWritesPerformed, drivers MUST return the original error.
