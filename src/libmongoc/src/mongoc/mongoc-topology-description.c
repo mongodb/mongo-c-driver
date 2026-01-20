@@ -2221,7 +2221,8 @@ mongoc_topology_description_handle_hello(
       }
    }
 
-   if (cluster_time_strategy == MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE) {
+   if (cluster_time_strategy == MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE ||
+       bson_empty(&topology->cluster_time)) {
       mongoc_topology_description_update_cluster_time(topology, hello_response);
    }
 
