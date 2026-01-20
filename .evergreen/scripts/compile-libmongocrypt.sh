@@ -22,8 +22,6 @@ compile_libmongocrypt() {
     "-DENABLE_ONLINE_TESTS=OFF"
     "-DENABLE_MONGOC=OFF"
     "-DBUILD_VERSION=${version:?}"
-    "-DMONGO_SANITIZE=address"
-    "-DCMAKE_BUILD_TYPE=Debug"
   )
 
   . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
