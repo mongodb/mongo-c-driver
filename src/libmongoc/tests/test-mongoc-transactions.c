@@ -21,19 +21,14 @@ _reset_server(json_test_ctx_t *ctx, const char *host_str)
 {
    mongoc_client_t *client;
    bson_error_t error;
-   bool res;
    mongoc_uri_t *uri = _mongoc_uri_copy_and_replace_host_list(ctx->test_framework_uri, host_str);
 
    client = test_framework_client_new_from_uri(uri, NULL);
    test_framework_set_ssl_opts(client);
 
-   /* From Transactions tests runner: "Create a MongoClient and call
-    * client.admin.runCommand({killAllSessions: []}) to clean up any open
-    * transactions from previous test failures. Ignore a command failure with
-    * error code 11601 ("Interrupted") to work around SERVER-38335."
-    */
-   res = mongoc_client_command_simple(client, "admin", tmp_bson("{'killAllSessions': []}"), NULL, NULL, &error);
-   if (!res && error.code != 11601) {
+   // From Transactions tests runner: "Create a MongoClient and call client.admin.runCommand({killAllSessions: []}) to
+   // clean up any open transactions from previous test failures.
+   if (!mongoc_client_command_simple(client, "admin", tmp_bson("{'killAllSessions': []}"), NULL, NULL, &error)) {
       test_error("Unexpected error: %s from killAllSessions\n", error.message);
    }
 
