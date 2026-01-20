@@ -802,6 +802,12 @@ mongoc_topology_description_suitable_servers(mongoc_array_t *set, /* OUT */
                                              int64_t local_threshold_ms)
 {
    const mongoc_set_t *td_servers = mc_tpld_servers_const(topology);
+
+   // No candidates -> no suitable servers.
+   if (td_servers->items_len == 0) {
+      return;
+   }
+
    const mongoc_read_mode_t given_read_mode = mongoc_read_prefs_get_mode(read_pref);
    const bool override_use_primary = _must_use_primary(topology, optype, given_read_mode);
 
