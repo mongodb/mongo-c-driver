@@ -324,7 +324,6 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
 {
    bson_t *kill_all_sessions_cmd = NULL;
    bool ret = false;
-   bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
    if (test_framework_is_oidc()) {
@@ -349,16 +348,13 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
       for (i = 0; i < server_ids.len; i++) {
          uint32_t server_id = _mongoc_array_index(&server_ids, uint32_t, i);
 
-         cmd_ret = mongoc_client_command_simple_with_server_id(test_runner->internal_client,
-                                                               "admin",
-                                                               kill_all_sessions_cmd,
-                                                               NULL /* read prefs. */,
-                                                               server_id,
-                                                               NULL,
-                                                               &cmd_error);
-
-         /* Ignore error code 11601 as a workaround for SERVER-38335. */
-         if (!cmd_ret && cmd_error.code != 11601) {
+         if (!mongoc_client_command_simple_with_server_id(test_runner->internal_client,
+                                                          "admin",
+                                                          kill_all_sessions_cmd,
+                                                          NULL /* read prefs. */,
+                                                          server_id,
+                                                          NULL,
+                                                          &cmd_error)) {
             test_set_error(
                error, "Unexpected error running killAllSessions on server (%d): %s", (int)server_id, cmd_error.message);
             _mongoc_array_destroy(&server_ids);
@@ -368,11 +364,8 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
       _mongoc_array_destroy(&server_ids);
    } else {
       /* Run on primary. */
-      cmd_ret = mongoc_client_command_simple(
-         test_runner->internal_client, "admin", kill_all_sessions_cmd, NULL /* read prefs. */, NULL, &cmd_error);
-
-      /* Ignore error code 11601 as a workaround for SERVER-38335. */
-      if (!cmd_ret && cmd_error.code != 11601) {
+      if (!mongoc_client_command_simple(
+             test_runner->internal_client, "admin", kill_all_sessions_cmd, NULL /* read prefs. */, NULL, &cmd_error)) {
          test_set_error(error, "Unexpected error running killAllSessions on primary: %s", cmd_error.message);
          goto done;
       }

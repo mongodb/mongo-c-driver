@@ -36,6 +36,7 @@ mongoc_server_stream_new(const mongoc_topology_description_t *td,
    server_stream->stream = stream; /* merely borrowed */
    server_stream->must_use_primary = false;
    server_stream->retry_attempted = false;
+   server_stream->timed_out = false;
 
    return server_stream;
 }

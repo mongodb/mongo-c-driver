@@ -1,6 +1,6 @@
-rem Load environment for Visual Studio 15 2017.
-rem https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-150
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat" || goto :error
+rem Load environment for Visual Studio 17 2022.
+rem https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170
+call "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat" || goto :error
 
 echo on
 echo

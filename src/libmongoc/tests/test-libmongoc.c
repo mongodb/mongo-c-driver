@@ -2709,3 +2709,12 @@ test_framework_set_oidc_callback(mongoc_client_t *client)
    mongoc_client_set_oidc_callback(client, callback);
    mongoc_oidc_callback_destroy(callback);
 }
+
+int
+skip_if_high_server_runtime_variance(void)
+{
+   if (test_framework_getenv_bool("MONGOC_TEST_SKIP_TIMEOUT_SENSITIVE")) {
+      return 0; // Skip.
+   }
+   return 1; // Proceed.
+}

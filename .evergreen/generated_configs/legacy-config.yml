@@ -1242,6 +1242,90 @@ tasks:
       AUTH: noauth
       MONGODB_API_VERSION: 1
       SSL: nossl
+- name: test-7.0-server-ipv6-client-ipv6-noauth-nosasl-nossl
+  tags:
+  - '7.0'
+  - ipv4-ipv6
+  - nosasl
+  - nossl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: '7.0'
+  - func: run-simple-http-server
+  - func: run-tests
+    vars:
+      URI: mongodb://[::1]/
+- name: test-7.0-server-ipv6-client-ipv4-noauth-nosasl-nossl
+  tags:
+  - '7.0'
+  - ipv4-ipv6
+  - nosasl
+  - nossl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: '7.0'
+  - func: run-simple-http-server
+  - func: run-tests
+    vars:
+      URI: mongodb://127.0.0.1/
+- name: test-7.0-server-ipv4-client-ipv4-noauth-nosasl-nossl
+  tags:
+  - '7.0'
+  - ipv4-ipv6
+  - nosasl
+  - nossl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: '7.0'
+  - func: run-simple-http-server
+  - func: run-tests
+    vars:
+      URI: mongodb://127.0.0.1/
+- name: test-7.0-server-ipv4-client-localhost-noauth-nosasl-nossl
+  tags:
+  - '7.0'
+  - ipv4-ipv6
+  - nosasl
+  - nossl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch-build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: fetch-det
+  - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: '7.0'
+  - func: run-simple-http-server
+  - func: run-tests
+    vars:
+      URI: mongodb://localhost/
 - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
   tags:
   - ipv4-ipv6
@@ -1257,6 +1341,8 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: latest
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1276,6 +1362,8 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: latest
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1295,6 +1383,8 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: latest
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -1314,6 +1404,8 @@ tasks:
       BUILD_NAME: debug-compile-nosasl-nossl
   - func: fetch-det
   - func: bootstrap-mongo-orchestration
+    vars:
+      MONGODB_VERSION: latest
   - func: run-simple-http-server
   - func: run-tests
     vars:
@@ -10006,16 +10098,16 @@ buildvariants:
     - macos-14-arm64
   - name: link-with-cmake-windows
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-cmake-windows-ssl
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-cmake-windows-snappy
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-cmake-mingw
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-pkg-config
     distros:
     - ubuntu2204-large
@@ -10026,13 +10118,13 @@ buildvariants:
   - link-with-bson
   - name: link-with-bson-windows
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: link-with-bson-mac
     distros:
     - macos-14-arm64
   - name: link-with-bson-mingw
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - check-headers
   - debug-compile-with-warnings
   - install-libmongoc-after-libbson
@@ -10138,7 +10230,7 @@ buildvariants:
   run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-nosasl-nossl
-  - .latest .nossl .nosasl
+  - .7.0 .nossl .nosasl
 - name: windows-2017
   display_name: Windows (VS 2017)
   expansions:
@@ -10150,32 +10242,34 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-sspi-winssl
   - debug-compile-nosrv
-  - .latest .nossl
-  - .nosasl .latest .nossl
+  - .7.0 .nossl
   - .compression !.snappy !.zstd !.latest
-  - test-dns-winssl
-  - test-dns-auth-winssl
   - debug-compile-aws
   - test-aws-openssl-regular-4.4
-  - test-aws-openssl-regular-latest
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
 - name: windows-2022
   display_name: Windows (VS 2022)
   expansions:
     CC: Visual Studio 17 2022 Win64
-  run_on: windows-vsCurrent-large
+  run_on: windows-2022-latest-large
   tasks:
+  - debug-compile-aws
+  - debug-compile-nosasl-nossl
   - debug-compile-sspi-winssl
   - .authentication-tests .winssl
-- name: mingw-windows2016
-  display_name: MinGW-W64 (Windows Server 2016)
+  - .latest .nossl
+  - test-aws-openssl-regular-latest
+  - test-dns-auth-winssl
+  - test-dns-winssl
+- name: mingw-windows2019
+  display_name: MinGW-W64 (Windows Server 2019)
   expansions:
     CC: gcc
   run_on: windows-vsCurrent-large
   tasks:
   - debug-compile-nosasl-nossl
-  - .latest .nossl .nosasl .server
+  - .7.0 .nossl .nosasl .server
 - name: rhel8-power
   display_name: Power (ppc64le) (RHEL 8)
   expansions:

@@ -636,25 +636,26 @@ for server_version in ['8.0', '7.0', '6.0', '5.0']:
 class IPTask(MatrixTask):
     axes = OD(
         [
+            ('version', ['7.0', 'latest']),
             ('client', ['ipv6', 'ipv4', 'localhost']),
             ('server', ['ipv6', 'ipv4']),
         ]
     )
 
-    name_prefix = 'test-latest'
+    name_prefix = 'test'
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield 'debug-compile-nosasl-nossl'
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
-        yield from ('nossl', 'nosasl', 'server', 'ipv4-ipv6', 'latest')
+        yield from ('nossl', 'nosasl', 'server', 'ipv4-ipv6', self.settings.version)
 
     def post_commands(self) -> Iterable[Value]:
         return [
             func('fetch-build', BUILD_NAME='debug-compile-nosasl-nossl'),
             func('fetch-det'),
-            func('bootstrap-mongo-orchestration'),
+            func('bootstrap-mongo-orchestration', MONGODB_VERSION=self.settings.version),
             func('run-simple-http-server'),
             func(
                 'run-tests',
@@ -669,6 +670,7 @@ class IPTask(MatrixTask):
     def name_parts(self) -> Iterable[str]:
         return (
             self.name_prefix,
+            self.display('version'),
             f'server-{self.display("server")}',
             f'client-{self.display("client")}',
             'noauth',

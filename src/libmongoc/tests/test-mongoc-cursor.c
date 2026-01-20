@@ -2394,8 +2394,10 @@ test_events_started_cb(const mongoc_apm_command_started_t *e)
 }
 
 static void
-test_cursor_timeout_killCursors(void)
+test_cursor_timeout_killCursors(void *unused)
 {
+   BSON_UNUSED(unused);
+
    bson_error_t error;
    const bson_t *got = NULL;
 
@@ -2563,6 +2565,12 @@ test_cursor_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Cursor/batchsize_override_decimal128", test_cursor_batchsize_override_decimal128);
    TestSuite_AddLive(suite, "/Cursor/batchsize_override_range_warning", test_cursor_batchsize_override_range_warning);
    TestSuite_AddLive(suite, "/Cursor/open_cursor_from_reply", test_open_cursor_from_reply);
-   TestSuite_AddLive(suite, "/Cursor/timeout_killCursors", test_cursor_timeout_killCursors);
+   TestSuite_AddFull(suite,
+                     "/Cursor/timeout_killCursors [lock:live-server]",
+                     test_cursor_timeout_killCursors,
+                     NULL,
+                     NULL,
+                     TestSuite_CheckLive,
+                     skip_if_high_server_runtime_variance);
    TestSuite_AddLive(suite, "/Cursor/killCursors_failure_logs", test_killCursors_failure_logs);
 }

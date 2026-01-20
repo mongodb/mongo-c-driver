@@ -82,6 +82,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_gridfs_bucket_install);
    TEST_INSTALL(test_gridfs_file_page_install);
    TEST_INSTALL(test_handshake_install);
+   TEST_INSTALL(test_jitter_source_install);
    TEST_INSTALL(test_linux_distro_scanner_install);
    TEST_INSTALL(test_list_install);
    TEST_INSTALL(test_log_install);

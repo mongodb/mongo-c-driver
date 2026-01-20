@@ -589,6 +589,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-http.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
@@ -947,6 +948,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(SASL_BACKEND STREQUAL "Cyrus")
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
    endif()
+   if(M_LIBRARY)
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lm")
+   endif()
 
    set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
@@ -1086,6 +1090,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-hedged-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-http.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c
@@ -1307,10 +1312,10 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (fam ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 
    if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
-      mongoc_add_example (client-side-encryption-schema-map ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-      mongoc_add_example (client-side-encryption-server-schema ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-      mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-      mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+      mongoc_add_example (client-side-encryption-schema-map ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c)
+      mongoc_add_example (client-side-encryption-server-schema ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c)
+      mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c)
+      mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c)
       mongoc_add_example (client-side-encryption-doc-snippets ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
    endif ()
 
