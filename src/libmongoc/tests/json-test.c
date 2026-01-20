@@ -334,6 +334,31 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
 }
 
 
+typedef struct find_and_add_deprioritized_servers_ctx_type {
+   mongoc_deprioritized_servers_t *ds;
+   const char *address;
+} find_and_add_deprioritized_servers_ctx_type;
+
+static bool
+find_and_add_deprioritized_servers(const void *item, void *ctx)
+{
+   BSON_ASSERT_PARAM(item);
+   BSON_ASSERT_PARAM(ctx);
+
+   const mongoc_server_description_t *const sd = (const mongoc_server_description_t *)item;
+   const find_and_add_deprioritized_servers_ctx_type data = *(find_and_add_deprioritized_servers_ctx_type *)ctx;
+
+   mongoc_deprioritized_servers_t *const ds = data.ds;
+   const char *const address = data.address;
+
+   if (strcmp(sd->host.host_and_port, address) == 0) {
+      mongoc_deprioritized_servers_add(ds, sd);
+   }
+
+   return true;
+}
+
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -463,6 +488,35 @@ test_server_selection_logic_cb(void *test_vp)
    const mongoc_ss_optype_t op =
       bson_iter_init_find(&iter, test, "operation") ? optype_from_test(bson_iter_utf8(&iter, NULL)) : MONGOC_SS_READ;
 
+   // get deprioritized servers
+   mongoc_deprioritized_servers_t *const ds =
+      bson_iter_init_find(&iter, test, "deprioritized_servers") ? mongoc_deprioritized_servers_new() : NULL;
+   if (ds) {
+      bson_t deprioritized_servers;
+      bson_iter_t deprioritized_servers_iter;
+      bson_iter_bson(&iter, &deprioritized_servers);
+      bson_iter_recurse(&iter, &deprioritized_servers_iter);
+
+
+      while (bson_iter_next(&deprioritized_servers_iter)) {
+         bson_iter_t server;
+
+         // Only the "address" field is needed.
+         BSON_ASSERT(bson_iter_recurse(&deprioritized_servers_iter, &server));
+         BSON_ASSERT(bson_iter_find(&server, "address"));
+
+         const char *const address = bson_iter_utf8(&server, NULL);
+         BSON_ASSERT(address);
+         BSON_ASSERT(strlen(address) > 0u);
+
+         // Find the corresponding server description.
+         // This is sadly O(n^2) given n servers. Ideally, this should use a `HashMap<Address, ID>`.
+         mongoc_set_for_each_const(mc_tpld_servers_const(&topology),
+                                   find_and_add_deprioritized_servers,
+                                   &(find_and_add_deprioritized_servers_ctx_type){.ds = ds, .address = address});
+      }
+   }
+
    mongoc_array_t selected_servers;
    _mongoc_array_init(&selected_servers, sizeof(mongoc_server_description_t *));
 
@@ -480,7 +534,7 @@ test_server_selection_logic_cb(void *test_vp)
    }
 
    mongoc_topology_description_suitable_servers(
-      &selected_servers, op, &topology, read_prefs, NULL, NULL, MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+      &selected_servers, op, &topology, read_prefs, NULL, ds, MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    // Server Selection Tests Spec: Drivers implementing server selection MUST test that their implementations correctly
    // return one of the servers in `in_latency_window`. Drivers SHOULD test against the full set of servers in
@@ -526,6 +580,7 @@ test_server_selection_logic_cb(void *test_vp)
    }
 
 DONE:
+   mongoc_deprioritized_servers_destroy(ds);
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_topology_description_cleanup(&topology);
    _mongoc_array_destroy(&selected_servers);
