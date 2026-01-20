@@ -773,6 +773,40 @@ _must_use_primary(const mongoc_topology_description_t *td,
    }
 }
 
+static void
+_filter_suitable_servers_by_rtt(mongoc_array_t *set, /* OUT */
+                                const mongoc_server_description_t *const *candidates,
+                                size_t candidates_len,
+                                int64_t local_threshold_ms)
+{
+   BSON_ASSERT_PARAM(set);
+   BSON_ASSERT_PARAM(candidates);
+
+   int64_t nearest = INT64_MAX;
+   bool found = false;
+
+   for (size_t i = 0u; i < candidates_len; i++) {
+      if (candidates[i]) {
+         nearest = BSON_MIN(nearest, candidates[i]->round_trip_time_msec);
+         found = true;
+      }
+   }
+
+   // No candidates remaining.
+   if (!found) {
+      return;
+   }
+
+   const int64_t rtt_limit = nearest + local_threshold_ms;
+
+   for (size_t i = 0u; i < candidates_len; i++) {
+      if (candidates[i] && (candidates[i]->round_trip_time_msec <= rtt_limit)) {
+         _mongoc_array_append_val(set, candidates[i]);
+      }
+   }
+}
+
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -973,33 +1007,7 @@ retry_without_deprioritization:
       BSON_UNREACHABLE("invalid topology->type");
    }
 
-   /* Ways to get here:
-    *   - secondary read
-    *   - secondary preferred read
-    *   - primary_preferred and no primary read
-    *   - sharded anything
-    * Find the nearest, then select within the window */
-   int64_t nearest = INT64_MAX;
-   bool found = false;
-   for (size_t i = 0u; i < data.candidates_len; i++) {
-      if (data.candidates[i]) {
-         nearest = BSON_MIN(nearest, data.candidates[i]->round_trip_time_msec);
-         found = true;
-      }
-   }
-
-   // No candidates remaining.
-   if (!found) {
-      goto DONE;
-   }
-
-   const int64_t rtt_limit = nearest + local_threshold_ms;
-
-   for (size_t i = 0u; i < data.candidates_len; i++) {
-      if (data.candidates[i] && (data.candidates[i]->round_trip_time_msec <= rtt_limit)) {
-         _mongoc_array_append_val(set, data.candidates[i]);
-      }
-   }
+   _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
 
 DONE:
 
