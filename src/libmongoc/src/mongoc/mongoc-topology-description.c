@@ -909,7 +909,14 @@ retry_without_deprioritization:
                   _mongoc_array_append_val(set, data.primary);
                   goto DONE;
                }
-            } break;
+
+               mongoc_server_description_filter_stale(
+                  data.candidates, data.candidates_len, data.primary, topology->heartbeat_msec, read_pref);
+               mongoc_server_description_filter_tags(data.candidates, data.candidates_len, read_pref);
+               _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
+
+               goto DONE;
+            }
 
             case MONGOC_READ_SECONDARY_PREFERRED: {
                /* try read_mode SECONDARY */
@@ -933,21 +940,27 @@ retry_without_deprioritization:
                      data.candidates[i] = NULL;
                   }
                }
-            } break;
 
-            case MONGOC_READ_NEAREST:
-               break;
+               mongoc_server_description_filter_stale(
+                  data.candidates, data.candidates_len, data.primary, topology->heartbeat_msec, read_pref);
+               mongoc_server_description_filter_tags(data.candidates, data.candidates_len, read_pref);
+               _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
+
+               goto DONE;
+            }
+
+            case MONGOC_READ_NEAREST: {
+               mongoc_server_description_filter_stale(
+                  data.candidates, data.candidates_len, data.primary, topology->heartbeat_msec, read_pref);
+               mongoc_server_description_filter_tags(data.candidates, data.candidates_len, read_pref);
+               _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
+               goto DONE;
+            }
 
             default:
                BSON_UNREACHABLE("invalid data.read_mode");
             }
-
-            /* mode is SECONDARY or NEAREST, filter by staleness and tags */
-            mongoc_server_description_filter_stale(
-               data.candidates, data.candidates_len, data.primary, topology->heartbeat_msec, read_pref);
-
-            mongoc_server_description_filter_tags(data.candidates, data.candidates_len, read_pref);
-         } break;
+         }
 
          case MONGOC_SS_WRITE: {
             BSON_ASSERT(topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY ||
@@ -961,13 +974,16 @@ retry_without_deprioritization:
                   goto DONE;
                }
             }
-         } break;
+
+            _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
+
+            goto DONE;
+         }
 
          default:
             BSON_UNREACHABLE("Invalid optype");
          }
       }
-      break;
 
    case MONGOC_TOPOLOGY_SHARDED:
       // All mongos are candidates.
@@ -985,8 +1001,11 @@ retry_without_deprioritization:
             ds = NULL;
             goto retry_without_deprioritization;
          }
+
+         _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
+
+         goto DONE;
       }
-      break;
 
    case MONGOC_TOPOLOGY_LOAD_BALANCED:
       // Always select the one and only server.
@@ -997,17 +1016,16 @@ retry_without_deprioritization:
          _mongoc_array_append_val(set, server);
          goto DONE;
       }
-      break;
 
-   case MONGOC_TOPOLOGY_UNKNOWN:
-      break;
+   case MONGOC_TOPOLOGY_UNKNOWN: {
+      _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
+      goto DONE;
+   }
 
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       BSON_UNREACHABLE("invalid topology->type");
    }
-
-   _filter_suitable_servers_by_rtt(set, data.candidates, data.candidates_len, local_threshold_ms);
 
 DONE:
 
