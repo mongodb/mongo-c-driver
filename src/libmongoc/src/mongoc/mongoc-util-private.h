@@ -30,7 +30,7 @@
 #include <mlib/str.h>
 
 #ifdef BSON_HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h> // IWYU pragma: export
 #endif
 
 #include <stdint.h>
