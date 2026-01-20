@@ -836,111 +836,141 @@ mongoc_topology_description_suitable_servers(mongoc_array_t *set, /* OUT */
    // - Find suitable servers from the filtered list by topology type and operation type.
    // - If there are no suitable servers, perform the previous step again without filtering out deprioritized servers.
 retry_without_deprioritization:
-   /* Single server --
-    * Either it is suitable or it isn't */
-   if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      const mongoc_server_description_t *server = mongoc_set_get_item_const(td_servers, 0);
-      if (_mongoc_topology_description_server_is_candidate(server->type, data.read_mode, topology->type)) {
-         _mongoc_array_append_val(set, server);
-      } else {
-         TRACE("Rejected [%s] [%s] for read mode [%s] with topology type Single",
-               mongoc_server_description_type(server),
-               server->host.host_and_port,
-               _mongoc_read_mode_as_str(data.read_mode));
+   switch (topology->type) {
+   case MONGOC_TOPOLOGY_SINGLE:
+      // Either the one and only server is suitable or it isn't.
+      {
+         const mongoc_server_description_t *server = mongoc_set_get_item_const(td_servers, 0);
+         if (_mongoc_topology_description_server_is_candidate(server->type, data.read_mode, topology->type)) {
+            _mongoc_array_append_val(set, server);
+         } else {
+            TRACE("Rejected [%s] [%s] for read mode [%s] with topology type Single",
+                  mongoc_server_description_type(server),
+                  server->host.host_and_port,
+                  _mongoc_read_mode_as_str(data.read_mode));
+         }
+         goto DONE;
       }
-      goto DONE;
-   }
 
-   /* Replica sets --
-    * Find suitable servers based on read mode */
-   if (topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY || topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
-      switch (optype) {
-      case MONGOC_SS_AGGREGATE_WITH_WRITE:
-      case MONGOC_SS_READ: {
-         mongoc_set_for_each_const(td_servers, _mongoc_replica_set_read_suitable_cb, &data);
+   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+      // Filter by staleness and tags.
+      {
+         switch (optype) {
+         case MONGOC_SS_AGGREGATE_WITH_WRITE:
+         case MONGOC_SS_READ: {
+            mongoc_set_for_each_const(td_servers, _mongoc_replica_set_read_suitable_cb, &data);
 
-         if (data.read_mode == MONGOC_READ_PRIMARY) {
-            if (data.primary) {
-               _mongoc_array_append_val(set, data.primary);
-            }
-
-            goto DONE;
-         }
-
-         if (data.read_mode == MONGOC_READ_PRIMARY_PREFERRED && data.primary) {
-            _mongoc_array_append_val(set, data.primary);
-            goto DONE;
-         }
-
-         if (data.read_mode == MONGOC_READ_SECONDARY_PREFERRED) {
-            /* try read_mode SECONDARY */
-            _mongoc_try_mode_secondary(set, topology, read_pref, must_use_primary, NULL, local_threshold_ms);
-
-            /* otherwise fall back to primary */
-            if (!set->len && data.primary) {
-               _mongoc_array_append_val(set, data.primary);
-            }
-
-            goto DONE;
-         }
-
-         if (data.read_mode == MONGOC_READ_SECONDARY) {
-            for (size_t i = 0u; i < data.candidates_len; i++) {
-               if (data.candidates[i] && data.candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
-                  TRACE("Rejected [%s] [%s] for mode [%s] with RS topology",
-                        mongoc_server_description_type(data.candidates[i]),
-                        data.candidates[i]->host.host_and_port,
-                        _mongoc_read_mode_as_str(data.read_mode));
-                  data.candidates[i] = NULL;
+            switch (data.read_mode) {
+            case MONGOC_READ_PRIMARY: {
+               if (data.primary) {
+                  _mongoc_array_append_val(set, data.primary);
                }
-            }
-         }
 
-         /* mode is SECONDARY or NEAREST, filter by staleness and tags */
-         mongoc_server_description_filter_stale(
-            data.candidates, data.candidates_len, data.primary, topology->heartbeat_msec, read_pref);
-
-         mongoc_server_description_filter_tags(data.candidates, data.candidates_len, read_pref);
-      } break;
-      case MONGOC_SS_WRITE: {
-         if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
-            mongoc_set_for_each_const(td_servers, _mongoc_topology_description_has_primary_cb, (void *)&data.primary);
-            if (data.primary) {
-               _mongoc_array_append_val(set, data.primary);
                goto DONE;
             }
+
+            case MONGOC_READ_PRIMARY_PREFERRED: {
+               if (data.primary) {
+                  _mongoc_array_append_val(set, data.primary);
+                  goto DONE;
+               }
+            } break;
+
+            case MONGOC_READ_SECONDARY_PREFERRED: {
+               /* try read_mode SECONDARY */
+               _mongoc_try_mode_secondary(set, topology, read_pref, must_use_primary, NULL, local_threshold_ms);
+
+               /* otherwise fall back to primary */
+               if (!set->len && data.primary) {
+                  _mongoc_array_append_val(set, data.primary);
+               }
+
+               goto DONE;
+            }
+
+            case MONGOC_READ_SECONDARY: {
+               for (size_t i = 0u; i < data.candidates_len; i++) {
+                  if (data.candidates[i] && data.candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+                     TRACE("Rejected [%s] [%s] for mode [%s] with RS topology",
+                           mongoc_server_description_type(data.candidates[i]),
+                           data.candidates[i]->host.host_and_port,
+                           _mongoc_read_mode_as_str(data.read_mode));
+                     data.candidates[i] = NULL;
+                  }
+               }
+            } break;
+
+            case MONGOC_READ_NEAREST:
+               break;
+
+            default:
+               BSON_UNREACHABLE("invalid data.read_mode");
+            }
+
+            /* mode is SECONDARY or NEAREST, filter by staleness and tags */
+            mongoc_server_description_filter_stale(
+               data.candidates, data.candidates_len, data.primary, topology->heartbeat_msec, read_pref);
+
+            mongoc_server_description_filter_tags(data.candidates, data.candidates_len, read_pref);
+         } break;
+
+         case MONGOC_SS_WRITE: {
+            BSON_ASSERT(topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY ||
+                        topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+
+            if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
+               mongoc_set_for_each_const(
+                  td_servers, _mongoc_topology_description_has_primary_cb, (void *)&data.primary);
+               if (data.primary) {
+                  _mongoc_array_append_val(set, data.primary);
+                  goto DONE;
+               }
+            }
+         } break;
+
+         default:
+            BSON_UNREACHABLE("Invalid optype");
          }
-      } break;
-      default:
-         BSON_UNREACHABLE("Invalid optype");
       }
-   }
+      break;
 
-   // Sharded clusters --
-   if (topology->type == MONGOC_TOPOLOGY_SHARDED) {
-      mongoc_set_for_each_const(td_servers, _mongoc_td_servers_to_candidates_array, &data);
+   case MONGOC_TOPOLOGY_SHARDED:
+      // All mongos are candidates.
+      {
+         mongoc_set_for_each_const(td_servers, _mongoc_td_servers_to_candidates_array, &data);
 
-      if (ds) {
-         _mongoc_filter_deprioritized_servers(&data, ds);
+         if (ds) {
+            _mongoc_filter_deprioritized_servers(&data, ds);
+         }
+
+         _mongoc_filter_suitable_mongos(&data);
+
+         if (ds && data.candidates_len == 0u) {
+            TRACE("%s", "deprioritization: retrying suitable servers filter without deprioritization");
+            ds = NULL;
+            goto retry_without_deprioritization;
+         }
       }
+      break;
 
-      _mongoc_filter_suitable_mongos(&data);
-
-      if (ds && data.candidates_len == 0u) {
-         TRACE("%s", "deprioritization: retrying suitable servers filter without deprioritization");
-         ds = NULL;
-         goto retry_without_deprioritization;
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
+      // Always select the one and only server.
+      {
+         const mongoc_server_description_t *server;
+         BSON_ASSERT(td_servers->items_len == 1);
+         server = mongoc_set_get_item_const(td_servers, 0);
+         _mongoc_array_append_val(set, server);
+         goto DONE;
       }
-   }
+      break;
 
-   /* Load balanced clusters --
-    * Always select the only server. */
-   if (topology->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-      const mongoc_server_description_t *server;
-      BSON_ASSERT(td_servers->items_len == 1);
-      server = mongoc_set_get_item_const(td_servers, 0);
-      _mongoc_array_append_val(set, server);
-      goto DONE;
+   case MONGOC_TOPOLOGY_UNKNOWN:
+      break;
+
+   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
+   default:
+      BSON_UNREACHABLE("invalid topology->type");
    }
 
    /* Ways to get here:
