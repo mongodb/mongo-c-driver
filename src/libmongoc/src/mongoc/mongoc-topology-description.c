@@ -532,10 +532,6 @@ _mongoc_td_servers_to_candidates_array(const void *item, void *ctx)
    return true;
 }
 
-// Server Selection Spec: If a list of deprioritized servers is provided, and
-// the topology is a sharded cluster, these servers should be selected only if
-// there are no other suitable servers. The server selection algorithm MUST
-// ignore the deprioritized servers if the topology is not a sharded cluster.
 static void
 _mongoc_filter_deprioritized_servers(mongoc_suitable_data_t *data, const mongoc_deprioritized_servers_t *ds)
 {
@@ -559,19 +555,18 @@ _mongoc_filter_deprioritized_servers(mongoc_suitable_data_t *data, const mongoc_
    }
 
    if (filtered_servers.len == 0u) {
-      TRACE("%s", "deprioritization: reverted due to no other suitable servers");
-      _mongoc_array_destroy(&filtered_servers);
+      TRACE("%s", "deprioritization: no suitable servers remaining");
    } else if (filtered_servers.len == data->candidates_len) {
       TRACE("%s", "deprioritization: none found in list of candidates");
-      _mongoc_array_destroy(&filtered_servers);
    } else {
       TRACE("%s", "deprioritization: using filtered list of candidates");
-      data->candidates_len = filtered_servers.len;
-      // `(void*)`: avoid MSVC error C4090:
-      //   'function': different 'const' qualifiers
-      memmove((void *)data->candidates, filtered_servers.data, filtered_servers.len * filtered_servers.element_size);
-      _mongoc_array_destroy(&filtered_servers);
    }
+
+   data->candidates_len = filtered_servers.len;
+   // `(void*)`: avoid MSVC error C4090:
+   //   'function': different 'const' qualifiers
+   memmove((void *)data->candidates, filtered_servers.data, filtered_servers.len * filtered_servers.element_size);
+   _mongoc_array_destroy(&filtered_servers);
 }
 
 
@@ -836,6 +831,11 @@ mongoc_topology_description_suitable_servers(mongoc_array_t *set, /* OUT */
       *must_use_primary = override_use_primary;
    }
 
+   // Find suitable servers as follows:
+   // - Filter out any deprioritized server addresses.
+   // - Find suitable servers from the filtered list by topology type and operation type.
+   // - If there are no suitable servers, perform the previous step again without filtering out deprioritized servers.
+retry_without_deprioritization:
    /* Single server --
     * Either it is suitable or it isn't */
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
@@ -925,6 +925,12 @@ mongoc_topology_description_suitable_servers(mongoc_array_t *set, /* OUT */
       }
 
       _mongoc_filter_suitable_mongos(&data);
+
+      if (ds && data.candidates_len == 0u) {
+         TRACE("%s", "deprioritization: retrying suitable servers filter without deprioritization");
+         ds = NULL;
+         goto retry_without_deprioritization;
+      }
    }
 
    /* Load balanced clusters --
