@@ -19,29 +19,42 @@
 
 #include <common-oid-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
-#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-topology-description-private.h>
+#include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <mongoc/mongoc-client-side-encryption.h>
-#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-bulk-operation.h>
+#include <mongoc/mongoc-client.h>
+#include <mongoc/mongoc-collection.h>
+#include <mongoc/mongoc-database.h>
+#include <mongoc/mongoc-error.h>
+#include <mongoc/mongoc-log.h>
 
+#include <bson/bson.h>
+
+#include <mlib/cmp.h>
 #include <mlib/loop.h>
 #include <mlib/str.h>
+#include <mlib/str_vec.h>
 
 #include <TestSuite.h>
 #include <json-test-monitoring.h>
 #include <json-test-operations.h>
+#include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef _MSC_VER
 #include <io.h>
 #else
 #include <dirent.h>
-#endif
-
-#ifdef BSON_HAVE_STRINGS_H
-#include <strings.h>
 #endif
 
 
