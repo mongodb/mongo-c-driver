@@ -1268,6 +1268,10 @@ mongoc_topology_select_server_id(mongoc_topology_t *topology,
             mongoc_topology_description_select(td.ptr, optype, read_prefs, must_use_primary, ds, local_threshold_ms);
 
          if (selected_server) {
+            mongoc_topology_description_t *const td = mc_tpld_unsafe_get_mutable(topology);
+            if (bson_empty(&td->cluster_time)) {
+               mongoc_topology_description_update_cluster_time(td, &selected_server->last_hello_response);
+            }
             server_id = selected_server->id;
             goto done;
          }
