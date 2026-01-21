@@ -2946,5 +2946,6 @@ test_session_install(TestSuite *suite)
                      test_sessions_prose3,
                      NULL,
                      NULL,
+                     test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_sessions);
 }
