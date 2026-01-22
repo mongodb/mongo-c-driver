@@ -3661,7 +3661,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
          can_retry = false; // Only retry once.
 
          {
-            mongoc_server_description_t const *const sd = cmd->server_stream->sd;
+            const mongoc_server_description_t *const sd = cmd->server_stream->sd;
             TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
             mongoc_deprioritized_servers_add(ds, sd);
          }

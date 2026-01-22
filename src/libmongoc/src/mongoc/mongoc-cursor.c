@@ -848,7 +848,7 @@ _mongoc_cursor_run_command(
          is_retryable = false;
 
          {
-            mongoc_server_description_t const *const sd = server_stream->sd;
+            const mongoc_server_description_t *const sd = server_stream->sd;
             TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
             mongoc_deprioritized_servers_add(ds, sd);
          }
