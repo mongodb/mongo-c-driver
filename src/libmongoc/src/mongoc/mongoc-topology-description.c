@@ -836,18 +836,6 @@ _filter_suitable_servers_for_single(mongoc_array_t *const set,
    return filter_is_done;
 }
 
-// Forward declaration required by MONGOC_READ_SECONDARY_PREFERRED.
-static _filter_suitable_servers_by_topology_result
-_filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
-                                     const mongoc_ss_optype_t optype,
-                                     const mongoc_topology_description_t *const topology,
-                                     const mongoc_read_prefs_t *const read_pref,
-                                     bool *const must_use_primary,
-                                     const mongoc_deprioritized_servers_t *const ds,
-                                     const int64_t local_threshold_ms,
-                                     const mongoc_set_t *const td_servers,
-                                     mongoc_suitable_data_t *const data);
-
 static _filter_suitable_servers_by_topology_result
 _filter_suitable_servers_with_read_mode_secondary(mongoc_array_t *const set, /* OUT */
                                                   const mongoc_topology_description_t *const topology,
