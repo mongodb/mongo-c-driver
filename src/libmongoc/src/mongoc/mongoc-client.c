@@ -1640,7 +1640,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
    bson_t reply_local;
 
    BSON_ASSERT_PARAM(client);
-   BSON_UNUSED(server_stream);
 
    if (reply == NULL) {
       reply = &reply_local;
