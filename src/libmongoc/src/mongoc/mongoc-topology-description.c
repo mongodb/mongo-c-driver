@@ -968,11 +968,12 @@ _filter_suitable_servers_for_replica_set(mongoc_array_t *const set, /* OUT */
             .topology_type = data->topology_type,
             .has_secondary = data->has_secondary,
             .candidates_len = 0,
-            .candidates = data->candidates,     // Reuse existing candidates array.
-            .read_mode = MONGOC_READ_SECONDARY, // Recurse into `MONGOC_READ_SECONDARY` case below.
+            .candidates = data->candidates, // Reuse existing candidates array.
+            .read_mode = MONGOC_READ_SECONDARY,
          };
 
-         // Only staleness and tags are needed by `MONGOC_READ_SECONDARY` below.
+         // Only staleness and tags are used by `_mongoc_replica_set_read_suitable_cb`.
+         // The read mode is specified by `inner_data.read_mode`, not by `read_pref.
          mongoc_set_for_each_const(td_servers, _mongoc_replica_set_read_suitable_cb, &inner_data);
          (void)_filter_suitable_servers_with_read_mode_secondary(
             set, topology, read_pref, ds, local_threshold_ms, &inner_data);
