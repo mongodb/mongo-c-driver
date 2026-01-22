@@ -2635,43 +2635,49 @@ prose_3_command_succeeded(const mongoc_apm_command_succeeded_t *event)
 }
 
 void
-test_sessions_prose_3_case(void (*op)(mongoc_client_t *client))
+test_sessions_prose_3_case(void (*command)(mongoc_client_t *client))
 {
-   prose_3_fixture_t f = {0};
+   prose_3_fixture_t fixture = {
+      .last_received_clusterTime = NULL,
+      .last_sent_clusterTime = NULL,
+   };
 
    mongoc_client_t *const client = test_framework_new_default_client();
 
-   // Set APM callbacks to capture $clusterTime
+   // Set APM callbacks to capture `$clusterTime`.
    {
       mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
       mongoc_apm_set_command_started_cb(callbacks, prose_3_command_started);
       mongoc_apm_set_command_succeeded_cb(callbacks, prose_3_command_succeeded);
-      mongoc_client_set_apm_callbacks(client, callbacks, &f);
+      mongoc_client_set_apm_callbacks(client, callbacks, &fixture);
       mongoc_apm_callbacks_destroy(callbacks);
    }
 
-   bson_t first_ping_received_clusterTime;
-   bson_init(&first_ping_received_clusterTime);
+   bson_t first_command_received_clusterTime;
+   bson_init(&first_command_received_clusterTime);
 
-   // Send a "ping"
+   // Send a command.
    {
-      op(client);
-      ASSERT(f.last_sent_clusterTime); // Fails!
-      ASSERT(f.last_received_clusterTime);
-      bson_copy_to(f.last_received_clusterTime, &first_ping_received_clusterTime);
+      command(client);
+      // `$clusterTime` should be included on the first sent command.
+      ASSERT(fixture.last_sent_clusterTime);
+      ASSERT(fixture.last_received_clusterTime);
+      bson_copy_to(fixture.last_received_clusterTime, &first_command_received_clusterTime);
    }
 
-   // Send another "ping"
+   // Send another command.
    {
-      op(client);
-      ASSERT(f.last_sent_clusterTime);
-      ASSERT_EQUAL_BSON(f.last_sent_clusterTime, &first_ping_received_clusterTime);
+      command(client);
+      ASSERT(fixture.last_sent_clusterTime);
+      // The `$clusterTime` sent on the second command should be the same as the `$clusterTime` in the reply of the
+      // first command.
+      ASSERT_EQUAL_BSON(fixture.last_sent_clusterTime, &first_command_received_clusterTime);
    }
 
-   bson_destroy(&first_ping_received_clusterTime);
+   bson_destroy(&first_command_received_clusterTime);
    mongoc_client_destroy(client);
-   bson_destroy(f.last_sent_clusterTime);
-   bson_destroy(f.last_received_clusterTime);
+   bson_destroy(fixture.last_sent_clusterTime);
+   bson_destroy(fixture.last_received_clusterTime);
 }
 
 static void
