@@ -2600,68 +2600,141 @@ test_sessions_snapshot_prose_test_1(void *ctx)
 typedef struct {
    bson_t *last_sent_clusterTime;
    bson_t *last_received_clusterTime;
-} prose3_fixture_t;
+} prose_3_fixture_t;
 
 static void
-prose3_command_started(const mongoc_apm_command_started_t *event)
+prose_3_command_started(const mongoc_apm_command_started_t *event)
 {
-   prose3_fixture_t *fixture = (prose3_fixture_t *)mongoc_apm_command_started_get_context(event);
+   prose_3_fixture_t *const fixture = (prose_3_fixture_t *)mongoc_apm_command_started_get_context(event);
 
-   const bson_t *cmd = mongoc_apm_command_started_get_command(event);
+   const bson_t *const cmd = mongoc_apm_command_started_get_command(event);
    bson_iter_t iter;
    if (bson_iter_init_find(&iter, cmd, "$clusterTime")) {
-      bson_destroy(fixture->last_sent_clusterTime);
       bson_t got;
       bson_iter_bson(&iter, &got);
+
+      bson_destroy(fixture->last_sent_clusterTime);
       fixture->last_sent_clusterTime = bson_copy(&got);
    }
 }
 
 static void
-prose3_command_succeeded(const mongoc_apm_command_succeeded_t *event)
+prose_3_command_succeeded(const mongoc_apm_command_succeeded_t *event)
 {
-   prose3_fixture_t *fixture = (prose3_fixture_t *)mongoc_apm_command_succeeded_get_context(event);
+   prose_3_fixture_t *const fixture = (prose_3_fixture_t *)mongoc_apm_command_succeeded_get_context(event);
 
-   const bson_t *reply = mongoc_apm_command_succeeded_get_reply(event);
+   const bson_t *const reply = mongoc_apm_command_succeeded_get_reply(event);
    bson_iter_t iter;
    if (bson_iter_init_find(&iter, reply, "$clusterTime")) {
-      bson_destroy(fixture->last_received_clusterTime);
       bson_t got;
       bson_iter_bson(&iter, &got);
+
+      bson_destroy(fixture->last_received_clusterTime);
       fixture->last_received_clusterTime = bson_copy(&got);
    }
 }
 
 void
-test_sessions_prose3(void *ctx)
+test_sessions_prose_3_case(void (*op)(mongoc_client_t *client))
 {
-   BSON_UNUSED(ctx);
+   prose_3_fixture_t f = {0};
 
-   mongoc_client_t *client = test_framework_new_default_client();
-   prose3_fixture_t f = {0};
-   bool ok;
-   bson_error_t error;
+   mongoc_client_t *const client = test_framework_new_default_client();
 
    // Set APM callbacks to capture $clusterTime
    {
       mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
-      mongoc_apm_set_command_started_cb(callbacks, prose3_command_started);
-      mongoc_apm_set_command_succeeded_cb(callbacks, prose3_command_succeeded);
+      mongoc_apm_set_command_started_cb(callbacks, prose_3_command_started);
+      mongoc_apm_set_command_succeeded_cb(callbacks, prose_3_command_succeeded);
       mongoc_client_set_apm_callbacks(client, callbacks, &f);
       mongoc_apm_callbacks_destroy(callbacks);
    }
 
+   bson_t first_ping_received_clusterTime;
+   bson_init(&first_ping_received_clusterTime);
+
    // Send a "ping"
    {
-      ok = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
-      ASSERT_OR_PRINT(ok, error);
+      op(client);
       ASSERT(f.last_sent_clusterTime); // Fails!
+      ASSERT(f.last_received_clusterTime);
+      bson_copy_to(f.last_received_clusterTime, &first_ping_received_clusterTime);
    }
 
-   // TODO: implement remaining test steps.
+   // Send another "ping"
+   {
+      op(client);
+      ASSERT(f.last_sent_clusterTime);
+      ASSERT_EQUAL_BSON(f.last_sent_clusterTime, &first_ping_received_clusterTime);
+   }
+
+   bson_destroy(&first_ping_received_clusterTime);
    mongoc_client_destroy(client);
    bson_destroy(f.last_sent_clusterTime);
    bson_destroy(f.last_received_clusterTime);
+}
+
+static void
+sessions_prose_3_ping(mongoc_client_t *client)
+{
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error), error);
+}
+
+static void
+sessions_prose_3_aggregate(mongoc_client_t *client)
+{
+   mongoc_collection_t *const collection = mongoc_client_get_collection(client, "db", "coll");
+   mongoc_cursor_t *const cursor =
+      mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, tmp_bson("{}"), NULL, NULL);
+
+   const bson_t *doc;
+   mongoc_cursor_next(cursor, &doc);
+
+   bson_error_t error;
+   ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(collection);
+}
+
+static void
+sessions_prose_3_find(mongoc_client_t *client)
+{
+   mongoc_collection_t *const collection = mongoc_client_get_collection(client, "db", "coll");
+
+   mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+
+   const bson_t *doc;
+   mongoc_cursor_next(cursor, &doc);
+
+   bson_error_t error;
+   ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(collection);
+}
+
+static void
+sessions_prose_3_insert_one(mongoc_client_t *client)
+{
+   mongoc_collection_t *const collection = mongoc_client_get_collection(client, "db", "coll");
+
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(collection, tmp_bson("{}"), NULL, NULL, &error), error);
+
+   mongoc_collection_destroy(collection);
+}
+
+void
+test_sessions_prose_3(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   test_sessions_prose_3_case(sessions_prose_3_ping);
+   test_sessions_prose_3_case(sessions_prose_3_aggregate);
+   test_sessions_prose_3_case(sessions_prose_3_find);
+   test_sessions_prose_3_case(sessions_prose_3_insert_one);
 }
 
 void
@@ -2943,7 +3016,7 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
                      "/Session/prose_test_3 [lock:live-server]",
-                     test_sessions_prose3,
+                     test_sessions_prose_3,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_cluster_time,
