@@ -754,12 +754,12 @@ _filter_suitable_servers_by_rtt(mongoc_array_t *set, /* OUT */
    BSON_ASSERT_PARAM(set);
    BSON_ASSERT_PARAM(candidates);
 
-   int64_t nearest = INT64_MAX;
+   int64_t nearest_rtt_ms = INT64_MAX;
    bool found = false;
 
    for (size_t i = 0u; i < candidates_len; i++) {
       if (candidates[i]) {
-         nearest = BSON_MIN(nearest, candidates[i]->round_trip_time_msec);
+         nearest_rtt_ms = BSON_MIN(nearest_rtt_ms, candidates[i]->round_trip_time_msec);
          found = true;
       }
    }
@@ -769,10 +769,10 @@ _filter_suitable_servers_by_rtt(mongoc_array_t *set, /* OUT */
       return;
    }
 
-   const int64_t rtt_limit = nearest + local_threshold_ms;
+   const int64_t rtt_limit_ms = nearest_rtt_ms + local_threshold_ms;
 
    for (size_t i = 0u; i < candidates_len; i++) {
-      if (candidates[i] && (candidates[i]->round_trip_time_msec <= rtt_limit)) {
+      if (candidates[i] && (candidates[i]->round_trip_time_msec <= rtt_limit_ms)) {
          _mongoc_array_append_val(set, candidates[i]);
       }
    }
