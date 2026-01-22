@@ -514,11 +514,11 @@ _mongoc_td_servers_to_candidates_array(const void *item, void *ctx)
 
 static void
 _mongoc_filter_deprioritized_servers(const mongoc_server_description_t **candidates,
-                                     size_t *candidates_len,
+                                     size_t *candidates_len_ptr,
                                      const mongoc_deprioritized_servers_t *ds)
 {
    BSON_ASSERT_PARAM(candidates);
-   BSON_ASSERT_PARAM(candidates_len);
+   BSON_ASSERT_PARAM(candidates_len_ptr);
    BSON_ASSERT_PARAM(ds);
 
    TRACE("%s", "deprioritization: filtering list of candidates");
@@ -526,7 +526,7 @@ _mongoc_filter_deprioritized_servers(const mongoc_server_description_t **candida
    mongoc_array_t filtered_servers;
    _mongoc_array_init(&filtered_servers, sizeof(const mongoc_server_description_t *));
 
-   for (size_t idx = 0u; idx < *candidates_len; ++idx) {
+   for (size_t idx = 0u; idx < *candidates_len_ptr; ++idx) {
       mongoc_server_description_t const *const sd = candidates[idx];
 
       if (!mongoc_deprioritized_servers_contains(ds, sd)) {
@@ -539,13 +539,13 @@ _mongoc_filter_deprioritized_servers(const mongoc_server_description_t **candida
 
    if (filtered_servers.len == 0u) {
       TRACE("%s", "deprioritization: no suitable servers remaining");
-   } else if (filtered_servers.len == *candidates_len) {
+   } else if (filtered_servers.len == *candidates_len_ptr) {
       TRACE("%s", "deprioritization: none found in list of candidates");
    } else {
       TRACE("%s", "deprioritization: using filtered list of candidates");
    }
 
-   *candidates_len = filtered_servers.len;
+   *candidates_len_ptr = filtered_servers.len;
    // `(void*)`: avoid MSVC error C4090:
    //   'function': different 'const' qualifiers
    memmove((void *)candidates, filtered_servers.data, filtered_servers.len * filtered_servers.element_size);
@@ -563,13 +563,13 @@ _mongoc_filter_suitable_mongos(mongoc_suitable_data_t *data)
    BSON_ASSERT(data->topology);
 
    const mongoc_server_description_t **const candidates = data->candidates;
-   size_t *const candidates_len = &data->candidates_len;
+   size_t *const candidates_len_ptr = &data->candidates_len;
    const mongoc_read_mode_t read_mode = data->read_mode;
    const mongoc_topology_description_type_t topology_type = data->topology->type;
 
    size_t idx = 0u;
 
-   while (idx < *candidates_len) {
+   while (idx < *candidates_len_ptr) {
       if (_mongoc_topology_description_server_is_candidate(candidates[idx]->type, read_mode, topology_type)) {
          // All candidates in the latency window are suitable.
          ++idx;
@@ -577,7 +577,7 @@ _mongoc_filter_suitable_mongos(mongoc_suitable_data_t *data)
          // Remove from list using swap+pop.
          // Order doesn't matter; the list will be randomized in
          // mongoc_topology_description_select prior to server selection.
-         candidates[idx] = candidates[--*candidates_len];
+         candidates[idx] = candidates[--*candidates_len_ptr];
       }
    }
 }
@@ -800,12 +800,12 @@ _filter_suitable_servers_by_rtt(mongoc_array_t *set, /* OUT */
 
 // [a, NULL, b, NULL, ..., c] -> [a, b, ..., c, NULL, ..., NULL]
 static void
-_partition_sort_candidates(const mongoc_server_description_t **candidates, size_t *candidates_len)
+_partition_sort_candidates(const mongoc_server_description_t **candidates, size_t *candidates_len_ptr)
 {
    BSON_ASSERT_PARAM(candidates);
-   BSON_ASSERT_PARAM(candidates_len);
+   BSON_ASSERT_PARAM(candidates_len_ptr);
 
-   const size_t old_len = *candidates_len;
+   const size_t old_len = *candidates_len_ptr;
 
    size_t new_len = 0u;
    const mongoc_server_description_t **insert_iter = candidates;
@@ -822,7 +822,7 @@ _partition_sort_candidates(const mongoc_server_description_t **candidates, size_
       }
    }
 
-   *candidates_len = new_len;
+   *candidates_len_ptr = new_len;
 }
 
 
@@ -919,7 +919,7 @@ _filter_suitable_servers_for_replica_set(mongoc_array_t *const set, /* OUT */
    const mongoc_read_prefs_t *read_prefs = data->read_prefs;
    const mongoc_read_mode_t read_mode = data->read_mode;
    const mongoc_server_description_t **const candidates = data->candidates;
-   size_t *const candidates_len = &data->candidates_len;
+   size_t *const candidates_len_ptr = &data->candidates_len;
    const int64_t local_threshold_ms = data->local_threshold_ms;
 
    switch (data->optype) {
@@ -947,23 +947,24 @@ _filter_suitable_servers_for_replica_set(mongoc_array_t *const set, /* OUT */
          }
 
          if (ds) {
-            _mongoc_filter_deprioritized_servers(candidates, candidates_len, ds);
+            _mongoc_filter_deprioritized_servers(candidates, candidates_len_ptr, ds);
 
             // Short-circuit: no candidates -> no suitable servers.
-            if (*candidates_len == 0u) {
+            if (*candidates_len_ptr == 0u) {
                return retry_without_deprioritization;
             }
          }
 
-         mongoc_server_description_filter_stale(candidates, *candidates_len, primary, heartbeat_msec, data->read_prefs);
-         mongoc_server_description_filter_tags(candidates, *candidates_len, data->read_prefs);
-         _partition_sort_candidates(candidates, candidates_len);
+         mongoc_server_description_filter_stale(
+            candidates, *candidates_len_ptr, primary, heartbeat_msec, data->read_prefs);
+         mongoc_server_description_filter_tags(candidates, *candidates_len_ptr, data->read_prefs);
+         _partition_sort_candidates(candidates, candidates_len_ptr);
 
-         if (ds && candidates_len == 0) {
+         if (ds && candidates_len_ptr == 0) {
             return retry_without_deprioritization;
          }
 
-         _filter_suitable_servers_by_rtt(set, candidates, *candidates_len, local_threshold_ms);
+         _filter_suitable_servers_by_rtt(set, candidates, *candidates_len_ptr, local_threshold_ms);
 
          return filter_is_done;
       }
@@ -1004,23 +1005,23 @@ _filter_suitable_servers_for_replica_set(mongoc_array_t *const set, /* OUT */
 
       case MONGOC_READ_NEAREST: {
          if (ds) {
-            _mongoc_filter_deprioritized_servers(candidates, candidates_len, ds);
+            _mongoc_filter_deprioritized_servers(candidates, candidates_len_ptr, ds);
 
             // Short-circuit: no candidates -> no suitable servers.
-            if (*candidates_len == 0u) {
+            if (*candidates_len_ptr == 0u) {
                return retry_without_deprioritization;
             }
          }
 
-         mongoc_server_description_filter_stale(candidates, *candidates_len, primary, heartbeat_msec, read_prefs);
-         mongoc_server_description_filter_tags(candidates, *candidates_len, read_prefs);
-         _partition_sort_candidates(candidates, candidates_len);
+         mongoc_server_description_filter_stale(candidates, *candidates_len_ptr, primary, heartbeat_msec, read_prefs);
+         mongoc_server_description_filter_tags(candidates, *candidates_len_ptr, read_prefs);
+         _partition_sort_candidates(candidates, candidates_len_ptr);
 
-         if (ds && candidates_len == 0) {
+         if (ds && candidates_len_ptr == 0) {
             return retry_without_deprioritization;
          }
 
-         _filter_suitable_servers_by_rtt(set, candidates, *candidates_len, local_threshold_ms);
+         _filter_suitable_servers_by_rtt(set, candidates, *candidates_len_ptr, local_threshold_ms);
 
          return filter_is_done;
       }
@@ -1068,7 +1069,7 @@ _filter_suitable_servers_for_sharded_cluster(mongoc_array_t *const set, /* OUT *
 
    const mongoc_set_t *const td_servers = data->td_servers;
    const mongoc_server_description_t **const candidates = data->candidates;
-   size_t *const candidates_len = &data->candidates_len;
+   size_t *const candidates_len_ptr = &data->candidates_len;
    const int64_t local_threshold_ms = data->local_threshold_ms;
 
    // All mongos are candidates.
@@ -1076,15 +1077,15 @@ _filter_suitable_servers_for_sharded_cluster(mongoc_array_t *const set, /* OUT *
    _mongoc_filter_suitable_mongos(data);
 
    if (ds) {
-      _mongoc_filter_deprioritized_servers(candidates, candidates_len, ds);
+      _mongoc_filter_deprioritized_servers(candidates, candidates_len_ptr, ds);
 
       // Short-circuit: no candidates -> no suitable servers.
-      if (*candidates_len == 0u) {
+      if (*candidates_len_ptr == 0u) {
          return retry_without_deprioritization;
       }
    }
 
-   _filter_suitable_servers_by_rtt(set, candidates, *candidates_len, local_threshold_ms);
+   _filter_suitable_servers_by_rtt(set, candidates, *candidates_len_ptr, local_threshold_ms);
 
    return filter_is_done;
 }
@@ -1106,7 +1107,7 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
 
    const mongoc_set_t *const td_servers = data->td_servers;
    const mongoc_server_description_t **const candidates = data->candidates;
-   size_t *const candidates_len = &data->candidates_len;
+   size_t *const candidates_len_ptr = &data->candidates_len;
    const mongoc_read_mode_t read_mode = data->read_mode;
    const int64_t local_threshold_ms = data->local_threshold_ms;
 
@@ -1135,7 +1136,7 @@ _filter_suitable_servers_by_topology(mongoc_array_t *const set, /* OUT */
       }
 
    case MONGOC_TOPOLOGY_UNKNOWN: {
-      _filter_suitable_servers_by_rtt(set, candidates, *candidates_len, local_threshold_ms);
+      _filter_suitable_servers_by_rtt(set, candidates, *candidates_len_ptr, local_threshold_ms);
       return filter_is_done;
    }
 
