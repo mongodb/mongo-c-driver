@@ -473,13 +473,6 @@ _mongoc_replica_set_read_suitable_cb(const void *item, void *ctx)
    }
 
    if (_mongoc_topology_description_server_is_candidate(server->type, data->read_mode, data->topology_type)) {
-      if (server->type == MONGOC_SERVER_RS_PRIMARY) {
-         if (data->read_mode == MONGOC_READ_PRIMARY || data->read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
-            /* we want a primary and we have one, done! */
-            return false;
-         }
-      }
-
       if (server->type == MONGOC_SERVER_RS_SECONDARY) {
          data->has_secondary = true;
       }
