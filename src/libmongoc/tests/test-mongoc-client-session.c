@@ -2695,7 +2695,8 @@ sessions_prose_3_aggregate(mongoc_client_t *client)
       mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, tmp_bson("{}"), NULL, NULL);
 
    const bson_t *doc;
-   mongoc_cursor_next(cursor, &doc);
+   while (mongoc_cursor_next(cursor, &doc))
+      ;
 
    bson_error_t error;
    ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
@@ -2712,7 +2713,8 @@ sessions_prose_3_find(mongoc_client_t *client)
    mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
 
    const bson_t *doc;
-   mongoc_cursor_next(cursor, &doc);
+   while (mongoc_cursor_next(cursor, &doc))
+      ;
 
    bson_error_t error;
    ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
