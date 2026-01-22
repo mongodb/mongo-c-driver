@@ -540,7 +540,7 @@ test_server_selection_logic_cb(void *test_vp)
    // return one of the servers in `in_latency_window`. Drivers SHOULD test against the full set of servers in
    // `in_latency_window` and against `suitable_servers` if possible.
    //
-   // Only `in_latency_windows` is used here, which is the result of `mongoc_topology_description_suitable_servers`.
+   // Only `in_latency_window` is used here, which is the result of `mongoc_topology_description_suitable_servers`.
    BSON_ASSERT(bson_iter_init_find(&iter, test, "in_latency_window"));
    bool matched_servers[50] = {0};
    bson_iter_t expected_servers_iter;
