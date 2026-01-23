@@ -19,6 +19,6 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#include <uthash-2.3.0/utlist.h>
+#include <uthash-2.3.0/utlist.h> // IWYU pragma: export
 
 #endif // MONGOC_UTLIST_H

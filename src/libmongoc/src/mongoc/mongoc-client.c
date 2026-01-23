@@ -1640,7 +1640,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
    bson_t reply_local;
 
    BSON_ASSERT_PARAM(client);
-   BSON_UNUSED(server_stream);
 
    if (reply == NULL) {
       reply = &reply_local;
@@ -1650,26 +1649,29 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
 
    BSON_ASSERT(parts->is_retryable_read);
 
-retry:
-   ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
+   {
+      mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
 
-   /* If a retryable error is encountered and the read is retryable, select
-    * a new readable stream and retry. If server selection fails or the selected
-    * server does not support retryable reads, fall through and allow the
-    * original error to be reported. */
-   if (is_retryable && _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY) {
-      /* each read command may be retried at most once */
-      is_retryable = false;
+   retry:
+      ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
 
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
+      /* If a retryable error is encountered and the read is retryable, select
+       * a new readable stream and retry. If server selection fails or the selected
+       * server does not support retryable reads, fall through and allow the
+       * original error to be reported. */
+      if (is_retryable && _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY) {
+         /* each read command may be retried at most once */
+         is_retryable = false;
+
+         {
+            const mongoc_server_description_t *const sd =
+               retry_server_stream ? retry_server_stream->sd : server_stream->sd;
+            TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
+            mongoc_deprioritized_servers_add(ds, sd);
+         }
 
          if (retry_server_stream) {
-            mongoc_deprioritized_servers_add_if_sharded(
-               ds, retry_server_stream->topology_type, retry_server_stream->sd);
             mongoc_server_stream_cleanup(retry_server_stream);
-         } else {
-            mongoc_deprioritized_servers_add_if_sharded(ds, server_stream->topology_type, server_stream->sd);
          }
 
          const mongoc_ss_log_context_t ss_log_context = {
@@ -1685,14 +1687,14 @@ retry:
                                                                NULL /* reply */,
                                                                NULL /* error */);
 
-         mongoc_deprioritized_servers_destroy(ds);
+         if (retry_server_stream) {
+            parts->assembled.server_stream = retry_server_stream;
+            bson_destroy(reply);
+            GOTO(retry);
+         }
       }
 
-      if (retry_server_stream) {
-         parts->assembled.server_stream = retry_server_stream;
-         bson_destroy(reply);
-         GOTO(retry);
-      }
+      mongoc_deprioritized_servers_destroy(ds);
    }
 
    if (retry_server_stream) {
