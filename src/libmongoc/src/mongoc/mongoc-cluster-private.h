@@ -88,9 +88,6 @@ mongoc_cluster_get_max_bson_obj_size(mongoc_cluster_t *cluster);
 int32_t
 mongoc_cluster_get_max_msg_size(mongoc_cluster_t *cluster);
 
-size_t
-_mongoc_cluster_buffer_iovec(mongoc_iovec_t *iov, size_t iovcnt, int skip, char *buffer);
-
 bool
 mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id);
 

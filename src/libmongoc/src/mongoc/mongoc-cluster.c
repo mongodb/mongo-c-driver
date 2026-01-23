@@ -158,7 +158,7 @@ _compression_level_from_uri(int32_t compressor_id, const mongoc_uri_t *uri)
 }
 
 
-size_t
+static size_t
 _mongoc_cluster_buffer_iovec(mongoc_iovec_t *iov, size_t iovcnt, int skip, char *buffer)
 {
    size_t buffer_offset = 0;
