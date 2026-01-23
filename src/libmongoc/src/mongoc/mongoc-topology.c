@@ -1268,6 +1268,13 @@ mongoc_topology_select_server_id(mongoc_topology_t *topology,
             mongoc_topology_description_select(td.ptr, optype, read_prefs, must_use_primary, ds, local_threshold_ms);
 
          if (selected_server) {
+            // If the topology description's cluster time is not yet initialized, initialize it using the selected
+            // server's last hello response. Using `mc_tpld_unsafe_get_mutable` is okay here since this only applies to
+            // single-threaded clients.
+            mongoc_topology_description_t *const td = mc_tpld_unsafe_get_mutable(topology);
+            if (bson_empty(&td->cluster_time)) {
+               mongoc_topology_description_update_cluster_time(td, &selected_server->last_hello_response);
+            }
             server_id = selected_server->id;
             goto done;
          }
