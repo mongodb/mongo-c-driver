@@ -161,13 +161,6 @@ mongoc_client_default_stream_initiator(const mongoc_uri_t *uri,
 mongoc_stream_t *
 _mongoc_client_create_stream(mongoc_client_t *client, const mongoc_host_list_t *host, bson_error_t *error);
 
-bool
-_mongoc_client_recv(mongoc_client_t *client,
-                    mcd_rpc_message *rpc,
-                    mongoc_buffer_t *buffer,
-                    mongoc_server_stream_t *server_stream,
-                    bson_error_t *error);
-
 void
 _mongoc_client_kill_cursor(mongoc_client_t *client,
                            uint32_t server_id,
