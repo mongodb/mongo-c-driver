@@ -1504,6 +1504,197 @@ test_cluster_stream_invalidation_pooled(void)
    mongoc_client_pool_destroy(pool);
 }
 
+
+typedef struct {
+   mock_server_t *server;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   char *legacy_hello_reply;
+} test_handshake_errors_fixture;
+
+typedef struct {
+   bool use_pool;
+   bool use_auth;
+} test_handshake_errors_opts;
+
+static test_handshake_errors_fixture *
+test_handshake_errors_setup(test_handshake_errors_opts opts)
+{
+   test_handshake_errors_fixture *f = bson_malloc0(sizeof(*f));
+
+   // Start mock server:
+   f->server = mock_server_new();
+   mock_server_run(f->server);
+
+   mongoc_uri_t *uri = mongoc_uri_copy(mock_server_get_uri(f->server));
+   if (opts.use_auth) {
+      mongoc_uri_set_username(uri, "user");
+      mongoc_uri_set_password(uri, "password");
+      mongoc_uri_set_auth_mechanism(uri, "plain"); // Does not require SSL.
+   }
+
+   // Create a legacy hello reply:
+   f->legacy_hello_reply = bson_strdup_printf(BSON_STR({
+                                                 "ok" : 1.0,
+                                                 "isWritablePrimary" : true,
+                                                 "minWireVersion" : {"$numberInt" : "%d"},
+                                                 "maxWireVersion" : {"$numberInt" : "%d"}
+                                              }),
+                                              WIRE_VERSION_MIN,
+                                              WIRE_VERSION_MAX);
+
+   // Create client:
+   bson_error_t error;
+   if (opts.use_pool) {
+      f->pool = mongoc_client_pool_new_with_error(uri, &error);
+      ASSERT_OR_PRINT(f->pool, error);
+      f->client = mongoc_client_pool_pop(f->pool);
+
+      // Await legacy hello from background monitoring:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request, f->legacy_hello_reply);
+         request_destroy(request);
+      }
+
+   } else {
+      f->client = mongoc_client_new_from_uri_with_error(uri, &error);
+      ASSERT_OR_PRINT(f->client, error);
+   }
+
+   mongoc_uri_destroy(uri);
+   return f;
+}
+
+static void
+test_handshake_errors_teardown(test_handshake_errors_fixture *f)
+{
+   if (f->pool) {
+      mongoc_client_pool_push(f->pool, f->client);
+      mongoc_client_pool_destroy(f->pool);
+   } else {
+      mongoc_client_destroy(f->client);
+   }
+
+   bson_free(f->legacy_hello_reply);
+   mock_server_destroy(f->server);
+   bson_free(f);
+}
+
+// test_handshake_errors_impl tests error handling during the handshake.
+// Expect SDAM specification "Error handling" section to apply.
+static void
+test_handshake_errors_impl(bool use_pool)
+{
+   bson_error_t error;
+
+   // Test connection error triggers SDAM error handling:
+   {
+      test_handshake_errors_fixture *f =
+         test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool});
+
+      // Disconnect server before attempting to connect.
+      mock_server_destroy(f->server);
+      f->server = NULL;
+
+      bool ok = mongoc_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+      ASSERT(!ok);
+
+      if (use_pool) {
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to connect");
+      } else {
+         ASSERT_ERROR_CONTAINS(
+            error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection refused");
+      }
+
+      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared once.
+      ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+      mongoc_server_description_destroy(sd);
+
+      test_handshake_errors_teardown(f);
+   }
+
+   // Test an error on "hello":
+   {
+      test_handshake_errors_fixture *f =
+         test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool});
+
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+
+      // Hang up handshake:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_with_hang_up(request);
+         request_destroy(request);
+      }
+
+      ASSERT(!future_get_bool(future));
+      if (use_pool) {
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+      } else {
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "closed");
+      }
+
+      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // FAILS! Clears twice for pooled client.
+      ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+      mongoc_server_description_destroy(sd);
+
+      future_destroy(future);
+      test_handshake_errors_teardown(f);
+   }
+
+   // Test an auth error. Use PLAIN to not require SSL.
+   {
+      test_handshake_errors_fixture *f =
+         test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool, .use_auth = true});
+
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+
+      // Reply to handshake:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request, f->legacy_hello_reply);
+         request_destroy(request);
+      }
+
+      // Hang up auth command:
+      {
+         request_t *request = mock_server_receives_msg(f->server, MONGOC_MSG_NONE, tmp_bson("{'saslStart': 1}"));
+         ASSERT(request);
+         reply_to_request_with_hang_up(request);
+         request_destroy(request);
+      }
+
+      ASSERT(!future_get_bool(future));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "socket error");
+
+      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // FAILS! Clears twice for both.
+      ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+      mongoc_server_description_destroy(sd);
+
+      future_destroy(future);
+      test_handshake_errors_teardown(f);
+   }
+}
+
+static void
+test_handshake_errors_pooled(void)
+{
+   test_handshake_errors_impl(true);
+}
+
+static void
+test_handshake_errors_single(void)
+{
+   test_handshake_errors_impl(false);
+}
+
 void
 test_cluster_install(TestSuite *suite)
 {
@@ -1582,4 +1773,6 @@ test_cluster_install(TestSuite *suite)
    */
    TestSuite_AddLive(suite, "/Cluster/stream_invalidation/single", test_cluster_stream_invalidation_single);
    TestSuite_AddLive(suite, "/Cluster/stream_invalidation/pooled", test_cluster_stream_invalidation_pooled);
+   TestSuite_AddMockServerTest(suite, "/Cluster/handshake_errors/single", test_handshake_errors_single);
+   TestSuite_AddMockServerTest(suite, "/Cluster/handshake_errors/pooled", test_handshake_errors_pooled);
 }
