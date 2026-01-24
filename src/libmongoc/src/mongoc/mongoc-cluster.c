@@ -118,8 +118,13 @@ _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_
 /* Called when a network error occurs on an application socket.
  */
 static void
-_handle_network_error(mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream, const bson_error_t *why)
+_handle_network_error(mongoc_cluster_t *cluster,
+                      mongoc_server_stream_t *server_stream,
+                      bson_t *reply,
+                      const bson_error_t *why)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    mongoc_topology_t *topology;
    uint32_t server_id;
    _mongoc_sdam_app_error_type_t type;
@@ -232,12 +237,17 @@ static const int32_t message_header_length = 4u * sizeof(int32_t);
 
 
 static bool
-_mongoc_cluster_run_command_opquery_send(
-   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, int32_t compressor_id, mcd_rpc_message *rpc, bson_error_t *error)
+_mongoc_cluster_run_command_opquery_send(mongoc_cluster_t *cluster,
+                                         const mongoc_cmd_t *cmd,
+                                         int32_t compressor_id,
+                                         mcd_rpc_message *rpc,
+                                         bson_t *reply,
+                                         bson_error_t *error)
 {
    BSON_ASSERT_PARAM(cluster);
    BSON_ASSERT_PARAM(cmd);
    BSON_ASSERT_PARAM(rpc);
+   BSON_ASSERT_PARAM(reply);
    BSON_ASSERT_PARAM(error);
 
    bool ret = false;
@@ -301,7 +311,7 @@ _mongoc_cluster_run_command_opquery_send(
    mcd_rpc_message_egress(rpc);
    if (!_mongoc_stream_writev_full(stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd->server_stream, reply, error);
       goto done;
    }
 
@@ -337,7 +347,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    if (!_mongoc_buffer_append_from_stream(&buffer, stream, sizeof(int32_t), cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd->server_stream, reply, error);
       goto done;
    }
 
@@ -345,7 +355,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    if (message_length < message_header_length || message_length > MONGOC_DEFAULT_MAX_MSG_SIZE) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "invalid message length");
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd->server_stream, reply, error);
       goto done;
    }
 
@@ -353,7 +363,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    if (!_mongoc_buffer_append_from_stream(&buffer, stream, remaining_bytes, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd->server_stream, reply, error);
       goto done;
    }
 
@@ -413,7 +423,7 @@ mongoc_cluster_run_command_opquery(
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new();
 
-   if (!_mongoc_cluster_run_command_opquery_send(cluster, cmd, compressor_id, rpc, error)) {
+   if (!_mongoc_cluster_run_command_opquery_send(cluster, cmd, compressor_id, rpc, reply, error)) {
       GOTO(done);
    }
 
@@ -3091,7 +3101,7 @@ _mongoc_cluster_run_opmsg_send(
                                                            &compressed_data_len,
                                                            error)) {
          RUN_CMD_ERR_DECORATE;
-         _handle_network_error(cluster, server_stream, error);
+         _handle_network_error(cluster, server_stream, reply, error);
          server_stream->stream = NULL;
          network_error_reply(reply, cmd);
          return false;
@@ -3108,7 +3118,7 @@ _mongoc_cluster_run_opmsg_send(
 
    if (!res) {
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
    }
@@ -3140,7 +3150,7 @@ _mongoc_cluster_run_opmsg_recv(
           &buffer, server_stream->stream, sizeof(int32_t), cluster->sockettimeoutms, error)) {
       MONGOC_DEBUG("could not read message length, stream probably closed or timed out");
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
       goto done;
@@ -3155,7 +3165,7 @@ _mongoc_cluster_run_opmsg_recv(
                   message_header_length,
                   message_length,
                   server_stream->sd->max_msg_size);
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
       goto done;
@@ -3166,7 +3176,7 @@ _mongoc_cluster_run_opmsg_recv(
    if (!_mongoc_buffer_append_from_stream(
           &buffer, server_stream->stream, remaining_bytes, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
       goto done;
@@ -3174,7 +3184,7 @@ _mongoc_cluster_run_opmsg_recv(
 
    if (!mcd_rpc_message_from_data_in_place(rpc, buffer.data, buffer.len, NULL)) {
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed server message");
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
       goto done;
@@ -3187,7 +3197,7 @@ _mongoc_cluster_run_opmsg_recv(
    if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
       _mongoc_set_error(
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "could not decompress message from server");
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
       GOTO(done);
@@ -3208,7 +3218,7 @@ _mongoc_cluster_run_opmsg_recv(
                      "malformed message from server: expected opCode %" PRId32 ", got %" PRId32,
                      MONGOC_OP_CODE_MSG,
                      op_code);
-         _handle_network_error(cluster, server_stream, error);
+         _handle_network_error(cluster, server_stream, reply, error);
          server_stream->stream = NULL;
          network_error_reply(reply, cmd);
          goto done;
@@ -3219,7 +3229,7 @@ _mongoc_cluster_run_opmsg_recv(
 
    if (!mcd_rpc_message_get_body(rpc, &body)) {
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, server_stream, reply, error);
       server_stream->stream = NULL;
       network_error_reply(reply, cmd);
       goto done;
