@@ -125,16 +125,12 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    BSON_OPTIONAL_PARAM(reply);
    BSON_ASSERT_PARAM(why);
 
-   mongoc_topology_t *topology;
-   uint32_t server_id;
-   _mongoc_sdam_app_error_type_t type;
-
    BSON_ASSERT(cmd->server_stream);
 
    ENTRY;
-   topology = cluster->client->topology;
-   server_id = cmd->server_stream->sd->id;
-   type = MONGOC_SDAM_APP_ERROR_NETWORK;
+   mongoc_topology_t *topology = cluster->client->topology;
+   uint32_t server_id = cmd->server_stream->sd->id;
+   _mongoc_sdam_app_error_type_t type = MONGOC_SDAM_APP_ERROR_NETWORK;
    if (mongoc_stream_timed_out(cmd->server_stream->stream)) {
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
       cmd->server_stream->timed_out = true;
