@@ -98,6 +98,8 @@ _bson_error_message_printf(bson_error_t *error, const char *format, ...) BSON_GN
 static void
 _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_t *server_stream, const bson_t *reply)
 {
+   BSON_ASSERT_PARAM(reply);
+
    uint32_t server_id;
 
    server_id = server_stream->sd->id;
@@ -460,6 +462,8 @@ _in_sharded_or_loadbalanced_txn(const mongoc_client_session_t *session)
 static void
 _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc_cmd_t *cmd, bson_t *reply)
 {
+   BSON_ASSERT_PARAM(reply);
+
    if (!cmd->is_txn_finish) {
       return;
    }
@@ -471,6 +475,8 @@ _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc
 static bool
 run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bool retval;
    const int32_t request_id = ++cluster->request_id;
    uint32_t server_id;
@@ -698,6 +704,8 @@ _try_get_oidc_connection_cache(mongoc_cluster_t *cluster, uint32_t server_id, bs
 bool
 mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    if (run_command_monitored(cluster, cmd, reply, error)) {
       return true;
    }
@@ -762,6 +770,8 @@ mongoc_cluster_run_command_private(mongoc_cluster_t *cluster,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bool retval;
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
@@ -822,6 +832,8 @@ mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bool ret;
 
    if (!mongoc_cmd_parts_assemble(parts, server_stream, error)) {
@@ -1305,6 +1317,8 @@ _mongoc_cluster_run_scram_command(mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(reply);
+
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
    const char *auth_source;
@@ -1364,6 +1378,8 @@ _mongoc_cluster_auth_scram_start(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_t cmd;
 
    BSON_ASSERT(scram->step == 0);
@@ -1420,6 +1436,8 @@ _mongoc_cluster_scram_handle_reply(mongoc_scram_t *scram,
                                    uint32_t *buflen /* OUT */,
                                    bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_iter_t iter;
    bson_subtype_t btype;
    const char *tmpstr;
@@ -2058,6 +2076,8 @@ _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error /* OUT */)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE(cluster)->client->topology;
    mongoc_server_stream_t *ret_server_stream;
    bson_error_t err_local;
@@ -2685,6 +2705,8 @@ mongoc_cluster_stream_for_reads(mongoc_cluster_t *cluster,
                                 bson_t *reply,
                                 bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn(cs) ? cs->txn.opts.read_prefs : read_prefs;
 
@@ -2706,6 +2728,8 @@ mongoc_cluster_stream_for_writes(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    const bool is_retryable =
       mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
@@ -2721,6 +2745,8 @@ mongoc_cluster_stream_for_aggr_with_write(mongoc_cluster_t *cluster,
                                           bson_t *reply,
                                           bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn(cs) ? cs->txn.opts.read_prefs : read_prefs;
 
@@ -2961,6 +2987,8 @@ mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id)
 static void
 network_error_reply(bson_t *reply, const mongoc_cmd_t *cmd)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bson_array_builder_t *labels;
 
    if (reply) {
