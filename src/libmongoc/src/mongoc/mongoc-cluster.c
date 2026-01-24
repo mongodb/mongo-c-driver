@@ -120,8 +120,10 @@ _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_
 static void
 _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, const bson_error_t *why)
 {
+   BSON_ASSERT_PARAM(cluster);
    BSON_ASSERT_PARAM(cmd);
    BSON_OPTIONAL_PARAM(reply);
+   BSON_ASSERT_PARAM(why);
 
    mongoc_topology_t *topology;
    uint32_t server_id;
