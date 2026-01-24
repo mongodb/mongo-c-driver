@@ -149,6 +149,41 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    /* Always disconnect the current connection on network error. */
    mongoc_cluster_disconnect_node(cluster, server_id);
 
+   bson_array_builder_t *labels;
+
+   if (reply) {
+      bson_init(reply);
+   }
+
+   if (cmd->session) {
+      if (cmd->session->server_session) {
+         cmd->session->server_session->dirty = true;
+      }
+      /* Transactions Spec defines TransientTransactionError: "Any
+       * network error or server selection error encountered running any
+       * command besides commitTransaction in a transaction. In the case
+       * of command errors, the server adds the label; in the case of
+       * network errors or server selection errors where the client
+       * receives no server reply, the client adds the label." */
+      if (_mongoc_client_session_in_txn(cmd->session) && !cmd->is_txn_finish) {
+         /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
+          * within a transaction, including commitTransaction and
+          * abortTransaction,
+          * fails with a TransientTransactionError". If we're about to add
+          * a TransientTransactionError label due to a client side error then we
+          * unpin. If commitTransaction/abortTransation includes a label in the
+          * server reply, we unpin in _mongoc_client_session_handle_reply. */
+         cmd->session->server_id = 0;
+         if (!reply) {
+            return;
+         }
+
+         BSON_APPEND_ARRAY_BUILDER_BEGIN(reply, "errorLabels", &labels);
+         bson_array_builder_append_utf8(labels, TRANSIENT_TXN_ERR, -1);
+         bson_append_array_builder_end(reply, labels);
+      }
+   }
+
    EXIT;
 }
 
@@ -2992,47 +3027,6 @@ mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id)
    return r;
 }
 
-static void
-network_error_reply(bson_t *reply, const mongoc_cmd_t *cmd)
-{
-   BSON_OPTIONAL_PARAM(reply);
-
-   bson_array_builder_t *labels;
-
-   if (reply) {
-      bson_init(reply);
-   }
-
-   if (cmd->session) {
-      if (cmd->session->server_session) {
-         cmd->session->server_session->dirty = true;
-      }
-      /* Transactions Spec defines TransientTransactionError: "Any
-       * network error or server selection error encountered running any
-       * command besides commitTransaction in a transaction. In the case
-       * of command errors, the server adds the label; in the case of
-       * network errors or server selection errors where the client
-       * receives no server reply, the client adds the label." */
-      if (_mongoc_client_session_in_txn(cmd->session) && !cmd->is_txn_finish) {
-         /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-          * within a transaction, including commitTransaction and
-          * abortTransaction,
-          * fails with a TransientTransactionError". If we're about to add
-          * a TransientTransactionError label due to a client side error then we
-          * unpin. If commitTransaction/abortTransation includes a label in the
-          * server reply, we unpin in _mongoc_client_session_handle_reply. */
-         cmd->session->server_id = 0;
-         if (!reply) {
-            return;
-         }
-
-         BSON_APPEND_ARRAY_BUILDER_BEGIN(reply, "errorLabels", &labels);
-         bson_array_builder_append_utf8(labels, TRANSIENT_TXN_ERR, -1);
-         bson_append_array_builder_end(reply, labels);
-      }
-   }
-}
-
 
 static bool
 _mongoc_cluster_run_opmsg_send(
@@ -3101,7 +3095,6 @@ _mongoc_cluster_run_opmsg_send(
          RUN_CMD_ERR_DECORATE;
          _handle_network_error(cluster, cmd, reply, error);
          server_stream->stream = NULL;
-         network_error_reply(reply, cmd);
          return false;
       }
    }
@@ -3118,7 +3111,6 @@ _mongoc_cluster_run_opmsg_send(
       RUN_CMD_ERR_DECORATE;
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
    }
 
    bson_free(iovecs);
@@ -3150,7 +3142,6 @@ _mongoc_cluster_run_opmsg_recv(
       RUN_CMD_ERR_DECORATE;
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
@@ -3165,7 +3156,6 @@ _mongoc_cluster_run_opmsg_recv(
                   server_stream->sd->max_msg_size);
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
@@ -3176,7 +3166,6 @@ _mongoc_cluster_run_opmsg_recv(
       RUN_CMD_ERR_DECORATE;
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
@@ -3184,7 +3173,6 @@ _mongoc_cluster_run_opmsg_recv(
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed server message");
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
    mcd_rpc_message_ingress(rpc);
@@ -3197,7 +3185,6 @@ _mongoc_cluster_run_opmsg_recv(
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "could not decompress message from server");
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       GOTO(done);
    }
 
@@ -3218,7 +3205,6 @@ _mongoc_cluster_run_opmsg_recv(
                      op_code);
          _handle_network_error(cluster, cmd, reply, error);
          server_stream->stream = NULL;
-         network_error_reply(reply, cmd);
          goto done;
       }
    }
@@ -3229,7 +3215,6 @@ _mongoc_cluster_run_opmsg_recv(
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
