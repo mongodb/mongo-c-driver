@@ -147,8 +147,6 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    /* Always disconnect the current connection on network error. */
    mongoc_cluster_disconnect_node(cluster, server_id);
 
-   bson_array_builder_t *labels;
-
    if (reply) {
       bson_init(reply);
    }
@@ -172,13 +170,7 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
           * unpin. If commitTransaction/abortTransation includes a label in the
           * server reply, we unpin in _mongoc_client_session_handle_reply. */
          cmd->session->server_id = 0;
-         if (!reply) {
-            return;
-         }
-
-         BSON_APPEND_ARRAY_BUILDER_BEGIN(reply, "errorLabels", &labels);
-         bson_array_builder_append_utf8(labels, TRANSIENT_TXN_ERR, -1);
-         bson_append_array_builder_end(reply, labels);
+         _mongoc_add_transient_txn_error(cmd->session, reply);
       }
    }
 
