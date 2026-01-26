@@ -1125,6 +1125,7 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->error_api_set = false;
    client->client_sessions = mongoc_set_new(8, NULL, NULL);
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
+   client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1200,6 +1201,7 @@ mongoc_client_destroy(mongoc_client_t *client)
       mongoc_uri_destroy(client->uri);
       mongoc_set_destroy(client->client_sessions);
       mongoc_server_api_destroy(client->api);
+      _mongoc_jitter_source_destroy(client->jitter_source);
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup(&client->ssl_opts, true);
@@ -2741,4 +2743,11 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
 
    mongoc_oidc_cache_set_user_callback(client->topology->oidc_cache, callback);
    return true;
+}
+
+void
+_mongoc_client_set_jitter_source(mongoc_client_t *client, mongoc_jitter_source_t *source)
+{
+   _mongoc_jitter_source_destroy(client->jitter_source);
+   client->jitter_source = source;
 }

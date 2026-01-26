@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-apm-private.h>
 #include <mongoc/mongoc-buffer-private.h>
 #include <mongoc/mongoc-cluster-private.h>
+#include <mongoc/mongoc-jitter-source-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 
 #include <mongoc/mongoc-config.h>
@@ -121,6 +122,8 @@ struct _mongoc_client_t {
    unsigned int csid_rand_seed;
 
    uint32_t generation;
+
+   mongoc_jitter_source_t *jitter_source;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
@@ -232,6 +235,9 @@ void
 _mongoc_client_set_stream_initiator_single_or_pooled(mongoc_client_t *client,
                                                      mongoc_stream_initiator_t initiator,
                                                      void *user_data);
+
+void
+_mongoc_client_set_jitter_source(mongoc_client_t *client, mongoc_jitter_source_t *source);
 
 BSON_END_DECLS
 

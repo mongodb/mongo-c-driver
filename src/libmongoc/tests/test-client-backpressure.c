@@ -17,6 +17,7 @@
 #include <common-oid-private.h> // kZeroObjectId
 #include <common-thread-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include <mongoc/mongoc.h>
 
@@ -476,6 +477,113 @@ test_SDAM_backpressure_network_timeout_fail(void *unused)
    mongoc_uri_destroy(uri);
 }
 
+static double
+always_0_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   BSON_UNUSED(source);
+   return 0.0;
+}
+
+static double
+always_1_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   BSON_UNUSED(source);
+   return 1.0;
+}
+
+static void
+backpressure_prose_1_set_fail_point(mongoc_client_t *client)
+{
+   bson_error_t error;
+   ASSERT_OR_PRINT(
+      mongoc_client_command_simple(client,
+                                   "admin",
+                                   tmp_bson("{"
+                                            "  'configureFailPoint': 'failCommand',"
+                                            "  'mode': 'alwaysOn',"
+                                            "  'data': {"
+                                            "    'failCommands': ['insert'],"
+                                            "    'errorCode' : 2,"
+                                            "    'errorLabels' : [ 'SystemOverloadedError', 'RetryableError' ]"
+                                            "  }"
+                                            "}"),
+                                   NULL,
+                                   NULL,
+                                   &error),
+      error);
+}
+
+static mlib_duration
+backpressure_prose_1_step_3_3(mongoc_collection_t *collection)
+{
+   const mlib_time_point start = mlib_now();
+
+   bson_error_t error;
+   ASSERT(!mongoc_collection_insert_one(collection, tmp_bson("{'a': 1}"), NULL, NULL, &error));
+   ASSERT(error.domain == MONGOC_ERROR_QUERY);
+
+   return mlib_elapsed_since(start);
+}
+
+static void
+test_backpressure_prose_1(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYWRITES, true);
+
+   // Step 1: Let `client` be a `mongoc_client_t`.
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   test_framework_set_ssl_opts(client);
+
+   mongoc_database_t *const db = mongoc_client_get_database(client, "db");
+
+   // Step 2: Let `collection` be a collection.
+   bson_error_t error;
+   mongoc_collection_t *const collection = mongoc_database_create_collection(db, "retry_backoff", NULL, &error);
+   ASSERT_OR_PRINT(collection, error);
+
+   // Step 3.1: Configure the random number generator used for jitter to always return `0` -- this effectively disables
+   // backoff.
+   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(always_0_jitter_source_generate));
+
+   // Step 3.2: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `insert`.
+   backpressure_prose_1_set_fail_point(client);
+
+   // Step 3.3: Insert the document `{ a: 1 }`. Expect that the command errors. Measure the duration of the command
+   // execution.
+   const mlib_duration no_backoff_duration = backpressure_prose_1_step_3_3(collection);
+
+   // Step 3.4: Configure the random number generator used for jitter to always return `1`.
+   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(always_1_jitter_source_generate));
+
+   // Step 3.5: Execute step 3.3 again.
+   const mlib_duration with_backoff_duration = backpressure_prose_1_step_3_3(collection);
+
+   // Step 3.6: Compare the durations of the two runs. The sum of 5 backoffs is 3.1 seconds. There is a 1-second window
+   // to account for potential variance between the two runs.
+   ASSERT_CMPDURATION(mlib_duration(with_backoff_duration, minus, no_backoff_duration), >=, mlib_duration(2100, ms));
+
+   ASSERT_OR_PRINT(mongoc_collection_drop(collection, &error), error);
+
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
+                                                "admin",
+                                                tmp_bson("{"
+                                                         "  'configureFailPoint': 'failCommand',"
+                                                         "  'mode': 'off'"
+                                                         "}"),
+                                                NULL,
+                                                NULL,
+                                                &error),
+                   error);
+
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
 void
 test_backpressure_install(TestSuite *suite)
 {
@@ -503,4 +611,12 @@ test_backpressure_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_mongos, // Only expected to run on single and replica set.
                      test_framework_skip_if_max_wire_version_less_than_21 /* Require server 7.0 */);
+
+   TestSuite_AddFull(suite,
+                     "/backpressure/prose_test_1",
+                     test_backpressure_prose_1,
+                     NULL,
+                     NULL,
+                     // TODO: Verify skip conditions.
+                     test_framework_skip_if_no_crypto);
 }
