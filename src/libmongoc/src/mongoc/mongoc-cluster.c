@@ -163,7 +163,7 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
        * of command errors, the server adds the label; in the case of
        * network errors or server selection errors where the client
        * receives no server reply, the client adds the label." */
-      if (_mongoc_client_session_in_txn(cmd->session) && !cmd->is_txn_finish) {
+      if (_mongoc_client_session_in_txn(cmd->session)) {
          /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
           * within a transaction, including commitTransaction and
           * abortTransaction,
