@@ -155,22 +155,15 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
       if (cmd->session->server_session) {
          cmd->session->server_session->dirty = true;
       }
-      /* Transactions Spec defines TransientTransactionError: "Any
-       * network error or server selection error encountered running any
-       * command besides commitTransaction in a transaction. In the case
-       * of command errors, the server adds the label; in the case of
-       * network errors or server selection errors where the client
-       * receives no server reply, the client adds the label." */
       if (_mongoc_client_session_in_txn(cmd->session)) {
-         /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-          * within a transaction, including commitTransaction and
-          * abortTransaction,
-          * fails with a TransientTransactionError". If we're about to add
-          * a TransientTransactionError label due to a client side error then we
-          * unpin. If commitTransaction/abortTransation includes a label in the
-          * server reply, we unpin in _mongoc_client_session_handle_reply. */
-         cmd->session->server_id = 0;
+         // Transactions Spec requires TransientTransactionError on "Any network error or server selection error
+         // encountered running any command besides commitTransaction in a transaction."
          _mongoc_add_transient_txn_error(cmd->session, reply);
+
+         // Transaction Spec: "Drivers MUST unpin a ClientSession when a command within a transaction, including
+         // commitTransaction and abortTransaction, fails with a TransientTransactionError".
+         // If the server reply includes the label, the session is unpinned in _mongoc_client_session_handle_reply.
+         cmd->session->server_id = 0;
       }
    }
 
