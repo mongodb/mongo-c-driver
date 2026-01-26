@@ -163,7 +163,7 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
          // Transaction Spec: "Drivers MUST unpin a ClientSession when a command within a transaction, including
          // commitTransaction and abortTransaction, fails with a TransientTransactionError".
          // If the server reply includes the label, the session is unpinned in _mongoc_client_session_handle_reply.
-         cmd->session->server_id = 0;
+         _mongoc_client_session_unpin(cmd->session);
       }
    }
 
