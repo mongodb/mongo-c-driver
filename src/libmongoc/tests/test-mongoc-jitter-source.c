@@ -6,7 +6,7 @@
    do {                                                                                  \
       const mlib_duration _a = (a);                                                      \
       const mlib_duration _b = (b);                                                      \
-      if (!mlib_duration_cmp(_a, op, b)) {                                               \
+      if (!mlib_duration_cmp(_a, op, _b)) {                                              \
          MONGOC_STDERR_PRINTF("FAIL\n\nAssert Failure: %" PRId64 "us %s %" PRId64 "us\n" \
                               "%s:%d  %s()\n",                                           \
                               mlib_microseconds_count(_a),                               \
