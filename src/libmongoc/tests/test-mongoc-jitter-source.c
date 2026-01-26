@@ -2,23 +2,6 @@
 
 #include <TestSuite.h>
 
-#define ASSERT_CMPDURATION(a, op, b)                                                     \
-   do {                                                                                  \
-      const mlib_duration _a = (a);                                                      \
-      const mlib_duration _b = (b);                                                      \
-      if (!mlib_duration_cmp(_a, op, _b)) {                                              \
-         MONGOC_STDERR_PRINTF("FAIL\n\nAssert Failure: %" PRId64 "us %s %" PRId64 "us\n" \
-                              "%s:%d  %s()\n",                                           \
-                              mlib_microseconds_count(_a),                               \
-                              BSON_STR(op),                                              \
-                              mlib_microseconds_count(_b),                               \
-                              __FILE__,                                                  \
-                              (int)(__LINE__),                                           \
-                              BSON_FUNC);                                                \
-         abort();                                                                        \
-      }                                                                                  \
-   } while (false)
-
 #define ASSERT_DURATION_ALMOST_EQUAL(lhs, rhs)                                                          \
    do {                                                                                                 \
       const mlib_duration_rep_t _lhs = mlib_microseconds_count(lhs);                                    \
