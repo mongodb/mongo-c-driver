@@ -69,6 +69,9 @@ _mongoc_read_error_get_type(bool cmd_ret, const bson_error_t *cmd_err, const bso
 void
 _mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, const char *label);
 
+#define MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR "SystemOverloadedError"
+#define MONGOC_ERROR_LABEL_RETRYABLEERROR "RetryableError"
+
 /**
  * @brief Adds `label` to the "errorLabels" array in `reply`.
  * @param reply is an optional inout-param. If non-NULL, `*reply` must be an initialized `bson_t`.
