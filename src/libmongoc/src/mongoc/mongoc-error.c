@@ -20,6 +20,7 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-util-private.h> // _mongoc_bson_array_add_label
 
 #include <bson/bson.h>
 
@@ -77,6 +78,31 @@ _mongoc_write_error_is_retryable(bson_error_t *error)
    default:
       return false;
    }
+}
+
+void
+_mongoc_add_error_label(bson_t *reply, const char *label)
+{
+   BSON_OPTIONAL_PARAM(reply);
+   BSON_ASSERT_PARAM(label);
+
+   if (!reply) {
+      return;
+   }
+
+   bson_t labels = BSON_INITIALIZER;
+   _mongoc_bson_array_copy_labels_to(reply, &labels);
+   _mongoc_bson_array_add_label(&labels, label);
+
+   bson_t new_reply = BSON_INITIALIZER;
+   bson_copy_to_excluding_noinit(reply, &new_reply, "errorLabels", NULL);
+   BSON_APPEND_ARRAY(&new_reply, "errorLabels", &labels);
+
+   bson_reinit(reply);
+   bson_concat(reply, &new_reply);
+
+   bson_destroy(&labels);
+   bson_destroy(&new_reply);
 }
 
 void
@@ -192,7 +218,7 @@ _mongoc_read_error_get_type(bool cmd_ret, const bson_error_t *cmd_err, const bso
 }
 
 void
-_mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, char *label)
+_mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, const char *label)
 {
    bson_iter_t iter;
    bson_iter_t src_label;
