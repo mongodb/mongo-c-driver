@@ -840,6 +840,13 @@ _test_cluster_time_comparison(bool pooled)
 
    mongoc_uri_destroy(uri);
    mock_server_destroy(server);
+
+   if (pooled) {
+      mongoc_client_pool_push(pool, client);
+      mongoc_client_pool_destroy(pool);
+   } else {
+      mongoc_client_destroy(client);
+   }
 }
 
 
