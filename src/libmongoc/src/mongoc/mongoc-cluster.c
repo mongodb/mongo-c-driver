@@ -3568,8 +3568,6 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    BSON_OPTIONAL_PARAM(error);
 
    bool ret;
-   // `can_retry` is set to false on retry. A retry may only happen once.
-   bool can_retry = is_retryable_write;
 
    // Increment the transaction number for the first attempt of each retryable write command.
    if (is_retryable_write) {
@@ -3583,7 +3581,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       bson_t reply;
       bson_error_t error;
       bool set;
-   } original_error = {.reply = {0}, .error = {0}, .set = false};
+   } original_reply_and_error = {.reply = {0}, .error = {0}, .set = false};
 
    // Ensure `*retry_server_stream` is always valid or null.
    *retry_server_stream = NULL;
@@ -3591,19 +3589,45 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
 
-   retry:
-      ret = mongoc_cluster_run_command_monitored(cluster, cmd, reply, error);
+      int attempt = 0;
+      int num_retries = is_retryable_write ? 1 : 0;
 
-      if (is_retryable_write) {
-         _mongoc_write_error_handle_labels(ret, error, reply, cmd->server_stream->sd);
-         _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
-      }
+      while (true) {
+         bson_t reply_local;
+         bson_error_t error_local = {0};
+         ret = mongoc_cluster_run_command_monitored(cluster, cmd, &reply_local, &error_local);
 
-      // If a retryable error is encountered and the write is retryable, select a new writable stream and retry. If
-      // server selection fails or the selected server does not support retryable writes, fall through and allow the
-      // original error to be reported.
-      if (can_retry && _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY) {
-         can_retry = false; // Only retry once.
+         if (is_retryable_write) {
+            _mongoc_write_error_handle_labels(ret, &error_local, &reply_local, cmd->server_stream->sd);
+            _mongoc_write_error_update_if_unsupported_storage_engine(ret, &error_local, &reply_local);
+         }
+
+         const mongoc_write_err_type_t error_type = _mongoc_write_error_get_type(&reply_local);
+
+         if (!(original_reply_and_error.set &&
+               mongoc_error_has_label(&reply_local, MONGOC_ERROR_LABEL_NOWRITESPERFORMED))) {
+            original_reply_and_error.error = error_local;
+
+            if (original_reply_and_error.set) {
+               bson_destroy(&original_reply_and_error.reply);
+            }
+
+            bson_copy_to(&reply_local, &original_reply_and_error.reply);
+
+            original_reply_and_error.set = true;
+         }
+
+         bson_destroy(&reply_local);
+
+         if (error_type != MONGOC_WRITE_ERR_RETRY) {
+            break;
+         }
+
+         ++attempt;
+
+         if (attempt > num_retries) {
+            break;
+         }
 
          {
             const mongoc_server_description_t *const sd = cmd->server_stream->sd;
@@ -3617,37 +3641,23 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
          *retry_server_stream = mongoc_cluster_stream_for_writes(
             cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, NULL /* error */);
 
-         if (*retry_server_stream) {
-            cmd->server_stream = *retry_server_stream; // Non-owning.
-            {
-               // Store the original error and reply before retry.
-               BSON_ASSERT(!original_error.set); // Retry only happens once.
-               original_error.set = true;
-               bson_copy_to(reply, &original_error.reply);
-               if (error) {
-                  original_error.error = *error;
-               }
-            }
-            bson_destroy(reply);
-            GOTO(retry);
+         if (!*retry_server_stream) {
+            break;
          }
+
+         cmd->server_stream = *retry_server_stream; // Non-owning.
       }
 
       mongoc_deprioritized_servers_destroy(ds);
    }
 
-   // If a retry attempt fails with an error labeled NoWritesPerformed, drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_NOWRITESPERFORMED)) {
-      if (error) {
-         *error = original_error.error;
-      }
-      bson_destroy(reply);
-      bson_copy_to(&original_error.reply, reply);
+   BSON_ASSERT(original_reply_and_error.set);
+
+   if (error) {
+      *error = original_reply_and_error.error;
    }
 
-   if (original_error.set) {
-      bson_destroy(&original_error.reply);
-   }
+   bson_steal(reply, &original_reply_and_error.reply);
 
    RETURN(ret);
 }
