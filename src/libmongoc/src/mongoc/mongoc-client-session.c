@@ -622,11 +622,9 @@ _mongoc_client_session_handle_reply(mongoc_client_session_t *session,
       (!strcmp(cmd_name, "find") || !strcmp(cmd_name, "aggregate") || !strcmp(cmd_name, "distinct"));
 
    if (mongoc_error_has_label(reply, "TransientTransactionError")) {
-      /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-       * within a transaction, including commitTransaction and abortTransaction,
-       * fails with a TransientTransactionError". If the server reply included
-       * a TransientTransactionError, we unpin here. If a network error caused
-       * us to add a label client-side, we unpin in network_error_reply. */
+      // Transaction Spec: "Drivers MUST unpin a ClientSession when a command within a transaction, including
+      // commitTransaction and abortTransaction, fails with a TransientTransactionError".
+      // If the server reply is labeled, unpin here. On a network error, label and unpin in _handle_network_error.
       _mongoc_client_session_unpin(session);
    }
 
