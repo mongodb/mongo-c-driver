@@ -2252,4 +2252,6 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "server_discovery_and_monitoring/unified");
 
    run_unified_tests(suite, JSON_DIR, "auth/unified");
+
+   run_unified_tests(suite, JSON_DIR, "backpressure");
 }
