@@ -147,10 +147,11 @@ _set_extra_crypt_shared(bson_t *extra)
 
 /* Convenience helper to check if spawning mongocryptd should be bypassed */
 static void
-_check_bypass(mongoc_auto_encryption_opts_t *opts)
+_set_extra(mongoc_auto_encryption_opts_t *opts)
 {
    bson_t extra = BSON_INITIALIZER;
    _set_extra_bypass(&extra);
+   _set_extra_crypt_shared(&extra);
    mongoc_auto_encryption_opts_set_extra(opts, &extra);
    bson_destroy(&extra);
 }
@@ -422,7 +423,7 @@ test_bson_size_limits_and_batch_splitting(bool with_qe)
 
    kms_providers = _make_kms_providers(false /* aws */, true /* local */);
    opts = mongoc_auto_encryption_opts_new();
-   _check_bypass(opts);
+   _set_extra(opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
    mongoc_auto_encryption_opts_set_kms_providers(opts, kms_providers);
 
@@ -958,7 +959,7 @@ test_datakey_and_double_encryption(void *unused)
    auto_encryption_opts = mongoc_auto_encryption_opts_new();
    kms_providers = _make_kms_providers(true /* aws */, true /* local */);
    tls_opts = _make_tls_opts();
-   _check_bypass(auto_encryption_opts);
+   _set_extra(auto_encryption_opts);
    mongoc_auto_encryption_opts_set_kms_providers(auto_encryption_opts, kms_providers);
    mongoc_auto_encryption_opts_set_tls_opts(auto_encryption_opts, tls_opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace(auto_encryption_opts, "keyvault", "datakeys");
@@ -1052,7 +1053,7 @@ _test_key_vault(bool with_external_key_vault)
    client_encrypted = test_framework_new_default_client();
    mongoc_client_set_error_api(client_encrypted, MONGOC_ERROR_API_VERSION_2);
    auto_encryption_opts = mongoc_auto_encryption_opts_new();
-   _check_bypass(auto_encryption_opts);
+   _set_extra(auto_encryption_opts);
    schema = get_bson_from_json_file("./src/libmongoc/tests/"
                                     "client_side_encryption_prose/external/"
                                     "external-schema.json");
@@ -1162,7 +1163,7 @@ test_views_are_prohibited(void *unused)
 
    client_encrypted = test_framework_new_default_client();
    auto_encryption_opts = mongoc_auto_encryption_opts_new();
-   _check_bypass(auto_encryption_opts);
+   _set_extra(auto_encryption_opts);
    kms_providers = _make_kms_providers(false /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers(auto_encryption_opts, kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace(auto_encryption_opts, "keyvault", "datakeys");
@@ -1836,7 +1837,7 @@ _test_corpus(bool local_schema)
    client_encrypted = test_framework_new_default_client();
    auto_encryption_opts = mongoc_auto_encryption_opts_new();
    mongoc_auto_encryption_opts_set_schema_map(auto_encryption_opts, schema_map);
-   _check_bypass(auto_encryption_opts);
+   _set_extra(auto_encryption_opts);
    kms_providers = _make_kms_providers(true /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers(auto_encryption_opts, kms_providers);
    tls_opts = _make_tls_opts();
@@ -1944,13 +1945,7 @@ _reset(mongoc_client_pool_t **pool,
 
    mongoc_auto_encryption_opts_destroy(*opts);
    *opts = mongoc_auto_encryption_opts_new();
-   {
-      bson_t extra = BSON_INITIALIZER;
-      _set_extra_bypass(&extra);
-      _set_extra_crypt_shared(&extra);
-      mongoc_auto_encryption_opts_set_extra(*opts, &extra);
-      bson_destroy(&extra);
-   }
+   _set_extra(*opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace(*opts, "db", "keyvault");
    kms_providers = _make_kms_providers(false /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers(*opts, kms_providers);
@@ -2223,7 +2218,7 @@ _test_multi_threaded(bool external_key_vault)
    ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, datakey, NULL /* opts */, NULL /* reply */, &error), error);
 
    /* create pool with auto encryption */
-   _check_bypass(opts);
+   _set_extra(opts);
 
    mongoc_auto_encryption_opts_set_keyvault_namespace(opts, "db", "keyvault");
    kms_providers = _make_kms_providers(false /* aws */, true /* local */);
@@ -6805,13 +6800,7 @@ create_encrypted_client(void)
    mongoc_client_t *client = test_framework_new_default_client();
    bson_error_t error;
    mongoc_auto_encryption_opts_t *ao = mongoc_auto_encryption_opts_new();
-   {
-      bson_t extra = BSON_INITIALIZER;
-      _set_extra_bypass(&extra);
-      _set_extra_crypt_shared(&extra);
-      mongoc_auto_encryption_opts_set_extra(ao, &extra);
-      bson_destroy(&extra);
-   }
+   _set_extra(ao);
    bson_t *kms_providers =
       BCON_NEW("local", "{", "key", BCON_BIN(BSON_SUBTYPE_UUID, (uint8_t *)LOCAL_MASTERKEY, 96), "}");
    mongoc_auto_encryption_opts_set_keyvault_namespace(ao, "db", "keyvault");
