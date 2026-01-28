@@ -88,24 +88,8 @@ mongoc_cluster_get_max_bson_obj_size(mongoc_cluster_t *cluster);
 int32_t
 mongoc_cluster_get_max_msg_size(mongoc_cluster_t *cluster);
 
-size_t
-_mongoc_cluster_buffer_iovec(mongoc_iovec_t *iov, size_t iovcnt, int skip, char *buffer);
-
 bool
 mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id);
-
-bool
-mongoc_cluster_legacy_rpc_sendv_to_server(mongoc_cluster_t *cluster,
-                                          mcd_rpc_message *rpc,
-                                          mongoc_server_stream_t *server_stream,
-                                          bson_error_t *error);
-
-bool
-mongoc_cluster_try_recv(mongoc_cluster_t *cluster,
-                        mcd_rpc_message *rpc,
-                        mongoc_buffer_t *buffer,
-                        mongoc_server_stream_t *server_stream,
-                        bson_error_t *error);
 
 /**
  * @brief Obtain a server stream appropriate for read operations on the

@@ -936,23 +936,6 @@ _mongoc_client_create_stream(mongoc_client_t *client, const mongoc_host_list_t *
 }
 
 
-bool
-_mongoc_client_recv(mongoc_client_t *client,
-                    mcd_rpc_message *rpc,
-                    mongoc_buffer_t *buffer,
-                    mongoc_server_stream_t *server_stream,
-                    bson_error_t *error)
-{
-   BSON_ASSERT_PARAM(client);
-   BSON_ASSERT(rpc);
-   BSON_ASSERT(buffer);
-   BSON_ASSERT(server_stream);
-   BSON_ASSERT_PARAM(error);
-
-   return mongoc_cluster_try_recv(&client->cluster, rpc, buffer, server_stream, error);
-}
-
-
 mongoc_client_t *
 mongoc_client_new(const char *uri_string)
 {
