@@ -7406,6 +7406,26 @@ skip_if_libmongocrypt_less_than_1_17_0(void)
    return get_libmongocrypt_version() >= test_framework_str_to_version("1.17.0");
 }
 
+static int
+skip_due_to_SERVER_118428(void)
+{
+   char *const path = test_framework_getenv("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
+   if (path) {
+      // Tests are using crypt_shared, not mongocryptd.
+      bson_free(path);
+      return 1; // Proceed.
+   }
+
+   // Skip testing versions of mongocryptd affected by SERVER-118428.
+   mongoc_client_t *mongocryptd_client = mongoc_client_new("mongodb://localhost:27020");
+   server_version_t sv = test_framework_get_server_version_with_client(mongocryptd_client);
+   bool should_skip = (sv == test_framework_str_to_version("8.2.4") || sv == test_framework_str_to_version("8.0.18") ||
+                       sv == test_framework_str_to_version("7.0.29"));
+   mongoc_client_destroy(mongocryptd_client);
+   bson_free(path);
+   return should_skip ? 0 : 1;
+}
+
 void
 test_client_side_encryption_install(TestSuite *suite)
 {
@@ -7445,7 +7465,8 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL,
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive);
+                     TestSuite_CheckLive,
+                     skip_due_to_SERVER_118428);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/bson_size_limits_and_batch_splitting_qe [lock:live-server]",
                      test_bson_size_limits_and_batch_splitting_qe,
@@ -7453,7 +7474,8 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      test_framework_skip_if_max_wire_version_less_than_25,
-                     test_framework_skip_if_single);
+                     test_framework_skip_if_single,
+                     skip_due_to_SERVER_118428);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/views_are_prohibited [lock:live-server]",
                      test_views_are_prohibited,
