@@ -7490,7 +7490,8 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive,
-                     test_framework_skip_if_offline /* requires AWS */);
+                     test_framework_skip_if_offline /* requires AWS */,
+                     skip_due_to_SERVER_118428);
    TestSuite_AddFull(suite,
                      "/client_side_encryption/custom_endpoint [lock:live-server]",
                      test_custom_endpoint,
