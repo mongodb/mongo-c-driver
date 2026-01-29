@@ -172,6 +172,51 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    EXIT;
 }
 
+/**
+ * @brief Called when a network error occurs creating a stream.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
+static void
+_handle_network_error_connecting(mongoc_cluster_t *cluster,
+                                 const mongoc_client_session_t *cs,
+                                 uint32_t server_id,
+                                 bson_t *reply,
+                                 bson_error_t *error_in)
+{
+   BSON_ASSERT_PARAM(cluster);
+   BSON_OPTIONAL_PARAM(cs);
+   BSON_OPTIONAL_PARAM(reply);
+   BSON_ASSERT_PARAM(error_in);
+
+   _mongoc_bson_init_if_set(reply);
+
+   // Add a transient transaction label if applicable.
+   _mongoc_add_transient_txn_error(cs, reply);
+
+   mongoc_topology_t *topology = BSON_ASSERT_PTR_INLINE(cluster)->client->topology;
+   mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
+
+   /* When establishing a new connection in load balanced mode, drivers MUST
+    * NOT perform SDAM error handling for any errors that occur before the
+    * MongoDB Handshake. */
+   if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      mc_tpld_modify_drop(tdmod);
+      return;
+   }
+
+   mongoc_topology_description_invalidate_server(tdmod.new_td, &topology->log_and_monitor, server_id, error_in);
+   mongoc_cluster_disconnect_node(cluster, server_id);
+   /* This is not load balanced mode, so there are no service IDs associated
+    * with connections. Pass kZeroObjectId to clear the entire connection
+    * pool to this server. */
+   _mongoc_topology_description_clear_connection_pool(tdmod.new_td, server_id, &kZeroObjectId);
+
+   if (!topology->single_threaded) {
+      _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
+   }
+   mc_tpld_modify_commit(tdmod);
+}
+
 static int32_t
 _compression_level_from_uri(int32_t compressor_id, const mongoc_uri_t *uri)
 {
@@ -2144,7 +2189,6 @@ _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
    /* if fetch_stream fails we need a place to receive error details and pass
     * them to mongoc_topology_description_invalidate_server. */
    bson_error_t *err_ptr = error ? error : &err_local;
-   mc_tpld_modification tdmod;
    mc_shared_tpld td;
 
    ENTRY;
@@ -2165,34 +2209,7 @@ _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
        * into account.
        */
 
-      _mongoc_bson_init_if_set(reply);
-
-      // Add a transient transaction label if applicable.
-      _mongoc_add_transient_txn_error(cs, reply);
-
-      /* Update the topology */
-      tdmod = mc_tpld_modify_begin(topology);
-
-      /* When establishing a new connection in load balanced mode, drivers MUST
-       * NOT perform SDAM error handling for any errors that occur before the
-       * MongoDB Handshake. */
-      if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         mc_tpld_modify_drop(tdmod);
-         ret_server_stream = NULL;
-         goto done;
-      }
-
-      mongoc_topology_description_invalidate_server(tdmod.new_td, &topology->log_and_monitor, server_id, err_ptr);
-      mongoc_cluster_disconnect_node(cluster, server_id);
-      /* This is not load balanced mode, so there are no service IDs associated
-       * with connections. Pass kZeroObjectId to clear the entire connection
-       * pool to this server. */
-      _mongoc_topology_description_clear_connection_pool(tdmod.new_td, server_id, &kZeroObjectId);
-
-      if (!topology->single_threaded) {
-         _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
-      }
-      mc_tpld_modify_commit(tdmod);
+      _handle_network_error_connecting(cluster, cs, server_id, reply, err_ptr);
       ret_server_stream = NULL;
       goto done;
    }
