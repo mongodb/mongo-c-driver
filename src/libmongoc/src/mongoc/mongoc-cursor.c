@@ -835,17 +835,20 @@ _mongoc_cursor_run_command(
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
 
-   retry:
-      ret = mongoc_cluster_run_command_monitored(&cursor->client->cluster, &parts.assembled, reply, &cursor->error);
+      int attempt = 0;
+      int num_retries = is_retryable ? 1 : 0;
 
-      if (ret) {
-         memset(&cursor->error, 0, sizeof(bson_error_t));
-      }
+      while (true) {
+         ret = mongoc_cluster_run_command_monitored(&cursor->client->cluster, &parts.assembled, reply, &cursor->error);
 
-      cursor->had_stream_timeout = server_stream->timed_out;
+         cursor->had_stream_timeout = server_stream->timed_out;
 
-      if (is_retryable && _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY) {
-         is_retryable = false;
+         ++attempt;
+
+         if (attempt > num_retries ||
+             _mongoc_read_error_get_type(ret, &cursor->error, reply) != MONGOC_READ_ERR_RETRY) {
+            break;
+         }
 
          {
             const mongoc_server_description_t *const sd = server_stream->sd;
@@ -865,12 +868,13 @@ _mongoc_cursor_run_command(
                                                          reply,
                                                          &cursor->error);
 
-         if (server_stream) {
-            cursor->server_id = server_stream->sd->id;
-            parts.assembled.server_stream = server_stream;
-            bson_destroy(reply);
-            GOTO(retry);
+         if (!server_stream) {
+            break;
          }
+
+         cursor->server_id = server_stream->sd->id;
+         parts.assembled.server_stream = server_stream;
+         bson_destroy(reply);
       }
 
       mongoc_deprioritized_servers_destroy(ds);

@@ -1620,7 +1620,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                                   bson_error_t *error)
 {
    mongoc_server_stream_t *retry_server_stream = NULL;
-   bool is_retryable = true;
    bool ret;
    bson_t reply_local;
 
@@ -1637,16 +1636,17 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
 
-   retry:
-      ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
+      int attempt = 0;
+      int num_retries = 1;
 
-      /* If a retryable error is encountered and the read is retryable, select
-       * a new readable stream and retry. If server selection fails or the selected
-       * server does not support retryable reads, fall through and allow the
-       * original error to be reported. */
-      if (is_retryable && _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY) {
-         /* each read command may be retried at most once */
-         is_retryable = false;
+      while (true) {
+         ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
+
+         ++attempt;
+
+         if (attempt > num_retries || _mongoc_read_error_get_type(ret, error, reply) != MONGOC_READ_ERR_RETRY) {
+            break;
+         }
 
          {
             const mongoc_server_description_t *const sd =
@@ -1672,11 +1672,12 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                                                NULL /* reply */,
                                                                NULL /* error */);
 
-         if (retry_server_stream) {
-            parts->assembled.server_stream = retry_server_stream;
-            bson_destroy(reply);
-            GOTO(retry);
+         if (!retry_server_stream) {
+            break;
          }
+
+         parts->assembled.server_stream = retry_server_stream;
+         bson_destroy(reply);
       }
 
       mongoc_deprioritized_servers_destroy(ds);
