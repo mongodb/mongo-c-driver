@@ -607,6 +607,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rpc.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-retry-backoff-iterator.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
