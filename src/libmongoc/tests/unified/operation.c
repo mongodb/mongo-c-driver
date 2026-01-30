@@ -2484,7 +2484,7 @@ operation_drop_index(test_t *test, operation_t *op, result_t *result, bson_error
    }
 
    coll = entity_map_get_collection(test->entity_map, op->object, error);
-   mongoc_collection_drop_index(coll, index, error);
+   mongoc_collection_drop_index(coll, index, &op_error);
    result_from_val_and_reply(result, NULL, NULL, &op_error);
    ret = true;
 
