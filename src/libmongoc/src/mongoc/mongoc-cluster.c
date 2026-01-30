@@ -254,8 +254,8 @@ _bson_error_message_printf(bson_error_t *error, const char *format, ...)
 static const int32_t message_header_length = 4u * sizeof(int32_t);
 
 /**
- * @param reply is a required out-param. `*reply` may or may not be initialized by this call. Callers may initialize
- * `*reply` to an empty document before calling to ensure `*reply` is always initialized upon return.
+ * @param reply is a required out-param. *reply is conditionally initialized by this call; otherwise, it is left
+ * unmodified.
  */
 static bool
 _mongoc_cluster_run_command_opquery_send(mongoc_cluster_t *cluster,
@@ -347,8 +347,8 @@ done:
 }
 
 /**
- * @param reply is a required out-param. `*reply` may or may not be initialized by this call. Callers may initialize
- * `*reply` to an empty document before calling to ensure `*reply` is always initialized upon return.
+ * @param reply is a required out-param. *reply is conditionally initialized by this call; otherwise, it is left
+ * unmodified.
  */
 static bool
 _mongoc_cluster_run_command_opquery_recv(
