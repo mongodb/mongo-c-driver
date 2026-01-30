@@ -58,6 +58,7 @@ fi
 
 echo "Waiting for mongo-orchestration to start..."
 wait_for_mongo_orchestration() {
+  return 0
   declare port="${1:?"wait_for_mongo_orchestration requires a server port"}"
 
   for _ in $(seq 300); do

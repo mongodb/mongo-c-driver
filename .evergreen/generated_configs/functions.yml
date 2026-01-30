@@ -252,7 +252,7 @@ functions:
           - -c
           - |
             if [[ ! -d drivers-evergreen-tools ]]; then
-                git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+                git clone --depth=1 --branch test-mongodb-runner-python https://github.com/blink1073/drivers-evergreen-tools.git
             fi
     - command: subprocess.exec
       type: setup
