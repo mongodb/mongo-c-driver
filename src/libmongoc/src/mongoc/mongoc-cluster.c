@@ -95,9 +95,6 @@ mongoc_cluster_run_opmsg(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bso
 static void
 _bson_error_message_printf(bson_error_t *error, const char *format, ...) BSON_GNUC_PRINTF(2, 3);
 
-/**
- * @param reply is a required out-param. Caller must initialize `*reply` before calling.
- */
 static void
 _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_t *server_stream, const bson_t *reply)
 {
