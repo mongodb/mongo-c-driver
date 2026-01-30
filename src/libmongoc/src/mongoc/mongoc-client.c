@@ -1779,11 +1779,7 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
       RETURN(ret);
    }
 
-   if (parts->is_retryable_read) {
-      RETURN(_mongoc_client_retryable_read_command_with_stream(client, parts, server_stream, reply, error));
-   }
-
-   RETURN(mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error));
+   RETURN(_mongoc_client_retryable_read_command_with_stream(client, parts, server_stream, reply, error));
 }
 
 
