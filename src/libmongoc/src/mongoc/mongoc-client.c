@@ -1623,7 +1623,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
 {
    mongoc_server_stream_t *retry_server_stream = NULL;
    bool ret;
-   bson_t reply_local;
+   bson_t reply_local = BSON_INITIALIZER;
 
    BSON_ASSERT_PARAM(client);
 
@@ -1632,8 +1632,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
    }
 
    ENTRY;
-
-   BSON_ASSERT(parts->is_retryable_read);
 
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
@@ -1644,14 +1642,41 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                             client->jitter_source);
 
       int attempt = 0;
-      int num_retries = 1;
+      int num_retries = parts->is_retryable_read ? 1 : 0;
 
       while (true) {
          ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
 
+         mongoc_token_bucket_t *const token_bucket = client->token_bucket;
+
+         if (ret) {
+            // Deposit tokens into the bucket on success.
+            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (attempt > 0 ? 1.0 : 0.0);
+            _mongoc_token_bucket_deposit(token_bucket, tokens);
+            break;
+         }
+
+         const bool is_overload = mongoc_error_has_label(reply, "SystemOverloadedError");
+         const bool is_retryable = _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY ||
+                                   (mongoc_error_has_label(reply, "RetryableError") && is_overload);
+
+         // If a retry fails with an error which is not an overload error, deposit 1 token.
+         if (attempt > 0 && !is_overload) {
+            _mongoc_token_bucket_deposit(token_bucket, 1.0);
+         }
+
+         // Break if error is non-retryable.
+         if (!is_retryable) {
+            break;
+         }
+
          ++attempt;
 
-         if (attempt > num_retries || _mongoc_read_error_get_type(ret, error, reply) != MONGOC_READ_ERR_RETRY) {
+         if (is_overload) {
+            num_retries = MONGOC_MAX_NUM_OVERLOAD_RETRIES;
+         }
+
+         if (attempt > num_retries) {
             break;
          }
 
@@ -1660,6 +1685,15 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                retry_server_stream ? retry_server_stream->sd : server_stream->sd;
             TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
             mongoc_deprioritized_servers_add(ds, sd);
+         }
+
+         if (is_overload) {
+            if (!_mongoc_token_bucket_consume(token_bucket, 1.0)) {
+               break;
+            }
+
+            const mlib_duration backoff_duration = _mongoc_retry_backoff_iterator_next(retry_backoff_iterator);
+            mlib_sleep_for(backoff_duration);
          }
 
          if (retry_server_stream) {
@@ -1687,6 +1721,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
          bson_destroy(reply);
       }
 
+      _mongoc_retry_backoff_iterator_destroy(retry_backoff_iterator);
       mongoc_deprioritized_servers_destroy(ds);
    }
 
@@ -1698,6 +1733,8 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       /* if a retry succeeded, clear the initial error */
       memset(error, 0, sizeof(bson_error_t));
    }
+
+   bson_destroy(&reply_local);
 
    RETURN(ret);
 }
