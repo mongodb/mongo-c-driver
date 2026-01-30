@@ -95,6 +95,9 @@ mongoc_cluster_run_opmsg(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bso
 static void
 _bson_error_message_printf(bson_error_t *error, const char *format, ...) BSON_GNUC_PRINTF(2, 3);
 
+/**
+ * @param reply is a required out-param. Caller must initialize `*reply` before calling.
+ */
 static void
 _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_t *server_stream, const bson_t *reply)
 {
@@ -115,7 +118,9 @@ _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_
    }
 }
 
-/* Called when a network error occurs on an application socket.
+/**
+ * @brief Called when a network error occurs on an application socket.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
  */
 static void
 _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, const bson_error_t *why)
@@ -251,7 +256,9 @@ _bson_error_message_printf(bson_error_t *error, const char *format, ...)
 // msgHeader consists of four int32 fields.
 static const int32_t message_header_length = 4u * sizeof(int32_t);
 
-
+/**
+ * @param reply is a required out-param. Caller must initialize `*reply` before calling.
+ */
 static bool
 _mongoc_cluster_run_command_opquery_send(mongoc_cluster_t *cluster,
                                          const mongoc_cmd_t *cmd,
@@ -341,6 +348,9 @@ done:
    return ret;
 }
 
+/**
+ * @param reply is a required out-param. Caller must initialize `*reply` before calling.
+ */
 static bool
 _mongoc_cluster_run_command_opquery_recv(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
@@ -420,6 +430,9 @@ done:
    return ret;
 }
 
+/**
+ * @param reply is a required out-param. `*reply` is always initialized upon return.
+ */
 static bool
 mongoc_cluster_run_command_opquery(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, int32_t compressor_id, bson_t *reply, bson_error_t *error)
@@ -485,6 +498,9 @@ _in_sharded_or_loadbalanced_txn(const mongoc_client_session_t *session)
    return (type == MONGOC_TOPOLOGY_SHARDED) || (type == MONGOC_TOPOLOGY_LOAD_BALANCED);
 }
 
+/**
+ * @param reply is a required out-param. Caller must initialize `*reply` before calling.
+ */
 static void
 _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc_cmd_t *cmd, bson_t *reply)
 {
@@ -497,7 +513,10 @@ _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc
    _mongoc_write_error_handle_labels(cmd_ret, cmd_err, reply, cmd->server_stream->sd);
 }
 
-// run_command_monitored is an internal helper to run a command with APM monitoring.
+/**
+ * @brief An internal helper to run a command with APM monitoring.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
 static bool
 run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
@@ -717,12 +736,15 @@ _try_get_oidc_connection_cache(mongoc_cluster_t *cluster, uint32_t server_id, bs
  *       If the server returns a ReauthenticationRequired error, auth
  *       may be re-attempted.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `*reply` is always
+ *       initialized upon return.
+ *
  * Returns:
  *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       If the client's APM callbacks are set, they are executed.
- *       @reply is set and should ALWAYS be released with bson_destroy().
  *
  *--------------------------------------------------------------------------
  */
@@ -781,11 +803,12 @@ _should_use_op_msg(const mongoc_cluster_t *cluster)
  *       The client's APM callbacks are not executed.
  *       Automatic encryption/decryption is not performed.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `*reply` is always
+ *       initialized upon return.
+ *
  * Returns:
  *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @reply is set and should ALWAYS be released with bson_destroy().
  *
  *--------------------------------------------------------------------------
  */
@@ -840,11 +863,14 @@ mongoc_cluster_run_command_private(mongoc_cluster_t *cluster,
  *       on a given stream. @error and @reply are optional out-pointers.
  *       The client's APM callbacks are not executed.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `*reply` is always
+ *       initialized upon return.
+ *
  * Returns:
  *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
- *       @reply is set and should ALWAYS be released with bson_destroy().
  *       mongoc_cmd_parts_cleanup will be always be called on parts. The
  *       caller should *not* call cleanup on the parts.
  *
@@ -1325,6 +1351,9 @@ _mongoc_cluster_get_auth_cmd_scram(mongoc_crypto_hash_algorithm_t algo,
  *       Runs a scram authentication command, handling auth_source and
  *       errors during the command.
  *
+ * Parameters:
+ *       @reply is a required out-param. `*reply` is only initialized
+ *       on success.
  *
  * Returns:
  *       true if the command was successful, false otherwise
@@ -1385,6 +1414,9 @@ _mongoc_cluster_run_scram_command(mongoc_cluster_t *cluster,
  *       command. The conversation can then be resumed using
  *       _mongoc_cluster_auth_scram_continue.
  *
+ * Parameters:
+ *       @reply is a required out-param. `*reply` is only initialized
+ *       on success.
  *
  * Returns:
  *       true if the saslStart command was successful, false otherwise
@@ -2094,6 +2126,9 @@ _try_get_server_stream(mongoc_cluster_t *cluster,
    }
 }
 
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ */
 static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                   uint32_t server_id,
@@ -2186,6 +2221,9 @@ done:
 }
 
 
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                  uint32_t server_id,
@@ -2605,6 +2643,10 @@ _mongoc_cluster_select_server_id(mongoc_client_session_t *cs,
  *       A mongoc_server_stream_t on which you must call
  *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Side effects:
  *       May add or disconnect nodes in @cluster->nodes.
  *       Sets @error and initializes @reply on error.
@@ -3010,7 +3052,9 @@ mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id)
    return r;
 }
 
-
+/**
+ * @param reply is a required out-param. `*reply` is only initialized on error.
+ */
 static bool
 _mongoc_cluster_run_opmsg_send(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
@@ -3102,6 +3146,9 @@ _mongoc_cluster_run_opmsg_send(
    return res;
 }
 
+/**
+ * @param reply is a required out-param. `*reply` is always initialized upon return.
+ */
 static bool
 _mongoc_cluster_run_opmsg_recv(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
@@ -3219,6 +3266,9 @@ done:
    return ret;
 }
 
+/**
+ * @param reply is a required out-param. `*reply` is always initialized upon return.
+ */
 static bool
 mongoc_cluster_run_opmsg(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
