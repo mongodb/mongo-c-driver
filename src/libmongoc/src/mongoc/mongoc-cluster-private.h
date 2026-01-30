@@ -98,6 +98,8 @@ mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id);
  * Returns a new stream (that must be freed) or NULL and sets an error via
  * `error`.
  *
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ *
  * @note The returned stream must be released via
  * `mongoc_server_stream_cleanup`.
  *
@@ -119,6 +121,8 @@ mongoc_cluster_stream_for_reads(mongoc_cluster_t *cluster,
  * Returns a new stream (that must be freed) or NULL and sets an error via
  * `error`.
  *
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ *
  * @note The returned stream must be released via `mongoc_server_stream_cleanup`
  *
  * @note May add nodes and/or update the cluster's topology.
@@ -137,6 +141,8 @@ mongoc_cluster_stream_for_writes(mongoc_cluster_t *cluster,
  *
  * Returns a new stream (that must be freed) or NULL and sets an error via
  * `error`.
+ *
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
  *
  * @note The returned stream must be released via
  * `mongoc_server_stream_cleanup`.
@@ -161,6 +167,7 @@ mongoc_cluster_stream_for_aggr_with_write(mongoc_cluster_t *cluster,
  * @param reconnect_ok If `true`, the server exists in the topology but is not
  * connected, then attempt to reconnect with the server. If `false`, then only
  * create a stream if the server is connected and ready.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
  *
  * @note The returned stream must be released via `mongoc_server_stream_cleanup`
  *
@@ -177,13 +184,16 @@ mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
 bool
 mongoc_cluster_stream_valid(mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream);
 
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
 bool
 mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error);
 
 // `mongoc_cluster_run_retryable_write` executes a write command and may apply retryable writes behavior.
 // `cmd->server_stream` is set to `*retry_server_stream` on retry. Otherwise, it is unmodified.
 // `*retry_server_stream` is set to a new stream on retry. The caller must call `mongoc_server_stream_cleanup`.
-// `*reply` must be uninitialized and is always initialized upon return. The caller must call `bson_destroy`.
+// `reply` is a required out-param. `*reply` is always initialized upon return.
 bool
 mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    mongoc_cmd_t *cmd,
@@ -192,6 +202,9 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    bson_t *reply,
                                    bson_error_t *error);
 
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
 bool
 mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
                                  mongoc_server_stream_t *server_stream,
@@ -199,6 +212,9 @@ mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error);
 
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
 bool
 mongoc_cluster_run_command_private(mongoc_cluster_t *cluster,
                                    const mongoc_cmd_t *cmd,
