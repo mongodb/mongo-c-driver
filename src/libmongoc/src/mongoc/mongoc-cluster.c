@@ -45,6 +45,7 @@
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-retry-backoff-iterator-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-set-private.h>
@@ -3557,6 +3558,8 @@ bool
 mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    mongoc_cmd_t *cmd,
                                    bool is_retryable_write,
+                                   mongoc_jitter_source_t *jitter_source,
+                                   mongoc_token_bucket_t *token_bucket,
                                    mongoc_server_stream_t **retry_server_stream,
                                    bson_t *reply,
                                    bson_error_t *error)
@@ -3588,6 +3591,8 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
 
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
+      mongoc_retry_backoff_iterator_t *const retry_backoff_iterator = _mongoc_retry_backoff_iterator_new(
+         MONGOC_RETRY_BACKOFF_GROWTH_FACTOR, MONGOC_RETRY_BACKOFF_INITIAL, MONGOC_RETRY_BACKOFF_MAX, jitter_source);
 
       int attempt = 0;
       int num_retries = is_retryable_write ? 1 : 0;
@@ -3617,13 +3622,34 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
             original_reply_and_error.set = true;
          }
 
+         const bool is_overload = mongoc_error_has_label(&reply_local, "SystemOverloadedError");
+         const bool is_retryable = mongoc_error_has_label(&reply_local, "RetryableWriteError") ||
+                                   (mongoc_error_has_label(&reply_local, "RetryableError") && is_overload);
+
          bson_destroy(&reply_local);
 
-         if (error_type != MONGOC_WRITE_ERR_RETRY) {
+         if (ret && !is_retryable) {
+            // Deposit tokens into the bucket on success.
+            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (attempt > 0 ? 1.0 : 0.0);
+            _mongoc_token_bucket_deposit(token_bucket, tokens);
+            break;
+         }
+
+         // If a retry fails with an error which is not an overload error, deposit 1 token.
+         if (attempt > 0 && !is_overload) {
+            _mongoc_token_bucket_deposit(token_bucket, 1.0);
+         }
+
+         // Break if error is non-retryable.
+         if (!is_retryable) {
             break;
          }
 
          ++attempt;
+
+         if (is_overload) {
+            num_retries = MONGOC_MAX_NUM_OVERLOAD_RETRIES;
+         }
 
          if (attempt > num_retries) {
             break;
@@ -3634,6 +3660,17 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
             TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
             mongoc_deprioritized_servers_add(ds, sd);
          }
+
+         if (is_overload) {
+            if (!_mongoc_token_bucket_consume(token_bucket, 1.0)) {
+               break;
+            }
+
+            const mlib_duration backoff_duration = _mongoc_retry_backoff_iterator_next(retry_backoff_iterator);
+            mlib_sleep_for(backoff_duration);
+         }
+
+         mongoc_server_stream_cleanup(*retry_server_stream);
 
          // Select a server.
          const mongoc_ss_log_context_t ss_log_context = {
@@ -3648,6 +3685,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
          cmd->server_stream = *retry_server_stream; // Non-owning.
       }
 
+      _mongoc_retry_backoff_iterator_destroy(retry_backoff_iterator);
       mongoc_deprioritized_servers_destroy(ds);
    }
 

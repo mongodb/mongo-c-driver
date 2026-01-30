@@ -24,11 +24,13 @@
 #include <mongoc/mongoc-cmd-private.h>
 #include <mongoc/mongoc-crypto-private.h>
 #include <mongoc/mongoc-deprioritized-servers-private.h>
+#include <mongoc/mongoc-jitter-source-private.h>
 #include <mongoc/mongoc-list-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-set-private.h>
+#include <mongoc/mongoc-token-bucket-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
 
@@ -198,6 +200,8 @@ bool
 mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    mongoc_cmd_t *cmd,
                                    bool is_retryable_write,
+                                   mongoc_jitter_source_t *jitter_source,
+                                   mongoc_token_bucket_t *token_bucket,
                                    mongoc_server_stream_t **retry_server_stream,
                                    bson_t *reply,
                                    bson_error_t *error);

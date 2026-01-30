@@ -28,6 +28,7 @@
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-jitter-source-private.h>
 #include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-token-bucket-private.h>
 
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
@@ -91,6 +92,14 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
+#define MONGOC_RETRY_TOKEN_RETURN_RATE 0.1
+#define MONGOC_MAX_NUM_OVERLOAD_RETRIES 5
+#define MONGOC_RETRY_BACKOFF_GROWTH_FACTOR 2.0
+#define MONGOC_RETRY_BACKOFF_INITIAL mlib_duration(100, ms)
+#define MONGOC_RETRY_BACKOFF_MAX mlib_duration(10, s)
+
+#define MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY 1000.0
+
 struct _mongoc_collection_t;
 
 struct _mongoc_client_t {
@@ -124,6 +133,7 @@ struct _mongoc_client_t {
    uint32_t generation;
 
    mongoc_jitter_source_t *jitter_source;
+   mongoc_token_bucket_t *token_bucket;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read

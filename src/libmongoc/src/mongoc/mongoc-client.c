@@ -48,6 +48,7 @@
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-retry-backoff-iterator-private.h>
 #include <mongoc/mongoc-set-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -1102,7 +1103,6 @@ mongoc_client_new_from_uri_with_error(const mongoc_uri_t *uri, bson_error_t *err
    RETURN(client);
 }
 
-
 /* precondition: topology is valid */
 mongoc_client_t *
 _mongoc_client_new_from_topology(mongoc_topology_t *topology)
@@ -1126,6 +1126,7 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->client_sessions = mongoc_set_new(8, NULL, NULL);
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
    client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
+   client->token_bucket = _mongoc_token_bucket_new(MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1202,6 +1203,7 @@ mongoc_client_destroy(mongoc_client_t *client)
       mongoc_set_destroy(client->client_sessions);
       mongoc_server_api_destroy(client->api);
       _mongoc_jitter_source_destroy(client->jitter_source);
+      _mongoc_token_bucket_destroy(client->token_bucket);
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup(&client->ssl_opts, true);
@@ -1635,6 +1637,11 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
 
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
+      mongoc_retry_backoff_iterator_t *const retry_backoff_iterator =
+         _mongoc_retry_backoff_iterator_new(MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
+                                            MONGOC_RETRY_BACKOFF_INITIAL,
+                                            MONGOC_RETRY_BACKOFF_MAX,
+                                            client->jitter_source);
 
       int attempt = 0;
       int num_retries = 1;
@@ -1718,8 +1725,14 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
    if (parts->is_retryable_write) {
       mongoc_server_stream_t *retry_server_stream = NULL;
 
-      bool ret = mongoc_cluster_run_retryable_write(
-         &client->cluster, &parts->assembled, true /* is_retryable */, &retry_server_stream, reply, error);
+      bool ret = mongoc_cluster_run_retryable_write(&client->cluster,
+                                                    &parts->assembled,
+                                                    true /* is_retryable */,
+                                                    client->jitter_source,
+                                                    client->token_bucket,
+                                                    &retry_server_stream,
+                                                    reply,
+                                                    error);
 
       if (retry_server_stream) {
          mongoc_server_stream_cleanup(retry_server_stream);
