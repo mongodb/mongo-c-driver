@@ -498,7 +498,7 @@ _in_sharded_or_loadbalanced_txn(const mongoc_client_session_t *session)
 }
 
 /**
- * @param reply is a required out-param. Caller must initialize `*reply` before calling.
+ * @param reply is a required inout-param. `*reply` must be an initialized `bson_t`.
  */
 static void
 _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc_cmd_t *cmd, bson_t *reply)
