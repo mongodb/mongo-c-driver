@@ -26,6 +26,7 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-retry-backoff-iterator-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -710,7 +711,7 @@ _mongoc_cursor_run_command(
    char *db = NULL;
    mongoc_session_opt_t *session_opts;
    bool ret = false;
-   bool is_retryable = true;
+   bool is_always_retryable = true;
 
    ENTRY;
 
@@ -805,21 +806,21 @@ _mongoc_cursor_run_command(
       parts.read_prefs = cursor->read_prefs;
    }
 
-   is_retryable = _is_retryable_read(&parts, server_stream);
+   is_always_retryable = _is_retryable_read(&parts, server_stream);
    if (!strcmp(cmd_name, "getMore")) {
-      is_retryable = false;
+      is_always_retryable = false;
    }
    if (!strcmp(cmd_name, "aggregate")) {
       bson_iter_t pipeline_iter;
       if (bson_iter_init_find(&pipeline_iter, command, "pipeline") && BSON_ITER_HOLDS_ARRAY(&pipeline_iter) &&
           bson_iter_recurse(&pipeline_iter, &pipeline_iter)) {
          if (_has_write_key(&pipeline_iter)) {
-            is_retryable = false;
+            is_always_retryable = false;
          }
       }
    }
-   if (is_retryable && retry_prohibited) {
-      is_retryable = false;
+   if (is_always_retryable && retry_prohibited) {
+      is_always_retryable = false;
    }
 
    if (cursor->write_concern && !mongoc_write_concern_is_default(cursor->write_concern)) {
@@ -834,19 +835,51 @@ _mongoc_cursor_run_command(
 
    {
       mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
+      mongoc_retry_backoff_iterator_t *const retry_backoff_iterator =
+         _mongoc_retry_backoff_iterator_new(MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
+                                            MONGOC_RETRY_BACKOFF_INITIAL,
+                                            MONGOC_RETRY_BACKOFF_MAX,
+                                            cursor->client->jitter_source);
 
       int attempt = 0;
-      int num_retries = is_retryable ? 1 : 0;
+      int num_retries = is_always_retryable ? 1 : 0;
 
       while (true) {
          ret = mongoc_cluster_run_command_monitored(&cursor->client->cluster, &parts.assembled, reply, &cursor->error);
 
          cursor->had_stream_timeout = server_stream->timed_out;
 
+         mongoc_token_bucket_t *const token_bucket = cursor->client->token_bucket;
+
+         if (ret) {
+            // Deposit tokens into the bucket on success.
+            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (attempt > 0 ? 1.0 : 0.0);
+            _mongoc_token_bucket_deposit(token_bucket, tokens);
+            memset(&cursor->error, 0, sizeof(bson_error_t));
+            break;
+         }
+
+         const bool is_overload = mongoc_error_has_label(reply, "SystemOverloadedError");
+         const bool is_retryable = _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY ||
+                                   (mongoc_error_has_label(reply, "RetryableError") && is_overload);
+
+         // If a retry fails with an error which is not an overload error, deposit 1 token.
+         if (attempt > 0 && !is_overload) {
+            _mongoc_token_bucket_deposit(token_bucket, 1.0);
+         }
+
+         // Break if error is non-retryable.
+         if (!is_retryable) {
+            break;
+         }
+
          ++attempt;
 
-         if (attempt > num_retries ||
-             _mongoc_read_error_get_type(ret, &cursor->error, reply) != MONGOC_READ_ERR_RETRY) {
+         if (is_overload) {
+            num_retries = MONGOC_MAX_NUM_OVERLOAD_RETRIES;
+         }
+
+         if (attempt > num_retries) {
             break;
          }
 
@@ -854,6 +887,15 @@ _mongoc_cursor_run_command(
             const mongoc_server_description_t *const sd = server_stream->sd;
             TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
             mongoc_deprioritized_servers_add(ds, sd);
+         }
+
+         if (is_overload) {
+            if (!_mongoc_token_bucket_consume(token_bucket, 1.0)) {
+               break;
+            }
+
+            const mlib_duration backoff_duration = _mongoc_retry_backoff_iterator_next(retry_backoff_iterator);
+            mlib_sleep_for(backoff_duration);
          }
 
          mongoc_server_stream_cleanup(server_stream);
@@ -877,6 +919,7 @@ _mongoc_cursor_run_command(
          bson_destroy(reply);
       }
 
+      _mongoc_retry_backoff_iterator_destroy(retry_backoff_iterator);
       mongoc_deprioritized_servers_destroy(ds);
    }
 
