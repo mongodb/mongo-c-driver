@@ -183,6 +183,7 @@ _handle_network_error_connecting(mongoc_cluster_t *cluster, uint32_t server_id, 
    BSON_ASSERT_PARAM(error_in);
 
    mongoc_topology_t *topology = BSON_ASSERT_PTR_INLINE(cluster)->client->topology;
+   BSON_ASSERT(!topology->single_threaded);
    mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
 
    /* When establishing a new connection in load balanced mode, drivers MUST
@@ -199,10 +200,7 @@ _handle_network_error_connecting(mongoc_cluster_t *cluster, uint32_t server_id, 
     * with connections. Pass kZeroObjectId to clear the entire connection
     * pool to this server. */
    _mongoc_topology_description_clear_connection_pool(tdmod.new_td, server_id, &kZeroObjectId);
-
-   if (!topology->single_threaded) {
-      _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
-   }
+   _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
    mc_tpld_modify_commit(tdmod);
 }
 
