@@ -173,25 +173,14 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
 }
 
 /**
- * @brief Called when a network error occurs creating a stream.
- * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ * @brief Called when a network error occurs creating a stream in a mongoc_client_pool_t.
+ * @note A single-threaded mongoc_client_t processes network errors creating streams in _mongoc_topology_scanner_cb.
  */
 static void
-_handle_network_error_connecting(mongoc_cluster_t *cluster,
-                                 const mongoc_client_session_t *cs,
-                                 uint32_t server_id,
-                                 bson_t *reply,
-                                 bson_error_t *error_in)
+_handle_network_error_connecting(mongoc_cluster_t *cluster, uint32_t server_id, bson_error_t *error_in)
 {
    BSON_ASSERT_PARAM(cluster);
-   BSON_OPTIONAL_PARAM(cs);
-   BSON_OPTIONAL_PARAM(reply);
    BSON_ASSERT_PARAM(error_in);
-
-   _mongoc_bson_init_if_set(reply);
-
-   // Add a transient transaction label if applicable.
-   _mongoc_add_transient_txn_error(cs, reply);
 
    mongoc_topology_t *topology = BSON_ASSERT_PTR_INLINE(cluster)->client->topology;
    mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
@@ -2039,6 +2028,7 @@ _cluster_add_node(mongoc_cluster_t *cluster,
 
    if (!stream) {
       MONGOC_WARNING("Failed connection to %s (%s)", host->host_and_port, error->message);
+      _handle_network_error_connecting(cluster, server_id, error);
       GOTO(error);
       /* TODO CDRIVER-3654: if this is a non-timeout network error and the
        * generation is not stale, mark the server unknown and increment the
@@ -2198,18 +2188,7 @@ _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
    ret_server_stream = _try_get_server_stream(cluster, td.ptr, server_id, reconnect_ok, err_ptr);
 
    if (!ret_server_stream) {
-      /* TODO CDRIVER-3654. A null server stream could be due to:
-       * 1. Network error during handshake.
-       * 2. Failure to retrieve server description (if it was removed from
-       * topology).
-       * 3. Auth error during handshake.
-       * Only (1) should mark the server unknown and clear the pool.
-       * Network errors should be checked at a lower layer than this, when an
-       * operation on a stream fails, and should take the connection generation
-       * into account.
-       */
-
-      _handle_network_error_connecting(cluster, cs, server_id, reply, err_ptr);
+      _mongoc_bson_init_if_set(reply);
       ret_server_stream = NULL;
       goto done;
    }
