@@ -1639,7 +1639,7 @@ test_handshake_errors_impl(bool use_pool)
       }
 
       mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // FAILS! Clears twice for pooled client.
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
       ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
       mongoc_server_description_destroy(sd);
 
@@ -1674,7 +1674,7 @@ test_handshake_errors_impl(bool use_pool)
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "socket error");
 
       mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // FAILS! Clears twice for both.
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
       ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
       mongoc_server_description_destroy(sd);
 
