@@ -116,7 +116,7 @@ _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_
 }
 
 /**
- * @brief Called when a network error occurs on an application socket.
+ * @brief Called when a network error occurs on an application socket sending a command.
  * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
  */
 static void
