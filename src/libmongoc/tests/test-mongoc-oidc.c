@@ -117,6 +117,17 @@ is_testing_azure_oidc(void)
    return true;
 }
 
+static bool
+is_testing_gcp_oidc(void)
+{
+   char *token_audience = test_framework_getenv("MONGOC_GCP_RESOURCE");
+   if (!token_audience) {
+      return false;
+   }
+   bson_free(token_audience);
+   return true;
+}
+
 
 static test_fixture_t *
 test_fixture_new(test_config_t cfg)
@@ -133,6 +144,15 @@ test_fixture_new(test_config_t cfg)
       bson_t props = BSON_INITIALIZER;
       BSON_APPEND_UTF8(&props, "ENVIRONMENT", "azure");
       char *token_resource = test_framework_getenv_required("MONGOC_AZURE_RESOURCE");
+      BSON_APPEND_UTF8(&props, "TOKEN_RESOURCE", token_resource);
+      bson_free(token_resource);
+      mongoc_uri_set_mechanism_properties(uri, &props);
+      bson_destroy(&props);
+   } else if (is_testing_gcp_oidc()) {
+      mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
+      bson_t props = BSON_INITIALIZER;
+      BSON_APPEND_UTF8(&props, "ENVIRONMENT", "gcp");
+      char *token_resource = test_framework_getenv_required("MONGOC_GCP_RESOURCE");
       BSON_APPEND_UTF8(&props, "TOKEN_RESOURCE", token_resource);
       bson_free(token_resource);
       mongoc_uri_set_mechanism_properties(uri, &props);
@@ -952,7 +972,7 @@ skip_if_no_oidc(void)
 static int
 skip_if_no_oidc_callback(void)
 {
-   if (is_testing_azure_oidc()) {
+   if (is_testing_azure_oidc() || is_testing_gcp_oidc()) {
       return 0; // Not using callback.
    }
    return test_framework_is_oidc() ? 1 : 0;
