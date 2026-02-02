@@ -199,6 +199,7 @@ _handle_network_error_connecting(mongoc_cluster_t *cluster, uint32_t server_id, 
    /* This is not load balanced mode, so there are no service IDs associated
     * with connections. Pass kZeroObjectId to clear the entire connection
     * pool to this server. */
+   // TODO: CDRIVER-3654 pool generation is not checked.
    _mongoc_topology_description_clear_connection_pool(tdmod.new_td, server_id, &kZeroObjectId);
    _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
    mc_tpld_modify_commit(tdmod);
