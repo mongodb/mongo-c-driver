@@ -1517,6 +1517,15 @@ typedef struct {
    bool use_auth;
 } test_handshake_errors_opts;
 
+static bool
+server_has_state(mongoc_client_t *client, const char *expected_state)
+{
+   mongoc_server_description_t *sd = mongoc_client_get_server_description(client, 1);
+   bool matched = 0 == strcmp(mongoc_server_description_type(sd), expected_state);
+   mongoc_server_description_destroy(sd);
+   return matched;
+}
+
 static test_handshake_errors_fixture *
 test_handshake_errors_setup(test_handshake_errors_opts opts)
 {
@@ -1625,7 +1634,7 @@ test_handshake_errors_impl(bool use_pool)
       // End state:
       {
          mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared once.
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
          ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
          mongoc_server_description_destroy(sd);
       }
@@ -1658,7 +1667,7 @@ test_handshake_errors_impl(bool use_pool)
       // End state:
       {
          mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
          ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
          mongoc_server_description_destroy(sd);
       }
@@ -1696,7 +1705,7 @@ test_handshake_errors_impl(bool use_pool)
       // End state:
       {
          mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
          ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
          mongoc_server_description_destroy(sd);
       }
