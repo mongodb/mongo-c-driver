@@ -1563,6 +1563,19 @@ test_handshake_errors_setup(test_handshake_errors_opts opts)
       ASSERT_OR_PRINT(f->client, error);
    }
 
+   // Initial state:
+   {
+      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 0);
+      if (opts.use_pool) {
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Standalone");
+      } else {
+         // Single-threaded client has not-yet discovered server.
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");
+      }
+      mongoc_server_description_destroy(sd);
+   }
+
    mongoc_uri_destroy(uri);
    return f;
 }
@@ -1608,10 +1621,13 @@ test_handshake_errors_impl(bool use_pool)
             error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection refused");
       }
 
-      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared once.
-      ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
-      mongoc_server_description_destroy(sd);
+      // End state:
+      {
+         mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared once.
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+         mongoc_server_description_destroy(sd);
+      }
 
       test_handshake_errors_teardown(f);
    }
@@ -1638,10 +1654,13 @@ test_handshake_errors_impl(bool use_pool)
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "closed");
       }
 
-      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
-      ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
-      mongoc_server_description_destroy(sd);
+      // End state:
+      {
+         mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+         mongoc_server_description_destroy(sd);
+      }
 
       future_destroy(future);
       test_handshake_errors_teardown(f);
@@ -1673,10 +1692,13 @@ test_handshake_errors_impl(bool use_pool)
       ASSERT(!future_get_bool(future));
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "socket error");
 
-      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
-      ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
-      mongoc_server_description_destroy(sd);
+      // End state:
+      {
+         mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Clears once.
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+         mongoc_server_description_destroy(sd);
+      }
 
       future_destroy(future);
       test_handshake_errors_teardown(f);
