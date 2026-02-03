@@ -1,3 +1,17 @@
+libmongoc 2.2.2
+===============
+
+## Fixed
+
+* Restore $clusterTime on first command of single-threaded client.
+* Wait between polling if `serverMonitoringMode=poll` is used on server supporting streaming.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Kevin Albertson
+
+
 libmongoc 2.2.1
 ===============
 
