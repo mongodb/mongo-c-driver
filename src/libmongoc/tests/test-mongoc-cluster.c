@@ -1558,6 +1558,7 @@ test_handshake_errors_setup(test_handshake_errors_opts opts)
          request_destroy(request);
       }
 
+      WAIT_UNTIL(server_has_state(f->client, "Standalone"));
    } else {
       f->client = mongoc_client_new_from_uri_with_error(uri, &error);
       ASSERT_OR_PRINT(f->client, error);
