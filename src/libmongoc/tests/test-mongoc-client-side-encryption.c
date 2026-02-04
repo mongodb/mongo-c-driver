@@ -7408,8 +7408,7 @@ skip_due_to_SERVER_118428(void)
    // Skip testing versions of mongocryptd affected by SERVER-118428.
    mongoc_client_t *mongocryptd_client = mongoc_client_new("mongodb://localhost:27020");
    server_version_t sv = test_framework_get_server_version_with_client(mongocryptd_client);
-   bool should_skip = (sv == test_framework_str_to_version("8.2.4") || sv == test_framework_str_to_version("8.0.18") ||
-                       sv == test_framework_str_to_version("7.0.29"));
+   bool should_skip = (sv >= test_framework_str_to_version("7.0.29"));
    mongoc_client_destroy(mongocryptd_client);
    bson_free(path);
    return should_skip ? 0 : 1;
