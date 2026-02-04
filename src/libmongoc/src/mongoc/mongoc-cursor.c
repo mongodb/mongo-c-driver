@@ -27,6 +27,7 @@
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-retry-backoff-iterator-private.h>
+#include <mongoc/mongoc-retryable-cmd-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -699,6 +700,67 @@ _mongoc_cursor_secondary_ok(mongoc_cursor_t *cursor, mongoc_server_stream_t *str
                                    stream->sd->type != MONGOC_SERVER_RS_PRIMARY);
 }
 
+typedef struct {
+   mongoc_cursor_t *cursor;
+   mongoc_cmd_parts_t *parts;
+   mongoc_ss_log_context_t const *ss_log_context;
+   mongoc_server_stream_t **server_stream;
+} retryable_cursor_command_context_t;
+
+static bool
+_retryable_cursor_command_execute(void *context, bson_t *reply, bson_error_t *error)
+{
+   retryable_cursor_command_context_t *const context_ = (retryable_cursor_command_context_t *)context;
+
+   mongoc_cursor_t *const cursor = context_->cursor;
+
+   BSON_ASSERT(&cursor->error == error);
+
+   const bool ret =
+      mongoc_cluster_run_command_monitored(&cursor->client->cluster, &context_->parts->assembled, reply, error);
+
+   if (ret) {
+      memset(error, 0, sizeof(bson_error_t));
+   }
+
+   cursor->had_stream_timeout = context_->parts->assembled.server_stream->timed_out;
+
+   return ret;
+}
+
+static mongoc_server_description_t const *
+_retryable_cursor_commmand_select_retry_server(void *context,
+                                               mongoc_deprioritized_servers_t *deprioritized_servers,
+                                               bson_t *reply,
+                                               bson_error_t *error)
+{
+   retryable_cursor_command_context_t *const context_ = (retryable_cursor_command_context_t *)context;
+
+   mongoc_server_stream_cleanup(*context_->server_stream);
+
+   mongoc_cursor_t *const cursor = context_->cursor;
+
+   BSON_ASSERT(!cursor->is_aggr_with_write_stage && "Cannot attempt a retry on an aggregate operation that "
+                                                    "contains write stages");
+
+   *context_->server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
+                                                              context_->ss_log_context,
+                                                              cursor->read_prefs,
+                                                              cursor->client_session,
+                                                              deprioritized_servers,
+                                                              reply,
+                                                              error);
+
+   if (!*context_->server_stream) {
+      return NULL;
+   }
+
+   cursor->server_id = (*context_->server_stream)->sd->id;
+   context_->parts->assembled.server_stream = *context_->server_stream;
+
+   return (*context_->server_stream)->sd;
+}
+
 bool
 _mongoc_cursor_run_command(
    mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply, bool retry_prohibited)
@@ -833,95 +895,31 @@ _mongoc_cursor_run_command(
       GOTO(done);
    }
 
-   {
-      mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
-      mongoc_retry_backoff_iterator_t *const retry_backoff_iterator =
-         _mongoc_retry_backoff_iterator_new(MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
-                                            MONGOC_RETRY_BACKOFF_INITIAL,
-                                            MONGOC_RETRY_BACKOFF_MAX,
-                                            cursor->client->jitter_source);
+   retryable_cursor_command_context_t context = {
+      .cursor = cursor,
+      .parts = &parts,
+      .ss_log_context = &ss_log_context,
+      .server_stream = &server_stream,
+   };
 
-      int attempt = 0;
-      int num_retries = is_always_retryable ? 1 : 0;
-
-      while (true) {
-         ret = mongoc_cluster_run_command_monitored(&cursor->client->cluster, &parts.assembled, reply, &cursor->error);
-
-         cursor->had_stream_timeout = server_stream->timed_out;
-
-         mongoc_token_bucket_t *const token_bucket = cursor->client->token_bucket;
-
-         if (ret) {
-            // Deposit tokens into the bucket on success.
-            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (attempt > 0 ? 1.0 : 0.0);
-            _mongoc_token_bucket_deposit(token_bucket, tokens);
-            memset(&cursor->error, 0, sizeof(bson_error_t));
-            break;
-         }
-
-         const bool is_overload = mongoc_error_has_label(reply, "SystemOverloadedError");
-         const bool is_retryable = _mongoc_read_error_get_type(ret, &cursor->error, reply) == MONGOC_READ_ERR_RETRY ||
-                                   (mongoc_error_has_label(reply, "RetryableError") && is_overload);
-
-         // If a retry fails with an error which is not an overload error, deposit 1 token.
-         if (attempt > 0 && !is_overload) {
-            _mongoc_token_bucket_deposit(token_bucket, 1.0);
-         }
-
-         // Break if error is non-retryable.
-         if (!is_retryable) {
-            break;
-         }
-
-         ++attempt;
-
-         if (is_overload) {
-            num_retries = MONGOC_MAX_NUM_OVERLOAD_RETRIES;
-         }
-
-         if (attempt > num_retries) {
-            break;
-         }
-
+   const mongoc_retryable_cmd_t retryable_cmd = {
+      .execute = _retryable_cursor_command_execute,
+      .select_retry_server = _retryable_cursor_commmand_select_retry_server,
+      .context = &context,
+      .is_always_retryable = is_always_retryable,
+      .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
+      .backoff_params =
          {
-            const mongoc_server_description_t *const sd = server_stream->sd;
-            TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
-            mongoc_deprioritized_servers_add(ds, sd);
-         }
+            .growth_factor = MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
+            .backoff_initial = MONGOC_RETRY_BACKOFF_INITIAL,
+            .backoff_max = MONGOC_RETRY_BACKOFF_MAX,
+         },
+      .jitter_source = cursor->client->jitter_source,
+      .token_bucket = cursor->client->token_bucket,
+      .initial_server_description = server_stream->sd,
+   };
 
-         if (is_overload) {
-            if (!_mongoc_token_bucket_consume(token_bucket, 1.0)) {
-               break;
-            }
-
-            const mlib_duration backoff_duration = _mongoc_retry_backoff_iterator_next(retry_backoff_iterator);
-            mlib_sleep_for(backoff_duration);
-         }
-
-         mongoc_server_stream_cleanup(server_stream);
-
-         BSON_ASSERT(!cursor->is_aggr_with_write_stage && "Cannot attempt a retry on an aggregate operation that "
-                                                          "contains write stages");
-         server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
-                                                         &ss_log_context,
-                                                         cursor->read_prefs,
-                                                         cursor->client_session,
-                                                         ds,
-                                                         reply,
-                                                         &cursor->error);
-
-         if (!server_stream) {
-            break;
-         }
-
-         cursor->server_id = server_stream->sd->id;
-         parts.assembled.server_stream = server_stream;
-         bson_destroy(reply);
-      }
-
-      _mongoc_retry_backoff_iterator_destroy(retry_backoff_iterator);
-      mongoc_deprioritized_servers_destroy(ds);
-   }
+   ret = _mongoc_execute_retryable_cmd(&retryable_cmd, reply, &cursor->error);
 
    if (cursor->error.domain) {
       bson_destroy(&cursor->error_doc);

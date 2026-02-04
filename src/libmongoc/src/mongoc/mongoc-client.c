@@ -49,6 +49,7 @@
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-retry-backoff-iterator-private.h>
+#include <mongoc/mongoc-retryable-cmd-private.h>
 #include <mongoc/mongoc-set-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -1614,6 +1615,56 @@ mongoc_client_set_read_prefs(mongoc_client_t *client, const mongoc_read_prefs_t 
    }
 }
 
+typedef struct {
+   mongoc_cluster_t *cluster;
+   mongoc_cmd_parts_t *parts;
+   mongoc_server_stream_t *retry_server_stream;
+} retryable_read_context_t;
+
+static bool
+_retryable_read_execute(void *context, bson_t *reply, bson_error_t *error)
+{
+   retryable_read_context_t *const context_ = (retryable_read_context_t *)context;
+
+   return mongoc_cluster_run_command_monitored(context_->cluster, &context_->parts->assembled, reply, error);
+}
+
+static mongoc_server_description_t const *
+_retryable_read_select_retry_server(void *context,
+                                    mongoc_deprioritized_servers_t *deprioritized_servers,
+                                    bson_t *reply,
+                                    bson_error_t *error)
+{
+   BSON_UNUSED(reply);
+   BSON_UNUSED(error);
+
+   retryable_read_context_t *const context_ = (retryable_read_context_t *)context;
+
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = context_->parts->assembled.command_name,
+      .has_operation_id = true,
+      .operation_id = context_->parts->assembled.operation_id,
+   };
+
+   mongoc_server_stream_cleanup(context_->retry_server_stream);
+
+   context_->retry_server_stream = mongoc_cluster_stream_for_reads(context_->cluster,
+                                                                   &ss_log_context,
+                                                                   context_->parts->read_prefs,
+                                                                   context_->parts->assembled.session,
+                                                                   deprioritized_servers,
+                                                                   NULL /* reply */,
+                                                                   NULL /* error */);
+
+   if (!context_->retry_server_stream) {
+      return NULL;
+   }
+
+   context_->parts->assembled.server_stream = context_->retry_server_stream;
+
+   return context_->retry_server_stream->sd;
+}
+
 static bool
 _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                                   mongoc_cmd_parts_t *parts,
@@ -1621,8 +1672,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                                   bson_t *reply,
                                                   bson_error_t *error)
 {
-   mongoc_server_stream_t *retry_server_stream = NULL;
-   bool ret;
    bson_t reply_local = BSON_INITIALIZER;
 
    BSON_ASSERT_PARAM(client);
@@ -1633,101 +1682,32 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
 
    ENTRY;
 
-   {
-      mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
-      mongoc_retry_backoff_iterator_t *const retry_backoff_iterator =
-         _mongoc_retry_backoff_iterator_new(MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
-                                            MONGOC_RETRY_BACKOFF_INITIAL,
-                                            MONGOC_RETRY_BACKOFF_MAX,
-                                            client->jitter_source);
+   retryable_read_context_t context = {
+      .cluster = &client->cluster,
+      .parts = parts,
+      .retry_server_stream = NULL,
+   };
 
-      int attempt = 0;
-      int num_retries = parts->is_retryable_read ? 1 : 0;
-
-      while (true) {
-         ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
-
-         mongoc_token_bucket_t *const token_bucket = client->token_bucket;
-
-         if (ret) {
-            // Deposit tokens into the bucket on success.
-            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (attempt > 0 ? 1.0 : 0.0);
-            _mongoc_token_bucket_deposit(token_bucket, tokens);
-            break;
-         }
-
-         const bool is_overload = mongoc_error_has_label(reply, "SystemOverloadedError");
-         const bool is_retryable = _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY ||
-                                   (mongoc_error_has_label(reply, "RetryableError") && is_overload);
-
-         // If a retry fails with an error which is not an overload error, deposit 1 token.
-         if (attempt > 0 && !is_overload) {
-            _mongoc_token_bucket_deposit(token_bucket, 1.0);
-         }
-
-         // Break if error is non-retryable.
-         if (!is_retryable) {
-            break;
-         }
-
-         ++attempt;
-
-         if (is_overload) {
-            num_retries = MONGOC_MAX_NUM_OVERLOAD_RETRIES;
-         }
-
-         if (attempt > num_retries) {
-            break;
-         }
-
+   const mongoc_retryable_cmd_t retryable_cmd = {
+      .execute = _retryable_read_execute,
+      .select_retry_server = _retryable_read_select_retry_server,
+      .context = &context,
+      .is_always_retryable = parts->is_retryable_read,
+      .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
+      .backoff_params =
          {
-            const mongoc_server_description_t *const sd =
-               retry_server_stream ? retry_server_stream->sd : server_stream->sd;
-            TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")", sd->host.host_and_port, sd->id);
-            mongoc_deprioritized_servers_add(ds, sd);
-         }
+            .growth_factor = MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
+            .backoff_initial = MONGOC_RETRY_BACKOFF_INITIAL,
+            .backoff_max = MONGOC_RETRY_BACKOFF_MAX,
+         },
+      .jitter_source = client->jitter_source,
+      .token_bucket = client->token_bucket,
+      .initial_server_description = server_stream->sd,
+   };
 
-         if (is_overload) {
-            if (!_mongoc_token_bucket_consume(token_bucket, 1.0)) {
-               break;
-            }
+   const bool ret = _mongoc_execute_retryable_cmd(&retryable_cmd, reply, error);
 
-            const mlib_duration backoff_duration = _mongoc_retry_backoff_iterator_next(retry_backoff_iterator);
-            mlib_sleep_for(backoff_duration);
-         }
-
-         if (retry_server_stream) {
-            mongoc_server_stream_cleanup(retry_server_stream);
-         }
-
-         const mongoc_ss_log_context_t ss_log_context = {
-            .operation = parts->assembled.command_name,
-            .has_operation_id = true,
-            .operation_id = parts->assembled.operation_id,
-         };
-         retry_server_stream = mongoc_cluster_stream_for_reads(&client->cluster,
-                                                               &ss_log_context,
-                                                               parts->read_prefs,
-                                                               parts->assembled.session,
-                                                               ds,
-                                                               NULL /* reply */,
-                                                               NULL /* error */);
-
-         if (!retry_server_stream) {
-            break;
-         }
-
-         parts->assembled.server_stream = retry_server_stream;
-         bson_destroy(reply);
-      }
-
-      _mongoc_retry_backoff_iterator_destroy(retry_backoff_iterator);
-      mongoc_deprioritized_servers_destroy(ds);
-   }
-
-   if (retry_server_stream) {
-      mongoc_server_stream_cleanup(retry_server_stream);
-   }
+   mongoc_server_stream_cleanup(context.retry_server_stream);
 
    if (ret && error) {
       /* if a retry succeeded, clear the initial error */
