@@ -11,6 +11,19 @@ Thanks to everyone who contributed to the development of this release.
   * Connor MacDonald
   * Kevin Albertson
 
+libmongoc 1.30.7
+================
+
+Fixes:
+
+  * Documentation build with python-docutils 0.22.2
+  * Omit `saslSupportedMechs` in single-threaded monitoring commands.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Julia Garland
+
 
 libmongoc 2.2.1
 ===============
