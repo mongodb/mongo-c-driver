@@ -128,13 +128,40 @@ is_testing_gcp_oidc(void)
    return true;
 }
 
+// get_test_uri returns the URI to a live writable server. URI does not include auth.
+// URI only has one host to simplify test assertions using operation counters (which count operations to all servers).
+static mongoc_uri_t *
+get_test_uri(void)
+{
+   // Get the "<host>:<port>" string of a writeable server.
+   char *host_and_port;
+   {
+      bson_error_t error;
+      mongoc_client_t *client = test_framework_new_default_client();
+      mongoc_server_description_t *sd = mongoc_client_select_server(client, true, NULL, &error);
+      ASSERT_OR_PRINT(sd, error);
+
+      host_and_port = bson_strdup(mongoc_server_description_host(sd)->host_and_port);
+
+      mongoc_server_description_destroy(sd);
+      mongoc_client_destroy(client);
+   }
+
+   char *uri_str = bson_strdup_printf("mongodb://%s", host_and_port);
+   mongoc_uri_t *uri = mongoc_uri_new(uri_str);
+
+   bson_free(host_and_port);
+   bson_free(uri_str);
+   return uri;
+}
 
 static test_fixture_t *
 test_fixture_new(test_config_t cfg)
 {
    test_fixture_t *tf = bson_malloc0(sizeof(*tf));
 
-   mongoc_uri_t *uri = mongoc_uri_new("mongodb://localhost:27017"); // Direct connect for simpler op counters.
+   mongoc_uri_t *uri = get_test_uri();
+   mongoc_uri_set_appname(uri, "mongoc-oidc");
    mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
    mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYREADS, false); // Disable retryable reads per spec.
    mongoc_oidc_callback_t *oidc_callback = NULL;
@@ -166,6 +193,7 @@ test_fixture_new(test_config_t cfg)
 
    if (cfg.use_pool) {
       tf->pool = mongoc_client_pool_new(uri);
+      test_framework_set_pool_ssl_opts(tf->pool);
       mongoc_client_pool_set_error_api(tf->pool, MONGOC_ERROR_API_VERSION_2);
       if (tf->using_callback) {
          ASSERT(mongoc_client_pool_set_oidc_callback(tf->pool, oidc_callback));
@@ -173,6 +201,7 @@ test_fixture_new(test_config_t cfg)
       tf->client = mongoc_client_pool_pop(tf->pool);
    } else {
       tf->client = mongoc_client_new_from_uri(uri);
+      test_framework_set_ssl_opts(tf->client);
       mongoc_client_set_error_api(tf->client, MONGOC_ERROR_API_VERSION_2);
       if (tf->using_callback) {
          ASSERT(mongoc_client_set_oidc_callback(tf->client, oidc_callback));
@@ -230,7 +259,19 @@ configure_failpoint(const char *failpoint_json)
 // Configure failpoint on a separate client:
 {
    bson_error_t error;
-   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_uri_t *uri = get_test_uri();
+
+   char *admin_user = test_framework_get_admin_user();
+   char *admin_pass = test_framework_get_admin_password();
+   if (admin_user && admin_pass) {
+      mongoc_uri_set_username(uri, admin_user);
+      mongoc_uri_set_password(uri, admin_pass);
+   }
+
+   mongoc_client_t *client = mongoc_client_new_from_uri_with_error(uri, &error);
+   ASSERT_OR_PRINT(client, error);
+
+   test_framework_set_ssl_opts(client);
 
    // Configure fail point:
    bson_t *failpoint = tmp_bson(failpoint_json);
@@ -238,6 +279,9 @@ configure_failpoint(const char *failpoint_json)
    ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", failpoint, NULL, NULL, &error), error);
 
    mongoc_client_destroy(client);
+   bson_free(admin_user);
+   bson_free(admin_pass);
+   mongoc_uri_destroy(uri);
 }
 
 // test_oidc_works tests a simple happy path.
@@ -302,11 +346,16 @@ test_oidc_bad_config(void *unused)
 
    // Expect error if no callback set:
    {
-      mongoc_client_t *client = mongoc_client_new("mongodb://localhost/?authMechanism=MONGODB-OIDC");
+      mongoc_uri_t *uri = get_test_uri(); // URI to test server. Error occurs after connecting.
+      mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
+      mongoc_client_t *client = mongoc_client_new_from_uri_with_error(uri, &error);
+      ASSERT_OR_PRINT(client, error);
+      test_framework_set_ssl_opts(client);
       bool ok = mongoc_client_command_simple(client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
       ASSERT(!ok);
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "no callback set");
       mongoc_client_destroy(client);
+      mongoc_uri_destroy(uri);
    }
 
    // Expect error if callback is set twice:
