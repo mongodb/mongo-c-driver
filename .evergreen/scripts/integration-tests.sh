@@ -44,4 +44,4 @@ export MONGO_ORCHESTRATION_HOME="${DRIVERS_TOOLS:?}/.evergreen/orchestration"
 export MONGODB_BINARIES="${DRIVERS_TOOLS:?}/mongodb/bin"
 export PATH="${MONGODB_BINARIES:?}:$PATH"
 
-"${DRIVERS_TOOLS:?}/.evergreen/run-mongodb.sh start"
+"${DRIVERS_TOOLS:?}/.evergreen/run-mongodb.sh" start
