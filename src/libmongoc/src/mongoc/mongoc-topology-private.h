@@ -419,8 +419,7 @@ typedef enum {
  * @param server_id The ID of the server on which the error occurred.
  * @param handshake_complete Whether the handshake was complete for this server
  * @param type The type of error to process
- * @param reply If checking for a command error, the server reply. Otherwise
- * NULL
+ * @param reply For a command error: the server reply. For a network error: a document with optional "errorLabels".
  * @param why An error that will be attached to the server description
  * @param generation The generation of the server description the caller was
  * using.

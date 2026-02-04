@@ -131,6 +131,13 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    BSON_ASSERT(cmd->server_stream);
 
    ENTRY;
+
+   bson_t reply_local;
+   if (!reply) {
+      reply = &reply_local;
+   }
+   bson_init(reply);
+
    mongoc_topology_t *topology = cluster->client->topology;
    uint32_t server_id = cmd->server_stream->sd->id;
    _mongoc_sdam_app_error_type_t type = MONGOC_SDAM_APP_ERROR_NETWORK;
@@ -143,16 +150,12 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
                                      server_id,
                                      true, // handshake_complete
                                      type,
-                                     NULL,
+                                     reply,
                                      why,
                                      cmd->server_stream->sd->generation,
                                      &cmd->server_stream->sd->service_id);
    /* Always disconnect the current connection on network error. */
    mongoc_cluster_disconnect_node(cluster, server_id);
-
-   if (reply) {
-      bson_init(reply);
-   }
 
    if (cmd->session) {
       if (cmd->session->server_session) {

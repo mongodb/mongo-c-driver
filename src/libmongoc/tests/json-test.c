@@ -266,7 +266,7 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
          bool handshake_complete = false;
          const char *type_str;
          _mongoc_sdam_app_error_type_t type = 0;
-         bson_t response;
+         bson_t response = BSON_INITIALIZER;
          bson_error_t err;
          mongoc_server_description_t const *sd;
          mc_shared_tpld td = mc_tpld_take_ref(topology);
@@ -329,6 +329,7 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
          _mongoc_topology_handle_app_error(
             topology, sd->id, handshake_complete, type, &response, &err, generation, &kZeroObjectId);
          mc_tpld_drop_ref(&td);
+         bson_destroy(&response);
       }
    }
 }

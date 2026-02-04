@@ -1898,6 +1898,8 @@ _mongoc_topology_handle_app_error(mongoc_topology_t *topology,
                                   uint32_t generation,
                                   const bson_oid_t *service_id)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_error_t server_selection_error;
    const mongoc_server_description_t *sd;
    bool cleared_pool = false;
@@ -1932,6 +1934,9 @@ _mongoc_topology_handle_app_error(mongoc_topology_t *topology,
    if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
       cleared_pool = _handle_sdam_app_error_command(topology, td.ptr, server_id, generation, service_id, sd, reply);
    } else {
+      if (mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR)) {
+         goto ignore_error;
+      }
       /* Invalidate the server that saw the error. */
       mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
       sd = mongoc_topology_description_server_by_id_const(tdmod.new_td, server_id, NULL);
