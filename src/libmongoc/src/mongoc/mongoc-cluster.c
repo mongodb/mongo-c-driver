@@ -178,6 +178,10 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
       }
    }
 
+   if (reply == &reply_local) {
+      bson_destroy(&reply_local);
+   }
+
    EXIT;
 }
 
@@ -963,6 +967,10 @@ mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
  *       @negotiate_sasl_supported_mechs is true, then saslSupportedMechs is
  *       added to the hello command.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Returns:
  *       A mongoc_server_description_t you must destroy or NULL. If the call
  *       failed its error is set and its type is MONGOC_SERVER_UNKNOWN.
@@ -978,8 +986,11 @@ _stream_run_hello(mongoc_cluster_t *cluster,
                   bool negotiate_sasl_supported_mechs,
                   mongoc_scram_t *scram,
                   bson_t *speculative_auth_response /* OUT */,
+                  bson_t *reply /* OUT */,
                   bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    mc_shared_tpld td = mc_tpld_take_ref(BSON_ASSERT_PTR_INLINE(cluster)->client->topology);
 
    ENTRY;
@@ -1040,14 +1051,14 @@ _stream_run_hello(mongoc_cluster_t *cluster,
       .query_flags = query_flags,
    };
 
-   bson_t reply;
+   bson_t hello_reply;
    // The final resulting server description
    mongoc_server_description_t *ret_handshake_sd = NULL;
-   if (!mongoc_cluster_run_command_private(cluster, &hello_cmd, &reply, error)) {
+   if (!mongoc_cluster_run_command_private(cluster, &hello_cmd, &hello_reply, error)) {
       // Command execution failed.
       if (negotiate_sasl_supported_mechs) {
          // Negotiating a new SASL mechanism
-         bsonParse(reply,
+         bsonParse(hello_reply,
                    find(allOf(key("ok"), isFalse), //
                         do({
                            /* hello response returned ok: 0. According to
@@ -1068,10 +1079,10 @@ _stream_run_hello(mongoc_cluster_t *cluster,
       ret_handshake_sd = BSON_ALIGNED_ALLOC0(mongoc_server_description_t);
       mongoc_server_description_init(ret_handshake_sd, address, server_id);
       /* send the error from run_command IN to handle_hello */
-      mongoc_server_description_handle_hello(ret_handshake_sd, &reply, rtt_msec, error);
+      mongoc_server_description_handle_hello(ret_handshake_sd, &hello_reply, rtt_msec, error);
 
       if (cluster->requires_auth && speculative_auth_response) {
-         _mongoc_topology_scanner_parse_speculative_authentication(&reply, speculative_auth_response);
+         _mongoc_topology_scanner_parse_speculative_authentication(&hello_reply, speculative_auth_response);
       }
 
       /* Note: This call will render our copy of the topology description to be
@@ -1089,7 +1100,12 @@ _stream_run_hello(mongoc_cluster_t *cluster,
 
    mongoc_server_stream_cleanup(server_stream);
    bson_destroy(&handshake_command);
-   bson_destroy(&reply);
+   if (!ret_handshake_sd || ret_handshake_sd->type == MONGOC_SERVER_UNKNOWN) {
+      // Move hello_reply on error, which may include errorLabels.
+      bson_steal(reply, &hello_reply);
+   } else {
+      bson_destroy(&hello_reply);
+   }
    mc_tpld_drop_ref(&td);
 
    RETURN(ret_handshake_sd);
@@ -1106,6 +1122,10 @@ _stream_run_hello(mongoc_cluster_t *cluster,
  *       mongoc_server_description_t on success, NULL otherwise.
  *       the mongoc_server_description_t MUST BE DESTROYED BY THE CALLER.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Side effects:
  *       Makes a blocking I/O call, updates cluster->topology->description
  *       with hello result.
@@ -1118,9 +1138,12 @@ _cluster_run_hello(mongoc_cluster_t *cluster,
                    uint32_t server_id,
                    mongoc_scram_t *scram /* OUT */,
                    bson_t *speculative_auth_response /* OUT */,
+                   bson_t *reply /* OUT */,
                    bson_error_t *error /* OUT */)
 {
    mongoc_server_description_t *sd;
+
+   BSON_OPTIONAL_PARAM(reply);
 
    ENTRY;
 
@@ -1136,6 +1159,7 @@ _cluster_run_hello(mongoc_cluster_t *cluster,
                           _mongoc_uri_requires_auth_negotiation(cluster->uri),
                           scram,
                           speculative_auth_response,
+                          reply,
                           error);
 
    if (!sd) {
@@ -2069,8 +2093,10 @@ _cluster_add_node(mongoc_cluster_t *cluster,
    cluster_node = _mongoc_cluster_node_new(stream, host->host_and_port);
    cluster_node->oidc_connection_cache = mongoc_oidc_connection_cache_new();
 
-   handshake_sd = _cluster_run_hello(cluster, cluster_node, server_id, &scram, &speculative_auth_response, error);
+   handshake_sd =
+      _cluster_run_hello(cluster, cluster_node, server_id, &scram, &speculative_auth_response, reply, error);
    if (!handshake_sd) {
+      reply_initialized = true;
       GOTO(error);
    }
 
