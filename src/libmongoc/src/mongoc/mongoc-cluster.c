@@ -138,6 +138,11 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    }
    bson_init(reply);
 
+   if (cmd->server_stream->needs_hello && !_mongoc_error_is_dns(why)) {
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
+   }
+
    mongoc_topology_t *topology = cluster->client->topology;
    uint32_t server_id = cmd->server_stream->sd->id;
    _mongoc_sdam_app_error_type_t type = MONGOC_SDAM_APP_ERROR_NETWORK;
@@ -1010,6 +1015,7 @@ _stream_run_hello(mongoc_cluster_t *cluster,
    mongoc_server_description_t empty_sd;
    mongoc_server_description_init(&empty_sd, address, server_id);
    mongoc_server_stream_t *const server_stream = _mongoc_cluster_create_server_stream(td.ptr, &empty_sd, stream);
+   server_stream->needs_hello = true;
    mongoc_server_description_cleanup(&empty_sd);
 
    mongoc_query_flags_t query_flags = MONGOC_QUERY_NONE;
