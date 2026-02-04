@@ -1621,7 +1621,8 @@ test_handshake_errors_impl(bool use_pool)
       mock_server_destroy(f->server);
       f->server = NULL;
 
-      bool ok = mongoc_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+      bson_t reply;
+      bool ok = mongoc_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, &reply, &error);
       ASSERT(!ok);
 
       if (use_pool) {
@@ -1634,12 +1635,24 @@ test_handshake_errors_impl(bool use_pool)
       // End state:
       {
          mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
-         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+         if (use_pool) {
+            // Considered an application operation error. See: SDAM > Network error when reading or writing.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 0); // Not cleared.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Standalone");       // Not marked Unknown.
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         } else {
+            // Considered a monitoring error. See: Server Monitoring > Network or command error during server check.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         }
          mongoc_server_description_destroy(sd);
       }
 
       test_handshake_errors_teardown(f);
+      bson_destroy(&reply);
    }
 
    // Test an error on "hello":
@@ -1647,7 +1660,8 @@ test_handshake_errors_impl(bool use_pool)
       test_handshake_errors_fixture *f =
          test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool});
 
-      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+      bson_t reply;
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, &reply, &error);
 
       // Hang up handshake:
       {
@@ -1667,21 +1681,34 @@ test_handshake_errors_impl(bool use_pool)
       // End state:
       {
          mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
-         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
-         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+         if (use_pool) {
+            // Considered an application operation error. See: SDAM > Network error when reading or writing.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 0); // Not cleared.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Standalone");       // Not marked Unknown.
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         } else {
+            // Considered a monitoring error. See: Server Monitoring > Network or command error during server check.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         }
          mongoc_server_description_destroy(sd);
       }
 
       future_destroy(future);
       test_handshake_errors_teardown(f);
+      bson_destroy(&reply);
    }
 
    // Test an auth error. Use PLAIN to not require SSL.
    {
       test_handshake_errors_fixture *f =
          test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool, .use_auth = true});
+      bson_t reply;
 
-      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, &reply, &error);
 
       // Reply to handshake:
       {
@@ -1708,10 +1735,13 @@ test_handshake_errors_impl(bool use_pool)
          ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
          ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
          mongoc_server_description_destroy(sd);
+         ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+         ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
       }
 
       future_destroy(future);
       test_handshake_errors_teardown(f);
+      bson_destroy(&reply);
    }
 }
 
