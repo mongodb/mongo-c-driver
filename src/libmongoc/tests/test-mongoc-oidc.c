@@ -418,7 +418,7 @@ test_oidc_delays(void *use_pool_void)
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["find"], "errorCode" : 391}
+      "data" : {"failCommands" : ["find"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
    int64_t start_us = bson_get_monotonic_time();
@@ -450,7 +450,7 @@ test_oidc_reauth_twice(void *use_pool_void)
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 2},
-      "data" : {"failCommands" : ["find"], "errorCode" : 391}
+      "data" : {"failCommands" : ["find"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
    int64_t start_us = bson_get_monotonic_time();
@@ -483,7 +483,7 @@ test_oidc_reauth_error_v1(void *use_pool_void)
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["find"], "errorCode" : 391}
+      "data" : {"failCommands" : ["find"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
    int64_t start_us = bson_get_monotonic_time();
@@ -693,7 +693,7 @@ PROSE_TEST(3, 3, "Unexpected error code does not clear the cache")
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["saslStart"], "errorCode" : 20}
+      "data" : {"failCommands" : ["saslStart"], "errorCode" : 20, "appName" : "mongoc-oidc"}
    }));
 
    // Expect auth to fail:
@@ -726,7 +726,7 @@ PROSE_TEST(4, 1, "Reauthentication Succeeds")
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["find"], "errorCode" : 391}
+      "data" : {"failCommands" : ["find"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
    // Expect auth to succeed:
@@ -751,7 +751,7 @@ PROSE_TEST(4, 2, "Read Commands Fail If Reauthentication Fails")
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["find"], "errorCode" : 391}
+      "data" : {"failCommands" : ["find"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
 
@@ -795,7 +795,7 @@ PROSE_TEST(4, 3, "Write Commands Fail If Reauthentication Fails")
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["insert"], "errorCode" : 391}
+      "data" : {"failCommands" : ["insert"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
    // Expect auth to fail:
@@ -873,7 +873,7 @@ PROSE_TEST(4, 4, "Speculative Authentication should be ignored on Reauthenticati
       configure_failpoint(BSON_STR({
          "configureFailPoint" : "failCommand",
          "mode" : {"times" : 1},
-         "data" : {"failCommands" : ["insert"], "errorCode" : 391}
+         "data" : {"failCommands" : ["insert"], "errorCode" : 391, "appName" : "mongoc-oidc"}
       }));
 
       DECL_OPCOUNT();
@@ -943,7 +943,7 @@ PROSE_TEST(4, 5, "Reauthentication Succeeds when a Session is involved")
    configure_failpoint(BSON_STR({
       "configureFailPoint" : "failCommand",
       "mode" : {"times" : 1},
-      "data" : {"failCommands" : ["find"], "errorCode" : 391}
+      "data" : {"failCommands" : ["find"], "errorCode" : 391, "appName" : "mongoc-oidc"}
    }));
 
    // Expect find on a session succeeds:
