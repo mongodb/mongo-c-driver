@@ -330,6 +330,16 @@ _mongoc_error_is_network(const bson_error_t *error)
 }
 
 bool
+_mongoc_error_is_dns(const bson_error_t *error)
+{
+   if (!error) {
+      return false;
+   }
+
+   return error->domain == MONGOC_ERROR_STREAM && error->code == MONGOC_ERROR_STREAM_NAME_RESOLUTION;
+}
+
+bool
 _mongoc_error_is_auth(const bson_error_t *error)
 {
    if (!error) {

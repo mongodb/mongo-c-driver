@@ -104,6 +104,9 @@ bool
 _mongoc_error_is_network(const bson_error_t *error);
 
 bool
+_mongoc_error_is_dns(const bson_error_t *error);
+
+bool
 _mongoc_error_is_server(const bson_error_t *error);
 
 bool
