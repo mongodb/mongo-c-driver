@@ -78,8 +78,10 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"pool-clear-checkout-error", SKIP_ALL_TESTS},
    {"pool-clear-application-error", SKIP_ALL_TESTS},
    {"pool-cleared-error", "PoolClearedError does not mark server unknown"}, // requires multithreaded runner
-   {"backpressure-network-error-fail", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
-   {"backpressure-network-timeout-fail", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-error-fail-single", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-timeout-fail-single", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-error-fail-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+{"backpressure-network-timeout-fail-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
    {"backpressure-server-description-unchanged-on-min-pool-size-population-error", SKIP_ALL_TESTS}, // No minPoolSize.
 
    // Requires streaming heartbeat support
