@@ -313,8 +313,16 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
             type = MONGOC_SDAM_APP_ERROR_COMMAND;
          } else if (0 == strcmp(type_str, "network")) {
             type = MONGOC_SDAM_APP_ERROR_NETWORK;
+            if (!handshake_complete) {
+               // _handle_network_error would have added a "SystemOverloadedError" label.
+               _mongoc_add_error_label(&response, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+            }
          } else if (0 == strcmp(type_str, "timeout")) {
             type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
+            if (!handshake_complete) {
+               // _handle_network_error would have added a "SystemOverloadedError" label.
+               _mongoc_add_error_label(&response, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+            }
          } else {
             test_error("unexpected 'type' value: %s", type_str);
          }
