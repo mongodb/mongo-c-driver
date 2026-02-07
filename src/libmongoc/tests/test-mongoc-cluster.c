@@ -7,6 +7,7 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>
@@ -1757,6 +1758,75 @@ test_handshake_errors_single(void)
    test_handshake_errors_impl(false);
 }
 
+// test_connection_open_after_backpressure_error verifies the spec behavior:
+// > Because the scan may occur on an authenticated connection in single-threaded monitors, the server may apply
+// > backpressure by failing the command with a `SystemOverloadedError` label. The driver MUST not close the connection
+// > when this label is encountered.
+static void
+test_single_connection_open_after_backpressure_error(void)
+{
+   bson_error_t error;
+
+   test_handshake_errors_fixture *f = test_handshake_errors_setup((test_handshake_errors_opts){0});
+
+   // Send an initial ping to establish a connection and complete a handshake:
+   {
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+
+      // Reply to handshake:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request, f->legacy_hello_reply);
+         request_destroy(request);
+      }
+
+      // Reply to ping:
+      {
+         request_t *request = mock_server_receives_msg(f->server, MONGOC_MSG_NONE, tmp_bson("{'ping': 1}"));
+         ASSERT(request);
+         reply_to_request_with_ok_and_destroy(request);
+      }
+
+      ASSERT_OR_PRINT(future_get_bool(future), error);
+      future_destroy(future);
+   }
+
+   mongoc_stream_t *start_stream = mongoc_topology_scanner_get_node(f->client->topology->scanner, 1)->stream;
+
+   // Pretend last scan is old to force another monitoring check:
+   f->client->topology->last_scan = mlib_time_add(mlib_now(), mlib_duration(-60, s)).time_since_monotonic_start._rep;
+
+   {
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+
+      // Reply to handshake with command error that has ServerOverloadedError label:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request,
+                                 BSON_STR({"ok" : 0, "code" : 123, "errorLabels" : ["SystemOverloadedError"]}));
+         request_destroy(request);
+      }
+
+      // TODO: Once CDRIVER-???? is addressed, expect server selection error. Currently, the server error is ignored.
+
+      // Reply to ping:
+      {
+         request_t *request = mock_server_receives_msg(f->server, MONGOC_MSG_NONE, tmp_bson("{'ping': 1}"));
+         ASSERT(request);
+         reply_to_request_with_ok_and_destroy(request);
+      }
+
+      ASSERT_OR_PRINT(future_get_bool(future), error);
+      future_destroy(future);
+   }
+
+   mongoc_stream_t *end_stream = mongoc_topology_scanner_get_node(f->client->topology->scanner, 1)->stream;
+   ASSERT_CMPVOID(start_stream, ==, end_stream);
+
+   test_handshake_errors_teardown(f);
+}
 void
 test_cluster_install(TestSuite *suite)
 {
@@ -1837,4 +1907,7 @@ test_cluster_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Cluster/stream_invalidation/pooled", test_cluster_stream_invalidation_pooled);
    TestSuite_AddMockServerTest(suite, "/Cluster/handshake_errors/single", test_handshake_errors_single);
    TestSuite_AddMockServerTest(suite, "/Cluster/handshake_errors/pooled", test_handshake_errors_pooled);
+   TestSuite_AddMockServerTest(suite,
+                               "/Cluster/single_connection_open_after_backpressure_error",
+                               test_single_connection_open_after_backpressure_error);
 }
