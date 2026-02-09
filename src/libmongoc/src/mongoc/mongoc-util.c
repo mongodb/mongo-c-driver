@@ -669,19 +669,7 @@ _mongoc_add_transient_txn_error(const mongoc_client_session_t *cs, bson_t *reply
    }
 
    if (_mongoc_client_session_in_txn(cs)) {
-      bson_t labels = BSON_INITIALIZER;
-      _mongoc_bson_array_copy_labels_to(reply, &labels);
-      _mongoc_bson_array_add_label(&labels, TRANSIENT_TXN_ERR);
-
-      bson_t new_reply = BSON_INITIALIZER;
-      bson_copy_to_excluding_noinit(reply, &new_reply, "errorLabels", NULL);
-      BSON_APPEND_ARRAY(&new_reply, "errorLabels", &labels);
-
-      bson_reinit(reply);
-      bson_concat(reply, &new_reply);
-
-      bson_destroy(&labels);
-      bson_destroy(&new_reply);
+      _mongoc_add_error_label(reply, TRANSIENT_TXN_ERR);
    }
 }
 
