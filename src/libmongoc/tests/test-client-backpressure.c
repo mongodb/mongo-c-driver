@@ -375,8 +375,8 @@ test_SDAM_backpressure_network_error_fail(void *unused)
       bool ok = mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, &reply, &error);
       ASSERT(!ok);
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
-      ASSERT(mongoc_error_has_label(&reply, "SystemOverloadedError"));
-      ASSERT(mongoc_error_has_label(&reply, "RetryableError"));
+      ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+      ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
       bson_destroy(&reply);
       mongoc_collection_destroy(coll);
       mongoc_client_pool_push(pool, client);
