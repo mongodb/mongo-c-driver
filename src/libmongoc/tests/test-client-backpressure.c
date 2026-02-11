@@ -34,6 +34,7 @@ typedef struct {
    int connection_failures;
    bool failed;
    bson_mutex_t mutex;
+   bson_t *filter;
 } CPB_thread_data;
 
 static CPB_thread_data *
@@ -41,6 +42,8 @@ CPB_thread_data_new(mongoc_client_pool_t *pool)
 {
    CPB_thread_data *thread_data = bson_malloc0(sizeof(CPB_thread_data));
    thread_data->pool = pool;
+   thread_data->filter =
+      bson_new_from_json((const uint8_t *)BSON_STR({"$where" : "function() { sleep(2000); return true; }"}), -1, NULL);
    bson_mutex_init(&thread_data->mutex);
    return thread_data;
 }
@@ -87,6 +90,7 @@ CPB_thread_data_new_destroy(CPB_thread_data *thread_data)
    if (!thread_data) {
       return;
    }
+   bson_destroy(thread_data->filter);
    bson_mutex_destroy(&thread_data->mutex);
    bson_free(thread_data);
 }
@@ -108,9 +112,7 @@ static BSON_THREAD_FUN(Connection_Pool_Backpressure_worker, arg)
    mongoc_client_t *client = mongoc_client_pool_pop(thread_data->pool);
    mongoc_collection_t *coll = mongoc_client_get_collection(client, "test", "test");
 
-   bson_t *filter =
-      bson_new_from_json((const uint8_t *)BSON_STR({"$where" : "function() { sleep(2000); return true; }"}), -1, NULL);
-   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, filter, NULL, NULL);
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, thread_data->filter, NULL, NULL);
 
    const bson_t *got;
    bool found = mongoc_cursor_next(cursor, &got);
@@ -129,7 +131,6 @@ static BSON_THREAD_FUN(Connection_Pool_Backpressure_worker, arg)
       }
    }
 
-   bson_destroy(filter);
    mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(coll);
    mongoc_client_pool_push(thread_data->pool, client);
