@@ -1759,7 +1759,7 @@ test_handshake_errors_single(void)
    test_handshake_errors_impl(false);
 }
 
-// test_connection_open_after_backpressure_error verifies the spec behavior:
+// test_single_connection_open_after_backpressure_error verifies the spec behavior:
 // > Because the scan may occur on an authenticated connection in single-threaded monitors, the server may apply
 // > backpressure by failing the command with a `SystemOverloadedError` label. The driver MUST not close the connection
 // > when this label is encountered.
