@@ -153,6 +153,8 @@ test_Connection_Pool_Backpressure(void *unused)
 {
    BSON_UNUSED(unused);
    mongoc_client_pool_t *pool = test_framework_new_default_client_pool();
+   CPB_thread_data *thread_data = CPB_thread_data_new(pool);
+   bool test_passed = false;
 
    // Set up the rate limiter:
    {
@@ -169,12 +171,14 @@ test_Connection_Pool_Backpressure(void *unused)
       bson_error_t error;
       mongoc_collection_drop(coll, NULL); // Drop pre-existing data.
       bool ok = mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error);
-      ASSERT_OR_PRINT(ok, error);
       mongoc_collection_destroy(coll);
       mongoc_client_pool_push(pool, client);
+      if (!ok) {
+         MONGOC_ERROR("Failed to insert: %s", error.message);
+         goto fail;
+      }
    }
 
-   CPB_thread_data *thread_data = CPB_thread_data_new(pool);
 
    // Run 100 threads to completion:
    {
@@ -190,6 +194,28 @@ test_Connection_Pool_Backpressure(void *unused)
       }
    }
 
+   if (CPB_thread_data_get_failed(thread_data)) {
+      MONGOC_ERROR("One or more worker threads failed unexpectedly.");
+      goto fail;
+   }
+
+   // Expect at least 10 connection failures due to backpressure:
+   if (CPB_thread_data_get_connection_failures(thread_data) < 10) {
+      MONGOC_ERROR("Expected at least 10 connection failures due to backpressure, but got %d",
+                   CPB_thread_data_get_connection_failures(thread_data));
+      goto fail;
+   }
+
+   // Expect no pool clears. libmongoc does not implement CMAP events. Instead, check for pool clears by inspecting the
+   // generation counter.
+   if (get_connection_pool_generation(pool) > 0) {
+      MONGOC_ERROR("Expected no pool clears, but generation counter was %u", get_connection_pool_generation(pool));
+      goto fail;
+   }
+
+   test_passed = true;
+
+fail:
    // Disable rate limiter "even if the test fails":
    {
       // Sleep for 1 second to clear the rate limiter.
@@ -197,13 +223,9 @@ test_Connection_Pool_Backpressure(void *unused)
       run_admin_command(BSON_STR({"setParameter" : 1, "ingressConnectionEstablishmentRateLimiterEnabled" : false}));
    }
 
-   ASSERT_WITH_MSG(!CPB_thread_data_get_failed(thread_data), "A worker thread failed unexpectedly. See logs.");
-
-   // Expect at least 10 connection failures due to backpressure:
-   ASSERT_CMPINT(CPB_thread_data_get_connection_failures(thread_data), >=, 10);
-
-   // libmongoc does not implement CMAP events. Instead, check for pool clears by inspecting the generation counter.
-   ASSERT_CMPUINT32(get_connection_pool_generation(pool), ==, 0);
+   if (!test_passed) {
+      test_error("Test failed. See logs for details.");
+   }
 
    CPB_thread_data_new_destroy(thread_data);
 
