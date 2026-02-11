@@ -138,6 +138,7 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
    }
    bson_init(reply);
 
+   // TODO (CDRIVER-6241) do not apply backpressure labels to non-IO TLS errors.
    if (cmd->server_stream->needs_hello && !_mongoc_error_is_dns(why)) {
       _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
       _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
@@ -201,6 +202,7 @@ _handle_network_error_connecting(mongoc_cluster_t *cluster,
    _mongoc_bson_init_if_set(reply);
 
    // Do not apply backpressure labels to DNS errors.
+   // TODO (CDRIVER-6241) do not apply backpressure labels to non-IO TLS errors.
    if (!_mongoc_error_is_dns(error_in)) {
       _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
       _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
