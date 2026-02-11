@@ -102,7 +102,7 @@ run_admin_command(const char *cmd_str)
    mongoc_client_destroy(client);
 }
 
-BSON_THREAD_FUN(Connection_Pool_Backpressure_worker, arg)
+static BSON_THREAD_FUN(Connection_Pool_Backpressure_worker, arg)
 {
    CPB_thread_data *thread_data = (CPB_thread_data *)arg;
    mongoc_client_t *client = mongoc_client_pool_pop(thread_data->pool);
