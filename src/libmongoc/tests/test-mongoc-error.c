@@ -1,3 +1,4 @@
+#include <bson/bson_t-private.h>
 #include <mongoc/mongoc-error-private.h>
 
 #include <mongoc/mongoc.h>
@@ -147,6 +148,25 @@ test_add_label(void)
    ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
    _mongoc_add_error_label(&reply, "foo");
    ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
+
+   // Can handle bson_t with heap data:
+   {
+      bson_t big = BSON_INITIALIZER;
+      // Append enough data to force heap allocation:
+      {
+         ASSERT(big.flags & BSON_FLAG_INLINE);
+         char *big_str = bson_malloc(128);
+         memset(big_str, 'x', 127);
+         big_str[127] = '\0';
+         BSON_APPEND_UTF8(&big, "big", big_str);
+         ASSERT(!(big.flags & BSON_FLAG_INLINE));
+         bson_free(big_str);
+      }
+
+      _mongoc_add_error_label(&big, "foo");
+      ASSERT_MATCH(&big, BSON_STR({"big" : {"$$type" : "string"}, "errorLabels" : ["foo"]}));
+      bson_destroy(&big);
+   }
 
    bson_destroy(&reply);
 }
