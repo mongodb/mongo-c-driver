@@ -155,6 +155,8 @@ test_Connection_Pool_Backpressure(void *unused)
    BSON_UNUSED(unused);
    mongoc_client_pool_t *pool = test_framework_new_default_client_pool();
    CPB_thread_data *thread_data = CPB_thread_data_new(pool);
+
+   // Do NOT assert anything until "ingressConnectionEstablishmentRateLimiterEnabled" is set to `false`.
    bool test_passed = false;
 
    // Set up the rate limiter:
