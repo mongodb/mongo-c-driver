@@ -81,7 +81,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"backpressure-network-error-fail-single", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
    {"backpressure-network-timeout-error-single", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
    {"backpressure-network-error-fail-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
-{"backpressure-network-timeout-error-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-timeout-error-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
    {"backpressure-server-description-unchanged-on-min-pool-size-population-error", SKIP_ALL_TESTS}, // No minPoolSize.
 
    // Requires streaming heartbeat support
