@@ -1733,6 +1733,7 @@ test_handshake_errors_impl(bool use_pool)
       // End state:
       {
          mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         // Considered an authentication step error. See: CMAP > Connection Pool > Backpressure-enabled.
          ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
          ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
          mongoc_server_description_destroy(sd);
