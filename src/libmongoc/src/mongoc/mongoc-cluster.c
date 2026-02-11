@@ -132,7 +132,7 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
 
    ENTRY;
 
-   bson_t reply_local;
+   bson_t reply_local = BSON_INITIALIZER;
    if (!reply) {
       reply = &reply_local;
    }
@@ -178,9 +178,7 @@ _handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t
       }
    }
 
-   if (reply == &reply_local) {
-      bson_destroy(&reply_local);
-   }
+   bson_destroy(&reply_local);
 
    EXIT;
 }
