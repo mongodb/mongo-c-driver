@@ -3637,7 +3637,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    }
 
    // If a retry attempt fails with an error labeled NoWritesPerformed, drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label(reply, "NoWritesPerformed")) {
+   if (original_error.set && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_NOWRITESPERFORMED)) {
       if (error) {
          *error = original_error.error;
       }

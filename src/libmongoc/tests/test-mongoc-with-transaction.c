@@ -23,7 +23,7 @@ with_transaction_fail_transient_txn(mongoc_client_session_t *session, void *ctx,
 
    *reply = bson_new();
    BSON_APPEND_ARRAY_BUILDER_BEGIN(*reply, "errorLabels", &labels);
-   bson_array_builder_append_utf8(labels, TRANSIENT_TXN_ERR, -1);
+   bson_array_builder_append_utf8(labels, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR, -1);
    bson_append_array_builder_end(*reply, labels);
 
    return false;
@@ -65,14 +65,14 @@ test_with_transaction_timeout(void *ctx)
    /* Test Case 2: If committing returns an error with the
       UnknownTransactionCommitResult label and we have exceeded
       the timeout, withTransaction fails. */
-   session->fail_commit_label = UNKNOWN_COMMIT_RESULT;
+   session->fail_commit_label = MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT;
    res = mongoc_client_session_with_transaction(session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
    ASSERT(!res);
 
    /* Test Case 3: If committing returns an error with the
       TransientTransactionError label and we have exceeded the
       timeout, withTransaction fails. */
-   session->fail_commit_label = TRANSIENT_TXN_ERR;
+   session->fail_commit_label = MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR;
    res = mongoc_client_session_with_transaction(session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
    ASSERT(!res);
 

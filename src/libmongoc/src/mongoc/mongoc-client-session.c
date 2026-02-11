@@ -121,7 +121,7 @@ txn_abort(mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort. Note that a
     * RetryableWriteError label has already been appended here. */
-   if (mongoc_error_has_label(&reply_local, RETRYABLE_WRITE_ERROR)) {
+   if (mongoc_error_has_label(&reply_local, MONGOC_ERROR_LABEL_RETRYABLEWRITEERROR)) {
       _mongoc_client_session_unpin(session);
       bson_destroy(&reply_local);
       r = mongoc_client_write_command_with_opts(session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
@@ -244,7 +244,7 @@ retry:
       _mongoc_client_session_unpin(session);
       if (reply) {
          bsonBuildAppend(*reply, insert(reply_local, not(key("errorLabels"))));
-         _mongoc_error_copy_labels_and_upsert(&reply_local, reply, UNKNOWN_COMMIT_RESULT);
+         _mongoc_error_copy_labels_and_upsert(&reply_local, reply, MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT);
       }
    } else if (reply) {
       /* maintain invariants: reply & reply_local are valid until the end */
@@ -961,7 +961,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
             BSON_ASSERT(mongoc_client_session_abort_transaction(session, NULL));
          }
 
-         if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer)) {
+         if (mongoc_error_has_label(active_reply, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR) &&
+             !mlib_timer_is_expired(timer)) {
             bson_destroy(active_reply);
             active_reply = NULL;
             continue;
@@ -998,7 +999,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                GOTO(done);
             }
 
-            if (mongoc_error_has_label(active_reply, UNKNOWN_COMMIT_RESULT) && !mlib_timer_is_expired(timer)) {
+            if (mongoc_error_has_label(active_reply, MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT) &&
+                !mlib_timer_is_expired(timer)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
                 *
@@ -1009,7 +1011,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                continue;
             }
 
-            if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer)) {
+            if (mongoc_error_has_label(active_reply, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR) &&
+                !mlib_timer_is_expired(timer)) {
                /* In the case of a transient txn error, go back to outside loop.
                   We must set the reply to NULL so it may be used by the cb. */
                bson_destroy(active_reply);

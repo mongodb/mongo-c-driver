@@ -669,7 +669,7 @@ _mongoc_add_transient_txn_error(const mongoc_client_session_t *cs, bson_t *reply
    }
 
    if (_mongoc_client_session_in_txn(cs)) {
-      _mongoc_add_error_label(reply, TRANSIENT_TXN_ERR);
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR);
    }
 }
 
