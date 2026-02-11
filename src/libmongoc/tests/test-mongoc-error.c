@@ -145,6 +145,8 @@ test_add_label(void)
    // Ignores duplicate:
    _mongoc_add_error_label(&reply, "bar");
    ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
+   _mongoc_add_error_label(&reply, "foo");
+   ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
 
    bson_destroy(&reply);
 }
