@@ -2209,29 +2209,6 @@ stream_not_found(const mongoc_topology_description_t *td,
  * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
  */
 static mongoc_server_stream_t *
-_try_get_server_stream(mongoc_cluster_t *cluster,
-                       const mongoc_topology_description_t *td,
-                       uint32_t server_id,
-                       bool reconnect_ok,
-                       bson_t *reply,
-                       bson_error_t *error)
-{
-   if (cluster->client->topology->single_threaded) {
-      /* in the single-threaded use case we share topology's streams */
-      mongoc_server_stream_t *ret = _cluster_fetch_stream_single(cluster, td, server_id, reconnect_ok, error);
-      if (!ret) {
-         _mongoc_bson_init_if_set(reply);
-      }
-      return ret;
-   } else {
-      return _cluster_fetch_stream_pooled(cluster, td, server_id, reconnect_ok, reply, error);
-   }
-}
-
-/**
- * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
- */
-static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                   uint32_t server_id,
                                   bool reconnect_ok,
@@ -2253,7 +2230,15 @@ _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref(topology);
 
-   ret_server_stream = _try_get_server_stream(cluster, td.ptr, server_id, reconnect_ok, reply, err_ptr);
+   if (cluster->client->topology->single_threaded) {
+      /* in the single-threaded use case we share topology's streams */
+      ret_server_stream = _cluster_fetch_stream_single(cluster, td.ptr, server_id, reconnect_ok, err_ptr);
+      if (!ret_server_stream) {
+         _mongoc_bson_init_if_set(reply);
+      }
+   } else {
+      ret_server_stream = _cluster_fetch_stream_pooled(cluster, td.ptr, server_id, reconnect_ok, reply, err_ptr);
+   }
 
    if (!ret_server_stream) {
       ret_server_stream = NULL;
