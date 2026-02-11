@@ -71,6 +71,11 @@ _mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, const char 
 
 #define MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR "SystemOverloadedError"
 #define MONGOC_ERROR_LABEL_RETRYABLEERROR "RetryableError"
+#define MONGOC_ERROR_LABEL_RETRYABLEWRITEERROR "RetryableWriteError"
+#define MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT "UnknownTransactionCommitResult"
+#define MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR "TransientTransactionError"
+#define MONGOC_ERROR_LABEL_NOWRITESPERFORMED "NoWritesPerformed"
+
 
 /**
  * @brief Adds `label` to the "errorLabels" array in `reply`.
