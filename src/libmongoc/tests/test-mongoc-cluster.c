@@ -1810,7 +1810,7 @@ test_single_connection_open_after_backpressure_error(void)
          request_destroy(request);
       }
 
-      // TODO: Once CDRIVER-???? is addressed, expect server selection error. Currently, the server error is ignored.
+      // TODO: Once CDRIVER-6236 is addressed, expect server selection error. Currently, the server error is ignored.
 
       // Reply to ping:
       {
