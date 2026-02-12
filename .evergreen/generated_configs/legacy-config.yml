@@ -10163,7 +10163,7 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - .latest .nossl
+  - .7.0 .nossl
 - name: gcc11-i686
   display_name: GCC 11 (i686) (Ubuntu 22.04)
   expansions:

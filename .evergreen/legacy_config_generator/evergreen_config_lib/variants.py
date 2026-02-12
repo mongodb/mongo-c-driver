@@ -104,7 +104,7 @@ all_variants = [
         'gcc102',
         'GCC 10.2 (Debian 11.0)',
         'debian11-latest-large',
-        ['release-compile', 'debug-compile-nosasl-nossl', '.latest .nossl'],
+        ['release-compile', 'debug-compile-nosasl-nossl', '.7.0 .nossl'], # Test server 7.0. Debian 11 is EOL for 8.0.
         {'CC': 'gcc'},
     ),
     Variant(
