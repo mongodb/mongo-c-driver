@@ -157,6 +157,7 @@ maybe_skip() {
 if [[ "${ssl}" != "OFF" ]]; then
   # FIXME: CDRIVER-2008 for the cygwin check
   if [[ "${OSTYPE}" != "cygwin" ]]; then
+    # TODO: uncomment test when resolving CDRIVER-6242:
     echo "Authenticating using X.509 - Skipped pending DEVPROD-28037"
     # maybe_skip "${mongoc_ping:?}" "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${auth_host:?}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=src/libmongoc/tests/x509gen/ldaptest-client-key-and-cert.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/ldaptest-ca-cert.crt&sslAllowInvalidHostnames=true&${c_timeout:?}"
   fi
