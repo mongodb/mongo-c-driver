@@ -98,10 +98,11 @@ _mongoc_add_error_label(bson_t *reply, const char *label)
    bson_copy_to_excluding_noinit(reply, &new_reply, "errorLabels", NULL);
    BSON_APPEND_ARRAY(&new_reply, "errorLabels", &labels);
 
-   bson_destroy(reply);
-   bson_steal(reply, &new_reply);
+   bson_reinit(reply);
+   bson_concat(reply, &new_reply);
 
    bson_destroy(&labels);
+   bson_destroy(&new_reply);
 }
 
 void
