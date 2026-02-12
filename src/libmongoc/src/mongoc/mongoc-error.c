@@ -138,7 +138,7 @@ _mongoc_write_error_handle_labels(bool cmd_ret,
       return;
    }
 
-   if (sd->max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
+   if (sd->max_wire_version >= WIRE_VERSION_ERROR_LABEL_RETRYABLEWRITEERROR) {
       return;
    }
 
