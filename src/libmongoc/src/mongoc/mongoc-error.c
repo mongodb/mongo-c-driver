@@ -115,7 +115,7 @@ _mongoc_write_error_append_retryable_label(bson_t *reply)
    }
 
    bson_copy_to_excluding_noinit(reply, &reply_local, "errorLabels", NULL);
-   _mongoc_error_copy_labels_and_upsert(reply, &reply_local, RETRYABLE_WRITE_ERROR);
+   _mongoc_error_copy_labels_and_upsert(reply, &reply_local, MONGOC_ERROR_LABEL_RETRYABLEWRITEERROR);
 
    bson_destroy(reply);
    bson_steal(reply, &reply_local);
@@ -138,7 +138,7 @@ _mongoc_write_error_handle_labels(bool cmd_ret,
       return;
    }
 
-   if (sd->max_wire_version >= WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) {
+   if (sd->max_wire_version >= WIRE_VERSION_ERROR_LABEL_RETRYABLEWRITEERROR) {
       return;
    }
 
