@@ -249,6 +249,15 @@ all_tasks = [
                 content_type='${content_type|application/x-gzip}',
             ),
         ],
+        allowed_requesters=[
+            'ad_hoc',
+            'commit',
+            # 'github_merge_queue'
+            # 'github_pr',
+            # 'github_tag',
+            'patch',
+            'trigger',
+        ],
     ),
     NamedTask(
         'rpm-package-build',
@@ -275,6 +284,15 @@ all_tasks = [
                 'export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n'
                 '.evergreen/scripts/build_snapshot_rpm.sh'
             ),
+        ],
+        allowed_requesters=[
+            'ad_hoc',
+            'commit',
+            # 'github_merge_queue'
+            # 'github_pr',
+            # 'github_tag',
+            'patch',
+            'trigger',
         ],
     ),
     CompileTask('debug-compile-with-warnings', CFLAGS='-Werror -Wno-cast-align'),

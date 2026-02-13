@@ -34,6 +34,7 @@ class Task(ConfigObject):
         tags: Iterable[str] = (),
         depends_on: Iterable[DependencySpec] = (),
         exec_timeout_secs: int | None = None,
+        allowed_requesters: Iterable[str] = ()
     ):
         self._name = task_name
         self._tags = list(tags)
@@ -41,6 +42,7 @@ class Task(ConfigObject):
         self.commands: ValueSequence = list(commands)
         self.exec_timeout_secs = exec_timeout_secs
         self._depends_on = list(map(self._normal_dep, depends_on))
+        self.allowed_requesters = list(allowed_requesters)
 
         if exec_timeout_secs is not None:
             self.options['exec_timeout_secs'] = exec_timeout_secs
@@ -106,6 +108,8 @@ class Task(ConfigObject):
                 self.post_commands(),
             )
         )
+        if len(self.allowed_requesters) > 0:
+            task['allowed_requesters'] = self.allowed_requesters
         return task
 
 
