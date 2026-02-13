@@ -956,6 +956,25 @@ fail:
    RETURN(ret);
 }
 
+static bool
+use_streaming_mode(const mongoc_server_monitor_t *server_monitor,
+                   const mongoc_server_description_t *previous_description)
+{
+   if (server_monitor->mode == MONGOC_SERVER_MONITORING_POLL) {
+      // URI requested with "serverMonitoringMode=poll".
+      return false;
+   }
+   if (bson_empty(&previous_description->topology_version)) {
+      // Server does not support stream monitoring.
+      return false;
+   }
+   if (_mongoc_handshake_get()->env != MONGOC_HANDSHAKE_ENV_NONE) {
+      // Only use stream monitoring in FaaS environments if requested in URI with "serverMonitoringMode=stream".
+      return server_monitor->mode == MONGOC_SERVER_MONITORING_STREAM;
+   }
+   return true;
+}
+
 /**
  * @brief Perform a hello check on a server
  *
@@ -1012,15 +1031,7 @@ _server_monitor_check_server(mongoc_server_monitor_t *server_monitor,
       GOTO(exit);
    }
 
-   if (server_monitor->mode != MONGOC_SERVER_MONITORING_POLL && !bson_empty(&previous_description->topology_version) &&
-       (_mongoc_handshake_get()->env == MONGOC_HANDSHAKE_ENV_NONE ||
-        server_monitor->mode == MONGOC_SERVER_MONITORING_STREAM)) {
-      // Use stream monitoring if:
-      // - serverMonitoringMode != "poll"
-      // - Server supports stream monitoring (indicated by `topologyVersion`).
-      // - ONE OF:
-      //    - Application is not in an FaaS environment (e.g. AWS Lambda).
-      //    - serverMonitoringMode == "stream"
+   if (use_streaming_mode(server_monitor, previous_description)) {
       awaited = true;
       _server_monitor_heartbeat_started(server_monitor, awaited);
       MONITOR_LOG(server_monitor, "awaitable hello");
@@ -1199,8 +1210,8 @@ static BSON_THREAD_FUN(_server_monitor_thread, server_monitor_void)
       _update_topology_description(server_monitor, description);
 
       /* Immediately proceed to the next check if the previous response was
-       * successful and included the topologyVersion field. */
-      if (description->type != MONGOC_SERVER_UNKNOWN && !bson_empty(&description->topology_version)) {
+       * successful and streaming is enabled. */
+      if (description->type != MONGOC_SERVER_UNKNOWN && use_streaming_mode(server_monitor, description)) {
          MONITOR_LOG(server_monitor, "immediately proceeding due to topologyVersion");
          continue;
       }
