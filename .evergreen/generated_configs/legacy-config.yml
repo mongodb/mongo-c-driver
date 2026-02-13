@@ -619,6 +619,11 @@ tasks:
       permissions: public-read
       local_file: deb-i386.tar.gz
       content_type: ${content_type|application/x-gzip}
+  allowed_requesters:
+  - ad_hoc
+  - commit
+  - patch
+  - trigger
 - name: rpm-package-build
   commands:
   - command: shell.exec
@@ -676,6 +681,11 @@ tasks:
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
         export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
         .evergreen/scripts/build_snapshot_rpm.sh
+  allowed_requesters:
+  - ad_hoc
+  - commit
+  - patch
+  - trigger
 - name: debug-compile-with-warnings
   commands:
   - command: shell.exec
