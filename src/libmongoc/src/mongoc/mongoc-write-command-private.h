@@ -43,8 +43,6 @@ struct _mongoc_crud_opts_t;
  * for context. */
 #define BSON_OBJECT_ALLOWANCE (16 * 1024)
 
-#define RETRYABLE_WRITE_ERROR "RetryableWriteError"
-
 struct _mongoc_bulk_write_flags_t {
    bool ordered;
    bool bypass_document_validation;

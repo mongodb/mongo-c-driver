@@ -1,3 +1,4 @@
+#include <bson/bson_t-private.h>
 #include <mongoc/mongoc-error-private.h>
 
 #include <mongoc/mongoc.h>
@@ -121,6 +122,53 @@ test_has_label(void)
    BSON_ASSERT(mongoc_error_has_label(reply, "bar"));
    BSON_ASSERT(!mongoc_error_has_label(reply, "baz"));
    BSON_ASSERT(!mongoc_error_has_label(tmp_bson("{}"), "foo"));
+}
+
+static void
+test_add_label(void)
+{
+   // Does nothing on NULL reply:
+   _mongoc_add_error_label(NULL, "foo");
+
+   // Adds "errorLabels" if not present:
+   bson_t reply = BSON_INITIALIZER;
+   _mongoc_add_error_label(&reply, "foo");
+   ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : ["foo"]}));
+
+   // Ignores duplicate:
+   _mongoc_add_error_label(&reply, "foo");
+   ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : ["foo"]}));
+
+   // Adds to existing "errorLabels":
+   _mongoc_add_error_label(&reply, "bar");
+   ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
+
+   // Ignores duplicate:
+   _mongoc_add_error_label(&reply, "bar");
+   ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
+   _mongoc_add_error_label(&reply, "foo");
+   ASSERT_MATCH(&reply, BSON_STR({"errorLabels" : [ "foo", "bar" ]}));
+
+   // Can handle bson_t with heap data:
+   {
+      bson_t big = BSON_INITIALIZER;
+      // Append enough data to force heap allocation:
+      {
+         ASSERT(big.flags & BSON_FLAG_INLINE);
+         char *big_str = bson_malloc(128);
+         memset(big_str, 'x', 127);
+         big_str[127] = '\0';
+         BSON_APPEND_UTF8(&big, "big", big_str);
+         ASSERT(!(big.flags & BSON_FLAG_INLINE));
+         bson_free(big_str);
+      }
+
+      _mongoc_add_error_label(&big, "foo");
+      ASSERT_MATCH(&big, BSON_STR({"big" : {"$$type" : "string"}, "errorLabels" : ["foo"]}));
+      bson_destroy(&big);
+   }
+
+   bson_destroy(&reply);
 }
 
 static void
@@ -282,6 +330,7 @@ test_error_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Error/command/v1", test_command_error_v1);
    TestSuite_AddMockServerTest(suite, "/Error/command/v2", test_command_error_v2);
    TestSuite_Add(suite, "/Error/has_label", test_has_label);
+   TestSuite_Add(suite, "/Error/add_label", test_add_label);
    TestSuite_Add(suite, "/Error/state_change", test_state_change);
    TestSuite_Add(suite, "/Error/basic", test_mongoc_error_basic);
    TestSuite_Add(suite, "/Error/category", test_mongoc_error_with_category);

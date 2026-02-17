@@ -266,7 +266,7 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
          bool handshake_complete = false;
          const char *type_str;
          _mongoc_sdam_app_error_type_t type = 0;
-         bson_t response;
+         bson_t response = BSON_INITIALIZER;
          bson_error_t err;
          mongoc_server_description_t const *sd;
          mc_shared_tpld td = mc_tpld_take_ref(topology);
@@ -313,8 +313,16 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
             type = MONGOC_SDAM_APP_ERROR_COMMAND;
          } else if (0 == strcmp(type_str, "network")) {
             type = MONGOC_SDAM_APP_ERROR_NETWORK;
+            if (!handshake_complete) {
+               // _handle_network_error would have added a "SystemOverloadedError" label.
+               _mongoc_add_error_label(&response, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+            }
          } else if (0 == strcmp(type_str, "timeout")) {
             type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
+            if (!handshake_complete) {
+               // _handle_network_error would have added a "SystemOverloadedError" label.
+               _mongoc_add_error_label(&response, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+            }
          } else {
             test_error("unexpected 'type' value: %s", type_str);
          }
@@ -329,6 +337,7 @@ process_sdam_test_hello_responses(bson_t *phase, mongoc_topology_t *topology)
          _mongoc_topology_handle_app_error(
             topology, sd->id, handshake_complete, type, &response, &err, generation, &kZeroObjectId);
          mc_tpld_drop_ref(&td);
+         bson_destroy(&response);
       }
    }
 }

@@ -37,6 +37,7 @@ mongoc_server_stream_new(const mongoc_topology_description_t *td,
    server_stream->must_use_primary = false;
    server_stream->retry_attempted = false;
    server_stream->timed_out = false;
+   server_stream->needs_hello = false; // Assume hello already sent.
 
    return server_stream;
 }

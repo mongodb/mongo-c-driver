@@ -67,7 +67,22 @@ mongoc_read_err_type_t
 _mongoc_read_error_get_type(bool cmd_ret, const bson_error_t *cmd_err, const bson_t *reply);
 
 void
-_mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, char *label);
+_mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, const char *label);
+
+#define MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR "SystemOverloadedError"
+#define MONGOC_ERROR_LABEL_RETRYABLEERROR "RetryableError"
+#define MONGOC_ERROR_LABEL_RETRYABLEWRITEERROR "RetryableWriteError"
+#define MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT "UnknownTransactionCommitResult"
+#define MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR "TransientTransactionError"
+#define MONGOC_ERROR_LABEL_NOWRITESPERFORMED "NoWritesPerformed"
+
+
+/**
+ * @brief Adds `label` to the "errorLabels" array in `reply`.
+ * @param reply is an optional inout-param. If non-NULL, `*reply` must be an initialized `bson_t`.
+ */
+void
+_mongoc_add_error_label(bson_t *reply, const char *label);
 
 void
 _mongoc_write_error_append_retryable_label(bson_t *reply);
@@ -92,6 +107,9 @@ _mongoc_error_is_state_change(bson_error_t *error);
 
 bool
 _mongoc_error_is_network(const bson_error_t *error);
+
+bool
+_mongoc_error_is_dns(const bson_error_t *error);
 
 bool
 _mongoc_error_is_server(const bson_error_t *error);

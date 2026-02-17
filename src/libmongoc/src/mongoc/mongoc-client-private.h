@@ -63,7 +63,7 @@ BSON_BEGIN_DECLS
 /* version corresponding to server 4.4 release */
 #define WIRE_VERSION_4_4 9
 /* version corresponding to retryable writes error label */
-#define WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL 9
+#define WIRE_VERSION_ERROR_LABEL_RETRYABLEWRITEERROR 9
 /* first version to support server hedged reads */
 #define WIRE_VERSION_HEDGED_READS 9
 /* first version to support estimatedDocumentCount with collStats */
