@@ -4,8 +4,8 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
  %global libver       1.0
--%global up_version   1.30.6
-+%global up_version   1.30.7
+-%global up_version   1.30.7
++%global up_version   1.30.8
  #global up_prever    rc0
  # disabled as require a MongoDB server
  %bcond_with          tests

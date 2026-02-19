@@ -1,6 +1,6 @@
 # remirepo/fedora spec file for mongo-c-driver
 #
-# SPDX-FileCopyrightText:  Copyright 2015-2025 Remi Collet
+# SPDX-FileCopyrightText:  Copyright 2015-2026 Remi Collet
 # SPDX-License-Identifier: CECILL-2.1
 # http://www.cecill.info/licences/Licence_CeCILL_V2-en.txt
 #
@@ -10,10 +10,13 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.30.6
+%global up_version   1.30.7
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
+
+# enable/disable man pages
+%bcond_without       manpages
 
 # disable for bootstrap (libmongocrypt needs libbson)
 %bcond_without       libmongocrypt
@@ -57,8 +60,10 @@ BuildRequires: cmake(mongocrypt) >= 1.12.0
 %endif
 BuildRequires: perl-interpreter
 # From man pages
+%if %{with manpages}
 BuildRequires: python3
 BuildRequires: python3-sphinx >= 5.0
+%endif
 
 Requires:   %{name}-libs%{?_isa} = %{version}-%{release}
 # Sub package removed
@@ -139,7 +144,12 @@ Documentation: http://mongoc.org/libbson/%{version}/
     -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
     -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
     -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON \
+%if %{with manpages}
     -DENABLE_MAN_PAGES:BOOL=ON \
+%else
+    -DENABLE_MAN_PAGES:BOOL=OFF \
+%endif
+    -DENABLE_HTML_DOCS:BOOL=OFF \
     -DENABLE_SHARED:BOOL=ON \
     -DENABLE_STATIC:STRING=OFF \
     -DENABLE_ZLIB:STRING=SYSTEM \
@@ -240,7 +250,9 @@ exit $ret
 %{_libdir}/cmake/%{libname}-%{libver}
 %{_libdir}/cmake/mongoc-%{libver}
 %{_libdir}/cmake/mongoc-%{version}
+%if %{with manpages}
 %{_mandir}/man3/mongoc*
+%endif
 
 %files -n libbson
 %license COPYING
@@ -256,11 +268,26 @@ exit $ret
 %{_libdir}/cmake/bson-%{libver}
 %{_libdir}/cmake/bson-%{version}
 %{_libdir}/pkgconfig/libbson-*.pc
+%if %{with manpages}
 %{_mandir}/man3/bson*
 %{_mandir}/man3/libbson*
+%endif
 
 
 %changelog
+* Wed Feb  4 2026 Remi Collet <remi@remirepo.net> - 1.30.7-1
+- update to 1.30.7
+
+* Tue Jan 27 2026 Remi Collet <remi@remirepo.net> - 1.30.6-3
+- re-enable man pages using upstream patch for new docutils
+
+* Thu Jan 22 2026 Remi Collet <remi@remirepo.net> - 1.30.6-2
+- temporarily drop man pages on Fedora 44 as FTBFS
+  reported as https://jira.mongodb.org/browse/CDRIVER-6210
+
+* Fri Jan 16 2026 Fedora Release Engineering <releng@fedoraproject.org> - 1.30.6-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_44_Mass_Rebuild
+
 * Wed Oct  8 2025 Remi Collet <remi@remirepo.net> - 1.30.6-1
 - update to 1.30.6
 
