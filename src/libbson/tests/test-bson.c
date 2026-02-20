@@ -2880,7 +2880,28 @@ test_bson_array_builder(void)
       {
          bson_t b;
          bson_array_builder_t *bab = bson_array_builder_new();
+         ASSERT(BSON_APPEND_ARRAY_BUILDER_APPEND_UTF8(bab, "A"));
+         ASSERT(bson_array_builder_build(bab, &b));
+         ASSERT_BSON_EQUAL(b, ["A"]);
+         bson_destroy(&b);
+         bson_array_builder_destroy(bab);
+      }
+
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new();
          ASSERT(bson_array_builder_append_symbol(bab, "A", 1));
+         ASSERT(bson_array_builder_build(bab, &b));
+         ASSERT_BSON_EQUAL(b, [ {"$symbol" : "A"} ]);
+         bson_destroy(&b);
+         bson_array_builder_destroy(bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new();
+         ASSERT(BSON_APPEND_ARRAY_BUILDER_APPEND_SYMBOL(bab, "A"));
          ASSERT(bson_array_builder_build(bab, &b));
          ASSERT_BSON_EQUAL(b, [ {"$symbol" : "A"} ]);
          bson_destroy(&b);
