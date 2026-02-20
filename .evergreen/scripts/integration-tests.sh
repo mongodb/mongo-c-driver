@@ -44,35 +44,4 @@ export MONGO_ORCHESTRATION_HOME="${DRIVERS_TOOLS:?}/.evergreen/orchestration"
 export MONGODB_BINARIES="${DRIVERS_TOOLS:?}/mongodb/bin"
 export PATH="${MONGODB_BINARIES:?}:$PATH"
 
-# Workaround absence of `tls=true` URI in the `mongodb_auth_uri` field returned by mongo orchestration.
-if [[ -n "${REQUIRE_API_VERSION:-}" && "${SSL:?}" != nossl ]]; then
-  prev='$MONGODB_BINARIES/mongosh $URI $MONGO_ORCHESTRATION_HOME/require-api-version.js'
-
-  # Use `--tlsAllowInvalidCertificates` to avoid self-signed certificate errors.
-  next='$MONGODB_BINARIES/mongosh --tls --tlsAllowInvalidCertificates $URI $MONGO_ORCHESTRATION_HOME/require-api-version.js'
-
-  sed -i -e "s|${prev:?}|${next:?}|" "${DRIVERS_TOOLS:?}/.evergreen/run-orchestration.sh"
-fi
-
-"${DRIVERS_TOOLS:?}/.evergreen/run-orchestration.sh"
-
-echo "Waiting for mongo-orchestration to start..."
-wait_for_mongo_orchestration() {
-  declare port="${1:?"wait_for_mongo_orchestration requires a server port"}"
-
-  for _ in $(seq 300); do
-    # Exit code 7: "Failed to connect to host".
-    if
-      curl -s --max-time 1 "localhost:${port:?}" >/dev/null
-      test $? -ne 7
-    then
-      return 0
-    else
-      sleep 1
-    fi
-  done
-  echo "Could not detect mongo-orchestration on port ${port:?}"
-  return 1
-}
-wait_for_mongo_orchestration 8889
-echo "Waiting for mongo-orchestration to start... done."
+"${DRIVERS_TOOLS:?}/.evergreen/run-mongodb.sh" start
