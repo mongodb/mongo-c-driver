@@ -1098,6 +1098,8 @@ bson_append_utf8(bson_t *bson, const char *key, int key_length, const char *valu
 BSON_EXPORT(bool)
 bson_array_builder_append_utf8(bson_array_builder_t *bab, const char *value, int length);
 
+#define BSON_APPEND_ARRAY_BUILDER_APPEND_UTF8(b, value) bson_array_builder_append_utf8(b, value, (int)strlen(value))
+
 /**
  * bson_append_symbol:
  * @bson: A bson_t.

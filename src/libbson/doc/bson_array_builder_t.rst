@@ -179,6 +179,8 @@ Appending values to an array
                                     const char *value,
                                     int length);
 
+    #define BSON_APPEND_ARRAY_BUILDER_APPEND_UTF8(b, value) bson_array_builder_append_utf8(b, value, (int)strlen(value))
+
     bool
     bson_array_builder_append_symbol (bson_array_builder_t *bab,
                                       const char *value,
