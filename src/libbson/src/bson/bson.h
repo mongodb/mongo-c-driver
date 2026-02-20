@@ -1122,6 +1122,8 @@ bson_append_symbol(bson_t *bson, const char *key, int key_length, const char *va
 BSON_EXPORT(bool)
 bson_array_builder_append_symbol(bson_array_builder_t *bab, const char *value, int length);
 
+#define BSON_APPEND_ARRAY_BUILDER_APPEND_SYMBOL(b, value) bson_array_builder_append_symbol(b, value, (int)strlen(value))
+
 /**
  * bson_append_time_t:
  * @bson: A bson_t.

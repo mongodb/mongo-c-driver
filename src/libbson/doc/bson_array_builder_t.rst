@@ -186,6 +186,8 @@ Appending values to an array
                                       const char *value,
                                       int length);
 
+    #define BSON_APPEND_ARRAY_BUILDER_APPEND_SYMBOL(b, value) bson_array_builder_append_symbol(b, value, (int)strlen(value))
+
     bool
     bson_array_builder_append_time_t (bson_array_builder_t *bab, time_t value);
 
