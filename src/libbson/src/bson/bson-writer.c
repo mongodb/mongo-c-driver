@@ -172,7 +172,7 @@ bson_writer_begin(bson_writer_t *writer, /* IN */
    memset(&writer->b, 0, sizeof(bson_t));
 
    b = (bson_impl_alloc_t *)&writer->b;
-   b->flags = BSON_FLAG_STATIC | BSON_FLAG_NO_FREE;
+   b->flags = BSON_FLAG_NO_FREE_STRUCT | BSON_FLAG_NO_FREE_DATA;
    b->len = 5;
    b->parent = NULL;
    b->buf = writer->buf;
