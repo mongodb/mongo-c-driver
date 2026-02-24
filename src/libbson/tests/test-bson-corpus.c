@@ -262,7 +262,7 @@ test_bson_corpus_parse_error(test_bson_parse_error_type_t *test)
    case BSON_TYPE_MAXKEY:
    case BSON_TYPE_MINKEY:
    default:
-      fprintf(stderr, "Unsupported parseError type: %#x\n", test->bson_type);
+      fprintf(stderr, "Unsupported parseError type: %#x\n", (unsigned int)test->bson_type);
       abort();
    }
 }
