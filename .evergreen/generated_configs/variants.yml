@@ -151,6 +151,9 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
@@ -173,11 +176,16 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-sharded-auth
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
+        batchtime: 1440
+      - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-rapid-sharded-auth
         batchtime: 1440
       - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
       - name: cse-sasl-cyrus-openssl-ubuntu2204-clang-12-compile
@@ -207,6 +215,9 @@ buildvariants:
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
+      - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-replica-auth
+      - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
+      - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-sharded-auth
   - name: cse-matrix-winssl
     display_name: cse-matrix-winssl
     expansions:
@@ -300,6 +311,9 @@ buildvariants:
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-rapid-replica-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-rapid-server-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-rapid-sharded-auth
       - name: sasl-cyrus-openssl-debian11-latest-gcc-compile
       - name: sasl-cyrus-openssl-debian12-latest-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-compile
@@ -309,6 +323,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-compile
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
@@ -317,6 +332,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
+      - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-server-auth
       - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-4.2-server-auth
@@ -333,6 +349,8 @@ buildvariants:
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-latest-server-auth
         batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-rapid-server-auth
+        batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-compile
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-5.0-server-auth
@@ -345,6 +363,8 @@ buildvariants:
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
         batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-rapid-server-auth
+        batchtime: 1440
       - name: sasl-cyrus-openssl-rhel80-gcc-compile
       - name: sasl-cyrus-openssl-ubuntu2204-clang-12-compile
       - name: sasl-cyrus-openssl-ubuntu2204-gcc-compile
@@ -355,6 +375,7 @@ buildvariants:
       - name: sasl-sspi-openssl-windows-2019-vs2022-x64-compile
       - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-compile
       - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
+      - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
   - name: sasl-matrix-winssl
     display_name: sasl-matrix-winssl
     expansions: {}
