@@ -375,15 +375,6 @@ class CoverageTask(MatrixTask):
         require(self.setting_eq('ssl', 'openssl'))
         require(self.setting_eq('version', 'latest'))
         require(self.settings.auth is True)
-
-        if not self.cse:
-            # No further requirements
-            return True
-
-        # CSE has extra requirements
-        if self.settings.version != 'latest':
-            # We only work with 4.2 or newer for CSE
-            require(Version(str(self.settings.version)) >= Version('4.2'))
         return True
 
 
