@@ -645,7 +645,7 @@ for server_version in ['8.0', '7.0', '6.0', '5.0']:
 class IPTask(MatrixTask):
     axes = OD(
         [
-            ('version', ['7.0', 'rapid', 'latest']),
+            ('version', ['7.0', 'latest']),
             ('client', ['ipv6', 'ipv4', 'localhost']),
             ('server', ['ipv6', 'ipv4']),
         ]
