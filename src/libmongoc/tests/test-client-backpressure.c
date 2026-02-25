@@ -705,6 +705,106 @@ test_backpressure_prose_3(void *ctx)
    mongoc_client_destroy(client);
 }
 
+typedef struct {
+   int find_commands_started_count;
+} prose_test_4_ctx_t;
+
+static void
+prose_test_4_command_started_cb(const mongoc_apm_command_started_t *event)
+{
+   prose_test_4_ctx_t *const ctx = (prose_test_4_ctx_t *)mongoc_apm_command_started_get_context(event);
+
+   const char *const command_name = mongoc_apm_command_started_get_command_name(event);
+
+   if (strcmp(command_name, "find") == 0) {
+      ctx->find_commands_started_count++;
+   }
+}
+
+static void
+test_backpressure_prose_4(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   // Step 1: Let `client` be a `mongoc_client_t` with `adaptiveRetries=True` and command event monitoring enabled.
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_ADAPTIVERETRIES, true);
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   test_framework_set_ssl_opts(client);
+   mongoc_uri_destroy(uri);
+
+   prose_test_4_ctx_t apm_ctx = {0};
+
+   {
+      mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(callbacks, prose_test_4_command_started_cb);
+      mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 2: Set `client`'s retry token bucket to have 2 tokens.
+   ASSERT(client->token_bucket);
+   client->token_bucket->tokens = 2.0;
+
+   // Step 3: Let `coll` be a collection.
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+
+   // Step 4: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
+   bson_error_t error;
+   ASSERT_OR_PRINT(
+      mongoc_client_command_simple(client,
+                                   "admin",
+                                   tmp_bson("{"
+                                            "  'configureFailPoint': 'failCommand',"
+                                            "  'mode': {'times': 3},"
+                                            "  'data': {"
+                                            "    'failCommands': ['find'],"
+                                            "    'errorCode': 462," // IngressRequestRateLimitExceeded
+                                            "    'errorLabels': ['SystemOverloadedError', 'RetryableError']"
+                                            "  }"
+                                            "}"),
+                                   NULL,
+                                   NULL,
+                                   &error),
+      error);
+
+   {
+      // Step 5: Perform a find operation with `coll` that fails.
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+
+      const bson_t *error_doc;
+      ASSERT(mongoc_cursor_error_document(cursor, &error, &error_doc));
+
+      // Step 6: Assert that the raised error contains both the `RetryableError` and `SystemOverloadedError` error
+      // labels.
+      ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+      ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+
+      mongoc_cursor_destroy(cursor);
+   }
+
+   // Step 7: Assert that the total number of started commands is 3: one for the initial attempt and two for the
+   // retries.
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 3);
+
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
+                                                "admin",
+                                                tmp_bson("{"
+                                                         "  'configureFailPoint': 'failCommand',"
+                                                         "  'mode': 'off'"
+                                                         "}"),
+                                                NULL,
+                                                NULL,
+                                                &error),
+                   error);
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 void
 test_backpressure_install(TestSuite *suite)
 {
@@ -746,4 +846,7 @@ test_backpressure_install(TestSuite *suite)
 
    TestSuite_AddFull(
       suite, "/backpressure/prose_test_3", test_backpressure_prose_3, NULL, NULL, test_framework_skip_if_no_crypto);
+
+   TestSuite_AddFull(
+      suite, "/backpressure/prose_test_4", test_backpressure_prose_4, NULL, NULL, test_framework_skip_if_no_crypto);
 }
