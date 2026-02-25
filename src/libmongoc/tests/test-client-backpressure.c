@@ -18,6 +18,7 @@
 #include <common-thread-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-token-bucket-private.h>
 
 #include <mongoc/mongoc.h>
 
@@ -584,6 +585,33 @@ test_backpressure_prose_1(void *ctx)
    mongoc_uri_destroy(uri);
 }
 
+static void
+test_backpressure_prose_2(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   // Step 1: Let `client` be a `mongoc_client_t` with `adaptiveRetries=True`.
+   mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   test_framework_set_ssl_opts(client);
+
+   // Step 2: Assert that the client's retry token bucket is at full capacity and that the capacity is
+   // `MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY`.
+   ASSERT(client->token_bucket->capacity == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+   ASSERT(client->token_bucket->tokens == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+
+   // Step 3: Using `client`, execute a successful `ping` command.
+   bson_error_t error;
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error), error);
+
+   // Step 4: Assert that the successful command did not increase the number of tokens in the bucket above
+   // `MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY`.
+   ASSERT(client->token_bucket->tokens <= MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+}
+
 void
 test_backpressure_install(TestSuite *suite)
 {
@@ -619,4 +647,7 @@ test_backpressure_install(TestSuite *suite)
                      NULL,
                      // TODO: Verify skip conditions.
                      test_framework_skip_if_no_crypto);
+
+   TestSuite_AddFull(
+      suite, "/backpressure/prose_test_2", test_backpressure_prose_2, NULL, NULL, test_framework_skip_if_no_crypto);
 }
