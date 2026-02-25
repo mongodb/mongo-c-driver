@@ -645,7 +645,7 @@ for server_version in ['8.0', '7.0', '6.0', '5.0']:
 class IPTask(MatrixTask):
     axes = OD(
         [
-            ('version', ['7.0', 'latest', 'rapid']),
+            ('version', ['7.0', 'rapid', 'latest']),
             ('client', ['ipv6', 'ipv4', 'localhost']),
             ('server', ['ipv6', 'ipv4']),
         ]
@@ -891,7 +891,7 @@ class OCSPTask(MatrixTask):
             prohibit(self.test == 'soft_fail_test')
 
             # Only Server 6.0+ are available on MacOS ARM64.
-            if self.settings.version not in ['latest', 'rapid']:
+            if self.settings.version not in ['rapid', 'latest']:
                 prohibit(Version(self.settings.version) < Version('6.0'))
 
         if self.settings.ssl == 'darwinssl' or self.settings.ssl == 'winssl':

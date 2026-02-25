@@ -23,7 +23,7 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('rhel8-latest', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest', 'rapid']),
+    ('rhel8-latest', 'gcc', None, 'off', ['noauth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'rapid', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long

@@ -11,7 +11,7 @@ COMPILE_MATRIX = [
 
 TEST_MATRIX = [
     # rhel8-latest provides 4.2 through latest.
-    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest', 'rapid']),
+    ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'rapid', 'latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
