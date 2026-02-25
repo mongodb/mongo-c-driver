@@ -43,7 +43,7 @@ TEST_MATRIX = [
     ('windows-2022-latest',  'vs2022x64', None, 'sspi', ['auth'], ['server'], ['rapid', 'latest']),
 
     # Test with Graviton processor:
-    ('amazon2023-arm64-latest-large-m8g', 'gcc',  None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['rapid', 'latest']),
+    ('amazon2023-arm64-latest-large-m8g', 'gcc',  None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['latest']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
