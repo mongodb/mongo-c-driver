@@ -2990,6 +2990,20 @@ test_bson_array_builder(void)
          bson_destroy(&b);
          bson_array_builder_destroy(bab);
       }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new();
+         bson_array_builder_t child;
+         ASSERT(bson_array_builder_append_array_builder_inline_begin(bab, &child));
+         ASSERT(bson_array_builder_append_int32(&child, 1));
+         ASSERT(bson_array_builder_append_int32(&child, 2));
+         ASSERT(bson_array_builder_append_array_builder_end(bab, &child));
+         ASSERT(bson_array_builder_build(bab, &b));
+         ASSERT_BSON_EQUAL(b, [[ 1, 2 ]]);
+         bson_destroy(&b);
+         bson_array_builder_destroy(bab);
+      }
    }
 
    // A failure in bson_append_array_builder_begin does not allocate.
@@ -3000,6 +3014,59 @@ test_bson_array_builder(void)
       ASSERT(!ok);
       bson_destroy(&b);
       // Not necessary to free `child`.
+   }
+
+   // Test inline builder works.
+   {
+      bson_array_builder_t bab;
+      bson_t b = BSON_INITIALIZER;
+      ASSERT(BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(&b, "foo", &bab));
+      ASSERT(bson_array_builder_append_int32(&bab, 1));
+      ASSERT(bson_array_builder_append_int32(&bab, 2));
+      ASSERT(bson_append_array_builder_end(&b, &bab));
+      ASSERT_BSON_EQUAL(b, {"foo" : [ 1, 2 ]});
+      bson_destroy(&b);
+   }
+
+   // Test inline builder does not leak when call to `bson_append_array_builder_end` is omitted.
+   {
+      bson_array_builder_t bab;
+      bson_t b = BSON_INITIALIZER;
+      ASSERT(BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(&b, "foo", &bab));
+      ASSERT(bson_array_builder_append_int32(&bab, 1));
+      ASSERT(bson_array_builder_append_int32(&bab, 2));
+      // No call to `bson_append_array_builder_end`.
+      bson_destroy(&b);
+      // No leak expected.
+   }
+
+   // Test inline builder can be safely passed to `bson_array_builder_destroy` (though it is unnecessary).
+   {
+      bson_array_builder_t bab;
+      bson_t b = BSON_INITIALIZER;
+      ASSERT(BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(&b, "foo", &bab));
+      ASSERT(bson_array_builder_append_int32(&bab, 1));
+      ASSERT(bson_array_builder_append_int32(&bab, 2));
+      bson_array_builder_destroy(&bab);
+      bson_destroy(&b);
+   }
+
+   // Test nested inline builders.
+   {
+      bson_array_builder_t bab;
+      bson_t b = BSON_INITIALIZER;
+      ASSERT(BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(&b, "foo", &bab));
+      ASSERT(bson_array_builder_append_int32(&bab, 1));
+      {
+         bson_array_builder_t child;
+         ASSERT(bson_array_builder_append_array_builder_inline_begin(&bab, &child));
+         ASSERT(bson_array_builder_append_int32(&child, 2));
+         ASSERT(bson_array_builder_append_array_builder_end(&bab, &child));
+      }
+      ASSERT(bson_array_builder_append_int32(&bab, 3));
+      ASSERT(bson_append_array_builder_end(&b, &bab));
+      ASSERT_BSON_EQUAL(b, {"foo" : [ 1, [2], 3 ]});
+      bson_destroy(&b);
    }
 }
 
