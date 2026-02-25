@@ -19,7 +19,7 @@ COMPILE_MATRIX = [
 # QE (subset of CSFLE) requires 7.0+ and are skipped by "server" tasks.
 TEST_MATRIX = [
     # Prefer macos-14-arm64 which is less resource-limited than macos-14. Provides 6.0+.
-    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['6.0', '7.0', '8.0', 'latest']),
+    ('macos-14-arm64', 'clang', None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['6.0', '7.0', '8.0', 'latest', 'rapid']),
 
     # Pre-6.0 coverage. Resource-limited: use sparingly.
     ('macos-14', 'clang', None, 'cyrus', ['auth'], ['sharded'], ['4.2', '4.4', '5.0']),

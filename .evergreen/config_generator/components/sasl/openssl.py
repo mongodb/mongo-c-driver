@@ -35,15 +35,15 @@ COMPILE_MATRIX = [
 ]
 
 TEST_MATRIX = [
-    ('rhel8-latest',       'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel8-arm64-latest', 'gcc', None, 'cyrus', ['auth'], ['server'], [       '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel8-power',        'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest']),
-    ('rhel8-zseries',      'gcc', None, 'cyrus', ['auth'], ['server'], [              '5.0', '6.0', '7.0', '8.0', 'latest']),
+    ('rhel8-latest',       'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest', 'rapid']),
+    ('rhel8-arm64-latest', 'gcc', None, 'cyrus', ['auth'], ['server'], [       '4.4', '5.0', '6.0', '7.0', '8.0', 'latest', 'rapid']),
+    ('rhel8-power',        'gcc', None, 'cyrus', ['auth'], ['server'], ['4.2', '4.4', '5.0', '6.0', '7.0', '8.0', 'latest', 'rapid']),
+    ('rhel8-zseries',      'gcc', None, 'cyrus', ['auth'], ['server'], [              '5.0', '6.0', '7.0', '8.0', 'latest', 'rapid']),
 
-    ('windows-2022-latest',  'vs2022x64', None, 'sspi', ['auth'], ['server'], ['latest']),
+    ('windows-2022-latest',  'vs2022x64', None, 'sspi', ['auth'], ['server'], ['latest', 'rapid']),
 
     # Test with Graviton processor:
-    ('amazon2023-arm64-latest-large-m8g', 'gcc',  None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['latest']),
+    ('amazon2023-arm64-latest-large-m8g', 'gcc',  None, 'cyrus', ['auth'], ['server', 'replica', 'sharded'], ['latest', 'rapid']),
 ]
 # fmt: on
 # pylint: enable=line-too-long
