@@ -32,7 +32,6 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
    BSON_ASSERT(cmd->execute);
    BSON_ASSERT(cmd->select_retry_server);
    BSON_ASSERT(cmd->jitter_source);
-   BSON_ASSERT(cmd->token_bucket);
    BSON_ASSERT(cmd->initial_server_description);
 
    bool ret = false;
@@ -67,12 +66,14 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
 
       if (ret && !is_retryable) {
          // Deposit tokens into the bucket on success.
-         const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (is_retry_attempt ? 1.0 : 0.0);
-         _mongoc_token_bucket_deposit(cmd->token_bucket, tokens);
+         if (cmd->token_bucket) {
+            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (is_retry_attempt ? 1.0 : 0.0);
+            _mongoc_token_bucket_deposit(cmd->token_bucket, tokens);
+         }
          break;
       }
 
-      if (is_retry_attempt && !is_overload) {
+      if (cmd->token_bucket && is_retry_attempt && !is_overload) {
          _mongoc_token_bucket_deposit(cmd->token_bucket, 1.0);
       }
 
@@ -98,7 +99,7 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
       }
 
       if (is_overload) {
-         if (!_mongoc_token_bucket_consume(cmd->token_bucket, 1.0)) {
+         if (cmd->token_bucket && !_mongoc_token_bucket_consume(cmd->token_bucket, 1.0)) {
             break;
          }
 

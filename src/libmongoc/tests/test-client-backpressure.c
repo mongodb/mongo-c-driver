@@ -592,6 +592,7 @@ test_backpressure_prose_2(void *ctx)
 
    // Step 1: Let `client` be a `mongoc_client_t` with `adaptiveRetries=True`.
    mongoc_uri_t *const uri = test_framework_get_uri();
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_ADAPTIVERETRIES, true);
    mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
    test_framework_set_ssl_opts(client);
 
