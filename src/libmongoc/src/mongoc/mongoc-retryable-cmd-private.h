@@ -25,6 +25,9 @@
 
 #include <mlib/duration.h>
 
+#define MONGOC_RETRY_TOKEN_RETURN_RATE 0.1
+#define MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS 5
+
 typedef struct {
    double growth_factor;
    mlib_duration backoff_initial;

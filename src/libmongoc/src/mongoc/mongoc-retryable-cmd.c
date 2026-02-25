@@ -22,9 +22,6 @@
 
 #include <mlib/time_point.h>
 
-#define MONGOC_RETRY_TOKEN_RETURN_RATE 0.1
-#define MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS 5
-
 bool
 _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
