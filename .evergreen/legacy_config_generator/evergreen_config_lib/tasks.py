@@ -654,7 +654,7 @@ for server_version in ['8.0', '7.0', '6.0', '5.0']:
 class IPTask(MatrixTask):
     axes = OD(
         [
-            ('version', ['7.0', 'latest']),
+            ('version', ['7.0', 'latest', 'rapid']),
             ('client', ['ipv6', 'ipv4', 'localhost']),
             ('server', ['ipv6', 'ipv4']),
         ]
@@ -746,7 +746,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
-            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -801,7 +801,7 @@ class OCSPTask(MatrixTask):
             ('delegate', ['delegate', 'nodelegate']),
             ('cert', ['rsa', 'ecdsa']),
             ('ssl', ['openssl', 'darwinssl', 'winssl']),
-            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -900,7 +900,7 @@ class OCSPTask(MatrixTask):
             prohibit(self.test == 'soft_fail_test')
 
             # Only Server 6.0+ are available on MacOS ARM64.
-            if self.settings.version != 'latest':
+            if self.settings.version not in ['latest', 'rapid']:
                 prohibit(Version(self.settings.version) < Version('6.0'))
 
         if self.settings.ssl == 'darwinssl' or self.settings.ssl == 'winssl':
