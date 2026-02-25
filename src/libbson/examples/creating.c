@@ -74,5 +74,24 @@ main(void)
       // bson_array_builder_t top-level example ... end
    }
 
+   {
+      // bson_array_builder_t inline example ... begin
+      bson_t parent = BSON_INITIALIZER;
+      bson_array_builder_t bab;
+
+      bson_append_array_builder_inline_begin(&parent, "foo", 3, &bab);
+      bson_array_builder_append_int32(&bab, 9);
+      bson_array_builder_append_int32(&bab, 8);
+      bson_array_builder_append_int32(&bab, 7);
+      bson_append_array_builder_end(&parent, &bab);
+
+      char *str = bson_as_relaxed_extended_json(&parent, NULL);
+      printf("%s\n", str); // Prints: { "foo" : [ 9, 8, 7 ] }
+      bson_free(str);
+
+      bson_destroy(&parent);
+      // bson_array_builder_t inline example ... end
+   }
+
    return 0;
 }
