@@ -215,6 +215,15 @@ _mongoc_http_send(const mongoc_http_request_t *req,
       goto fail;
    }
 
+   // Ensure NULL terminator follows content
+   {
+      if (!_mongoc_buffer_append(&http_response_buf, (uint8_t *)"\0", 1)) {
+         _mongoc_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to buffer HTTP response");
+         goto fail;
+      }
+      http_response_buf.len--;
+   }
+
    http_response_str = (char *)http_response_buf.data;
    const char *const resp_end_ptr = http_response_str + http_response_buf.len;
 
