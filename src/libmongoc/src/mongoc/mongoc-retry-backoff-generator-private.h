@@ -16,25 +16,25 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#ifndef MONGOC_RETRY_BACKOFF_ITERATOR_PRIVATE_H
-#define MONGOC_RETRY_BACKOFF_ITERATOR_PRIVATE_H
+#ifndef MONGOC_RETRY_BACKOFF_GENERATOR_PRIVATE_H
+#define MONGOC_RETRY_BACKOFF_GENERATOR_PRIVATE_H
 
 #include <mongoc/mongoc-jitter-source-private.h>
 
 #include <mlib/duration.h>
 
-typedef struct _mongoc_retry_backoff_iterator_t mongoc_retry_backoff_iterator_t;
+typedef struct _mongoc_retry_backoff_generator_t mongoc_retry_backoff_generator_t;
 
-mongoc_retry_backoff_iterator_t *
-_mongoc_retry_backoff_iterator_new(double growth_factor,
-                                   mlib_duration backoff_initial,
-                                   mlib_duration backoff_max,
-                                   mongoc_jitter_source_t *jitter_source);
+mongoc_retry_backoff_generator_t *
+_mongoc_retry_backoff_generator_new(double growth_factor,
+                                    mlib_duration backoff_initial,
+                                    mlib_duration backoff_max,
+                                    mongoc_jitter_source_t *jitter_source);
 
 void
-_mongoc_retry_backoff_iterator_destroy(mongoc_retry_backoff_iterator_t *iterator);
+_mongoc_retry_backoff_generator_destroy(mongoc_retry_backoff_generator_t *generator);
 
 mlib_duration
-_mongoc_retry_backoff_iterator_next(mongoc_retry_backoff_iterator_t *iterator);
+_mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator);
 
 #endif

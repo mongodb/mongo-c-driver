@@ -15,7 +15,7 @@
  */
 
 #include <mongoc/mongoc-error-private.h>
-#include <mongoc/mongoc-retry-backoff-iterator-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
 #include <mongoc/mongoc-retryable-cmd-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-write-command-private.h>
@@ -39,11 +39,11 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
    mongoc_server_description_t const *server_description = cmd->initial_server_description;
 
    mongoc_deprioritized_servers_t *const deprioritized_servers = mongoc_deprioritized_servers_new();
-   mongoc_retry_backoff_iterator_t *const retry_backoff_iter =
-      _mongoc_retry_backoff_iterator_new(cmd->backoff_params.growth_factor,
-                                         cmd->backoff_params.backoff_initial,
-                                         cmd->backoff_params.backoff_max,
-                                         cmd->jitter_source);
+   mongoc_retry_backoff_generator_t *const retry_backoff_generator =
+      _mongoc_retry_backoff_generator_new(cmd->backoff_params.growth_factor,
+                                          cmd->backoff_params.backoff_initial,
+                                          cmd->backoff_params.backoff_max,
+                                          cmd->jitter_source);
 
    while (true) {
       ret = cmd->execute(cmd->context, reply, error);
@@ -100,7 +100,7 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
             break;
          }
 
-         const mlib_duration backoff_duration = _mongoc_retry_backoff_iterator_next(retry_backoff_iter);
+         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
          mlib_sleep_for(backoff_duration);
       }
 
@@ -113,7 +113,7 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
       bson_destroy(reply);
    }
 
-   _mongoc_retry_backoff_iterator_destroy(retry_backoff_iter);
+   _mongoc_retry_backoff_generator_destroy(retry_backoff_generator);
    mongoc_deprioritized_servers_destroy(deprioritized_servers);
 
    RETURN(ret);

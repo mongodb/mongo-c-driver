@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include <mongoc/mongoc-retry-backoff-iterator-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
 
 #include <bson/macros.h>
 #include <bson/memory.h>
 
 #include <math.h>
 
-struct _mongoc_retry_backoff_iterator_t {
+struct _mongoc_retry_backoff_generator_t {
    int attempt;
    int max_attempt;
    double growth_factor;
@@ -39,18 +39,18 @@ _compute_max_attempt(double growth_factor, mlib_duration backoff_initial, mlib_d
           1;
 }
 
-mongoc_retry_backoff_iterator_t *
-_mongoc_retry_backoff_iterator_new(double growth_factor,
-                                   mlib_duration backoff_initial,
-                                   mlib_duration backoff_max,
-                                   mongoc_jitter_source_t *jitter_source)
+mongoc_retry_backoff_generator_t *
+_mongoc_retry_backoff_generator_new(double growth_factor,
+                                    mlib_duration backoff_initial,
+                                    mlib_duration backoff_max,
+                                    mongoc_jitter_source_t *jitter_source)
 {
    BSON_ASSERT_PARAM(jitter_source);
 
-   mongoc_retry_backoff_iterator_t *const iterator =
-      (mongoc_retry_backoff_iterator_t *)bson_malloc(sizeof(mongoc_retry_backoff_iterator_t));
+   mongoc_retry_backoff_generator_t *const generator =
+      (mongoc_retry_backoff_generator_t *)bson_malloc(sizeof(mongoc_retry_backoff_generator_t));
 
-   *iterator = (mongoc_retry_backoff_iterator_t){
+   *generator = (mongoc_retry_backoff_generator_t){
       .attempt = 0,
       .max_attempt = _compute_max_attempt(growth_factor, backoff_initial, backoff_max),
       .growth_factor = growth_factor,
@@ -59,13 +59,13 @@ _mongoc_retry_backoff_iterator_new(double growth_factor,
       .jitter_source = jitter_source,
    };
 
-   return iterator;
+   return generator;
 }
 
 void
-_mongoc_retry_backoff_iterator_destroy(mongoc_retry_backoff_iterator_t *iterator)
+_mongoc_retry_backoff_generator_destroy(mongoc_retry_backoff_generator_t *generator)
 {
-   bson_free(iterator);
+   bson_free(generator);
 }
 
 static mlib_duration
@@ -75,21 +75,21 @@ _duration_double_multiply(mlib_duration duration, double factor)
 }
 
 mlib_duration
-_mongoc_retry_backoff_iterator_next(mongoc_retry_backoff_iterator_t *iterator)
+_mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator)
 {
-   BSON_ASSERT_PARAM(iterator);
+   BSON_ASSERT_PARAM(generator);
 
-   iterator->attempt = BSON_MIN(iterator->attempt + 1, iterator->max_attempt);
+   generator->attempt = BSON_MIN(generator->attempt + 1, generator->max_attempt);
 
-   const double jitter = _mongoc_jitter_source_generate(iterator->jitter_source);
+   const double jitter = _mongoc_jitter_source_generate(generator->jitter_source);
 
    BSON_ASSERT(0.0 <= jitter && jitter <= 1.0);
 
-   if (iterator->attempt >= iterator->max_attempt) {
-      return _duration_double_multiply(iterator->backoff_max, jitter);
+   if (generator->attempt >= generator->max_attempt) {
+      return _duration_double_multiply(generator->backoff_max, jitter);
    }
 
-   const double backoff_factor = pow(iterator->growth_factor, (double)iterator->attempt - 1);
+   const double backoff_factor = pow(generator->growth_factor, (double)generator->attempt - 1);
 
-   return _duration_double_multiply(iterator->backoff_initial, jitter * backoff_factor);
+   return _duration_double_multiply(generator->backoff_initial, jitter * backoff_factor);
 }

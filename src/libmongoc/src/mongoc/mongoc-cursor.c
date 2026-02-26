@@ -26,7 +26,7 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
-#include <mongoc/mongoc-retry-backoff-iterator-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
 #include <mongoc/mongoc-retryable-cmd-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-trace-private.h>
