@@ -443,7 +443,7 @@ append_success:
     * buffers. This allows us to realloc directly from the child without
     * walking up to the parent bson_t.
     */
-   achild->flags = (BSON_FLAG_CHILD | BSON_FLAG_NO_FREE_DATA | BSON_FLAG_NO_FREE_STRUCT);
+   achild->flags = (BSON_FLAG_CHILD | BSON_FLAG_NO_FREE_DATA | BSON_FLAG_NO_FREE_OBJECT);
 
    if ((bson->flags & BSON_FLAG_CHILD)) {
       achild->depth = ((bson_impl_alloc_t *)bson)->depth + 1;
@@ -1873,7 +1873,7 @@ bson_init(bson_t *bson)
 
    BSON_ASSERT(bson);
 
-   impl->flags = BSON_FLAG_INLINE_DATA | BSON_FLAG_NO_FREE_STRUCT;
+   impl->flags = BSON_FLAG_INLINE_DATA | BSON_FLAG_NO_FREE_OBJECT;
    impl->len = 5;
    impl->data[0] = 5;
    impl->data[1] = 0;
@@ -1924,7 +1924,7 @@ bson_init_static(bson_t *bson, const uint8_t *data, size_t length)
       return false;
    }
 
-   impl->flags = BSON_FLAG_NO_FREE_STRUCT | BSON_FLAG_RDONLY;
+   impl->flags = BSON_FLAG_NO_FREE_OBJECT | BSON_FLAG_RDONLY;
    impl->len = (uint32_t)length;
    impl->parent = NULL;
    impl->depth = 0;
@@ -1976,7 +1976,7 @@ bson_sized_new(size_t size)
 
    if (size <= BSON_INLINE_DATA_SIZE) {
       bson_init(b);
-      b->flags &= ~BSON_FLAG_NO_FREE_STRUCT;
+      b->flags &= ~BSON_FLAG_NO_FREE_OBJECT;
    } else {
       impl_a->flags = BSON_FLAG_NONE;
       impl_a->len = 5;
@@ -2100,7 +2100,7 @@ bson_copy_to(const bson_t *src, bson_t *dst)
 
    if ((src->flags & BSON_FLAG_INLINE_DATA)) {
       memcpy(dst, src, sizeof *dst);
-      dst->flags = (BSON_FLAG_NO_FREE_STRUCT | BSON_FLAG_INLINE_DATA);
+      dst->flags = (BSON_FLAG_NO_FREE_OBJECT | BSON_FLAG_INLINE_DATA);
       return;
    }
 
@@ -2109,7 +2109,7 @@ bson_copy_to(const bson_t *src, bson_t *dst)
    MONGOC_DEBUG_ASSERT(len <= BSON_MAX_SIZE);
 
    adst = (bson_impl_alloc_t *)dst;
-   adst->flags = BSON_FLAG_NO_FREE_STRUCT;
+   adst->flags = BSON_FLAG_NO_FREE_OBJECT;
    adst->len = src->len;
    adst->parent = NULL;
    adst->depth = 0;
@@ -2193,7 +2193,7 @@ bson_destroy(bson_t *bson)
       bson_free(*((bson_impl_alloc_t *)bson)->buf);
    }
 
-   if (!(bson->flags & BSON_FLAG_NO_FREE_STRUCT)) {
+   if (!(bson->flags & BSON_FLAG_NO_FREE_OBJECT)) {
       bson_free(bson);
    }
 }
@@ -2262,12 +2262,12 @@ bson_steal(bson_t *dst, bson_t *src)
    } else {
       memcpy(dst, src, sizeof(bson_t));
       alloc = (bson_impl_alloc_t *)dst;
-      alloc->flags |= BSON_FLAG_NO_FREE_STRUCT;
+      alloc->flags |= BSON_FLAG_NO_FREE_OBJECT;
       alloc->buf = &alloc->alloc;
       alloc->buflen = &alloc->alloclen;
    }
 
-   if (!(src->flags & BSON_FLAG_NO_FREE_STRUCT)) {
+   if (!(src->flags & BSON_FLAG_NO_FREE_OBJECT)) {
       bson_free(src);
    } else {
       /* src is invalid after steal */

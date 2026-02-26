@@ -35,7 +35,7 @@ BSON_BEGIN_DECLS
 typedef enum {
    BSON_FLAG_NONE = 0,
    BSON_FLAG_INLINE_DATA = (1 << 0),    // Set if BSON data is embedded in `bson_t`.
-   BSON_FLAG_NO_FREE_STRUCT = (1 << 1), // Set if `bson_destroy` should not free `bson_t` struct.
+   BSON_FLAG_NO_FREE_OBJECT = (1 << 1), // Set if `bson_destroy` should not free `bson_t` object.
    BSON_FLAG_RDONLY = (1 << 2),
    BSON_FLAG_CHILD = (1 << 3),
    BSON_FLAG_IN_CHILD = (1 << 4),

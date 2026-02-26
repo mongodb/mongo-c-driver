@@ -88,7 +88,7 @@ test_bson_alloc(void)
    ASSERT_CMPUINT32(b->len, ==, (uint32_t)5);
    BSON_ASSERT((b->flags & BSON_FLAG_INLINE_DATA));
    BSON_ASSERT(!(b->flags & BSON_FLAG_CHILD));
-   BSON_ASSERT(!(b->flags & BSON_FLAG_NO_FREE_STRUCT));
+   BSON_ASSERT(!(b->flags & BSON_FLAG_NO_FREE_OBJECT));
    BSON_ASSERT(!(b->flags & BSON_FLAG_NO_FREE_DATA));
    bson_destroy(b);
 
@@ -955,7 +955,7 @@ test_bson_init(void)
 
    bson_init(&b);
    BSON_ASSERT((b.flags & BSON_FLAG_INLINE_DATA));
-   BSON_ASSERT((b.flags & BSON_FLAG_NO_FREE_STRUCT));
+   BSON_ASSERT((b.flags & BSON_FLAG_NO_FREE_OBJECT));
    BSON_ASSERT(!(b.flags & BSON_FLAG_RDONLY));
    for (i = 0; i < 100; i++) {
       bson_snprintf(key, sizeof key, "%d", i);
@@ -1195,7 +1195,7 @@ test_bson_build_child_deep_1(bson_t *b, int *count)
    BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE_DATA));
    BSON_ASSERT((b->flags & BSON_FLAG_IN_CHILD));
    BSON_ASSERT(!(child.flags & BSON_FLAG_INLINE_DATA));
-   BSON_ASSERT((child.flags & BSON_FLAG_NO_FREE_STRUCT));
+   BSON_ASSERT((child.flags & BSON_FLAG_NO_FREE_OBJECT));
    BSON_ASSERT((child.flags & BSON_FLAG_CHILD));
 
    if (*count < 100) {
@@ -1222,7 +1222,7 @@ test_bson_build_child_deep(void)
    BSON_ASSERT((u.b.flags & BSON_FLAG_INLINE_DATA));
    test_bson_build_child_deep_1(&u.b, &count);
    BSON_ASSERT(!(u.b.flags & BSON_FLAG_INLINE_DATA));
-   BSON_ASSERT((u.b.flags & BSON_FLAG_NO_FREE_STRUCT));
+   BSON_ASSERT((u.b.flags & BSON_FLAG_NO_FREE_OBJECT));
    BSON_ASSERT(!(u.b.flags & BSON_FLAG_NO_FREE_DATA));
    BSON_ASSERT(!(u.b.flags & BSON_FLAG_RDONLY));
    BSON_ASSERT(bson_validate(&u.b, BSON_VALIDATE_NONE, NULL));
@@ -1575,7 +1575,7 @@ test_bson_steal(void)
    heap_alloced = bson_new_from_buffer(&buf, &len, bson_realloc_ctx, NULL);
    ASSERT(bson_steal(&dst, heap_alloced));
    ASSERT(dst.flags & BSON_FLAG_NO_FREE_DATA);
-   ASSERT(dst.flags & BSON_FLAG_NO_FREE_STRUCT);
+   ASSERT(dst.flags & BSON_FLAG_NO_FREE_OBJECT);
    ASSERT(((bson_impl_alloc_t *)&dst)->realloc == bson_realloc_ctx);
    ASSERT(((bson_impl_alloc_t *)&dst)->realloc_func_ctx == NULL);
    bson_destroy(&dst);
@@ -1971,7 +1971,7 @@ test_bson_regex_lengths(void)
       &new, "0_________1_________2_________3___4", -1, "0_________1_________2_________3_________4_________5___4", "i");
 
    ASSERT(new.len == 121);
-   ASSERT(new.flags & BSON_FLAG_NO_FREE_STRUCT);
+   ASSERT(new.flags & BSON_FLAG_NO_FREE_OBJECT);
    ASSERT(!(new.flags & BSON_FLAG_INLINE_DATA));
 
    bson_destroy(&new);
