@@ -648,11 +648,11 @@ mcommon_json_append_value_binary(mcommon_string_append_t *append,
    if (mode == BSON_JSON_MODE_CANONICAL || mode == BSON_JSON_MODE_RELAXED) {
       return mcommon_string_append(append, "{ \"$binary\" : { \"base64\" : \"") &&
              mcommon_string_append_base64_encode(append, bytes, byte_count) &&
-             mcommon_string_append_printf(append, "\", \"subType\" : \"%02x\" } }", subtype);
+             mcommon_string_append_printf(append, "\", \"subType\" : \"%02x\" } }", (unsigned int)subtype);
    } else {
       return mcommon_string_append(append, "{ \"$binary\" : \"") &&
              mcommon_string_append_base64_encode(append, bytes, byte_count) &&
-             mcommon_string_append_printf(append, "\", \"$type\" : \"%02x\" }", subtype);
+             mcommon_string_append_printf(append, "\", \"$type\" : \"%02x\" }", (unsigned int)subtype);
    }
 }
 
