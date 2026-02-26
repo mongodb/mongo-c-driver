@@ -23,6 +23,7 @@
 #include <mongoc/mongoc-rand-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
 
@@ -911,7 +912,16 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
    const mlib_timer timer = mlib_expires_after(timeout, ms);
 
-   int transaction_attempt = 0;
+   const mongoc_retry_backoff_params_t retry_backoff_params = {
+      .growth_factor = 1.5,
+      .backoff_initial = mlib_duration(5, ms),
+      .backoff_max = mlib_duration(5, s),
+   };
+
+   mongoc_retry_backoff_generator_t *const retry_backoff_generator =
+      _mongoc_retry_backoff_generator_new(retry_backoff_params, session->jitter_source);
+
+   bool is_first_attempt = true;
 
    /* Attempt to wrap a user callback in start- and end- transaction semantics.
       If this fails for transient reasons, restart, either from the very
@@ -921,10 +931,10 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       At the top of this loop, active_reply should always be NULL, and
       local_reply should always be uninitialized. */
    while (true) {
-      if (transaction_attempt > 0) {
-         const double jitter = _mongoc_jitter_source_generate(session->jitter_source);
-
-         const mlib_duration backoff_duration = _mongoc_compute_backoff_duration(jitter, transaction_attempt);
+      if (is_first_attempt) {
+         is_first_attempt = false;
+      } else {
+         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
 
          const mlib_timer backoff_timer = mlib_expires_after(backoff_duration);
 
@@ -943,8 +953,6 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       if (!res) {
          GOTO(done);
       }
-
-      transaction_attempt = BSON_MIN(transaction_attempt + 1, MONGOC_BACKOFF_ATTEMPT_LIMIT);
 
       res = cb(session, ctx, &active_reply, error);
       state = session->txn.state;
@@ -1030,6 +1038,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
    }
 
 done:
+   _mongoc_retry_backoff_generator_destroy(retry_backoff_generator);
+
    /* At this point, active_reply is either pointing to the user's reply
       object, or our local one on the stack, or is NULL. */
    if (reply && active_reply) {
