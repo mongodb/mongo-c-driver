@@ -1,6 +1,6 @@
 define printbson
 	set $bson = $arg0
-	if $bson->flags & BSON_FLAG_INLINE
+	if $bson->flags & BSON_FLAG_INLINE_DATA
 		print ((bson_impl_inline_t*) $bson)->data
 		set $data = &(((bson_impl_inline_t*) $bson)->data)
 		printf "INLINE"
