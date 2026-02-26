@@ -39,11 +39,15 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
    mongoc_server_description_t const *server_description = cmd->initial_server_description;
 
    mongoc_deprioritized_servers_t *const deprioritized_servers = mongoc_deprioritized_servers_new();
+
+   const mongoc_retry_backoff_params_t retry_backoff_params = {
+      .growth_factor = 2.0,
+      .backoff_initial = mlib_duration(100, ms),
+      .backoff_max = mlib_duration(10, s),
+   };
+
    mongoc_retry_backoff_generator_t *const retry_backoff_generator =
-      _mongoc_retry_backoff_generator_new(cmd->backoff_params.growth_factor,
-                                          cmd->backoff_params.backoff_initial,
-                                          cmd->backoff_params.backoff_max,
-                                          cmd->jitter_source);
+      _mongoc_retry_backoff_generator_new(retry_backoff_params, cmd->jitter_source);
 
    while (true) {
       ret = cmd->execute(cmd->context, reply, error);

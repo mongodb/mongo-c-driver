@@ -28,12 +28,6 @@
 #define MONGOC_RETRY_TOKEN_RETURN_RATE 0.1
 #define MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS 5
 
-typedef struct {
-   double growth_factor;
-   mlib_duration backoff_initial;
-   mlib_duration backoff_max;
-} mongoc_retry_backoff_params_t;
-
 typedef enum {
    MONGOC_RETRYABLE_CMD_TYPE_READ,
    MONGOC_RETRYABLE_CMD_TYPE_WRITE,
@@ -48,7 +42,6 @@ typedef struct {
    void *context;
    bool is_always_retryable;
    mongoc_retryable_cmd_type_t type;
-   mongoc_retry_backoff_params_t backoff_params;
    mongoc_jitter_source_t *jitter_source;
    mongoc_token_bucket_t *token_bucket;
    mongoc_server_description_t const *initial_server_description;

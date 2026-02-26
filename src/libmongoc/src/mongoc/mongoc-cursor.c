@@ -908,12 +908,6 @@ _mongoc_cursor_run_command(
       .context = &context,
       .is_always_retryable = is_always_retryable,
       .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
-      .backoff_params =
-         {
-            .growth_factor = MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
-            .backoff_initial = MONGOC_RETRY_BACKOFF_INITIAL,
-            .backoff_max = MONGOC_RETRY_BACKOFF_MAX,
-         },
       .jitter_source = cursor->client->jitter_source,
       .token_bucket = cursor->client->token_bucket,
       .initial_server_description = server_stream->sd,

@@ -1697,12 +1697,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .context = &context,
       .is_always_retryable = parts->is_retryable_read,
       .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
-      .backoff_params =
-         {
-            .growth_factor = MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
-            .backoff_initial = MONGOC_RETRY_BACKOFF_INITIAL,
-            .backoff_max = MONGOC_RETRY_BACKOFF_MAX,
-         },
       .jitter_source = client->jitter_source,
       .token_bucket = client->token_bucket,
       .initial_server_description = server_stream->sd,

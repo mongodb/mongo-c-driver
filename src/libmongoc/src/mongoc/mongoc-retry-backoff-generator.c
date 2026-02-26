@@ -24,26 +24,21 @@
 struct _mongoc_retry_backoff_generator_t {
    int attempt;
    int max_attempt;
-   double growth_factor;
-   mlib_duration backoff_initial;
-   mlib_duration backoff_max;
+   mongoc_retry_backoff_params_t params;
    mongoc_jitter_source_t *jitter_source;
 };
 
 static int
-_compute_max_attempt(double growth_factor, mlib_duration backoff_initial, mlib_duration backoff_max)
+_compute_max_attempt(mongoc_retry_backoff_params_t params)
 {
-   return (int)ceil(
-             log((double)mlib_microseconds_count(backoff_max) / (double)mlib_microseconds_count(backoff_initial)) /
-             log(growth_factor)) +
+   return (int)ceil(log((double)mlib_microseconds_count(params.backoff_max) /
+                        (double)mlib_microseconds_count(params.backoff_initial)) /
+                    log(params.growth_factor)) +
           1;
 }
 
 mongoc_retry_backoff_generator_t *
-_mongoc_retry_backoff_generator_new(double growth_factor,
-                                    mlib_duration backoff_initial,
-                                    mlib_duration backoff_max,
-                                    mongoc_jitter_source_t *jitter_source)
+_mongoc_retry_backoff_generator_new(mongoc_retry_backoff_params_t params, mongoc_jitter_source_t *jitter_source)
 {
    BSON_ASSERT_PARAM(jitter_source);
 
@@ -52,10 +47,8 @@ _mongoc_retry_backoff_generator_new(double growth_factor,
 
    *generator = (mongoc_retry_backoff_generator_t){
       .attempt = 0,
-      .max_attempt = _compute_max_attempt(growth_factor, backoff_initial, backoff_max),
-      .growth_factor = growth_factor,
-      .backoff_initial = backoff_initial,
-      .backoff_max = backoff_max,
+      .max_attempt = _compute_max_attempt(params),
+      .params = params,
       .jitter_source = jitter_source,
    };
 
@@ -85,11 +78,13 @@ _mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator
 
    BSON_ASSERT(0.0 <= jitter && jitter <= 1.0);
 
+   const mongoc_retry_backoff_params_t *const params = &generator->params;
+
    if (generator->attempt >= generator->max_attempt) {
-      return _duration_double_multiply(generator->backoff_max, jitter);
+      return _duration_double_multiply(params->backoff_max, jitter);
    }
 
-   const double backoff_factor = pow(generator->growth_factor, (double)generator->attempt - 1);
+   const double backoff_factor = pow(params->growth_factor, (double)generator->attempt - 1);
 
-   return _duration_double_multiply(generator->backoff_initial, jitter * backoff_factor);
+   return _duration_double_multiply(params->backoff_initial, jitter * backoff_factor);
 }

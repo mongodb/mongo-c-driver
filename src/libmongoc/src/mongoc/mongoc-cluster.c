@@ -3674,12 +3674,6 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       .context = &context,
       .is_always_retryable = is_retryable_write,
       .type = MONGOC_RETRYABLE_CMD_TYPE_WRITE,
-      .backoff_params =
-         {
-            .growth_factor = MONGOC_RETRY_BACKOFF_GROWTH_FACTOR,
-            .backoff_initial = MONGOC_RETRY_BACKOFF_INITIAL,
-            .backoff_max = MONGOC_RETRY_BACKOFF_MAX,
-         },
       .jitter_source = jitter_source,
       .token_bucket = token_bucket,
       .initial_server_description = cmd->server_stream->sd,

@@ -23,13 +23,16 @@
 
 #include <mlib/duration.h>
 
+typedef struct {
+   double growth_factor;
+   mlib_duration backoff_initial;
+   mlib_duration backoff_max;
+} mongoc_retry_backoff_params_t;
+
 typedef struct _mongoc_retry_backoff_generator_t mongoc_retry_backoff_generator_t;
 
 mongoc_retry_backoff_generator_t *
-_mongoc_retry_backoff_generator_new(double growth_factor,
-                                    mlib_duration backoff_initial,
-                                    mlib_duration backoff_max,
-                                    mongoc_jitter_source_t *jitter_source);
+_mongoc_retry_backoff_generator_new(mongoc_retry_backoff_params_t params, mongoc_jitter_source_t *jitter_source);
 
 void
 _mongoc_retry_backoff_generator_destroy(mongoc_retry_backoff_generator_t *generator);
