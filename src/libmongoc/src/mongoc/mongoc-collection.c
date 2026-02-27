@@ -549,7 +549,7 @@ _make_aggregate_for_count(const mongoc_collection_t *coll,
                           mongoc_count_document_opts_t *opts,
                           bson_t *out)
 {
-   bson_array_builder_t *pipeline;
+   bson_array_builder_t pipeline;
    bson_t match_stage;
    bson_t group_stage;
    bson_t group_stage_doc;
@@ -560,34 +560,34 @@ _make_aggregate_for_count(const mongoc_collection_t *coll,
    bson_append_utf8(out, "aggregate", 9, coll->collection, coll->collectionlen);
    bson_append_document_begin(out, "cursor", 6, &empty);
    bson_append_document_end(out, &empty);
-   bson_append_array_builder_begin(out, "pipeline", 8, &pipeline);
+   bson_append_array_builder_inline_begin(out, "pipeline", 8, &pipeline);
 
-   bson_array_builder_append_document_begin(pipeline, &match_stage);
+   bson_array_builder_append_document_begin(&pipeline, &match_stage);
    bson_append_document(&match_stage, "$match", 6, filter);
-   bson_array_builder_append_document_end(pipeline, &match_stage);
+   bson_array_builder_append_document_end(&pipeline, &match_stage);
    /* if @opts includes "skip", or "limit", append $skip and $limit stages to
     * the aggregate pipeline. */
    if (opts->skip.value_type != BSON_TYPE_EOD) {
       bson_t skip_stage;
-      bson_array_builder_append_document_begin(pipeline, &skip_stage);
+      bson_array_builder_append_document_begin(&pipeline, &skip_stage);
       bson_append_value(&skip_stage, "$skip", 5, &opts->skip);
-      bson_array_builder_append_document_end(pipeline, &skip_stage);
+      bson_array_builder_append_document_end(&pipeline, &skip_stage);
    }
    if (opts->limit.value_type != BSON_TYPE_EOD) {
       bson_t limit_stage;
-      bson_array_builder_append_document_begin(pipeline, &limit_stage);
+      bson_array_builder_append_document_begin(&pipeline, &limit_stage);
       bson_append_value(&limit_stage, "$limit", 6, &opts->limit);
-      bson_array_builder_append_document_end(pipeline, &limit_stage);
+      bson_array_builder_append_document_end(&pipeline, &limit_stage);
    }
-   bson_array_builder_append_document_begin(pipeline, &group_stage);
+   bson_array_builder_append_document_begin(&pipeline, &group_stage);
    bson_append_document_begin(&group_stage, "$group", 6, &group_stage_doc);
    bson_append_int32(&group_stage_doc, "_id", 3, 1);
    bson_append_document_begin(&group_stage_doc, "n", 1, &sum);
    bson_append_int32(&sum, "$sum", 4, 1);
    bson_append_document_end(&group_stage_doc, &sum);
    bson_append_document_end(&group_stage, &group_stage_doc);
-   bson_array_builder_append_document_end(pipeline, &group_stage);
-   bson_append_array_builder_end(out, pipeline);
+   bson_array_builder_append_document_end(&pipeline, &group_stage);
+   bson_append_array_builder_end(out, &pipeline);
 }
 
 
@@ -2595,8 +2595,8 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
 
    // Build the createIndexes command.
    BSON_ASSERT(BSON_APPEND_UTF8(&cmd, "createIndexes", collection->collection));
-   bson_array_builder_t *indexes;
-   BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_BEGIN(&cmd, "indexes", &indexes));
+   bson_array_builder_t indexes;
+   BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(&cmd, "indexes", &indexes));
    for (uint32_t idx = 0; idx < n_models; idx++) {
       /*
          Append a document of this form:
@@ -2614,7 +2614,7 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
       */
 
       bson_t index;
-      BSON_ASSERT(bson_array_builder_append_document_begin(indexes, &index));
+      BSON_ASSERT(bson_array_builder_append_document_begin(&indexes, &index));
       BSON_ASSERT(BSON_APPEND_DOCUMENT(&index, "key", models[idx]->keys));
       bson_iter_t name_iter;
       if (models[idx]->opts && bson_iter_init_find(&name_iter, models[idx]->opts, "name")) {
@@ -2630,9 +2630,9 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
       if (models[idx]->opts) {
          BSON_ASSERT(bson_concat(&index, models[idx]->opts));
       }
-      BSON_ASSERT(bson_array_builder_append_document_end(indexes, &index));
+      BSON_ASSERT(bson_array_builder_append_document_end(&indexes, &index));
    }
-   BSON_ASSERT(bson_append_array_builder_end(&cmd, indexes));
+   BSON_ASSERT(bson_append_array_builder_end(&cmd, &indexes));
 
    ok = mongoc_collection_write_command_with_opts(collection, &cmd, opts, reply_ptr, error);
 

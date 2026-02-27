@@ -1905,23 +1905,23 @@ _skip_if_unsupported(const char *test_name, bson_t *original)
    if (skip) {
       /* Modify the test file to give all entries in "tests" a skipReason */
       bson_t *modified = bson_new();
-      bson_array_builder_t *modified_tests;
+      bson_array_builder_t modified_tests;
       bson_iter_t iter;
 
       bson_copy_to_excluding_noinit(original, modified, "tests", NULL);
-      BSON_APPEND_ARRAY_BUILDER_BEGIN(modified, "tests", &modified_tests);
+      BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(modified, "tests", &modified_tests);
       BSON_ASSERT(bson_iter_init_find(&iter, original, "tests"));
       for (bson_iter_recurse(&iter, &iter); bson_iter_next(&iter);) {
          bson_t original_test;
          bson_t modified_test;
 
          bson_iter_bson(&iter, &original_test);
-         bson_array_builder_append_document_begin(modified_tests, &modified_test);
+         bson_array_builder_append_document_begin(&modified_tests, &modified_test);
          bson_concat(&modified_test, &original_test);
          BSON_APPEND_UTF8(&modified_test, "skipReason", "libmongoc does not support required operation.");
-         bson_array_builder_append_document_end(modified_tests, &modified_test);
+         bson_array_builder_append_document_end(&modified_tests, &modified_test);
       }
-      bson_append_array_builder_end(modified, modified_tests);
+      bson_append_array_builder_end(modified, &modified_tests);
       bson_destroy(original);
       return modified;
    }
@@ -1992,11 +1992,11 @@ _install_json_test_suite_with_check(TestSuite *suite, const char *base, const ch
          }
          /* Modify the test file to give applicable entries a skipReason */
          bson_t *modified = bson_new();
-         bson_array_builder_t *modified_tests;
+         bson_array_builder_t modified_tests;
          bson_iter_t iter;
 
          bson_copy_to_excluding_noinit(test, modified, "tests", NULL);
-         BSON_APPEND_ARRAY_BUILDER_BEGIN(modified, "tests", &modified_tests);
+         BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(modified, "tests", &modified_tests);
          BSON_ASSERT(bson_iter_init_find(&iter, test, "tests"));
          for (bson_iter_recurse(&iter, &iter); bson_iter_next(&iter);) {
             bson_iter_t desc_iter;
@@ -2009,14 +2009,14 @@ _install_json_test_suite_with_check(TestSuite *suite, const char *base, const ch
             bson_iter_init_find(&desc_iter, &original_test, "description");
             desc = bson_iter_utf8(&desc_iter, &desc_len);
 
-            bson_array_builder_append_document_begin(modified_tests, &modified_test);
+            bson_array_builder_append_document_begin(&modified_tests, &modified_test);
             bson_concat(&modified_test, &original_test);
             if (!skip->subtest_desc.data || mstr_cmp(skip->subtest_desc, ==, mstr_cstring(desc))) {
                BSON_APPEND_UTF8(&modified_test, "skipReason", skip->reason.data ? skip->reason.data : "(null)");
             }
-            bson_array_builder_append_document_end(modified_tests, &modified_test);
+            bson_array_builder_append_document_end(&modified_tests, &modified_test);
          }
-         bson_append_array_builder_end(modified, modified_tests);
+         bson_append_array_builder_end(modified, &modified_tests);
          bson_destroy(test);
          test = modified;
       }

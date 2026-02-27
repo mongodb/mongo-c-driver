@@ -11,7 +11,7 @@ main(void)
    uint32_t i;
    bson_t *document;
    bson_t child;
-   bson_array_builder_t *bab;
+   bson_array_builder_t bab;
    char *str;
 
    document = bson_new();
@@ -49,24 +49,24 @@ main(void)
    /*
     * Append array of strings. Generate keys "0", "1", "2".
     */
-   BSON_APPEND_ARRAY_BUILDER_BEGIN(document, "languages", &bab);
+   BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(document, "languages", &bab);
    for (i = 0; i < sizeof lang_names / sizeof(char *); ++i) {
-      bson_array_builder_append_utf8(bab, lang_names[i], -1);
+      bson_array_builder_append_utf8(&bab, lang_names[i], -1);
    }
-   bson_append_array_builder_end(document, bab);
+   bson_append_array_builder_end(document, &bab);
 
    /*
     * Array of subdocuments:
     *    degrees: [ { degree: "BA", school: "Vassar" }, ... ]
     */
-   BSON_APPEND_ARRAY_BUILDER_BEGIN(document, "degrees", &bab);
+   BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(document, "degrees", &bab);
    for (i = 0; i < sizeof degrees / sizeof(char *); ++i) {
-      bson_array_builder_append_document_begin(bab, &child);
+      bson_array_builder_append_document_begin(&bab, &child);
       BSON_APPEND_UTF8(&child, "degree", degrees[i]);
       BSON_APPEND_UTF8(&child, "school", schools[i]);
-      bson_array_builder_append_document_end(bab, &child);
+      bson_array_builder_append_document_end(&bab, &child);
    }
-   bson_append_array_builder_end(document, bab);
+   bson_append_array_builder_end(document, &bab);
 
    /*
     * Print the document as a JSON string.

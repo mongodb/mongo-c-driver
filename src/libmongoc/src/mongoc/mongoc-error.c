@@ -222,21 +222,21 @@ _mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, const char 
 {
    bson_iter_t iter;
    bson_iter_t src_label;
-   bson_array_builder_t *dst_labels;
+   bson_array_builder_t dst_labels;
 
-   BSON_APPEND_ARRAY_BUILDER_BEGIN(dst, "errorLabels", &dst_labels);
-   bson_array_builder_append_utf8(dst_labels, label, -1);
+   BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(dst, "errorLabels", &dst_labels);
+   bson_array_builder_append_utf8(&dst_labels, label, -1);
 
    /* append any other errorLabels already in "src" */
    if (bson_iter_init_find(&iter, src, "errorLabels") && bson_iter_recurse(&iter, &src_label)) {
       while (bson_iter_next(&src_label) && BSON_ITER_HOLDS_UTF8(&src_label)) {
          if (strcmp(bson_iter_utf8(&src_label, NULL), label) != 0) {
-            bson_array_builder_append_utf8(dst_labels, bson_iter_utf8(&src_label, NULL), -1);
+            bson_array_builder_append_utf8(&dst_labels, bson_iter_utf8(&src_label, NULL), -1);
          }
       }
    }
 
-   bson_append_array_builder_end(dst, dst_labels);
+   bson_append_array_builder_end(dst, &dst_labels);
 }
 
 /* Defined in SDAM spec under "Application Errors".

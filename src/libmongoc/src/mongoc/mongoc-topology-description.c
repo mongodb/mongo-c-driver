@@ -2867,20 +2867,20 @@ mongoc_topology_description_append_contents_to_bson(const mongoc_topology_descri
    }
    if (flags & MONGOC_TOPOLOGY_DESCRIPTION_CONTENT_FLAG_SERVERS) {
       const mongoc_set_t *const set = mc_tpld_servers_const(BSON_ASSERT_PTR_INLINE(td));
-      bson_array_builder_t *array;
-      if (BSON_APPEND_ARRAY_BUILDER_BEGIN(bson, "servers", &array)) {
+      bson_array_builder_t array;
+      if (BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(bson, "servers", &array)) {
          bool ok = true;
          for (size_t i = 0; ok && i < set->items_len; i++) {
             const mongoc_server_description_t *sd = mongoc_set_get_item_const(set, i);
             bson_t child;
-            if (!bson_array_builder_append_document_begin(array, &child)) {
+            if (!bson_array_builder_append_document_begin(&array, &child)) {
                ok = false;
             } else {
                ok &= mongoc_server_description_append_contents_to_bson(sd, &child, servers_flags);
-               ok &= bson_array_builder_append_document_end(array, &child);
+               ok &= bson_array_builder_append_document_end(&array, &child);
             }
          }
-         if (!bson_append_array_builder_end(bson, array) || !ok) {
+         if (!bson_append_array_builder_end(bson, &array) || !ok) {
             return false;
          }
       } else {
