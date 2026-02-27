@@ -626,10 +626,10 @@ bson_append_array_from_vector_int8(bson_t *bson, const char *key, int key_length
 {
    BSON_ASSERT_PARAM(bson);
    BSON_ASSERT_PARAM(key);
-   bson_array_builder_t *child;
-   if (bson_append_array_builder_begin(bson, key, key_length, &child)) {
-      bool ok = bson_array_builder_append_vector_int8_elements(child, view);
-      return bson_append_array_builder_end(bson, child) && ok;
+   bson_array_builder_t child;
+   if (bson_append_array_builder_inline_begin(bson, key, key_length, &child)) {
+      bool ok = bson_array_builder_append_vector_int8_elements(&child, view);
+      return bson_append_array_builder_end(bson, &child) && ok;
    } else {
       return false;
    }
@@ -643,10 +643,10 @@ bson_append_array_from_vector_float32(bson_t *bson,
 {
    BSON_ASSERT_PARAM(bson);
    BSON_ASSERT_PARAM(key);
-   bson_array_builder_t *child;
-   if (bson_append_array_builder_begin(bson, key, key_length, &child)) {
-      bool ok = bson_array_builder_append_vector_float32_elements(child, view);
-      return bson_append_array_builder_end(bson, child) && ok;
+   bson_array_builder_t child;
+   if (bson_append_array_builder_inline_begin(bson, key, key_length, &child)) {
+      bool ok = bson_array_builder_append_vector_float32_elements(&child, view);
+      return bson_append_array_builder_end(bson, &child) && ok;
    } else {
       return false;
    }
@@ -660,10 +660,10 @@ bson_append_array_from_vector_packed_bit(bson_t *bson,
 {
    BSON_ASSERT_PARAM(bson);
    BSON_ASSERT_PARAM(key);
-   bson_array_builder_t *child;
-   if (bson_append_array_builder_begin(bson, key, key_length, &child)) {
-      bool ok = bson_array_builder_append_vector_packed_bit_elements(child, view);
-      return bson_append_array_builder_end(bson, child) && ok;
+   bson_array_builder_t child;
+   if (bson_append_array_builder_inline_begin(bson, key, key_length, &child)) {
+      bool ok = bson_array_builder_append_vector_packed_bit_elements(&child, view);
+      return bson_append_array_builder_end(bson, &child) && ok;
    } else {
       return false;
    }
@@ -676,10 +676,10 @@ bson_append_array_from_vector(bson_t *bson, const char *key, int key_length, con
    BSON_ASSERT_PARAM(bson);
    BSON_ASSERT_PARAM(key);
    BSON_ASSERT_PARAM(iter);
-   bson_array_builder_t *child;
-   if (bson_append_array_builder_begin(bson, key, key_length, &child)) {
-      bool ok = bson_array_builder_append_vector_elements(child, iter);
-      return bson_append_array_builder_end(bson, child) && ok;
+   bson_array_builder_t child;
+   if (bson_append_array_builder_inline_begin(bson, key, key_length, &child)) {
+      bool ok = bson_array_builder_append_vector_elements(&child, iter);
+      return bson_append_array_builder_end(bson, &child) && ok;
    } else {
       return false;
    }

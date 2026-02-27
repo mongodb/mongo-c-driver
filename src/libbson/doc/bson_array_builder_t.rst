@@ -14,8 +14,6 @@ Appending an array value
 
 .. code-block:: c
 
-    typedef struct _bson_array_builder_t bson_array_builder_t;
-
     bool
     bson_append_array_builder_begin (bson_t *bson,
                                      const char *key,
@@ -35,6 +33,32 @@ Appending an array value
    :start-after: // bson_array_builder_t example ... begin
    :end-before: // bson_array_builder_t example ... end
    :dedent: 6
+
+Call ``bson_append_array_builder_end`` to finish building the array and free the ``bson_array_builder_t`` object.
+
+Appending an array value inline
+-------------------------------
+
+.. code-block:: c
+
+    bool
+    bson_append_array_builder_inline_begin(bson_t *bson,
+                                           const char *key,
+                                           int key_length,
+                                           bson_array_builder_t *child);
+
+    #define BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(b, key, child) \
+        bson_append_array_builder_inline_begin(b, key, (int)strlen(key), child)
+
+``bson_append_array_builder_inline_begin`` may be used to append an array as a value without allocating a ``bson_array_builder_t`` on the heap. Example:
+
+.. literalinclude:: ../examples/creating.c
+   :language: c
+   :start-after: // bson_array_builder_t inline example ... begin
+   :end-before: // bson_array_builder_t inline example ... end
+   :dedent: 6
+
+Call ``bson_append_array_builder_end`` to finish building the array. It is not necessary to call ``bson_append_array_builder_end`` to free resources when using ``bson_append_array_builder_inline_begin``.
 
 Creating a top-level array
 --------------------------
@@ -216,6 +240,10 @@ Appending values to an array
     bool
     bson_array_builder_append_array_builder_begin (bson_array_builder_t *bab,
                                                    bson_array_builder_t **child);
+
+    bool
+    bson_array_builder_append_array_builder_inline_begin (bson_array_builder_t *bab,
+                                                          bson_array_builder_t *child);
 
     bool
     bson_array_builder_append_array_builder_end (bson_array_builder_t *bab,

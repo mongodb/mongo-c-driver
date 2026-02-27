@@ -2537,10 +2537,6 @@ append_failure:
    return false;
 }
 
-struct _bson_array_builder_t {
-   uint32_t index;
-   bson_t bson;
-};
 
 bson_array_builder_t *
 bson_array_builder_new(void)
@@ -2821,6 +2817,12 @@ bson_array_builder_append_array_builder_begin(bson_array_builder_t *bab, bson_ar
 }
 
 bool
+bson_array_builder_append_array_builder_inline_begin(bson_array_builder_t *bab, bson_array_builder_t *child)
+{
+   bson_array_builder_append_impl(bson_append_array_builder_inline_begin, child);
+}
+
+bool
 bson_array_builder_append_array_builder_end(bson_array_builder_t *bab, bson_array_builder_t *child)
 {
    return bson_append_array_builder_end(&bab->bson, child);
@@ -2847,6 +2849,9 @@ bson_array_builder_destroy(bson_array_builder_t *bab)
       return;
    }
    bson_destroy(&bab->bson);
+   if (bab->flags & BSON_FLAG_NO_FREE_OBJECT) {
+      return;
+   }
    bson_free(bab);
 }
 
@@ -2863,6 +2868,16 @@ bson_append_array_builder_begin(bson_t *bson, const char *key, int key_length, b
       *child = NULL;
    }
    return ok;
+}
+
+bool
+bson_append_array_builder_inline_begin(bson_t *bson, const char *key, int key_length, bson_array_builder_t *child)
+{
+   BSON_ASSERT_PARAM(bson);
+   BSON_ASSERT_PARAM(key);
+   BSON_ASSERT_PARAM(child);
+   *child = (bson_array_builder_t){.index = 0, .flags = BSON_FLAG_NO_FREE_OBJECT, .bson = BSON_INITIALIZER};
+   return bson_append_array_begin(bson, key, key_length, &child->bson);
 }
 
 bool

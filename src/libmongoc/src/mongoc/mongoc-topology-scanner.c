@@ -305,7 +305,7 @@ _build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_
    bson_t *doc = bson_copy(basis_cmd);
    bson_iter_t iter;
    const bson_t *compressors;
-   bson_array_builder_t *subarray;
+   bson_array_builder_t subarray;
 
    BSON_ASSERT(doc);
    bson_t *handshake_doc = _mongoc_handshake_build_doc_with_application(appname);
@@ -317,17 +317,17 @@ _build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_
    bson_append_document(doc, HANDSHAKE_FIELD, -1, handshake_doc);
    bson_destroy(handshake_doc);
 
-   BSON_APPEND_ARRAY_BUILDER_BEGIN(doc, "compression", &subarray);
+   BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(doc, "compression", &subarray);
    if (uri) {
       compressors = mongoc_uri_get_compressors(uri);
 
       if (bson_iter_init(&iter, compressors)) {
          while (bson_iter_next(&iter)) {
-            bson_array_builder_append_utf8(subarray, bson_iter_key(&iter), -1);
+            bson_array_builder_append_utf8(&subarray, bson_iter_key(&iter), -1);
          }
       }
    }
-   bson_append_array_builder_end(doc, subarray);
+   bson_append_array_builder_end(doc, &subarray);
 
    if (is_loadbalanced) {
       BSON_APPEND_BOOL(doc, "loadBalanced", true);

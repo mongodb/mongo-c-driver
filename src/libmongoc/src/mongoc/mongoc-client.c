@@ -2111,12 +2111,12 @@ mongoc_client_command_simple_with_server_id(mongoc_client_t *client,
 static void
 _mongoc_client_prepare_killcursors_command(int64_t cursor_id, const char *collection, bson_t *command)
 {
-   bson_array_builder_t *child;
+   bson_array_builder_t child;
 
    bson_append_utf8(command, "killCursors", 11, collection, -1);
-   bson_append_array_builder_begin(command, "cursors", 7, &child);
-   bson_array_builder_append_int64(child, cursor_id);
-   bson_append_array_builder_end(command, child);
+   bson_append_array_builder_inline_begin(command, "cursors", 7, &child);
+   bson_array_builder_append_int64(&child, cursor_id);
+   bson_append_array_builder_end(command, &child);
 }
 
 

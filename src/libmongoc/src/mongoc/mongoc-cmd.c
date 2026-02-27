@@ -961,7 +961,7 @@ _mongoc_cmd_append_payload_as_array(const mongoc_cmd_t *cmd, bson_t *out)
    bson_t doc;
    const uint8_t *pos;
    const char *field_name;
-   bson_array_builder_t *bson;
+   bson_array_builder_t bson;
 
    BSON_ASSERT(cmd->payloads_count > 0);
    BSON_ASSERT(cmd->payloads_count <= MONGOC_CMD_PAYLOADS_COUNT_MAX);
@@ -972,17 +972,17 @@ _mongoc_cmd_append_payload_as_array(const mongoc_cmd_t *cmd, bson_t *out)
       // Create a BSON array from a document sequence (OP_MSG Section with payloadType=1).
       field_name = cmd->payloads[i].identifier;
       BSON_ASSERT(field_name);
-      BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_BEGIN(out, field_name, &bson));
+      BSON_ASSERT(BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(out, field_name, &bson));
 
       pos = cmd->payloads[i].documents;
       while (pos < cmd->payloads[i].documents + cmd->payloads[i].size) {
          const int32_t doc_len = mlib_read_i32le(pos);
          BSON_ASSERT(bson_init_static(&doc, pos, (size_t)doc_len));
-         bson_array_builder_append_document(bson, &doc);
+         bson_array_builder_append_document(&bson, &doc);
 
          pos += doc_len;
       }
-      bson_append_array_builder_end(out, bson);
+      bson_append_array_builder_end(out, &bson);
    }
 }
 

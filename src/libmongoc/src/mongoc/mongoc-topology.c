@@ -1719,18 +1719,18 @@ _mongoc_topology_push_server_session(mongoc_topology_t *topology, mongoc_server_
 bool
 _mongoc_topology_end_sessions_cmd(mongoc_topology_t *topology, bson_t *cmd)
 {
-   bson_array_builder_t *ar;
+   bson_array_builder_t ar;
    /* Only end up to 10'000 sessions */
    const int ENDED_SESSION_PRUNING_LIMIT = 10000;
    int i = 0;
    mongoc_server_session_t *ss = mongoc_server_session_pool_get_existing(topology->session_pool);
 
    bson_init(cmd);
-   BSON_APPEND_ARRAY_BUILDER_BEGIN(cmd, "endSessions", &ar);
+   BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(cmd, "endSessions", &ar);
 
    for (; i < ENDED_SESSION_PRUNING_LIMIT && ss != NULL;
         ++i, ss = mongoc_server_session_pool_get_existing(topology->session_pool)) {
-      bson_array_builder_append_document(ar, &ss->lsid);
+      bson_array_builder_append_document(&ar, &ss->lsid);
       mongoc_server_session_pool_drop(topology->session_pool, ss);
    }
 
@@ -1740,7 +1740,7 @@ _mongoc_topology_end_sessions_cmd(mongoc_topology_t *topology, bson_t *cmd)
       mongoc_server_session_pool_return(topology->session_pool, ss);
    }
 
-   bson_append_array_builder_end(cmd, ar);
+   bson_append_array_builder_end(cmd, &ar);
 
    return i > 0;
 }

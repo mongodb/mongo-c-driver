@@ -205,13 +205,13 @@ operation_list_database_names(test_t *test, operation_t *op, result_t *result, b
       bson_val_t *val = NULL;
       if (names) {
          bson_t bson = BSON_INITIALIZER;
-         bson_array_builder_t *element;
+         bson_array_builder_t element;
 
-         BSON_APPEND_ARRAY_BUILDER_BEGIN(&bson, "v", &element);
+         BSON_APPEND_ARRAY_BUILDER_INLINE_BEGIN(&bson, "v", &element);
          for (char **names_iter = names; *names_iter != NULL; ++names_iter) {
-            bson_array_builder_append_utf8(element, *names_iter, -1);
+            bson_array_builder_append_utf8(&element, *names_iter, -1);
          }
-         bson_append_array_builder_end(&bson, element);
+         bson_append_array_builder_end(&bson, &element);
 
          bson_iter_t iter;
          bson_iter_init_find(&iter, &bson, "v");
