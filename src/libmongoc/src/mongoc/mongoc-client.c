@@ -1625,15 +1625,15 @@ typedef struct {
 } retryable_read_context_t;
 
 static bool
-_retryable_read_execute(void *context, bson_t *reply, bson_error_t *error)
+_retryable_read_execute(void *user_data, bson_t *reply, bson_error_t *error)
 {
-   retryable_read_context_t *const context_ = (retryable_read_context_t *)context;
+   retryable_read_context_t *const context = (retryable_read_context_t *)user_data;
 
-   return mongoc_cluster_run_command_monitored(context_->cluster, &context_->parts->assembled, reply, error);
+   return mongoc_cluster_run_command_monitored(context->cluster, &context->parts->assembled, reply, error);
 }
 
 static mongoc_server_description_t const *
-_retryable_read_select_retry_server(void *context,
+_retryable_read_select_retry_server(void *user_data,
                                     mongoc_deprioritized_servers_t *deprioritized_servers,
                                     bson_t *reply,
                                     bson_error_t *error)
@@ -1641,31 +1641,31 @@ _retryable_read_select_retry_server(void *context,
    BSON_UNUSED(reply);
    BSON_UNUSED(error);
 
-   retryable_read_context_t *const context_ = (retryable_read_context_t *)context;
+   retryable_read_context_t *const context = (retryable_read_context_t *)user_data;
 
    const mongoc_ss_log_context_t ss_log_context = {
-      .operation = context_->parts->assembled.command_name,
+      .operation = context->parts->assembled.command_name,
       .has_operation_id = true,
-      .operation_id = context_->parts->assembled.operation_id,
+      .operation_id = context->parts->assembled.operation_id,
    };
 
-   mongoc_server_stream_cleanup(context_->retry_server_stream);
+   mongoc_server_stream_cleanup(context->retry_server_stream);
 
-   context_->retry_server_stream = mongoc_cluster_stream_for_reads(context_->cluster,
-                                                                   &ss_log_context,
-                                                                   context_->parts->read_prefs,
-                                                                   context_->parts->assembled.session,
-                                                                   deprioritized_servers,
-                                                                   NULL /* reply */,
-                                                                   NULL /* error */);
+   context->retry_server_stream = mongoc_cluster_stream_for_reads(context->cluster,
+                                                                  &ss_log_context,
+                                                                  context->parts->read_prefs,
+                                                                  context->parts->assembled.session,
+                                                                  deprioritized_servers,
+                                                                  NULL /* reply */,
+                                                                  NULL /* error */);
 
-   if (!context_->retry_server_stream) {
+   if (!context->retry_server_stream) {
       return NULL;
    }
 
-   context_->parts->assembled.server_stream = context_->retry_server_stream;
+   context->parts->assembled.server_stream = context->retry_server_stream;
 
-   return context_->retry_server_stream->sd;
+   return context->retry_server_stream->sd;
 }
 
 static bool
@@ -1694,7 +1694,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_read_execute,
       .select_retry_server = _retryable_read_select_retry_server,
-      .context = &context,
+      .user_data = &context,
       .is_always_retryable = parts->is_retryable_read,
       .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
       .jitter_source = client->jitter_source,

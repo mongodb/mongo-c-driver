@@ -33,13 +33,15 @@ typedef enum {
    MONGOC_RETRYABLE_CMD_TYPE_WRITE,
 } mongoc_retryable_cmd_type_t;
 
+typedef bool (*mongoc_retryable_cmd_execute_cb_t)(void *user_data, bson_t *reply, bson_error_t *error);
+
+typedef mongoc_server_description_t const *(*mongoc_retryable_cmd_select_retry_server_cb_t)(
+   void *user_data, mongoc_deprioritized_servers_t *deprioritized_servers, bson_t *reply, bson_error_t *error);
+
 typedef struct {
-   bool (*execute)(void *context, bson_t *reply, bson_error_t *error);
-   mongoc_server_description_t const *(*select_retry_server)(void *context,
-                                                             mongoc_deprioritized_servers_t *deprioritized_servers,
-                                                             bson_t *reply,
-                                                             bson_error_t *error);
-   void *context;
+   mongoc_retryable_cmd_execute_cb_t execute;
+   mongoc_retryable_cmd_select_retry_server_cb_t select_retry_server;
+   void *user_data;
    bool is_always_retryable;
    mongoc_retryable_cmd_type_t type;
    mongoc_jitter_source_t *jitter_source;

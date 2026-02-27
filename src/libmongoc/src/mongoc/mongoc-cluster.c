@@ -3569,36 +3569,36 @@ typedef struct {
 } retryable_write_context_t;
 
 static bool
-_retryable_write_execute(void *context, bson_t *reply, bson_error_t *error)
+_retryable_write_execute(void *user_data, bson_t *reply, bson_error_t *error)
 {
-   retryable_write_context_t *const context_ = (retryable_write_context_t *)context;
+   retryable_write_context_t *const context = (retryable_write_context_t *)user_data;
 
-   const bool ret = mongoc_cluster_run_command_monitored(context_->cluster, context_->cmd, reply, error);
+   const bool ret = mongoc_cluster_run_command_monitored(context->cluster, context->cmd, reply, error);
 
-   if (context_->is_always_retryable) {
-      _mongoc_write_error_handle_labels(ret, error, reply, context_->cmd->server_stream->sd);
+   if (context->is_always_retryable) {
+      _mongoc_write_error_handle_labels(ret, error, reply, context->cmd->server_stream->sd);
       _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
    }
 
-   if (!(context_->reply_and_error.set && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_NOWRITESPERFORMED))) {
+   if (!(context->reply_and_error.set && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_NOWRITESPERFORMED))) {
       if (error) {
-         context_->reply_and_error.error = *error;
+         context->reply_and_error.error = *error;
       }
 
-      if (context_->reply_and_error.set) {
-         bson_destroy(&context_->reply_and_error.reply);
+      if (context->reply_and_error.set) {
+         bson_destroy(&context->reply_and_error.reply);
       }
 
-      bson_copy_to(reply, &context_->reply_and_error.reply);
+      bson_copy_to(reply, &context->reply_and_error.reply);
 
-      context_->reply_and_error.set = true;
+      context->reply_and_error.set = true;
    }
 
    return ret;
 }
 
 static mongoc_server_description_t const *
-_retryable_write_select_retry_server(void *context,
+_retryable_write_select_retry_server(void *user_data,
                                      mongoc_deprioritized_servers_t *deprioritized_servers,
                                      bson_t *reply,
                                      bson_error_t *error)
@@ -3606,27 +3606,27 @@ _retryable_write_select_retry_server(void *context,
    BSON_UNUSED(reply);
    BSON_UNUSED(error);
 
-   retryable_write_context_t *const context_ = (retryable_write_context_t *)context;
+   retryable_write_context_t *const context = (retryable_write_context_t *)user_data;
 
    const mongoc_ss_log_context_t ss_log_context = {
-      .operation = context_->cmd->command_name, .has_operation_id = true, .operation_id = context_->cmd->operation_id};
+      .operation = context->cmd->command_name, .has_operation_id = true, .operation_id = context->cmd->operation_id};
 
-   mongoc_server_stream_cleanup(*context_->retry_server_stream);
+   mongoc_server_stream_cleanup(*context->retry_server_stream);
 
-   *context_->retry_server_stream = mongoc_cluster_stream_for_writes(context_->cluster,
-                                                                     &ss_log_context,
-                                                                     context_->cmd->session,
-                                                                     deprioritized_servers,
-                                                                     NULL /* reply */,
-                                                                     NULL /* error */);
+   *context->retry_server_stream = mongoc_cluster_stream_for_writes(context->cluster,
+                                                                    &ss_log_context,
+                                                                    context->cmd->session,
+                                                                    deprioritized_servers,
+                                                                    NULL /* reply */,
+                                                                    NULL /* error */);
 
-   if (!*context_->retry_server_stream) {
+   if (!*context->retry_server_stream) {
       return NULL;
    }
 
-   context_->cmd->server_stream = *context_->retry_server_stream;
+   context->cmd->server_stream = *context->retry_server_stream;
 
-   return context_->cmd->server_stream->sd;
+   return context->cmd->server_stream->sd;
 }
 
 bool
@@ -3671,7 +3671,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_write_execute,
       .select_retry_server = _retryable_write_select_retry_server,
-      .context = &context,
+      .user_data = &context,
       .is_always_retryable = is_retryable_write,
       .type = MONGOC_RETRYABLE_CMD_TYPE_WRITE,
       .jitter_source = jitter_source,

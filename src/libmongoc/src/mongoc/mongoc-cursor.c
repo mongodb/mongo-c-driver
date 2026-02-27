@@ -708,57 +708,57 @@ typedef struct {
 } retryable_cursor_command_context_t;
 
 static bool
-_retryable_cursor_command_execute(void *context, bson_t *reply, bson_error_t *error)
+_retryable_cursor_command_execute(void *user_data, bson_t *reply, bson_error_t *error)
 {
-   retryable_cursor_command_context_t *const context_ = (retryable_cursor_command_context_t *)context;
+   retryable_cursor_command_context_t *const context = (retryable_cursor_command_context_t *)user_data;
 
-   mongoc_cursor_t *const cursor = context_->cursor;
+   mongoc_cursor_t *const cursor = context->cursor;
 
    BSON_ASSERT(&cursor->error == error);
 
    const bool ret =
-      mongoc_cluster_run_command_monitored(&cursor->client->cluster, &context_->parts->assembled, reply, error);
+      mongoc_cluster_run_command_monitored(&cursor->client->cluster, &context->parts->assembled, reply, error);
 
    if (ret) {
       memset(error, 0, sizeof(bson_error_t));
    }
 
-   cursor->had_stream_timeout = context_->parts->assembled.server_stream->timed_out;
+   cursor->had_stream_timeout = context->parts->assembled.server_stream->timed_out;
 
    return ret;
 }
 
 static mongoc_server_description_t const *
-_retryable_cursor_commmand_select_retry_server(void *context,
+_retryable_cursor_commmand_select_retry_server(void *user_data,
                                                mongoc_deprioritized_servers_t *deprioritized_servers,
                                                bson_t *reply,
                                                bson_error_t *error)
 {
-   retryable_cursor_command_context_t *const context_ = (retryable_cursor_command_context_t *)context;
+   retryable_cursor_command_context_t *const context = (retryable_cursor_command_context_t *)user_data;
 
-   mongoc_server_stream_cleanup(*context_->server_stream);
+   mongoc_server_stream_cleanup(*context->server_stream);
 
-   mongoc_cursor_t *const cursor = context_->cursor;
+   mongoc_cursor_t *const cursor = context->cursor;
 
    BSON_ASSERT(!cursor->is_aggr_with_write_stage && "Cannot attempt a retry on an aggregate operation that "
                                                     "contains write stages");
 
-   *context_->server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
-                                                              context_->ss_log_context,
-                                                              cursor->read_prefs,
-                                                              cursor->client_session,
-                                                              deprioritized_servers,
-                                                              reply,
-                                                              error);
+   *context->server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
+                                                             context->ss_log_context,
+                                                             cursor->read_prefs,
+                                                             cursor->client_session,
+                                                             deprioritized_servers,
+                                                             reply,
+                                                             error);
 
-   if (!*context_->server_stream) {
+   if (!*context->server_stream) {
       return NULL;
    }
 
-   cursor->server_id = (*context_->server_stream)->sd->id;
-   context_->parts->assembled.server_stream = *context_->server_stream;
+   cursor->server_id = (*context->server_stream)->sd->id;
+   context->parts->assembled.server_stream = *context->server_stream;
 
-   return (*context_->server_stream)->sd;
+   return (*context->server_stream)->sd;
 }
 
 bool
@@ -905,7 +905,7 @@ _mongoc_cursor_run_command(
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_cursor_command_execute,
       .select_retry_server = _retryable_cursor_commmand_select_retry_server,
-      .context = &context,
+      .user_data = &context,
       .is_always_retryable = is_always_retryable,
       .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
       .jitter_source = cursor->client->jitter_source,

@@ -50,7 +50,7 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
       _mongoc_retry_backoff_generator_new(retry_backoff_params, cmd->jitter_source);
 
    while (true) {
-      ret = cmd->execute(cmd->context, reply, error);
+      ret = cmd->execute(cmd->user_data, reply, error);
 
       const bool is_retryable_read = cmd->type == MONGOC_RETRYABLE_CMD_TYPE_READ &&
                                      _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY;
@@ -108,7 +108,7 @@ _mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, 
          mlib_sleep_for(backoff_duration);
       }
 
-      server_description = cmd->select_retry_server(cmd->context, deprioritized_servers, reply, error);
+      server_description = cmd->select_retry_server(cmd->user_data, deprioritized_servers, reply, error);
 
       if (!server_description) {
          break;
