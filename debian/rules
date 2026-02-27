@@ -21,7 +21,8 @@ ifeq ($(DEB_HOST_ARCH),riscv64)
 	export DEB_LDFLAGS_MAINT_APPEND += -Wl,--no-as-needed -latomic -Wl,--as-needed
 endif
 
-ifneq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+
+ifeq (,$(filter libbson-doc libmongoc-doc,$(shell dh_listpackages)))
 	DOCS=OFF
 else
 	DOCS=ON
@@ -32,7 +33,7 @@ endif
 	dh $@
 
 override_dh_auto_configure:
-	[ "$(DOCS)" = "ON" ] || echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
+	[ "$(DOCS)" = "ON" ] || echo "arch-only build; not building documentation"
 	echo $(DEB_VERSION_UPSTREAM) > VERSION_CURRENT
 	dh_auto_configure -- \
 	-DENABLE_MONGOC=ON \
