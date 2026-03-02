@@ -2848,6 +2848,9 @@ bson_array_builder_destroy(bson_array_builder_t *bab)
    if (!bab) {
       return;
    }
+   // Given `bson_array_builder_new()`, `bab->bson` owns the BSON data and must be destroyed.
+   // Given `bson_append_array_builder_begin()` or `bson_append_array_builder_inline_begin()`, `bab->bson` (child) is a
+   // proxy to the parent `bson_t` object: both `BSON_FLAG_NO_FREE_DATA` and `BSON_FLAG_NO_FREE_OBJECT` are always set.
    bson_destroy(&bab->bson);
    if (bab->flags & BSON_FLAG_NO_FREE_OBJECT) {
       return;
