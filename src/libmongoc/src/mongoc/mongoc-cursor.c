@@ -710,6 +710,8 @@ typedef struct {
 static bool
 _retryable_cursor_command_execute(void *user_data, bson_t *reply, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(user_data);
+
    retryable_cursor_command_context_t *const context = (retryable_cursor_command_context_t *)user_data;
 
    mongoc_cursor_t *const cursor = context->cursor;
@@ -734,6 +736,9 @@ _retryable_cursor_commmand_select_retry_server(void *user_data,
                                                bson_t *reply,
                                                bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(user_data);
+   BSON_ASSERT_PARAM(deprioritized_servers);
+
    retryable_cursor_command_context_t *const context = (retryable_cursor_command_context_t *)user_data;
 
    mongoc_server_stream_cleanup(*context->server_stream);

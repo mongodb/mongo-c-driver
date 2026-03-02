@@ -3571,6 +3571,8 @@ typedef struct {
 static bool
 _retryable_write_execute(void *user_data, bson_t *reply, bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(user_data);
+
    retryable_write_context_t *const context = (retryable_write_context_t *)user_data;
 
    const bool ret = mongoc_cluster_run_command_monitored(context->cluster, context->cmd, reply, error);
@@ -3603,6 +3605,8 @@ _retryable_write_select_retry_server(void *user_data,
                                      bson_t *reply,
                                      bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(user_data);
+   BSON_ASSERT_PARAM(deprioritized_servers);
    BSON_UNUSED(reply);
    BSON_UNUSED(error);
 
