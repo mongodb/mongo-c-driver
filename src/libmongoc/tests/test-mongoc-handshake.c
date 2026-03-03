@@ -1356,6 +1356,37 @@ test_mongoc_handshake_cpp(void)
    bson_destroy(handshake);
 }
 
+// Prose test 9 in the Handshake spec validates the presence of the backpressure flag, but we instead use a mock server
+// test because the C Driver lacks a mechanism for inspecting handshake documents sent to the server.
+static void
+test_mongoc_handshake_includes_backpressure_flag(void)
+{
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_pool_t *const pool = test_framework_client_pool_new_from_uri(mock_server_get_uri(server), NULL);
+
+   mongoc_client_t *const client = mongoc_client_pool_pop(pool);
+
+   request_t *const request = mock_server_receives_any_hello(server);
+   ASSERT(request);
+
+   const bson_t *const request_doc = request_get_doc(request, 0);
+   ASSERT(request_doc);
+   ASSERT(bson_has_field(request_doc, HANDSHAKE_BACKPRESSURE_FIELD));
+   bson_iter_t iter;
+   ASSERT(bson_iter_init_find(&iter, request_doc, HANDSHAKE_BACKPRESSURE_FIELD));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(bson_iter_bool(&iter));
+
+   reply_to_request_simple(request, "{'ok': 1, 'isWritablePrimary': true}");
+
+   request_destroy(request);
+   mongoc_client_pool_push(pool, client);
+   mongoc_client_pool_destroy(pool);
+   mock_server_destroy(server);
+}
+
 void
 test_handshake_install(TestSuite *suite)
 {
@@ -1443,4 +1474,6 @@ test_handshake_install(TestSuite *suite)
                      NULL /* ctx */,
                      test_framework_skip_if_no_setenv);
    TestSuite_Add(suite, "/MongoDB/handshake/includes_c++", test_mongoc_handshake_cpp);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/includes_backpressure_flag", test_mongoc_handshake_includes_backpressure_flag);
 }

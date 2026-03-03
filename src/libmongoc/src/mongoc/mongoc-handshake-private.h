@@ -28,6 +28,8 @@
 
 BSON_BEGIN_DECLS
 
+#define HANDSHAKE_BACKPRESSURE_FIELD "backpressure"
+
 #define HANDSHAKE_FIELD "client"
 #define HANDSHAKE_PLATFORM_FIELD "platform"
 
