@@ -669,17 +669,7 @@ tasks:
       script: |-
         set -o errexit
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
-        export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64
-        .evergreen/scripts/build_snapshot_rpm.sh
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        sudo rm -rf ../build ../mock-result ../rpm.tar.gz
-        export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
+        export MOCK_TARGET_CONFIG=centos-stream+epel-10-aarch64
         .evergreen/scripts/build_snapshot_rpm.sh
   allowed_requesters:
   - ad_hoc
