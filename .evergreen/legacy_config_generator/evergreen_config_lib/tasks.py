@@ -276,12 +276,7 @@ all_tasks = [
             ),
             shell_mongoc(
                 'sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n'
-                'export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64\n'
-                '.evergreen/scripts/build_snapshot_rpm.sh'
-            ),
-            shell_mongoc(
-                'sudo rm -rf ../build ../mock-result ../rpm.tar.gz\n'
-                'export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n'
+                'export MOCK_TARGET_CONFIG=centos-stream+epel-10-aarch64\n'
                 '.evergreen/scripts/build_snapshot_rpm.sh'
             ),
         ],
