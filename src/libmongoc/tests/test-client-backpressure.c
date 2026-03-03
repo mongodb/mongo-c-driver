@@ -838,15 +838,26 @@ test_backpressure_install(TestSuite *suite)
                      test_backpressure_prose_1,
                      NULL,
                      NULL,
-                     // TODO: Verify skip conditions.
-                     test_framework_skip_if_no_crypto);
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
 
-   TestSuite_AddFull(
-      suite, "/backpressure/prose_test_2", test_backpressure_prose_2, NULL, NULL, test_framework_skip_if_no_crypto);
+   TestSuite_AddFull(suite,
+                     "/backpressure/prose_test_2",
+                     test_backpressure_prose_2,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
 
-   TestSuite_AddFull(
-      suite, "/backpressure/prose_test_3", test_backpressure_prose_3, NULL, NULL, test_framework_skip_if_no_crypto);
+   TestSuite_AddFull(suite,
+                     "/backpressure/prose_test_3",
+                     test_backpressure_prose_3,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
 
-   TestSuite_AddFull(
-      suite, "/backpressure/prose_test_4", test_backpressure_prose_4, NULL, NULL, test_framework_skip_if_no_crypto);
+   TestSuite_AddFull(suite,
+                     "/backpressure/prose_test_4",
+                     test_backpressure_prose_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
 }
