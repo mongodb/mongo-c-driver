@@ -1,9 +1,10 @@
-mongo-c-driver (2.2.2-2) UNRELEASED; urgency=medium
+mongo-c-driver (2.2.3-1) UNRELEASED; urgency=medium
 
+  * New upstream release
   * Skip documentation during arch-only build. Thanks to Helmut Grohne for the
     patch. (Closes: #1129217)
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 27 Feb 2026 15:28:36 -0500
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 03 Mar 2026 13:46:19 -0500
 
 mongo-c-driver (2.2.2-1) unstable; urgency=medium
 
