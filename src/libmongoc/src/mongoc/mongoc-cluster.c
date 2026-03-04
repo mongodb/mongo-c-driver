@@ -3698,7 +3698,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       bson_t reply_local = BSON_INITIALIZER;
       bson_error_t error_local = {0};
 
-      ret = _mongoc_execute_retryable_cmd(&retryable_cmd, &reply_local, &error_local);
+      ret = _mongoc_retryable_cmd_run(&retryable_cmd, &reply_local, &error_local);
 
       bson_destroy(&reply_local);
    }

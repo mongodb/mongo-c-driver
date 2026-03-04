@@ -50,6 +50,6 @@ typedef struct {
 } mongoc_retryable_cmd_t;
 
 bool
-_mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error);
+_mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error);
 
 #endif

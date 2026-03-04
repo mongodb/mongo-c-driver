@@ -918,7 +918,7 @@ _mongoc_cursor_run_command(
       .initial_server_description = server_stream->sd,
    };
 
-   ret = _mongoc_execute_retryable_cmd(&retryable_cmd, reply, &cursor->error);
+   ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, &cursor->error);
 
    if (cursor->error.domain) {
       bson_destroy(&cursor->error_doc);

@@ -23,7 +23,7 @@
 #include <mlib/time_point.h>
 
 bool
-_mongoc_execute_retryable_cmd(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error)
+_mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
    BSON_ASSERT_PARAM(cmd);
    BSON_ASSERT(cmd->execute);

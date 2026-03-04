@@ -1706,7 +1706,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .initial_server_description = server_stream->sd,
    };
 
-   const bool ret = _mongoc_execute_retryable_cmd(&retryable_cmd, reply, error);
+   const bool ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, error);
 
    mongoc_server_stream_cleanup(context.retry_server_stream);
 
