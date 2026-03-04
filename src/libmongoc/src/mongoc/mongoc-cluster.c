@@ -3582,6 +3582,15 @@ _retryable_write_execute(void *user_data, bson_t *reply, bson_error_t *error)
       _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
    }
 
+   // CDRIVER-6195: From the retryable writes spec:
+   //
+   // - If the driver has encountered only errors that indicate write attempts were made, the most recently encountered
+   //   error must be returned.
+   // - If all errors indicate no attempt was made (e.g., all errors contain the `NoWritesPerformed` error label or are
+   //   client-side errors before a command is sent), the first error encountered must be returned.
+   // - If the driver has encountered some errors which indicate a write attempt was made and some which indicate no
+   //   write attempt was made (e.g., a retryable server error followed by a checkout error), the most recently
+   //   encountered error which indicates a write attempt occurred must be returned.
    if (!(context->reply_and_error.set && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_NOWRITESPERFORMED))) {
       if (error) {
          context->reply_and_error.error = *error;
