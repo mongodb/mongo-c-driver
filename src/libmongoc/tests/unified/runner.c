@@ -122,7 +122,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"tests that operations retry at most maxAttempts=5 times", "collection.dropIndexes retries at most maxAttempts=5 times"},
    {"tests that operations respect overload backoff retry loop", "collection.dropIndexes retries using operation loop"},
 
-   // TODO: Investigate why change stream ops fail due to extra killCursors event.
+   // TODO: (CDRIVER-6262) Update the unified tests and remove these skips.
    {"tests that operations respect overload backoff retry loop", "client.createChangeStream retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "database.createChangeStream retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.createChangeStream retries using operation loop"},
