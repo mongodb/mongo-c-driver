@@ -65,7 +65,8 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
       const bool is_overload_retryable =
          is_overload && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
 
-      const bool is_retryable = is_retryable_read || is_retryable_write || is_overload_retryable;
+      const bool is_retryable = (cmd->is_always_retryable && is_retryable_read) ||
+                                (cmd->is_always_retryable && is_retryable_write) || is_overload_retryable;
 
       const bool is_retry_attempt = attempt > 0;
 

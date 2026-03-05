@@ -805,6 +805,129 @@ test_backpressure_prose_4(void *ctx)
    mongoc_client_destroy(client);
 }
 
+typedef struct {
+   const char *second_failpoint_cmd;
+   char *events[16];
+   size_t event_count;
+} test_t;
+
+static void
+test_cleanup(test_t *test)
+{
+   for (size_t i = 0; i < test->event_count; i++) {
+      bson_free(test->events[i]);
+   }
+}
+
+static void
+test_command_succeeded_cb(const mongoc_apm_command_succeeded_t *event)
+{
+   test_t *test = (test_t *)mongoc_apm_command_succeeded_get_context(event);
+   ASSERT_CMPSIZE_T(test->event_count, <, 16);
+   test->events[test->event_count++] =
+      bson_strdup_printf("%s:succeeded", mongoc_apm_command_succeeded_get_command_name(event));
+}
+
+static void
+test_command_failed_cb(const mongoc_apm_command_failed_t *event)
+{
+   test_t *test = (test_t *)mongoc_apm_command_failed_get_context(event);
+   ASSERT_CMPSIZE_T(test->event_count, <, 16);
+   test->events[test->event_count++] =
+      bson_strdup_printf("%s:failed", mongoc_apm_command_failed_get_command_name(event));
+
+   if (test->second_failpoint_cmd) {
+      run_admin_command(test->second_failpoint_cmd);
+      test->second_failpoint_cmd = NULL; // Only run once.
+   }
+}
+
+// Test the following scenario:
+// "getMore" fails with a SystemOverloadedError (should retry) followed by a Retryable Read Error (should not retry).
+static void
+test_overload_followed_by_retryable_error(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   bson_error_t error;
+
+
+   // Set up a collection with three documents:
+   {
+      mongoc_client_t *setup_client = test_framework_new_default_client();
+      mongoc_collection_t *coll = mongoc_client_get_collection(setup_client, "db", "coll");
+      mongoc_collection_drop(coll, NULL);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 1}"), NULL, NULL, &error), error);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 2}"), NULL, NULL, &error), error);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 3}"), NULL, NULL, &error), error);
+      mongoc_collection_destroy(coll);
+      mongoc_client_destroy(setup_client);
+   }
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   test_t t = {0};
+   // Set APM callback to configure a different failpoint on the first error.
+   {
+      mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_succeeded_cb(callbacks, &test_command_succeeded_cb);
+      mongoc_apm_set_command_failed_cb(callbacks, &test_command_failed_cb);
+      mongoc_client_set_apm_callbacks(client, callbacks, &t);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Set-up failpoints:
+   {
+      // Set first failpoint to fail with overload error:
+      run_admin_command(BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {
+            "failCommands" : ["getMore"],
+            "errorCode" : 2,
+            "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
+         }
+      }));
+      // Set second failpoint to fail with retryable read error:
+      t.second_failpoint_cmd = BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"failCommands" : ["getMore"], "errorCode" : 262 /* ExceededTimeLimit */}
+      });
+   }
+
+   // Do an "find" operation followed by a "getMore".
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+      // Use batchSize:1 to force a getMore.
+      mongoc_cursor_t *cursor =
+         mongoc_collection_find_with_opts(coll, tmp_bson("{}"), tmp_bson("{'batchSize': 1}"), NULL);
+      const bson_t *doc;
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+
+      // Send "find" command:
+      ASSERT(mongoc_cursor_next(cursor, &doc));
+      ASSERT_EQUAL_BSON(doc, tmp_bson("{'_id': 1}"));
+
+
+      // Send "getMore". Expect overload error to retry, then retryeable read error to be reported:
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+      ASSERT(mongoc_cursor_error(cursor, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, 262, "failpoint");
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+
+   ASSERT_CMPSTR(t.events[0], "find:succeeded");
+   ASSERT_CMPSTR(t.events[1], "getMore:failed");
+   ASSERT_CMPSTR(t.events[2], "getMore:failed");
+   if (t.events[3]) {
+      test_error("Unexpected event: %s", t.events[3]);
+   }
+
+   test_cleanup(&t);
+   mongoc_client_destroy(client);
+}
+
 void
 test_backpressure_install(TestSuite *suite)
 {
@@ -857,6 +980,13 @@ test_backpressure_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/backpressure/prose_test_4",
                      test_backpressure_prose_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
+
+   TestSuite_AddFull(suite,
+                     "/backpressure/overload_followed_by_retryable_error",
+                     test_overload_followed_by_retryable_error,
                      NULL,
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
