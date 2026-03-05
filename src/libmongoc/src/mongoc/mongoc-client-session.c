@@ -892,6 +892,10 @@ _max_time_ms_failure(bson_t *reply)
    return false;
 }
 
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR 1.5
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL mlib_duration(5, ms)
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX mlib_duration(5, s)
+
 bool
 mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                                        mongoc_client_session_with_transaction_cb_t cb,
@@ -913,9 +917,9 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
    const mlib_timer timer = mlib_expires_after(timeout, ms);
 
    const mongoc_retry_backoff_params_t retry_backoff_params = {
-      .growth_factor = 1.5,
-      .backoff_initial = mlib_duration(5, ms),
-      .backoff_max = mlib_duration(5, s),
+      .growth_factor = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR,
+      .backoff_initial = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL,
+      .backoff_max = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX,
    };
 
    mongoc_retry_backoff_generator_t *const retry_backoff_generator =

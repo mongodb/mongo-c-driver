@@ -92,10 +92,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
-#define MONGOC_RETRY_BACKOFF_GROWTH_FACTOR 2.0
-#define MONGOC_RETRY_BACKOFF_INITIAL mlib_duration(100, ms)
-#define MONGOC_RETRY_BACKOFF_MAX mlib_duration(10, s)
-
 #define MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY 1000.0
 
 struct _mongoc_collection_t;

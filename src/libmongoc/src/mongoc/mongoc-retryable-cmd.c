@@ -22,6 +22,10 @@
 
 #include <mlib/time_point.h>
 
+#define MONGOC_RETRYABLE_CMD_BACKOFF_GROWTH_FACTOR 2.0
+#define MONGOC_RETRYABLE_CMD_BACKOFF_INITIAL mlib_duration(100, ms)
+#define MONGOC_RETRYABLE_CMD_BACKOFF_MAX mlib_duration(10, s)
+
 bool
 _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
@@ -41,9 +45,9 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
    mongoc_deprioritized_servers_t *const deprioritized_servers = mongoc_deprioritized_servers_new();
 
    const mongoc_retry_backoff_params_t retry_backoff_params = {
-      .growth_factor = 2.0,
-      .backoff_initial = mlib_duration(100, ms),
-      .backoff_max = mlib_duration(10, s),
+      .growth_factor = MONGOC_RETRYABLE_CMD_BACKOFF_GROWTH_FACTOR,
+      .backoff_initial = MONGOC_RETRYABLE_CMD_BACKOFF_INITIAL,
+      .backoff_max = MONGOC_RETRYABLE_CMD_BACKOFF_MAX,
    };
 
    mongoc_retry_backoff_generator_t *const retry_backoff_generator =
