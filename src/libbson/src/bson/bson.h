@@ -845,6 +845,11 @@ bson_append_array_begin(bson_t *bson, const char *key, int key_length, bson_t *c
 
 #define BSON_APPEND_ARRAY_BEGIN(b, key, child) bson_append_array_begin(b, key, (int)strlen(key), child)
 
+BSON_EXPORT(bool)
+bson_append_array_unsafe_begin(bson_t *bson, const char *key, int key_length, bson_t *child);
+
+#define BSON_APPEND_ARRAY_UNSAFE_BEGIN(b, key, child) bson_append_array_unsafe_begin(b, key, (int)strlen(key), child)
+
 /**
  * bson_append_array_end:
  * @bson: A bson_t.

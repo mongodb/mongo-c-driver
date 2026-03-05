@@ -547,6 +547,19 @@ bson_append_array_begin(bson_t *bson,    /* IN */
    BSON_ASSERT(key);
    BSON_ASSERT(child);
 
+   return bson_append_array_unsafe_begin(bson, key, key_length, child);
+}
+
+bool
+bson_append_array_unsafe_begin(bson_t *bson,    /* IN */
+                               const char *key, /* IN */
+                               int key_length,  /* IN */
+                               bson_t *child)   /* IN */
+{
+   BSON_ASSERT(bson);
+   BSON_ASSERT(key);
+   BSON_ASSERT(child);
+
    return _bson_append_bson_begin(bson, key, key_length, BSON_TYPE_ARRAY, child);
 }
 
