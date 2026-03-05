@@ -150,7 +150,7 @@ enum mcommon_memory_order {
                     __atomic_fetch_add,                                                                                \
                     __sync_fetch_and_add,                                                                              \
                     ord,                                                                                               \
-                    (volatile VCIntrinType*)a,                                                                         \
+                    BSON_IF_MSVC((volatile VCIntrinType*))a,                                                                         \
                     addend);                                                                                           \
    }                                                                                                                   \
                                                                                                                        \
@@ -194,7 +194,7 @@ enum mcommon_memory_order {
       Type volatile *a, Type value, enum mcommon_memory_order ord)                                                     \
    {                                                                                                                   \
       BSON_IF_MSVC(DEF_ATOMIC_OP(BSON_CONCAT(                                                                          \
-         _InterlockedExchange, VCIntrinSuffix), ~, ~, ord, (volatile VCIntrinType*)a, value);)                         \
+         _InterlockedExchange, VCIntrinSuffix), ~, ~, ord, BSON_IF_MSVC((volatile VCIntrinType*))a, value);)                         \
       /* GNU doesn't want CONSUME order for the exchange operation, so we                                              \
        * cannot use DEF_ATOMIC_OP. */                                                                                  \
       BSON_IF_GNU_LIKE(switch (ord) {                                                                                  \
@@ -224,21 +224,21 @@ enum mcommon_memory_order {
       case mcommon_memory_order_acq_rel:                                                                               \
       case mcommon_memory_order_seq_cst:                                                                               \
          DEF_ATOMIC_CMPEXCH_STRONG(                                                                                    \
-            VCIntrinSuffix, , __ATOMIC_SEQ_CST, (volatile VCIntrinType*)a, actual, new_value);                         \
+            VCIntrinSuffix, , __ATOMIC_SEQ_CST, BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);                         \
          break;                                                                                                        \
       case mcommon_memory_order_acquire:                                                                               \
          DEF_ATOMIC_CMPEXCH_STRONG(                                                                                    \
             VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_ACQUIRE,                                              \
-            (volatile VCIntrinType*)a, actual, new_value);                                                             \
+            BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);                                                             \
          break;                                                                                                        \
       case mcommon_memory_order_consume:                                                                               \
          DEF_ATOMIC_CMPEXCH_STRONG(                                                                                    \
             VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_CONSUME,                                              \
-            (volatile VCIntrinType*)a, actual, new_value);                                                             \
+            BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);                                                             \
          break;                                                                                                        \
       case mcommon_memory_order_relaxed:                                                                               \
          DEF_ATOMIC_CMPEXCH_STRONG(                                                                                    \
-            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_nf), __ATOMIC_RELAXED, (volatile VCIntrinType*)a, actual, new_value);\
+            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_nf), __ATOMIC_RELAXED, BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);\
          break;                                                                                                        \
       default:                                                                                                         \
          BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                       \
@@ -254,20 +254,20 @@ enum mcommon_memory_order {
       case mcommon_memory_order_release:                                                                               \
       case mcommon_memory_order_acq_rel:                                                                               \
       case mcommon_memory_order_seq_cst:                                                                               \
-         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix, , __ATOMIC_SEQ_CST, (volatile VCIntrinType*)a, actual, new_value);    \
+         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix, , __ATOMIC_SEQ_CST, BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);    \
          break;                                                                                                        \
       case mcommon_memory_order_acquire:                                                                               \
          DEF_ATOMIC_CMPEXCH_WEAK(                                                                                      \
             VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_ACQUIRE,                                              \
-            (volatile VCIntrinType*)a, actual, new_value);                                                             \
+            BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);                                                             \
          break;                                                                                                        \
       case mcommon_memory_order_consume:                                                                               \
          DEF_ATOMIC_CMPEXCH_WEAK(                                                                                      \
-            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_CONSUME,(volatile VCIntrinType*)a, actual, new_value);\
+            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_CONSUME,BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);\
          break;                                                                                                        \
       case mcommon_memory_order_relaxed:                                                                               \
          DEF_ATOMIC_CMPEXCH_WEAK(                                                                                      \
-            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_nf), __ATOMIC_RELAXED, (volatile VCIntrinType*)a, actual, new_value);\
+            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_nf), __ATOMIC_RELAXED, BSON_IF_MSVC((volatile VCIntrinType*))a, actual, new_value);\
          break;                                                                                                        \
       default:                                                                                                         \
          BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                       \
