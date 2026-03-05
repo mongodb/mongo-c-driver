@@ -3,6 +3,11 @@
 bson_append_array_begin()
 =========================
 
+.. warning::
+   .. deprecated:: 2.3.0
+
+      Use :symbol:`bson_append_array_builder_begin <bson_array_builder_t>` to safely generate array keys ("0", "1", "2", ...) or :symbol:`bson_append_array_unsafe_begin` to manually provide keys.
+
 Synopsis
 --------
 
@@ -30,7 +35,7 @@ Description
 
 The :symbol:`bson_append_array_begin()` function shall begin appending an array field to ``bson``. This allows for incrementally building a sub-array. Doing so will generally yield better performance as you will serialize to a single buffer. When done building the sub-array, the caller *MUST* call :symbol:`bson_append_array_end()`.
 
-For generating array element keys, see :symbol:`bson_uint32_to_string`.
+The caller is responsible for generating array element keys correctly ("0", "1", "2", ...). For generating array element keys, see :symbol:`bson_uint32_to_string`.
 
 Consider using :symbol:`bson_array_builder_t` to append an array without needing to generate array element keys.
 

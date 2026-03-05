@@ -840,6 +840,7 @@ bson_array_builder_append_document_end(bson_array_builder_t *bab, bson_t *child)
  *
  * Returns: true if successful; false if append would overflow max size.
  */
+BSON_GNUC_DEPRECATED_FOR(bson_append_array_builder_begin or bson_append_array_unsafe_begin)
 BSON_EXPORT(bool)
 bson_append_array_begin(bson_t *bson, const char *key, int key_length, bson_t *child);
 
