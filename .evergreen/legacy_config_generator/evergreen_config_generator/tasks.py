@@ -34,7 +34,7 @@ class Task(ConfigObject):
         tags: Iterable[str] = (),
         depends_on: Iterable[DependencySpec] = (),
         exec_timeout_secs: int | None = None,
-        allowed_requesters: Iterable[str] = ()
+        allowed_requesters: Iterable[str] = (),
     ):
         self._name = task_name
         self._tags = list(tags)

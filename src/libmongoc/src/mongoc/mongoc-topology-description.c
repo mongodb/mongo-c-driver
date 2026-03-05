@@ -960,7 +960,7 @@ _filter_suitable_servers_for_replica_set(mongoc_array_t *const set, /* OUT */
          mongoc_server_description_filter_tags(candidates, *candidates_len_ptr, data->read_prefs);
          _partition_sort_candidates(candidates, candidates_len_ptr);
 
-         if (ds && candidates_len_ptr == 0) {
+         if (ds && *candidates_len_ptr == 0u) {
             return retry_without_deprioritization;
          }
 
@@ -1017,7 +1017,7 @@ _filter_suitable_servers_for_replica_set(mongoc_array_t *const set, /* OUT */
          mongoc_server_description_filter_tags(candidates, *candidates_len_ptr, read_prefs);
          _partition_sort_candidates(candidates, candidates_len_ptr);
 
-         if (ds && candidates_len_ptr == 0) {
+         if (ds && *candidates_len_ptr == 0u) {
             return retry_without_deprioritization;
          }
 

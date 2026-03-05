@@ -154,12 +154,12 @@ test_add_label(void)
       bson_t big = BSON_INITIALIZER;
       // Append enough data to force heap allocation:
       {
-         ASSERT(big.flags & BSON_FLAG_INLINE);
+         ASSERT(big.flags & BSON_FLAG_INLINE_DATA);
          char *big_str = bson_malloc(128);
          memset(big_str, 'x', 127);
          big_str[127] = '\0';
          BSON_APPEND_UTF8(&big, "big", big_str);
-         ASSERT(!(big.flags & BSON_FLAG_INLINE));
+         ASSERT(!(big.flags & BSON_FLAG_INLINE_DATA));
          bson_free(big_str);
       }
 

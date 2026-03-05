@@ -1,3 +1,14 @@
+libmongoc 2.2.3
+===============
+
+## Fixed
+
+* Fix handling in HTTP response parser.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
 libmongoc 2.2.2
 ===============
 
