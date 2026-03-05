@@ -1146,7 +1146,20 @@ mlib_printf_attribute(1, 0) static inline mstr mstr_vsprintf(const char *format,
       // Do the formatting
       va_list dup_args;
       va_copy(dup_args, args);
+
+      // clang complains that the format string is not a string literal;
+      // this is fine since we're writing a vsnprintf wrapper
+      // the format string will be checked at call sites to mstr_vsprintf()
+      // because we mark it using mlib_printf_attribute
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
       int n_chars = vsnprintf(ret.data, len_with_null, format, dup_args);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic pop
+#endif
       va_end(dup_args);
 
       // On error, returns a negative value

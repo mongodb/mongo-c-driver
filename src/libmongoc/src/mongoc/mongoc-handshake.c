@@ -291,6 +291,44 @@ _get_os_name(void)
 #endif
 }
 
+#ifdef _WIN32
+static bool
+_win32_get_os_version(RTL_OSVERSIONINFOEXW *osvi) {
+   // not using GetVersionEx here as this function has special behavior:
+   // it returns the version the application has been "manifested" (targeted) for, or Windows 8 if not manifested
+   // instead of the version it's actually running on
+   // see: https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getversionexa
+
+   // instead, we are using RtlGetVersion
+   // this function is not publicly documented and no declaration is available in a header file as a result
+   // instead, it must be looked up manually in ntdll.dll
+
+   // ntdll.dll is always loaded into every process - this call is expected to always succeed
+   const HMODULE ntdll_handle = GetModuleHandleW(L"ntdll.dll");
+   if (!ntdll_handle) {
+      return false;
+   }
+
+   NTSTATUS(NTAPI *const rtlgetversion_ptr)(RTL_OSVERSIONINFOEXW*) =
+      (NTSTATUS(NTAPI*)(RTL_OSVERSIONINFOEXW*))GetProcAddress(ntdll_handle, "RtlGetVersion");
+   if (!rtlgetversion_ptr) {
+      return false;
+   }
+
+   ZeroMemory(osvi, sizeof(*osvi));
+   osvi->dwOSVersionInfoSize = sizeof(*osvi);
+
+   const NTSTATUS status = rtlgetversion_ptr(osvi);
+   if (status != 0) {
+      MONGOC_WARNING("RtlGetVersion() returned NTSTATUS: %08lX", (unsigned long)status);
+      return false;
+   }
+
+   return true;
+}
+#endif
+
+
 static char *
 _get_os_version(void)
 {
@@ -298,28 +336,14 @@ _get_os_version(void)
    bool found = false;
 
 #ifdef _WIN32
-   OSVERSIONINFO osvi;
-   ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-#if defined(_MSC_VER)
-   // CDRIVER-4263: GetVersionEx is deprecated.
-#pragma warning(suppress : 4996)
-   const BOOL res = GetVersionEx(&osvi);
-#else
-   const BOOL res = GetVersionEx(&osvi);
-#endif
-
-   if (res) {
+   RTL_OSVERSIONINFOEXW osvi;
+   if (_win32_get_os_version(&osvi)) {
       // Truncation is OK.
       int req = bson_snprintf(
          ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
       BSON_ASSERT(req > 0);
       found = true;
-   } else {
-      char *msg = mongoc_winerr_to_string(GetLastError());
-      MONGOC_WARNING("Error with GetVersionEx(): %s", msg);
-      bson_free(msg);
    }
 
 #elif defined(_POSIX_VERSION)

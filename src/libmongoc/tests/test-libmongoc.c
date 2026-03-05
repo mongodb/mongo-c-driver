@@ -2479,7 +2479,7 @@ windows_exception_handler(EXCEPTION_POINTERS *pExceptionInfo)
    char exception_string[128];
    bson_snprintf(exception_string,
                  sizeof(exception_string),
-                 (exception_code == EXCEPTION_ACCESS_VIOLATION) ? "(access violation)" : "0x%08X",
+                 (exception_code == EXCEPTION_ACCESS_VIOLATION) ? "(access violation)" : "0x%08lX",
                  exception_code);
 
    char address_string[32];
@@ -2544,7 +2544,7 @@ windows_exception_handler(EXCEPTION_POINTERS *pExceptionInfo)
 
       DWORD offset_ln = 0;
       if (SymGetLineFromAddr64(process, (DWORD64)stack_frame.AddrPC.Offset, &offset_ln, &line)) {
-         fprintf(stderr, " %s:%d ", line.FileName, line.LineNumber);
+         fprintf(stderr, " %s:%lu ", line.FileName, line.LineNumber);
       }
 
       fprintf(stderr, "\n");
