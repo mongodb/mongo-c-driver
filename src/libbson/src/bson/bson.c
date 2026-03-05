@@ -2866,7 +2866,7 @@ bson_append_array_builder_begin(bson_t *bson, const char *key, int key_length, b
    BSON_ASSERT_PARAM(key);
    BSON_ASSERT_PARAM(child);
    *child = bson_array_builder_new();
-   bool ok = bson_append_array_begin(bson, key, key_length, &(*child)->bson);
+   bool ok = bson_append_array_unsafe_begin(bson, key, key_length, &(*child)->bson);
    if (!ok) {
       bson_array_builder_destroy(*child);
       *child = NULL;
