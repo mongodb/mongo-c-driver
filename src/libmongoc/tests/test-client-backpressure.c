@@ -809,30 +809,36 @@ typedef struct {
    const char *second_failpoint_cmd;
    char *events[16];
    size_t event_count;
-} test_t;
+} test_overload_followed_by_retryable_error_t;
 
 static void
-test_cleanup(test_t *test)
+test_overload_followed_by_retryable_error_cleanup(test_overload_followed_by_retryable_error_t *test)
 {
-   for (size_t i = 0; i < test->event_count; i++) {
+   for (size_t i = 0; i < test->event_count; ++i) {
       bson_free(test->events[i]);
    }
 }
 
 static void
-test_command_succeeded_cb(const mongoc_apm_command_succeeded_t *event)
+test_overload_followed_by_retryable_error_command_succeeded_cb(const mongoc_apm_command_succeeded_t *event)
 {
-   test_t *test = (test_t *)mongoc_apm_command_succeeded_get_context(event);
+   test_overload_followed_by_retryable_error_t *const test =
+      (test_overload_followed_by_retryable_error_t *)mongoc_apm_command_succeeded_get_context(event);
+
    ASSERT_CMPSIZE_T(test->event_count, <, 16);
+
    test->events[test->event_count++] =
       bson_strdup_printf("%s:succeeded", mongoc_apm_command_succeeded_get_command_name(event));
 }
 
 static void
-test_command_failed_cb(const mongoc_apm_command_failed_t *event)
+test_overload_followed_by_retryable_error_command_failed_cb(const mongoc_apm_command_failed_t *event)
 {
-   test_t *test = (test_t *)mongoc_apm_command_failed_get_context(event);
+   test_overload_followed_by_retryable_error_t *const test =
+      (test_overload_followed_by_retryable_error_t *)mongoc_apm_command_failed_get_context(event);
+
    ASSERT_CMPSIZE_T(test->event_count, <, 16);
+
    test->events[test->event_count++] =
       bson_strdup_printf("%s:failed", mongoc_apm_command_failed_get_command_name(event));
 
@@ -851,27 +857,32 @@ test_overload_followed_by_retryable_error(void *unused)
 
    bson_error_t error;
 
-
    // Set up a collection with three documents:
    {
-      mongoc_client_t *setup_client = test_framework_new_default_client();
-      mongoc_collection_t *coll = mongoc_client_get_collection(setup_client, "db", "coll");
+      mongoc_client_t *const setup_client = test_framework_new_default_client();
+
+      mongoc_collection_t *const coll = mongoc_client_get_collection(setup_client, "db", "coll");
       mongoc_collection_drop(coll, NULL);
+
       ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 1}"), NULL, NULL, &error), error);
       ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 2}"), NULL, NULL, &error), error);
       ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{'_id': 3}"), NULL, NULL, &error), error);
+
       mongoc_collection_destroy(coll);
       mongoc_client_destroy(setup_client);
    }
 
-   mongoc_client_t *client = test_framework_new_default_client();
-   test_t t = {0};
+   mongoc_client_t *const client = test_framework_new_default_client();
+   test_overload_followed_by_retryable_error_t test = {0};
+
    // Set APM callback to configure a different failpoint on the first error.
    {
-      mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
-      mongoc_apm_set_command_succeeded_cb(callbacks, &test_command_succeeded_cb);
-      mongoc_apm_set_command_failed_cb(callbacks, &test_command_failed_cb);
-      mongoc_client_set_apm_callbacks(client, callbacks, &t);
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+
+      mongoc_apm_set_command_succeeded_cb(callbacks, &test_overload_followed_by_retryable_error_command_succeeded_cb);
+      mongoc_apm_set_command_failed_cb(callbacks, &test_overload_followed_by_retryable_error_command_failed_cb);
+      mongoc_client_set_apm_callbacks(client, callbacks, &test);
+
       mongoc_apm_callbacks_destroy(callbacks);
    }
 
@@ -887,8 +898,9 @@ test_overload_followed_by_retryable_error(void *unused)
             "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
          }
       }));
+
       // Set second failpoint to fail with retryable read error:
-      t.second_failpoint_cmd = BSON_STR({
+      test.second_failpoint_cmd = BSON_STR({
          "configureFailPoint" : "failCommand",
          "mode" : {"times" : 1},
          "data" : {"failCommands" : ["getMore"], "errorCode" : 262 /* ExceededTimeLimit */}
@@ -897,34 +909,34 @@ test_overload_followed_by_retryable_error(void *unused)
 
    // Do an "find" operation followed by a "getMore".
    {
-      mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
       // Use batchSize:1 to force a getMore.
-      mongoc_cursor_t *cursor =
+      mongoc_cursor_t *const cursor =
          mongoc_collection_find_with_opts(coll, tmp_bson("{}"), tmp_bson("{'batchSize': 1}"), NULL);
-      const bson_t *doc;
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
 
       // Send "find" command:
+      const bson_t *doc;
       ASSERT(mongoc_cursor_next(cursor, &doc));
       ASSERT_EQUAL_BSON(doc, tmp_bson("{'_id': 1}"));
-
 
       // Send "getMore". Expect overload error to retry, then retryeable read error to be reported:
       ASSERT(!mongoc_cursor_next(cursor, &doc));
       ASSERT(mongoc_cursor_error(cursor, &error));
       ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_QUERY, 262, "failpoint");
+
       mongoc_cursor_destroy(cursor);
       mongoc_collection_destroy(coll);
    }
 
-   ASSERT_CMPSTR(t.events[0], "find:succeeded");
-   ASSERT_CMPSTR(t.events[1], "getMore:failed");
-   ASSERT_CMPSTR(t.events[2], "getMore:failed");
-   if (t.events[3]) {
-      ASSERT_CMPSTR(t.events[3], "killCursors:succeeded");
+   ASSERT_CMPSTR(test.events[0], "find:succeeded");
+   ASSERT_CMPSTR(test.events[1], "getMore:failed");
+   ASSERT_CMPSTR(test.events[2], "getMore:failed");
+   if (test.events[3]) {
+      ASSERT_CMPSTR(test.events[3], "killCursors:succeeded");
    }
 
-   test_cleanup(&t);
+   test_overload_followed_by_retryable_error_cleanup(&test);
    mongoc_client_destroy(client);
 }
 
