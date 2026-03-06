@@ -872,8 +872,8 @@ test_overload_followed_by_retryable_error(void *unused)
       mongoc_client_destroy(setup_client);
    }
 
-   mongoc_client_t *const client = test_framework_new_default_client();
    test_overload_followed_by_retryable_error_t test = {0};
+   mongoc_client_t *const client = test_framework_new_default_client();
 
    // Set APM callback to configure a different failpoint on the first error.
    {
@@ -932,12 +932,13 @@ test_overload_followed_by_retryable_error(void *unused)
    ASSERT_CMPSTR(test.events[0], "find:succeeded");
    ASSERT_CMPSTR(test.events[1], "getMore:failed");
    ASSERT_CMPSTR(test.events[2], "getMore:failed");
-   if (test.events[3]) {
-      ASSERT_CMPSTR(test.events[3], "killCursors:succeeded");
+   ASSERT_CMPSTR(test.events[3], "killCursors:succeeded");
+   if (test.events[4]) {
+      test_error("Unexpected extra event: %s", test.events[4]);
    }
 
-   test_overload_followed_by_retryable_error_cleanup(&test);
    mongoc_client_destroy(client);
+   test_overload_followed_by_retryable_error_cleanup(&test);
 }
 
 void
