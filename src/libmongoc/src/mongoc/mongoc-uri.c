@@ -712,9 +712,9 @@ mongoc_uri_option_is_bool(const char *key)
 
    return !strcasecmp(key, MONGOC_URI_DIRECTCONNECTION) || !strcasecmp(key, MONGOC_URI_JOURNAL) ||
           !strcasecmp(key, MONGOC_URI_RETRYREADS) || !strcasecmp(key, MONGOC_URI_RETRYWRITES) ||
-          !strcasecmp(key, MONGOC_URI_SAFE) || !strcasecmp(key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
-          !strcasecmp(key, MONGOC_URI_TLS) || !strcasecmp(key, MONGOC_URI_TLSINSECURE) ||
-          !strcasecmp(key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
+          !strcasecmp(key, MONGOC_URI_ADAPTIVERETRIES) || !strcasecmp(key, MONGOC_URI_SAFE) ||
+          !strcasecmp(key, MONGOC_URI_SERVERSELECTIONTRYONCE) || !strcasecmp(key, MONGOC_URI_TLS) ||
+          !strcasecmp(key, MONGOC_URI_TLSINSECURE) || !strcasecmp(key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
           !strcasecmp(key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp(key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp(key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) || !strcasecmp(key, MONGOC_URI_LOADBALANCED) ||

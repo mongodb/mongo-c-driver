@@ -16,26 +16,29 @@
 
 #include <mongoc/mongoc-prelude.h>
 
-#ifndef MONGOC_JITTER_SOURCE_PRIVATE_H
-#define MONGOC_JITTER_SOURCE_PRIVATE_H
+#ifndef MONGOC_TOKEN_BUCKET_PRIVATE_H
+#define MONGOC_TOKEN_BUCKET_PRIVATE_H
 
-#include <mlib/duration.h>
+#include <mongoc/mongoc-thread-private.h>
 
-typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
+#include <stdbool.h>
 
-// A function that returns nearly-uniformly-distributed values in the range `[0.0, 1.0]`.
-typedef double (*mongoc_jitter_source_generate_fn_t)(mongoc_jitter_source_t *);
+typedef struct {
+   bson_mutex_t mutex;
+   double capacity;
+   double tokens;
+} mongoc_token_bucket_t;
 
-mongoc_jitter_source_t *
-_mongoc_jitter_source_new(mongoc_jitter_source_generate_fn_t generate);
+mongoc_token_bucket_t *
+_mongoc_token_bucket_new(double capacity);
 
 void
-_mongoc_jitter_source_destroy(mongoc_jitter_source_t *source);
+_mongoc_token_bucket_destroy(mongoc_token_bucket_t *bucket);
 
-double
-_mongoc_jitter_source_generate(mongoc_jitter_source_t *source);
+bool
+_mongoc_token_bucket_consume(mongoc_token_bucket_t *bucket, double n);
 
-double
-_mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source);
+void
+_mongoc_token_bucket_deposit(mongoc_token_bucket_t *bucket, double n);
 
 #endif

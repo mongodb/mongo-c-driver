@@ -567,7 +567,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-change-stream.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd-deprecated.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
@@ -607,6 +606,8 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rpc.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-retryable-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-retry-backoff-generator.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
@@ -624,6 +625,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-timeout.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-token-bucket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
@@ -1091,7 +1093,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-hedged-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-http.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-interrupt.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c
@@ -1108,6 +1109,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retry-backoff-generator.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryability-helpers.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
@@ -1130,6 +1132,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-timeout.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-token-bucket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
