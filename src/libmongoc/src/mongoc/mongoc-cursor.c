@@ -767,8 +767,7 @@ _retryable_cursor_commmand_select_retry_server(void *user_data,
 }
 
 bool
-_mongoc_cursor_run_command(
-   mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply, bool retry_prohibited)
+_mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply)
 {
    mongoc_server_stream_t *server_stream;
    bson_iter_t iter;
@@ -885,9 +884,6 @@ _mongoc_cursor_run_command(
             is_always_retryable = false;
          }
       }
-   }
-   if (is_always_retryable && retry_prohibited) {
-      is_always_retryable = false;
    }
 
    if (cursor->write_concern && !mongoc_write_concern_is_default(cursor->write_concern)) {
@@ -1451,7 +1447,7 @@ _mongoc_cursor_response_refresh(mongoc_cursor_t *cursor,
 
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
-   if (_mongoc_cursor_run_command(cursor, command, opts, &response->reply, false)) {
+   if (_mongoc_cursor_run_command(cursor, command, opts, &response->reply)) {
       if (_mongoc_cursor_start_reading_response(cursor, response)) {
          cursor->in_exhaust = cursor->client->in_exhaust;
          return;

@@ -175,8 +175,7 @@ _mongoc_cursor_fetch_stream(mongoc_cursor_t *cursor, const mongoc_ss_log_context
 void
 _mongoc_cursor_collection(const mongoc_cursor_t *cursor, const char **collection, int *collection_len);
 bool
-_mongoc_cursor_run_command(
-   mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply, bool retry_prohibited);
+_mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply);
 bool
 _mongoc_cursor_more(mongoc_cursor_t *cursor);
 
