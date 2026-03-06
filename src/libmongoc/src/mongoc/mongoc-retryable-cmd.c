@@ -38,7 +38,7 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
    bool ret = false;
 
    int attempt = 0;
-   int allowed_retries = cmd->is_always_retryable ? 1 : 0;
+   int allowed_retries = cmd->retry_eligibility == MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY ? 0 : 1;
 
    mongoc_server_description_t const *server_description = cmd->initial_server_description;
 
@@ -56,17 +56,16 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
    while (true) {
       ret = cmd->execute(cmd->user_data, reply, error);
 
-      const bool is_retryable_read = cmd->type == MONGOC_RETRYABLE_CMD_TYPE_READ &&
+      const bool is_retryable_read = cmd->retry_eligibility == MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ &&
                                      _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY;
-      const bool is_retryable_write =
-         cmd->type == MONGOC_RETRYABLE_CMD_TYPE_WRITE && _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY;
+      const bool is_retryable_write = cmd->retry_eligibility == MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE &&
+                                      _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY;
 
       const bool is_overload = mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
       const bool is_overload_retryable =
          is_overload && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
 
-      const bool is_retryable = (cmd->is_always_retryable && is_retryable_read) ||
-                                (cmd->is_always_retryable && is_retryable_write) || is_overload_retryable;
+      const bool is_retryable = is_retryable_read || is_retryable_write || is_overload_retryable;
 
       const bool is_retry_attempt = attempt > 0;
 

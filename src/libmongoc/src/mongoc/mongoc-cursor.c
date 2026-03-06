@@ -907,8 +907,8 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       .execute = _retryable_cursor_command_execute,
       .select_retry_server = _retryable_cursor_commmand_select_retry_server,
       .user_data = &context,
-      .is_always_retryable = is_always_retryable,
-      .type = MONGOC_RETRYABLE_CMD_TYPE_READ,
+      .retry_eligibility =
+         is_always_retryable ? MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ : MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
       .jitter_source = cursor->client->jitter_source,
       .token_bucket = cursor->client->token_bucket,
       .initial_server_description = server_stream->sd,
