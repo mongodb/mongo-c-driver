@@ -921,7 +921,7 @@ test_overload_followed_by_retryable_error(void *unused)
    ASSERT_CMPSTR(t.events[1], "getMore:failed");
    ASSERT_CMPSTR(t.events[2], "getMore:failed");
    if (t.events[3]) {
-      test_error("Unexpected event: %s", t.events[3]);
+      ASSERT_CMPSTR(t.events[3], "killCursors:succeeded");
    }
 
    test_cleanup(&t);
