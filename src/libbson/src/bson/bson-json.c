@@ -1782,7 +1782,7 @@ _bson_json_read_start_array(bson_json_reader_t *reader) /* IN */
       key = bson->key;
       len = bson->key_buf.len;
 
-      STACK_PUSH_ARRAY(bson_append_array_begin(STACK_BSON_PARENT, key, (int)len, STACK_BSON_CHILD));
+      STACK_PUSH_ARRAY(bson_append_array_unsafe_begin(STACK_BSON_PARENT, key, (int)len, STACK_BSON_CHILD));
    }
 }
 

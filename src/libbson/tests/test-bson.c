@@ -1166,7 +1166,7 @@ test_bson_build_child_array(void)
    bson_t *child2;
 
    bson_init(&b);
-   BSON_ASSERT(bson_append_array_begin(&b, "foo", -1, &child));
+   BSON_ASSERT(bson_append_array_unsafe_begin(&b, "foo", -1, &child));
    BSON_ASSERT(bson_append_utf8(&child, "0", -1, "baz", -1));
    BSON_ASSERT(bson_append_array_end(&b, &child));
 

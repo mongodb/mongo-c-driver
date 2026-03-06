@@ -2827,7 +2827,7 @@ test_bson_as_json_with_opts_array(void)
    bson_t nested;
 
    b = bson_new();
-   BSON_ASSERT(BSON_APPEND_ARRAY_BEGIN(b, "v", &nested));
+   BSON_ASSERT(BSON_APPEND_ARRAY_UNSAFE_BEGIN(b, "v", &nested));
    BSON_ASSERT(BSON_APPEND_UTF8(&nested, "0", "abcdef"));
    BSON_ASSERT(bson_append_array_end(b, &nested));
    BSON_ASSERT(BSON_APPEND_UTF8(b, "w", "abcdef"));
