@@ -1,3 +1,15 @@
+libmongoc 2.3.0 [UNRELEASED]
+============================
+
+## New Features
+
+- Support retry for server overload errors.
+    - Supported on all commands.
+    - Custom application retry logic may need to be adjusted to avoid retrying too long.
+    - Upgrade is recommended to avoid impacts of server changes related to overload errors.
+        - If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors.
+    - Set the URI option `adaptiveRetry=true` limit retries with a token bucket system.
+
 libmongoc 2.2.3
 ===============
 
