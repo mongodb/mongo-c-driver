@@ -496,23 +496,12 @@ always_1_jitter_source_generate(mongoc_jitter_source_t *source)
 static void
 backpressure_prose_1_set_fail_point(mongoc_client_t *client)
 {
-   bson_error_t error;
-   ASSERT_OR_PRINT(
-      mongoc_client_command_simple(client,
-                                   "admin",
-                                   tmp_bson("{"
-                                            "  'configureFailPoint': 'failCommand',"
-                                            "  'mode': 'alwaysOn',"
-                                            "  'data': {"
-                                            "    'failCommands': ['insert'],"
-                                            "    'errorCode' : 2,"
-                                            "    'errorLabels' : [ 'SystemOverloadedError', 'RetryableError' ]"
-                                            "  }"
-                                            "}"),
-                                   NULL,
-                                   NULL,
-                                   &error),
-      error);
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : "alwaysOn",
+      "data" :
+         {"failCommands" : ["insert"], "errorCode" : 2, "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]}
+   }));
 }
 
 static mlib_duration
@@ -649,23 +638,17 @@ test_backpressure_prose_3(void *ctx)
    mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
 
    // Step 3: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : "alwaysOn",
+      "data" : {
+         "failCommands" : ["find"],
+         "errorCode" : 462, // IngressRequestRateLimitExceeded
+         "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
+      }
+   }));
+
    bson_error_t error;
-   ASSERT_OR_PRINT(
-      mongoc_client_command_simple(client,
-                                   "admin",
-                                   tmp_bson("{"
-                                            "  'configureFailPoint': 'failCommand',"
-                                            "  'mode': 'alwaysOn',"
-                                            "  'data': {"
-                                            "    'failCommands': ['find'],"
-                                            "    'errorCode': 462," // IngressRequestRateLimitExceeded
-                                            "    'errorLabels': ['SystemOverloadedError', 'RetryableError']"
-                                            "  }"
-                                            "}"),
-                                   NULL,
-                                   NULL,
-                                   &error),
-      error);
 
    {
       // Step 4: Perform a find operation with `coll` that fails.
@@ -748,23 +731,17 @@ test_backpressure_prose_4(void *ctx)
    mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
 
    // Step 4: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 3},
+      "data" : {
+         "failCommands" : ["find"],
+         "errorCode" : 462, // IngressRequestRateLimitExceeded
+         "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
+      }
+   }));
+
    bson_error_t error;
-   ASSERT_OR_PRINT(
-      mongoc_client_command_simple(client,
-                                   "admin",
-                                   tmp_bson("{"
-                                            "  'configureFailPoint': 'failCommand',"
-                                            "  'mode': {'times': 3},"
-                                            "  'data': {"
-                                            "    'failCommands': ['find'],"
-                                            "    'errorCode': 462," // IngressRequestRateLimitExceeded
-                                            "    'errorLabels': ['SystemOverloadedError', 'RetryableError']"
-                                            "  }"
-                                            "}"),
-                                   NULL,
-                                   NULL,
-                                   &error),
-      error);
 
    {
       // Step 5: Perform a find operation with `coll` that fails.
