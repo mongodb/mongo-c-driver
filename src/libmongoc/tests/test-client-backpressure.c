@@ -517,6 +517,12 @@ backpressure_prose_1_step_3_3(mongoc_collection_t *collection)
 }
 
 static void
+disable_fail_point(void)
+{
+   run_admin_command(BSON_STR({"configureFailPoint" : "failCommand", "mode" : "off"}));
+}
+
+static void
 test_backpressure_prose_1(void *ctx)
 {
    BSON_UNUSED(ctx);
@@ -556,16 +562,7 @@ test_backpressure_prose_1(void *ctx)
    // to account for potential variance between the two runs.
    ASSERT_CMPDURATION(mlib_duration(with_backoff_duration, minus, no_backoff_duration), >=, mlib_duration(2100, ms));
 
-   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
-                                                "admin",
-                                                tmp_bson("{"
-                                                         "  'configureFailPoint': 'failCommand',"
-                                                         "  'mode': 'off'"
-                                                         "}"),
-                                                NULL,
-                                                NULL,
-                                                &error),
-                   error);
+   disable_fail_point();
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(db);
@@ -671,16 +668,7 @@ test_backpressure_prose_3(void *ctx)
    // Step 6: Assert that the total number of started commands is MAX_RETRIES + 1.
    ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS + 1);
 
-   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
-                                                "admin",
-                                                tmp_bson("{"
-                                                         "  'configureFailPoint': 'failCommand',"
-                                                         "  'mode': 'off'"
-                                                         "}"),
-                                                NULL,
-                                                NULL,
-                                                &error),
-                   error);
+   disable_fail_point();
 
    mongoc_collection_destroy(coll);
    mongoc_client_destroy(client);
@@ -765,16 +753,7 @@ test_backpressure_prose_4(void *ctx)
    // retries.
    ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 3);
 
-   ASSERT_OR_PRINT(mongoc_client_command_simple(client,
-                                                "admin",
-                                                tmp_bson("{"
-                                                         "  'configureFailPoint': 'failCommand',"
-                                                         "  'mode': 'off'"
-                                                         "}"),
-                                                NULL,
-                                                NULL,
-                                                &error),
-                   error);
+   disable_fail_point();
 
    mongoc_collection_destroy(coll);
    mongoc_client_destroy(client);
