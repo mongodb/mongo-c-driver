@@ -894,7 +894,7 @@ _max_time_ms_failure(bson_t *reply)
 
 #define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR 1.5
 #define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL mlib_duration(5, ms)
-#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX mlib_duration(5, s)
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX mlib_duration(500, ms)
 
 bool
 mongoc_client_session_with_transaction(mongoc_client_session_t *session,
