@@ -745,8 +745,6 @@ _retryable_cursor_commmand_select_retry_server(void *user_data,
 
    mongoc_cursor_t *const cursor = context->cursor;
 
-   BSON_ASSERT(!cursor->is_aggr_with_write_stage && "Cannot attempt a retry on an aggregate operation that "
-                                                    "contains write stages");
 
    *context->server_stream = mongoc_cluster_stream_for_reads(&cursor->client->cluster,
                                                              context->ss_log_context,
@@ -903,12 +901,28 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       .server_stream = &server_stream,
    };
 
+   bool is_read = !cursor->is_aggr_with_write_stage;
+   mongoc_retry_eligibility_t retry_eligibility;
+   if (is_always_retryable) {
+      // Meets requirements of Retryable Read.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ;
+   } else if (is_read &&
+              mongoc_uri_get_option_as_bool(parts.client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
+      // Eligible for overload retries only.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
+   } else if (!is_read &&
+              mongoc_uri_get_option_as_bool(parts.client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+      // Eligible for overload retries only.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
+   } else {
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
+   }
+
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_cursor_command_execute,
       .select_retry_server = _retryable_cursor_commmand_select_retry_server,
       .user_data = &context,
-      .retry_eligibility =
-         is_always_retryable ? MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ : MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
+      .retry_eligibility = retry_eligibility,
       .jitter_source = cursor->client->jitter_source,
       .token_bucket = cursor->client->topology->token_bucket,
       .initial_server_description = server_stream->sd,

@@ -3681,12 +3681,22 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       .retry_server_stream = retry_server_stream,
    };
 
+   mongoc_retry_eligibility_t retry_eligibility;
+   if (is_retryable_write) {
+      // Meets requirements of Retryable Write.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE;
+   } else if (mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+      // Eligible for overload retries only.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
+   } else {
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
+   }
+
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_write_execute,
       .select_retry_server = _retryable_write_select_retry_server,
       .user_data = &context,
-      .retry_eligibility =
-         is_retryable_write ? MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE : MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
+      .retry_eligibility = retry_eligibility,
       .jitter_source = jitter_source,
       .token_bucket = token_bucket,
       .initial_server_description = cmd->server_stream->sd,

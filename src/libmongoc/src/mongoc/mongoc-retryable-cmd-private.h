@@ -29,9 +29,10 @@
 #define MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS 5
 
 typedef enum {
+   MONGOC_RETRY_ELIGIBILITY_NONE,
    MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
-   MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ,
-   MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE,
+   MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ,  // Satisfies Retryable Read requirements
+   MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE, // Satisfies Retryable Write requirements
 } mongoc_retry_eligibility_t;
 
 typedef bool (*mongoc_retryable_cmd_execute_cb_t)(void *user_data, bson_t *reply, bson_error_t *error);

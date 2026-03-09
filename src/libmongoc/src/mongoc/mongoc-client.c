@@ -1690,12 +1690,41 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .retry_server_stream = NULL,
    };
 
+   mongoc_retry_eligibility_t retry_eligibility;
+   if (parts->is_retryable_read) {
+      // Meets requirements of Retryable Read.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ;
+   } else {
+      // Check if eligible for overload retries:
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
+
+      // runCommand is not eligible for overload retries if retryReads=false or retryWrites=false.
+      if (parts->is_raw_command) {
+         if (!mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS) ||
+             !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+            retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
+         }
+      }
+
+      // Reads are not eligible for overload retries if retryReads=false.
+      if (parts->is_read_command &&
+          !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
+         retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
+      }
+
+      // Writes are not eligible for overload retries if retryWrites=false.
+      // Write operations that do not satisfy Retryable Writes may go through this function.
+      if (parts->is_write_command &&
+          !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+         retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
+      }
+   }
+
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_read_execute,
       .select_retry_server = _retryable_read_select_retry_server,
       .user_data = &context,
-      .retry_eligibility =
-         parts->is_retryable_read ? MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ : MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
+      .retry_eligibility = retry_eligibility,
       .jitter_source = client->jitter_source,
       .token_bucket = client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
@@ -1967,6 +1996,8 @@ _mongoc_client_command_with_opts(mongoc_client_t *client,
          GOTO(done);
       }
    }
+
+   parts.is_raw_command = mode == MONGOC_CMD_RAW;
 
    ret = _mongoc_client_command_with_stream(client, &parts, user_prefs, server_stream, reply_ptr, error);
 

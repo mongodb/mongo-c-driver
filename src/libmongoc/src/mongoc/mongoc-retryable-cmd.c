@@ -62,8 +62,9 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
                                       _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY;
 
       const bool is_overload = mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
-      const bool is_overload_retryable =
-         is_overload && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
+      const bool is_overload_retryable = is_overload &&
+                                         mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR) &&
+                                         cmd->retry_eligibility != MONGOC_RETRY_ELIGIBILITY_NONE;
 
       const bool is_retryable = is_retryable_read || is_retryable_write || is_overload_retryable;
 
