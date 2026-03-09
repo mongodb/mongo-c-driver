@@ -543,7 +543,7 @@ test_backpressure_prose_1(void *ctx)
 
    // Step 2: Let `collection` be a collection.
    bson_error_t error;
-   mongoc_collection_t *const collection = mongoc_database_create_collection(db, "retry_backoff", NULL, &error);
+   mongoc_collection_t *const collection = mongoc_client_get_collection(client, "db", "retry_backoff");
    ASSERT_OR_PRINT(collection, error);
 
    // Step 3.1: Configure the random number generator used for jitter to always return `0` -- this effectively disables
@@ -566,8 +566,6 @@ test_backpressure_prose_1(void *ctx)
    // Step 3.6: Compare the durations of the two runs. The sum of 5 backoffs is 3.1 seconds. There is a 1-second window
    // to account for potential variance between the two runs.
    ASSERT_CMPDURATION(mlib_duration(with_backoff_duration, minus, no_backoff_duration), >=, mlib_duration(2100, ms));
-
-   ASSERT_OR_PRINT(mongoc_collection_drop(collection, &error), error);
 
    ASSERT_OR_PRINT(mongoc_client_command_simple(client,
                                                 "admin",
