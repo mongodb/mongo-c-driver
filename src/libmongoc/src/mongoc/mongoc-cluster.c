@@ -3564,7 +3564,7 @@ typedef struct {
 
    mongoc_cluster_t *cluster;
    mongoc_cmd_t *cmd;
-   bool is_always_retryable;
+   bool only_retry_on_overload;
    mongoc_server_stream_t **retry_server_stream;
 } retryable_write_context_t;
 
@@ -3577,7 +3577,7 @@ _retryable_write_execute(void *user_data, bson_t *reply, bson_error_t *error)
 
    const bool ret = mongoc_cluster_run_command_monitored(context->cluster, context->cmd, reply, error);
 
-   if (context->is_always_retryable) {
+   if (!context->only_retry_on_overload) {
       _mongoc_write_error_handle_labels(ret, error, reply, context->cmd->server_stream->sd);
       _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
    }
@@ -3677,7 +3677,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
          },
       .cluster = cluster,
       .cmd = cmd,
-      .is_always_retryable = is_retryable_write,
+      .only_retry_on_overload = !is_retryable_write,
       .retry_server_stream = retry_server_stream,
    };
 
