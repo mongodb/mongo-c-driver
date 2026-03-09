@@ -1128,10 +1128,6 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
    client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
 
-   if (mongoc_uri_get_option_as_bool(client->uri, MONGOC_URI_ADAPTIVERETRIES, false)) {
-      client->token_bucket = _mongoc_token_bucket_new(MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
-   }
-
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
 
@@ -1207,7 +1203,6 @@ mongoc_client_destroy(mongoc_client_t *client)
       mongoc_set_destroy(client->client_sessions);
       mongoc_server_api_destroy(client->api);
       _mongoc_jitter_source_destroy(client->jitter_source);
-      _mongoc_token_bucket_destroy(client->token_bucket);
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup(&client->ssl_opts, true);
@@ -1702,7 +1697,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .retry_eligibility =
          parts->is_retryable_read ? MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ : MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
       .jitter_source = client->jitter_source,
-      .token_bucket = client->token_bucket,
+      .token_bucket = client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
    };
 
@@ -1747,7 +1742,7 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
                                                     &parts->assembled,
                                                     true /* is_retryable */,
                                                     client->jitter_source,
-                                                    client->token_bucket,
+                                                    client->topology->token_bucket,
                                                     &retry_server_stream,
                                                     reply,
                                                     error);

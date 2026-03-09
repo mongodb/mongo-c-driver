@@ -1857,7 +1857,7 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
                                                          &parts.assembled,
                                                          parts.is_retryable_write,
                                                          self->client->jitter_source,
-                                                         self->client->token_bucket,
+                                                         self->client->topology->token_bucket,
                                                          &new_ss,
                                                          &cmd_reply,
                                                          &error);

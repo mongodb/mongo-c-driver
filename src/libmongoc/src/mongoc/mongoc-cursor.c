@@ -910,7 +910,7 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       .retry_eligibility =
          is_always_retryable ? MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ : MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY,
       .jitter_source = cursor->client->jitter_source,
-      .token_bucket = cursor->client->token_bucket,
+      .token_bucket = cursor->client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
    };
 

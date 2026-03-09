@@ -127,7 +127,6 @@ struct _mongoc_client_t {
    uint32_t generation;
 
    mongoc_jitter_source_t *jitter_source;
-   mongoc_token_bucket_t *token_bucket;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read

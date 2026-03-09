@@ -2404,7 +2404,7 @@ mongoc_collection_find_and_modify_with_opts(mongoc_collection_t *collection,
                                             &parts.assembled,
                                             parts.is_retryable_write,
                                             collection->client->jitter_source,
-                                            collection->client->token_bucket,
+                                            collection->client->topology->token_bucket,
                                             &retry_server_stream,
                                             reply,
                                             error);

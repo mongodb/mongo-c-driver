@@ -738,7 +738,7 @@ _mongoc_write_opmsg(mongoc_write_command_t *command,
                                                   &parts.assembled,
                                                   parts.is_retryable_write,
                                                   client->jitter_source,
-                                                  client->token_bucket,
+                                                  client->topology->token_bucket,
                                                   &new_retry_server_stream,
                                                   &reply,
                                                   error);

@@ -597,8 +597,8 @@ test_backpressure_prose_2(void *ctx)
 
    // Step 2: Assert that the client's retry token bucket is at full capacity and that the capacity is
    // `MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY`.
-   ASSERT(client->token_bucket->capacity == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
-   ASSERT(client->token_bucket->tokens == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+   ASSERT(client->topology->token_bucket->capacity == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+   ASSERT(client->topology->token_bucket->tokens == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
 
    // Step 3: Using `client`, execute a successful `ping` command.
    bson_error_t error;
@@ -606,7 +606,7 @@ test_backpressure_prose_2(void *ctx)
 
    // Step 4: Assert that the successful command did not increase the number of tokens in the bucket above
    // `MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY`.
-   ASSERT(client->token_bucket->tokens <= MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+   ASSERT(client->topology->token_bucket->tokens <= MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
 
    mongoc_client_destroy(client);
    mongoc_uri_destroy(uri);
@@ -741,8 +741,8 @@ test_backpressure_prose_4(void *ctx)
    }
 
    // Step 2: Set `client`'s retry token bucket to have 2 tokens.
-   ASSERT(client->token_bucket);
-   client->token_bucket->tokens = 2.0;
+   ASSERT(client->topology->token_bucket);
+   client->topology->token_bucket->tokens = 2.0;
 
    // Step 3: Let `coll` be a collection.
    mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
