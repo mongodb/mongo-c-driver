@@ -977,6 +977,34 @@ test_bson_init_static(void)
    bson_destroy(&b);
 }
 
+// Constructs a bson_t and then by-value assigns through *dst
+static void
+make_bson_for_relocate(volatile bson_t *dst)
+{
+   bson_t item = BSON_INITIALIZER;
+   for (int i = 0; i < 1024; ++i) {
+      bson_append_utf8(&item, "foo", -1, "bar", -1);
+   }
+   // Do the write. This is volatile to assure the write occurs exactly once at this location.
+   *dst = item;
+}
+
+/**
+ * Test that trivial relocation (by-value assignment/copying) leaves the bson_t in a valid state.
+ */
+static void
+test_bson_relocate(void)
+{
+   bson_t doc;
+   make_bson_for_relocate(&doc);
+   bson_iter_t iter;
+   bson_iter_init(&iter, &doc);
+   while (bson_iter_next(&iter)) {
+      // Do nothing
+   }
+   bson_destroy(&doc);
+}
+
 static void *
 realloc_func_never_called(void *mem, size_t num_bytes, void *ctx)
 {
@@ -3010,6 +3038,7 @@ test_bson_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/new_from_buffer", test_bson_new_from_buffer);
    TestSuite_Add(suite, "/bson/init", test_bson_init);
    TestSuite_Add(suite, "/bson/init_static", test_bson_init_static);
+   TestSuite_Add(suite, "/bson/relocate", test_bson_relocate);
    TestSuite_Add(suite, "/bson/basic", test_bson_alloc);
    TestSuite_Add(suite, "/bson/basic_array_alloc", test_bson_array_alloc);
    TestSuite_Add(suite, "/bson/append_overflow", test_bson_append_overflow);
