@@ -534,8 +534,6 @@ test_backpressure_prose_1(void *ctx)
    mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
    test_framework_set_ssl_opts(client);
 
-   mongoc_database_t *const db = mongoc_client_get_database(client, "db");
-
    // Step 2: Let `collection` be a collection.
    bson_error_t error;
    mongoc_collection_t *const collection = mongoc_client_get_collection(client, "db", "retry_backoff");
@@ -565,7 +563,6 @@ test_backpressure_prose_1(void *ctx)
    disable_fail_point();
 
    mongoc_collection_destroy(collection);
-   mongoc_database_destroy(db);
    mongoc_client_destroy(client);
    mongoc_uri_destroy(uri);
 }
