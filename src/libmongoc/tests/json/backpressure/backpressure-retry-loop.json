@@ -112,7 +112,7 @@
       "database": {
         "id": "database_retryWrites_false",
         "client": "client_retryWrites_false",
-        "databaseName": "backpressure-db"
+        "databaseName": "retryable-writes-tests"
       }
     },
     {
