@@ -175,11 +175,11 @@ bson_writer_begin(bson_writer_t *writer, /* IN */
    b->flags = BSON_FLAG_NO_FREE_OBJECT | BSON_FLAG_NO_FREE_DATA;
    b->len = 5;
    b->parent = NULL;
-   b->buf = writer->buf;
-   b->buflen = writer->buflen;
+   b->indirect_buffer = writer->buf;
+   b->indirect_buflen = writer->buflen;
    b->offset = writer->offset;
-   b->alloc = NULL;
-   b->alloclen = 0;
+   b->own_buffer = NULL;
+   b->own_buflen = 0;
    b->realloc = writer->realloc_func;
    b->realloc_func_ctx = writer->realloc_func_ctx;
 

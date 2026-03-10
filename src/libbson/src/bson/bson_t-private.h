@@ -62,14 +62,31 @@ typedef struct {
     * exposed through an accessor function. Plus, it's redundant since
     * BSON self describes the length in the first four bytes of the
     * buffer. */
-   uint32_t len;              /* length of bson document in bytes */
-   bson_t *parent;            /* parent bson if a child */
-   uint32_t depth;            /* Subdocument depth. */
-   uint8_t **buf;             /* pointer to buffer pointer */
-   size_t *buflen;            /* pointer to buffer length */
-   size_t offset;             /* our offset inside *buf  */
-   uint8_t *alloc;            /* buffer that we own. */
-   size_t alloclen;           /* length of buffer that we own. */
+   uint32_t len; /* length of bson document in bytes */
+   /**
+    * @brief Pointer to a parent document object if we are a child of some other
+    * document, otherwise a null pointer.
+    */
+   bson_t *parent;
+   uint32_t depth; /* Subdocument depth. */
+   /**
+    * @brief If non-null, this pointer refers to the pointer to a buffer that is not directly owned
+    * by this `bson_t`, but may still manipulated/managed by this `bson_t`.
+    *
+    * If this pointer is null, then the data buffer is in `own_buffer`
+    */
+   uint8_t **indirect_buffer;
+   size_t *indirect_buflen;
+   /**
+    * @brief The offset (in bytes) to the beginning of the document within the data buffer.
+    */
+   size_t offset;
+   /**
+    * @brief Data buffer that is managed directly by this `bson_t`. This is not used if `indirect_buffer`
+    * is non-null.
+    */
+   uint8_t *own_buffer;
+   size_t own_buflen;
    bson_realloc_func realloc; /* our realloc implementation */
    void *realloc_func_ctx;    /* context for our realloc func */
 } bson_impl_alloc_t;
