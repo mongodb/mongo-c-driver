@@ -3564,7 +3564,7 @@ typedef struct {
 
    mongoc_cluster_t *cluster;
    mongoc_cmd_t *cmd;
-   bool only_retry_on_overload;
+   mongoc_retry_eligibility_t retry_eligibility;
    mongoc_server_stream_t **retry_server_stream;
 } retryable_write_context_t;
 
@@ -3577,7 +3577,7 @@ _retryable_write_execute(void *user_data, bson_t *reply, bson_error_t *error)
 
    const bool ret = mongoc_cluster_run_command_monitored(context->cluster, context->cmd, reply, error);
 
-   if (!context->only_retry_on_overload) {
+   if (context->retry_eligibility == MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE) {
       _mongoc_write_error_handle_labels(ret, error, reply, context->cmd->server_stream->sd);
       _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
    }
@@ -3668,19 +3668,6 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    // Ensure `*retry_server_stream` is always valid or null.
    *retry_server_stream = NULL;
 
-   retryable_write_context_t context = {
-      .reply_and_error =
-         {
-            .error = {0},
-            .reply = BSON_INITIALIZER,
-            .set = false,
-         },
-      .cluster = cluster,
-      .cmd = cmd,
-      .only_retry_on_overload = !is_retryable_write,
-      .retry_server_stream = retry_server_stream,
-   };
-
    mongoc_retry_eligibility_t retry_eligibility;
    if (is_retryable_write) {
       // Meets requirements of Retryable Write.
@@ -3691,6 +3678,19 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    } else {
       retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
    }
+
+   retryable_write_context_t context = {
+      .reply_and_error =
+         {
+            .error = {0},
+            .reply = BSON_INITIALIZER,
+            .set = false,
+         },
+      .cluster = cluster,
+      .cmd = cmd,
+      .retry_eligibility = retry_eligibility,
+      .retry_server_stream = retry_server_stream,
+   };
 
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_write_execute,
