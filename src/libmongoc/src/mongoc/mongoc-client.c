@@ -1711,13 +1711,6 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
           !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
          retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
       }
-
-      // Writes are not eligible for overload retries if retryWrites=false.
-      // Write operations that do not satisfy Retryable Writes may go through this function.
-      if (parts->is_write_command &&
-          !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
-         retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
-      }
    }
 
    const mongoc_retryable_cmd_t retryable_cmd = {
@@ -1764,12 +1757,12 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
       return false;
    }
 
-   if (parts->is_retryable_write) {
+   if (parts->is_write_command) {
       mongoc_server_stream_t *retry_server_stream = NULL;
 
       bool ret = mongoc_cluster_run_retryable_write(&client->cluster,
                                                     &parts->assembled,
-                                                    true /* is_retryable */,
+                                                    parts->is_retryable_write,
                                                     client->jitter_source,
                                                     client->topology->token_bucket,
                                                     &retry_server_stream,
