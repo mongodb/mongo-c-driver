@@ -827,6 +827,7 @@ bson_array_builder_append_document_end(bson_array_builder_t *bab, bson_t *child)
  * @key_length: The length of @key in bytes not including NUL or -1
  *    if @key_length is NUL terminated.
  * @child: A location to an uninitialized bson_t.
+ * @deprecated Use bson_append_array_builder_begin or bson_append_array_unsafe_begin instead.
  *
  * Appends a new field named @key to @bson. The field is, however,
  * incomplete. @child will be initialized so that you may add fields to the
@@ -840,10 +841,16 @@ bson_array_builder_append_document_end(bson_array_builder_t *bab, bson_t *child)
  *
  * Returns: true if successful; false if append would overflow max size.
  */
+BSON_GNUC_DEPRECATED_FOR(bson_append_array_builder_begin or bson_append_array_unsafe_begin)
 BSON_EXPORT(bool)
 bson_append_array_begin(bson_t *bson, const char *key, int key_length, bson_t *child);
 
 #define BSON_APPEND_ARRAY_BEGIN(b, key, child) bson_append_array_begin(b, key, (int)strlen(key), child)
+
+BSON_EXPORT(bool)
+bson_append_array_unsafe_begin(bson_t *bson, const char *key, int key_length, bson_t *child);
+
+#define BSON_APPEND_ARRAY_UNSAFE_BEGIN(b, key, child) bson_append_array_unsafe_begin(b, key, (int)strlen(key), child)
 
 /**
  * bson_append_array_end:

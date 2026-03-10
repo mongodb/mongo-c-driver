@@ -1,3 +1,10 @@
+libbson 2.3.0 [UNRELEASED]
+==========================
+
+## Deprecated
+
+* `bson_append_array_begin`. Use `bson_append_array_builder_begin` or `bson_append_array_unsafe_begin` instead.
+
 libbson 2.2.3
 =============
 

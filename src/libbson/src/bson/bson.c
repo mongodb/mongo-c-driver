@@ -511,37 +511,20 @@ _bson_append_bson_end(bson_t *bson,  /* IN */
    return true;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_append_array_begin --
- *
- *       Start appending a new array.
- *
- *       Use @child to append to the data area for the given field.
- *
- *       It is a programming error to call any other bson function on
- *       @bson until bson_append_array_end() has been called. It is
- *       valid to call bson_append*() functions on @child.
- *
- *       This function is useful to allow building nested documents using
- *       a single buffer owned by the top-level bson document.
- *
- * Returns:
- *       true if successful; otherwise false and @child is invalid.
- *
- * Side effects:
- *       @child is initialized if true is returned.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 bson_append_array_begin(bson_t *bson,    /* IN */
                         const char *key, /* IN */
                         int key_length,  /* IN */
                         bson_t *child)   /* IN */
+{
+   return bson_append_array_unsafe_begin(bson, key, key_length, child);
+}
+
+bool
+bson_append_array_unsafe_begin(bson_t *bson,    /* IN */
+                               const char *key, /* IN */
+                               int key_length,  /* IN */
+                               bson_t *child)   /* IN */
 {
    BSON_ASSERT(bson);
    BSON_ASSERT(key);
@@ -2857,7 +2840,7 @@ bson_append_array_builder_begin(bson_t *bson, const char *key, int key_length, b
    BSON_ASSERT_PARAM(key);
    BSON_ASSERT_PARAM(child);
    *child = bson_array_builder_new();
-   bool ok = bson_append_array_begin(bson, key, key_length, &(*child)->bson);
+   bool ok = bson_append_array_unsafe_begin(bson, key, key_length, &(*child)->bson);
    if (!ok) {
       bson_array_builder_destroy(*child);
       *child = NULL;
