@@ -41,6 +41,7 @@ mongoc_cmd_parts_init(mongoc_cmd_parts_t *parts,
    parts->body = command_body;
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
+   parts->is_raw_command = false;
    parts->is_read_command = false;
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
