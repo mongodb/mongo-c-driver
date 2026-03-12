@@ -374,6 +374,45 @@ functions:
                 exit 1
             fi
             echo "restoring instance profile ... succeeded"
+  run oidc k8s test:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        env:
+          K8S_VARIANT: ${VARIANT}
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/setup-pod.sh
+    - command: subprocess.exec
+      type: test
+      params:
+        binary: bash
+        env:
+          K8S_DRIVERS_TAR_FILE: ${OIDC_TEST_TARBALL}
+          K8S_TEST_CMD: ./.evergreen/scripts/oidc-k8s-test.sh
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/run-driver-test.sh
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/teardown-pod.sh
   run-mock-kms-servers:
     - command: subprocess.exec
       type: setup
