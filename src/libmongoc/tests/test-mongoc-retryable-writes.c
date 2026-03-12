@@ -1441,16 +1441,7 @@ retryable_writes_prose_test_6_case_3(void *ctx)
       bson_t reply = BSON_INITIALIZER;
       prose_test_6_attempt_insert(client, 91u, &reply);
 
-      bson_iter_t top_level_iter;
-      bson_iter_t error_labels_iter;
-      if (bson_iter_init_find(&top_level_iter, &reply, "errorLabels") &&
-          bson_iter_recurse(&top_level_iter, &error_labels_iter)) {
-         while (bson_iter_next(&error_labels_iter)) {
-            const char *const label = bson_iter_utf8(&error_labels_iter, NULL);
-            ASSERT_WITH_MSG(0 != strcmp(label, "NoWritesPerformed"),
-                            "expected error to not contain error label `NoWritesPerformed`");
-         }
-      }
+      ASSERT(!mongoc_error_has_label(&reply, "NoWritesPerformed"));
 
       bson_destroy(&reply);
    }
