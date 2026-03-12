@@ -540,6 +540,161 @@ test_retry_reads_sharded_on_same_mongos(void *_ctx)
    _mongoc_array_destroy(&clients);
 }
 
+static void
+run_admin_command(const char *cmd_str)
+{
+   bson_t *const cmd_bson = tmp_bson(cmd_str);
+
+   bson_error_t error;
+   mongoc_client_t *const client = test_framework_new_default_client();
+   ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", cmd_bson, NULL, NULL, &error), error);
+
+   mongoc_client_destroy(client);
+}
+
+typedef struct {
+   bool is_set;
+   uint32_t id;
+} server_id_maybe;
+
+typedef struct {
+   server_id_maybe server_id_failed;
+   server_id_maybe server_id_succeeded;
+} prose_test_3_apm_ctx;
+
+static void
+prose_test_3_on_command_failed(const mongoc_apm_command_failed_t *event)
+{
+   prose_test_3_apm_ctx *const ctx = (prose_test_3_apm_ctx *)mongoc_apm_command_failed_get_context(event);
+
+   if (0 != strcmp(mongoc_apm_command_failed_get_command_name(event), "find")) {
+      return;
+   }
+
+   ASSERT(!ctx->server_id_failed.is_set);
+
+   ctx->server_id_failed.id = mongoc_apm_command_failed_get_server_id(event);
+   ctx->server_id_failed.is_set = true;
+}
+
+static void
+prose_test_3_on_command_succeeded(const mongoc_apm_command_succeeded_t *event)
+{
+   prose_test_3_apm_ctx *const ctx = (prose_test_3_apm_ctx *)mongoc_apm_command_succeeded_get_context(event);
+
+   if (0 != strcmp(mongoc_apm_command_succeeded_get_command_name(event), "find")) {
+      return;
+   }
+
+   ASSERT(!ctx->server_id_succeeded.is_set);
+
+   ctx->server_id_succeeded.id = mongoc_apm_command_succeeded_get_server_id(event);
+   ctx->server_id_succeeded.is_set = true;
+}
+
+static void
+test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str, prose_test_3_apm_ctx *apm_ctx)
+{
+   // Step 1: Create a client `client` with `retryReads=true`, `readPreference=primaryPreferred`, and command event
+   // monitoring enabled.
+   mongoc_client_t *client = NULL;
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri();
+
+      mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYWRITES, true);
+
+      {
+         mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
+         mongoc_uri_set_read_prefs_t(uri, read_prefs);
+         mongoc_read_prefs_destroy(read_prefs);
+      }
+
+      client = test_framework_client_new_from_uri(uri, NULL);
+
+      mongoc_uri_destroy(uri);
+   }
+   test_framework_set_ssl_opts(client);
+
+   // Step 2: Configure the provided fail point for `client`:
+   run_admin_command(fail_point_cmd_str);
+
+   // Step 3: Reset the command event monitor to clear the failpoint command from its stored events.
+   apm_ctx->server_id_failed.is_set = false;
+   apm_ctx->server_id_succeeded.is_set = false;
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_failed_cb(callbacks, prose_test_3_on_command_failed);
+      mongoc_apm_set_command_succeeded_cb(callbacks, prose_test_3_on_command_succeeded);
+
+      mongoc_client_set_apm_callbacks(client, callbacks, apm_ctx);
+
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 4: Execute a `find` command with `client`.
+   {
+      mongoc_collection_t *const coll = get_test_collection(client, "retryable_reads");
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      while (mongoc_cursor_next(cursor, &doc))
+         ;
+
+      bson_error_t error;
+      ASSERT(!mongoc_cursor_error(cursor, &error));
+
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+
+   // Step 5: Assert that one failed command event and one successful command event occurred.
+   ASSERT(apm_ctx->server_id_failed.is_set);
+   ASSERT(apm_ctx->server_id_succeeded.is_set);
+
+   mongoc_client_destroy(client);
+}
+
+// Retryable Reads Caused by Overload Errors Are Retried on a Different Replicaset Server When One is Available.
+static void
+test_retryable_reads_prose_3_1(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   prose_test_3_apm_ctx apm_ctx = {0};
+
+   test_retryable_reads_prose_3_steps_1_to_5(
+      BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" :
+            {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 6}
+      }),
+      &apm_ctx);
+
+   // Step 6: Assert that both events occurred on different servers.
+   ASSERT(apm_ctx.server_id_failed.id != apm_ctx.server_id_succeeded.id);
+}
+
+// Retryable Reads Caused by Non-Overload Errors Are Retried on the Same Replicaset Server.
+static void
+test_retryable_reads_prose_3_2(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   prose_test_3_apm_ctx apm_ctx = {0};
+
+   test_retryable_reads_prose_3_steps_1_to_5(
+      BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"failCommands" : ["find"], "errorLabels" : ["RetryableError"], "errorCode" : 6}
+      }),
+      &apm_ctx);
+
+   // Step 6: Assert that both events occurred on the same server.
+   ASSERT(apm_ctx.server_id_failed.id == apm_ctx.server_id_succeeded.id);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -591,4 +746,18 @@ test_retryable_reads_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_not_mongos,
                      test_framework_skip_if_no_failpoint);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_3_1",
+                     test_retryable_reads_prose_3_1,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_3_2",
+                     test_retryable_reads_prose_3_2,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
 }
