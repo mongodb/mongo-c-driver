@@ -99,7 +99,7 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
          break;
       }
 
-      {
+      if (server_description->type == MONGOC_SERVER_MONGOS || is_overload) {
          TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")",
                server_description->host.host_and_port,
                server_description->id);
