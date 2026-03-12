@@ -128,6 +128,12 @@ is_testing_gcp_oidc(void)
    return true;
 }
 
+static bool
+is_testing_k8s(void)
+{
+   return test_framework_getenv_bool("MONGOC_TEST_OIDC_K8S");
+}
+
 // get_test_uri returns the URI to a live writable server. URI does not include auth.
 // URI only has one host to simplify test assertions using operation counters (which count operations to all servers).
 static mongoc_uri_t *
@@ -182,6 +188,12 @@ test_fixture_new(test_config_t cfg)
       char *token_resource = test_framework_getenv_required("MONGOC_GCP_RESOURCE");
       BSON_APPEND_UTF8(&props, "TOKEN_RESOURCE", token_resource);
       bson_free(token_resource);
+      mongoc_uri_set_mechanism_properties(uri, &props);
+      bson_destroy(&props);
+   } else if (is_testing_k8s()) {
+      mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
+      bson_t props = BSON_INITIALIZER;
+      BSON_APPEND_UTF8(&props, "ENVIRONMENT", "k8s");
       mongoc_uri_set_mechanism_properties(uri, &props);
       bson_destroy(&props);
    } else {
@@ -1021,7 +1033,7 @@ skip_if_no_oidc(void)
 static int
 skip_if_no_oidc_callback(void)
 {
-   if (is_testing_azure_oidc() || is_testing_gcp_oidc()) {
+   if (is_testing_azure_oidc() || is_testing_gcp_oidc() || is_testing_k8s()) {
       return 0; // Not using callback.
    }
    return test_framework_is_oidc() ? 1 : 0;
