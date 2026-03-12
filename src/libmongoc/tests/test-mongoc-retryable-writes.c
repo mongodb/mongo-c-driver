@@ -1309,8 +1309,8 @@ retryable_writes_prose_test_6_case_1(void *ctx)
    // Step 1: Create a client with `retryWrites=true`.
    mongoc_client_t *const client = prose_test_6_create_client();
 
-   // Step 2: Configure a fail point with error code `91` (ShutdownInProgress) with the `RetryableError`,
-   // `SystemOverloadedError`, and `NoWritesPerformed` error labels.
+   // Step 2: Configure a fail point with error code `91` (ShutdownInProgress) with the `RetryableError` and
+   // `SystemOverloadedError` error labels:
    run_admin_command(client, BSON_STR({
                         "configureFailPoint" : "failCommand",
                         "mode" : {"times" : 1},
