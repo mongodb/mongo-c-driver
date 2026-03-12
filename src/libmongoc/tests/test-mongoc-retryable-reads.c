@@ -751,13 +751,13 @@ test_retryable_reads_install(TestSuite *suite)
                      test_retryable_reads_prose_3_1,
                      NULL,
                      NULL,
-                     test_framework_skip_if_not_replset,
+                     test_framework_skip_if_not_replset_with_secondary,
                      test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
    TestSuite_AddFull(suite,
                      "/retryable_reads/prose_test_3_2",
                      test_retryable_reads_prose_3_2,
                      NULL,
                      NULL,
-                     test_framework_skip_if_not_replset,
+                     test_framework_skip_if_not_replset_with_secondary,
                      test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
 }
