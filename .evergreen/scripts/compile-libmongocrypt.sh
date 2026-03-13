@@ -14,7 +14,7 @@ compile_libmongocrypt() {
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
   declare -r version="1.18.0-dev"
 
-  git clone -q --depth=1 https://github.com/mdb-ad/libmongocrypt --branch "keyaltname" || return
+  git clone -q --depth=1 https://github.com/mdb-ad/libmongocrypt --branch "keyaltname-fix" || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"

@@ -10,7 +10,7 @@
         "load-balanced"
       ],
       "csfle": {
-        "minLibmongocryptVersion": "1.15.1"
+        "minLibmongocryptVersion": "1.18.0"
       }
     }
   ],
