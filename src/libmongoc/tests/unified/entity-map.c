@@ -970,6 +970,11 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
    bson_free(gcp_resource);
 
+   const bool testing_k8s_oidc = test_framework_getenv_bool("MONGOC_TEST_OIDC_K8S");
+   if (uri_requests_oidc && testing_k8s_oidc) {
+      mongoc_uri_set_mechanism_properties(uri, tmp_bson("{'ENVIRONMENT': 'k8s'}"));
+   }
+
    if (!mongoc_uri_has_option(uri, MONGOC_URI_HEARTBEATFREQUENCYMS)) {
       can_reduce_heartbeat = true;
    }
@@ -980,7 +985,7 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    client = test_framework_client_new_from_uri(uri, api);
 
-   if (uri_requests_oidc && !testing_azure_oidc && !testing_gcp_oidc) {
+   if (uri_requests_oidc && !testing_azure_oidc && !testing_gcp_oidc && !testing_k8s_oidc) {
       test_framework_set_oidc_callback(client);
    }
 

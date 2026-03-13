@@ -5863,6 +5863,32 @@ tasks:
           args:
             - -c
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/gcp/run-driver-test.sh
+  - name: oidc-k8s-auth-test-task
+    run_on:
+      - ubuntu2204-small
+    commands:
+      - func: fetch-source
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          add_expansions_to_env: true
+          args:
+            - -c
+            - .evergreen/scripts/oidc-k8s-compile.sh
+      - command: expansions.update
+        params:
+          file: mongoc/oidc-remote-test-expansion.yml
+      - func: run oidc k8s test
+        vars:
+          VARIANT: eks
+      - func: run oidc k8s test
+        vars:
+          VARIANT: gke
+      - func: run oidc k8s test
+        vars:
+          VARIANT: aks
   - name: openssl-compat-1.0.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
     tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]
