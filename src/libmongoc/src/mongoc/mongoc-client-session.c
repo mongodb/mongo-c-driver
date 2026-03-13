@@ -23,6 +23,7 @@
 #include <mongoc/mongoc-rand-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
 
@@ -121,7 +122,7 @@ txn_abort(mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort. Note that a
     * RetryableWriteError label has already been appended here. */
-   if (mongoc_error_has_label(&reply_local, RETRYABLE_WRITE_ERROR)) {
+   if (mongoc_error_has_label(&reply_local, MONGOC_ERROR_LABEL_RETRYABLEWRITEERROR)) {
       _mongoc_client_session_unpin(session);
       bson_destroy(&reply_local);
       r = mongoc_client_write_command_with_opts(session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
@@ -244,7 +245,7 @@ retry:
       _mongoc_client_session_unpin(session);
       if (reply) {
          bsonBuildAppend(*reply, insert(reply_local, not(key("errorLabels"))));
-         _mongoc_error_copy_labels_and_upsert(&reply_local, reply, UNKNOWN_COMMIT_RESULT);
+         _mongoc_error_copy_labels_and_upsert(&reply_local, reply, MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT);
       }
    } else if (reply) {
       /* maintain invariants: reply & reply_local are valid until the end */
@@ -622,11 +623,9 @@ _mongoc_client_session_handle_reply(mongoc_client_session_t *session,
       (!strcmp(cmd_name, "find") || !strcmp(cmd_name, "aggregate") || !strcmp(cmd_name, "distinct"));
 
    if (mongoc_error_has_label(reply, "TransientTransactionError")) {
-      /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-       * within a transaction, including commitTransaction and abortTransaction,
-       * fails with a TransientTransactionError". If the server reply included
-       * a TransientTransactionError, we unpin here. If a network error caused
-       * us to add a label client-side, we unpin in network_error_reply. */
+      // Transaction Spec: "Drivers MUST unpin a ClientSession when a command within a transaction, including
+      // commitTransaction and abortTransaction, fails with a TransientTransactionError".
+      // If the server reply is labeled, unpin here. On a network error, label and unpin in _handle_network_error.
       _mongoc_client_session_unpin(session);
    }
 
@@ -893,6 +892,10 @@ _max_time_ms_failure(bson_t *reply)
    return false;
 }
 
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR 1.5
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL mlib_duration(5, ms)
+#define MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX mlib_duration(500, ms)
+
 bool
 mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                                        mongoc_client_session_with_transaction_cb_t cb,
@@ -913,7 +916,16 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
    const mlib_timer timer = mlib_expires_after(timeout, ms);
 
-   int transaction_attempt = 0;
+   const mongoc_retry_backoff_params_t retry_backoff_params = {
+      .growth_factor = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR,
+      .backoff_initial = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL,
+      .backoff_max = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX,
+   };
+
+   mongoc_retry_backoff_generator_t *const retry_backoff_generator =
+      _mongoc_retry_backoff_generator_new(retry_backoff_params, session->jitter_source);
+
+   bool is_first_attempt = true;
 
    /* Attempt to wrap a user callback in start- and end- transaction semantics.
       If this fails for transient reasons, restart, either from the very
@@ -923,10 +935,10 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       At the top of this loop, active_reply should always be NULL, and
       local_reply should always be uninitialized. */
    while (true) {
-      if (transaction_attempt > 0) {
-         const double jitter = _mongoc_jitter_source_generate(session->jitter_source);
-
-         const mlib_duration backoff_duration = _mongoc_compute_backoff_duration(jitter, transaction_attempt);
+      if (is_first_attempt) {
+         is_first_attempt = false;
+      } else {
+         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
 
          const mlib_timer backoff_timer = mlib_expires_after(backoff_duration);
 
@@ -946,8 +958,6 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
          GOTO(done);
       }
 
-      transaction_attempt = BSON_MIN(transaction_attempt + 1, MONGOC_BACKOFF_ATTEMPT_LIMIT);
-
       res = cb(session, ctx, &active_reply, error);
       state = session->txn.state;
 
@@ -963,7 +973,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
             BSON_ASSERT(mongoc_client_session_abort_transaction(session, NULL));
          }
 
-         if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer)) {
+         if (mongoc_error_has_label(active_reply, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR) &&
+             !mlib_timer_is_expired(timer)) {
             bson_destroy(active_reply);
             active_reply = NULL;
             continue;
@@ -1000,7 +1011,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                GOTO(done);
             }
 
-            if (mongoc_error_has_label(active_reply, UNKNOWN_COMMIT_RESULT) && !mlib_timer_is_expired(timer)) {
+            if (mongoc_error_has_label(active_reply, MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT) &&
+                !mlib_timer_is_expired(timer)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
                 *
@@ -1011,7 +1023,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
                continue;
             }
 
-            if (mongoc_error_has_label(active_reply, TRANSIENT_TXN_ERR) && !mlib_timer_is_expired(timer)) {
+            if (mongoc_error_has_label(active_reply, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR) &&
+                !mlib_timer_is_expired(timer)) {
                /* In the case of a transient txn error, go back to outside loop.
                   We must set the reply to NULL so it may be used by the cb. */
                bson_destroy(active_reply);
@@ -1029,6 +1042,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
    }
 
 done:
+   _mongoc_retry_backoff_generator_destroy(retry_backoff_generator);
+
    /* At this point, active_reply is either pointing to the user's reply
       object, or our local one on the stack, or is NULL. */
    if (reply && active_reply) {

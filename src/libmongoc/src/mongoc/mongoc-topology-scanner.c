@@ -314,6 +314,7 @@ _build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_
       bson_destroy(doc);
       return NULL;
    }
+   BSON_APPEND_BOOL(doc, HANDSHAKE_BACKPRESSURE_FIELD, true);
    bson_append_document(doc, HANDSHAKE_FIELD, -1, handshake_doc);
    bson_destroy(handshake_doc);
 

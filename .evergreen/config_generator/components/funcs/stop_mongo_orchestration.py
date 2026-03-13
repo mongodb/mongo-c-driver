@@ -7,8 +7,8 @@ class StopMongoOrchestration(Function):
     commands = [
         bash_exec(
             script="""\
-                if [[ -d MO ]]; then
-                    cd MO && mongo-orchestration stop
+                if [[ -d drivers-evergreen-tools ]]; then
+                    cd drivers-evergreen-tools && .evergreen/run-mongodb.sh stop
                 fi
             """
         ),

@@ -2252,6 +2252,18 @@ test_framework_skip_if_not_replset(void)
    return !test_framework_skip_if_replset();
 }
 
+int
+test_framework_skip_if_not_replset_with_secondary(void)
+{
+   if (0 == test_framework_skip_if_not_replset()) {
+      return 0; // Not replset. Skip.
+   }
+   if (test_framework_data_nodes_count() < 2) {
+      return 0; // Not enough data nodes to have a secondary. Skip.
+   }
+   return 1;
+}
+
 /* convenience skip functions based on the wire version. */
 #define WIRE_VERSION_CHECKS(wv)                                                                     \
    int test_framework_skip_if_max_wire_version_more_than_##wv(void)                                 \

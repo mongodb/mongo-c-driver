@@ -678,8 +678,8 @@ functions:
         args:
           - -c
           - |
-            if [[ -d MO ]]; then
-                cd MO && mongo-orchestration stop
+            if [[ -d drivers-evergreen-tools ]]; then
+                cd drivers-evergreen-tools && .evergreen/run-mongodb.sh stop
             fi
   upload-build:
     - command: archive.targz_pack

@@ -176,6 +176,8 @@ test_framework_skip_if_not_mongos(void);
 int
 test_framework_skip_if_not_replset(void);
 int
+test_framework_skip_if_not_replset_with_secondary(void);
+int
 test_framework_skip_if_not_single(void);
 int
 test_framework_skip_if_offline(void);

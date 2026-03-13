@@ -13,4 +13,4 @@ export MONGOC_TEST_SSL="ON"
 # Install required OpenSSL runtime library.
 sudo apt install -y libssl-dev
 
-./cmake-build/src/libmongoc/test-libmongoc -d -l '/auth/unified/*'
+./cmake-build/src/libmongoc/test-libmongoc -d -l '/auth/unified/*' -l '/oidc/*'

@@ -787,7 +787,7 @@ bcon_append_ctx_va(bson_t *bson, bcon_append_ctx_t *ctx, va_list *ap)
          STACK_POP_DOC(bson_append_document_end(STACK_BSON_PARENT, STACK_BSON_CHILD));
          break;
       case BCON_TYPE_ARRAY_START:
-         STACK_PUSH_ARRAY(bson_append_array_begin(STACK_BSON_PARENT, key, -1, STACK_BSON_CHILD));
+         STACK_PUSH_ARRAY(bson_append_array_unsafe_begin(STACK_BSON_PARENT, key, -1, STACK_BSON_CHILD));
          break;
       case BCON_TYPE_ARRAY_END:
          STACK_POP_ARRAY(bson_append_array_end(STACK_BSON_PARENT, STACK_BSON_CHILD));

@@ -41,7 +41,8 @@ typedef struct _mongoc_server_stream_t {
    // by a network error establishing an initial connection. Used to avoid
    // further retry attempts.
    bool retry_attempted;
-   bool timed_out; // True if an operation on `stream` timed out.
+   bool timed_out;   // True if an operation on `stream` timed out.
+   bool needs_hello; // True if `stream` has not-yet sent the handshake hello command. Used to apply error labels.
 } mongoc_server_stream_t;
 
 

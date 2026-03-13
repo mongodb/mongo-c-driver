@@ -163,6 +163,7 @@ BSON document contains duplicate keys.
 
     bson_append_array
     bson_append_array_begin
+    bson_append_array_unsafe_begin
     bson_append_array_end
     bson_append_binary
     bson_append_binary_uninit

@@ -45,6 +45,8 @@
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
+#include <mongoc/mongoc-retryable-cmd-private.h>
 #include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-set-private.h>
@@ -87,6 +89,7 @@ _cluster_fetch_stream_pooled(mongoc_cluster_t *cluster,
                              const mongoc_topology_description_t *td,
                              uint32_t server_id,
                              bool reconnect_ok,
+                             bson_t *reply,
                              bson_error_t *error);
 
 static bool
@@ -98,6 +101,8 @@ _bson_error_message_printf(bson_error_t *error, const char *format, ...) BSON_GN
 static void
 _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_t *server_stream, const bson_t *reply)
 {
+   BSON_ASSERT_PARAM(reply);
+
    uint32_t server_id;
 
    server_id = server_stream->sd->id;
@@ -113,38 +118,120 @@ _handle_not_primary_error(mongoc_cluster_t *cluster, const mongoc_server_stream_
    }
 }
 
-/* Called when a network error occurs on an application socket.
+/**
+ * @brief Called when a network error occurs on an application socket sending a command.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
  */
 static void
-_handle_network_error(mongoc_cluster_t *cluster, mongoc_server_stream_t *server_stream, const bson_error_t *why)
+_handle_network_error(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, const bson_error_t *why)
 {
-   mongoc_topology_t *topology;
-   uint32_t server_id;
-   _mongoc_sdam_app_error_type_t type;
+   BSON_ASSERT_PARAM(cluster);
+   BSON_ASSERT_PARAM(cmd);
+   BSON_OPTIONAL_PARAM(reply);
+   BSON_ASSERT_PARAM(why);
 
-   BSON_ASSERT(server_stream);
+   BSON_ASSERT(cmd->server_stream);
 
    ENTRY;
-   topology = cluster->client->topology;
-   server_id = server_stream->sd->id;
-   type = MONGOC_SDAM_APP_ERROR_NETWORK;
-   if (mongoc_stream_timed_out(server_stream->stream)) {
+
+   bson_t reply_local = BSON_INITIALIZER;
+   if (!reply) {
+      reply = &reply_local;
+   }
+   bson_init(reply);
+
+   // TODO (CDRIVER-6241) do not apply backpressure labels to non-IO TLS errors.
+   if (cmd->server_stream->needs_hello && !_mongoc_error_is_dns(why)) {
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
+   }
+
+   mongoc_topology_t *topology = cluster->client->topology;
+   uint32_t server_id = cmd->server_stream->sd->id;
+   _mongoc_sdam_app_error_type_t type = MONGOC_SDAM_APP_ERROR_NETWORK;
+   if (mongoc_stream_timed_out(cmd->server_stream->stream)) {
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
-      server_stream->timed_out = true;
+      cmd->server_stream->timed_out = true;
    }
 
    _mongoc_topology_handle_app_error(topology,
                                      server_id,
                                      true, // handshake_complete
                                      type,
-                                     NULL,
+                                     reply,
                                      why,
-                                     server_stream->sd->generation,
-                                     &server_stream->sd->service_id);
+                                     cmd->server_stream->sd->generation,
+                                     &cmd->server_stream->sd->service_id);
    /* Always disconnect the current connection on network error. */
    mongoc_cluster_disconnect_node(cluster, server_id);
 
+   if (cmd->session) {
+      if (cmd->session->server_session) {
+         cmd->session->server_session->dirty = true;
+      }
+      if (_mongoc_client_session_in_txn(cmd->session)) {
+         // Transactions Spec requires TransientTransactionError on "Any network error or server selection error
+         // encountered running any command besides commitTransaction in a transaction."
+         _mongoc_add_transient_txn_error(cmd->session, reply);
+
+         // Transaction Spec: "Drivers MUST unpin a ClientSession when a command within a transaction, including
+         // commitTransaction and abortTransaction, fails with a TransientTransactionError".
+         // If the server reply includes the label, the session is unpinned in _mongoc_client_session_handle_reply.
+         _mongoc_client_session_unpin(cmd->session);
+      }
+   }
+
+   bson_destroy(&reply_local);
+
    EXIT;
+}
+
+/**
+ * @brief Called when a network error occurs creating a stream in a mongoc_client_pool_t.
+ * @note A single-threaded mongoc_client_t processes network errors creating streams in _mongoc_topology_scanner_cb.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
+static void
+_handle_network_error_connecting(mongoc_cluster_t *cluster,
+                                 uint32_t server_id,
+                                 bson_t *reply,
+                                 const bson_error_t *error_in)
+{
+   BSON_ASSERT_PARAM(cluster);
+   BSON_ASSERT_PARAM(error_in);
+   BSON_OPTIONAL_PARAM(reply);
+
+   _mongoc_bson_init_if_set(reply);
+
+   // Do not apply backpressure labels to DNS errors.
+   // TODO (CDRIVER-6241) do not apply backpressure labels to non-IO TLS errors.
+   if (!_mongoc_error_is_dns(error_in)) {
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR);
+      _mongoc_add_error_label(reply, MONGOC_ERROR_LABEL_RETRYABLEERROR);
+      return;
+   }
+
+   mongoc_topology_t *topology = BSON_ASSERT_PTR_INLINE(cluster)->client->topology;
+   BSON_ASSERT(!topology->single_threaded);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
+
+   /* When establishing a new connection in load balanced mode, drivers MUST
+    * NOT perform SDAM error handling for any errors that occur before the
+    * MongoDB Handshake. */
+   if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      mc_tpld_modify_drop(tdmod);
+      return;
+   }
+
+   mongoc_topology_description_invalidate_server(tdmod.new_td, &topology->log_and_monitor, server_id, error_in);
+   mongoc_cluster_disconnect_node(cluster, server_id);
+   /* This is not load balanced mode, so there are no service IDs associated
+    * with connections. Pass kZeroObjectId to clear the entire connection
+    * pool to this server. */
+   // TODO: CDRIVER-3654 pool generation is not checked.
+   _mongoc_topology_description_clear_connection_pool(tdmod.new_td, server_id, &kZeroObjectId);
+   _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
+   mc_tpld_modify_commit(tdmod);
 }
 
 static int32_t
@@ -158,7 +245,7 @@ _compression_level_from_uri(int32_t compressor_id, const mongoc_uri_t *uri)
 }
 
 
-size_t
+static size_t
 _mongoc_cluster_buffer_iovec(mongoc_iovec_t *iov, size_t iovcnt, int skip, char *buffer)
 {
    size_t buffer_offset = 0;
@@ -228,14 +315,22 @@ _bson_error_message_printf(bson_error_t *error, const char *format, ...)
 // msgHeader consists of four int32 fields.
 static const int32_t message_header_length = 4u * sizeof(int32_t);
 
-
+/**
+ * @param reply is a required out-param. *reply is conditionally initialized by this call; otherwise, it is left
+ * unmodified.
+ */
 static bool
-_mongoc_cluster_run_command_opquery_send(
-   mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, int32_t compressor_id, mcd_rpc_message *rpc, bson_error_t *error)
+_mongoc_cluster_run_command_opquery_send(mongoc_cluster_t *cluster,
+                                         const mongoc_cmd_t *cmd,
+                                         int32_t compressor_id,
+                                         mcd_rpc_message *rpc,
+                                         bson_t *reply,
+                                         bson_error_t *error)
 {
    BSON_ASSERT_PARAM(cluster);
    BSON_ASSERT_PARAM(cmd);
    BSON_ASSERT_PARAM(rpc);
+   BSON_ASSERT_PARAM(reply);
    BSON_ASSERT_PARAM(error);
 
    bool ret = false;
@@ -299,7 +394,7 @@ _mongoc_cluster_run_command_opquery_send(
    mcd_rpc_message_egress(rpc);
    if (!_mongoc_stream_writev_full(stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       goto done;
    }
 
@@ -313,6 +408,10 @@ done:
    return ret;
 }
 
+/**
+ * @param reply is a required out-param. *reply is conditionally initialized by this call; otherwise, it is left
+ * unmodified.
+ */
 static bool
 _mongoc_cluster_run_command_opquery_recv(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
@@ -335,7 +434,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    if (!_mongoc_buffer_append_from_stream(&buffer, stream, sizeof(int32_t), cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       goto done;
    }
 
@@ -343,7 +442,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    if (message_length < message_header_length || message_length > MONGOC_DEFAULT_MAX_MSG_SIZE) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "invalid message length");
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       goto done;
    }
 
@@ -351,7 +450,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    if (!_mongoc_buffer_append_from_stream(&buffer, stream, remaining_bytes, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error or timeout");
-      _handle_network_error(cluster, cmd->server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       goto done;
    }
 
@@ -392,6 +491,9 @@ done:
    return ret;
 }
 
+/**
+ * @param reply is a required out-param. `*reply` is always initialized upon return.
+ */
 static bool
 mongoc_cluster_run_command_opquery(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, int32_t compressor_id, bson_t *reply, bson_error_t *error)
@@ -411,7 +513,7 @@ mongoc_cluster_run_command_opquery(
 
    mcd_rpc_message *const rpc = mcd_rpc_message_new();
 
-   if (!_mongoc_cluster_run_command_opquery_send(cluster, cmd, compressor_id, rpc, error)) {
+   if (!_mongoc_cluster_run_command_opquery_send(cluster, cmd, compressor_id, rpc, reply, error)) {
       GOTO(done);
    }
 
@@ -457,9 +559,14 @@ _in_sharded_or_loadbalanced_txn(const mongoc_client_session_t *session)
    return (type == MONGOC_TOPOLOGY_SHARDED) || (type == MONGOC_TOPOLOGY_LOAD_BALANCED);
 }
 
+/**
+ * @param reply is a required inout-param. `*reply` must be an initialized `bson_t`.
+ */
 static void
 _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc_cmd_t *cmd, bson_t *reply)
 {
+   BSON_ASSERT_PARAM(reply);
+
    if (!cmd->is_txn_finish) {
       return;
    }
@@ -467,10 +574,15 @@ _handle_txn_error_labels(bool cmd_ret, const bson_error_t *cmd_err, const mongoc
    _mongoc_write_error_handle_labels(cmd_ret, cmd_err, reply, cmd->server_stream->sd);
 }
 
-// run_command_monitored is an internal helper to run a command with APM monitoring.
+/**
+ * @brief An internal helper to run a command with APM monitoring.
+ * @param reply is an optional out-param. If non-NULL, `*reply` is always initialized upon return.
+ */
 static bool
 run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bool retval;
    const int32_t request_id = ++cluster->request_id;
    uint32_t server_id;
@@ -685,12 +797,15 @@ _try_get_oidc_connection_cache(mongoc_cluster_t *cluster, uint32_t server_id, bs
  *       If the server returns a ReauthenticationRequired error, auth
  *       may be re-attempted.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `*reply` is always
+ *       initialized upon return.
+ *
  * Returns:
  *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       If the client's APM callbacks are set, they are executed.
- *       @reply is set and should ALWAYS be released with bson_destroy().
  *
  *--------------------------------------------------------------------------
  */
@@ -698,6 +813,8 @@ _try_get_oidc_connection_cache(mongoc_cluster_t *cluster, uint32_t server_id, bs
 bool
 mongoc_cluster_run_command_monitored(mongoc_cluster_t *cluster, mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    if (run_command_monitored(cluster, cmd, reply, error)) {
       return true;
    }
@@ -747,11 +864,12 @@ _should_use_op_msg(const mongoc_cluster_t *cluster)
  *       The client's APM callbacks are not executed.
  *       Automatic encryption/decryption is not performed.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `*reply` is always
+ *       initialized upon return.
+ *
  * Returns:
  *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @reply is set and should ALWAYS be released with bson_destroy().
  *
  *--------------------------------------------------------------------------
  */
@@ -762,6 +880,8 @@ mongoc_cluster_run_command_private(mongoc_cluster_t *cluster,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bool retval;
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
@@ -804,11 +924,14 @@ mongoc_cluster_run_command_private(mongoc_cluster_t *cluster,
  *       on a given stream. @error and @reply are optional out-pointers.
  *       The client's APM callbacks are not executed.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `*reply` is always
+ *       initialized upon return.
+ *
  * Returns:
  *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
- *       @reply is set and should ALWAYS be released with bson_destroy().
  *       mongoc_cmd_parts_cleanup will be always be called on parts. The
  *       caller should *not* call cleanup on the parts.
  *
@@ -822,6 +945,8 @@ mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    bool ret;
 
    if (!mongoc_cmd_parts_assemble(parts, server_stream, error)) {
@@ -844,6 +969,10 @@ mongoc_cluster_run_command_parts(mongoc_cluster_t *cluster,
  *       @negotiate_sasl_supported_mechs is true, then saslSupportedMechs is
  *       added to the hello command.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Returns:
  *       A mongoc_server_description_t you must destroy or NULL. If the call
  *       failed its error is set and its type is MONGOC_SERVER_UNKNOWN.
@@ -859,8 +988,11 @@ _stream_run_hello(mongoc_cluster_t *cluster,
                   bool negotiate_sasl_supported_mechs,
                   mongoc_scram_t *scram,
                   bson_t *speculative_auth_response /* OUT */,
+                  bson_t *reply /* OUT */,
                   bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    mc_shared_tpld td = mc_tpld_take_ref(BSON_ASSERT_PTR_INLINE(cluster)->client->topology);
 
    ENTRY;
@@ -896,6 +1028,7 @@ _stream_run_hello(mongoc_cluster_t *cluster,
    mongoc_server_description_t empty_sd;
    mongoc_server_description_init(&empty_sd, address, server_id);
    mongoc_server_stream_t *const server_stream = _mongoc_cluster_create_server_stream(td.ptr, &empty_sd, stream);
+   server_stream->needs_hello = true;
    mongoc_server_description_cleanup(&empty_sd);
 
    mongoc_query_flags_t query_flags = MONGOC_QUERY_NONE;
@@ -920,14 +1053,14 @@ _stream_run_hello(mongoc_cluster_t *cluster,
       .query_flags = query_flags,
    };
 
-   bson_t reply;
+   bson_t hello_reply;
    // The final resulting server description
    mongoc_server_description_t *ret_handshake_sd = NULL;
-   if (!mongoc_cluster_run_command_private(cluster, &hello_cmd, &reply, error)) {
+   if (!mongoc_cluster_run_command_private(cluster, &hello_cmd, &hello_reply, error)) {
       // Command execution failed.
       if (negotiate_sasl_supported_mechs) {
          // Negotiating a new SASL mechanism
-         bsonParse(reply,
+         bsonParse(hello_reply,
                    find(allOf(key("ok"), isFalse), //
                         do({
                            /* hello response returned ok: 0. According to
@@ -948,10 +1081,10 @@ _stream_run_hello(mongoc_cluster_t *cluster,
       ret_handshake_sd = BSON_ALIGNED_ALLOC0(mongoc_server_description_t);
       mongoc_server_description_init(ret_handshake_sd, address, server_id);
       /* send the error from run_command IN to handle_hello */
-      mongoc_server_description_handle_hello(ret_handshake_sd, &reply, rtt_msec, error);
+      mongoc_server_description_handle_hello(ret_handshake_sd, &hello_reply, rtt_msec, error);
 
       if (cluster->requires_auth && speculative_auth_response) {
-         _mongoc_topology_scanner_parse_speculative_authentication(&reply, speculative_auth_response);
+         _mongoc_topology_scanner_parse_speculative_authentication(&hello_reply, speculative_auth_response);
       }
 
       /* Note: This call will render our copy of the topology description to be
@@ -969,7 +1102,12 @@ _stream_run_hello(mongoc_cluster_t *cluster,
 
    mongoc_server_stream_cleanup(server_stream);
    bson_destroy(&handshake_command);
-   bson_destroy(&reply);
+   if (!ret_handshake_sd || ret_handshake_sd->type == MONGOC_SERVER_UNKNOWN) {
+      // Move hello_reply on error, which may include errorLabels.
+      bson_steal(reply, &hello_reply);
+   } else {
+      bson_destroy(&hello_reply);
+   }
    mc_tpld_drop_ref(&td);
 
    RETURN(ret_handshake_sd);
@@ -986,6 +1124,10 @@ _stream_run_hello(mongoc_cluster_t *cluster,
  *       mongoc_server_description_t on success, NULL otherwise.
  *       the mongoc_server_description_t MUST BE DESTROYED BY THE CALLER.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Side effects:
  *       Makes a blocking I/O call, updates cluster->topology->description
  *       with hello result.
@@ -998,9 +1140,12 @@ _cluster_run_hello(mongoc_cluster_t *cluster,
                    uint32_t server_id,
                    mongoc_scram_t *scram /* OUT */,
                    bson_t *speculative_auth_response /* OUT */,
+                   bson_t *reply /* OUT */,
                    bson_error_t *error /* OUT */)
 {
    mongoc_server_description_t *sd;
+
+   BSON_OPTIONAL_PARAM(reply);
 
    ENTRY;
 
@@ -1016,6 +1161,7 @@ _cluster_run_hello(mongoc_cluster_t *cluster,
                           _mongoc_uri_requires_auth_negotiation(cluster->uri),
                           scram,
                           speculative_auth_response,
+                          reply,
                           error);
 
    if (!sd) {
@@ -1287,6 +1433,9 @@ _mongoc_cluster_get_auth_cmd_scram(mongoc_crypto_hash_algorithm_t algo,
  *       Runs a scram authentication command, handling auth_source and
  *       errors during the command.
  *
+ * Parameters:
+ *       @reply is a required out-param. `*reply` is only initialized
+ *       on success.
  *
  * Returns:
  *       true if the command was successful, false otherwise
@@ -1305,6 +1454,8 @@ _mongoc_cluster_run_scram_command(mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(reply);
+
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
    const char *auth_source;
@@ -1345,6 +1496,9 @@ _mongoc_cluster_run_scram_command(mongoc_cluster_t *cluster,
  *       command. The conversation can then be resumed using
  *       _mongoc_cluster_auth_scram_continue.
  *
+ * Parameters:
+ *       @reply is a required out-param. `*reply` is only initialized
+ *       on success.
  *
  * Returns:
  *       true if the saslStart command was successful, false otherwise
@@ -1364,6 +1518,8 @@ _mongoc_cluster_auth_scram_start(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_t cmd;
 
    BSON_ASSERT(scram->step == 0);
@@ -1420,6 +1576,8 @@ _mongoc_cluster_scram_handle_reply(mongoc_scram_t *scram,
                                    uint32_t *buflen /* OUT */,
                                    bson_error_t *error)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_iter_t iter;
    bson_subtype_t btype;
    const char *tmpstr;
@@ -1884,6 +2042,10 @@ _mongoc_cluster_finish_speculative_auth(mongoc_cluster_t *cluster,
  * Returns:
  *       A stream connected to the server, or NULL on failure.
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Side effects:
  *       Adds a cluster node, or sets error on failure.
  *
@@ -1893,6 +2055,7 @@ static mongoc_cluster_node_t *
 _cluster_add_node(mongoc_cluster_t *cluster,
                   const mongoc_topology_description_t *td,
                   uint32_t server_id,
+                  bson_t *reply,
                   bson_error_t *error /* OUT */)
 {
    mongoc_host_list_t *host = NULL;
@@ -1902,6 +2065,7 @@ _cluster_add_node(mongoc_cluster_t *cluster,
    mongoc_handshake_sasl_supported_mechs_t sasl_supported_mechs;
    mongoc_scram_t scram = {0};
    bson_t speculative_auth_response = BSON_INITIALIZER;
+   bool reply_initialized = false;
 
    ENTRY;
 
@@ -1919,6 +2083,8 @@ _cluster_add_node(mongoc_cluster_t *cluster,
 
    if (!stream) {
       MONGOC_WARNING("Failed connection to %s (%s)", host->host_and_port, error->message);
+      _handle_network_error_connecting(cluster, server_id, reply, error);
+      reply_initialized = true;
       GOTO(error);
       /* TODO CDRIVER-3654: if this is a non-timeout network error and the
        * generation is not stale, mark the server unknown and increment the
@@ -1929,8 +2095,10 @@ _cluster_add_node(mongoc_cluster_t *cluster,
    cluster_node = _mongoc_cluster_node_new(stream, host->host_and_port);
    cluster_node->oidc_connection_cache = mongoc_oidc_connection_cache_new();
 
-   handshake_sd = _cluster_run_hello(cluster, cluster_node, server_id, &scram, &speculative_auth_response, error);
+   handshake_sd =
+      _cluster_run_hello(cluster, cluster_node, server_id, &scram, &speculative_auth_response, reply, error);
    if (!handshake_sd) {
+      reply_initialized = true;
       GOTO(error);
    }
 
@@ -1980,6 +2148,10 @@ error:
 
    if (cluster_node) {
       _mongoc_cluster_node_destroy(cluster_node); /* also destroys stream */
+   }
+
+   if (!reply_initialized && reply) {
+      bson_init(reply);
    }
 
    RETURN(NULL);
@@ -2035,21 +2207,9 @@ stream_not_found(const mongoc_topology_description_t *td,
    }
 }
 
-static mongoc_server_stream_t *
-_try_get_server_stream(mongoc_cluster_t *cluster,
-                       const mongoc_topology_description_t *td,
-                       uint32_t server_id,
-                       bool reconnect_ok,
-                       bson_error_t *error)
-{
-   if (cluster->client->topology->single_threaded) {
-      /* in the single-threaded use case we share topology's streams */
-      return _cluster_fetch_stream_single(cluster, td, server_id, reconnect_ok, error);
-   } else {
-      return _cluster_fetch_stream_pooled(cluster, td, server_id, reconnect_ok, error);
-   }
-}
-
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ */
 static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                   uint32_t server_id,
@@ -2058,61 +2218,31 @@ _mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error /* OUT */)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE(cluster)->client->topology;
    mongoc_server_stream_t *ret_server_stream;
    bson_error_t err_local;
    /* if fetch_stream fails we need a place to receive error details and pass
     * them to mongoc_topology_description_invalidate_server. */
    bson_error_t *err_ptr = error ? error : &err_local;
-   mc_tpld_modification tdmod;
    mc_shared_tpld td;
 
    ENTRY;
 
    td = mc_tpld_take_ref(topology);
 
-   ret_server_stream = _try_get_server_stream(cluster, td.ptr, server_id, reconnect_ok, err_ptr);
+   if (cluster->client->topology->single_threaded) {
+      /* in the single-threaded use case we share topology's streams */
+      ret_server_stream = _cluster_fetch_stream_single(cluster, td.ptr, server_id, reconnect_ok, err_ptr);
+      if (!ret_server_stream) {
+         _mongoc_bson_init_if_set(reply);
+      }
+   } else {
+      ret_server_stream = _cluster_fetch_stream_pooled(cluster, td.ptr, server_id, reconnect_ok, reply, err_ptr);
+   }
 
    if (!ret_server_stream) {
-      /* TODO CDRIVER-3654. A null server stream could be due to:
-       * 1. Network error during handshake.
-       * 2. Failure to retrieve server description (if it was removed from
-       * topology).
-       * 3. Auth error during handshake.
-       * Only (1) should mark the server unknown and clear the pool.
-       * Network errors should be checked at a lower layer than this, when an
-       * operation on a stream fails, and should take the connection generation
-       * into account.
-       */
-
-      _mongoc_bson_init_if_set(reply);
-
-      // Add a transient transaction label if applicable.
-      _mongoc_add_transient_txn_error(cs, reply);
-
-      /* Update the topology */
-      tdmod = mc_tpld_modify_begin(topology);
-
-      /* When establishing a new connection in load balanced mode, drivers MUST
-       * NOT perform SDAM error handling for any errors that occur before the
-       * MongoDB Handshake. */
-      if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         mc_tpld_modify_drop(tdmod);
-         ret_server_stream = NULL;
-         goto done;
-      }
-
-      mongoc_topology_description_invalidate_server(tdmod.new_td, &topology->log_and_monitor, server_id, err_ptr);
-      mongoc_cluster_disconnect_node(cluster, server_id);
-      /* This is not load balanced mode, so there are no service IDs associated
-       * with connections. Pass kZeroObjectId to clear the entire connection
-       * pool to this server. */
-      _mongoc_topology_description_clear_connection_pool(tdmod.new_td, server_id, &kZeroObjectId);
-
-      if (!topology->single_threaded) {
-         _mongoc_topology_background_monitoring_cancel_check(topology, server_id);
-      }
-      mc_tpld_modify_commit(tdmod);
       ret_server_stream = NULL;
       goto done;
    }
@@ -2140,6 +2270,9 @@ done:
 }
 
 
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ */
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_server(mongoc_cluster_t *cluster,
                                  uint32_t server_id,
@@ -2356,12 +2489,15 @@ _mongoc_cluster_create_server_stream(mongoc_topology_description_t const *td,
    return mongoc_server_stream_new(td, sd, stream);
 }
 
-
+/**
+ * @param reply is an optional out-param. If non-NULL, `*reply` is only initialized on error.
+ */
 static mongoc_server_stream_t *
 _cluster_fetch_stream_pooled(mongoc_cluster_t *cluster,
                              const mongoc_topology_description_t *td,
                              uint32_t server_id,
                              bool reconnect_ok,
+                             bson_t *reply,
                              bson_error_t *error /* OUT */)
 {
    mongoc_cluster_node_t *cluster_node;
@@ -2400,10 +2536,11 @@ _cluster_fetch_stream_pooled(mongoc_cluster_t *cluster,
    /* no node, or out of date */
    if (!reconnect_ok) {
       node_not_found(td, server_id, error);
+      _mongoc_bson_init_if_set(reply);
       return NULL;
    }
 
-   cluster_node = _cluster_add_node(cluster, td, server_id, error);
+   cluster_node = _cluster_add_node(cluster, td, server_id, reply, error);
    if (cluster_node) {
       return _mongoc_cluster_create_server_stream(td, cluster_node->handshake_sd, cluster_node->stream);
    } else {
@@ -2559,6 +2696,10 @@ _mongoc_cluster_select_server_id(mongoc_client_session_t *cs,
  *       A mongoc_server_stream_t on which you must call
  *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
  *
+ * Parameters:
+ *       @reply is an optional out-param. If non-NULL, `reply` is only
+ *       initialized on error.
+ *
  * Side effects:
  *       May add or disconnect nodes in @cluster->nodes.
  *       Sets @error and initializes @reply on error.
@@ -2685,6 +2826,8 @@ mongoc_cluster_stream_for_reads(mongoc_cluster_t *cluster,
                                 bson_t *reply,
                                 bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn(cs) ? cs->txn.opts.read_prefs : read_prefs;
 
@@ -2706,6 +2849,8 @@ mongoc_cluster_stream_for_writes(mongoc_cluster_t *cluster,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    const bool is_retryable =
       mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
@@ -2721,6 +2866,8 @@ mongoc_cluster_stream_for_aggr_with_write(mongoc_cluster_t *cluster,
                                           bson_t *reply,
                                           bson_error_t *error)
 {
+   BSON_OPTIONAL_PARAM(reply);
+
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn(cs) ? cs->txn.opts.read_prefs : read_prefs;
 
@@ -2958,206 +3105,9 @@ mongoc_cluster_check_interval(mongoc_cluster_t *cluster, uint32_t server_id)
    return r;
 }
 
-
-bool
-mongoc_cluster_legacy_rpc_sendv_to_server(mongoc_cluster_t *cluster,
-                                          mcd_rpc_message *rpc,
-                                          mongoc_server_stream_t *server_stream,
-                                          bson_error_t *error)
-{
-   BSON_ASSERT_PARAM(cluster);
-   BSON_ASSERT_PARAM(rpc);
-   BSON_ASSERT_PARAM(server_stream);
-   BSON_ASSERT_PARAM(error);
-
-   ENTRY;
-
-   bool ret = false;
-
-   void *compressed_data = NULL;
-   size_t compressed_data_len = 0u;
-   mongoc_iovec_t *iovecs = NULL;
-   size_t num_iovecs = 0u;
-
-   if (cluster->client->in_exhaust) {
-      _mongoc_set_error(
-         error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_IN_EXHAUST, "a cursor derived from this client is in exhaust");
-      GOTO(done);
-   }
-
-   const int32_t compressor_id = mongoc_server_description_compressor_id(server_stream->sd);
-
-   if (compressor_id != -1 && !mcd_rpc_message_compress(rpc,
-                                                        compressor_id,
-                                                        _compression_level_from_uri(compressor_id, cluster->uri),
-                                                        &compressed_data,
-                                                        &compressed_data_len,
-                                                        error)) {
-      GOTO(done);
-   }
-
-   const uint32_t server_id = server_stream->sd->id;
-   const int32_t max_msg_size = mongoc_server_stream_max_msg_size(server_stream);
-
-   const int32_t message_length = mcd_rpc_header_get_message_length(rpc);
-
-   if (message_length > max_msg_size) {
-      _mongoc_set_error(error,
-                        MONGOC_ERROR_CLIENT,
-                        MONGOC_ERROR_CLIENT_TOO_BIG,
-                        "attempted to send an RPC message with length %" PRId32
-                        " which exceeds the maximum allowed length %" PRId32,
-                        message_length,
-                        max_msg_size);
-      GOTO(done);
-   }
-
-   iovecs = mcd_rpc_message_to_iovecs(rpc, &num_iovecs);
-   BSON_ASSERT(iovecs);
-
-   mcd_rpc_message_egress(rpc);
-   if (!_mongoc_stream_writev_full(server_stream->stream, iovecs, num_iovecs, cluster->sockettimeoutms, error)) {
-      GOTO(done);
-   }
-
-   _mongoc_topology_update_last_used(cluster->client->topology, server_id);
-
-   ret = true;
-
-done:
-   bson_free(iovecs);
-   bson_free(compressed_data);
-
-   RETURN(ret);
-}
-
-
-bool
-mongoc_cluster_try_recv(mongoc_cluster_t *cluster,
-                        mcd_rpc_message *rpc,
-                        mongoc_buffer_t *buffer,
-                        mongoc_server_stream_t *server_stream,
-                        bson_error_t *error)
-{
-   BSON_ASSERT_PARAM(cluster);
-   BSON_ASSERT_PARAM(rpc);
-   BSON_ASSERT_PARAM(server_stream);
-   BSON_ASSERT_PARAM(error);
-
-   ENTRY;
-
-   bool ret = false;
-
-   TRACE("Waiting for reply from server_id \"%u\"", server_stream->sd->id);
-
-   const size_t offset = buffer->len;
-
-   if (!_mongoc_buffer_append_from_stream(
-          buffer, server_stream->stream, sizeof(int32_t), cluster->sockettimeoutms, error)) {
-      MONGOC_DEBUG("could not read message length, stream probably closed or timed out");
-      mongoc_counter_protocol_ingress_error_inc();
-      _handle_network_error(cluster, server_stream, error);
-      GOTO(done);
-   }
-
-   const int32_t message_length = mlib_read_i32le(buffer->data + offset);
-
-   const int32_t max_msg_size = mongoc_server_stream_max_msg_size(server_stream);
-
-   if (message_length < message_header_length || message_length > max_msg_size) {
-      _mongoc_set_error(error,
-                        MONGOC_ERROR_PROTOCOL,
-                        MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                        "message length %" PRId32 " is not within valid range of %" PRId32 "-%" PRId32 " bytes",
-                        message_header_length,
-                        message_length,
-                        server_stream->sd->max_msg_size);
-      _handle_network_error(cluster, server_stream, error);
-      mongoc_counter_protocol_ingress_error_inc();
-      GOTO(done);
-   }
-
-   const size_t remaining_bytes = (size_t)message_length - sizeof(int32_t);
-
-   if (!_mongoc_buffer_append_from_stream(
-          buffer, server_stream->stream, remaining_bytes, cluster->sockettimeoutms, error)) {
-      _handle_network_error(cluster, server_stream, error);
-      mongoc_counter_protocol_ingress_error_inc();
-      GOTO(done);
-   }
-
-   if (!mcd_rpc_message_from_data_in_place(rpc, buffer->data + offset, (size_t)message_length, NULL)) {
-      _mongoc_set_error(
-         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "failed to decode reply from server");
-      _handle_network_error(cluster, server_stream, error);
-      mongoc_counter_protocol_ingress_error_inc();
-      GOTO(done);
-   }
-
-   mcd_rpc_message_ingress(rpc);
-
-   void *decompressed_data = NULL;
-   size_t decompressed_data_len = 0u;
-
-   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
-      _mongoc_set_error(
-         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "could not decompress server reply");
-      GOTO(done);
-   }
-
-   if (decompressed_data) {
-      _mongoc_buffer_destroy(buffer);
-      _mongoc_buffer_init(buffer, decompressed_data, decompressed_data_len, NULL, NULL);
-   }
-
-   ret = true;
-
-done:
-
-   return ret;
-}
-
-
-static void
-network_error_reply(bson_t *reply, const mongoc_cmd_t *cmd)
-{
-   bson_array_builder_t *labels;
-
-   if (reply) {
-      bson_init(reply);
-   }
-
-   if (cmd->session) {
-      if (cmd->session->server_session) {
-         cmd->session->server_session->dirty = true;
-      }
-      /* Transactions Spec defines TransientTransactionError: "Any
-       * network error or server selection error encountered running any
-       * command besides commitTransaction in a transaction. In the case
-       * of command errors, the server adds the label; in the case of
-       * network errors or server selection errors where the client
-       * receives no server reply, the client adds the label." */
-      if (_mongoc_client_session_in_txn(cmd->session) && !cmd->is_txn_finish) {
-         /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-          * within a transaction, including commitTransaction and
-          * abortTransaction,
-          * fails with a TransientTransactionError". If we're about to add
-          * a TransientTransactionError label due to a client side error then we
-          * unpin. If commitTransaction/abortTransation includes a label in the
-          * server reply, we unpin in _mongoc_client_session_handle_reply. */
-         cmd->session->server_id = 0;
-         if (!reply) {
-            return;
-         }
-
-         BSON_APPEND_ARRAY_BUILDER_BEGIN(reply, "errorLabels", &labels);
-         bson_array_builder_append_utf8(labels, TRANSIENT_TXN_ERR, -1);
-         bson_append_array_builder_end(reply, labels);
-      }
-   }
-}
-
-
+/**
+ * @param reply is a required out-param. `*reply` is only initialized on error.
+ */
 static bool
 _mongoc_cluster_run_opmsg_send(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
@@ -3223,9 +3173,8 @@ _mongoc_cluster_run_opmsg_send(
                                                            &compressed_data_len,
                                                            error)) {
          RUN_CMD_ERR_DECORATE;
-         _handle_network_error(cluster, server_stream, error);
+         _handle_network_error(cluster, cmd, reply, error);
          server_stream->stream = NULL;
-         network_error_reply(reply, cmd);
          return false;
       }
    }
@@ -3240,9 +3189,8 @@ _mongoc_cluster_run_opmsg_send(
 
    if (!res) {
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
    }
 
    bson_free(iovecs);
@@ -3251,6 +3199,9 @@ _mongoc_cluster_run_opmsg_send(
    return res;
 }
 
+/**
+ * @param reply is a required out-param. `*reply` is always initialized upon return.
+ */
 static bool
 _mongoc_cluster_run_opmsg_recv(
    mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, mcd_rpc_message *rpc, bson_t *reply, bson_error_t *error)
@@ -3272,9 +3223,8 @@ _mongoc_cluster_run_opmsg_recv(
           &buffer, server_stream->stream, sizeof(int32_t), cluster->sockettimeoutms, error)) {
       MONGOC_DEBUG("could not read message length, stream probably closed or timed out");
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
@@ -3287,9 +3237,8 @@ _mongoc_cluster_run_opmsg_recv(
                   message_header_length,
                   message_length,
                   server_stream->sd->max_msg_size);
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
@@ -3298,17 +3247,15 @@ _mongoc_cluster_run_opmsg_recv(
    if (!_mongoc_buffer_append_from_stream(
           &buffer, server_stream->stream, remaining_bytes, cluster->sockettimeoutms, error)) {
       RUN_CMD_ERR_DECORATE;
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
    if (!mcd_rpc_message_from_data_in_place(rpc, buffer.data, buffer.len, NULL)) {
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed server message");
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
    mcd_rpc_message_ingress(rpc);
@@ -3319,9 +3266,8 @@ _mongoc_cluster_run_opmsg_recv(
    if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
       _mongoc_set_error(
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "could not decompress message from server");
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       GOTO(done);
    }
 
@@ -3340,9 +3286,8 @@ _mongoc_cluster_run_opmsg_recv(
                      "malformed message from server: expected opCode %" PRId32 ", got %" PRId32,
                      MONGOC_OP_CODE_MSG,
                      op_code);
-         _handle_network_error(cluster, server_stream, error);
+         _handle_network_error(cluster, cmd, reply, error);
          server_stream->stream = NULL;
-         network_error_reply(reply, cmd);
          goto done;
       }
    }
@@ -3351,9 +3296,8 @@ _mongoc_cluster_run_opmsg_recv(
 
    if (!mcd_rpc_message_get_body(rpc, &body)) {
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "malformed message from server");
-      _handle_network_error(cluster, server_stream, error);
+      _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
-      network_error_reply(reply, cmd);
       goto done;
    }
 
@@ -3375,6 +3319,9 @@ done:
    return ret;
 }
 
+/**
+ * @param reply is a required out-param. `*reply` is always initialized upon return.
+ */
 static bool
 mongoc_cluster_run_opmsg(mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd, bson_t *reply, bson_error_t *error)
 {
@@ -3608,10 +3555,99 @@ mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_
    return mcd_rpc_message_decompress(rpc, data, data_len);
 }
 
+typedef struct {
+   struct {
+      bson_t reply;
+      bson_error_t error;
+      bool set;
+   } reply_and_error;
+
+   mongoc_cluster_t *cluster;
+   mongoc_cmd_t *cmd;
+   mongoc_retry_eligibility_t retry_eligibility;
+   mongoc_server_stream_t **retry_server_stream;
+} retryable_write_context_t;
+
+static bool
+_retryable_write_execute(void *user_data, bson_t *reply, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(user_data);
+
+   retryable_write_context_t *const context = (retryable_write_context_t *)user_data;
+
+   const bool ret = mongoc_cluster_run_command_monitored(context->cluster, context->cmd, reply, error);
+
+   if (context->retry_eligibility == MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE) {
+      _mongoc_write_error_handle_labels(ret, error, reply, context->cmd->server_stream->sd);
+      _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
+   }
+
+   // CDRIVER-6195: From the retryable writes spec:
+   //
+   // - If the driver has encountered only errors that indicate write attempts were made, the most recently encountered
+   //   error must be returned.
+   // - If all errors indicate no attempt was made (e.g., all errors contain the `NoWritesPerformed` error label or are
+   //   client-side errors before a command is sent), the first error encountered must be returned.
+   // - If the driver has encountered some errors which indicate a write attempt was made and some which indicate no
+   //   write attempt was made (e.g., a retryable server error followed by a checkout error), the most recently
+   //   encountered error which indicates a write attempt occurred must be returned.
+   if (!(context->reply_and_error.set && mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_NOWRITESPERFORMED))) {
+      if (error) {
+         context->reply_and_error.error = *error;
+      }
+
+      if (context->reply_and_error.set) {
+         bson_destroy(&context->reply_and_error.reply);
+      }
+
+      bson_copy_to(reply, &context->reply_and_error.reply);
+
+      context->reply_and_error.set = true;
+   }
+
+   return ret;
+}
+
+static mongoc_server_description_t const *
+_retryable_write_select_retry_server(void *user_data,
+                                     mongoc_deprioritized_servers_t *deprioritized_servers,
+                                     bson_t *reply,
+                                     bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(user_data);
+   BSON_ASSERT_PARAM(deprioritized_servers);
+   BSON_UNUSED(reply);
+   BSON_UNUSED(error);
+
+   retryable_write_context_t *const context = (retryable_write_context_t *)user_data;
+
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = context->cmd->command_name, .has_operation_id = true, .operation_id = context->cmd->operation_id};
+
+   mongoc_server_stream_cleanup(*context->retry_server_stream);
+
+   *context->retry_server_stream = mongoc_cluster_stream_for_writes(context->cluster,
+                                                                    &ss_log_context,
+                                                                    context->cmd->session,
+                                                                    deprioritized_servers,
+                                                                    NULL /* reply */,
+                                                                    NULL /* error */);
+
+   if (!*context->retry_server_stream) {
+      return NULL;
+   }
+
+   context->cmd->server_stream = *context->retry_server_stream;
+
+   return context->cmd->server_stream->sd;
+}
+
 bool
 mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    mongoc_cmd_t *cmd,
                                    bool is_retryable_write,
+                                   mongoc_jitter_source_t *jitter_source,
+                                   mongoc_token_bucket_t *token_bucket,
                                    mongoc_server_stream_t **retry_server_stream,
                                    bson_t *reply,
                                    bson_error_t *error)
@@ -3622,10 +3658,6 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    BSON_ASSERT_PARAM(reply);
    BSON_OPTIONAL_PARAM(error);
 
-   bool ret;
-   // `can_retry` is set to false on retry. A retry may only happen once.
-   bool can_retry = is_retryable_write;
-
    // Increment the transaction number for the first attempt of each retryable write command.
    if (is_retryable_write) {
       bson_iter_t txn_number_iter;
@@ -3633,73 +3665,61 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       bson_iter_overwrite_int64(&txn_number_iter, ++cmd->session->server_session->txn_number);
    }
 
-   // Store the original error and reply if needed.
-   struct {
-      bson_t reply;
-      bson_error_t error;
-      bool set;
-   } original_error = {.reply = {0}, .error = {0}, .set = false};
-
    // Ensure `*retry_server_stream` is always valid or null.
    *retry_server_stream = NULL;
 
-retry:
-   ret = mongoc_cluster_run_command_monitored(cluster, cmd, reply, error);
-
+   mongoc_retry_eligibility_t retry_eligibility;
    if (is_retryable_write) {
-      _mongoc_write_error_handle_labels(ret, error, reply, cmd->server_stream->sd);
-      _mongoc_write_error_update_if_unsupported_storage_engine(ret, error, reply);
+      // Meets requirements of Retryable Write.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE;
+   } else if (mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+      // Eligible for overload retries only.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
+   } else {
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
    }
 
-   // If a retryable error is encountered and the write is retryable, select a new writable stream and retry. If server
-   // selection fails or the selected server does not support retryable writes, fall through and allow the original
-   // error to be reported.
-   if (can_retry && _mongoc_write_error_get_type(reply) == MONGOC_WRITE_ERR_RETRY) {
-      can_retry = false; // Only retry once.
-
-      // Select a server.
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
-
-         // If talking to a sharded cluster, deprioritize the just-used mongos to prefer a new mongos for the retry.
-         mongoc_deprioritized_servers_add_if_sharded(ds, cmd->server_stream->topology_type, cmd->server_stream->sd);
-
-         const mongoc_ss_log_context_t ss_log_context = {
-            .operation = cmd->command_name, .has_operation_id = true, .operation_id = cmd->operation_id};
-         *retry_server_stream = mongoc_cluster_stream_for_writes(
-            cluster, &ss_log_context, cmd->session, ds, NULL /* reply */, NULL /* error */);
-
-         mongoc_deprioritized_servers_destroy(ds);
-      }
-
-      if (*retry_server_stream) {
-         cmd->server_stream = *retry_server_stream; // Non-owning.
+   retryable_write_context_t context = {
+      .reply_and_error =
          {
-            // Store the original error and reply before retry.
-            BSON_ASSERT(!original_error.set); // Retry only happens once.
-            original_error.set = true;
-            bson_copy_to(reply, &original_error.reply);
-            if (error) {
-               original_error.error = *error;
-            }
-         }
-         bson_destroy(reply);
-         GOTO(retry);
-      }
+            .error = {0},
+            .reply = BSON_INITIALIZER,
+            .set = false,
+         },
+      .cluster = cluster,
+      .cmd = cmd,
+      .retry_eligibility = retry_eligibility,
+      .retry_server_stream = retry_server_stream,
+   };
+
+   const mongoc_retryable_cmd_t retryable_cmd = {
+      .execute = _retryable_write_execute,
+      .select_retry_server = _retryable_write_select_retry_server,
+      .user_data = &context,
+      .retry_eligibility = retry_eligibility,
+      .jitter_source = jitter_source,
+      .token_bucket = token_bucket,
+      .initial_server_description = cmd->server_stream->sd,
+   };
+
+   bool ret = false;
+
+   {
+      bson_t reply_local = BSON_INITIALIZER;
+      bson_error_t error_local = {0};
+
+      ret = _mongoc_retryable_cmd_run(&retryable_cmd, &reply_local, &error_local);
+
+      bson_destroy(&reply_local);
    }
 
-   // If a retry attempt fails with an error labeled NoWritesPerformed, drivers MUST return the original error.
-   if (original_error.set && mongoc_error_has_label(reply, "NoWritesPerformed")) {
-      if (error) {
-         *error = original_error.error;
-      }
-      bson_destroy(reply);
-      bson_copy_to(&original_error.reply, reply);
+   BSON_ASSERT(context.reply_and_error.set);
+
+   if (error) {
+      *error = context.reply_and_error.error;
    }
 
-   if (original_error.set) {
-      bson_destroy(&original_error.reply);
-   }
+   bson_steal(reply, &context.reply_and_error.reply);
 
    RETURN(ret);
 }

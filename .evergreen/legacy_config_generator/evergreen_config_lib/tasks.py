@@ -249,6 +249,15 @@ all_tasks = [
                 content_type='${content_type|application/x-gzip}',
             ),
         ],
+        allowed_requesters=[
+            'ad_hoc',
+            'commit',
+            # 'github_merge_queue'
+            # 'github_pr',
+            # 'github_tag',
+            'patch',
+            'trigger',
+        ],
     ),
     NamedTask(
         'rpm-package-build',
@@ -275,6 +284,15 @@ all_tasks = [
                 'export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n'
                 '.evergreen/scripts/build_snapshot_rpm.sh'
             ),
+        ],
+        allowed_requesters=[
+            'ad_hoc',
+            'commit',
+            # 'github_merge_queue'
+            # 'github_pr',
+            # 'github_tag',
+            'patch',
+            'trigger',
         ],
     ),
     CompileTask('debug-compile-with-warnings', CFLAGS='-Werror -Wno-cast-align'),
@@ -357,15 +375,6 @@ class CoverageTask(MatrixTask):
         require(self.setting_eq('ssl', 'openssl'))
         require(self.setting_eq('version', 'latest'))
         require(self.settings.auth is True)
-
-        if not self.cse:
-            # No further requirements
-            return True
-
-        # CSE has extra requirements
-        if self.settings.version != 'latest':
-            # We only work with 4.2 or newer for CSE
-            require(Version(str(self.settings.version)) >= Version('4.2'))
         return True
 
 
@@ -728,7 +737,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
-            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -783,7 +792,7 @@ class OCSPTask(MatrixTask):
             ('delegate', ['delegate', 'nodelegate']),
             ('cert', ['rsa', 'ecdsa']),
             ('ssl', ['openssl', 'darwinssl', 'winssl']),
-            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -882,7 +891,7 @@ class OCSPTask(MatrixTask):
             prohibit(self.test == 'soft_fail_test')
 
             # Only Server 6.0+ are available on MacOS ARM64.
-            if self.settings.version != 'latest':
+            if self.settings.version not in ['rapid', 'latest']:
                 prohibit(Version(self.settings.version) < Version('6.0'))
 
         if self.settings.ssl == 'darwinssl' or self.settings.ssl == 'winssl':

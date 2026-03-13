@@ -28,6 +28,7 @@
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-shared-private.h>
 #include <mongoc/mongoc-thread-private.h>
+#include <mongoc/mongoc-token-bucket-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-topology-scanner-private.h>
 #include <mongoc/mongoc-ts-pool-private.h>
@@ -237,6 +238,9 @@ typedef struct _mongoc_topology_t {
 
    // `oidc_cache` implements the OIDC spec "Client Cache". It is shared among all pooled clients.
    mongoc_oidc_cache_t *oidc_cache;
+
+   // `token_bucket` is used to limit overload retry attempts if the URI contains `adaptiveRetries=True`.
+   mongoc_token_bucket_t *token_bucket;
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -419,8 +423,7 @@ typedef enum {
  * @param server_id The ID of the server on which the error occurred.
  * @param handshake_complete Whether the handshake was complete for this server
  * @param type The type of error to process
- * @param reply If checking for a command error, the server reply. Otherwise
- * NULL
+ * @param reply For a command error: the server reply. For a network error: a document with optional "errorLabels".
  * @param why An error that will be attached to the server description
  * @param generation The generation of the server description the caller was
  * using.

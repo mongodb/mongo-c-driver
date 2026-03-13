@@ -21,10 +21,6 @@
 
 #include <mlib/duration.h>
 
-#define MONGOC_BACKOFF_MAX mlib_duration(500, ms)
-#define MONGOC_BACKOFF_INITIAL mlib_duration(5, ms)
-#define MONGOC_BACKOFF_ATTEMPT_LIMIT 13 // `5 * 1.5 ^ (n - 1) >= 500` when `n >= 13`.
-
 typedef struct _mongoc_jitter_source_t mongoc_jitter_source_t;
 
 // A function that returns nearly-uniformly-distributed values in the range `[0.0, 1.0]`.
@@ -41,8 +37,5 @@ _mongoc_jitter_source_generate(mongoc_jitter_source_t *source);
 
 double
 _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source);
-
-mlib_duration
-_mongoc_compute_backoff_duration(double jitter, int transaction_attempt);
 
 #endif

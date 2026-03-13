@@ -644,6 +644,10 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
    // URI and topology are valid. Try to apply to OIDC environment.
    mongoc_oidc_cache_apply_env_from_uri(topology->oidc_cache, topology->uri);
 
+   if (mongoc_uri_get_option_as_bool(topology->uri, MONGOC_URI_ADAPTIVERETRIES, false)) {
+      topology->token_bucket = _mongoc_token_bucket_new(MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
+   }
+
    size_t hl_array_size = 0u;
 
    BSON_ASSERT(mlib_in_range(size_t, td->max_hosts));
@@ -741,6 +745,8 @@ mongoc_topology_destroy(mongoc_topology_t *topology)
    bson_destroy(topology->encrypted_fields_map);
 
    mongoc_oidc_cache_destroy(topology->oidc_cache);
+
+   _mongoc_token_bucket_destroy(topology->token_bucket);
 
    bson_free(topology);
 }
@@ -1268,6 +1274,13 @@ mongoc_topology_select_server_id(mongoc_topology_t *topology,
             mongoc_topology_description_select(td.ptr, optype, read_prefs, must_use_primary, ds, local_threshold_ms);
 
          if (selected_server) {
+            // If the topology description's cluster time is not yet initialized, initialize it using the selected
+            // server's last hello response. Using `mc_tpld_unsafe_get_mutable` is okay here since this only applies to
+            // single-threaded clients.
+            mongoc_topology_description_t *const td = mc_tpld_unsafe_get_mutable(topology);
+            if (bson_empty(&td->cluster_time)) {
+               mongoc_topology_description_update_cluster_time(td, &selected_server->last_hello_response);
+            }
             server_id = selected_server->id;
             goto done;
          }
@@ -1891,6 +1904,8 @@ _mongoc_topology_handle_app_error(mongoc_topology_t *topology,
                                   uint32_t generation,
                                   const bson_oid_t *service_id)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_error_t server_selection_error;
    const mongoc_server_description_t *sd;
    bool cleared_pool = false;
@@ -1925,6 +1940,9 @@ _mongoc_topology_handle_app_error(mongoc_topology_t *topology,
    if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
       cleared_pool = _handle_sdam_app_error_command(topology, td.ptr, server_id, generation, service_id, sd, reply);
    } else {
+      if (mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR)) {
+         goto ignore_error;
+      }
       /* Invalidate the server that saw the error. */
       mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
       sd = mongoc_topology_description_server_by_id_const(tdmod.new_td, server_id, NULL);

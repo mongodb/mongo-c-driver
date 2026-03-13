@@ -28,8 +28,6 @@
 #include <bson/bson.h>
 
 /* error labels: see Transactions Spec */
-#define TRANSIENT_TXN_ERR "TransientTransactionError"
-#define UNKNOWN_COMMIT_RESULT "UnknownTransactionCommitResult"
 #define MAX_TIME_MS_EXPIRED "MaxTimeMSExpired"
 #define DEFAULT_MAX_COMMIT_TIME_MS 0
 #define SESSION_NEVER_USED (-1)

@@ -1,3 +1,53 @@
+libmongoc 2.3.0 [UNRELEASED]
+============================
+
+## New Features
+
+- Support retry for server overload errors.
+    - Supported on all commands.
+    - Custom application retry logic may need to be adjusted to avoid retrying too long.
+    - Upgrade is recommended to avoid impacts of server changes related to overload errors.
+        - If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors.
+    - Set the URI option `adaptiveRetry=true` limit retries with a token bucket system.
+
+libmongoc 2.2.3
+===============
+
+## Fixed
+
+* Fix handling in HTTP response parser.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 2.2.2
+===============
+
+## Fixed
+
+* Restore $clusterTime on first command of single-threaded client.
+* Wait between polling if `serverMonitoringMode=poll` is used on server supporting streaming.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Kevin Albertson
+
+libmongoc 1.30.7
+================
+
+Fixes:
+
+  * Documentation build with python-docutils 0.22.2
+  * Omit `saslSupportedMechs` in single-threaded monitoring commands.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Julia Garland
+
+
 libmongoc 2.2.1
 ===============
 

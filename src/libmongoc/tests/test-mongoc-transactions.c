@@ -579,12 +579,15 @@ test_unknown_commit_result(void)
    r = mongoc_client_session_commit_transaction(session, &reply, &error);
    BSON_ASSERT(!r);
 
-   if (!mongoc_error_has_label(&reply, "UnknownTransactionCommitResult")) {
-      test_error("Reply lacks UnknownTransactionCommitResult label: %s", bson_as_relaxed_extended_json(&reply, NULL));
+   if (!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT)) {
+      test_error("Reply lacks %s label: %s",
+                 MONGOC_ERROR_LABEL_UNKNOWNTRANSACTIONCOMMITRESULT,
+                 bson_as_relaxed_extended_json(&reply, NULL));
    }
 
-   if (mongoc_error_has_label(&reply, "TransientTransactionError")) {
-      test_error("Reply shouldn't have TransientTransactionError label: %s",
+   if (mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR)) {
+      test_error("Reply shouldn't have %s label: %s",
+                 MONGOC_ERROR_LABEL_TRANSIENTTRANSACTIONERROR,
                  bson_as_relaxed_extended_json(&reply, NULL));
    }
 
