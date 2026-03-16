@@ -977,6 +977,34 @@ test_bson_init_static(void)
    bson_destroy(&b);
 }
 
+// Constructs a bson_t and then by-value assigns through *dst
+static void
+make_bson_for_relocate(volatile bson_t *dst)
+{
+   bson_t item = BSON_INITIALIZER;
+   for (int i = 0; i < 1024; ++i) {
+      bson_append_utf8(&item, "foo", -1, "bar", -1);
+   }
+   // Do the write. This is volatile to assure the write occurs exactly once at this location.
+   *dst = item;
+}
+
+/**
+ * Test that trivial relocation (by-value assignment/copying) leaves the bson_t in a valid state.
+ */
+static void
+test_bson_relocate(void)
+{
+   bson_t doc;
+   make_bson_for_relocate(&doc);
+   bson_iter_t iter;
+   bson_iter_init(&iter, &doc);
+   while (bson_iter_next(&iter)) {
+      // Do nothing
+   }
+   bson_destroy(&doc);
+}
+
 static void *
 realloc_func_never_called(void *mem, size_t num_bytes, void *ctx)
 {
@@ -1040,7 +1068,7 @@ test_bson_new_from_buffer(void)
 
       BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE_DATA);
       BSON_ASSERT(buf_len == 0x10000);
-      BSON_ASSERT(&buf_len == ((bson_impl_alloc_t *)b)->buflen);
+      BSON_ASSERT(&buf_len == ((bson_impl_alloc_t *)b)->indirect_buflen);
       BSON_ASSERT(b->len == 5);
 
       bson_append_utf8(b, "hello", -1, "world", -1);
@@ -1226,7 +1254,7 @@ test_bson_build_child_deep(void)
    BSON_ASSERT(!(u.b.flags & BSON_FLAG_NO_FREE_DATA));
    BSON_ASSERT(!(u.b.flags & BSON_FLAG_RDONLY));
    BSON_ASSERT(bson_validate(&u.b, BSON_VALIDATE_NONE, NULL));
-   BSON_ASSERT(((bson_impl_alloc_t *)&u.b)->alloclen == 1024);
+   BSON_ASSERT(((bson_impl_alloc_t *)&u.b)->own_buflen == 1024);
    BSON_ASSERT_BSON_EQUAL_FILE(&u.b, "test39.bson");
    bson_destroy(&u.b);
 }
@@ -1263,7 +1291,7 @@ test_bson_build_child_deep_no_begin_end(void)
    bson_init(&u.b);
    test_bson_build_child_deep_no_begin_end_1(&u.b, &count);
    BSON_ASSERT(bson_validate(&u.b, BSON_VALIDATE_NONE, NULL));
-   BSON_ASSERT(u.a.alloclen == 1024);
+   BSON_ASSERT(u.a.own_buflen == 1024);
    BSON_ASSERT_BSON_EQUAL_FILE(&u.b, "test39.bson");
    bson_destroy(&u.b);
 }
@@ -1540,10 +1568,10 @@ test_bson_steal(void)
    /* spilled over, stack-allocated */
    bson_init(&stack_alloced);
    bloat(&stack_alloced);
-   alloc = ((bson_impl_alloc_t *)&stack_alloced)->alloc;
+   alloc = ((bson_impl_alloc_t *)&stack_alloced)->own_buffer;
    ASSERT(bson_steal(&dst, &stack_alloced));
    /* data was transferred */
-   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->alloc);
+   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->own_buffer);
    ASSERT(bson_has_field(&dst, "99"));
    ASSERT(!(dst.flags & BSON_FLAG_INLINE_DATA));
    ASSERT(!bson_validate(&stack_alloced, BSON_VALIDATE_NONE, 0));
@@ -1560,10 +1588,10 @@ test_bson_steal(void)
    /* spilled over, heap-allocated */
    heap_alloced = bson_new();
    bloat(heap_alloced);
-   alloc = ((bson_impl_alloc_t *)heap_alloced)->alloc;
+   alloc = ((bson_impl_alloc_t *)heap_alloced)->own_buffer;
    ASSERT(bson_steal(&dst, heap_alloced));
    /* data was transferred */
-   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->alloc);
+   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->own_buffer);
    ASSERT(bson_has_field(&dst, "99"));
    ASSERT(!(dst.flags & BSON_FLAG_INLINE_DATA));
    bson_destroy(&dst);
@@ -1618,7 +1646,7 @@ test_bson_reserve_buffer(void)
    ASSERT((buf = bson_reserve_buffer(&stack_alloced, src.len)));
    ASSERT_CMPUINT32(src.len, ==, stack_alloced.len);
    ASSERT(!(stack_alloced.flags & BSON_FLAG_INLINE_DATA));
-   memcpy(buf, ((bson_impl_alloc_t *)&src)->alloc, src.len);
+   memcpy(buf, ((bson_impl_alloc_t *)&src)->own_buffer, src.len);
    BSON_ASSERT_KEY_AND_VALUE(&stack_alloced);
    ASSERT(bson_has_field(&stack_alloced, "99"));
    bson_destroy(&src);
@@ -1641,7 +1669,7 @@ test_bson_reserve_buffer(void)
    ASSERT((buf = bson_reserve_buffer(heap_alloced, src.len)));
    ASSERT_CMPUINT32(src.len, ==, heap_alloced->len);
    ASSERT(!(heap_alloced->flags & BSON_FLAG_INLINE_DATA));
-   memcpy(buf, ((bson_impl_alloc_t *)&src)->alloc, src.len);
+   memcpy(buf, ((bson_impl_alloc_t *)&src)->own_buffer, src.len);
    BSON_ASSERT_KEY_AND_VALUE(heap_alloced);
    ASSERT(bson_has_field(heap_alloced, "99"));
 
@@ -3010,6 +3038,7 @@ test_bson_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/new_from_buffer", test_bson_new_from_buffer);
    TestSuite_Add(suite, "/bson/init", test_bson_init);
    TestSuite_Add(suite, "/bson/init_static", test_bson_init_static);
+   TestSuite_Add(suite, "/bson/relocate", test_bson_relocate);
    TestSuite_Add(suite, "/bson/basic", test_bson_alloc);
    TestSuite_Add(suite, "/bson/basic_array_alloc", test_bson_array_alloc);
    TestSuite_Add(suite, "/bson/append_overflow", test_bson_append_overflow);
