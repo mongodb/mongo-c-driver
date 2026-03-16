@@ -161,7 +161,7 @@ _bson_impl_alloc_grow(bson_impl_alloc_t *impl, /* IN */
    size_t req = impl->offset + (size_t)impl->len + (size_t)grow_size + (size_t)impl->depth;
 
    uint8_t **const buf_to_grow = impl->indirect_buffer ? impl->indirect_buffer : &impl->own_buffer;
-   size_t *const sz_to_grow = impl->indirect_buflen ? impl->indirect_buflen : &impl->own_buflen;
+   size_t *const sz_to_grow = impl->indirect_buffer ? impl->indirect_buflen : &impl->own_buflen;
 
    if (req <= *sz_to_grow) {
       return true;
@@ -2220,7 +2220,7 @@ bson_reserve_buffer(bson_t *bson, uint32_t total_size)
    } else {
       bson_impl_alloc_t *impl = (bson_impl_alloc_t *)bson;
       impl->len = total_size;
-      const size_t sz = impl->indirect_buflen ? *impl->indirect_buflen : impl->own_buflen;
+      const size_t sz = impl->indirect_buffer ? *impl->indirect_buflen : impl->own_buflen;
       (void)sz;
       BSON_ASSERT(impl->offset <= sz && sz - impl->offset >= (size_t)total_size);
    }
