@@ -1185,7 +1185,7 @@ _parse_kms_provider_azure(
             return false;
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1228,7 +1228,7 @@ _parse_kms_provider_gcp(
             BSON_ASSERT(BSON_APPEND_UTF8(&child, key, value));
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1279,7 +1279,7 @@ _parse_kms_provider_kmip(
             BSON_ASSERT(bson_append_document_end(tls_opts, &tls_child));
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1323,7 +1323,7 @@ _parse_kms_provider_local(
             BSON_APPEND_BINARY(&child, "key", BSON_SUBTYPE_BINARY, data, 96);
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
