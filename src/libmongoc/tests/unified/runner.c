@@ -648,8 +648,9 @@ check_schema_version(test_file_t *test_file)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    // 1.23 is partially supported (automatic encryption)
    // 1.25 is partially supported (minLibmongocryptVersion)
+   // 1.28 is partially supported (accessToken)
    semver_t schema_version;
-   semver_parse("1.25", &schema_version);
+   semver_parse("1.28", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
