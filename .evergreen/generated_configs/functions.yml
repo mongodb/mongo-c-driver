@@ -304,7 +304,7 @@ functions:
           - -c
           - |
             if [[ ! -d drivers-evergreen-tools ]]; then
-                git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+                git clone --depth=1 https://github.com/kevinAlbs/drivers-evergreen-tools.git --branch D2924
             fi
     - command: subprocess.exec
       type: setup
