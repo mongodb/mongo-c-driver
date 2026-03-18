@@ -93,7 +93,7 @@ KMS providers may include an optional name suffix separate with a colon. This en
    "aws:name2": {
       accessKeyId: String,
       secretAccessKey: String
-   }   
+   }
 
 .. seealso::
 
