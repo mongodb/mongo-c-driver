@@ -39,7 +39,8 @@ The format for the KMS provider type ``local`` is as follows:
 .. code-block:: javascript
 
    local: {
-      key: <96 byte BSON binary of subtype 0> or String /* The master key used to encrypt/decrypt data keys. May be passed as a base64 encoded string. */
+      // key is used to encrypt/decrypt data keys:
+      key: "<96 byte BSON binary of subtype 0>" or String // May be passed as a base64 encoded string.
    }
 
 The format for the KMS provider type ``azure`` is as follows:
@@ -50,7 +51,7 @@ The format for the KMS provider type ``azure`` is as follows:
       tenantId: String,
       clientId: String,
       clientSecret: String,
-      identityPlatformEndpoint: Optional<String> /* Defaults to login.microsoftonline.com */
+      identityPlatformEndpoint: Optional<String> // Defaults to login.microsoftonline.com
    }
 
    // To pass an accessToken directly:
@@ -64,8 +65,8 @@ The format for the KMS provider type ``gcp`` is as follows:
 
    gcp: {
       email: String,
-      privateKey: byte[] or String, /* May be passed as a base64 encoded string. */
-      endpoint: Optional<String> /* Defaults to oauth2.googleapis.com */
+      privateKey: byte[] or String, // May be passed as a base64 encoded string.
+      endpoint: Optional<String> // Defaults to oauth2.googleapis.com
    }
 
    // To pass an accessToken directly:
