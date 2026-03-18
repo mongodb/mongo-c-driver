@@ -25,7 +25,7 @@ KMS providers are specified as a string of the form ``<KMS provider type>`` or `
 The supported KMS provider types are ``aws``, ``azure``, ``gcp``, ``local``, and ``kmip``. The optional name enables configuring multiple KMS providers with the same KMS provider type (e.g. ``aws:name1`` and ``aws:name2`` can refer to different AWS accounts).
 At least one KMS provider must be specified.
 
-The format for the KMS provider type ``aws`` is as follows:
+Supported forms of the KMS provider type ``aws`` include:
 
 .. code-block:: javascript
 
@@ -34,7 +34,17 @@ The format for the KMS provider type ``aws`` is as follows:
       secretAccessKey: String
    }
 
-The format for the KMS provider type ``local`` is as follows:
+   // To pass temporary credentials:
+   aws: {
+      accessKeyId: String,
+      secretAccessKey: String
+      sessionToken: String
+   }
+
+   // To request credentials from the environment:
+   aws: {}
+
+Supported forms of the KMS provider type ``local`` include:
 
 .. code-block:: javascript
 
@@ -43,7 +53,7 @@ The format for the KMS provider type ``local`` is as follows:
       key: "<96 byte BSON binary of subtype 0>" or String // May be passed as a base64 encoded string.
    }
 
-The format for the KMS provider type ``azure`` is as follows:
+Supported forms of the KMS provider type ``azure`` include:
 
 .. code-block:: javascript
 
@@ -59,7 +69,10 @@ The format for the KMS provider type ``azure`` is as follows:
       accessToken: String
    }
 
-The format for the KMS provider type ``gcp`` is as follows:
+   // To request credentials from the environment:
+   azure: {}
+
+Supported forms of the KMS provider type ``gcp`` include:
 
 .. code-block:: javascript
 
@@ -74,7 +87,10 @@ The format for the KMS provider type ``gcp`` is as follows:
       accessToken: String
    }
 
-The format for the KMS provider type ``kmip`` is as follows:
+   // To request credentials from the environment:
+   gcp: {}
+
+Supported forms of the KMS provider type ``kmip`` include:
 
 .. code-block:: javascript
 
