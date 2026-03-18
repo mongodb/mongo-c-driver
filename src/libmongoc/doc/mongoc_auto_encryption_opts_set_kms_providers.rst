@@ -53,6 +53,11 @@ The format for the KMS provider type ``azure`` is as follows:
       identityPlatformEndpoint: Optional<String> /* Defaults to login.microsoftonline.com */
    }
 
+   // To pass an accessToken directly:
+   azure: {
+      accessToken: String
+   }
+
 The format for the KMS provider type ``gcp`` is as follows:
 
 .. code-block:: javascript
@@ -61,6 +66,11 @@ The format for the KMS provider type ``gcp`` is as follows:
       email: String,
       privateKey: byte[] or String, /* May be passed as a base64 encoded string. */
       endpoint: Optional<String> /* Defaults to oauth2.googleapis.com */
+   }
+
+   // To pass an accessToken directly:
+   gcp: {
+      accessToken: String
    }
 
 The format for the KMS provider type ``kmip`` is as follows:
