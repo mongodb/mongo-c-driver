@@ -81,7 +81,7 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
     export MONGOC_TEST_GCP_EMAIL="${FLE_GCP_EMAIL:?}"
     export MONGOC_TEST_GCP_PRIVATEKEY="${FLE_GCP_PRIVATEKEY:?}"
   } &>/dev/null
-  popd # "${mongoc_dir}/../drivers-evergreen-tools/.evergreen/csfle"
+  popd # "${det_dir:?}/.evergreen/csfle"
   echo "Setting KMS credentials from the environment... done."
 
   export MONGOC_TEST_CSFLE_TLS_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
