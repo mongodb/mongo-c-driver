@@ -35,19 +35,6 @@ class RunMockKMSServers(Function):
                 echo "Preparing KMS TLS venv environment... done."
             """,
         ),
-        bash_exec(
-            command_type=command_type,
-            background=True,
-            working_dir='drivers-evergreen-tools/.evergreen/csfle',
-            script="""\
-                set -o errexit
-                echo "Starting mock KMS TLS servers..."
-                . ./activate-kmstlsvenv.sh
-                python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999 &
-                deactivate
-                echo "Starting mock KMS TLS servers... done."
-            """,
-        ),
         ec2_assume_role(role_arn='${aws_test_secrets_role}'),
         bash_exec(
             command_type=command_type,

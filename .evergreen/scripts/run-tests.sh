@@ -195,7 +195,6 @@ export MONGOC_TEST_MONITORING_VERBOSE=on
 # Limit tests to execute and ensure required servers are running.
 if [[ "${CLIENT_SIDE_ENCRYPTION}" == "on" ]]; then
   echo "Waiting for mock KMS servers to start..."
-  wait_for_server "mock KMS" 8999
   wait_for_server "mock KMS" 9000
   wait_for_server "mock KMS" 9001
   wait_for_server "mock KMS" 9002
