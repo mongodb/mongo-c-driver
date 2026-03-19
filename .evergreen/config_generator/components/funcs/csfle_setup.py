@@ -12,14 +12,12 @@ class CSFLESetup(Function):
         # parallel do not race to setup a venv environment; it has already been prepared.
         # This primarily addresses the situation where the "run tests" and "csfle-setup"
         # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
-        # TODO: remove this function along with the "csfle-setup" function.
         bash_exec(
             command_type=command_type,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
             script="""\
                 set -o errexit
                 echo "Preparing KMS TLS venv environment..."
-                # TODO: remove this function along with the "csfle-setup" function.
                 if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
                     # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
                     # See CDRIVER-4530.
