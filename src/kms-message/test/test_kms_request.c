@@ -99,7 +99,8 @@ test_file_path (const char *path, const char *suffix)
    char *r;
    char *test_name = last_segment (path);
    char file_path[PATH_MAX];
-   snprintf (file_path, PATH_MAX, "%s/%s.%s", path, test_name, suffix);
+   int ret = snprintf (file_path, PATH_MAX, "%s/%s.%s", path, test_name, suffix);
+   KMS_ASSERT (ret > 0 && ret < PATH_MAX);
    r = strdup (file_path);
    free (test_name);
    return r;
@@ -114,6 +115,7 @@ realloc_buffer (char **buffer, size_t *n, size_t len)
 
    } else {
       *buffer = realloc (*buffer, len);
+      KMS_ASSERT(*buffer);
    }
 
    *n = len;
@@ -1118,7 +1120,7 @@ kms_request_kmip_prohibited_test (void)
 static int
 count_substrings (const char *big, const char *little)
 {
-   char *iter;
+   const char *iter;
    int count = 0;
 
    iter = strstr (big, little);
