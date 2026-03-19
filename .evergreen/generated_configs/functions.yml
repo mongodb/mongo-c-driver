@@ -192,6 +192,46 @@ functions:
         args:
           - -c
           - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+  csfle-setup:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: drivers-evergreen-tools/.evergreen/csfle
+        args:
+          - -c
+          - |
+            set -o errexit
+            echo "Preparing KMS TLS venv environment..."
+            # TODO: remove this function along with the "csfle-setup" function.
+            if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
+                # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
+                # See CDRIVER-4530.
+                . ../venv-utils.sh
+                venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
+                venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
+                python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0 "sqlalchemy<2.0.0"
+                deactivate
+            else
+                . ./activate-kmstlsvenv.sh
+                deactivate
+            fi
+            echo "Preparing KMS TLS venv environment... done."
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: drivers-evergreen-tools/.evergreen/csfle
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ./setup.sh
   docker-login-amazon-ecr:
     - command: expansions.update
       params:
@@ -413,46 +453,6 @@ functions:
         args:
           - -c
           - ./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/teardown-pod.sh
-  run-mock-kms-servers:
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        working_dir: drivers-evergreen-tools/.evergreen/csfle
-        args:
-          - -c
-          - |
-            set -o errexit
-            echo "Preparing KMS TLS venv environment..."
-            # TODO: remove this function along with the "run kms servers" function.
-            if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
-                # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
-                # See CDRIVER-4530.
-                . ../venv-utils.sh
-                venvcreate "C:/python/Python39/python.exe" kmstlsvenv || # windows-2017
-                venvcreate "C:/python/Python38/python.exe" kmstlsvenv    # windows-2015
-                python -m pip install --upgrade boto3~=1.19 pykmip~=0.10.0 "sqlalchemy<2.0.0"
-                deactivate
-            else
-                . ./activate-kmstlsvenv.sh
-                deactivate
-            fi
-            echo "Preparing KMS TLS venv environment... done."
-    - command: ec2.assume_role
-      params:
-        role_arn: ${aws_test_secrets_role}
-    - command: subprocess.exec
-      type: setup
-      params:
-        binary: bash
-        working_dir: drivers-evergreen-tools/.evergreen/csfle
-        include_expansions_in_env:
-          - AWS_ACCESS_KEY_ID
-          - AWS_SECRET_ACCESS_KEY
-          - AWS_SESSION_TOKEN
-        args:
-          - -c
-          - ./setup.sh
   run-simple-http-server:
     - command: subprocess.exec
       type: setup

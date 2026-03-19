@@ -4,22 +4,22 @@ from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
 
 
-class RunMockKMSServers(Function):
-    name = 'run-mock-kms-servers'
+class CSFLESetup(Function):
+    name = 'csfle-setup'
     command_type = EvgCommandType.SETUP
     commands = [
         # This command ensures future invocations of activate-kmstlsvenv.sh conducted in
         # parallel do not race to setup a venv environment; it has already been prepared.
-        # This primarily addresses the situation where the "run tests" and "run-mock-kms-servers"
+        # This primarily addresses the situation where the "run tests" and "csfle-setup"
         # functions invoke 'activate-kmstlsvenv.sh' simultaneously.
-        # TODO: remove this function along with the "run-mock-kms-servers" function.
+        # TODO: remove this function along with the "csfle-setup" function.
         bash_exec(
             command_type=command_type,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
             script="""\
                 set -o errexit
                 echo "Preparing KMS TLS venv environment..."
-                # TODO: remove this function along with the "run kms servers" function.
+                # TODO: remove this function along with the "csfle-setup" function.
                 if [[ "$OSTYPE" =~ cygwin && ! -d kmstlsvenv ]]; then
                     # Avoid using Python 3.10 on Windows due to incompatible cipher suites.
                     # See CDRIVER-4530.
@@ -46,4 +46,4 @@ class RunMockKMSServers(Function):
 
 
 def functions():
-    return RunMockKMSServers.defn()
+    return CSFLESetup.defn()

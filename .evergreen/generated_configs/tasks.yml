@@ -32,7 +32,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -56,7 +56,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
     run_on: rhel8-latest-large
@@ -79,7 +79,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -103,7 +103,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
     run_on: rhel8-latest-large
@@ -126,7 +126,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -150,7 +150,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
     run_on: rhel8-latest-large
@@ -173,7 +173,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -197,7 +197,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
     run_on: rhel8-latest-large
@@ -220,7 +220,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -244,7 +244,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
     run_on: rhel8-latest-large
@@ -267,7 +267,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -291,7 +291,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
     run_on: rhel8-latest-large
@@ -314,7 +314,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -338,7 +338,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
     run_on: rhel8-latest-large
@@ -361,7 +361,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -385,7 +385,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
     run_on: rhel8-latest-large
@@ -408,7 +408,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -432,7 +432,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
     run_on: rhel8-latest-large
@@ -455,7 +455,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -479,7 +479,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
     run_on: rhel8-latest-large
@@ -502,7 +502,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -526,7 +526,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
     run_on: rhel8-latest-large
@@ -549,7 +549,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -573,7 +573,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
     run_on: rhel8-latest-large
@@ -596,7 +596,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -620,7 +620,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
     run_on: rhel8-latest-large
@@ -643,7 +643,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -667,7 +667,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-replica-auth
     run_on: rhel8-latest-large
@@ -690,7 +690,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -714,7 +714,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-server-auth
     run_on: rhel8-latest-large
@@ -737,7 +737,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
@@ -761,7 +761,7 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile
     run_on: rhel8-latest-large
@@ -2919,7 +2919,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-server-auth
     run_on: macos-14-arm64
@@ -2940,7 +2940,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-sharded-auth
     run_on: macos-14-arm64
@@ -2961,7 +2961,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-replica-auth
     run_on: macos-14-arm64
@@ -2982,7 +2982,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-server-auth
     run_on: macos-14-arm64
@@ -3003,7 +3003,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-sharded-auth
     run_on: macos-14-arm64
@@ -3024,7 +3024,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-replica-auth
     run_on: macos-14-arm64
@@ -3045,7 +3045,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-server-auth
     run_on: macos-14-arm64
@@ -3066,7 +3066,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-sharded-auth
     run_on: macos-14-arm64
@@ -3087,7 +3087,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-replica-auth
     run_on: macos-14-arm64
@@ -3108,7 +3108,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-server-auth
     run_on: macos-14-arm64
@@ -3129,7 +3129,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-sharded-auth
     run_on: macos-14-arm64
@@ -3150,7 +3150,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-rapid-replica-auth
     run_on: macos-14-arm64
@@ -3171,7 +3171,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-rapid-server-auth
     run_on: macos-14-arm64
@@ -3192,7 +3192,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-rapid-sharded-auth
     run_on: macos-14-arm64
@@ -3213,7 +3213,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile
     run_on: macos-14
@@ -3243,7 +3243,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.4-sharded-auth
     run_on: macos-14
@@ -3264,7 +3264,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-5.0-sharded-auth
     run_on: macos-14
@@ -3285,7 +3285,7 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-debian11-latest-clang-compile
     run_on: debian11-latest-large
@@ -3351,7 +3351,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3372,7 +3372,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3393,7 +3393,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-replica-auth
     run_on: rhel8-arm64-latest-small
@@ -3414,7 +3414,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3435,7 +3435,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3456,7 +3456,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-replica-auth
     run_on: rhel8-arm64-latest-small
@@ -3477,7 +3477,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3498,7 +3498,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3519,7 +3519,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-replica-auth
     run_on: rhel8-arm64-latest-small
@@ -3540,7 +3540,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3561,7 +3561,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3582,7 +3582,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-replica-auth
     run_on: rhel8-arm64-latest-small
@@ -3603,7 +3603,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3624,7 +3624,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3645,7 +3645,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-replica-auth
     run_on: rhel8-arm64-latest-small
@@ -3666,7 +3666,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3687,7 +3687,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3708,7 +3708,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-replica-auth
     run_on: rhel8-arm64-latest-small
@@ -3729,7 +3729,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-server-auth
     run_on: rhel8-arm64-latest-small
@@ -3750,7 +3750,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-sharded-auth
     run_on: rhel8-arm64-latest-small
@@ -3771,7 +3771,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
     run_on: rhel8-latest-large
@@ -3801,7 +3801,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
     run_on: rhel8-latest-large
@@ -3822,7 +3822,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-sharded-auth
     run_on: rhel8-latest-large
@@ -3843,7 +3843,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-replica-auth
     run_on: rhel8-latest-large
@@ -3864,7 +3864,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
     run_on: rhel8-latest-large
@@ -3885,7 +3885,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-sharded-auth
     run_on: rhel8-latest-large
@@ -3906,7 +3906,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-replica-auth
     run_on: rhel8-latest-large
@@ -3927,7 +3927,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
     run_on: rhel8-latest-large
@@ -3948,7 +3948,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-sharded-auth
     run_on: rhel8-latest-large
@@ -3969,7 +3969,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
     run_on: rhel8-latest-large
@@ -3990,7 +3990,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
     run_on: rhel8-latest-large
@@ -4011,7 +4011,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-sharded-auth
     run_on: rhel8-latest-large
@@ -4032,7 +4032,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-replica-auth
     run_on: rhel8-latest-large
@@ -4053,7 +4053,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
     run_on: rhel8-latest-large
@@ -4074,7 +4074,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-sharded-auth
     run_on: rhel8-latest-large
@@ -4095,7 +4095,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
     run_on: rhel8-latest-large
@@ -4116,7 +4116,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
     run_on: rhel8-latest-large
@@ -4137,7 +4137,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-sharded-auth
     run_on: rhel8-latest-large
@@ -4158,7 +4158,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
     run_on: rhel8-latest-large
@@ -4179,7 +4179,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
     run_on: rhel8-latest-large
@@ -4200,7 +4200,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
     run_on: rhel8-latest-large
@@ -4221,7 +4221,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-replica-auth
     run_on: rhel8-latest-large
@@ -4242,7 +4242,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-server-auth
     run_on: rhel8-latest-large
@@ -4263,7 +4263,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-sharded-auth
     run_on: rhel8-latest-large
@@ -4284,7 +4284,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
     run_on: rhel8-zseries-large
@@ -4316,7 +4316,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
     run_on: rhel8-zseries-small
@@ -4338,7 +4338,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
     run_on: rhel80-large
@@ -4413,7 +4413,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
@@ -4434,7 +4434,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
@@ -4455,7 +4455,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.4-replica-auth
     run_on: windows-vsCurrent-small
@@ -4476,7 +4476,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
@@ -4497,7 +4497,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
@@ -4518,7 +4518,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-5.0-replica-auth
     run_on: windows-vsCurrent-small
@@ -4539,7 +4539,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
@@ -4560,7 +4560,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
@@ -4581,7 +4581,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-6.0-replica-auth
     run_on: windows-vsCurrent-small
@@ -4602,7 +4602,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
@@ -4623,7 +4623,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
@@ -4644,7 +4644,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-7.0-replica-auth
     run_on: windows-vsCurrent-small
@@ -4665,7 +4665,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
@@ -4686,7 +4686,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
@@ -4707,7 +4707,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-compile
     run_on: windows-2022-latest-large
@@ -4737,7 +4737,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-server-auth
     run_on: windows-2022-latest-small
@@ -4758,7 +4758,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-sharded-auth
     run_on: windows-2022-latest-small
@@ -4779,7 +4779,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
     run_on: windows-2022-latest-small
@@ -4800,7 +4800,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
     run_on: windows-2022-latest-small
@@ -4821,7 +4821,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
     run_on: windows-2022-latest-small
@@ -4842,7 +4842,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-replica-auth
     run_on: windows-2022-latest-small
@@ -4863,7 +4863,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
     run_on: windows-2022-latest-small
@@ -4884,7 +4884,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-sharded-auth
     run_on: windows-2022-latest-small
@@ -4905,7 +4905,7 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-compile
     run_on: windows-vsCurrent-large
@@ -4935,7 +4935,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
@@ -4956,7 +4956,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
@@ -4977,7 +4977,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-replica-auth
     run_on: windows-vsCurrent-small
@@ -4998,7 +4998,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
@@ -5019,7 +5019,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
@@ -5040,7 +5040,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-replica-auth
     run_on: windows-vsCurrent-small
@@ -5061,7 +5061,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
@@ -5082,7 +5082,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
@@ -5103,7 +5103,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-replica-auth
     run_on: windows-vsCurrent-small
@@ -5124,7 +5124,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
@@ -5145,7 +5145,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
@@ -5166,7 +5166,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-replica-auth
     run_on: windows-vsCurrent-small
@@ -5187,7 +5187,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
@@ -5208,7 +5208,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
@@ -5229,7 +5229,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-compile
     run_on: windows-2022-latest-large
@@ -5259,7 +5259,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-8.0-server-auth
     run_on: windows-2022-latest-small
@@ -5280,7 +5280,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-8.0-sharded-auth
     run_on: windows-2022-latest-small
@@ -5301,7 +5301,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
     run_on: windows-2022-latest-small
@@ -5322,7 +5322,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-latest-server-auth
     run_on: windows-2022-latest-small
@@ -5343,7 +5343,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
     run_on: windows-2022-latest-small
@@ -5364,7 +5364,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-rapid-replica-auth
     run_on: windows-2022-latest-small
@@ -5385,7 +5385,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
     run_on: windows-2022-latest-small
@@ -5406,7 +5406,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-rapid-sharded-auth
     run_on: windows-2022-latest-small
@@ -5427,7 +5427,7 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
   - name: kms-divergence-check
     commands:
