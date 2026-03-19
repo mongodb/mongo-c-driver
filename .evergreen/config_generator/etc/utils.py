@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional, Type, TypeVar, Union, cast
 
 import yaml
-from shrub.v3.evg_command import EvgCommandType, subprocess_exec, BuiltInCommand
+from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
 from shrub.v3.evg_task import EvgTaskRef
 from shrub.v3.shrub_service import ConfigDumper
@@ -179,6 +179,7 @@ class BuiltInCommandWithRetry(BuiltInCommand):
     """
     Extends BuildInCommand to add the missing retry_on_failure
     """
+
     retry_on_failure: Optional[bool] = None
 
 
@@ -200,31 +201,31 @@ def subprocess_exec_with_retry(
     add_expansions_to_env: Optional[bool] = None,
     include_expansions_in_env: Optional[List[str]] = None,
     command_type: Optional[EvgCommandType] = None,
-    retry_on_failure: Optional[bool] = None
+    retry_on_failure: Optional[bool] = None,
 ) -> BuiltInCommandWithRetry:
     """
     Extends subprocess_exec to add the missing retry_on_failure
     """
     return BuiltInCommandWithRetry(
-        command="subprocess.exec",
+        command='subprocess.exec',
         params={
-            "binary": binary,
-            "args": args,
-            "command": command,
-            "working_dir": working_dir,
-            "env": env,
-            "background": background,
-            "shell": shell,
-            "silent": silent,
-            "continue_on_err": continue_on_err,
-            "system_log": system_log,
-            "ignore_standard_out": ignore_standard_out,
-            "ignore_standard_error": ignore_standard_error,
-            "redirect_standard_error_to_output": redirect_standard_error_to_output,
-            "add_to_path": add_to_path,
-            "add_expansions_to_env": add_expansions_to_env,
-            "include_expansions_in_env": include_expansions_in_env,
-            "retry_on_failure": retry_on_failure,
+            'binary': binary,
+            'args': args,
+            'command': command,
+            'working_dir': working_dir,
+            'env': env,
+            'background': background,
+            'shell': shell,
+            'silent': silent,
+            'continue_on_err': continue_on_err,
+            'system_log': system_log,
+            'ignore_standard_out': ignore_standard_out,
+            'ignore_standard_error': ignore_standard_error,
+            'redirect_standard_error_to_output': redirect_standard_error_to_output,
+            'add_to_path': add_to_path,
+            'add_expansions_to_env': add_expansions_to_env,
+            'include_expansions_in_env': include_expansions_in_env,
+            'retry_on_failure': retry_on_failure,
         },
         type=command_type,
     )
