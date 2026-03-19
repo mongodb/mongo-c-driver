@@ -232,6 +232,19 @@ functions:
         args:
           - -c
           - ./setup.sh
+  csfle-teardown:
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: drivers-evergreen-tools/.evergreen/csfle
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ./teardown.sh
   docker-login-amazon-ecr:
     - command: expansions.update
       params:

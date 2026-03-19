@@ -7,6 +7,7 @@ from config_generator.components.funcs.bootstrap_mongo_orchestration import Boot
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.csfle_setup import CSFLESetup
+from config_generator.components.funcs.csfle_teardown import CSFLETeardown
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.etc.distros import compiler_to_vars, find_large_distro, find_small_distro, make_distro_str
@@ -85,6 +86,7 @@ def generate_test_tasks(SSL, TAG, MATRIX, MORE_COMPILE_TAGS=None, MORE_TEST_TAGS
                 test_commands.append(CSFLESetup.call())
 
             test_commands.append(RunTests.call())
+            test_commands.append(CSFLETeardown.call())
 
             res.append(
                 EvgTask(
