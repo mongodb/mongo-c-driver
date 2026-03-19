@@ -9,9 +9,10 @@ from config_generator.etc.distros import make_distro_str
 from config_generator.etc.distros import compiler_to_vars
 
 from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
+from config_generator.components.funcs.csfle_setup import CSFLESetup
+from config_generator.components.funcs.csfle_teardown import CSFLETeardown
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
-from config_generator.components.funcs.run_mock_kms_servers import RunMockKMSServers
 from config_generator.components.funcs.run_tests import RunTests
 
 
@@ -59,8 +60,9 @@ def generate_test_tasks(SSL, TAG, MATRIX):
             test_commands.append(expansions_update(updates=updates))
             test_commands.append(FetchDET.call())
             test_commands.append(BootstrapMongoOrchestration.call())
-            test_commands.append(RunMockKMSServers.call())
+            test_commands.append(CSFLESetup.call())
             test_commands.append(RunTests.call())
+            test_commands.append(CSFLETeardown.call())
 
             res.append(
                 EvgTask(
