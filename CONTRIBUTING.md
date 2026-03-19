@@ -281,7 +281,6 @@ The set of mock KMS servers running in the background and their corresponding in
 
 | Port | CA File | Cert File | Command |
 | --- | --- | --- | --- |
-| 8999 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8999
 | 9000 | ca.pem | expired.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 9000
 | 9001 | ca.pem | wrong-host.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 9001
 | 9002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --require_client_cert --port 9002
