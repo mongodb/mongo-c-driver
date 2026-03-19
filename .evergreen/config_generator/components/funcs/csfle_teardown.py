@@ -12,7 +12,7 @@ class CSFLETeardown(Function):
             command_type=command_type,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
             include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
-            script="./teardown.sh"
+            script='./teardown.sh',
         ),
     ]
 

@@ -24,7 +24,7 @@ compile_libmongocrypt() {
     "-DBUILD_VERSION=${version:?}"
   )
 
-  declare -a crypt_c_flags 
+  declare -a crypt_c_flags
   if [[ "${OSTYPE}" != "cygwin" ]]; then
     crypt_c_flags+=("-Wno-deprecated-declarations") # Remove after libmongocrypt upgrades to libbson 2.3.0+ (MONGOCRYPT-888) and migrates deprecated calls.
   fi

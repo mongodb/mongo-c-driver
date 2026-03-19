@@ -11,30 +11,31 @@ from config_generator.etc.distros import find_small_distro
 from config_generator.etc.function import Function
 from config_generator.etc.utils import bash_exec
 
+
 class RunOIDCK8sTest(Function):
     name = 'run oidc k8s test'
     commands = [
         bash_exec(
-            include_expansions_in_env=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"],
+            include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
             command_type=EvgCommandType.SETUP,
             env={
                 'K8S_VARIANT': '${VARIANT}',
             },
-            script='./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/setup-pod.sh'
+            script='./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/setup-pod.sh',
         ),
         bash_exec(
-            include_expansions_in_env=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"],
+            include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
             command_type=EvgCommandType.TEST,
             env={
                 'K8S_DRIVERS_TAR_FILE': '${OIDC_TEST_TARBALL}',
                 'K8S_TEST_CMD': './.evergreen/scripts/oidc-k8s-test.sh',
             },
-            script='./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/run-driver-test.sh'
+            script='./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/run-driver-test.sh',
         ),
         bash_exec(
-            include_expansions_in_env=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"],
+            include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
             command_type=EvgCommandType.SETUP,
-            script='./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/teardown-pod.sh'
+            script='./drivers-evergreen-tools/.evergreen/auth_oidc/k8s/teardown-pod.sh',
         ),
     ]
 
@@ -220,9 +221,9 @@ def tasks():
                     script='.evergreen/scripts/oidc-k8s-compile.sh',
                 ),
                 expansions_update(file='mongoc/oidc-remote-test-expansion.yml'),
-                RunOIDCK8sTest.call(vars={"VARIANT":"eks"}),
-                RunOIDCK8sTest.call(vars={"VARIANT":"gke"}),
-                RunOIDCK8sTest.call(vars={"VARIANT":"aks"})
+                RunOIDCK8sTest.call(vars={'VARIANT': 'eks'}),
+                RunOIDCK8sTest.call(vars={'VARIANT': 'gke'}),
+                RunOIDCK8sTest.call(vars={'VARIANT': 'aks'}),
             ],
         ),
     ]

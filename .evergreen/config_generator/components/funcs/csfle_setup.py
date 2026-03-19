@@ -38,7 +38,7 @@ class CSFLESetup(Function):
             command_type=command_type,
             working_dir='drivers-evergreen-tools/.evergreen/csfle',
             include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
-            script="./setup.sh", # Creates secrets-export.sh. Starts servers on ports 5698, 9000, 9001, 9002, and 9003.
+            script='./setup.sh',  # Creates secrets-export.sh. Starts servers on ports 5698, 9000, 9001, 9002, and 9003.
         ),
     ]
 
