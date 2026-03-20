@@ -82,7 +82,6 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_gridfs_bucket_install);
    TEST_INSTALL(test_gridfs_file_page_install);
    TEST_INSTALL(test_handshake_install);
-   TEST_INSTALL(test_jitter_source_install);
    TEST_INSTALL(test_linux_distro_scanner_install);
    TEST_INSTALL(test_list_install);
    TEST_INSTALL(test_log_install);
@@ -94,6 +93,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_read_concern_install);
    TEST_INSTALL(test_read_write_concern_install);
    TEST_INSTALL(test_read_prefs_install);
+   TEST_INSTALL(test_retry_backoff_generator_install);
    TEST_INSTALL(test_retryable_writes_install);
    TEST_INSTALL(test_retryable_reads_install);
    TEST_INSTALL(test_socket_install);
@@ -113,6 +113,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_speculative_auth_install);
    TEST_INSTALL(test_stream_install);
    TEST_INSTALL(test_thread_install);
+   TEST_INSTALL(test_token_bucket_install);
    TEST_INSTALL(test_topology_install);
    TEST_INSTALL(test_topology_description_install);
    TEST_INSTALL(test_ts_pool_install);

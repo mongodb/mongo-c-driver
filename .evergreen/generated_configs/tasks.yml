@@ -32,8 +32,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.2", with-mongocrypt, openssl]
@@ -56,8 +57,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.2", openssl]
@@ -79,8 +81,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.2", with-mongocrypt, openssl]
@@ -103,8 +106,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.4", openssl]
@@ -126,8 +130,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "4.4", with-mongocrypt, openssl]
@@ -150,8 +155,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.4", openssl]
@@ -173,8 +179,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "4.4", with-mongocrypt, openssl]
@@ -197,8 +204,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "5.0", openssl]
@@ -220,8 +228,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "5.0", with-mongocrypt, openssl]
@@ -244,8 +253,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "5.0", openssl]
@@ -267,8 +277,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "5.0", with-mongocrypt, openssl]
@@ -291,8 +302,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "6.0", openssl]
@@ -314,8 +326,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "6.0", with-mongocrypt, openssl]
@@ -338,8 +351,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "6.0", openssl]
@@ -361,8 +375,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "6.0", with-mongocrypt, openssl]
@@ -385,8 +400,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", openssl]
@@ -408,8 +424,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "7.0", with-mongocrypt, openssl]
@@ -432,8 +449,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "7.0", openssl]
@@ -455,8 +473,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "7.0", with-mongocrypt, openssl]
@@ -479,8 +498,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "8.0", openssl]
@@ -502,8 +522,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, "8.0", with-mongocrypt, openssl]
@@ -526,8 +547,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "8.0", openssl]
@@ -549,8 +571,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, "8.0", with-mongocrypt, openssl]
@@ -573,8 +596,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, latest, openssl]
@@ -596,8 +620,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, latest, with-mongocrypt, openssl]
@@ -620,8 +645,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, latest, openssl]
@@ -643,8 +669,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, latest, with-mongocrypt, openssl]
@@ -667,8 +694,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, rapid, openssl]
@@ -690,8 +718,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-replica-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, replica, rapid, with-mongocrypt, openssl]
@@ -714,8 +743,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, rapid, openssl]
@@ -737,8 +767,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-cse-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-server-auth-with-mongocrypt
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, cse, asan, auth, server, rapid, with-mongocrypt, openssl]
@@ -761,8 +792,9 @@ tasks:
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-compile
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, compile, rhel8-latest, clang, asan, sasl-cyrus]
@@ -793,6 +825,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "4.2", openssl]
@@ -814,6 +847,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "4.2", openssl]
@@ -835,6 +869,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "4.4", openssl]
@@ -856,6 +891,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "4.4", openssl]
@@ -877,6 +913,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "4.4", openssl]
@@ -898,6 +935,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "5.0", openssl]
@@ -919,6 +957,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "5.0", openssl]
@@ -940,6 +979,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "5.0", openssl]
@@ -961,6 +1001,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "6.0", openssl]
@@ -982,6 +1023,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "6.0", openssl]
@@ -1003,6 +1045,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "6.0", openssl]
@@ -1024,6 +1067,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "7.0", openssl]
@@ -1045,6 +1089,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "7.0", openssl]
@@ -1066,6 +1111,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "7.0", openssl]
@@ -1087,6 +1133,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, "8.0", openssl]
@@ -1108,6 +1155,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, "8.0", openssl]
@@ -1129,6 +1177,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, "8.0", openssl]
@@ -1150,6 +1199,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, latest, openssl]
@@ -1171,6 +1221,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, latest, openssl]
@@ -1192,6 +1243,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, latest, openssl]
@@ -1213,6 +1265,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, replica, rapid, openssl]
@@ -1234,6 +1287,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, server, rapid, openssl]
@@ -1255,6 +1309,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: asan-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-asan, test, rhel8-latest, clang, sasl-cyrus, asan, auth, sharded, rapid, openssl]
@@ -1276,6 +1331,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: check-headers
     commands:
       - func: check-headers
@@ -1296,6 +1352,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1314,6 +1371,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1361,6 +1419,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1379,6 +1438,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1426,6 +1486,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1444,6 +1505,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1491,6 +1553,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1509,6 +1572,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1556,6 +1620,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1574,6 +1639,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1621,6 +1687,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1639,6 +1706,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1686,6 +1754,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1704,6 +1773,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1751,6 +1821,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1769,6 +1840,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1816,6 +1888,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1834,6 +1907,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1881,6 +1955,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1899,6 +1974,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1946,6 +2022,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1964,6 +2041,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2011,6 +2089,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2029,6 +2108,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2076,6 +2156,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2094,6 +2175,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2141,6 +2223,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2159,6 +2242,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2206,6 +2290,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2224,6 +2309,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2271,6 +2357,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2289,6 +2376,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2336,6 +2424,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2354,6 +2443,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2401,6 +2491,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2419,6 +2510,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2466,6 +2558,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2484,6 +2577,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2531,6 +2625,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2549,6 +2644,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2596,6 +2692,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2614,6 +2711,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2661,6 +2759,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2679,6 +2778,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2726,6 +2826,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2744,6 +2845,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2791,6 +2893,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2809,6 +2912,7 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
+          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2871,8 +2975,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-server-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, "6.0", darwinssl]
@@ -2892,8 +2997,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-6.0-sharded-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, "6.0", darwinssl]
@@ -2913,8 +3019,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-replica-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, replica, "7.0", darwinssl]
@@ -2934,8 +3041,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-server-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, "7.0", darwinssl]
@@ -2955,8 +3063,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-7.0-sharded-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, "7.0", darwinssl]
@@ -2976,8 +3085,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-replica-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, replica, "8.0", darwinssl]
@@ -2997,8 +3107,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-server-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, "8.0", darwinssl]
@@ -3018,8 +3129,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-8.0-sharded-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, "8.0", darwinssl]
@@ -3039,8 +3151,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-replica-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, replica, latest, darwinssl]
@@ -3060,8 +3173,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-server-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, latest, darwinssl]
@@ -3081,8 +3195,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-latest-sharded-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, latest, darwinssl]
@@ -3102,8 +3217,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-rapid-replica-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, replica, rapid, darwinssl]
@@ -3123,8 +3239,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-rapid-server-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, server, rapid, darwinssl]
@@ -3144,8 +3261,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-arm64-clang-test-rapid-sharded-auth
     run_on: macos-14-arm64
     tags: [cse-matrix-darwinssl, test, macos-14-arm64, clang, sasl-cyrus, cse, auth, sharded, rapid, darwinssl]
@@ -3165,8 +3283,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-compile
     run_on: macos-14
     tags: [cse-matrix-darwinssl, compile, macos-14, clang, cse, sasl-cyrus]
@@ -3195,8 +3314,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-4.4-sharded-auth
     run_on: macos-14
     tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, sharded, "4.4", darwinssl]
@@ -3216,8 +3336,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-darwinssl-macos-14-clang-test-5.0-sharded-auth
     run_on: macos-14
     tags: [cse-matrix-darwinssl, test, macos-14, clang, sasl-cyrus, cse, auth, sharded, "5.0", darwinssl]
@@ -3237,8 +3358,9 @@ tasks:
             - { key: SSL, value: darwinssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-debian11-latest-clang-compile
     run_on: debian11-latest-large
     tags: [cse-matrix-openssl, compile, debian11-latest, clang, cse, sasl-cyrus]
@@ -3303,8 +3425,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
@@ -3324,8 +3447,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-4.4-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, "4.4", openssl]
@@ -3345,8 +3469,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-replica-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
@@ -3366,8 +3491,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
@@ -3387,8 +3513,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-5.0-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, "5.0", openssl]
@@ -3408,8 +3535,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-replica-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
@@ -3429,8 +3557,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
@@ -3450,8 +3579,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, "6.0", openssl]
@@ -3471,8 +3601,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-replica-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
@@ -3492,8 +3623,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
@@ -3513,8 +3645,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, "7.0", openssl]
@@ -3534,8 +3667,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-replica-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
@@ -3555,8 +3689,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
@@ -3576,8 +3711,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, "8.0", openssl]
@@ -3597,8 +3733,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-replica-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
@@ -3618,8 +3755,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
@@ -3639,8 +3777,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, latest, openssl]
@@ -3660,8 +3799,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-replica-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, replica, rapid, openssl]
@@ -3681,8 +3821,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-server-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, server, rapid, openssl]
@@ -3702,8 +3843,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-sharded-auth
     run_on: rhel8-arm64-latest-small
     tags: [cse-matrix-openssl, test, rhel8-arm64-latest, gcc, sasl-cyrus, cse, auth, sharded, rapid, openssl]
@@ -3723,8 +3865,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-compile
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, compile, rhel8-latest, gcc, cse, sasl-cyrus]
@@ -3753,8 +3896,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "4.2", openssl]
@@ -3774,8 +3918,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.2-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "4.2", openssl]
@@ -3795,8 +3940,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "4.4", openssl]
@@ -3816,8 +3962,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "4.4", openssl]
@@ -3837,8 +3984,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-4.4-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "4.4", openssl]
@@ -3858,8 +4006,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "5.0", openssl]
@@ -3879,8 +4028,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "5.0", openssl]
@@ -3900,8 +4050,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-5.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "5.0", openssl]
@@ -3921,8 +4072,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "6.0", openssl]
@@ -3942,8 +4094,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "6.0", openssl]
@@ -3963,8 +4116,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "6.0", openssl]
@@ -3984,8 +4138,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "7.0", openssl]
@@ -4005,8 +4160,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "7.0", openssl]
@@ -4026,8 +4182,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "7.0", openssl]
@@ -4047,8 +4204,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, "8.0", openssl]
@@ -4068,8 +4226,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, "8.0", openssl]
@@ -4089,8 +4248,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, "8.0", openssl]
@@ -4110,8 +4270,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, latest, openssl]
@@ -4131,8 +4292,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, latest, openssl]
@@ -4152,8 +4314,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, latest, openssl]
@@ -4173,8 +4336,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-replica-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, replica, rapid, openssl]
@@ -4194,8 +4358,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-server-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, server, rapid, openssl]
@@ -4215,8 +4380,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-sharded-auth
     run_on: rhel8-latest-large
     tags: [cse-matrix-openssl, test, rhel8-latest, gcc, sasl-cyrus, cse, auth, sharded, rapid, openssl]
@@ -4236,8 +4402,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-compile
     run_on: rhel8-zseries-large
     tags: [cse-matrix-openssl, compile, rhel8-zseries, gcc, cse, sasl-cyrus]
@@ -4268,8 +4435,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-sharded-auth
     run_on: rhel8-zseries-small
     tags: [cse-matrix-openssl, test, rhel8-zseries, gcc, sasl-cyrus, cse, auth, sharded, latest, openssl]
@@ -4290,8 +4458,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-cyrus-openssl-rhel80-gcc-compile
     run_on: rhel80-large
     tags: [cse-matrix-openssl, compile, rhel80, gcc, cse, sasl-cyrus]
@@ -4365,8 +4534,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "4.2", openssl]
@@ -4386,8 +4556,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "4.2", openssl]
@@ -4407,8 +4578,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.4-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "4.4", openssl]
@@ -4428,8 +4600,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "4.4", openssl]
@@ -4449,8 +4622,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "4.4", openssl]
@@ -4470,8 +4644,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-5.0-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "5.0", openssl]
@@ -4491,8 +4666,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "5.0", openssl]
@@ -4512,8 +4688,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "5.0", openssl]
@@ -4533,8 +4710,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-6.0-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "6.0", openssl]
@@ -4554,8 +4732,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "6.0", openssl]
@@ -4575,8 +4754,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "6.0", openssl]
@@ -4596,8 +4776,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-7.0-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "7.0", openssl]
@@ -4617,8 +4798,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "7.0", openssl]
@@ -4638,8 +4820,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-openssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "7.0", openssl]
@@ -4659,8 +4842,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-compile
     run_on: windows-2022-latest-large
     tags: [cse-matrix-openssl, compile, windows-2022-latest, vs2022x64, cse, sasl-sspi]
@@ -4689,8 +4873,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-server-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, server, "8.0", openssl]
@@ -4710,8 +4895,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-sharded-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, sharded, "8.0", openssl]
@@ -4731,8 +4917,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, replica, latest, openssl]
@@ -4752,8 +4939,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, server, latest, openssl]
@@ -4773,8 +4961,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, sharded, latest, openssl]
@@ -4794,8 +4983,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-replica-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, replica, rapid, openssl]
@@ -4815,8 +5005,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, server, rapid, openssl]
@@ -4836,8 +5027,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-sharded-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-openssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, sharded, rapid, openssl]
@@ -4857,8 +5049,9 @@ tasks:
             - { key: SSL, value: openssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-compile
     run_on: windows-vsCurrent-large
     tags: [cse-matrix-winssl, compile, windows-vsCurrent, vs2022x64, cse, sasl-sspi]
@@ -4887,8 +5080,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "4.2", winssl]
@@ -4908,8 +5102,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.2-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "4.2", winssl]
@@ -4929,8 +5124,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "4.4", winssl]
@@ -4950,8 +5146,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "4.4", winssl]
@@ -4971,8 +5168,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-4.4-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "4.4", winssl]
@@ -4992,8 +5190,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "5.0", winssl]
@@ -5013,8 +5212,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "5.0", winssl]
@@ -5034,8 +5234,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-5.0-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "5.0", winssl]
@@ -5055,8 +5256,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "6.0", winssl]
@@ -5076,8 +5278,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "6.0", winssl]
@@ -5097,8 +5300,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-6.0-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "6.0", winssl]
@@ -5118,8 +5322,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-replica-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, replica, "7.0", winssl]
@@ -5139,8 +5344,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-server-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, server, "7.0", winssl]
@@ -5160,8 +5366,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2019-vs2022-x64-test-7.0-sharded-auth
     run_on: windows-vsCurrent-small
     tags: [cse-matrix-winssl, test, windows-vsCurrent, vs2022x64, sasl-sspi, cse, auth, sharded, "7.0", winssl]
@@ -5181,8 +5388,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-compile
     run_on: windows-2022-latest-large
     tags: [cse-matrix-winssl, compile, windows-2022-latest, vs2022x64, cse, sasl-sspi]
@@ -5211,8 +5419,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-8.0-server-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, server, "8.0", winssl]
@@ -5232,8 +5441,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-8.0-sharded-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, sharded, "8.0", winssl]
@@ -5253,8 +5463,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, replica, latest, winssl]
@@ -5274,8 +5485,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-latest-server-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, server, latest, winssl]
@@ -5295,8 +5507,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, sharded, latest, winssl]
@@ -5316,8 +5529,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-rapid-replica-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, replica, rapid, winssl]
@@ -5337,8 +5551,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, server, rapid, winssl]
@@ -5358,8 +5573,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: cse-sasl-sspi-winssl-windows-2022-latest-vs2022x64-test-rapid-sharded-auth
     run_on: windows-2022-latest-small
     tags: [cse-matrix-winssl, test, windows-2022-latest, vs2022x64, sasl-sspi, cse, auth, sharded, rapid, winssl]
@@ -5379,8 +5595,9 @@ tasks:
             - { key: SSL, value: winssl }
       - func: fetch-det
       - func: bootstrap-mongo-orchestration
-      - func: run-mock-kms-servers
+      - func: csfle-setup
       - func: run-tests
+      - func: csfle-teardown
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
@@ -5815,6 +6032,32 @@ tasks:
           args:
             - -c
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/gcp/run-driver-test.sh
+  - name: oidc-k8s-auth-test-task
+    run_on:
+      - ubuntu2204-small
+    commands:
+      - func: fetch-source
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          add_expansions_to_env: true
+          args:
+            - -c
+            - .evergreen/scripts/oidc-k8s-compile.sh
+      - command: expansions.update
+        params:
+          file: mongoc/oidc-remote-test-expansion.yml
+      - func: run oidc k8s test
+        vars:
+          VARIANT: eks
+      - func: run oidc k8s test
+        vars:
+          VARIANT: gke
+      - func: run oidc k8s test
+        vars:
+          VARIANT: aks
   - name: openssl-compat-1.0.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
     tags: [openssl-compat, openssl-1.0.2, openssl-shared, ubuntu2404, gcc]
@@ -9103,6 +9346,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "4.2", openssl]
@@ -9124,6 +9368,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.2-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "4.2", openssl]
@@ -9145,6 +9390,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "4.4", openssl]
@@ -9166,6 +9412,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "4.4", openssl]
@@ -9187,6 +9434,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-4.4-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "4.4", openssl]
@@ -9208,6 +9456,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "5.0", openssl]
@@ -9229,6 +9478,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "5.0", openssl]
@@ -9250,6 +9500,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-5.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "5.0", openssl]
@@ -9271,6 +9522,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "6.0", openssl]
@@ -9292,6 +9544,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "6.0", openssl]
@@ -9313,6 +9566,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-6.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "6.0", openssl]
@@ -9334,6 +9588,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "7.0", openssl]
@@ -9355,6 +9610,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "7.0", openssl]
@@ -9376,6 +9632,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-7.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "7.0", openssl]
@@ -9397,6 +9654,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, "8.0", openssl]
@@ -9418,6 +9676,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, "8.0", openssl]
@@ -9439,6 +9698,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-8.0-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, "8.0", openssl]
@@ -9460,6 +9720,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, latest, openssl]
@@ -9481,6 +9742,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, latest, openssl]
@@ -9502,6 +9764,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-latest-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, latest, openssl]
@@ -9523,6 +9786,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-replica-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, replica, rapid, openssl]
@@ -9544,6 +9808,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-server-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, server, rapid, openssl]
@@ -9565,6 +9830,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: tsan-sasl-cyrus-openssl-rhel8-latest-clang-test-rapid-sharded-auth
     run_on: rhel8-latest-large
     tags: [sanitizers-matrix-tsan, test, rhel8-latest, clang, sasl-cyrus, tsan, auth, sharded, rapid, openssl]
@@ -9586,6 +9852,7 @@ tasks:
       - func: bootstrap-mongo-orchestration
       - func: run-simple-http-server
       - func: run-tests
+      - func: csfle-teardown
   - name: verify-headers
     run_on:
       - amazon2

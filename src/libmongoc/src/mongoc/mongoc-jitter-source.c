@@ -17,9 +17,6 @@
 #include <mongoc/mongoc-jitter-source-private.h>
 #include <mongoc/mongoc-util-private.h>
 
-#include <math.h>
-
-
 struct _mongoc_jitter_source_t {
    mongoc_jitter_source_generate_fn_t generate;
 };
@@ -57,25 +54,4 @@ _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source)
    BSON_UNUSED(source);
 
    return (double)_mongoc_simple_rand_uint32_t() / (double)UINT32_MAX;
-}
-
-static mlib_duration
-_duration_double_multiply(mlib_duration duration, double factor)
-{
-   return mlib_duration((mlib_duration_rep_t)round((double)mlib_microseconds_count(duration) * factor), us);
-}
-
-mlib_duration
-_mongoc_compute_backoff_duration(double jitter, int transaction_attempt)
-{
-   BSON_ASSERT(0.0 <= jitter && jitter <= 1.0);
-   BSON_ASSERT(transaction_attempt > 0);
-
-   if (transaction_attempt >= MONGOC_BACKOFF_ATTEMPT_LIMIT) {
-      return _duration_double_multiply(MONGOC_BACKOFF_MAX, jitter);
-   }
-
-   const double backoff_factor = pow(1.5, (double)(transaction_attempt - 1));
-
-   return _duration_double_multiply(MONGOC_BACKOFF_INITIAL, jitter * backoff_factor);
 }

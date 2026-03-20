@@ -363,8 +363,10 @@ class CoverageTask(MatrixTask):
         extra = {'COVERAGE': 'ON'}
         if self.cse:
             extra['CLIENT_SIDE_ENCRYPTION'] = 'ON'
-            yield func('run-mock-kms-servers')
+            yield func('csfle-setup')
         yield func('run-tests', AUTH=self.display('auth'), SSL=self.display('ssl'), **extra)
+        if self.cse:
+            yield func('csfle-teardown')
         yield func('upload coverage')
         yield func('update codecov.io')
 

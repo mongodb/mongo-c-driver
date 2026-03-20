@@ -24,6 +24,11 @@ compile_libmongocrypt() {
     "-DBUILD_VERSION=${version:?}"
   )
 
+  declare -a crypt_c_flags
+  if [[ "${OSTYPE}" != "cygwin" ]]; then
+    crypt_c_flags+=("-Wno-deprecated-declarations") # Remove after libmongocrypt upgrades to libbson 2.3.0+ (MONGOCRYPT-888) and migrates deprecated calls.
+  fi
+
   . "$(dirname "${BASH_SOURCE[0]}")/find-ccache.sh"
   find_ccache_and_export_vars "$(pwd)/libmongocrypt" || true
   if command -v "${CMAKE_C_COMPILER_LAUNCHER:-}" && [[ "${OSTYPE:?}" == cygwin ]]; then
@@ -42,6 +47,7 @@ compile_libmongocrypt() {
     MONGOCRYPT_INSTALL_PREFIX="${install_dir:?}" \
     DEFAULT_BUILD_ONLY="true" \
     LIBMONGOCRYPT_EXTRA_CMAKE_FLAGS="${crypt_cmake_flags[*]:?}" \
+    LIBMONGOCRYPT_EXTRA_CFLAGS="${crypt_c_flags[*]}" \
     ./libmongocrypt/.evergreen/compile.sh || return
 }
 

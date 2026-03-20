@@ -3,10 +3,10 @@ from importlib import import_module
 from inspect import isclass
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Iterable, Literal, Mapping, Type, TypeVar, Union, cast
+from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional, Type, TypeVar, Union, cast
 
 import yaml
-from shrub.v3.evg_command import EvgCommandType, subprocess_exec
+from shrub.v3.evg_command import BuiltInCommand, EvgCommandType, subprocess_exec
 from shrub.v3.evg_project import EvgProject
 from shrub.v3.evg_task import EvgTaskRef
 from shrub.v3.shrub_service import ConfigDumper
@@ -173,3 +173,59 @@ def all_possible(typ: Type[T]) -> Iterable[T]:
             yield typ(**items)  # type: ignore
     else:
         raise TypeError(f'Do not know how to do "all_possible" of type {typ!r} ({origin=})')
+
+
+class BuiltInCommandWithRetry(BuiltInCommand):
+    """
+    Extends BuildInCommand to add the missing retry_on_failure
+    """
+
+    retry_on_failure: Optional[bool] = None
+
+
+def subprocess_exec_with_retry(
+    binary: Optional[str] = None,
+    args: Optional[List[str]] = None,
+    command: Optional[str] = None,
+    working_dir: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None,
+    background: Optional[bool] = None,
+    shell: Optional[str] = None,
+    silent: Optional[bool] = None,
+    continue_on_err: Optional[bool] = None,
+    system_log: Optional[bool] = None,
+    ignore_standard_out: Optional[bool] = None,
+    ignore_standard_error: Optional[bool] = None,
+    redirect_standard_error_to_output: Optional[bool] = None,
+    add_to_path: Optional[List[str]] = None,
+    add_expansions_to_env: Optional[bool] = None,
+    include_expansions_in_env: Optional[List[str]] = None,
+    command_type: Optional[EvgCommandType] = None,
+    retry_on_failure: Optional[bool] = None,
+) -> BuiltInCommandWithRetry:
+    """
+    Extends subprocess_exec to add the missing retry_on_failure
+    """
+    return BuiltInCommandWithRetry(
+        command='subprocess.exec',
+        params={
+            'binary': binary,
+            'args': args,
+            'command': command,
+            'working_dir': working_dir,
+            'env': env,
+            'background': background,
+            'shell': shell,
+            'silent': silent,
+            'continue_on_err': continue_on_err,
+            'system_log': system_log,
+            'ignore_standard_out': ignore_standard_out,
+            'ignore_standard_error': ignore_standard_error,
+            'redirect_standard_error_to_output': redirect_standard_error_to_output,
+            'add_to_path': add_to_path,
+            'add_expansions_to_env': add_expansions_to_env,
+            'include_expansions_in_env': include_expansions_in_env,
+            'retry_on_failure': retry_on_failure,
+        },
+        type=command_type,
+    )

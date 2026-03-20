@@ -31,6 +31,7 @@ function (mongoc_add_warning_options)
    set(cond/clang-lt4 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,4>>)
    set(cond/clang-lt10 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,10>>)
    set(cond/clang-lt19 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,19>>)
+   set(cond/clang-lt22 $<AND:${cond/clang},$<VERSION_LESS:$<C_COMPILER_VERSION>,22>>)
    # Process options:
    foreach (opt IN LISTS ARGV)
       # Replace prefixes. Matches right-most first:
@@ -100,6 +101,8 @@ mongoc_add_warning_options (
      clang:not-clang-lt4:-Werror=format-pedantic
      clang:not-clang-lt19:-Werror=format-signedness
      clang:not-clang-lt10:-Werror=format-type-confusion
+     # Disable warnings about using C2y language features, such as __COUNTER__
+     clang:not-clang-lt22:-Wno-c2y-extensions
 
      # Aside: Disable CRT insecurity warnings
      msvc:/D_CRT_SECURE_NO_WARNINGS

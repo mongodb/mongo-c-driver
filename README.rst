@@ -21,7 +21,7 @@ The documentation is available at `MongoDB C Driver Docs <https://www.mongodb.co
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <https://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
-questions - you're more likely to get an answer on the `MongoDB Community Forums`_ or `StackOverflow <https://stackoverflow.com/questions/tagged/mongodb+c>`_.
+questions - you're more likely to get an answer on the `Reddit`_ or `StackOverflow`_.
 
 Bugs / Feature Requests
 =======================
@@ -40,7 +40,7 @@ How To Ask For Help
 -------------------
 
 If you are having difficulty building the driver after reading the below instructions, please post on
-the `MongoDB Community Forums`_ to ask for help. Please include in your post all of the following
+the `Reddit`_ or `StackOverflow`_ to ask for help. Please include in your post all of the following
 information:
 
 - The version of the driver you are trying to build (branch or tag).
@@ -75,7 +75,8 @@ information:
 
   Can you tell me what I need to install? Thanks!
 
-.. _MongoDB Community Forums: https://www.mongodb.com/community/forums/tags/c/data/drivers/7/c-driver
+.. _Reddit: https://www.reddit.com/r/mongodb/
+.. _StackOverflow: https://stackoverflow.com/questions/tagged/mongodb+c
 
 Security Vulnerabilities
 ------------------------
