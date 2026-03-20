@@ -293,7 +293,8 @@ _get_os_name(void)
 
 #ifdef _WIN32
 static bool
-_win32_get_os_version(RTL_OSVERSIONINFOEXW *osvi) {
+_win32_get_os_version(RTL_OSVERSIONINFOEXW *osvi)
+{
    // not using GetVersionEx here as this function has special behavior:
    // it returns the version the application has been "manifested" (targeted) for, or Windows 8 if not manifested
    // instead of the version it's actually running on
@@ -309,8 +310,8 @@ _win32_get_os_version(RTL_OSVERSIONINFOEXW *osvi) {
       return false;
    }
 
-   NTSTATUS(NTAPI *const rtlgetversion_ptr)(RTL_OSVERSIONINFOEXW*) =
-      (NTSTATUS(NTAPI*)(RTL_OSVERSIONINFOEXW*))GetProcAddress(ntdll_handle, "RtlGetVersion");
+   NTSTATUS(NTAPI *const rtlgetversion_ptr)(RTL_OSVERSIONINFOEXW *) =
+      (NTSTATUS(NTAPI *)(RTL_OSVERSIONINFOEXW *))GetProcAddress(ntdll_handle, "RtlGetVersion");
    if (!rtlgetversion_ptr) {
       return false;
    }
