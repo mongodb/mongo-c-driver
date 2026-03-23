@@ -23,6 +23,14 @@
 #include <stream-tracker.h>
 
 static void
+disable_tryonce(mongoc_uri_t *uri)
+{
+   // Setting this by default makes tests a little more resilient to transient errors and more consistent with other
+   // non-single-threaded Drivers which implicitly set this by default.
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+}
+
+static void
 _assert_options_match(const bson_t *test, mongoc_uri_t *uri)
 {
    match_ctx_t ctx = {{0}};
@@ -317,6 +325,7 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
       mongoc_client_pool_set_apm_callbacks(pool, callbacks, &ctx);
       client = mongoc_client_pool_pop(pool);
    } else {
+      disable_tryonce(uri);
       client = test_framework_client_new_from_uri(uri, NULL);
 
       if (!expect_error) {
@@ -693,13 +702,16 @@ _prose_test_ping(mongoc_client_t *client)
 #define RESCAN_INTERVAL_MS 500
 
 static void *
-_prose_test_init_resource_single(const mongoc_uri_t *uri, _mongoc_rr_resolver_fn fn)
+_prose_test_init_resource_single(const mongoc_uri_t *uri_in, _mongoc_rr_resolver_fn fn)
 {
    mongoc_client_t *client;
    mongoc_topology_t *topology;
 
-   BSON_ASSERT_PARAM(uri);
+   BSON_ASSERT_PARAM(uri_in);
    BSON_ASSERT_PARAM(fn);
+
+   mongoc_uri_t *uri = mongoc_uri_copy(uri_in);
+   disable_tryonce(uri);
 
    client = mongoc_client_new_from_uri(uri);
    topology = client->topology;
@@ -714,6 +726,8 @@ _prose_test_init_resource_single(const mongoc_uri_t *uri, _mongoc_rr_resolver_fn
       mongoc_client_set_ssl_opts(client, &ssl_opts);
    }
 #endif /* defined(MONGOC_ENABLE_SSL) */
+
+   mongoc_uri_destroy(uri);
 
    return client;
 }
