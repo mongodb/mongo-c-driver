@@ -21,7 +21,7 @@ compile_libmongocrypt() {
     cd .. || return
   }
   # TODO: after libmongocrypt 1.18.0 is released, replace the above block with:
-  # git clone --depth=0 -q https://github.com/mongodb/libmongocrypt --branch 1.18.0 || return
+  # git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch 1.18.0 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
