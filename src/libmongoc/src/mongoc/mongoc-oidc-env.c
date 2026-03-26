@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc-oidc-env-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mcd-azure.h>
 #include <mongoc/mongoc-oidc-callback.h>
@@ -141,8 +142,57 @@ static mongoc_oidc_credential_t *
 mongoc_oidc_env_fn_k8s(mongoc_oidc_callback_params_t *params)
 {
    BSON_UNUSED(params);
-   // TODO (CDRIVER-4489)
-   return NULL;
+
+   mongoc_oidc_credential_t *ret = NULL;
+   mongoc_stream_t *fstream = NULL;
+
+   const char *token_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/token";
+   char *AZURE_FEDERATED_TOKEN_FILE = _mongoc_getenv("AZURE_FEDERATED_TOKEN_FILE");
+   if (AZURE_FEDERATED_TOKEN_FILE) {
+      token_file_path = AZURE_FEDERATED_TOKEN_FILE;
+   }
+   char *AWS_WEB_IDENTITY_TOKEN_FILE = _mongoc_getenv("AWS_WEB_IDENTITY_TOKEN_FILE");
+   if (AWS_WEB_IDENTITY_TOKEN_FILE) {
+      token_file_path = AWS_WEB_IDENTITY_TOKEN_FILE;
+   }
+
+   // Read contents of token file.
+   {
+      fstream = mongoc_stream_file_new_for_path(token_file_path, O_RDONLY, 0);
+      if (!fstream) {
+         MONGOC_ERROR("failed to open K8s token file: %s. Reason: %s", token_file_path, strerror(errno));
+         goto fail;
+      }
+
+      mcommon_string_append_t append;
+      mcommon_string_new_as_append(&append);
+      for (;;) {
+         char buf[128];
+         ssize_t got = mongoc_stream_read(
+            fstream, buf, sizeof(buf), 0 /* min_bytes */, 0 /* timeout_msec. Unused for file stream. */);
+
+         if (got > 0) {
+            mcommon_string_append_bytes(&append, (const char *)buf, (uint32_t)got);
+         } else if (got == 0) {
+            // EOF.
+            break;
+         } else {
+            mcommon_string_destroy(mcommon_string_from_append(&append));
+            MONGOC_ERROR("failed to read K8s token file: %s. Reason: %s", token_file_path, strerror(errno));
+            goto fail;
+         }
+      }
+      mcommon_string_t *token_file_contents = mcommon_string_from_append(&append);
+      ret = mongoc_oidc_credential_new(token_file_contents->str);
+      mcommon_string_destroy(token_file_contents);
+   }
+
+fail:
+
+   mongoc_stream_destroy(fstream);
+   bson_free(AWS_WEB_IDENTITY_TOKEN_FILE);
+   bson_free(AZURE_FEDERATED_TOKEN_FILE);
+   return ret;
 }
 
 const mongoc_oidc_env_t *
