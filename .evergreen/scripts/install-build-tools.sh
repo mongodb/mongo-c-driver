@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 export_uv_tool_dirs() {
-  UV_TOOL_DIR="$(pwd)/uv-tool" || return
-  UV_TOOL_BIN_DIR="$(pwd)/uv-bin" || return
+  UV_TOOL_DIR="$(mktemp -d)" || return
+  UV_TOOL_BIN_DIR="$(mktemp -d)" || return
 
   PATH="${UV_TOOL_BIN_DIR:?}:${PATH:-}" || return
 
