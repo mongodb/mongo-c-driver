@@ -140,136 +140,176 @@ enum mcommon_memory_order {
    } while (0)
 
 
-#define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinSuffix)                                                           \
-   static BSON_INLINE Type mcommon_atomic_##NamePart##_fetch_add(                                                      \
-      Type volatile *a, Type addend, enum mcommon_memory_order ord)                                                    \
-   {                                                                                                                   \
-      DEF_ATOMIC_OP(BSON_CONCAT(_InterlockedExchangeAdd, VCIntrinSuffix),                                              \
-                    __atomic_fetch_add,                                                                                \
-                    __sync_fetch_and_add,                                                                              \
-                    ord,                                                                                               \
-                    a,                                                                                                 \
-                    addend);                                                                                           \
-   }                                                                                                                   \
-                                                                                                                       \
-   static BSON_INLINE Type mcommon_atomic_##NamePart##_fetch_sub(                                                      \
-      Type volatile *a, Type subtrahend, enum mcommon_memory_order ord)                                                \
-   {                                                                                                                   \
-      /* MSVC doesn't have a subtract intrinsic, so just reuse addition    */                                          \
-      BSON_IF_MSVC(return mcommon_atomic_##NamePart##_fetch_add(a, -subtrahend, ord);)                                 \
-      BSON_IF_GNU_LIKE(DEF_ATOMIC_OP(~, __atomic_fetch_sub, ~, ord, a, subtrahend);)                                   \
-      MCOMMON_IF_GNU_LEGACY_ATOMICS(DEF_ATOMIC_OP(~, ~, __sync_fetch_and_sub, ord, a, subtrahend);)                    \
-   }                                                                                                                   \
-                                                                                                                       \
-   static BSON_INLINE Type mcommon_atomic_##NamePart##_fetch(Type volatile const *a, enum mcommon_memory_order order)  \
-   {                                                                                                                   \
-      /* MSVC doesn't have a load intrinsic, so just add zero */                                                       \
-      BSON_IF_MSVC(return mcommon_atomic_##NamePart##_fetch_add((Type volatile *)a, 0, order);)                        \
-      /* GNU doesn't want RELEASE order for the fetch operation, so we can't                                           \
-       * just use DEF_ATOMIC_OP. */                                                                                    \
-      BSON_IF_GNU_LIKE(switch (order) {                                                                                \
-         case mcommon_memory_order_release: /* Fall back to seqcst */                                                  \
-         case mcommon_memory_order_acq_rel: /* Fall back to seqcst */                                                  \
-         case mcommon_memory_order_seq_cst:                                                                            \
-            return __atomic_load_n(a, __ATOMIC_SEQ_CST);                                                               \
-         case mcommon_memory_order_acquire:                                                                            \
-            return __atomic_load_n(a, __ATOMIC_ACQUIRE);                                                               \
-         case mcommon_memory_order_consume:                                                                            \
-            return __atomic_load_n(a, __ATOMIC_CONSUME);                                                               \
-         case mcommon_memory_order_relaxed:                                                                            \
-            return __atomic_load_n(a, __ATOMIC_RELAXED);                                                               \
-         default:                                                                                                      \
-            BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                    \
-      })                                                                                                               \
-      MCOMMON_IF_GNU_LEGACY_ATOMICS({                                                                                  \
-         BSON_UNUSED(order);                                                                                           \
-         __sync_synchronize();                                                                                         \
-         return *a;                                                                                                    \
-      })                                                                                                               \
-   }                                                                                                                   \
-                                                                                                                       \
-   static BSON_INLINE Type mcommon_atomic_##NamePart##_exchange(                                                       \
-      Type volatile *a, Type value, enum mcommon_memory_order ord)                                                     \
-   {                                                                                                                   \
-      BSON_IF_MSVC(DEF_ATOMIC_OP(BSON_CONCAT(_InterlockedExchange, VCIntrinSuffix), ~, ~, ord, a, value);)             \
-      /* GNU doesn't want CONSUME order for the exchange operation, so we                                              \
-       * cannot use DEF_ATOMIC_OP. */                                                                                  \
-      BSON_IF_GNU_LIKE(switch (ord) {                                                                                  \
-         case mcommon_memory_order_acq_rel:                                                                            \
-            return __atomic_exchange_n(a, value, __ATOMIC_ACQ_REL);                                                    \
-         case mcommon_memory_order_release:                                                                            \
-            return __atomic_exchange_n(a, value, __ATOMIC_RELEASE);                                                    \
-         case mcommon_memory_order_seq_cst:                                                                            \
-            return __atomic_exchange_n(a, value, __ATOMIC_SEQ_CST);                                                    \
-         case mcommon_memory_order_consume: /* Fall back to acquire */                                                 \
-         case mcommon_memory_order_acquire:                                                                            \
-            return __atomic_exchange_n(a, value, __ATOMIC_ACQUIRE);                                                    \
-         case mcommon_memory_order_relaxed:                                                                            \
-            return __atomic_exchange_n(a, value, __ATOMIC_RELAXED);                                                    \
-         default:                                                                                                      \
-            BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                    \
-      })                                                                                                               \
-      MCOMMON_IF_GNU_LEGACY_ATOMICS(BSON_UNUSED(ord); return __sync_val_compare_and_swap(a, *a, value);)               \
-   }                                                                                                                   \
-                                                                                                                       \
-   static BSON_INLINE Type mcommon_atomic_##NamePart##_compare_exchange_strong(                                        \
-      Type volatile *a, Type expect, Type new_value, enum mcommon_memory_order ord)                                    \
-   {                                                                                                                   \
-      Type actual = expect;                                                                                            \
-      switch (ord) {                                                                                                   \
-      case mcommon_memory_order_release:                                                                               \
-      case mcommon_memory_order_acq_rel:                                                                               \
-      case mcommon_memory_order_seq_cst:                                                                               \
-         DEF_ATOMIC_CMPEXCH_STRONG(VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);                          \
-         break;                                                                                                        \
-      case mcommon_memory_order_acquire:                                                                               \
-         DEF_ATOMIC_CMPEXCH_STRONG(                                                                                    \
-            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_ACQUIRE, a, actual, new_value);                       \
-         break;                                                                                                        \
-      case mcommon_memory_order_consume:                                                                               \
-         DEF_ATOMIC_CMPEXCH_STRONG(                                                                                    \
-            VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_CONSUME, a, actual, new_value);                       \
-         break;                                                                                                        \
-      case mcommon_memory_order_relaxed:                                                                               \
-         DEF_ATOMIC_CMPEXCH_STRONG(VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_nf), __ATOMIC_RELAXED, a, actual, new_value); \
-         break;                                                                                                        \
-      default:                                                                                                         \
-         BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                       \
-      }                                                                                                                \
-      return actual;                                                                                                   \
-   }                                                                                                                   \
-                                                                                                                       \
-   static BSON_INLINE Type mcommon_atomic_##NamePart##_compare_exchange_weak(                                          \
-      Type volatile *a, Type expect, Type new_value, enum mcommon_memory_order ord)                                    \
-   {                                                                                                                   \
-      Type actual = expect;                                                                                            \
-      switch (ord) {                                                                                                   \
-      case mcommon_memory_order_release:                                                                               \
-      case mcommon_memory_order_acq_rel:                                                                               \
-      case mcommon_memory_order_seq_cst:                                                                               \
-         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);                            \
-         break;                                                                                                        \
-      case mcommon_memory_order_acquire:                                                                               \
-         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_ACQUIRE, a, actual, new_value);  \
-         break;                                                                                                        \
-      case mcommon_memory_order_consume:                                                                               \
-         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_acq), __ATOMIC_CONSUME, a, actual, new_value);  \
-         break;                                                                                                        \
-      case mcommon_memory_order_relaxed:                                                                               \
-         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix, MSVC_MEMORDER_SUFFIX(_nf), __ATOMIC_RELAXED, a, actual, new_value);   \
-         break;                                                                                                        \
-      default:                                                                                                         \
-         BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                       \
-      }                                                                                                                \
-      return actual;                                                                                                   \
+// on Windows, when invoking the appropriate intrinsic, cast to the type the intrinsic is declared with to avoid
+// warnings irrespective of the signedness of Type; all these operations are bit-level and don't care about the sign
+#define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinType, VCIntrinSuffix)                                            \
+   static BSON_INLINE Type mcommon_atomic_##NamePart##_fetch_add(                                                     \
+      Type volatile *a, Type addend, enum mcommon_memory_order ord)                                                   \
+   {                                                                                                                  \
+      DEF_ATOMIC_OP(BSON_CONCAT(_InterlockedExchangeAdd, VCIntrinSuffix),                                             \
+                    __atomic_fetch_add,                                                                               \
+                    __sync_fetch_and_add,                                                                             \
+                    ord,                                                                                              \
+                    BSON_IF_MSVC((volatile VCIntrinType *)) a,                                                        \
+                    addend);                                                                                          \
+   }                                                                                                                  \
+                                                                                                                      \
+   static BSON_INLINE Type mcommon_atomic_##NamePart##_fetch_sub(                                                     \
+      Type volatile *a, Type subtrahend, enum mcommon_memory_order ord)                                               \
+   {                                                                                                                  \
+      /* MSVC doesn't have a subtract intrinsic, so just reuse addition    */                                         \
+      BSON_IF_MSVC(return mcommon_atomic_##NamePart##_fetch_add(a, -subtrahend, ord);)                                \
+      BSON_IF_GNU_LIKE(DEF_ATOMIC_OP(~, __atomic_fetch_sub, ~, ord, a, subtrahend);)                                  \
+      MCOMMON_IF_GNU_LEGACY_ATOMICS(DEF_ATOMIC_OP(~, ~, __sync_fetch_and_sub, ord, a, subtrahend);)                   \
+   }                                                                                                                  \
+                                                                                                                      \
+   static BSON_INLINE Type mcommon_atomic_##NamePart##_fetch(Type volatile const *a, enum mcommon_memory_order order) \
+   {                                                                                                                  \
+      /* MSVC doesn't have a load intrinsic, so just add zero */                                                      \
+      BSON_IF_MSVC(return mcommon_atomic_##NamePart##_fetch_add((Type volatile *)a, 0, order);)                       \
+      /* GNU doesn't want RELEASE order for the fetch operation, so we can't                                          \
+       * just use DEF_ATOMIC_OP. */                                                                                   \
+      BSON_IF_GNU_LIKE(switch (order) {                                                                               \
+         case mcommon_memory_order_release: /* Fall back to seqcst */                                                 \
+         case mcommon_memory_order_acq_rel: /* Fall back to seqcst */                                                 \
+         case mcommon_memory_order_seq_cst:                                                                           \
+            return __atomic_load_n(a, __ATOMIC_SEQ_CST);                                                              \
+         case mcommon_memory_order_acquire:                                                                           \
+            return __atomic_load_n(a, __ATOMIC_ACQUIRE);                                                              \
+         case mcommon_memory_order_consume:                                                                           \
+            return __atomic_load_n(a, __ATOMIC_CONSUME);                                                              \
+         case mcommon_memory_order_relaxed:                                                                           \
+            return __atomic_load_n(a, __ATOMIC_RELAXED);                                                              \
+         default:                                                                                                     \
+            BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                   \
+      })                                                                                                              \
+      MCOMMON_IF_GNU_LEGACY_ATOMICS({                                                                                 \
+         BSON_UNUSED(order);                                                                                          \
+         __sync_synchronize();                                                                                        \
+         return *a;                                                                                                   \
+      })                                                                                                              \
+   }                                                                                                                  \
+                                                                                                                      \
+   static BSON_INLINE Type mcommon_atomic_##NamePart##_exchange(                                                      \
+      Type volatile *a, Type value, enum mcommon_memory_order ord)                                                    \
+   {                                                                                                                  \
+      BSON_IF_MSVC(DEF_ATOMIC_OP(BSON_CONCAT(_InterlockedExchange, VCIntrinSuffix),                                   \
+                                 ~,                                                                                   \
+                                 ~,                                                                                   \
+                                 ord,                                                                                 \
+                                 BSON_IF_MSVC((volatile VCIntrinType *)) a,                                           \
+                                 value);)                                                                             \
+      /* GNU doesn't want CONSUME order for the exchange operation, so we                                             \
+       * cannot use DEF_ATOMIC_OP. */                                                                                 \
+      BSON_IF_GNU_LIKE(switch (ord) {                                                                                 \
+         case mcommon_memory_order_acq_rel:                                                                           \
+            return __atomic_exchange_n(a, value, __ATOMIC_ACQ_REL);                                                   \
+         case mcommon_memory_order_release:                                                                           \
+            return __atomic_exchange_n(a, value, __ATOMIC_RELEASE);                                                   \
+         case mcommon_memory_order_seq_cst:                                                                           \
+            return __atomic_exchange_n(a, value, __ATOMIC_SEQ_CST);                                                   \
+         case mcommon_memory_order_consume: /* Fall back to acquire */                                                \
+         case mcommon_memory_order_acquire:                                                                           \
+            return __atomic_exchange_n(a, value, __ATOMIC_ACQUIRE);                                                   \
+         case mcommon_memory_order_relaxed:                                                                           \
+            return __atomic_exchange_n(a, value, __ATOMIC_RELAXED);                                                   \
+         default:                                                                                                     \
+            BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                   \
+      })                                                                                                              \
+      MCOMMON_IF_GNU_LEGACY_ATOMICS(BSON_UNUSED(ord); return __sync_val_compare_and_swap(a, *a, value);)              \
+   }                                                                                                                  \
+                                                                                                                      \
+   static BSON_INLINE Type mcommon_atomic_##NamePart##_compare_exchange_strong(                                       \
+      Type volatile *a, Type expect, Type new_value, enum mcommon_memory_order ord)                                   \
+   {                                                                                                                  \
+      Type actual = expect;                                                                                           \
+      switch (ord) {                                                                                                  \
+      case mcommon_memory_order_release:                                                                              \
+      case mcommon_memory_order_acq_rel:                                                                              \
+      case mcommon_memory_order_seq_cst:                                                                              \
+         DEF_ATOMIC_CMPEXCH_STRONG(                                                                                   \
+            VCIntrinSuffix, , __ATOMIC_SEQ_CST, BSON_IF_MSVC((volatile VCIntrinType *)) a, actual, new_value);        \
+         break;                                                                                                       \
+      case mcommon_memory_order_acquire:                                                                              \
+         DEF_ATOMIC_CMPEXCH_STRONG(VCIntrinSuffix,                                                                    \
+                                   MSVC_MEMORDER_SUFFIX(_acq),                                                        \
+                                   __ATOMIC_ACQUIRE,                                                                  \
+                                   BSON_IF_MSVC((volatile VCIntrinType *)) a,                                         \
+                                   actual,                                                                            \
+                                   new_value);                                                                        \
+         break;                                                                                                       \
+      case mcommon_memory_order_consume:                                                                              \
+         DEF_ATOMIC_CMPEXCH_STRONG(VCIntrinSuffix,                                                                    \
+                                   MSVC_MEMORDER_SUFFIX(_acq),                                                        \
+                                   __ATOMIC_CONSUME,                                                                  \
+                                   BSON_IF_MSVC((volatile VCIntrinType *)) a,                                         \
+                                   actual,                                                                            \
+                                   new_value);                                                                        \
+         break;                                                                                                       \
+      case mcommon_memory_order_relaxed:                                                                              \
+         DEF_ATOMIC_CMPEXCH_STRONG(VCIntrinSuffix,                                                                    \
+                                   MSVC_MEMORDER_SUFFIX(_nf),                                                         \
+                                   __ATOMIC_RELAXED,                                                                  \
+                                   BSON_IF_MSVC((volatile VCIntrinType *)) a,                                         \
+                                   actual,                                                                            \
+                                   new_value);                                                                        \
+         break;                                                                                                       \
+      default:                                                                                                        \
+         BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                      \
+      }                                                                                                               \
+      return actual;                                                                                                  \
+   }                                                                                                                  \
+                                                                                                                      \
+   static BSON_INLINE Type mcommon_atomic_##NamePart##_compare_exchange_weak(                                         \
+      Type volatile *a, Type expect, Type new_value, enum mcommon_memory_order ord)                                   \
+   {                                                                                                                  \
+      Type actual = expect;                                                                                           \
+      switch (ord) {                                                                                                  \
+      case mcommon_memory_order_release:                                                                              \
+      case mcommon_memory_order_acq_rel:                                                                              \
+      case mcommon_memory_order_seq_cst:                                                                              \
+         DEF_ATOMIC_CMPEXCH_WEAK(                                                                                     \
+            VCIntrinSuffix, , __ATOMIC_SEQ_CST, BSON_IF_MSVC((volatile VCIntrinType *)) a, actual, new_value);        \
+         break;                                                                                                       \
+      case mcommon_memory_order_acquire:                                                                              \
+         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix,                                                                      \
+                                 MSVC_MEMORDER_SUFFIX(_acq),                                                          \
+                                 __ATOMIC_ACQUIRE,                                                                    \
+                                 BSON_IF_MSVC((volatile VCIntrinType *)) a,                                           \
+                                 actual,                                                                              \
+                                 new_value);                                                                          \
+         break;                                                                                                       \
+      case mcommon_memory_order_consume:                                                                              \
+         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix,                                                                      \
+                                 MSVC_MEMORDER_SUFFIX(_acq),                                                          \
+                                 __ATOMIC_CONSUME,                                                                    \
+                                 BSON_IF_MSVC((volatile VCIntrinType *)) a,                                           \
+                                 actual,                                                                              \
+                                 new_value);                                                                          \
+         break;                                                                                                       \
+      case mcommon_memory_order_relaxed:                                                                              \
+         DEF_ATOMIC_CMPEXCH_WEAK(VCIntrinSuffix,                                                                      \
+                                 MSVC_MEMORDER_SUFFIX(_nf),                                                           \
+                                 __ATOMIC_RELAXED,                                                                    \
+                                 BSON_IF_MSVC((volatile VCIntrinType *)) a,                                           \
+                                 actual,                                                                              \
+                                 new_value);                                                                          \
+         break;                                                                                                       \
+      default:                                                                                                        \
+         BSON_UNREACHABLE("Invalid mcommon_memory_order value");                                                      \
+      }                                                                                                               \
+      return actual;                                                                                                  \
    }
 
-#define DECL_ATOMIC_STDINT(Name, VCSuffix) DECL_ATOMIC_INTEGRAL(Name, Name##_t, VCSuffix)
+#define DECL_ATOMIC_STDINT(Name, VCIntrinType, VCSuffix) DECL_ATOMIC_INTEGRAL(Name, Name##_t, VCIntrinType, VCSuffix)
 
 #if defined(_MSC_VER) || defined(MCOMMON_USE_LEGACY_GCC_ATOMICS)
 /* MSVC and GCC require built-in types (not typedefs) for their atomic
- * intrinsics. */
-#if defined(_MSC_VER)
+ * intrinsics.
+ * When using clang-cl it pretends to be MSVC (by defining _MSC_VER)
+ * but then complains about int8_t actual arguments (signed char on Windows) vs char formal arguments mismatch
+ */
+#if defined(_MSC_VER) && !defined(__clang__)
 #define DECL_ATOMIC_INTEGRAL_INT8 char
 #define DECL_ATOMIC_INTEGRAL_INT32 long
 #define DECL_ATOMIC_INTEGRAL_INT long
@@ -278,23 +318,23 @@ enum mcommon_memory_order {
 #define DECL_ATOMIC_INTEGRAL_INT32 int
 #define DECL_ATOMIC_INTEGRAL_INT int
 #endif
-DECL_ATOMIC_INTEGRAL(int8, DECL_ATOMIC_INTEGRAL_INT8, 8)
-DECL_ATOMIC_INTEGRAL(int16, short, 16)
+DECL_ATOMIC_INTEGRAL(int8, DECL_ATOMIC_INTEGRAL_INT8, char, 8)
+DECL_ATOMIC_INTEGRAL(int16, short, short, 16)
 #if !defined(MCOMMON_EMULATE_INT32)
-DECL_ATOMIC_INTEGRAL(int32, DECL_ATOMIC_INTEGRAL_INT32, )
+DECL_ATOMIC_INTEGRAL(int32, DECL_ATOMIC_INTEGRAL_INT32, long, )
 #endif
 #if !defined(MCOMMON_EMULATE_INT)
-DECL_ATOMIC_INTEGRAL(int, DECL_ATOMIC_INTEGRAL_INT, )
+DECL_ATOMIC_INTEGRAL(int, DECL_ATOMIC_INTEGRAL_INT, long, )
 #endif
 #else
 /* Other compilers that we support provide generic intrinsics */
-DECL_ATOMIC_STDINT(int8, 8)
-DECL_ATOMIC_STDINT(int16, 16)
+DECL_ATOMIC_STDINT(int8, char, 8)
+DECL_ATOMIC_STDINT(int16, short, 16)
 #if !defined(MCOMMON_EMULATE_INT32)
-DECL_ATOMIC_STDINT(int32, )
+DECL_ATOMIC_STDINT(int32, long, )
 #endif
 #if !defined(MCOMMON_EMULATE_INT)
-DECL_ATOMIC_INTEGRAL(int, int, )
+DECL_ATOMIC_INTEGRAL(int, int, long, )
 #endif
 #endif
 
@@ -374,9 +414,9 @@ mcommon_thrd_yield(void);
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
 /* (64-bit intrinsics are only available in x64) */
 #ifdef _MSC_VER
-DECL_ATOMIC_INTEGRAL(int64, __int64, 64)
+DECL_ATOMIC_INTEGRAL(int64, __int64, __int64, 64)
 #else
-DECL_ATOMIC_STDINT(int64, 64)
+DECL_ATOMIC_STDINT(int64, __int64, 64)
 #endif
 #else
 static BSON_INLINE int64_t
