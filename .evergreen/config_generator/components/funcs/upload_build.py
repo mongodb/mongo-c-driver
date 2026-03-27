@@ -9,7 +9,11 @@ class UploadBuild(Function):
         archive_targz_pack(
             target='${build_id}.tar.gz',
             source_dir='mongoc',
-            exclude_files=['uv-*'],  # install_build_tools
+            exclude_files=[
+                # install_build_tools
+                './**/uv-bin',
+                './**/uv-tool',
+            ],
             include=['./**'],
         ),
         s3_put(
