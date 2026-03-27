@@ -731,8 +731,8 @@ functions:
     - command: archive.targz_pack
       params:
         exclude_files:
-          - ./**/uv-bin
-          - ./**/uv-tool
+          - "**/uv-bin"
+          - "**/uv-tool"
         include:
           - ./**
         source_dir: mongoc

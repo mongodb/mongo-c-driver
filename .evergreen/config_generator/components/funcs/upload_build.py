@@ -11,8 +11,8 @@ class UploadBuild(Function):
             source_dir='mongoc',
             exclude_files=[
                 # install_build_tools
-                './**/uv-bin',
-                './**/uv-tool',
+                '**/uv-bin',
+                '**/uv-tool',
             ],
             include=['./**'],
         ),
