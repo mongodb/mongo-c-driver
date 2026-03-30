@@ -11,8 +11,8 @@ required-markers = [
     "platform_machine == 'ppc64le' and sys_platform == 'linux'",
     "platform_machine == 's390x' and sys_platform == 'linux'",
     "platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "platform_machine == 'aarch64' and sys_platform == 'darwin'",
-    "platform_machine == 'x86_64' and sys_platform == 'win32'",
+    "platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 
 [[package]]
