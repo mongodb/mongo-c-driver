@@ -2268,4 +2268,6 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "auth/unified");
 
    run_unified_tests(suite, JSON_DIR, "backpressure");
+
+   run_unified_tests(suite, JSON_DIR, "mongodb-handshake");
 }
