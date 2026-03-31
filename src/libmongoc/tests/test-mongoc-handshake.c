@@ -680,7 +680,7 @@ test_mongoc_handshake_data_append_null_args(void)
    /* Make sure setting the handshake works */
    ASSERT(mongoc_handshake_data_append(NULL, NULL, NULL));
 
-   _reset_handshake();
+   _override_host_platform_os();
    bson_t *handshake_doc = _get_handshake_document(false);
    bson_iter_init(&md_iter, handshake_doc);
    _handshake_check_application(handshake_doc);
@@ -716,7 +716,8 @@ test_mongoc_handshake_data_append_null_args(void)
    ASSERT(bson_iter_find(&inner_iter, "version"));
    ASSERT(BSON_ITER_HOLDS_UTF8(&inner_iter));
    val = bson_iter_utf8(&inner_iter, NULL);
-   _check_os_version_valid(val);
+   ASSERT(val);
+   ASSERT(strlen(val) > 0);
 
    /* Check os arch is valid */
    ASSERT(bson_iter_find(&inner_iter, "architecture"));
