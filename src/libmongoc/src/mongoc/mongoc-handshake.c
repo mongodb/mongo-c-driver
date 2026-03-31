@@ -564,6 +564,10 @@ _append_platform_field(bson_t *doc, const mongoc_handshake_t *handshake, bool tr
    const char *const compiler_info = handshake->compiler_info;
    const char *const flags = handshake->flags;
 
+   const bool platform_is_empty = platform == NULL || platform[0] == '\0';
+   const bool compiler_info_is_empty = compiler_info == NULL || compiler_info[0] == '\0';
+   const bool flags_is_empty = flags == NULL || flags[0] == '\0';
+
    const uint32_t overhead = (/* 1 byte for utf8 tag */
                               1 +
                               /* key size */
@@ -582,9 +586,61 @@ _append_platform_field(bson_t *doc, const mongoc_handshake_t *handshake, bool tr
                                         &combined_platform,
                                         truncate ? HANDSHAKE_MAX_SIZE - overhead - doc->len : UINT32_MAX - 1u);
 
-   mcommon_string_append(&combined_platform, platform);
-   mcommon_string_append_all_or_none(&combined_platform, compiler_info);
-   mcommon_string_append_all_or_none(&combined_platform, flags);
+   if (!platform_is_empty) {
+      mcommon_string_append(&combined_platform, platform);
+   }
+
+   // `platform` must be delimited with " / " from any subsequent field values.
+   if (!compiler_info_is_empty && !flags_is_empty) {
+      bool success = false;
+
+      // First try to append both `compiler_info` and `flags`.
+      {
+         char *both = bson_strdup_printf("%s%s", compiler_info, flags);
+
+         if (platform_is_empty) {
+            success = mcommon_string_append_all_or_none(&combined_platform, both);
+         } else {
+            char *delimited = bson_strdup_printf(" / %s", both);
+            success = mcommon_string_append_all_or_none(&combined_platform, delimited);
+            bson_free(delimited);
+         }
+
+         bson_free(both);
+      }
+
+      // Fallback to only `compiler_info`.
+      if (!success) {
+         combined_platform._max_len_exceeded = false;
+
+         if (platform_is_empty) {
+            mcommon_string_append_all_or_none(&combined_platform, compiler_info);
+         } else {
+            char *delimited = bson_strdup_printf(" / %s", compiler_info);
+            mcommon_string_append_all_or_none(&combined_platform, delimited);
+            bson_free(delimited);
+         }
+      }
+   }
+
+   // Only `compiler_info` or `flags` is present.
+   else if (!compiler_info_is_empty) {
+      if (platform_is_empty) {
+         mcommon_string_append_all_or_none(&combined_platform, compiler_info);
+      } else {
+         char *delimited = bson_strdup_printf(" / %s", compiler_info);
+         mcommon_string_append_all_or_none(&combined_platform, delimited);
+         bson_free(delimited);
+      }
+   } else if (!flags_is_empty) {
+      if (platform_is_empty) {
+         mcommon_string_append_all_or_none(&combined_platform, flags);
+      } else {
+         char *delimited = bson_strdup_printf(" / %s", flags);
+         mcommon_string_append_all_or_none(&combined_platform, delimited);
+         bson_free(delimited);
+      }
+   }
 
    bson_append_utf8(doc,
                     HANDSHAKE_PLATFORM_FIELD,

@@ -966,13 +966,13 @@ test_mongoc_platform_truncate(int drop)
    /* adjust remaining space depending on which combination of
     * flags/compiler_info we want to test dropping */
    if (drop == 2) {
-      undropped = bson_strdup_printf("%s", "");
+      undropped = bson_strdup("");
    } else if (drop == 1) {
-      handshake_remaining_space -= strlen(md->compiler_info);
-      undropped = bson_strdup_printf("%s", md->compiler_info);
+      handshake_remaining_space -= strlen(" / ") + strlen(md->compiler_info);
+      undropped = bson_strdup_printf(" / %s", md->compiler_info);
    } else {
-      handshake_remaining_space -= strlen(md->flags) + strlen(md->compiler_info);
-      undropped = bson_strdup_printf("%s%s", md->compiler_info, md->flags);
+      handshake_remaining_space -= strlen(" / ") + strlen(md->flags) + strlen(md->compiler_info);
+      undropped = bson_strdup_printf(" / %s%s", md->compiler_info, md->flags);
    }
 
    big_string[handshake_remaining_space] = '\0';
