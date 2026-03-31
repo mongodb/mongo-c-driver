@@ -558,10 +558,11 @@ _mongoc_handshake_cleanup(void)
 }
 
 static void
-_append_platform_field(bson_t *doc, const char *platform, bool truncate)
+_append_platform_field(bson_t *doc, const mongoc_handshake_t *handshake, bool truncate)
 {
-   char *compiler_info = _mongoc_handshake_get()->compiler_info;
-   char *flags = _mongoc_handshake_get()->flags;
+   const char *const platform = handshake->platform;
+   const char *const compiler_info = handshake->compiler_info;
+   const char *const flags = handshake->flags;
 
    const uint32_t overhead = (/* 1 byte for utf8 tag */
                               1 +
@@ -610,7 +611,7 @@ _get_subdoc_static(bson_t *doc, char *subdoc_name, bson_t *out)
 }
 
 static bool
-_truncate_handshake(bson_t **doc)
+_truncate_handshake(bson_t **doc, const mongoc_handshake_t *md)
 {
    if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
       bson_t env_doc;
@@ -651,11 +652,10 @@ _truncate_handshake(bson_t **doc)
       *doc = new_doc;
    }
 
-   const mongoc_handshake_t *md = _mongoc_handshake_get();
    if ((*doc)->len > HANDSHAKE_MAX_SIZE && md->platform) {
       bson_t *new_doc = bson_new();
       bson_copy_to_excluding_noinit(*doc, new_doc, "platform", NULL);
-      _append_platform_field(new_doc, md->platform, true);
+      _append_platform_field(new_doc, md, true);
       bson_destroy(*doc);
       *doc = new_doc;
    }
@@ -669,9 +669,8 @@ _truncate_handshake(bson_t **doc)
  * case, the caller shouldn't include it with hello
  */
 bson_t *
-_mongoc_handshake_build_doc_with_application(const char *appname)
+_mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const char *appname)
 {
-   const mongoc_handshake_t *md = _mongoc_handshake_get();
    char *env_name = NULL;
    switch (md->env) {
    case MONGOC_HANDSHAKE_ENV_AWS:
@@ -716,10 +715,10 @@ _mongoc_handshake_build_doc_with_application(const char *appname)
                       if (md->kubernetes, then(kv("orchestrator", cstr("kubernetes")))))))));
 
    if (md->platform) {
-      _append_platform_field(doc, md->platform, false);
+      _append_platform_field(doc, md, false);
    }
 
-   if (_truncate_handshake(&doc)) {
+   if (_truncate_handshake(&doc, md)) {
       return doc;
    } else {
       bson_destroy(doc);

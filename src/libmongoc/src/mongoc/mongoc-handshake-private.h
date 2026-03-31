@@ -137,7 +137,7 @@ void
 _mongoc_handshake_cleanup(void);
 
 bson_t *
-_mongoc_handshake_build_doc_with_application(const char *application);
+_mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const char *appname);
 
 void
 _mongoc_handshake_freeze(void);
