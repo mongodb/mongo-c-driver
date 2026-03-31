@@ -2798,3 +2798,22 @@ _mongoc_client_set_jitter_source(mongoc_client_t *client, mongoc_jitter_source_t
    _mongoc_jitter_source_destroy(client->jitter_source);
    client->jitter_source = source;
 }
+
+bool
+mongoc_client_append_metadata(mongoc_client_t *client, const char *name, const char *version, const char *platform)
+{
+   BSON_ASSERT_PARAM(client);
+   BSON_ASSERT_PARAM(name);
+   BSON_OPTIONAL_PARAM(version);
+   BSON_OPTIONAL_PARAM(platform);
+
+   BSON_ASSERT(client->topology);
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR("Cannot use mongoc_client_append_metadata on a pooled client, use "
+                   "mongoc_client_pool_append_metadata");
+      return false;
+   }
+
+   return _mongoc_topology_scanner_append_metadata(client->topology->scanner, name, version, platform);
+}
