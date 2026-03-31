@@ -235,6 +235,12 @@ void
 _mongoc_topology_scanner_dup_handshake_cmd(mongoc_topology_scanner_t *ts, bson_t *copy_into);
 
 bool
+_mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
+                                         const char *name,
+                                         const char *version,
+                                         const char *platform);
+
+bool
 mongoc_topology_scanner_has_node_for_host(mongoc_topology_scanner_t *ts, mongoc_host_list_t *host);
 
 void
