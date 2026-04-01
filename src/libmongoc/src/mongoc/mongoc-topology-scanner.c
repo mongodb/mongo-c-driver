@@ -696,13 +696,8 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
       // Double-checked lock: failed: handshake command was updated by another thread.
       // Retry using the updated handshake command.
       else {
-         bson_mutex_unlock(&ts->handshake_cmd_mtx);
-
-         // Discard previous work without holding the lock.
          _driver_info_options_destroy(&current, &updated);
          bson_destroy(new_cmd);
-
-         bson_mutex_lock(&ts->handshake_cmd_mtx);
       }
    }
 }
