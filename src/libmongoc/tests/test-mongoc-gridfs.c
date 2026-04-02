@@ -1632,14 +1632,8 @@ test_corrupt_zero_chunk(void)
 
    // Read file and expect error:
    {
-      uint8_t buf[7] = {0};
-      mongoc_iovec_t iov = {.iov_base = (void *)buf, .iov_len = sizeof(buf)};
       mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename(gridfs, "test_file", &error);
-      ASSERT_OR_PRINT(file, error);
-
-      // Expect error on read:
-      ssize_t got = mongoc_gridfs_file_readv(file, &iov, 1 /* iovcnt */, 1 /* min_bytes */, 0 /* timeout_msec */);
-      ASSERT_CMPSSIZE_T(got, ==, -1);
+      ASSERT(!file);
    }
 
    mongoc_gridfs_destroy(gridfs);

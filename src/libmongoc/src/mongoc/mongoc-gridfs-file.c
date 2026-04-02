@@ -237,7 +237,8 @@ _mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data)
          if (!BSON_ITER_HOLDS_NUMBER(&iter)) {
             GOTO(failure);
          }
-         if (bson_iter_as_int64(&iter) > INT32_MAX) {
+         int64_t as_i64 = bson_iter_as_int64(&iter);
+         if (as_i64 > INT32_MAX || as_i64 <= 0) {
             GOTO(failure);
          }
          file->chunk_size = (int32_t)bson_iter_as_int64(&iter);
