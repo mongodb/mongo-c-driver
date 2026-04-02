@@ -138,7 +138,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
          message (STATUS "  Not found")
       endif ()
    # The compression format below this version isn't supported. See SERVER-43070
-   elseif (${ZSTD_VERSION} VERSION_LESS "0.8.0")
+   elseif ("${ZSTD_VERSION}" VERSION_LESS "0.8.0")
       if (ENABLE_ZSTD MATCHES "ON")
          message (FATAL_ERROR "Detected zstd version ${ZSTD_VERSION} but version 0.8.0 required")
       else ()
