@@ -1641,6 +1641,70 @@ test_corrupt_zero_chunk(void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_corrupt_too_small_chunk(void)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   bool ok;
+   bson_error_t error;
+
+   mongoc_gridfs_t *gridfs = mongoc_client_get_gridfs(client, "test_too_small_chunk", NULL, &error);
+   ASSERT_OR_PRINT(gridfs, error);
+   // Drop prior test data.
+   ASSERT_OR_PRINT(mongoc_gridfs_drop(gridfs, &error), error);
+
+   // Write a file:
+   {
+      mongoc_gridfs_file_opt_t opts = {.filename = "test_file"};
+      mongoc_iovec_t iov = {.iov_base = (void *)"foobar", .iov_len = 7};
+      mongoc_gridfs_file_t *file = mongoc_gridfs_create_file(gridfs, &opts);
+      ASSERT_CMPSSIZE_T(mongoc_gridfs_file_writev(file, &iov, 1, 0), ==, 7);
+      BSON_ASSERT(mongoc_gridfs_file_save(file));
+      mongoc_gridfs_file_destroy(file);
+   }
+
+   // Corrupt file by changing chunk size and length to 1000:
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection(client, "test_too_small_chunk", "fs.files");
+      ok = mongoc_collection_update_one(coll,
+                                        tmp_bson("{}"),
+                                        tmp_bson(BSON_STR({"$set" : {"chunkSize" : 1000, "length" : 1000}})),
+                                        NULL,
+                                        NULL,
+                                        &error);
+      ASSERT_OR_PRINT(ok, error);
+      mongoc_collection_destroy(coll);
+   }
+
+   // Read beyond actual data, expect error:
+   {
+      mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename(gridfs, "test_file", &error);
+      ASSERT_OR_PRINT(file, error);
+
+      // Read one byte to load page:
+      {
+         char buf[1];
+         mongoc_iovec_t iov = {.iov_base = buf, .iov_len = 1};
+         ssize_t got = mongoc_gridfs_file_readv(file, &iov, 1, 1, 0);
+         ASSERT_CMPSSIZE_T(1, ==, got);
+      }
+
+      // Seek beyond length:
+      ASSERT_CMPINT(0, ==, mongoc_gridfs_file_seek(file, 500, SEEK_SET));
+
+      // Read one byte:
+      {
+         char buf[1];
+         mongoc_iovec_t iov = {.iov_base = buf, .iov_len = 1};
+         ssize_t got = mongoc_gridfs_file_readv(file, &iov, 1, 1, 0);
+         ASSERT_CMPSSIZE_T(1, ==, got);
+      }
+   }
+
+   mongoc_gridfs_destroy(gridfs);
+   mongoc_client_destroy(client);
+}
+
 void
 test_gridfs_install(TestSuite *suite)
 {
@@ -1679,4 +1743,5 @@ test_gridfs_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/gridfs_old/write_failure", test_write_failure);
    TestSuite_AddLive(suite, "/gridfs_old/reading_multiple_chunks", test_reading_multiple_chunks);
    TestSuite_AddLive(suite, "/gridfs_old/corrupt/zero_chunk", test_corrupt_zero_chunk);
+   TestSuite_AddLive(suite, "/gridfs_old/corrupt/too_small_chunk", test_corrupt_too_small_chunk);
 }
