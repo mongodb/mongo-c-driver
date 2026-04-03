@@ -1634,6 +1634,7 @@ test_corrupt_zero_chunk(void)
    {
       mongoc_gridfs_file_t *file = mongoc_gridfs_find_one_by_filename(gridfs, "test_file", &error);
       ASSERT(!file);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "Failed to read GridFS file");
    }
 
    mongoc_gridfs_destroy(gridfs);
