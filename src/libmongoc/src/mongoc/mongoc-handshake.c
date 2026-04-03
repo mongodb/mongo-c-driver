@@ -559,9 +559,9 @@ _mongoc_handshake_cleanup(void)
 static void
 _append_platform_field(bson_t *doc, const mongoc_handshake_t *handshake, bool truncate)
 {
-   const char *const platform = gMongocHandshake.platform;
-   const char *const compiler_info = gMongocHandshake.compiler_info;
-   const char *const flags = gMongocHandshake.flags;
+   const char *const platform = handshake->platform;
+   const char *const compiler_info = handshake->compiler_info;
+   const char *const flags = handshake->flags;
 
    const uint32_t overhead = (/* 1 byte for utf8 tag */
                               1 +
