@@ -738,7 +738,8 @@ _mongoc_handshake_freeze(void)
 static void
 _mongoc_handshake_freeze_nolock(void)
 {
-   _mongoc_handshake_get()->frozen = true;
+   // Ensure all writes to gMongocHandshake are ordered BEFORE this store.
+   mcommon_atomic_int8_exchange(&gMongocHandshake.frozen, true, mcommon_memory_order_release);
 }
 
 /*
@@ -830,6 +831,12 @@ mongoc_handshake_t *
 _mongoc_handshake_get(void)
 {
    return &gMongocHandshake;
+}
+
+bool
+_mongoc_handshake_is_frozen(void)
+{
+   return mcommon_atomic_int8_fetch(&gMongocHandshake.frozen, mcommon_memory_order_relaxed) != 0;
 }
 
 bool
