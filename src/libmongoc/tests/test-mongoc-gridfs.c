@@ -1701,6 +1701,7 @@ test_corrupt_too_small_chunk(void)
          ASSERT(mongoc_gridfs_file_error(file, &error));
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "GridFS operation failed");
       }
+      mongoc_gridfs_file_destroy(file);
    }
 
    mongoc_gridfs_destroy(gridfs);
