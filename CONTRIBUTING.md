@@ -252,11 +252,13 @@ An Azure:
 * `MONGOC_TEST_AZURE_TENANT_ID=<string>`
 * `MONGOC_TEST_AZURE_CLIENT_ID=<string>`
 * `MONGOC_TEST_AZURE_CLIENT_SECRET=<string>`
+* `MONGOC_TEST_AZURE_ACCESS_TOKEN=<string>`
 
 For GCP:
 
 * `MONGOC_TEST_GCP_EMAIL=<string>`
 * `MONGOC_TEST_GCP_PRIVATEKEY=<string>`
+* `MONGOC_TEST_GCP_ACCESS_TOKEN=<string>`
 
 Tests of In-Use Encryption also require temporary credentials to external KMS providers.
 

@@ -1184,8 +1184,12 @@ _parse_kms_provider_azure(
          if (!_append_kms_provider_value_or_getenv(&child, key, value, "MONGOC_TEST_AZURE_CLIENT_SECRET", error)) {
             return false;
          }
+      } else if (strcmp(key, "accessToken") == 0) {
+         if (!_append_kms_provider_value_or_getenv(&child, key, value, "MONGOC_TEST_AZURE_ACCESS_TOKEN", error)) {
+            return false;
+         }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1227,8 +1231,12 @@ _parse_kms_provider_gcp(
          if (value) {
             BSON_ASSERT(BSON_APPEND_UTF8(&child, key, value));
          }
+      } else if (strcmp(key, "accessToken") == 0) {
+         if (!_append_kms_provider_value_or_getenv(&child, key, value, "MONGOC_TEST_GCP_ACCESS_TOKEN", error)) {
+            return false;
+         }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1279,7 +1287,7 @@ _parse_kms_provider_kmip(
             BSON_ASSERT(bson_append_document_end(tls_opts, &tls_child));
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1323,7 +1331,7 @@ _parse_kms_provider_local(
             BSON_APPEND_BINARY(&child, "key", BSON_SUBTYPE_BINARY, data, 96);
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
