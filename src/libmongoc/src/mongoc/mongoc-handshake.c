@@ -838,7 +838,7 @@ _mongoc_handshake_get_unfrozen(void)
 bool
 _mongoc_handshake_is_frozen(void)
 {
-   return mcommon_atomic_int8_fetch(&gMongocHandshake.frozen, mcommon_memory_order_relaxed) != 0;
+   return mcommon_atomic_int8_fetch(&gMongocHandshake.frozen, mcommon_memory_order_acquire) != 0;
 }
 
 bool
