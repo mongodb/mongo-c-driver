@@ -454,7 +454,11 @@ mongoc_gridfs_file_readv(
       for (;;) {
          r = _mongoc_gridfs_file_page_read(
             file->page, (uint8_t *)iov[i].iov_base + iov_pos, (uint32_t)(iov[i].iov_len - iov_pos));
-         BSON_ASSERT(r >= 0);
+         if (r < 0) {
+            _mongoc_set_error(
+               &file->error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "GridFS operation failed");
+            return -1;
+         }
 
          iov_pos += r;
          file->pos += r;

@@ -1697,7 +1697,9 @@ test_corrupt_too_small_chunk(void)
          char buf[1];
          mongoc_iovec_t iov = {.iov_base = buf, .iov_len = 1};
          ssize_t got = mongoc_gridfs_file_readv(file, &iov, 1, 1, 0);
-         ASSERT_CMPSSIZE_T(1, ==, got);
+         ASSERT_CMPSSIZE_T(-1, ==, got);
+         ASSERT(mongoc_gridfs_file_error(file, &error));
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "GridFS operation failed");
       }
    }
 

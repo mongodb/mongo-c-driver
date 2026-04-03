@@ -72,6 +72,10 @@ _mongoc_gridfs_file_page_read(mongoc_gridfs_file_page_t *page, void *dst, uint32
    BSON_ASSERT(page);
    BSON_ASSERT(dst);
 
+   if (page->offset > page->len) {
+      RETURN(-1);
+   }
+
    bytes_read = BSON_MIN(len, page->len - page->offset);
 
    src = page->read_buf ? page->read_buf : page->buf;
