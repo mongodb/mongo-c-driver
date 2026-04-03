@@ -39,6 +39,8 @@ This function will log an error and return ``false`` when one of the following o
 
 Otherwise, ``true`` if the given fields are set successfully.
 
+.. include:: includes/mongoc_client_pool_thread_safe.txt
+
 .. seealso::
 
   | :symbol:`mongoc_client_append_metadata()`
