@@ -288,7 +288,7 @@ _mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data)
 
 failure:
    bson_destroy(&file->bson);
-
+   bson_free(file);
    RETURN(NULL);
 }
 
