@@ -2138,7 +2138,7 @@ test_handshake_metadata_append_empty_duplicate_impl(const driver_info_options *a
 }
 
 static void
-test_handshake_metadata_append_empty_duplicate_case_1(void)
+test_handshake_metadata_append_empty_duplicate_case_2(void)
 {
    test_handshake_metadata_append_empty_duplicate_impl(
       &(driver_info_options){.name = "library", .version = NULL, .platform = "Library Platform"},
@@ -2146,7 +2146,7 @@ test_handshake_metadata_append_empty_duplicate_case_1(void)
 }
 
 static void
-test_handshake_metadata_append_empty_duplicate_case_2(void)
+test_handshake_metadata_append_empty_duplicate_case_3(void)
 {
    test_handshake_metadata_append_empty_duplicate_impl(
       &(driver_info_options){.name = "library", .version = "1.2", .platform = NULL},
@@ -2190,7 +2190,7 @@ test_handshake_metadata_append_empty_identical_impl(const driver_info_options *i
 }
 
 static void
-test_handshake_metadata_append_empty_identical_case_1(void)
+test_handshake_metadata_append_empty_identical_case_2(void)
 {
    test_handshake_metadata_append_empty_identical_impl(
       &(driver_info_options){.name = "library", .version = NULL, .platform = "Library Platform"},
@@ -2198,7 +2198,7 @@ test_handshake_metadata_append_empty_identical_case_1(void)
 }
 
 static void
-test_handshake_metadata_append_empty_identical_case_2(void)
+test_handshake_metadata_append_empty_identical_case_3(void)
 {
    test_handshake_metadata_append_empty_identical_impl(
       &(driver_info_options){.name = "library", .version = "1.2", .platform = NULL},
@@ -2339,16 +2339,16 @@ test_handshake_install(TestSuite *suite)
                                test_handshake_metadata_append_separated_identical);
 
    TestSuite_AddMockServerTest(suite,
-                               "/MongoDB/handshake/metadata_append/empty_duplicate/case_1",
-                               test_handshake_metadata_append_empty_duplicate_case_1);
-   TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/empty_duplicate/case_2",
                                test_handshake_metadata_append_empty_duplicate_case_2);
-
    TestSuite_AddMockServerTest(suite,
-                               "/MongoDB/handshake/metadata_append/empty_identical/case_1",
-                               test_handshake_metadata_append_empty_identical_case_1);
+                               "/MongoDB/handshake/metadata_append/empty_duplicate/case_3",
+                               test_handshake_metadata_append_empty_duplicate_case_3);
+
    TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/empty_identical/case_2",
                                test_handshake_metadata_append_empty_identical_case_2);
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/empty_identical/case_3",
+                               test_handshake_metadata_append_empty_identical_case_3);
 }
