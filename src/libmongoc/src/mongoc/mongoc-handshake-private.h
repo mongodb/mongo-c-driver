@@ -145,6 +145,9 @@ _mongoc_handshake_freeze(void);
 const mongoc_handshake_t *
 _mongoc_handshake_get(void);
 
+mongoc_handshake_t *
+_mongoc_handshake_get_unfrozen(void);
+
 bool
 _mongoc_handshake_is_frozen(void);
 

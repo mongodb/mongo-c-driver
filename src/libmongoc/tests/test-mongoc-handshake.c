@@ -373,7 +373,7 @@ static void
 _override_host_platform_os(void)
 {
    _reset_handshake();
-   mongoc_handshake_t *md = _mongoc_handshake_get();
+   mongoc_handshake_t *md = _mongoc_handshake_get_unfrozen();
    bson_free(md->os_type);
    md->os_type = bson_strdup("Linux");
    bson_free(md->os_name);
@@ -751,7 +751,7 @@ _test_platform(bool platform_oversized)
 
    _reset_handshake();
 
-   md = _mongoc_handshake_get();
+   md = _mongoc_handshake_get_unfrozen();
 
    bson_free(md->os_type);
    md->os_type = bson_strdup("foo");
@@ -781,7 +781,7 @@ _test_platform(bool platform_oversized)
    ASSERT(!strstr(md->platform, "b"));
 
    bson_t *doc;
-   ASSERT(doc = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get(), "my app"));
+   ASSERT(doc = _mongoc_handshake_build_doc_with_application(md, "my app"));
    ASSERT_CMPUINT32(doc->len, ==, (uint32_t)HANDSHAKE_MAX_SIZE);
 
    bson_destroy(doc);
@@ -927,7 +927,7 @@ test_mongoc_platform_truncate(int drop)
 
    /* we manually bypass the defaults of the handshake to ensure an exceedingly
     * long field does not cause our test to incorrectly fail */
-   md = _mongoc_handshake_get();
+   md = _mongoc_handshake_get_unfrozen();
    bson_free(md->os_type);
    md->os_type = bson_strdup("test_a");
    bson_free(md->os_name);
@@ -952,7 +952,7 @@ test_mongoc_platform_truncate(int drop)
    md->os_version = big_string;
 
    bson_t *handshake_no_platform =
-      _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get(), default_appname);
+      _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get_unfrozen(), default_appname);
    size_t handshake_remaining_space = HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
    bson_destroy(handshake_no_platform);
 
@@ -978,7 +978,7 @@ test_mongoc_platform_truncate(int drop)
    ASSERT(mongoc_handshake_data_append(NULL, NULL, big_string));
 
    bson_t *doc;
-   ASSERT(doc = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get(), default_appname));
+   ASSERT(doc = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get_unfrozen(), default_appname));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
@@ -1030,7 +1030,7 @@ test_mongoc_handshake_cannot_send(void)
 
    /* The handshake cannot be built if a field that cannot be dropped
     * (os.type) is set to a very long string */
-   mongoc_handshake_t *md = _mongoc_handshake_get();
+   mongoc_handshake_t *md = _mongoc_handshake_get_unfrozen();
    bson_free(md->os_type);
    md->os_type = bson_strdup(big_string);
 
@@ -1347,7 +1347,7 @@ test_mongoc_handshake_race_condition(void)
 static void
 test_mongoc_handshake_cpp(void)
 {
-   bson_t *handshake = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get(), "foo");
+   bson_t *handshake = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get_unfrozen(), "foo");
    const char *platform = bson_lookup_utf8(handshake, "platform");
    if (0 != strlen(MONGOC_CXX_COMPILER_VERSION)) {
       ASSERT_CONTAINS(platform, "CXX=" MONGOC_CXX_COMPILER_ID " " MONGOC_CXX_COMPILER_VERSION);

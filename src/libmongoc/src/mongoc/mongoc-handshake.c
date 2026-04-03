@@ -728,14 +728,6 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
 void
 _mongoc_handshake_freeze(void)
 {
-   bson_mutex_lock(&gHandshakeLock);
-   gMongocHandshake.frozen = true;
-   bson_mutex_unlock(&gHandshakeLock);
-}
-
-static void
-_mongoc_handshake_freeze_nolock(void)
-{
    // Ensure all writes to gMongocHandshake are ordered BEFORE this store.
    mcommon_atomic_int8_exchange(&gMongocHandshake.frozen, true, mcommon_memory_order_release);
 }
@@ -819,7 +811,7 @@ mongoc_handshake_data_append(const char *driver_name, const char *driver_version
       _append_and_truncate(&gMongocHandshake.driver_version, driver_version, HANDSHAKE_DRIVER_VERSION_MAX);
    }
 
-   _mongoc_handshake_freeze_nolock();
+   _mongoc_handshake_freeze();
    bson_mutex_unlock(&gHandshakeLock);
 
    return true;
@@ -827,6 +819,13 @@ mongoc_handshake_data_append(const char *driver_name, const char *driver_version
 
 const mongoc_handshake_t *
 _mongoc_handshake_get(void)
+{
+   BSON_ASSERT(_mongoc_handshake_is_frozen());
+   return &gMongocHandshake;
+}
+
+mongoc_handshake_t *
+_mongoc_handshake_get_unfrozen(void)
 {
    return &gMongocHandshake;
 }
