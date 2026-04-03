@@ -783,6 +783,13 @@ mongoc_handshake_data_append(const char *driver_name, const char *driver_version
    }
 
    bson_mutex_lock(&gHandshakeLock);
+
+   // TOCTOU: another thread may have frozen the handshake before this lock was acquired.
+   if (_mongoc_handshake_is_frozen()) {
+      bson_mutex_unlock(&gHandshakeLock);
+      return false;
+   }
+
    BSON_ASSERT(gMongocHandshake.platform);
 
    /* allow practically any size for "platform", we'll trim it down in
