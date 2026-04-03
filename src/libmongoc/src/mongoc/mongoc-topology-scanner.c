@@ -300,7 +300,11 @@ _mongoc_topology_scanner_parse_speculative_authentication(const bson_t *hello, b
 }
 
 static bson_t *
-_build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_uri_t *uri, bool is_loadbalanced)
+_build_handshake_cmd(const mongoc_handshake_t *handshake,
+                     const bson_t *basis_cmd,
+                     const char *appname,
+                     const mongoc_uri_t *uri,
+                     bool is_loadbalanced)
 {
    bson_t *doc = bson_copy(basis_cmd);
    bson_iter_t iter;
@@ -308,7 +312,7 @@ _build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_
    bson_array_builder_t *subarray;
 
    BSON_ASSERT(doc);
-   bson_t *handshake_doc = _mongoc_handshake_build_doc_with_application(appname);
+   bson_t *handshake_doc = _mongoc_handshake_build_doc_with_application(handshake, appname);
 
    if (!handshake_doc) {
       bson_destroy(doc);
@@ -376,8 +380,11 @@ _mongoc_topology_scanner_dup_handshake_cmd(mongoc_topology_scanner_t *ts, bson_t
    /* Construct a new handshake command to be sent */
    BSON_ASSERT(ts->handshake_cmd == NULL);
    bson_mutex_unlock(&ts->handshake_cmd_mtx);
-   new_cmd = _build_handshake_cmd(
-      _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd, appname, ts->uri, ts->loadbalanced);
+   new_cmd = _build_handshake_cmd(_mongoc_handshake_get(),
+                                  _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd,
+                                  appname,
+                                  ts->uri,
+                                  ts->loadbalanced);
    bson_mutex_lock(&ts->handshake_cmd_mtx);
    if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
       /* Someone else updated the handshake_cmd while we were building ours.
