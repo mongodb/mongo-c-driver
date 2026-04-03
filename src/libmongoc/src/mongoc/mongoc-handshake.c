@@ -778,13 +778,11 @@ mongoc_handshake_data_append(const char *driver_name, const char *driver_version
 {
    int platform_space;
 
-   bson_mutex_lock(&gHandshakeLock);
-
-   if (gMongocHandshake.frozen) {
-      bson_mutex_unlock(&gHandshakeLock);
+   if (_mongoc_handshake_is_frozen()) {
       return false;
    }
 
+   bson_mutex_lock(&gHandshakeLock);
    BSON_ASSERT(gMongocHandshake.platform);
 
    /* allow practically any size for "platform", we'll trim it down in
