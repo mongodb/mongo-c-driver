@@ -142,7 +142,7 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
 void
 _mongoc_handshake_freeze(void);
 
-mongoc_handshake_t *
+const mongoc_handshake_t *
 _mongoc_handshake_get(void);
 
 bool

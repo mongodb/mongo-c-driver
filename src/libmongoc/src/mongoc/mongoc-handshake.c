@@ -825,7 +825,7 @@ mongoc_handshake_data_append(const char *driver_name, const char *driver_version
    return true;
 }
 
-mongoc_handshake_t *
+const mongoc_handshake_t *
 _mongoc_handshake_get(void)
 {
    return &gMongocHandshake;
