@@ -1,5 +1,5 @@
 {
-  "description": "fle2v2-InsertFind-Indexed",
+  "description": "fle2v2-InsertFind-keyAltName",
   "schemaVersion": "1.25",
   "runOnRequirements": [
     {
@@ -325,6 +325,156 @@
                   }
                 },
                 "commandName": "find"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Create translates keyAltName",
+      "operations": [
+        {
+          "name": "dropCollection",
+          "object": "db",
+          "arguments": {
+            "collection": "default"
+          }
+        },
+        {
+          "name": "createCollection",
+          "object": "db",
+          "arguments": {
+            "collection": "default"
+          }
+        }
+      ],
+      "expectEvents": [
+        {
+          "client": "client0",
+          "events": [
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "drop": "enxcol_.default.esc"
+                },
+                "commandName": "drop"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "drop": "enxcol_.default.ecoc"
+                },
+                "commandName": "drop"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "drop": "default"
+                },
+                "commandName": "drop"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "create": "enxcol_.default.esc",
+                  "clusteredIndex": {
+                    "key": {
+                      "_id": 1
+                    },
+                    "unique": true
+                  }
+                },
+                "commandName": "create"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "create": "enxcol_.default.ecoc",
+                  "clusteredIndex": {
+                    "key": {
+                      "_id": 1
+                    },
+                    "unique": true
+                  }
+                },
+                "commandName": "create"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "find": "datakeys",
+                  "filter": {
+                    "$or": [
+                      {
+                        "_id": {
+                          "$in": []
+                        }
+                      },
+                      {
+                        "keyAltNames": {
+                          "$in": [
+                            "altname"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "$db": "keyvault",
+                  "readConcern": {
+                    "level": "majority"
+                  }
+                },
+                "commandName": "find"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "create": "default",
+                  "encryptedFields": {
+                    "fields": [
+                      {
+                        "path": "encryptedIndexed",
+                        "bsonType": "string",
+                        "queries": {
+                          "queryType": "equality",
+                          "contention": {
+                            "$numberLong": "0"
+                          }
+                        },
+                        "keyId": {
+                          "$binary": {
+                            "base64": "EjRWeBI0mHYSNBI0VniQEg==",
+                            "subType": "04"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "commandName": "create"
+              }
+            },
+            {
+              "commandStartedEvent": {
+                "command": {
+                  "createIndexes": "default",
+                  "indexes": [
+                    {
+                      "name": "__safeContent___1",
+                      "key": {
+                        "__safeContent__": 1
+                      }
+                    }
+                  ]
+                },
+                "commandName": "createIndexes"
               }
             }
           ]
