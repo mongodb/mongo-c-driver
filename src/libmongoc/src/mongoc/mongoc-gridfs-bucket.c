@@ -346,21 +346,21 @@ mongoc_gridfs_bucket_open_download_stream (mongoc_gridfs_bucket_t *bucket,
    bson_destroy (&file_doc);
 
    if (file->chunk_size <= 0) {
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_GRIDFS,
-                         MONGOC_ERROR_GRIDFS_CORRUPT,
-                         "File document contains invalid chunk size: %" PRId32,
-                         file->chunk_size);
+      bson_set_error (error,
+                      MONGOC_ERROR_GRIDFS,
+                      MONGOC_ERROR_GRIDFS_CORRUPT,
+                      "File document contains invalid chunk size: %" PRId32,
+                      file->chunk_size);
       _mongoc_gridfs_bucket_file_destroy (file);
       return NULL;
    }
 
    if (file->length < 0) {
-      _mongoc_set_error (error,
-                         MONGOC_ERROR_GRIDFS,
-                         MONGOC_ERROR_GRIDFS_CORRUPT,
-                         "File document contains invalid length: %" PRId64,
-                         file->length);
+      bson_set_error (error,
+                      MONGOC_ERROR_GRIDFS,
+                      MONGOC_ERROR_GRIDFS_CORRUPT,
+                      "File document contains invalid length: %" PRId64,
+                      file->length);
       _mongoc_gridfs_bucket_file_destroy (file);
       return NULL;
    }
