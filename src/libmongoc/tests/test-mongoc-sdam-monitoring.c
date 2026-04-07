@@ -1119,7 +1119,7 @@ test_serverMonitoringMode(void)
    }
 
    smm_t *t = NULL;
-   mongoc_handshake_t *md = _mongoc_handshake_get();
+   mongoc_handshake_t *md = _mongoc_handshake_get_unfrozen();
 
    if (test_framework_get_server_version() >= test_framework_str_to_version("4.4.0")) {
       printf("'connect with serverMonitoringMode=auto >=4.4' ... begin\n");

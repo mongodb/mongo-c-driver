@@ -377,6 +377,8 @@ _initialize_handshake_cmd(mongoc_topology_scanner_t *ts, const char *appname)
 
    // Double-checked lock: do not hold lock while building the initial handshake command.
    bson_mutex_unlock(&ts->handshake_cmd_mtx);
+   _mongoc_handshake_freeze(); // Global handshake metadata MUST NOT be modified after the first client or client pool
+                               // has been initialized.
    bson_t *const new_cmd = _build_handshake_cmd(_mongoc_handshake_get(),
                                                 _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd,
                                                 appname,

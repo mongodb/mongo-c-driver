@@ -1399,32 +1399,34 @@ retryable_writes_prose_test_6_case_3(void *ctx)
 {
    BSON_UNUSED(ctx);
 
-   // Step 1: Create a client with `retryWrites=true` and `monitorCommands=true`.
+   // Step 1: Create a client with `retryWrites=true`.
    mongoc_client_t *const client = prose_test_6_create_client();
 
-   // Step 2: Configure the client to listen to CommandFailedEvents. In the attached listener, configure a fail point
-   // with error code `91` (NotWritablePrimary) and the `NoWritesPerformed`, `RetryableError` and
-   // `SystemOverloadedError` labels.
-   prose_test_6_apm_ctx_t apm_ctx = {
-      .first_fail_point_error_code = 91u,
-      .second_fail_point_cmd_str = BSON_STR({
-         "configureFailPoint" : "failCommand",
-         "mode" : "alwaysOn",
-         "data" : {
-            "failCommands" : ["insert"],
-            "errorLabels" : [ "RetryableError", "SystemOverloadedError", "NoWritesPerformed" ],
-            "errorCode" : 91
-         }
-      })};
+   // Step 2: Configure a fail point with error code `91` (ShutdownInProgress) with the `RetryableError` and
+   // `SystemOverloadedError` error labels.
+   prose_test_6_apm_ctx_t apm_ctx = {.first_fail_point_error_code = 91u,
+                                     .second_fail_point_cmd_str = BSON_STR({
+                                        "configureFailPoint" : "failCommand",
+                                        "mode" : {"times" : 1},
+                                        "data" : {
+                                           "failCommands" : ["insert"],
+                                           "errorLabels" : [ "RetryableError", "SystemOverloadedError" ],
+                                           "errorCode" : 91
+                                        }
+                                     })};
    prose_test_6_set_apm_callbacks(client, &apm_ctx);
 
-   // Step 3: Configure a fail point with error code `91` (ShutdownInProgress) with the `RetryableError` and
-   // `SystemOverloadedError` error labels but without the `NoWritesPerformed` error label.
+   // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code `91`
+   // (ShutdownInProgress) and the `NoWritesPerformed`, `RetryableError` and `SystemOverloadedError` labels.
+   // Configure the second fail point command only if the failed event is for the first error configured in step 2.
    run_admin_command(BSON_STR({
       "configureFailPoint" : "failCommand",
-      "mode" : {"times" : 1},
-      "data" :
-         {"failCommands" : ["insert"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
+      "mode" : "alwaysOn",
+      "data" : {
+         "failCommands" : ["insert"],
+         "errorLabels" : [ "RetryableError", "SystemOverloadedError", "NoWritesPerformed" ],
+         "errorCode" : 91
+      }
    }));
 
    // Step 4: Attempt an `insertOne` operation on any record for any database and collection. Expect the `insertOne` to

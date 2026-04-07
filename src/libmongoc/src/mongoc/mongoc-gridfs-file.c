@@ -49,6 +49,12 @@ _mongoc_gridfs_file_flush_page(mongoc_gridfs_file_t *file);
 static ssize_t
 _mongoc_gridfs_file_extend(mongoc_gridfs_file_t *file);
 
+static void
+set_generic_failure(mongoc_gridfs_file_t *file)
+{
+   _mongoc_set_error(&file->error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "GridFS operation failed");
+}
+
 
 /*****************************************************************
  * Magic accessor generation
@@ -237,7 +243,8 @@ _mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data)
          if (!BSON_ITER_HOLDS_NUMBER(&iter)) {
             GOTO(failure);
          }
-         if (bson_iter_as_int64(&iter) > INT32_MAX) {
+         int64_t as_i64 = bson_iter_as_int64(&iter);
+         if (as_i64 > INT32_MAX || as_i64 <= 0) {
             GOTO(failure);
          }
          file->chunk_size = (int32_t)bson_iter_as_int64(&iter);
@@ -287,7 +294,7 @@ _mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data)
 
 failure:
    bson_destroy(&file->bson);
-
+   bson_free(file);
    RETURN(NULL);
 }
 
@@ -451,13 +458,21 @@ mongoc_gridfs_file_readv(
       iov_pos = 0;
 
       for (;;) {
-         r = _mongoc_gridfs_file_page_read(
-            file->page, (uint8_t *)iov[i].iov_base + iov_pos, (uint32_t)(iov[i].iov_len - iov_pos));
-         BSON_ASSERT(r >= 0);
+         size_t iov_diff = iov[i].iov_len - iov_pos;
+         if (!mlib_in_range(uint32_t, iov_diff)) {
+            set_generic_failure(file);
+            return -1;
+         }
+         r = _mongoc_gridfs_file_page_read(file->page, (uint8_t *)iov[i].iov_base + iov_pos, (uint32_t)(iov_diff));
+         if (r < 0) {
+            set_generic_failure(file);
+            return -1;
+         }
 
-         iov_pos += r;
-         file->pos += r;
-         bytes_read += r;
+         if (mlib_add(&iov_pos, r) || mlib_add(&file->pos, r) || mlib_add(&bytes_read, r)) {
+            set_generic_failure(file);
+            return -1;
+         }
 
          if (iov_pos == iov[i].iov_len) {
             /* filled a bucket, keep going */
@@ -514,15 +529,28 @@ mongoc_gridfs_file_writev(mongoc_gridfs_file_t *file, const mongoc_iovec_t *iov,
             return -1;
          }
 
+         size_t iov_diff = iov[i].iov_len - iov_pos;
+         if (!mlib_in_range(uint32_t, iov_diff)) {
+            set_generic_failure(file);
+            return -1;
+         }
+
          /* write bytes until an iov is exhausted or the page is full */
-         r = _mongoc_gridfs_file_page_write(
-            file->page, (uint8_t *)iov[i].iov_base + iov_pos, (uint32_t)(iov[i].iov_len - iov_pos));
-         BSON_ASSERT(r >= 0);
+         r = _mongoc_gridfs_file_page_write(file->page, (uint8_t *)iov[i].iov_base + iov_pos, iov_diff);
+         if (r < 0) {
+            set_generic_failure(file);
+            return -1;
+         }
 
-         iov_pos += r;
-         file->pos += r;
-         bytes_written += r;
+         if (mlib_add(&iov_pos, r) || mlib_add(&file->pos, r) || mlib_add(&bytes_written, r)) {
+            set_generic_failure(file);
+            return -1;
+         }
 
+         if (!mlib_in_range(int64_t, file->pos)) {
+            set_generic_failure(file);
+            return -1;
+         }
          file->length = BSON_MAX(file->length, (int64_t)file->pos);
 
          if (iov_pos == iov[i].iov_len) {
@@ -589,7 +617,14 @@ _mongoc_gridfs_file_extend(mongoc_gridfs_file_t *file)
       {
          const uint64_t len = target_length - file->pos;
          BSON_ASSERT(mlib_in_range(uint32_t, len));
-         file->pos += _mongoc_gridfs_file_page_memset0(file->page, (uint32_t)len);
+         int32_t ret = _mongoc_gridfs_file_page_memset0(file->page, (uint32_t)len);
+         if (ret < 0) {
+            set_generic_failure(file);
+            RETURN(-1);
+         }
+         if (mlib_add(&file->pos, file->pos, ret)) {
+            RETURN(-1);
+         }
       }
 
       if (file->pos == target_length) {
@@ -693,20 +728,34 @@ _mongoc_gridfs_file_keep_cursor(mongoc_gridfs_file_t *file)
    /* server returns roughly 4 MB batches by default */
    chunks_per_batch = (4 * 1024 * 1024) / (uint32_t)file->chunk_size;
 
+   uint32_t upper_bound = 0;
+   if (mlib_mul(&upper_bound, 2, chunks_per_batch) || mlib_add(&upper_bound, file->cursor_range[0])) {
+      set_generic_failure(file);
+      return false;
+   }
+
    return (
       /* cursor is on or before the desired chunk */
       file->cursor_range[0] <= chunk_no &&
       /* chunk_no is before end of file */
       chunk_no <= file->cursor_range[1] &&
       /* desired chunk is in this batch or next one */
-      chunk_no < file->cursor_range[0] + 2 * chunks_per_batch);
+      chunk_no < upper_bound);
 }
 
 
 static int64_t
 divide_round_up(int64_t num, int64_t denom)
 {
-   return (num + denom - 1) / denom;
+   BSON_ASSERT(num >= 0);
+   BSON_ASSERT(denom > 0);
+
+   int64_t res = num / denom;
+   if (num % denom != 0) {
+      // Remainder, add one.
+      return res + 1;
+   }
+   return res;
 }
 
 
@@ -754,7 +803,10 @@ _mongoc_gridfs_file_refresh_page(mongoc_gridfs_file_t *file)
 
    BSON_ASSERT(file);
 
-   file->n = (int32_t)(file->pos / file->chunk_size);
+   if (mlib_narrow(&file->n, file->pos / file->chunk_size)) {
+      set_generic_failure(file);
+      RETURN(false);
+   }
 
    if (file->page) {
       _mongoc_gridfs_file_page_destroy(file->page);
@@ -763,8 +815,16 @@ _mongoc_gridfs_file_refresh_page(mongoc_gridfs_file_t *file)
 
    /* if the file pointer is past the end of the current file (i.e. pointing to
     * a new chunk), we'll pass the page constructor a new empty page. */
+   if (file->length < 0 || file->chunk_size <= 0) {
+      set_generic_failure(file);
+      RETURN(false);
+   }
    const int64_t existing_chunks = divide_round_up(file->length, file->chunk_size);
-   const int64_t required_chunks = divide_round_up(file->pos + 1, file->chunk_size);
+   int64_t pos_plus1 = 0;
+   if (mlib_add(&pos_plus1, file->pos, 1)) {
+      RETURN(false);
+   }
+   const int64_t required_chunks = divide_round_up(pos_plus1, file->chunk_size);
 
    if (required_chunks > existing_chunks) {
       data = (uint8_t *)"";
@@ -802,11 +862,14 @@ _mongoc_gridfs_file_refresh_page(mongoc_gridfs_file_t *file)
          /* find all chunks greater than or equal to our current file pos */
          file->cursor = mongoc_collection_find_with_opts(file->gridfs->chunks, &query, &opts, NULL);
 
-         file->cursor_range[0] = file->n;
-         file->cursor_range[1] = (uint32_t)(file->length / file->chunk_size);
-
          bson_destroy(&query);
          bson_destroy(&opts);
+
+         if (mlib_narrow(&file->cursor_range[0], file->n) ||
+             mlib_narrow(&file->cursor_range[1], file->length / file->chunk_size)) {
+            set_generic_failure(file);
+            RETURN(false);
+         }
 
          BSON_ASSERT(file->cursor);
       }
@@ -825,7 +888,9 @@ _mongoc_gridfs_file_refresh_page(mongoc_gridfs_file_t *file)
             RETURN(0);
          }
 
-         file->cursor_range[0]++;
+         if (mlib_add(&file->cursor_range[0], 1)) {
+            RETURN(false);
+         }
       }
 
       bson_iter_t iter;
@@ -925,7 +990,7 @@ _mongoc_gridfs_file_refresh_page(mongoc_gridfs_file_t *file)
 int
 mongoc_gridfs_file_seek(mongoc_gridfs_file_t *file, int64_t delta, int whence)
 {
-   int64_t offset;
+   int64_t offset = 0;
 
    BSON_ASSERT(file);
 
@@ -934,11 +999,20 @@ mongoc_gridfs_file_seek(mongoc_gridfs_file_t *file, int64_t delta, int whence)
       offset = delta;
       break;
    case SEEK_CUR:
-      BSON_ASSERT(mlib_in_range(int64_t, file->pos));
-      offset = (int64_t)file->pos + delta;
+      if (!mlib_in_range(int64_t, file->pos)) {
+         errno = EINVAL;
+         return -1;
+      }
+      if (mlib_add(&offset, file->pos, delta)) {
+         errno = EINVAL;
+         return -1;
+      }
       break;
    case SEEK_END:
-      offset = file->length + delta;
+      if (mlib_add(&offset, file->length, delta)) {
+         errno = EINVAL;
+         return -1;
+      }
       break;
    default:
       errno = EINVAL;
@@ -968,7 +1042,9 @@ mongoc_gridfs_file_seek(mongoc_gridfs_file_t *file, int64_t delta, int whence)
        * lazily load */
    } else if (file->page) {
       const int64_t n = offset % file->chunk_size;
-      BSON_ASSERT(mlib_in_range(uint32_t, n));
+      if (!mlib_in_range(uint32_t, n)) {
+         return -1;
+      }
       BSON_ASSERT(_mongoc_gridfs_file_page_seek(file->page, (uint32_t)n));
    }
 
@@ -976,7 +1052,9 @@ mongoc_gridfs_file_seek(mongoc_gridfs_file_t *file, int64_t delta, int whence)
 
    BSON_ASSERT(mlib_in_range(uint64_t, file->chunk_size));
    const uint64_t n = file->pos / (uint64_t)file->chunk_size;
-   BSON_ASSERT(mlib_in_range(int32_t, n));
+   if (!mlib_in_range(int32_t, n)) {
+      return -1;
+   }
    file->n = (int32_t)n;
 
    return 0;

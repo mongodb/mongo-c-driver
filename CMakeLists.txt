@@ -397,14 +397,14 @@ add_custom_target(mongo_c_driver_examples)
 
 add_subdirectory (src/common)
 
+if (WIN32)
+   add_definitions (-D_CRT_SECURE_NO_WARNINGS)
+   list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_CRT_SECURE_NO_WARNINGS)
+endif ()
+
 if (NOT USING_SYSTEM_BSON)
    message (STATUS "Using bundled libbson")
    add_subdirectory (src/libbson)
-endif ()
-
-if (MSVC)
-   add_definitions (-D_CRT_SECURE_NO_WARNINGS)
-   list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_CRT_SECURE_NO_WARNINGS)
 endif ()
 
 if (ENABLE_MONGOC)
