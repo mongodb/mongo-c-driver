@@ -48,6 +48,7 @@ typedef struct {
    mongoc_jitter_source_t *jitter_source;
    mongoc_token_bucket_t *token_bucket;
    mongoc_server_description_t const *initial_server_description;
+   int32_t max_adaptive_retries;
 } mongoc_retryable_cmd_t;
 
 bool

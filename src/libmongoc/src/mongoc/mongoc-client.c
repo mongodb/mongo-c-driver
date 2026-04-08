@@ -1127,6 +1127,8 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->client_sessions = mongoc_set_new(8, NULL, NULL);
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
    client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
+   client->max_adaptive_retries =
+      mongoc_uri_get_option_as_int32(client->uri, MONGOC_URI_MAXADAPTIVERETRIES, MONGOC_DEFAULT_MAX_ADAPTIVE_RETRIES);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1721,6 +1723,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .jitter_source = client->jitter_source,
       .token_bucket = client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
+      .max_adaptive_retries = client->max_adaptive_retries,
    };
 
    const bool ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, error);

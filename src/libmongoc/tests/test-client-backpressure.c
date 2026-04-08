@@ -635,8 +635,8 @@ test_backpressure_prose_3(void *ctx)
       mongoc_cursor_destroy(cursor);
    }
 
-   // Step 6: Assert that the total number of started commands is MAX_RETRIES + 1.
-   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS + 1);
+   // Step 6: Assert that the total number of started commands is `MONGOC_DEFAULT_MAX_ADAPTIVE_RETRIES + 1`.
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, MONGOC_DEFAULT_MAX_ADAPTIVE_RETRIES + 1);
 
    disable_fail_point();
 

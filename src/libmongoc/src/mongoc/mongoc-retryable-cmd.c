@@ -92,7 +92,7 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
       ++attempt;
 
       if (is_overload) {
-         allowed_retries = MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS;
+         allowed_retries = cmd->max_adaptive_retries;
       }
 
       if (attempt > allowed_retries) {

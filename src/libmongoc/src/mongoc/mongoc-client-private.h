@@ -93,6 +93,7 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
 #define MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY 1000.0
+#define MONGOC_DEFAULT_MAX_ADAPTIVE_RETRIES 2
 
 struct _mongoc_collection_t;
 
@@ -127,6 +128,7 @@ struct _mongoc_client_t {
    uint32_t generation;
 
    mongoc_jitter_source_t *jitter_source;
+   int32_t max_adaptive_retries;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
