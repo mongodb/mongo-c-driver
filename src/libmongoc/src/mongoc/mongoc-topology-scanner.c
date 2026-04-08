@@ -789,6 +789,7 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
             bson_destroy(old_cmd);
             return true;
          } else {
+            MONGOC_WARNING("Failed to append metadata due to exceeding total handshake size limits");
             return false;
          }
       }
