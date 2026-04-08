@@ -789,7 +789,6 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
             bson_destroy(old_cmd);
             return true;
          } else {
-            bson_destroy(new_cmd);
             return false;
          }
       }
