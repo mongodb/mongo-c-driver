@@ -2207,6 +2207,56 @@ test_handshake_metadata_append_empty_identical_case_3(void)
       &(driver_info_options){.name = "library", .version = "1.2", .platform = ""});
 }
 
+static void
+test_handshake_metadata_mongoc_platform_reappends(void)
+{
+   _override_host_platform_os();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+
+   {
+      bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+      // "<mongoc platform>" is always appended as the last element whenever able (no truncation).
+      ASSERT_MATCH(metadata,
+                   "{"
+                   "  'driver': {"
+                   "    'name': 'test_e',"
+                   "    'version': '1.25.0'"
+                   "  },"
+                   "  'platform': 'posix=1234 / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "}");
+
+      bson_destroy(metadata);
+   }
+
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   {
+      bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+      // "<mongoc platform>" must not be ordered before newly-appended platform metadata.
+      ASSERT_MATCH(metadata,
+                   "{"
+                   "  'driver': {"
+                   "    'name': 'test_e / library',"
+                   "    'version': '1.25.0 / 1.2'"
+                   "  },"
+                   "  'platform': 'posix=1234 / Library Platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "}");
+
+      bson_destroy(metadata);
+   }
+
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
 void
 test_handshake_install(TestSuite *suite)
 {
@@ -2353,4 +2403,8 @@ test_handshake_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/empty_identical/case_3",
                                test_handshake_metadata_append_empty_identical_case_3);
+
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/mongoc_platform_reappends",
+                               test_handshake_metadata_mongoc_platform_reappends);
 }

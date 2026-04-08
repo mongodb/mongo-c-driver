@@ -388,6 +388,22 @@ _get_driver_info(void)
 {
    gMongocHandshake.driver_name = bson_strndup("mongoc", HANDSHAKE_DRIVER_NAME_MAX);
    gMongocHandshake.driver_version = bson_strndup(MONGOC_VERSION_S, HANDSHAKE_DRIVER_VERSION_MAX);
+
+   // For backward compatibility with how the platform string is handled (appending `compiler_info` and `flags`), the
+   // platform metadata associated with the "mongoc" client field is always the LAST element in the "platform" metadata
+   // field, not the first:
+   //
+   //  - "name":     [            "mongoc",     "Library Platform",  "Framework Platform"]
+   //  - "version":  [  "<mongoc version>",    "<library version>", "<framework version>"]
+   //  - "platform": ["<library platform>", "<framework platform>",   "<mongoc platform>"] (!!)
+   //
+   // As an optimization, permit an empty "mongoc" platform value to be omitted from the list:
+   //
+   //  - "name":     [            "mongoc",     "Library Platform"]
+   //  - "version":  [  "<mongoc version>",    "<library version>"]
+   //  - "platform": ["<library platform>"                        ]
+   //
+   // In other words, `num_elements(name) - 1u == num_elements(platform)` implies `"<mongoc platform>" == ""`.
 }
 
 static void

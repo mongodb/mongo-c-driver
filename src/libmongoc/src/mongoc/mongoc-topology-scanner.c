@@ -446,10 +446,14 @@ static const size_t metadata_field_delim_len = 3u;
 static mongoc_array_t
 _mongoc_metadata_field_to_array_view(char const *value, size_t value_len)
 {
-   BSON_ASSERT_PARAM(value);
+   BSON_OPTIONAL_PARAM(value);
 
    mongoc_array_t ret;
    _mongoc_array_init(&ret, sizeof(_metadata_field_t));
+
+   if (!value || value[0] == '\0') {
+      return ret;
+   }
 
    const char *iter = value;
 
@@ -466,59 +470,60 @@ _mongoc_metadata_field_to_array_view(char const *value, size_t value_len)
    return ret;
 }
 
+static bool
+_mongoc_metadata_field_has_match(const mongoc_array_t *fields, const char *value, size_t value_len)
+{
+   BSON_ASSERT_PARAM(fields);
+   BSON_OPTIONAL_PARAM(value);
+
+   // Empty strings are equivalent to an "unset" (NULL) value, which matches anything.
+   if (!value || value[0] == '\0') {
+      return true;
+   }
+
+   for (size_t idx = 0u; idx < fields->len; idx++) {
+      const _metadata_field_t field = _mongoc_array_index(fields, _metadata_field_t, idx);
+
+      if (value_len == field.length && strncmp(value, field.field, field.length) == 0) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
 static char *
-_mongoc_append_metadata_value(char *current, const char *value, size_t max_len, bool allow_duplicates)
+_mongoc_append_metadata_value(char *current, size_t current_len, const char *value, size_t max_len)
 {
    BSON_OPTIONAL_PARAM(current);
    BSON_OPTIONAL_PARAM(value);
 
    BSON_ASSERT(max_len <= HANDSHAKE_MAX_SIZE);
+   BSON_ASSERT(current_len <= max_len);
 
    // Empty strings are equivalent to an "unset" (NULL) value.
    if (!value || value[0] == '\0') {
       return current;
    }
 
-   const size_t value_len = strlen(value);
-
    const char *prefix = current ? current : "";
-   const size_t prefix_len = strlen(prefix);
-
-   // Duplicates are permitted for a given metadata field when, given a single metadata append operation, the resulting
-   // overall metadata contains *any* changes after accounting for deduplication of individual fields:
-   //  - ("a", "b", "") + ("a", "b", "") -> ("a", "b", "")
-   //  - ("a", "b", "") + ("a", "c", "") -> ("a / a", "b / c", "")
-   //  - ("a", "b", "") + ("a", "", "c") -> ("a / a", "b", "c")
-   if (!allow_duplicates) {
-      mongoc_array_t fields = _mongoc_metadata_field_to_array_view(prefix, prefix_len);
-
-      for (size_t idx = 0u; idx < fields.len; idx++) {
-         const _metadata_field_t field = _mongoc_array_index(&fields, _metadata_field_t, idx);
-
-         // Field already exists. Do nothing.
-         if (value_len == field.length && strncmp(value, field.field, field.length) == 0) {
-            _mongoc_array_destroy(&fields);
-            return current;
-         }
-      }
-
-      _mongoc_array_destroy(&fields);
-   }
+   const size_t prefix_len = current_len;
 
    const size_t prefix_with_delim_len = prefix_len > 0u ? prefix_len + metadata_field_delim_len : 0u;
-   if (prefix_with_delim_len < max_len) {
-      // Always truncate the resulting value to fit within `max_len`.
-      const int trunc_len = (int)(max_len - prefix_with_delim_len);
 
-      if (prefix_with_delim_len > 0u) {
-         return bson_strdup_printf("%s%s%.*s", prefix, metadata_field_delim, trunc_len, value);
-      } else {
-         return bson_strdup_printf("%.*s", trunc_len, value);
-      }
+   // Unable to append due to length limits preventing the inclusion of the delimiter.
+   if (prefix_with_delim_len >= max_len) {
+      return NULL;
    }
 
-   // Permit pointer comparison with `current` to avoid redundant copies.
-   return current;
+   // Always truncate the resulting value to fit within `max_len`.
+   const int trunc_len = (int)(max_len - prefix_with_delim_len);
+
+   if (prefix_with_delim_len > 0u) {
+      return bson_strdup_printf("%.*s%s%.*s", (int)prefix_len, prefix, metadata_field_delim, trunc_len, value);
+   } else {
+      return bson_strdup_printf("%.*s", trunc_len, value);
+   }
 }
 
 // `driverInfoOptions` from the MongoDB Handshake spec.
@@ -631,6 +636,10 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
       }
    }
 
+   size_t const name_len = strlen(name);
+   size_t const version_len = version ? strlen(version) : 0u;
+   size_t const platform_len = platform ? strlen(platform) : 0u;
+
    // Only ever set at most once: when not-null, value is never subsequently changed.
    const char *const appname = mcommon_atomic_ptr_fetch((void *)&ts->appname, mcommon_memory_order_relaxed);
 
@@ -658,31 +667,97 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
       // Double-checked lock: do not hold lock while build the new handshake command.
       bson_mutex_unlock(&ts->handshake_cmd_mtx);
       {
-         updated.name = _mongoc_append_metadata_value(current.name, name, HANDSHAKE_DRIVER_NAME_MAX, false);
-         updated.version = _mongoc_append_metadata_value(current.version, version, HANDSHAKE_DRIVER_VERSION_MAX, false);
-         updated.platform = _mongoc_append_metadata_value(current.platform, platform, HANDSHAKE_MAX_SIZE, false);
+         const size_t current_name_len = current.name ? strlen(current.name) : 0u;
+         const size_t current_version_len = current.version ? strlen(current.version) : 0u;
+         size_t current_platform_len = current.platform ? strlen(current.platform) : 0u;
 
-         // No append should take place if the result is completely identical due to duplicates.
-         if (current.name == updated.name && current.version == updated.version &&
-             current.platform == updated.platform) {
-            _driver_info_options_destroy(&current, &updated);
-            return true; // No observable change to metadata is considered success.
+         // Duplicates are identified by a set of appendable metadata fields where empty-or-null values are always
+         // considered a match. All fields must match for the set to be considered a duplicate.
+         //  - ("a", "b", "c") + ("a",  "",  "") -> ("a", "b", "c")
+         //  - ("a", "b", "c") + ("a", "b",  "") -> ("a", "b", "c")
+         //  - ("a", "b", "c") + ("a", "b", "x") -> ("a / a", "b / b", "c / x")
+         //  - ("a", "b", "c") + ("a",  "", "x") -> ("a / a", "b / ",  "c / x")
+         // DRIVERS-3251: to preserve the "as a set" invariant, an empty placeholder field ["a", "", "c"] must
+         // necessarily be delimited as: "a /  / c".
+         {
+            mongoc_array_t name_fields = _mongoc_metadata_field_to_array_view(current.name, current_name_len);
+            mongoc_array_t version_fields = _mongoc_metadata_field_to_array_view(current.version, current_version_len);
+            mongoc_array_t platform_fields =
+               _mongoc_metadata_field_to_array_view(current.platform, current_platform_len);
+
+            // Exclude the conditionally-appended "mongoc" platform values (`compiler_info` and `flags`) from the
+            // platform string to be appended-to so user-provided metadata is prioritized for inclusion. Conditionally
+            // (re-)append them later using `_build_handshake_cmd()`.
+            if (platform_fields.len > 0u) {
+               // The "mongoc" platform value is always the last element, when present.
+               const _metadata_field_t mongoc_platform =
+                  _mongoc_array_index(&platform_fields, _metadata_field_t, platform_fields.len - 1u);
+
+               const char *const compiler_info = _mongoc_handshake_get()->compiler_info;
+
+               // `compiler_info` is always present when `flags` is present. Otherwise, neither are present.
+               // The unlikely possibility that user-provided platform metadata coincidentally matches `compiler_info`
+               // is considered acceptable. Use of `strstr()` is safe given `current.platform` is null-terminated and
+               // `mongoc_platform` is always the last element in the string (no intermediate delimiters).
+               if (mongoc_platform.field && compiler_info &&
+                   strstr(mongoc_platform.field, compiler_info) == mongoc_platform.field) {
+                  // Exclude "<mongoc-platform>" from duplicate checks.
+                  platform_fields.len -= 1u;
+
+                  // "... / <mongoc-platform>" -> "... / " or "<mongoc-platform>" -> ""
+                  current_platform_len -= mongoc_platform.length;
+
+                  // "... / " -> "..." or "" -> ""
+                  current_platform_len -= platform_fields.len > 0u ? metadata_field_delim_len : 0u;
+               }
+            }
+
+            // Duplicates are permitted for a given metadata field when, given a single metadata append operation, the
+            // resulting overall metadata contains *any* changes after accounting for deduplication of individual
+            // fields:
+            //  - ("a", "b", "") + ("a", "b", "") -> ("a", "b", "")
+            //  - ("a", "b", "") + ("a", "c", "") -> ("a / a", "b / c", "")
+            //  - ("a", "b", "") + ("a", "", "c") -> ("a / a", "b", "c")
+            const bool name_match = _mongoc_metadata_field_has_match(&name_fields, name, name_len);
+            const bool version_match = _mongoc_metadata_field_has_match(&version_fields, version, version_len);
+            const bool platform_match = _mongoc_metadata_field_has_match(&platform_fields, platform, platform_len);
+
+            _mongoc_array_destroy(&name_fields);
+            _mongoc_array_destroy(&version_fields);
+            _mongoc_array_destroy(&platform_fields);
+
+            // All fields contained a duplicate: the resulting metadata does not change after deduplication.
+            if (name_match && version_match && platform_match) {
+               _driver_info_options_destroy(&current, &updated);
+               return true; // No changes due to duplicates is still considered a success.
+            }
          }
 
-         // Any metadata fields which were previously unchanged due to field-specific duplicates must now be
-         // unconditionally appended-to.
+         // Append the new set of values to each metadata field.
+         updated.name = _mongoc_append_metadata_value(current.name, current_name_len, name, HANDSHAKE_DRIVER_NAME_MAX);
+         updated.version =
+            _mongoc_append_metadata_value(current.version, current_version_len, version, HANDSHAKE_DRIVER_VERSION_MAX);
+         updated.platform =
+            _mongoc_append_metadata_value(current.platform, current_platform_len, platform, HANDSHAKE_MAX_SIZE);
+
+         // When any metadata field append fails, the entire append operation is a failure.
          {
-            if (current.name == updated.name) {
-               updated.name = _mongoc_append_metadata_value(current.name, name, HANDSHAKE_DRIVER_NAME_MAX, true);
+            if (!updated.name) {
+               _driver_info_options_destroy(&current, &updated);
+               MONGOC_WARNING("Failed to append metadata due to 'name' exceeding handshake size limits");
+               return false;
             }
 
-            if (current.version == updated.version) {
-               updated.version =
-                  _mongoc_append_metadata_value(current.version, version, HANDSHAKE_DRIVER_VERSION_MAX, true);
+            if (!updated.version) {
+               _driver_info_options_destroy(&current, &updated);
+               MONGOC_WARNING("Failed to append metadata due to 'version' exceeding handshake size limits");
+               return false;
             }
 
-            if (current.platform == updated.platform) {
-               updated.platform = _mongoc_append_metadata_value(current.platform, platform, HANDSHAKE_MAX_SIZE, true);
+            if (!updated.platform) {
+               _driver_info_options_destroy(&current, &updated);
+               MONGOC_WARNING("Failed to append metadata due to 'platform' exceeding handshake size limits");
+               return false;
             }
          }
 
