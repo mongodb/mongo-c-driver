@@ -239,7 +239,8 @@ typedef struct _mongoc_topology_t {
    // `oidc_cache` implements the OIDC spec "Client Cache". It is shared among all pooled clients.
    mongoc_oidc_cache_t *oidc_cache;
 
-   // `token_bucket` is used to limit overload retry attempts if the URI contains `adaptiveRetries=True`.
+   // `token_bucket` is used to limit overload retry attempts. This is currently unused (always `NULL`), but may be
+   // reintroduced in future iterations of Client Backpressure.
    mongoc_token_bucket_t *token_bucket;
 } mongoc_topology_t;
 
