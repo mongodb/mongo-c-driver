@@ -607,6 +607,30 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
    BSON_OPTIONAL_PARAM(version);
    BSON_OPTIONAL_PARAM(platform);
 
+   if (name[0] == '\0') {
+      MONGOC_WARNING("Metadata field 'name' must not be an empty string");
+      return false;
+   }
+
+   // MongoDB Handshake Spec: All strings provided as part of the driver info MUST NOT contain the delimiter used for
+   // metadata concatention.
+   {
+      if (strstr(name, metadata_field_delim)) {
+         MONGOC_WARNING("Metadata field 'name' must not contain the delimiter \"%s\"", metadata_field_delim);
+         return false;
+      }
+
+      if (version && strstr(version, metadata_field_delim)) {
+         MONGOC_WARNING("Metadata field 'version' must not contain the delimiter \"%s\"", metadata_field_delim);
+         return false;
+      }
+
+      if (platform && strstr(platform, metadata_field_delim)) {
+         MONGOC_WARNING("Metadata field 'platform' must not contain the delimiter \"%s\"", metadata_field_delim);
+         return false;
+      }
+   }
+
    // Only ever set at most once: when not-null, value is never subsequently changed.
    const char *const appname = mcommon_atomic_ptr_fetch((void *)&ts->appname, mcommon_memory_order_relaxed);
 
