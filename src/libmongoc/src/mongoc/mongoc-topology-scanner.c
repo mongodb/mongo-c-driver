@@ -534,7 +534,7 @@ typedef struct _driver_info_options_t {
 } _driver_info_options_t;
 
 // Return owning copies of metadata fields to be potentially appended-to.
-// Precondition: `out` must not containing owning pointers.
+// Precondition: `out` must not contain any owning pointers.
 static void
 _read_driver_info_options(const bson_t *handshake_cmd, _driver_info_options_t *out)
 {
@@ -618,7 +618,7 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
    }
 
    // MongoDB Handshake Spec: All strings provided as part of the driver info MUST NOT contain the delimiter used for
-   // metadata concatention.
+   // metadata concatenation.
    {
       if (strstr(name, metadata_field_delim)) {
          MONGOC_WARNING("Metadata field 'name' must not contain the delimiter \"%s\"", metadata_field_delim);
