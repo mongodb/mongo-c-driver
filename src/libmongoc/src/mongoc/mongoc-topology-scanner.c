@@ -777,7 +777,7 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
       // Double-checked lock: success.
       if (ts->handshake_cmd == old_cmd) {
          if (new_cmd) {
-            ts->handshake_cmd = new_cmd; // Ownership transfer.
+            ts->handshake_cmd = new_cmd; // Ownership transfer: `old_cmd = exchange(ts->handshake_cmd, new_cmd);`.
          } else {
             // Leave the previous valid handshake command unchanged.
          }
