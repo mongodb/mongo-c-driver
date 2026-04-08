@@ -2208,16 +2208,26 @@ test_handshake_metadata_append_empty_identical_case_3(void)
 }
 
 static void
-test_handshake_metadata_mongoc_platform_reappends(void)
+test_handshake_metadata_mongoc_platform_reappends_impl(bool initialize_with)
 {
    _override_host_platform_os();
+
+   {
+      mongoc_handshake_t *const md = _mongoc_handshake_get_unfrozen();
+
+      // Start with an empty platform string.
+      bson_free(md->platform);
+      md->platform = bson_strdup("");
+   }
 
    mock_server_t *const server = mock_server_new();
    mock_server_run(server);
 
    mongoc_client_t *const client = _test_metadata_append_setup_client(server);
 
-   {
+   if (initialize_with) {
+      ASSERT(mongoc_handshake_data_append("library", "1.2", "Library Platform"));
+   } else {
       bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
 
       // "<mongoc platform>" is always appended as the last element whenever able (no truncation).
@@ -2227,31 +2237,163 @@ test_handshake_metadata_mongoc_platform_reappends(void)
                    "    'name': 'test_e',"
                    "    'version': '1.25.0'"
                    "  },"
-                   "  'platform': 'posix=1234 / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "  'platform': 'CC=GCC CFLAGS=\\\"-fPIE\\\"'"
                    "}");
 
       bson_destroy(metadata);
-   }
 
-   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+      ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+   }
 
    {
       bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
 
-      // "<mongoc platform>" must not be ordered before newly-appended platform metadata.
+      // User-provided platform metadata must always come before "<mongoc platform>".
       ASSERT_MATCH(metadata,
                    "{"
                    "  'driver': {"
                    "    'name': 'test_e / library',"
                    "    'version': '1.25.0 / 1.2'"
                    "  },"
-                   "  'platform': 'posix=1234 / Library Platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "  'platform': 'Library Platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "}");
+
+      bson_destroy(metadata);
+   }
+
+   ASSERT(mongoc_client_append_metadata(client, "framework", "2.0", "Framework Platform"));
+
+   {
+      bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+      // "<mongoc platform>" must be reappended as the last element following an append operation.
+      ASSERT_MATCH(metadata,
+                   "{"
+                   "  'driver': {"
+                   "    'name': 'test_e / library / framework',"
+                   "    'version': '1.25.0 / 1.2 / 2.0'"
+                   "  },"
+                   "  'platform': 'Library Platform / Framework Platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
                    "}");
 
       bson_destroy(metadata);
    }
 
    mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_mongoc_platform_reappends(void)
+{
+   test_handshake_metadata_mongoc_platform_reappends_impl(true);
+   test_handshake_metadata_mongoc_platform_reappends_impl(false);
+}
+
+static void
+test_handshake_metadata_mongoc_platform_truncation(void)
+{
+   // Ensure determinism of the total handshake command length.
+   _override_host_platform_os();
+
+   {
+      mongoc_handshake_t *const md = _mongoc_handshake_get_unfrozen();
+
+      // Ensure determinism of the total handshake command length.
+      md->docker = false;
+      md->kubernetes = false;
+   }
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // This value is steadily increased until truncation occurs. The subtracted value must be large enough (the
+   // `big_platform` string must start small enough) to allow for state 0 (no truncation) to occur at least once.
+   size_t big_platform_len = (HANDSHAKE_MAX_SIZE - 147);
+   int state = 0;
+
+   int count_state_0 = 0; // No truncation.
+   int count_state_1 = 0; // Only `flags` is omitted.
+   int count_state_2 = 0; // Both `compiler_info` and `flags` are omitted.
+
+   // Repeatedly increase the length of the appended platform value to trigger incremental truncation.
+   while (state < 3) {
+      mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+
+      char *const big_platform = bson_malloc(big_platform_len);
+      memset(big_platform, 'a', big_platform_len - 1u);
+      big_platform[big_platform_len - 1u] = '\0';
+
+      ASSERT(mongoc_client_append_metadata(client, "library", "1.2", big_platform));
+
+      {
+         bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+         const char *const platform = bson_lookup_utf8(metadata, "platform");
+
+         // Initially, entire platform string should be present.
+         if (state == 0) {
+            char *const expected = bson_strdup_printf("posix=1234 / %s / CC=GCC CFLAGS=\"-fPIE\"", big_platform);
+
+            if (strcmp(platform, expected) == 0) {
+               ++count_state_0;
+            } else {
+               ++state; // Transition to state 1.
+            }
+
+            bson_free(expected);
+         }
+
+         // `flags` must be the first value to be omitted due to truncation.
+         if (state == 1) {
+            char *const expected = bson_strdup_printf("posix=1234 / %s / CC=GCC", big_platform);
+
+            if (strcmp(platform, expected) == 0) {
+               ++count_state_1;
+            } else {
+               ++state; // Transition to state 2.
+            }
+
+            bson_free(expected);
+         }
+
+         // `compiler_info` must be the next value omitted due to truncation.
+         if (state == 2) {
+            char *const expected = bson_strdup_printf("posix=1234 / %s", big_platform);
+
+            if (strcmp(platform, expected) == 0) {
+               ++count_state_2; // `big_platform` is not yet truncated.
+            } else {
+               // The truncated platform string is still a substring.
+               ASSERT(strstr(expected, platform) == expected);
+
+               // Truncation must have removed exactly one character due to `big_platform_len` being incremented by 1.
+               ASSERT_CMPSIZE_T(strlen(platform), ==, strlen(expected) - 1u);
+
+               ++state; // End iteration.
+            }
+
+            bson_free(expected);
+         }
+
+         bson_destroy(metadata);
+      }
+
+      bson_free(big_platform);
+      mongoc_client_destroy(client);
+
+      // Must be smaller than length of `compiler_info` or `flags` to ensure states 1 and 2 each occur at least once.
+      big_platform_len += 1u;
+   }
+
+   // Unlikely: one or more of the string comparisons above failed to match the expected platform string for a reason
+   // other than the expected truncation behavior. When this happens, one or more of these counters will not have been
+   // incremented as expected.
+   ASSERT_CMPINT(count_state_0, >, 0);
+   ASSERT_CMPINT(count_state_1, >, 0);
+   ASSERT_CMPINT(count_state_2, >, 0);
+
    mock_server_destroy(server);
 
    _reset_handshake();
@@ -2407,4 +2549,7 @@ test_handshake_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/mongoc_platform_reappends",
                                test_handshake_metadata_mongoc_platform_reappends);
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/mongoc_platform_truncation",
+                               test_handshake_metadata_mongoc_platform_truncation);
 }
