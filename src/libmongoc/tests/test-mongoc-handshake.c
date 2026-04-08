@@ -1434,7 +1434,7 @@ _test_metadata_append_reply_hello_and_destroy(request_t *request)
 static void
 _set_initial_metadata(const char *name, const char *version, const char *platform)
 {
-   mongoc_handshake_data_append(name, version, platform);
+   ASSERT(!_mongoc_handshake_is_frozen());
 
    // Avoid noise in handshake platform string.
    {
@@ -1446,6 +1446,8 @@ _set_initial_metadata(const char *name, const char *version, const char *platfor
       md->compiler_info = NULL;
       md->flags = NULL;
    }
+
+   ASSERT(mongoc_handshake_data_append(name, version, platform));
 }
 
 typedef struct driver_info_options {
@@ -2226,6 +2228,7 @@ test_handshake_metadata_mongoc_platform_reappends_impl(bool initialize_with)
    mongoc_client_t *const client = _test_metadata_append_setup_client(server);
 
    if (initialize_with) {
+      ASSERT(!_mongoc_handshake_is_frozen());
       ASSERT(mongoc_handshake_data_append("library", "1.2", "Library Platform"));
    } else {
       bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
