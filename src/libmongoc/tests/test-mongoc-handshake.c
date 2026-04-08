@@ -2535,6 +2535,7 @@ test_handshake_install(TestSuite *suite)
                                "/MongoDB/handshake/metadata_append/separated_identical",
                                test_handshake_metadata_append_separated_identical);
 
+   // Do not implement Case 1, which requires an empty/null "name" field.
    TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/empty_duplicate/case_2",
                                test_handshake_metadata_append_empty_duplicate_case_2);
@@ -2542,6 +2543,7 @@ test_handshake_install(TestSuite *suite)
                                "/MongoDB/handshake/metadata_append/empty_duplicate/case_3",
                                test_handshake_metadata_append_empty_duplicate_case_3);
 
+   // Do not implement Case 1, which requires an empty/null "name" field.
    TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/empty_identical/case_2",
                                test_handshake_metadata_append_empty_identical_case_2);
