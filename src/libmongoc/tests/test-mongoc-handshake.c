@@ -390,7 +390,7 @@ _override_host_platform_os(void)
    bson_free(md->compiler_info);
    md->compiler_info = bson_strdup("CC=GCC");
    bson_free(md->flags);
-   md->flags = bson_strdup("CFLAGS=\"-fPIE\"");
+   md->flags = bson_strdup(" CFLAGS=\"-fPIE\"");
 }
 
 // erase all FaaS variables used in testing
