@@ -691,7 +691,8 @@ mongoc_uri_option_is_int32(const char *key)
           !strcasecmp(key, MONGOC_URI_SOCKETCHECKINTERVALMS) || !strcasecmp(key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp(key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp(key, MONGOC_URI_MAXPOOLSIZE) ||
           !strcasecmp(key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp(key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp(key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) || !strcasecmp(key, MONGOC_URI_SRVMAXHOSTS);
+          !strcasecmp(key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) || !strcasecmp(key, MONGOC_URI_SRVMAXHOSTS) ||
+          !strcasecmp(key, MONGOC_URI_MAXADAPTIVERETRIES);
 }
 
 bool
@@ -712,9 +713,9 @@ mongoc_uri_option_is_bool(const char *key)
 
    return !strcasecmp(key, MONGOC_URI_DIRECTCONNECTION) || !strcasecmp(key, MONGOC_URI_JOURNAL) ||
           !strcasecmp(key, MONGOC_URI_RETRYREADS) || !strcasecmp(key, MONGOC_URI_RETRYWRITES) ||
-          !strcasecmp(key, MONGOC_URI_SAFE) || !strcasecmp(key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
-          !strcasecmp(key, MONGOC_URI_TLS) || !strcasecmp(key, MONGOC_URI_TLSINSECURE) ||
-          !strcasecmp(key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
+          !strcasecmp(key, MONGOC_URI_ENABLEOVERLOADRETARGETING) || !strcasecmp(key, MONGOC_URI_SAFE) ||
+          !strcasecmp(key, MONGOC_URI_SERVERSELECTIONTRYONCE) || !strcasecmp(key, MONGOC_URI_TLS) ||
+          !strcasecmp(key, MONGOC_URI_TLSINSECURE) || !strcasecmp(key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
           !strcasecmp(key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp(key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp(key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) || !strcasecmp(key, MONGOC_URI_LOADBALANCED) ||
@@ -1005,7 +1006,16 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
          if (0 < strlen(value)) {
             int32_t i32 = 42424242;
             if (mlib_i32_parse(mstr_cstring(value), &i32)) {
+               if (!bson_strcasecmp(canon, MONGOC_URI_MAXADAPTIVERETRIES)) {
+                  MONGOC_WARNING("Unsupported value for \"%s\": \"%s\"", key, value);
+                  continue;
+               }
                goto UNSUPPORTED_VALUE;
+            }
+
+            if (!bson_strcasecmp(canon, MONGOC_URI_MAXADAPTIVERETRIES) && i32 < 0) {
+               MONGOC_WARNING("Invalid \"%s\" of %" PRId32 ": must be a non-negative integer", key, i32);
+               continue;
             }
 
             if (!_mongoc_uri_set_option_as_int32_with_error(uri, canon, i32, error)) {
@@ -1047,6 +1057,10 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
                               key);
                bval = false;
             } else {
+               if (!bson_strcasecmp(canon, MONGOC_URI_ENABLEOVERLOADRETARGETING)) {
+                  MONGOC_WARNING("Unsupported value for \"%s\": \"%s\"", key, value);
+                  continue;
+               }
                goto UNSUPPORTED_VALUE;
             }
 
