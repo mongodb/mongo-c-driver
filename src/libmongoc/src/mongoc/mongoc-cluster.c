@@ -3701,6 +3701,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       .token_bucket = token_bucket,
       .initial_server_description = cmd->server_stream->sd,
       .max_adaptive_retries = cluster->client->max_adaptive_retries,
+      .enable_overload_retargeting = cluster->client->enable_overload_retargeting,
    };
 
    bool ret = false;

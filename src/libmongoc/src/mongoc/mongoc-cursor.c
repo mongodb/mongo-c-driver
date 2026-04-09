@@ -927,6 +927,7 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       .token_bucket = cursor->client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
       .max_adaptive_retries = cursor->client->max_adaptive_retries,
+      .enable_overload_retargeting = cursor->client->enable_overload_retargeting,
    };
 
    ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, &cursor->error);

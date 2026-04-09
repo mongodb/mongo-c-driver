@@ -592,27 +592,33 @@ prose_test_3_on_command_succeeded(const mongoc_apm_command_succeeded_t *event)
    ctx->server_id_succeeded.is_set = true;
 }
 
-static void
-test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str, prose_test_3_apm_ctx *apm_ctx)
+static mongoc_uri_t *
+make_prose_test_3_uri(void)
 {
-   // Step 1: Create a client `client` with `retryReads=true`, `readPreference=primaryPreferred`, and command event
-   // monitoring enabled.
-   mongoc_client_t *client = NULL;
+   mongoc_uri_t *const uri = test_framework_get_uri();
+
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYREADS, true);
+
    {
-      mongoc_uri_t *const uri = test_framework_get_uri();
-
-      mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYWRITES, true);
-
-      {
-         mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
-         mongoc_uri_set_read_prefs_t(uri, read_prefs);
-         mongoc_read_prefs_destroy(read_prefs);
-      }
-
-      client = test_framework_client_new_from_uri(uri, NULL);
-
-      mongoc_uri_destroy(uri);
+      mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
+      mongoc_uri_set_read_prefs_t(uri, read_prefs);
+      mongoc_read_prefs_destroy(read_prefs);
    }
+
+   return uri;
+}
+
+static void
+test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str,
+                                          mongoc_uri_t *uri, // Owning.
+                                          prose_test_3_apm_ctx *apm_ctx)
+{
+   BSON_ASSERT_PARAM(uri);
+
+   // Step 1: Create a client with the provided URI and command event monitoring enabled.
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   mongoc_uri_destroy(uri);
+
    test_framework_set_ssl_opts(client);
 
    // Step 2: Configure the provided fail point for `client`:
@@ -654,11 +660,15 @@ test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str, prose_
    mongoc_client_destroy(client);
 }
 
-// Retryable Reads Caused by Overload Errors Are Retried on a Different Replicaset Server When One is Available.
+// Retryable Reads Caused by Overload Errors Are Retried on a Different Replicaset Server When One is Available and
+// enableOverloadRetargeting is enabled.
 static void
 test_retryable_reads_prose_3_1(void *ctx)
 {
    BSON_UNUSED(ctx);
+
+   mongoc_uri_t *const uri = make_prose_test_3_uri();
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, true);
 
    prose_test_3_apm_ctx apm_ctx = {0};
 
@@ -669,6 +679,7 @@ test_retryable_reads_prose_3_1(void *ctx)
          "data" :
             {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 6}
       }),
+      uri, // Ownership transfer.
       &apm_ctx);
 
    // Step 6: Assert that both events occurred on different servers.
@@ -689,6 +700,30 @@ test_retryable_reads_prose_3_2(void *ctx)
          "mode" : {"times" : 1},
          "data" : {"failCommands" : ["find"], "errorLabels" : ["RetryableError"], "errorCode" : 6}
       }),
+      make_prose_test_3_uri(), // Ownership transfer.
+      &apm_ctx);
+
+   // Step 6: Assert that both events occurred on the same server.
+   ASSERT(apm_ctx.server_id_failed.id == apm_ctx.server_id_succeeded.id);
+}
+
+// Retryable Reads Caused by Overload Errors Are Retried on the Same Replicaset Server When enableOverloadRetargeting
+// is disabled.
+static void
+test_retryable_reads_prose_3_3(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   prose_test_3_apm_ctx apm_ctx = {0};
+
+   test_retryable_reads_prose_3_steps_1_to_5(
+      BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" :
+            {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 6}
+      }),
+      make_prose_test_3_uri(), // Ownership transfer
       &apm_ctx);
 
    // Step 6: Assert that both events occurred on the same server.
@@ -756,6 +791,13 @@ test_retryable_reads_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/retryable_reads/prose_test_3_2",
                      test_retryable_reads_prose_3_2,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset_with_secondary,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_3_3",
+                     test_retryable_reads_prose_3_3,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset_with_secondary,

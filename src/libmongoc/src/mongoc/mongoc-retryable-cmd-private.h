@@ -49,6 +49,7 @@ typedef struct {
    mongoc_token_bucket_t *token_bucket;
    mongoc_server_description_t const *initial_server_description;
    int32_t max_adaptive_retries;
+   bool enable_overload_retargeting;
 } mongoc_retryable_cmd_t;
 
 bool

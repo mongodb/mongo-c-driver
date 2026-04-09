@@ -1129,6 +1129,8 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
    client->max_adaptive_retries =
       mongoc_uri_get_option_as_int32(client->uri, MONGOC_URI_MAXADAPTIVERETRIES, MONGOC_DEFAULT_MAX_ADAPTIVE_RETRIES);
+   client->enable_overload_retargeting =
+      mongoc_uri_get_option_as_bool(client->uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, false);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1724,6 +1726,7 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .token_bucket = client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
       .max_adaptive_retries = client->max_adaptive_retries,
+      .enable_overload_retargeting = client->enable_overload_retargeting,
    };
 
    const bool ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, error);

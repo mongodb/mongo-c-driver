@@ -129,6 +129,7 @@ struct _mongoc_client_t {
 
    mongoc_jitter_source_t *jitter_source;
    int32_t max_adaptive_retries;
+   bool enable_overload_retargeting;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
