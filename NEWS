@@ -10,6 +10,30 @@ libmongoc 2.3.0 [UNRELEASED]
         - If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors.
     - Set the URI option `adaptiveRetry=true` limit retries with a token bucket system.
 
+libmongoc 2.2.4
+===============
+
+Fixes:
+
+  * Fix handling of corrupt GridFS files.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.30.8
+================
+
+Fixes:
+
+  * Fix handling of corrupt GridFS files.
+  * Fix handling in HTTP response parser.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Remi Collet
+
 libmongoc 2.2.3
 ===============
 

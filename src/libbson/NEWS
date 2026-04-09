@@ -5,6 +5,16 @@ libbson 2.3.0 [UNRELEASED]
 
 * `bson_append_array_begin`. Use `bson_append_array_builder_begin` or `bson_append_array_unsafe_begin` instead.
 
+libbson 2.2.4
+=============
+
+No changes since 2.2.3. Version incremented to match the libmongoc version.
+
+libbson 1.30.8
+==============
+
+No changes since 1.30.7. Version incremented to match the libmongoc version.
+
 libbson 2.2.3
 =============
 
