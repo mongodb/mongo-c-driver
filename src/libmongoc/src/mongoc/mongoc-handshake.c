@@ -839,6 +839,9 @@ _append_and_truncate(char **s, const char *suffix, size_t max_len)
    BSON_ASSERT_PARAM(s);
    BSON_ASSERT_PARAM(suffix);
 
+   // `max_len` is at most `HANDSHAKE_MAX_SIZE`, which fits well within the range of `int`.
+   BSON_ASSERT(mlib_in_range(int, max_len));
+
    char *old_str = *s;
    const char *const delim = " / ";
    const size_t delim_len = strlen(delim);
@@ -859,8 +862,8 @@ _append_and_truncate(char **s, const char *suffix, size_t max_len)
       return;
    }
 
+   // `INT_MAX > HANDSHAKE_MAX_SIZE >= max_len > required_space`, therefore `space_for_suffix` is always within range.
    const int space_for_suffix = (int)(max_len - required_space);
-   BSON_ASSERT(mlib_in_range(int, space_for_suffix));
 
    // Strip the trailing " / " delimiter and/or truncate to fit within `max_len`.
    const int truncated_len = BSON_MIN((int)suffix_len, space_for_suffix);
