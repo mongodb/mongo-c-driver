@@ -397,11 +397,11 @@ _get_driver_info(void)
    //  - "version":  [  "<mongoc version>",    "<library version>", "<framework version>"]
    //  - "platform": ["<library platform>", "<framework platform>",   "<mongoc platform>"] (!!)
    //
-   // As an optimization, permit an empty "mongoc" platform value to be omitted from the list:
+   // Due to handshake length limits and truncation, the "<mongoc platform>" value may be excluded completely:
    //
    //  - "name":     [            "mongoc",     "Library Platform"]
    //  - "version":  [  "<mongoc version>",    "<library version>"]
-   //  - "platform": ["<library platform>"                        ] (implies `"<mongoc platform" == ""`)
+   //  - "platform": ["<library platform>"                        ] (!!)
 }
 
 static void
