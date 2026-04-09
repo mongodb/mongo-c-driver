@@ -42,6 +42,8 @@
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-version.h>
 
+#include <bson/compat.h>
+
 #include <mlib/cmp.h>
 #include <mlib/config.h>
 
@@ -834,11 +836,19 @@ _mongoc_handshake_freeze(void)
 static void
 _append_and_truncate(char **s, const char *suffix, size_t max_len)
 {
-   char *old_str = *s;
-   const size_t delim_len = strlen(" / ");
-
    BSON_ASSERT_PARAM(s);
    BSON_ASSERT_PARAM(suffix);
+
+   char *old_str = *s;
+   const char *const delim = " / ";
+   const size_t delim_len = strlen(delim);
+
+   // For backward compatibility, allow `suffix` to contain the " / " delimiter at the end of its value, but strip it so
+   // that `_append_platform_field()` can re-append it only when it is necessary.
+   size_t suffix_len = strlen(suffix);
+   if (suffix_len >= delim_len && strncmp(suffix + (suffix_len - delim_len), delim, delim_len) == 0) {
+      suffix_len -= delim_len;
+   }
 
    const char *const prefix = old_str ? old_str : "";
 
@@ -849,10 +859,13 @@ _append_and_truncate(char **s, const char *suffix, size_t max_len)
       return;
    }
 
-   const size_t space_for_suffix = max_len - required_space;
+   const int space_for_suffix = (int)(max_len - required_space);
    BSON_ASSERT(mlib_in_range(int, space_for_suffix));
 
-   *s = bson_strdup_printf("%s / %.*s", prefix, (int)space_for_suffix, suffix);
+   // Strip the trailing " / " delimiter and/or truncate to fit within `max_len`.
+   const int truncated_len = BSON_MIN((int)suffix_len, space_for_suffix);
+
+   *s = bson_strdup_printf("%s / %.*s", prefix, truncated_len, suffix);
    BSON_ASSERT(strlen(*s) <= max_len);
 
    bson_free(old_str);

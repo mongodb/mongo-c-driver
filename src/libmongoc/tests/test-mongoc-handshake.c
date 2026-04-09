@@ -2402,6 +2402,40 @@ test_handshake_metadata_mongoc_platform_truncation(void)
    _reset_handshake();
 }
 
+static void
+test_handshake_metadata_append_strip_delimiters(void)
+{
+   _override_host_platform_os();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   ASSERT(client);
+
+   // For backward compatibility, permit string arguments to old metadata append API to contain trailing delimiters.
+   ASSERT(mongoc_handshake_data_append("driver_name / ", "driver_version / ", "platform / "));
+
+   bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Resulting handshake command must not contain trailing delimiters (e.g. "driver_name / ") or double-delimiters
+   // (e.g. "posix=1234 / / CC=GCC CFLAGS=\"-fPIE\"").
+   ASSERT_MATCH(metadata,
+                "{"
+                "  'driver': {"
+                "    'name': 'test_e / driver_name',"
+                "    'version': '1.25.0 / driver_version'"
+                "  },"
+                "  'platform': 'posix=1234 / platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                "}");
+
+   bson_destroy(metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
 void
 test_handshake_install(TestSuite *suite)
 {
@@ -2557,4 +2591,6 @@ test_handshake_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite,
                                "/MongoDB/handshake/metadata_append/mongoc_platform_truncation",
                                test_handshake_metadata_mongoc_platform_truncation);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/strip_delimiters", test_handshake_metadata_append_strip_delimiters);
 }
