@@ -237,7 +237,8 @@ _mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data)
          if (!BSON_ITER_HOLDS_NUMBER(&iter)) {
             GOTO(failure);
          }
-         if (bson_iter_as_int64(&iter) > INT32_MAX) {
+         int64_t as_i64 = bson_iter_as_int64(&iter);
+         if (as_i64 > INT32_MAX || as_i64 <= 0) {
             GOTO(failure);
          }
          file->chunk_size = (int32_t)bson_iter_as_int64(&iter);
@@ -287,7 +288,7 @@ _mongoc_gridfs_file_new_from_bson(mongoc_gridfs_t *gridfs, const bson_t *data)
 
 failure:
    bson_destroy(&file->bson);
-
+   bson_free(file);
    RETURN(NULL);
 }
 
@@ -453,7 +454,11 @@ mongoc_gridfs_file_readv(
       for (;;) {
          r = _mongoc_gridfs_file_page_read(
             file->page, (uint8_t *)iov[i].iov_base + iov_pos, (uint32_t)(iov[i].iov_len - iov_pos));
-         BSON_ASSERT(r >= 0);
+         if (r < 0) {
+            _mongoc_set_error(
+               &file->error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "GridFS operation failed");
+            return -1;
+         }
 
          iov_pos += r;
          file->pos += r;
