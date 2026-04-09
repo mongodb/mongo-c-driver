@@ -866,7 +866,7 @@ _append_and_truncate(char **s, const char *suffix, size_t max_len)
    const int space_for_suffix = (int)(max_len - required_space);
 
    // Strip the trailing " / " delimiter and/or truncate to fit within `max_len`.
-   const int truncated_len = BSON_MIN((int)suffix_len, space_for_suffix);
+   const int truncated_len = mlib_cmp(suffix_len, <, space_for_suffix) ? (int)suffix_len : space_for_suffix;
 
    *s = bson_strdup_printf("%s / %.*s", prefix, truncated_len, suffix);
    BSON_ASSERT(strlen(*s) <= max_len);
