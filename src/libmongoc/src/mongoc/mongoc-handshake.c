@@ -401,9 +401,7 @@ _get_driver_info(void)
    //
    //  - "name":     [            "mongoc",     "Library Platform"]
    //  - "version":  [  "<mongoc version>",    "<library version>"]
-   //  - "platform": ["<library platform>"                        ]
-   //
-   // In other words, `num_elements(name) - 1u == num_elements(platform)` implies `"<mongoc platform>" == ""`.
+   //  - "platform": ["<library platform>"                        ] (implies `"<mongoc platform" == ""`)
 }
 
 static void
