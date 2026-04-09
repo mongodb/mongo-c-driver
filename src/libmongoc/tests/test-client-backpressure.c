@@ -556,9 +556,11 @@ test_backpressure_prose_1(void *ctx)
    // Step 3.5: Execute step 3.3 again.
    const mlib_duration with_backoff_duration = backpressure_prose_1_step_3_3(collection);
 
-   // Step 3.6: Compare the durations of the two runs. The sum of 5 backoffs is 3.1 seconds. There is a 1-second window
-   // to account for potential variance between the two runs.
-   ASSERT_CMPDURATION(mlib_duration(with_backoff_duration, minus, no_backoff_duration), >=, mlib_duration(2100, ms));
+   // Step 3.6: Compare the time between the two runs. The sum of 2 backoffs is 0.3 seconds. There is a 0.3-second
+   // window to account for potential variance between the two runs.
+   const mlib_duration diff = mlib_duration(with_backoff_duration, minus, (no_backoff_duration, plus, (300, ms)));
+   const mlib_duration abs_diff = mlib_duration(imaxabs(mlib_microseconds_count(diff)), us);
+   ASSERT_CMPDURATION(abs_diff, <, mlib_duration(300, ms));
 
    disable_fail_point();
 
