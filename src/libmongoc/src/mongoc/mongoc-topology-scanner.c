@@ -672,13 +672,7 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
          size_t current_platform_len = current.platform ? strlen(current.platform) : 0u;
 
          // Duplicates are identified by a set of appendable metadata fields where empty-or-null values are always
-         // considered a match. All fields must match for the set to be considered a duplicate.
-         //  - ("a", "b", "c") + ("a",  "",  "") -> ("a", "b", "c")
-         //  - ("a", "b", "c") + ("a", "b",  "") -> ("a", "b", "c")
-         //  - ("a", "b", "c") + ("a", "b", "x") -> ("a / a", "b / b", "c / x")
-         //  - ("a", "b", "c") + ("a",  "", "x") -> ("a / a", "b / ",  "c / x")
-         // DRIVERS-3251: to preserve the "as a set" invariant, an empty placeholder field ["a", "", "c"] must
-         // necessarily be delimited as: "a /  / c".
+         // considered a match. All fields must contain a match for the set to be considered a duplicate.
          {
             mongoc_array_t name_fields = _mongoc_metadata_field_to_array_view(current.name, current_name_len);
             mongoc_array_t version_fields = _mongoc_metadata_field_to_array_view(current.version, current_version_len);
