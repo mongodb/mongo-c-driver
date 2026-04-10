@@ -200,8 +200,6 @@ bool
 mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    mongoc_cmd_t *cmd,
                                    bool is_retryable_write,
-                                   mongoc_jitter_source_t *jitter_source,
-                                   mongoc_token_bucket_t *token_bucket,
                                    mongoc_server_stream_t **retry_server_stream,
                                    bson_t *reply,
                                    bson_error_t *error);

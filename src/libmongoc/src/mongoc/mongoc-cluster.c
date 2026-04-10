@@ -3646,8 +3646,6 @@ bool
 mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
                                    mongoc_cmd_t *cmd,
                                    bool is_retryable_write,
-                                   mongoc_jitter_source_t *jitter_source,
-                                   mongoc_token_bucket_t *token_bucket,
                                    mongoc_server_stream_t **retry_server_stream,
                                    bson_t *reply,
                                    bson_error_t *error)
@@ -3692,16 +3690,18 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
       .retry_server_stream = retry_server_stream,
    };
 
+   mongoc_client_t *const client = cluster->client;
+
    const mongoc_retryable_cmd_t retryable_cmd = {
       .execute = _retryable_write_execute,
       .select_retry_server = _retryable_write_select_retry_server,
       .user_data = &context,
       .retry_eligibility = retry_eligibility,
-      .jitter_source = jitter_source,
-      .token_bucket = token_bucket,
+      .jitter_source = client->jitter_source,
+      .token_bucket = client->topology->token_bucket,
       .initial_server_description = cmd->server_stream->sd,
-      .max_adaptive_retries = cluster->client->max_adaptive_retries,
-      .enable_overload_retargeting = cluster->client->enable_overload_retargeting,
+      .max_adaptive_retries = client->max_adaptive_retries,
+      .enable_overload_retargeting = client->enable_overload_retargeting,
    };
 
    bool ret = false;

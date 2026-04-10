@@ -1766,14 +1766,8 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
    if (parts->is_write_command) {
       mongoc_server_stream_t *retry_server_stream = NULL;
 
-      bool ret = mongoc_cluster_run_retryable_write(&client->cluster,
-                                                    &parts->assembled,
-                                                    parts->is_retryable_write,
-                                                    client->jitter_source,
-                                                    client->topology->token_bucket,
-                                                    &retry_server_stream,
-                                                    reply,
-                                                    error);
+      bool ret = mongoc_cluster_run_retryable_write(
+         &client->cluster, &parts->assembled, parts->is_retryable_write, &retry_server_stream, reply, error);
 
       if (retry_server_stream) {
          mongoc_server_stream_cleanup(retry_server_stream);

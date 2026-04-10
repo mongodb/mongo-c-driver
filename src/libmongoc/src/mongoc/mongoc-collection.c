@@ -2400,14 +2400,8 @@ mongoc_collection_find_and_modify_with_opts(mongoc_collection_t *collection,
    }
 
    bson_destroy(reply);
-   ret = mongoc_cluster_run_retryable_write(cluster,
-                                            &parts.assembled,
-                                            parts.is_retryable_write,
-                                            collection->client->jitter_source,
-                                            collection->client->topology->token_bucket,
-                                            &retry_server_stream,
-                                            reply,
-                                            error);
+   ret = mongoc_cluster_run_retryable_write(
+      cluster, &parts.assembled, parts.is_retryable_write, &retry_server_stream, reply, error);
 
    if (bson_iter_init_find(&iter, reply, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
       const char *errmsg = NULL;
