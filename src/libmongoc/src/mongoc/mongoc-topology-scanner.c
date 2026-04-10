@@ -444,7 +444,7 @@ static const size_t metadata_field_delim_len = 3u;
 
 // "a / b / c" -> ["a", "b", "c"]
 static mongoc_array_t
-_mongoc_metadata_field_to_array_view(char const *value, size_t value_len)
+_mongoc_metadata_field_to_array_view(const char *value, size_t value_len)
 {
    BSON_OPTIONAL_PARAM(value);
 
@@ -696,9 +696,9 @@ _mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
             }
          }
 
-         size_t const name_len = strlen(name);
-         size_t const version_len = version ? strlen(version) : 0u;
-         size_t const platform_len = platform ? strlen(platform) : 0u;
+         const size_t name_len = strlen(name);
+         const size_t version_len = version ? strlen(version) : 0u;
+         const size_t platform_len = platform ? strlen(platform) : 0u;
 
          // Duplicates are permitted for a given metadata field when, given a single metadata append operation, the
          // resulting overall metadata contains *any* changes after accounting for deduplication of individual
