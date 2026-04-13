@@ -19,7 +19,6 @@
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-retryable-cmd-private.h>
-#include <mongoc/mongoc-token-bucket-private.h>
 
 #include <mongoc/mongoc.h>
 

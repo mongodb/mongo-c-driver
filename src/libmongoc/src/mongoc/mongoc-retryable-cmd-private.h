@@ -21,11 +21,8 @@
 
 #include <mongoc/mongoc-jitter-source-private.h>
 #include <mongoc/mongoc-server-stream-private.h>
-#include <mongoc/mongoc-token-bucket-private.h>
 
 #include <mlib/duration.h>
-
-#define MONGOC_RETRY_TOKEN_RETURN_RATE 0.1
 
 typedef enum {
    MONGOC_RETRY_ELIGIBILITY_NONE,
@@ -45,7 +42,6 @@ typedef struct {
    void *user_data;
    mongoc_retry_eligibility_t retry_eligibility;
    mongoc_jitter_source_t *jitter_source;
-   mongoc_token_bucket_t *token_bucket;
    mongoc_server_description_t const *initial_server_description;
    int32_t max_adaptive_retries;
    bool enable_overload_retargeting;

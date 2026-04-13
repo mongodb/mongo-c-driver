@@ -68,20 +68,8 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
 
       const bool is_retryable = is_retryable_read || is_retryable_write || is_overload_retryable;
 
-      const bool is_retry_attempt = attempt > 0;
-
       if (ret && !is_retryable) {
-         if (cmd->token_bucket) {
-            // Deposit tokens into the bucket on success.
-            const double tokens = MONGOC_RETRY_TOKEN_RETURN_RATE + (is_retry_attempt ? 1.0 : 0.0);
-            _mongoc_token_bucket_deposit(cmd->token_bucket, tokens);
-         }
          break;
-      }
-
-      // If a retry fails with an error which is not an overload errr, deposit 1 token.
-      if (cmd->token_bucket && is_retry_attempt && !is_overload) {
-         _mongoc_token_bucket_deposit(cmd->token_bucket, 1.0);
       }
 
       // Propagate the error if it is non-retryable.
@@ -107,10 +95,6 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
       }
 
       if (is_overload) {
-         if (cmd->token_bucket && !_mongoc_token_bucket_consume(cmd->token_bucket, 1.0)) {
-            break;
-         }
-
          const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
          mlib_sleep_for(backoff_duration);
       }

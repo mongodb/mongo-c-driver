@@ -742,8 +742,6 @@ mongoc_topology_destroy(mongoc_topology_t *topology)
 
    mongoc_oidc_cache_destroy(topology->oidc_cache);
 
-   _mongoc_token_bucket_destroy(topology->token_bucket);
-
    bson_free(topology);
 }
 

@@ -30,7 +30,6 @@
 #include <mongoc/mongoc-scram-private.h>
 #include <mongoc/mongoc-server-stream-private.h>
 #include <mongoc/mongoc-set-private.h>
-#include <mongoc/mongoc-token-bucket-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
 
