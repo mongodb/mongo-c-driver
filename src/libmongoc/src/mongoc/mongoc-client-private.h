@@ -91,7 +91,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
-#define MONGOC_DEFAULT_MAX_ADAPTIVE_RETRIES 2
+#define MONGOC_DEFAULT_MAXADAPTIVERETRIES 2
+#define MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING false
 
 struct _mongoc_collection_t;
 
