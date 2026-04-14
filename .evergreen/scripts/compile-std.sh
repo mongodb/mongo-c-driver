@@ -108,8 +108,8 @@ CMAKE_BUILD_PARALLEL_LEVEL="$(nproc)"
 if [[ "${CMAKE_GENERATOR:-}" =~ "Visual Studio" ]]; then
   # MSBuild needs additional assistance.
   # https://devblogs.microsoft.com/cppblog/improved-parallelism-in-msbuild/
-  export UseMultiToolTask=1
-  export EnforceProcessCountAcrossBuilds=1
+  export UseMultiToolTask=true
+  export EnforceProcessCountAcrossBuilds=true
 fi
 
 echo "Checking requested C standard is supported..."
