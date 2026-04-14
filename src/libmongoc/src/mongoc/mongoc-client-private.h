@@ -42,6 +42,7 @@
 #include <mongoc/mongoc-crypt-private.h>
 #include <mongoc/mongoc-shared-private.h>
 #include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-uri-private.h>
 
 #include <mongoc/mongoc-stream.h>
 #include <mongoc/mongoc-write-concern.h>
@@ -91,7 +92,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
-#define MONGOC_DEFAULT_MAXADAPTIVERETRIES 2
 #define MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING false
 
 struct _mongoc_collection_t;

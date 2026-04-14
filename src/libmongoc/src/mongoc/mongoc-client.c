@@ -1127,8 +1127,7 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->client_sessions = mongoc_set_new(8, NULL, NULL);
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
    client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
-   client->max_adaptive_retries =
-      mongoc_uri_get_option_as_int32(client->uri, MONGOC_URI_MAXADAPTIVERETRIES, MONGOC_DEFAULT_MAXADAPTIVERETRIES);
+   client->max_adaptive_retries = _mongoc_uri_get_max_adaptive_retries(client->uri);
    client->enable_overload_retargeting = mongoc_uri_get_option_as_bool(
       client->uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING);
 

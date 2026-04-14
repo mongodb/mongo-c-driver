@@ -2613,6 +2613,20 @@ mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri)
    return retval;
 }
 
+/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
+int32_t
+_mongoc_uri_get_max_adaptive_retries(const mongoc_uri_t *uri)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   if ((options = mongoc_uri_get_options(uri)) &&
+       bson_iter_init_find_case(&iter, options, MONGOC_URI_MAXADAPTIVERETRIES) && BSON_ITER_HOLDS_INT32(&iter)) {
+      return bson_iter_int32(&iter);
+   }
+
+   return MONGOC_DEFAULT_MAXADAPTIVERETRIES;
+}
 
 const char *
 mongoc_uri_get_srv_hostname(const mongoc_uri_t *uri)

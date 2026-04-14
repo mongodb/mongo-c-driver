@@ -571,12 +571,13 @@ test_backpressure_prose_1(void *ctx)
 
 typedef struct {
    int find_commands_started_count;
-} prose_test_3_and_4_ctx_t;
+} find_command_start_counter_ctx_t;
 
 static void
 prose_test_3_command_started_cb(const mongoc_apm_command_started_t *event)
 {
-   prose_test_3_and_4_ctx_t *const ctx = (prose_test_3_and_4_ctx_t *)mongoc_apm_command_started_get_context(event);
+   find_command_start_counter_ctx_t *const ctx =
+      (find_command_start_counter_ctx_t *)mongoc_apm_command_started_get_context(event);
 
    const char *const command_name = mongoc_apm_command_started_get_command_name(event);
 
@@ -593,7 +594,7 @@ test_backpressure_prose_3(void *ctx)
    // Step 1: Let `client` be a `mongoc_client_t` with command event monitoring enabled.
    mongoc_client_t *const client = test_framework_new_default_client();
 
-   prose_test_3_and_4_ctx_t apm_ctx = {0};
+   find_command_start_counter_ctx_t apm_ctx = {0};
 
    {
       mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
@@ -662,7 +663,7 @@ test_backpressure_prose_4(void *ctx)
    }
    test_framework_set_ssl_opts(client);
 
-   prose_test_3_and_4_ctx_t apm_ctx = {0};
+   find_command_start_counter_ctx_t apm_ctx = {0};
 
    {
       mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
@@ -707,6 +708,74 @@ test_backpressure_prose_4(void *ctx)
 
    // Step 6: Assert that the total number of started commands is `maxAdaptiveRetries` + 1 (2).
    ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 2);
+
+   disable_fail_point();
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
+static void
+test_backpressure_max_adaptive_retries_0(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   // Let `client` be a `mongoc_client_t` with `maxAdaptiveRetries=0` and command event monitoring enabled.
+   mongoc_client_t *client = NULL;
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri();
+      mongoc_uri_set_option_as_int32(uri, MONGOC_URI_MAXADAPTIVERETRIES, 0);
+
+      client = test_framework_client_new_from_uri(uri, NULL);
+
+      mongoc_uri_destroy(uri);
+   }
+   test_framework_set_ssl_opts(client);
+
+   find_command_start_counter_ctx_t apm_ctx = {0};
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(callbacks, prose_test_3_command_started_cb);
+      mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Let `coll` be a collection.
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+
+   // Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : "alwaysOn",
+      "data" : {
+         "failCommands" : ["find"],
+         "errorCode" : 462, // IngressRequestRateLimitExceeded
+         "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
+      }
+   }));
+
+   bson_error_t error;
+
+   {
+      // Perform a find operation with `coll` that fails.
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+
+      const bson_t *error_doc;
+      ASSERT(mongoc_cursor_error_document(cursor, &error, &error_doc));
+
+      // Assert that the raised error contains both the `RetryableError` and `SystemOverloadedError` error labels.
+      ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+      ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+
+      mongoc_cursor_destroy(cursor);
+   }
+
+   // Assert that the total number of started commands is 1 (1 initial attempt and no retries).
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 1);
 
    disable_fail_point();
 
@@ -895,6 +964,13 @@ test_backpressure_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/backpressure/prose_test_4",
                      test_backpressure_prose_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
+
+   TestSuite_AddFull(suite,
+                     "/backpressure/max_adaptive_retries_zero",
+                     test_backpressure_max_adaptive_retries_0,
                      NULL,
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
