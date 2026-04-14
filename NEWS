@@ -9,7 +9,7 @@ libmongoc 2.3.0 [UNRELEASED]
     * Upgrade is recommended to avoid impacts of server changes related to overload errors.
         * If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors.
     * Add URI option `maxAdaptiveRetries` to configure the maximum number of retries for operations that fail with a `SystemOverloadedError` (default: `2`).
-    * Add URI option `enableOverloadRetargeting` to control whether retries of `SystemOverloadedError` prefer a different server (default: `false`).
+    * Add URI option `enableOverloadRetargeting` to control whether retries of `SystemOverloadedError` will attempt to use a different server (default: `false`).
 
 libmongoc 2.2.4
 ===============
