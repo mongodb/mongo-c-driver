@@ -97,6 +97,8 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
       if (is_overload) {
          const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
          mlib_sleep_for(backoff_duration);
+      } else {
+         _mongoc_retry_backoff_generator_skip(retry_backoff_generator);
       }
 
       server_description = cmd->select_retry_server(cmd->user_data, deprioritized_servers, reply, error);
