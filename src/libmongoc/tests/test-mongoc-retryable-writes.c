@@ -1,3 +1,4 @@
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-uri-private.h>
 
@@ -1530,6 +1531,88 @@ retryable_writes_prose_test_6_case_4(void *ctx)
    mongoc_client_destroy(client);
 }
 
+static int gProseTest6Case5BackoffCount;
+
+static double
+prose_test_6_case_5_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   BSON_UNUSED(source);
+   ++gProseTest6Case5BackoffCount;
+   return 0.0;
+}
+
+typedef struct {
+   const char *second_fail_point_cmd_str;
+} prose_test_6_case_5_ctx_t;
+
+static void
+prose_test_6_case_5_on_command_failed(const mongoc_apm_command_failed_t *event)
+{
+   prose_test_6_case_5_ctx_t *const ctx = (prose_test_6_case_5_ctx_t *)mongoc_apm_command_failed_get_context(event);
+
+   if (0 != strcmp(mongoc_apm_command_failed_get_command_name(event), "insert")) {
+      return;
+   }
+
+   // Configure the second fail point command only if the failed event is for the first error configured in step 2.
+   if (ctx->second_fail_point_cmd_str) {
+      run_admin_command(ctx->second_fail_point_cmd_str);
+      ctx->second_fail_point_cmd_str = NULL;
+   }
+}
+
+// Case 5: Test that drivers do not apply backoff to non-overload errors.
+void
+retryable_writes_prose_test_6_case_5(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   // Step 1: Create a client with `retryWrites=true`.
+   mongoc_client_t *const client = prose_test_6_create_client();
+
+   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(prose_test_6_case_5_jitter_source_generate));
+
+   // Step 2: Configure a fail point with error code 91 (`ShutdownInProgress`) with the `RetryableError` and
+   // `SystemOverloadedError` error labels.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" :
+         {"failCommands" : ["insert"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
+   }));
+
+   // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code 91
+   // (`ShutdownInProgress`) and the `RetryableWriteError` and `RetryableError` labels. Configure the second fail point
+   // command only if the failed event is for the first error configured in step 2.
+   prose_test_6_case_5_ctx_t apm_ctx = {
+      .second_fail_point_cmd_str = BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : "alwaysOn",
+         "data" :
+            {"failCommands" : ["insert"], "errorLabels" : [ "RetryableError", "RetryableWriteError" ], "errorCode" : 91}
+      }),
+   };
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_failed_cb(callbacks, prose_test_6_case_5_on_command_failed);
+      mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 4: Attempt an `insertOne` operation on any record for any database and collection. Expect the `insertOne` to
+   // fail with a server error. Assert that backoff was applied only once for the initial overload error and not for the
+   // subsequent non-overload retryable errors.
+   gProseTest6Case5BackoffCount = 0;
+   prose_test_6_attempt_insert(client, 91u, NULL);
+   ASSERT_CMPINT(gProseTest6Case5BackoffCount, ==, 1);
+
+   // Step 5: Disable the fail point.
+   disable_fail_point();
+
+   mongoc_client_destroy(client);
+}
+
 void
 test_retryable_writes_install(TestSuite *suite)
 {
@@ -1667,6 +1750,14 @@ test_retryable_writes_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/retryable_writes/prose_test_6_case_4",
                      retryable_writes_prose_test_6_case_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset, /* only run against replica sets as mongos does not propagate
+                                                            the NoWritesPerformed label to the drivers */
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ for errorLabels */);
+   TestSuite_AddFull(suite,
+                     "/retryable_writes/prose_test_6_case_5",
+                     retryable_writes_prose_test_6_case_5,
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset, /* only run against replica sets as mongos does not propagate
