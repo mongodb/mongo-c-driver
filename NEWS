@@ -3,7 +3,7 @@ libmongoc 2.3.0 [UNRELEASED]
 
 ## New Features
 
-* Added support for MongoDB's Intelligent Workload Management (IWM) (<TODO: insert link to IWM landing page once it is live>) and ingress connection rate limiting features. The driver now gracefully handles write-blocking scenarios and optimizes connection establishment during high-load conditions to maintain application availability.
+* Added support for [MongoDB's Intelligent Workload Management (IWM)](https://www.mongodb.com/docs/atlas/intelligent-workload-management/) and ingress connection rate limiting features. The driver now gracefully handles write-blocking scenarios and optimizes connection establishment during high-load conditions to maintain application availability.
     * Supported on all commands.
     * Custom application retry logic may need to be adjusted to avoid retrying too long.
     * Upgrade is recommended to avoid impacts of server changes related to overload errors.
