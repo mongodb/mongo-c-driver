@@ -10,6 +10,10 @@ libmongoc 2.3.0 [UNRELEASED]
         - If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors.
     - Set the URI option `adaptiveRetry=true` limit retries with a token bucket system.
 
+## Removed
+
+* Support for macOS versions 13 and older. These versions are EOL and not tested. Use macOS version 14 or newer.
+
 libmongoc 2.2.4
 ===============
 
