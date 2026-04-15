@@ -1531,17 +1531,15 @@ retryable_writes_prose_test_6_case_4(void *ctx)
    mongoc_client_destroy(client);
 }
 
-// Prose test 6 case 5 requires some means of detecting how many times backoff is applied during the execution of a
-// command. Since the C Driver lacks a formal mechanism for this, we use a global counter that is incremented every time
-// `prose_test_6_case_5_jitter_source_generate` is called. Since jitter is generated only when backoff is calculated,
-// this effectively counts the number of times backoff is applied.
-static int gProseTest6Case5BackoffCount;
+typedef struct {
+   int count;
+} backoff_counter_t;
 
 static double
-prose_test_6_case_5_jitter_source_generate(mongoc_jitter_source_t *source)
+backoff_counting_jitter_source_generate(mongoc_jitter_source_t *source)
 {
-   BSON_UNUSED(source);
-   ++gProseTest6Case5BackoffCount;
+   backoff_counter_t *const counter = (backoff_counter_t *)_mongoc_jitter_source_get_context(source);
+   ++counter->count;
    return 0.0;
 }
 
@@ -1574,7 +1572,12 @@ retryable_writes_prose_test_6_case_5(void *ctx)
    // Step 1: Create a client with `retryWrites=true`.
    mongoc_client_t *const client = prose_test_6_create_client();
 
-   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(prose_test_6_case_5_jitter_source_generate));
+   backoff_counter_t backoff_counter = {0};
+   {
+      mongoc_jitter_source_t *const jitter_source = _mongoc_jitter_source_new(backoff_counting_jitter_source_generate);
+      _mongoc_jitter_source_set_context(jitter_source, &backoff_counter);
+      _mongoc_client_set_jitter_source(client, jitter_source);
+   }
 
    // Step 2: Configure a fail point with error code 91 (`ShutdownInProgress`) with the `RetryableError` and
    // `SystemOverloadedError` error labels.
@@ -1607,9 +1610,8 @@ retryable_writes_prose_test_6_case_5(void *ctx)
    // Step 4: Attempt an `insertOne` operation on any record for any database and collection. Expect the `insertOne` to
    // fail with a server error. Assert that backoff was applied only once for the initial overload error and not for the
    // subsequent non-overload retryable errors.
-   gProseTest6Case5BackoffCount = 0;
    prose_test_6_attempt_insert(client, 91u, NULL);
-   ASSERT_CMPINT(gProseTest6Case5BackoffCount, ==, 1);
+   ASSERT_CMPINT(backoff_counter.count, ==, 1);
 
    // Step 5: Disable the fail point.
    disable_fail_point();

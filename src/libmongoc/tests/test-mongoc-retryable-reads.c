@@ -827,17 +827,15 @@ test_retryable_reads_prose_4(void *unused)
    mongoc_client_destroy(client);
 }
 
-// Prose test 5 requires some means of detecting how many times backoff is applied during the execution of a command.
-// Since the C Driver lacks a formal mechanism for this, we use a global counter that is incremented every time
-// `prose_test_5_jitter_source_generate` is called. Since jitter is generated only when backoff is calculated, this
-// effectively counts the number of times backoff is applied.
-static int gProseTest5BackoffCount;
+typedef struct {
+   int count;
+} backoff_counter_t;
 
 static double
-prose_test_5_jitter_source_generate(mongoc_jitter_source_t *source)
+backoff_counting_jitter_source_generate(mongoc_jitter_source_t *source)
 {
-   BSON_UNUSED(source);
-   ++gProseTest5BackoffCount;
+   backoff_counter_t *const counter = (backoff_counter_t *)_mongoc_jitter_source_get_context(source);
+   ++counter->count;
    return 0.0;
 }
 
@@ -871,7 +869,12 @@ test_retryable_reads_prose_5(void *unused)
    // Step 1: Create a client.
    mongoc_client_t *const client = test_framework_new_default_client();
 
-   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(prose_test_5_jitter_source_generate));
+   backoff_counter_t backoff_counter = {0};
+   {
+      mongoc_jitter_source_t *const jitter_source = _mongoc_jitter_source_new(backoff_counting_jitter_source_generate);
+      _mongoc_jitter_source_set_context(jitter_source, &backoff_counter);
+      _mongoc_client_set_jitter_source(client, jitter_source);
+   }
 
    // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code 91
    // (`ShutdownInProgress`) and the `RetryableError` label. Configure the second fail point command only if the failed
@@ -900,9 +903,8 @@ test_retryable_reads_prose_5(void *unused)
          {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
    }));
 
-   // Step 4: Attempt a `findOne` operation on any record for any database and collection. Expect the `findOne` to fail
-   // with a server error.
-   gProseTest5BackoffCount = 0;
+   // Step 4: Attempt a findOne operation on any record for any database and collection. Expect the findOne to fail with
+   // a server error.
    {
       mongoc_collection_t *const coll = get_test_collection(client, "retryable_reads");
       mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
@@ -919,7 +921,7 @@ test_retryable_reads_prose_5(void *unused)
    // Assert that backoff was applied only once for the initial overload error and not for the subsequent non-overload
    // retryable errors. The jitter source is only invoked when backoff is actually applied (via
    // _mongoc_retry_backoff_generator_next), not when it is skipped (via _mongoc_retry_backoff_generator_skip).
-   ASSERT_CMPINT(gProseTest5BackoffCount, ==, 1);
+   ASSERT_CMPINT(backoff_counter.count, ==, 1);
 
    // Step 5: Disable the fail point.
    run_admin_command(BSON_STR({"configureFailPoint" : "failCommand", "mode" : "off"}));

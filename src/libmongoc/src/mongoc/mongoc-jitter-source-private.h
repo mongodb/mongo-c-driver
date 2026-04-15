@@ -38,4 +38,10 @@ _mongoc_jitter_source_generate(mongoc_jitter_source_t *source);
 double
 _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source);
 
+void
+_mongoc_jitter_source_set_context(mongoc_jitter_source_t *source, void *ctx);
+
+void *
+_mongoc_jitter_source_get_context(mongoc_jitter_source_t *source);
+
 #endif
