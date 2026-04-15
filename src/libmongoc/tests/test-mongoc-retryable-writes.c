@@ -1406,30 +1406,29 @@ retryable_writes_prose_test_6_case_3(void *ctx)
 
    // Step 2: Configure a fail point with error code `91` (ShutdownInProgress) with the `RetryableError` and
    // `SystemOverloadedError` error labels.
-   prose_test_6_case_1_to_3_apm_ctx_t apm_ctx = {.first_fail_point_error_code = 91u,
-                                                 .second_fail_point_cmd_str = BSON_STR({
-                                                    "configureFailPoint" : "failCommand",
-                                                    "mode" : {"times" : 1},
-                                                    "data" : {
-                                                       "failCommands" : ["insert"],
-                                                       "errorLabels" : [ "RetryableError", "SystemOverloadedError" ],
-                                                       "errorCode" : 91
-                                                    }
-                                                 })};
-   prose_test_6_case_1_to_3_set_apm_callbacks(client, &apm_ctx);
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" :
+         {"failCommands" : ["insert"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
+   }));
 
    // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code `91`
    // (ShutdownInProgress) and the `NoWritesPerformed`, `RetryableError` and `SystemOverloadedError` labels.
    // Configure the second fail point command only if the failed event is for the first error configured in step 2.
-   run_admin_command(BSON_STR({
-      "configureFailPoint" : "failCommand",
-      "mode" : "alwaysOn",
-      "data" : {
-         "failCommands" : ["insert"],
-         "errorLabels" : [ "RetryableError", "SystemOverloadedError", "NoWritesPerformed" ],
-         "errorCode" : 91
-      }
-   }));
+   prose_test_6_case_1_to_3_apm_ctx_t apm_ctx = {
+      .first_fail_point_error_code = 91u,
+      .second_fail_point_cmd_str = BSON_STR({
+
+         "configureFailPoint" : "failCommand",
+         "mode" : "alwaysOn",
+         "data" : {
+            "failCommands" : ["insert"],
+            "errorLabels" : [ "RetryableError", "SystemOverloadedError", "NoWritesPerformed" ],
+            "errorCode" : 91
+         }
+      })};
+   prose_test_6_case_1_to_3_set_apm_callbacks(client, &apm_ctx);
 
    // Step 4: Attempt an `insertOne` operation on any record for any database and collection. Expect the `insertOne` to
    // fail with a server error. Assert that the error code of the server error is 91. Assert that the error does not
