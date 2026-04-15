@@ -827,6 +827,10 @@ test_retryable_reads_prose_4(void *unused)
    mongoc_client_destroy(client);
 }
 
+// Prose test 5 requires some means of detecting how many times backoff is applied during the execution of a command.
+// Since the C Driver lacks a formal mechanism for this, we use a global counter that is incremented every time
+// `prose_test_5_jitter_source_generate` is called. Since jitter is generated only when backoff is calculated, this
+// effectively counts the number of times backoff is applied.
 static int gProseTest5BackoffCount;
 
 static double
