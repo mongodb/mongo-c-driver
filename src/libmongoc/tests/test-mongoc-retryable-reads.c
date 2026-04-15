@@ -1,3 +1,4 @@
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-uri-private.h>
 
@@ -826,6 +827,102 @@ test_retryable_reads_prose_4(void *unused)
    mongoc_client_destroy(client);
 }
 
+static int gProseTest5BackoffCount;
+
+static double
+prose_test_5_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   BSON_UNUSED(source);
+   ++gProseTest5BackoffCount;
+   return 0.0;
+}
+
+typedef struct {
+   const char *second_failpoint_cmd;
+} prose_test_5_ctx_t;
+
+static void
+prose_test_5_on_command_failed(const mongoc_apm_command_failed_t *event)
+{
+   prose_test_5_ctx_t *const ctx = (prose_test_5_ctx_t *)mongoc_apm_command_failed_get_context(event);
+
+   if (0 != strcmp(mongoc_apm_command_failed_get_command_name(event), "find")) {
+      return;
+   }
+
+   // Configure the second fail point command only if the failed event is for the first error configured in step 2.
+   if (ctx->second_failpoint_cmd) {
+      run_admin_command(ctx->second_failpoint_cmd);
+      ctx->second_failpoint_cmd = NULL;
+   }
+}
+
+// Test that drivers do not apply backoff to non-overload errors.
+static void
+test_retryable_reads_prose_5(void *unused)
+{
+   BSON_UNUSED(unused);
+
+
+   // Step 1: Create a client.
+   mongoc_client_t *const client = test_framework_new_default_client();
+
+   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(prose_test_5_jitter_source_generate));
+
+   // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code 91
+   // (`ShutdownInProgress`) and the `RetryableError` label. Configure the second fail point command only if the failed
+   // event is for the first error configured in step 2.
+   prose_test_5_ctx_t ctx = {
+      .second_failpoint_cmd = BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : "alwaysOn",
+         "data" : {"failCommands" : ["find"], "errorLabels" : ["RetryableError"], "errorCode" : 91}
+      }),
+   };
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_failed_cb(callbacks, prose_test_5_on_command_failed);
+      mongoc_client_set_apm_callbacks(client, callbacks, &ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 2: Configure a fail point with error code 91 (`ShutdownInProgress`) with the `RetryableError` and
+   // `SystemOverloadedError` error labels.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" :
+         {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
+   }));
+
+   // Step 4: Attempt a `findOne` operation on any record for any database and collection. Expect the `findOne` to fail
+   // with a server error.
+   gProseTest5BackoffCount = 0;
+   {
+      mongoc_collection_t *const coll = get_test_collection(client, "retryable_reads");
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+
+      bson_error_t error;
+      ASSERT(mongoc_cursor_error(cursor, &error));
+
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+   // Assert that backoff was applied only once for the initial overload error and not for the subsequent non-overload
+   // retryable errors. The jitter source is only invoked when backoff is actually applied (via
+   // _mongoc_retry_backoff_generator_next), not when it is skipped (via _mongoc_retry_backoff_generator_skip).
+   ASSERT_CMPINT(gProseTest5BackoffCount, ==, 1);
+
+   // Step 5: Disable the fail point.
+   run_admin_command(BSON_STR({"configureFailPoint" : "failCommand", "mode" : "off"}));
+
+   mongoc_client_destroy(client);
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -901,6 +998,12 @@ test_retryable_reads_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/retryable_reads/prose_test_4",
                      test_retryable_reads_prose_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_5",
+                     test_retryable_reads_prose_5,
                      NULL,
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
