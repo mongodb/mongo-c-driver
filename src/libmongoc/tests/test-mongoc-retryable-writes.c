@@ -1760,7 +1760,8 @@ test_retryable_writes_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_not_replset, /* only run against replica sets as mongos does not propagate
                                                             the NoWritesPerformed label to the drivers */
-                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ for errorLabels */);
+                     test_framework_skip_if_max_wire_version_less_than_9, /* require 4.4+ for errorLabels */
+                     test_framework_skip_if_no_crypto /* require crypto for sessions */);
    TestSuite_AddFull(suite,
                      "/retryable_writes/prose_test_6_case_5",
                      retryable_writes_prose_test_6_case_5,
