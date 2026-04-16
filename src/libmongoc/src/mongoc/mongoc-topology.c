@@ -403,8 +403,9 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (mongoc_uri_get_option_as_bool(uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
-      /* retryWrites requires sessions, which require crypto - just warn */
-      MONGOC_WARNING("retryWrites not supported without an SSL crypto library");
+      // retryWrites needs crypto to retry server errors that require sessions. (See Retryable Writes spec)
+      // retryWrites does not need crypto to retry server overload errors. (See Client Backpressure spec)
+      MONGOC_WARNING("retryWrites is not fully supported without an SSL crypto library");
    }
 #endif
 

@@ -452,7 +452,7 @@ test_retry_no_crypto(void *ctx)
    BSON_ASSERT(client);
    ASSERT_CAPTURED_LOG("test_framework_client_new and retryWrites=true",
                        MONGOC_LOG_LEVEL_WARNING,
-                       "retryWrites not supported without an SSL crypto library");
+                       "retryWrites is not fully supported without an SSL crypto library");
    mongoc_client_destroy(client);
 
    clear_captured_logs();
@@ -464,7 +464,7 @@ test_retry_no_crypto(void *ctx)
    BSON_ASSERT(client);
    ASSERT_CAPTURED_LOG("test_framework_client_new_from_uri and retryWrites=true",
                        MONGOC_LOG_LEVEL_WARNING,
-                       "retryWrites not supported without an SSL crypto library");
+                       "retryWrites is not fully supported without an SSL crypto library");
    mongoc_client_destroy(client);
 
    clear_captured_logs();
@@ -473,7 +473,7 @@ test_retry_no_crypto(void *ctx)
    BSON_ASSERT(pool);
    ASSERT_CAPTURED_LOG("test_framework_client_pool_new_from_uri and retryWrites=true",
                        MONGOC_LOG_LEVEL_WARNING,
-                       "retryWrites not supported without an SSL crypto library");
+                       "retryWrites is not fully supported without an SSL crypto library");
    mongoc_client_pool_destroy(pool);
 
    mongoc_uri_destroy(uri);
