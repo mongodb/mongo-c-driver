@@ -1,14 +1,64 @@
-libmongoc 2.3.0 [UNRELEASED]
-============================
+libmongoc 2.3.0
+===============
 
 ## New Features
 
-- Support retry for server overload errors.
-    - Supported on all commands.
-    - Custom application retry logic may need to be adjusted to avoid retrying too long.
-    - Upgrade is recommended to avoid impacts of server changes related to overload errors.
-        - If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors.
-    - Set the URI option `adaptiveRetry=true` limit retries with a token bucket system.
+* Added support for [MongoDB's Intelligent Workload Management (IWM)](https://www.mongodb.com/docs/atlas/intelligent-workload-management/) and ingress connection rate limiting features. The driver now gracefully handles write-blocking scenarios and optimizes connection establishment during high-load conditions to maintain application availability.
+  * Supported on all commands.
+  * Custom application retry logic may need to be adjusted to avoid retrying too long.
+  * Upgrade is recommended to avoid impacts of server changes related to overload errors.
+    * If not upgrading, custom application retry logic may need to be adjusted to handle higher rates of overload errors. See [Overload Errors](https://www.mongodb.com/docs/atlas/overload-errors/?interface=driver&language=c).
+  * Add URI option `maxAdaptiveRetries` to configure the maximum number of retries for operations that fail with a `SystemOverloadedError` (default: `2`).
+  * Add URI option `enableOverloadRetargeting` to control whether retries of `SystemOverloadedError` will attempt to use a different server (default: `false`).
+* Support appending client handshake metadata after initialization and per-client/pool.
+  * Adds `mongoc_client_append_metadata` and `mongoc_client_pool_append_metadata`.
+  * Useful for projects wrapping the C driver to self-identify.
+* Support Kubernetes as a credential provider for `MONGODB-OIDC` authentication.
+
+## Improvements
+
+* Improve cursor handling on client-side timeouts:
+  * Send killCursors after cursor receives client-side timeout.
+  * Break early if change stream resumes on repeated client-side timeouts.
+
+## Removed
+
+* Support for macOS versions 13 and older. These versions are EOL and not tested. Use macOS version 14 or newer.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Connor MacDonald
+  * Ezra Chung
+  * GitHub user: user-45-20
+
+## Removed
+
+* Support for macOS versions 13 and older. These versions are EOL and not tested. Use macOS version 14 or newer.
+
+libmongoc 2.2.4
+===============
+
+Fixes:
+
+  * Fix handling of corrupt GridFS files.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.30.8
+================
+
+Fixes:
+
+  * Fix handling of corrupt GridFS files.
+  * Fix handling in HTTP response parser.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Remi Collet
 
 libmongoc 2.2.3
 ===============

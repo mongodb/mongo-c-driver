@@ -370,7 +370,7 @@ void
 test_connect_faas_use_polling(void)
 {
    test_fixture_t *tf;
-   mongoc_handshake_t *md = _mongoc_handshake_get();
+   mongoc_handshake_t *md = _mongoc_handshake_get_unfrozen();
    md->env = MONGOC_HANDSHAKE_ENV_AWS;
 
    /* This mock server will not respond to streaming hello, so OBSERVE_SOON

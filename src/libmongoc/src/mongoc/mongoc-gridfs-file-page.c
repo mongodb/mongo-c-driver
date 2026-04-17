@@ -23,6 +23,9 @@
 #include <mongoc/mongoc-gridfs-file-page-private.h>
 #include <mongoc/mongoc-trace-private.h>
 
+#include <mlib/ckdint.h>
+#include <mlib/cmp.h>
+
 
 /** create a new page from a buffer
  *
@@ -64,7 +67,7 @@ _mongoc_gridfs_file_page_seek(mongoc_gridfs_file_page_t *page, uint32_t offset)
 int32_t
 _mongoc_gridfs_file_page_read(mongoc_gridfs_file_page_t *page, void *dst, uint32_t len)
 {
-   int bytes_read;
+   uint32_t bytes_read;
    const uint8_t *src;
 
    ENTRY;
@@ -72,15 +75,25 @@ _mongoc_gridfs_file_page_read(mongoc_gridfs_file_page_t *page, void *dst, uint32
    BSON_ASSERT(page);
    BSON_ASSERT(dst);
 
+   if (page->offset > page->len) {
+      RETURN(-1);
+   }
+
    bytes_read = BSON_MIN(len, page->len - page->offset);
 
    src = page->read_buf ? page->read_buf : page->buf;
 
    memcpy(dst, src + page->offset, bytes_read);
 
-   page->offset += bytes_read;
+   if (mlib_add(&page->offset, bytes_read)) {
+      return -1;
+   }
 
-   RETURN(bytes_read);
+   if (!mlib_in_range(int32_t, bytes_read)) {
+      RETURN(-1);
+   }
+
+   RETURN((int32_t)bytes_read);
 }
 
 
@@ -99,12 +112,16 @@ _mongoc_gridfs_file_page_read(mongoc_gridfs_file_page_t *page, void *dst, uint32
 int32_t
 _mongoc_gridfs_file_page_write(mongoc_gridfs_file_page_t *page, const void *src, uint32_t len)
 {
-   int bytes_written;
+   uint32_t bytes_written;
 
    ENTRY;
 
    BSON_ASSERT(page);
    BSON_ASSERT(src);
+
+   if (page->offset > page->chunk_size) {
+      return -1;
+   }
 
    bytes_written = BSON_MIN(len, page->chunk_size - page->offset);
 
@@ -115,13 +132,19 @@ _mongoc_gridfs_file_page_write(mongoc_gridfs_file_page_t *page, const void *src,
 
    /* Copy bytes and adjust the page position */
    memcpy(page->buf + page->offset, src, bytes_written);
-   page->offset += bytes_written;
+   if (mlib_add(&page->offset, bytes_written)) {
+      return -1;
+   }
    page->len = BSON_MAX(page->offset, page->len);
 
    /* Don't use the old read buffer, which is no longer current */
    page->read_buf = page->buf;
 
-   RETURN(bytes_written);
+   if (!mlib_in_range(int32_t, bytes_written)) {
+      RETURN(-1);
+   }
+
+   RETURN((int32_t)bytes_written);
 }
 
 
@@ -138,7 +161,7 @@ _mongoc_gridfs_file_page_write(mongoc_gridfs_file_page_t *page, const void *src,
  * Returns:
  *      Number of bytes set.
  */
-uint32_t
+int32_t
 _mongoc_gridfs_file_page_memset0(mongoc_gridfs_file_page_t *page, uint32_t len)
 {
    uint32_t bytes_set;
@@ -146,6 +169,10 @@ _mongoc_gridfs_file_page_memset0(mongoc_gridfs_file_page_t *page, uint32_t len)
    ENTRY;
 
    BSON_ASSERT(page);
+
+   if (page->offset > page->chunk_size) {
+      return -1;
+   }
 
    bytes_set = BSON_MIN(page->chunk_size - page->offset, len);
 
@@ -156,13 +183,19 @@ _mongoc_gridfs_file_page_memset0(mongoc_gridfs_file_page_t *page, uint32_t len)
 
    /* Set bytes and adjust the page position */
    memset(page->buf + page->offset, '\0', bytes_set);
-   page->offset += bytes_set;
+   if (mlib_add(&page->offset, bytes_set)) {
+      return -1;
+   }
    page->len = BSON_MAX(page->offset, page->len);
 
    /* Don't use the old read buffer, which is no longer current */
    page->read_buf = page->buf;
 
-   RETURN(bytes_set);
+   if (!mlib_in_range(int32_t, bytes_set)) {
+      RETURN(-1);
+   }
+
+   RETURN((int32_t)bytes_set);
 }
 
 

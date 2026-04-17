@@ -138,7 +138,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
          message (STATUS "  Not found")
       endif ()
    # The compression format below this version isn't supported. See SERVER-43070
-   elseif (${ZSTD_VERSION} VERSION_LESS "0.8.0")
+   elseif ("${ZSTD_VERSION}" VERSION_LESS "0.8.0")
       if (ENABLE_ZSTD MATCHES "ON")
          message (FATAL_ERROR "Detected zstd version ${ZSTD_VERSION} but version 0.8.0 required")
       else ()
@@ -625,7 +625,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-timeout.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-token-bucket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
@@ -1132,7 +1131,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-timeout.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-token-bucket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-scanner.c

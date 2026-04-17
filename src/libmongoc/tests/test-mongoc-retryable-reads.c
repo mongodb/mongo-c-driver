@@ -1,4 +1,6 @@
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-uri-private.h>
 
 #include <mongoc/mongoc.h>
 
@@ -592,27 +594,33 @@ prose_test_3_on_command_succeeded(const mongoc_apm_command_succeeded_t *event)
    ctx->server_id_succeeded.is_set = true;
 }
 
-static void
-test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str, prose_test_3_apm_ctx *apm_ctx)
+static mongoc_uri_t *
+make_prose_test_3_uri(void)
 {
-   // Step 1: Create a client `client` with `retryReads=true`, `readPreference=primaryPreferred`, and command event
-   // monitoring enabled.
-   mongoc_client_t *client = NULL;
+   mongoc_uri_t *const uri = test_framework_get_uri();
+
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYREADS, true);
+
    {
-      mongoc_uri_t *const uri = test_framework_get_uri();
-
-      mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYWRITES, true);
-
-      {
-         mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
-         mongoc_uri_set_read_prefs_t(uri, read_prefs);
-         mongoc_read_prefs_destroy(read_prefs);
-      }
-
-      client = test_framework_client_new_from_uri(uri, NULL);
-
-      mongoc_uri_destroy(uri);
+      mongoc_read_prefs_t *const read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY_PREFERRED);
+      mongoc_uri_set_read_prefs_t(uri, read_prefs);
+      mongoc_read_prefs_destroy(read_prefs);
    }
+
+   return uri;
+}
+
+static void
+test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str,
+                                          mongoc_uri_t *uri, // Owning.
+                                          prose_test_3_apm_ctx *apm_ctx)
+{
+   BSON_ASSERT_PARAM(uri);
+
+   // Step 1: Create a client with the provided URI and command event monitoring enabled.
+   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
+   mongoc_uri_destroy(uri);
+
    test_framework_set_ssl_opts(client);
 
    // Step 2: Configure the provided fail point for `client`:
@@ -654,11 +662,15 @@ test_retryable_reads_prose_3_steps_1_to_5(const char *fail_point_cmd_str, prose_
    mongoc_client_destroy(client);
 }
 
-// Retryable Reads Caused by Overload Errors Are Retried on a Different Replicaset Server When One is Available.
+// Retryable Reads Caused by Overload Errors Are Retried on a Different Replicaset Server When One is Available and
+// enableOverloadRetargeting is enabled.
 static void
 test_retryable_reads_prose_3_1(void *ctx)
 {
    BSON_UNUSED(ctx);
+
+   mongoc_uri_t *const uri = make_prose_test_3_uri();
+   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, true);
 
    prose_test_3_apm_ctx apm_ctx = {0};
 
@@ -669,6 +681,7 @@ test_retryable_reads_prose_3_1(void *ctx)
          "data" :
             {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 6}
       }),
+      uri, // Ownership transfer.
       &apm_ctx);
 
    // Step 6: Assert that both events occurred on different servers.
@@ -689,10 +702,231 @@ test_retryable_reads_prose_3_2(void *ctx)
          "mode" : {"times" : 1},
          "data" : {"failCommands" : ["find"], "errorLabels" : ["RetryableError"], "errorCode" : 6}
       }),
+      make_prose_test_3_uri(), // Ownership transfer.
       &apm_ctx);
 
    // Step 6: Assert that both events occurred on the same server.
    ASSERT(apm_ctx.server_id_failed.id == apm_ctx.server_id_succeeded.id);
+}
+
+// Retryable Reads Caused by Overload Errors Are Retried on the Same Replicaset Server When enableOverloadRetargeting
+// is disabled.
+static void
+test_retryable_reads_prose_3_3(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   prose_test_3_apm_ctx apm_ctx = {0};
+
+   test_retryable_reads_prose_3_steps_1_to_5(
+      BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" :
+            {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 6}
+      }),
+      make_prose_test_3_uri(), // Ownership transfer
+      &apm_ctx);
+
+   // Step 6: Assert that both events occurred on the same server.
+   ASSERT(apm_ctx.server_id_failed.id == apm_ctx.server_id_succeeded.id);
+}
+
+typedef struct {
+   const char *second_failpoint_cmd;
+   int find_commands_started_count;
+} prose_test_4_ctx_t;
+
+static void
+prose_test_4_on_command_started(const mongoc_apm_command_started_t *event)
+{
+   prose_test_4_ctx_t *const ctx = (prose_test_4_ctx_t *)mongoc_apm_command_started_get_context(event);
+
+   if (0 == strcmp(mongoc_apm_command_started_get_command_name(event), "find")) {
+      ctx->find_commands_started_count++;
+   }
+}
+
+static void
+prose_test_4_on_command_failed(const mongoc_apm_command_failed_t *event)
+{
+   prose_test_4_ctx_t *const ctx = (prose_test_4_ctx_t *)mongoc_apm_command_failed_get_context(event);
+
+   if (0 != strcmp(mongoc_apm_command_failed_get_command_name(event), "find")) {
+      return;
+   }
+
+   // Configure the second fail point command only if the failed event is for the first error configured in step 2.
+   if (ctx->second_failpoint_cmd) {
+      run_admin_command(ctx->second_failpoint_cmd);
+      ctx->second_failpoint_cmd = NULL;
+   }
+}
+
+// Test that drivers set the maximum number of retries for all retryable read errors when an overload error is
+// encountered.
+static void
+test_retryable_reads_prose_4(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   // Step 1: Create a client.
+   mongoc_client_t *const client = test_framework_new_default_client();
+
+   // Step 2: Configure a fail point with error code 91 (`ShutdownInProgress`) with the `RetryableError` and
+   // `SystemOverloadedError` error labels.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" :
+         {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
+   }));
+
+   // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code 91
+   // (`ShutdownInProgress`) and the `RetryableError` label. Configure the second fail point command only if the failed
+   // event is for the first error configured in step 2.
+   prose_test_4_ctx_t apm_ctx = {
+      .second_failpoint_cmd = BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : "alwaysOn",
+         "data" : {"failCommands" : ["find"], "errorLabels" : ["RetryableError"], "errorCode" : 91}
+      }),
+      .find_commands_started_count = 0,
+   };
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(callbacks, prose_test_4_on_command_started);
+      mongoc_apm_set_command_failed_cb(callbacks, prose_test_4_on_command_failed);
+      mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 4: Attempt a `findOne` operation on any record for any database and collection. Expect the `findOne` to fail
+   // with a server error.
+   {
+      mongoc_collection_t *const coll = get_test_collection(client, "retryable_reads");
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+
+      bson_error_t error;
+      ASSERT(mongoc_cursor_error(cursor, &error));
+
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+
+   // Assert that `MONGOC_DEFAULT_MAXADAPTIVERETRIES + 1` attempts were made.
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, MONGOC_DEFAULT_MAXADAPTIVERETRIES + 1);
+
+   // Step 5: Disable the fail point.
+   run_admin_command(BSON_STR({"configureFailPoint" : "failCommand", "mode" : "off"}));
+
+   mongoc_client_destroy(client);
+}
+
+typedef struct {
+   int count;
+} backoff_counter_t;
+
+static double
+backoff_counting_jitter_source_generate(mongoc_jitter_source_t *source)
+{
+   backoff_counter_t *const counter = (backoff_counter_t *)_mongoc_jitter_source_get_context(source);
+   ++counter->count;
+   return 0.0;
+}
+
+typedef struct {
+   const char *second_failpoint_cmd;
+} prose_test_5_ctx_t;
+
+static void
+prose_test_5_on_command_failed(const mongoc_apm_command_failed_t *event)
+{
+   prose_test_5_ctx_t *const ctx = (prose_test_5_ctx_t *)mongoc_apm_command_failed_get_context(event);
+
+   if (0 != strcmp(mongoc_apm_command_failed_get_command_name(event), "find")) {
+      return;
+   }
+
+   // Configure the second fail point command only if the failed event is for the first error configured in step 2.
+   if (ctx->second_failpoint_cmd) {
+      run_admin_command(ctx->second_failpoint_cmd);
+      ctx->second_failpoint_cmd = NULL;
+   }
+}
+
+// Test that drivers do not apply backoff to non-overload errors.
+static void
+test_retryable_reads_prose_5(void *unused)
+{
+   BSON_UNUSED(unused);
+
+
+   // Step 1: Create a client.
+   mongoc_client_t *const client = test_framework_new_default_client();
+
+   backoff_counter_t backoff_counter = {0};
+   {
+      mongoc_jitter_source_t *const jitter_source = _mongoc_jitter_source_new(backoff_counting_jitter_source_generate);
+      _mongoc_jitter_source_set_context(jitter_source, &backoff_counter);
+      _mongoc_client_set_jitter_source(client, jitter_source);
+   }
+
+   // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code 91
+   // (`ShutdownInProgress`) and the `RetryableError` label. Configure the second fail point command only if the failed
+   // event is for the first error configured in step 2.
+   prose_test_5_ctx_t ctx = {
+      .second_failpoint_cmd = BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : "alwaysOn",
+         "data" : {"failCommands" : ["find"], "errorLabels" : ["RetryableError"], "errorCode" : 91}
+      }),
+   };
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_failed_cb(callbacks, prose_test_5_on_command_failed);
+      mongoc_client_set_apm_callbacks(client, callbacks, &ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 2: Configure a fail point with error code 91 (`ShutdownInProgress`) with the `RetryableError` and
+   // `SystemOverloadedError` error labels.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : {"times" : 1},
+      "data" :
+         {"failCommands" : ["find"], "errorLabels" : [ "RetryableError", "SystemOverloadedError" ], "errorCode" : 91}
+   }));
+
+   // Step 4: Attempt a findOne operation on any record for any database and collection. Expect the findOne to fail with
+   // a server error.
+   {
+      mongoc_collection_t *const coll = get_test_collection(client, "retryable_reads");
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+
+      bson_error_t error;
+      ASSERT(mongoc_cursor_error(cursor, &error));
+
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+   // Assert that backoff was applied only once for the initial overload error and not for the subsequent non-overload
+   // retryable errors. The jitter source is only invoked when backoff is actually applied (via
+   // _mongoc_retry_backoff_generator_next), not when it is skipped (via _mongoc_retry_backoff_generator_skip).
+   ASSERT_CMPINT(backoff_counter.count, ==, 1);
+
+   // Step 5: Disable the fail point.
+   run_admin_command(BSON_STR({"configureFailPoint" : "failCommand", "mode" : "off"}));
+
+   mongoc_client_destroy(client);
 }
 
 /*
@@ -759,5 +993,24 @@ test_retryable_reads_install(TestSuite *suite)
                      NULL,
                      NULL,
                      test_framework_skip_if_not_replset_with_secondary,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_3_3",
+                     test_retryable_reads_prose_3_3,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_not_replset_with_secondary,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_4",
+                     test_retryable_reads_prose_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
+   TestSuite_AddFull(suite,
+                     "/retryable_reads/prose_test_5",
+                     test_retryable_reads_prose_5,
+                     NULL,
+                     NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* require 4.4+ */);
 }

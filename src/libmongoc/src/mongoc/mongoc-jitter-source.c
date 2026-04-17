@@ -19,6 +19,7 @@
 
 struct _mongoc_jitter_source_t {
    mongoc_jitter_source_generate_fn_t generate;
+   void *ctx;
 };
 
 mongoc_jitter_source_t *
@@ -54,4 +55,20 @@ _mongoc_jitter_source_generate_default(mongoc_jitter_source_t *source)
    BSON_UNUSED(source);
 
    return (double)_mongoc_simple_rand_uint32_t() / (double)UINT32_MAX;
+}
+
+void
+_mongoc_jitter_source_set_context(mongoc_jitter_source_t *source, void *ctx)
+{
+   BSON_ASSERT_PARAM(source);
+
+   source->ctx = ctx;
+}
+
+void *
+_mongoc_jitter_source_get_context(mongoc_jitter_source_t *source)
+{
+   BSON_ASSERT_PARAM(source);
+
+   return source->ctx;
 }

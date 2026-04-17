@@ -40,4 +40,7 @@ _mongoc_retry_backoff_generator_destroy(mongoc_retry_backoff_generator_t *genera
 mlib_duration
 _mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator);
 
+void
+_mongoc_retry_backoff_generator_skip(mongoc_retry_backoff_generator_t *generator);
+
 #endif

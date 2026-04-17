@@ -19,7 +19,6 @@
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-retryable-cmd-private.h>
-#include <mongoc/mongoc-token-bucket-private.h>
 
 #include <mongoc/mongoc.h>
 
@@ -556,9 +555,11 @@ test_backpressure_prose_1(void *ctx)
    // Step 3.5: Execute step 3.3 again.
    const mlib_duration with_backoff_duration = backpressure_prose_1_step_3_3(collection);
 
-   // Step 3.6: Compare the durations of the two runs. The sum of 5 backoffs is 3.1 seconds. There is a 1-second window
-   // to account for potential variance between the two runs.
-   ASSERT_CMPDURATION(mlib_duration(with_backoff_duration, minus, no_backoff_duration), >=, mlib_duration(2100, ms));
+   // Step 3.6: Compare the time between the two runs. The sum of 2 backoffs is 0.3 seconds. There is a 0.3-second
+   // window to account for potential variance between the two runs.
+   const mlib_duration diff = mlib_duration(with_backoff_duration, minus, (no_backoff_duration, plus, (300, ms)));
+   const mlib_duration abs_diff = mlib_duration(imaxabs(mlib_microseconds_count(diff)), us);
+   ASSERT_CMPDURATION(abs_diff, <, mlib_duration(300, ms));
 
    disable_fail_point();
 
@@ -567,42 +568,16 @@ test_backpressure_prose_1(void *ctx)
    mongoc_uri_destroy(uri);
 }
 
-static void
-test_backpressure_prose_2(void *ctx)
-{
-   BSON_UNUSED(ctx);
-
-   // Step 1: Let `client` be a `mongoc_client_t` with `adaptiveRetries=True`.
-   mongoc_uri_t *const uri = test_framework_get_uri();
-   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_ADAPTIVERETRIES, true);
-   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
-   test_framework_set_ssl_opts(client);
-
-   // Step 2: Assert that the client's retry token bucket is at full capacity and that the capacity is
-   // `MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY`.
-   ASSERT(client->topology->token_bucket->capacity == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
-   ASSERT(client->topology->token_bucket->tokens == MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
-
-   // Step 3: Using `client`, execute a successful `ping` command.
-   bson_error_t error;
-   ASSERT_OR_PRINT(mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error), error);
-
-   // Step 4: Assert that the successful command did not increase the number of tokens in the bucket above
-   // `MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY`.
-   ASSERT(client->topology->token_bucket->tokens <= MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
-
-   mongoc_client_destroy(client);
-   mongoc_uri_destroy(uri);
-}
 
 typedef struct {
    int find_commands_started_count;
-} prose_test_3_ctx_t;
+} find_command_start_counter_ctx_t;
 
 static void
 prose_test_3_command_started_cb(const mongoc_apm_command_started_t *event)
 {
-   prose_test_3_ctx_t *const ctx = (prose_test_3_ctx_t *)mongoc_apm_command_started_get_context(event);
+   find_command_start_counter_ctx_t *const ctx =
+      (find_command_start_counter_ctx_t *)mongoc_apm_command_started_get_context(event);
 
    const char *const command_name = mongoc_apm_command_started_get_command_name(event);
 
@@ -619,7 +594,7 @@ test_backpressure_prose_3(void *ctx)
    // Step 1: Let `client` be a `mongoc_client_t` with command event monitoring enabled.
    mongoc_client_t *const client = test_framework_new_default_client();
 
-   prose_test_3_ctx_t apm_ctx = {0};
+   find_command_start_counter_ctx_t apm_ctx = {0};
 
    {
       mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
@@ -662,8 +637,8 @@ test_backpressure_prose_3(void *ctx)
       mongoc_cursor_destroy(cursor);
    }
 
-   // Step 6: Assert that the total number of started commands is MAX_RETRIES + 1.
-   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, MONGOC_MAX_NUM_OVERLOAD_ATTEMPTS + 1);
+   // Step 6: Assert that the total number of started commands is `MONGOC_DEFAULT_MAXADAPTIVERETRIES + 1`.
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, MONGOC_DEFAULT_MAXADAPTIVERETRIES + 1);
 
    disable_fail_point();
 
@@ -671,54 +646,39 @@ test_backpressure_prose_3(void *ctx)
    mongoc_client_destroy(client);
 }
 
-typedef struct {
-   int find_commands_started_count;
-} prose_test_4_ctx_t;
-
-static void
-prose_test_4_command_started_cb(const mongoc_apm_command_started_t *event)
-{
-   prose_test_4_ctx_t *const ctx = (prose_test_4_ctx_t *)mongoc_apm_command_started_get_context(event);
-
-   const char *const command_name = mongoc_apm_command_started_get_command_name(event);
-
-   if (strcmp(command_name, "find") == 0) {
-      ctx->find_commands_started_count++;
-   }
-}
-
 static void
 test_backpressure_prose_4(void *ctx)
 {
    BSON_UNUSED(ctx);
 
-   // Step 1: Let `client` be a `mongoc_client_t` with `adaptiveRetries=True` and command event monitoring enabled.
-   mongoc_uri_t *const uri = test_framework_get_uri();
-   mongoc_uri_set_option_as_bool(uri, MONGOC_URI_ADAPTIVERETRIES, true);
-   mongoc_client_t *const client = test_framework_client_new_from_uri(uri, NULL);
-   test_framework_set_ssl_opts(client);
-   mongoc_uri_destroy(uri);
+   // Step 1: Let `client` be a `mongoc_client_t` with `maxAdaptiveRetries=1` and command event monitoring enabled.
+   mongoc_client_t *client = NULL;
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri();
+      mongoc_uri_set_option_as_int32(uri, MONGOC_URI_MAXADAPTIVERETRIES, 1);
 
-   prose_test_4_ctx_t apm_ctx = {0};
+      client = test_framework_client_new_from_uri(uri, NULL);
+
+      mongoc_uri_destroy(uri);
+   }
+   test_framework_set_ssl_opts(client);
+
+   find_command_start_counter_ctx_t apm_ctx = {0};
 
    {
-      mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new();
-      mongoc_apm_set_command_started_cb(callbacks, prose_test_4_command_started_cb);
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(callbacks, prose_test_3_command_started_cb);
       mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
       mongoc_apm_callbacks_destroy(callbacks);
    }
 
-   // Step 2: Set `client`'s retry token bucket to have 2 tokens.
-   ASSERT(client->topology->token_bucket);
-   client->topology->token_bucket->tokens = 2.0;
-
-   // Step 3: Let `coll` be a collection.
+   // Step 2: Let `coll` be a collection.
    mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
 
-   // Step 4: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
+   // Step 3: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
    run_admin_command(BSON_STR({
       "configureFailPoint" : "failCommand",
-      "mode" : {"times" : 3},
+      "mode" : "alwaysOn",
       "data" : {
          "failCommands" : ["find"],
          "errorCode" : 462, // IngressRequestRateLimitExceeded
@@ -729,7 +689,7 @@ test_backpressure_prose_4(void *ctx)
    bson_error_t error;
 
    {
-      // Step 5: Perform a find operation with `coll` that fails.
+      // Step 4: Perform a find operation with `coll` that fails.
       mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
 
       const bson_t *doc;
@@ -738,7 +698,7 @@ test_backpressure_prose_4(void *ctx)
       const bson_t *error_doc;
       ASSERT(mongoc_cursor_error_document(cursor, &error, &error_doc));
 
-      // Step 6: Assert that the raised error contains both the `RetryableError` and `SystemOverloadedError` error
+      // Step 5: Assert that the raised error contains both the `RetryableError` and `SystemOverloadedError` error
       // labels.
       ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_RETRYABLEERROR));
       ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
@@ -746,9 +706,76 @@ test_backpressure_prose_4(void *ctx)
       mongoc_cursor_destroy(cursor);
    }
 
-   // Step 7: Assert that the total number of started commands is 3: one for the initial attempt and two for the
-   // retries.
-   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 3);
+   // Step 6: Assert that the total number of started commands is `maxAdaptiveRetries` + 1 (2).
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 2);
+
+   disable_fail_point();
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
+static void
+test_backpressure_max_adaptive_retries_0(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   // Let `client` be a `mongoc_client_t` with `maxAdaptiveRetries=0` and command event monitoring enabled.
+   mongoc_client_t *client = NULL;
+   {
+      mongoc_uri_t *const uri = test_framework_get_uri();
+      mongoc_uri_set_option_as_int32(uri, MONGOC_URI_MAXADAPTIVERETRIES, 0);
+
+      client = test_framework_client_new_from_uri(uri, NULL);
+
+      mongoc_uri_destroy(uri);
+   }
+   test_framework_set_ssl_opts(client);
+
+   find_command_start_counter_ctx_t apm_ctx = {0};
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_started_cb(callbacks, prose_test_3_command_started_cb);
+      mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Let `coll` be a collection.
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+
+   // Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `find`.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : "alwaysOn",
+      "data" : {
+         "failCommands" : ["find"],
+         "errorCode" : 462, // IngressRequestRateLimitExceeded
+         "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
+      }
+   }));
+
+   bson_error_t error;
+
+   {
+      // Perform a find operation with `coll` that fails.
+      mongoc_cursor_t *const cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(cursor, &doc));
+
+      const bson_t *error_doc;
+      ASSERT(mongoc_cursor_error_document(cursor, &error, &error_doc));
+
+      // Assert that the raised error contains both the `RetryableError` and `SystemOverloadedError` error labels.
+      ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+      ASSERT(mongoc_error_has_label(error_doc, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+
+      mongoc_cursor_destroy(cursor);
+   }
+
+   // Assert that the total number of started commands is 1 (1 initial attempt and no retries).
+   ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 1);
 
    disable_fail_point();
 
@@ -928,13 +955,6 @@ test_backpressure_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
 
    TestSuite_AddFull(suite,
-                     "/backpressure/prose_test_2",
-                     test_backpressure_prose_2,
-                     NULL,
-                     NULL,
-                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
-
-   TestSuite_AddFull(suite,
                      "/backpressure/prose_test_3",
                      test_backpressure_prose_3,
                      NULL,
@@ -944,6 +964,13 @@ test_backpressure_install(TestSuite *suite)
    TestSuite_AddFull(suite,
                      "/backpressure/prose_test_4",
                      test_backpressure_prose_4,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
+
+   TestSuite_AddFull(suite,
+                     "/backpressure/max_adaptive_retries_zero",
+                     test_backpressure_max_adaptive_retries_0,
                      NULL,
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);

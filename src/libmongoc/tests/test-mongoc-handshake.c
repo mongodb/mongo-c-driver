@@ -18,7 +18,10 @@
 
 #include <bson/bson.h>
 
+#include <mock_server/request.h>
+
 #include <stdint.h>
+#include <string.h>
 #ifdef _POSIX_VERSION
 #include <sys/utsname.h>
 #endif
@@ -373,7 +376,7 @@ static void
 _override_host_platform_os(void)
 {
    _reset_handshake();
-   mongoc_handshake_t *md = _mongoc_handshake_get();
+   mongoc_handshake_t *md = _mongoc_handshake_get_unfrozen();
    bson_free(md->os_type);
    md->os_type = bson_strdup("Linux");
    bson_free(md->os_name);
@@ -387,7 +390,7 @@ _override_host_platform_os(void)
    bson_free(md->compiler_info);
    md->compiler_info = bson_strdup("CC=GCC");
    bson_free(md->flags);
-   md->flags = bson_strdup("CFLAGS=\"-fPIE\"");
+   md->flags = bson_strdup(" CFLAGS=\"-fPIE\"");
 }
 
 // erase all FaaS variables used in testing
@@ -680,7 +683,7 @@ test_mongoc_handshake_data_append_null_args(void)
    /* Make sure setting the handshake works */
    ASSERT(mongoc_handshake_data_append(NULL, NULL, NULL));
 
-   _reset_handshake();
+   _override_host_platform_os();
    bson_t *handshake_doc = _get_handshake_document(false);
    bson_iter_init(&md_iter, handshake_doc);
    _handshake_check_application(handshake_doc);
@@ -716,7 +719,8 @@ test_mongoc_handshake_data_append_null_args(void)
    ASSERT(bson_iter_find(&inner_iter, "version"));
    ASSERT(BSON_ITER_HOLDS_UTF8(&inner_iter));
    val = bson_iter_utf8(&inner_iter, NULL);
-   _check_os_version_valid(val);
+   ASSERT(val);
+   ASSERT(strlen(val) > 0);
 
    /* Check os arch is valid */
    ASSERT(bson_iter_find(&inner_iter, "architecture"));
@@ -751,7 +755,7 @@ _test_platform(bool platform_oversized)
 
    _reset_handshake();
 
-   md = _mongoc_handshake_get();
+   md = _mongoc_handshake_get_unfrozen();
 
    bson_free(md->os_type);
    md->os_type = bson_strdup("foo");
@@ -781,7 +785,7 @@ _test_platform(bool platform_oversized)
    ASSERT(!strstr(md->platform, "b"));
 
    bson_t *doc;
-   ASSERT(doc = _mongoc_handshake_build_doc_with_application("my app"));
+   ASSERT(doc = _mongoc_handshake_build_doc_with_application(md, "my app"));
    ASSERT_CMPUINT32(doc->len, ==, (uint32_t)HANDSHAKE_MAX_SIZE);
 
    bson_destroy(doc);
@@ -927,7 +931,7 @@ test_mongoc_platform_truncate(int drop)
 
    /* we manually bypass the defaults of the handshake to ensure an exceedingly
     * long field does not cause our test to incorrectly fail */
-   md = _mongoc_handshake_get();
+   md = _mongoc_handshake_get_unfrozen();
    bson_free(md->os_type);
    md->os_type = bson_strdup("test_a");
    bson_free(md->os_name);
@@ -951,7 +955,8 @@ test_mongoc_platform_truncate(int drop)
    bson_free(md->os_version);
    md->os_version = big_string;
 
-   bson_t *handshake_no_platform = _mongoc_handshake_build_doc_with_application(default_appname);
+   bson_t *handshake_no_platform =
+      _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get_unfrozen(), default_appname);
    size_t handshake_remaining_space = HANDSHAKE_MAX_SIZE - handshake_no_platform->len;
    bson_destroy(handshake_no_platform);
 
@@ -964,20 +969,20 @@ test_mongoc_platform_truncate(int drop)
    /* adjust remaining space depending on which combination of
     * flags/compiler_info we want to test dropping */
    if (drop == 2) {
-      undropped = bson_strdup_printf("%s", "");
+      undropped = bson_strdup("");
    } else if (drop == 1) {
-      handshake_remaining_space -= strlen(md->compiler_info);
-      undropped = bson_strdup_printf("%s", md->compiler_info);
+      handshake_remaining_space -= strlen(" / ") + strlen(md->compiler_info);
+      undropped = bson_strdup_printf(" / %s", md->compiler_info);
    } else {
-      handshake_remaining_space -= strlen(md->flags) + strlen(md->compiler_info);
-      undropped = bson_strdup_printf("%s%s", md->compiler_info, md->flags);
+      handshake_remaining_space -= strlen(" / ") + strlen(md->flags) + strlen(md->compiler_info);
+      undropped = bson_strdup_printf(" / %s%s", md->compiler_info, md->flags);
    }
 
    big_string[handshake_remaining_space] = '\0';
    ASSERT(mongoc_handshake_data_append(NULL, NULL, big_string));
 
    bson_t *doc;
-   ASSERT(doc = _mongoc_handshake_build_doc_with_application(default_appname));
+   ASSERT(doc = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get_unfrozen(), default_appname));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
     * dropped the flags correctly, instead of truncating anything
@@ -1029,7 +1034,7 @@ test_mongoc_handshake_cannot_send(void)
 
    /* The handshake cannot be built if a field that cannot be dropped
     * (os.type) is set to a very long string */
-   mongoc_handshake_t *md = _mongoc_handshake_get();
+   mongoc_handshake_t *md = _mongoc_handshake_get_unfrozen();
    bson_free(md->os_type);
    md->os_type = bson_strdup(big_string);
 
@@ -1346,7 +1351,7 @@ test_mongoc_handshake_race_condition(void)
 static void
 test_mongoc_handshake_cpp(void)
 {
-   bson_t *handshake = _mongoc_handshake_build_doc_with_application("foo");
+   bson_t *handshake = _mongoc_handshake_build_doc_with_application(_mongoc_handshake_get_unfrozen(), "foo");
    const char *platform = bson_lookup_utf8(handshake, "platform");
    if (0 != strlen(MONGOC_CXX_COMPILER_VERSION)) {
       ASSERT_CONTAINS(platform, "CXX=" MONGOC_CXX_COMPILER_ID " " MONGOC_CXX_COMPILER_VERSION);
@@ -1385,6 +1390,1050 @@ test_mongoc_handshake_includes_backpressure_flag(void)
    mongoc_client_pool_push(pool, client);
    mongoc_client_pool_destroy(pool);
    mock_server_destroy(server);
+}
+
+// `maxIdleTimeMS` is not supported. Use hangups to force subsequent handshakes instead.
+// Override `minHeartbeatFrequencyMS` (500ms) to avoid slowdowns from hangups.
+static mongoc_client_t *
+_test_metadata_append_setup_client(mock_server_t *server)
+{
+   mongoc_client_t *const client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   client->topology->min_heartbeat_frequency_msec = 0;
+   return client;
+}
+
+// Return a copy of the "client" (metadata) field.
+static bson_t *
+_test_metadata_append_get_metadata(request_t *request)
+{
+   const bson_t *req_doc = request_get_doc(request, 0);
+   ASSERT(req_doc);
+
+   bson_iter_t iter;
+   ASSERT(bson_iter_init_find(&iter, req_doc, HANDSHAKE_FIELD));
+   ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
+
+   uint32_t len;
+   const uint8_t *data;
+   bson_iter_document(&iter, &len, &data);
+   return bson_new_from_data(data, len);
+}
+
+static void
+_test_metadata_append_reply_hello_and_destroy(request_t *request)
+{
+   BSON_ASSERT_PARAM(request);
+
+   reply_to_request_simple(request,
+                           tmp_str("{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': %d, 'maxWireVersion': %d}",
+                                   WIRE_VERSION_MIN,
+                                   WIRE_VERSION_MAX));
+   request_destroy(request);
+}
+
+static void
+_set_initial_metadata(const char *name, const char *version, const char *platform)
+{
+   ASSERT(!_mongoc_handshake_is_frozen());
+
+   // Avoid noise in handshake platform string.
+   {
+      mongoc_handshake_t *const md = _mongoc_handshake_get_unfrozen();
+
+      bson_free(md->compiler_info);
+      bson_free(md->flags);
+
+      md->compiler_info = NULL;
+      md->flags = NULL;
+   }
+
+   ASSERT(mongoc_handshake_data_append(name, version, platform));
+}
+
+typedef struct driver_info_options {
+   const char *name;
+   const char *version;
+   const char *platform;
+} driver_info_options;
+
+static bson_t *
+_handshake_metadata_append_ping_capture(mock_server_t *server, mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM(server);
+   BSON_ASSERT_PARAM(client);
+
+   bson_t *metadata = NULL;
+
+   // Setup Step 2: Send a `ping` command to the server and verify that the command succeeds.
+   future_t *future = future_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, NULL);
+
+   // Setup Step 3: Save intercepted `client` document as `initialClientMetadata`.
+   {
+      request_t *const request = mock_server_receives_any_hello(server);
+      ASSERT(request);
+
+      metadata = _test_metadata_append_get_metadata(request);
+      ASSERT(metadata);
+
+      _test_metadata_append_reply_hello_and_destroy(request);
+   }
+
+   // Setup Step 4: Wait 5ms for the connection to become idle.
+   //
+   // `maxIdleTimeMS` is not supported. Use hangups to force subsequent handshakes instead.
+   {
+      request_t *const request =
+         mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'admin', 'ping': 1}"));
+      reply_to_request_with_hang_up(request);
+      request_destroy(request);
+   }
+
+   ASSERT(!future_get_bool(future)); // Hang up: network error.
+   future_destroy(future);
+
+   return metadata;
+}
+
+static bson_t *
+_handshake_metadata_append_setup(mock_server_t *server, mongoc_client_t *client, const driver_info_options *options)
+{
+   BSON_ASSERT_PARAM(server);
+   BSON_ASSERT_PARAM(client);
+
+   // Setup Step 1: Create a MongoClient instance with the following:
+   _set_initial_metadata(options->name, options->version, options->platform);
+
+   return _handshake_metadata_append_ping_capture(server, client);
+}
+
+// All other subfields in the `client` document remain unchanged from `initialClientMetadata`.
+static void
+_test_metadata_append_check_other_subfields(const bson_t *initial_client_metadata,
+                                            const bson_t *updated_client_metadata)
+{
+   // client.driver (other subfields)
+   {
+      bson_t initial = BSON_INITIALIZER;
+      bson_t updated = BSON_INITIALIZER;
+
+      bson_t *const initial_driver = bson_lookup_bson(initial_client_metadata, "driver");
+      bson_t *const updated_driver = bson_lookup_bson(updated_client_metadata, "driver");
+
+      ASSERT(initial_driver);
+      ASSERT(updated_driver);
+
+      bson_copy_to_excluding_noinit(initial_driver, &initial, "name", "version", NULL);
+      bson_copy_to_excluding_noinit(updated_driver, &updated, "name", "version", NULL);
+
+      ASSERT_EQUAL_BSON(&initial, &updated);
+
+      bson_destroy(initial_driver);
+      bson_destroy(updated_driver);
+
+      bson_destroy(&initial);
+      bson_destroy(&updated);
+   }
+
+   // client (other subfields)
+   {
+      bson_t initial = BSON_INITIALIZER;
+      bson_t updated = BSON_INITIALIZER;
+
+      bson_copy_to_excluding_noinit(initial_client_metadata, &initial, "driver", "platform", NULL);
+      bson_copy_to_excluding_noinit(updated_client_metadata, &updated, "driver", "platform", NULL);
+
+      ASSERT_EQUAL_BSON(&initial, &updated);
+
+      bson_destroy(&initial);
+      bson_destroy(&updated);
+   }
+}
+
+static void
+_test_metadata_append_ping_check(mongoc_client_t *client,
+                                 mock_server_t *server,
+                                 const bson_t *initial_client_metadata,
+                                 const driver_info_options *options,
+                                 void (*check_fn)(const bson_t *initial_client_metadata,
+                                                  const bson_t *updated_client_metadata,
+                                                  const driver_info_options *options))
+{
+   future_t *const future = future_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, NULL);
+   ASSERT(future);
+
+   {
+      request_t *const request = mock_server_receives_any_hello(server);
+      ASSERT(request);
+
+      bson_t *const updated_client_metadata = _test_metadata_append_get_metadata(request);
+      ASSERT(updated_client_metadata);
+
+      check_fn(initial_client_metadata, updated_client_metadata, options);
+      _test_metadata_append_reply_hello_and_destroy(request);
+
+      bson_destroy(updated_client_metadata);
+   }
+
+   {
+      request_t *const request =
+         mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'admin', 'ping': 1}"));
+      reply_to_request_simple(request, "{'ok': 1}");
+      request_destroy(request);
+   }
+
+   // ... the command succeeds.
+   ASSERT(future_get_bool(future)); // {"ok": 1}
+   future_destroy(future);
+}
+
+static void
+_test_metadata_append_unique_check(const bson_t *initial_client_metadata,
+                                   const bson_t *updated_client_metadata,
+                                   const driver_info_options *options)
+{
+   BSON_ASSERT_PARAM(initial_client_metadata);
+   BSON_ASSERT_PARAM(updated_client_metadata);
+   BSON_ASSERT_PARAM(options);
+
+   // client.driver.name
+   {
+      const char *const initial_driver_name = bson_lookup_utf8(initial_client_metadata, "driver.name");
+      const char *const updated_driver_name = bson_lookup_utf8(updated_client_metadata, "driver.name");
+
+      ASSERT(initial_driver_name);
+      ASSERT(updated_driver_name);
+
+      if (options->name) {
+         // - If test case's name is non-null: `library|<name>`.
+         ASSERT_CMPSTR(updated_driver_name, tmp_str("%s / %s", initial_driver_name, options->name));
+      } else {
+         // - Otherwise, the field remains unchanged: `library`.
+         ASSERT_CMPSTR(updated_driver_name, initial_driver_name);
+      }
+   }
+
+   // client.driver.version
+   {
+      const char *const initial_driver_version = bson_lookup_utf8(initial_client_metadata, "driver.version");
+      const char *const updated_driver_version = bson_lookup_utf8(updated_client_metadata, "driver.version");
+
+      ASSERT(initial_driver_version);
+      ASSERT(updated_driver_version);
+
+      if (options->version) {
+         // - If test case's version is non-null: `1.2|<version>`.
+         char *expected_version = bson_strdup_printf("%s / %s", initial_driver_version, options->version);
+         ASSERT_CMPSTR(updated_driver_version, expected_version);
+         bson_free(expected_version);
+      } else {
+         // - Otherwise, the field remains unchanged: `1.2`.
+         ASSERT_CMPSTR(updated_driver_version, initial_driver_version);
+      }
+   }
+
+   // client.platform
+   {
+      const char *const initial_platform = bson_lookup_utf8(initial_client_metadata, "platform");
+      const char *const updated_platform = bson_lookup_utf8(updated_client_metadata, "platform");
+
+      ASSERT(initial_platform);
+      ASSERT(updated_platform);
+
+      if (options->platform) {
+         // - If test case's platform is non-null: `Library Platform|<platform>`.
+         ASSERT_CMPSTR(updated_platform, tmp_str("%s / %s", initial_platform, options->platform));
+      } else {
+         // - Otherwise, the field remains unchanged: `Library Platform`.
+         ASSERT_CMPSTR(updated_platform, initial_platform);
+      }
+   }
+
+   _test_metadata_append_check_other_subfields(initial_client_metadata, updated_client_metadata);
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 1: Drivers should verify that metadata provided
+// after `MongoClient` initialization is appended, not replaced, and is visible in the `hello` command of new
+// connections.
+static void
+test_handshake_metadata_append_single_impl(const driver_info_options *options)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_t *const initial_client_metadata = _handshake_metadata_append_setup(server,
+                                                                            client,
+                                                                            &(driver_info_options){
+                                                                               .name = "library",
+                                                                               .version = "1.2",
+                                                                               .platform = "Library Platform",
+                                                                            });
+
+   // Step 1: Append the `DriverInfoOptions` from the selected test case to the `MongoClient` metadata.
+   ASSERT(mongoc_client_append_metadata(client, options->name, options->version, options->platform));
+
+   // Step 2: Send a `ping` command to the server and verify:
+   _test_metadata_append_ping_check(
+      client, server, initial_client_metadata, options, _test_metadata_append_unique_check);
+
+   bson_destroy(initial_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_append_single_case_1(void)
+{
+   test_handshake_metadata_append_single_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "2.0",
+      .platform = "Framework Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_single_case_2(void)
+{
+   test_handshake_metadata_append_single_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "2.0",
+      .platform = NULL,
+   });
+}
+
+static void
+test_handshake_metadata_append_single_case_3(void)
+{
+   test_handshake_metadata_append_single_impl(&(driver_info_options){
+      .name = "framework",
+      .version = NULL,
+      .platform = "Framework Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_single_case_4(void)
+{
+   test_handshake_metadata_append_single_impl(&(driver_info_options){
+      .name = "framework",
+      .version = NULL,
+      .platform = NULL,
+   });
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 2: Drivers should verify that after `MongoClient`
+// initialization, metadata can be updated multiple times, not replaced, and is visible in the `hello` command of new
+// connections.
+static void
+test_handshake_metadata_append_multiple_impl(const driver_info_options *options)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_destroy(_handshake_metadata_append_setup(server, client, &(driver_info_options){0}));
+
+   // Setup Step 1: Create a `MongoClient` instance with: ...
+   // Setup Step 2: Append the following `DriverInfoOptions` to the `MongoClient` metadata: ...
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   // Setup Step 3: Send a `ping` command to the server and verify that the command succeeds.
+   // Setup Step 4: Save intercepted client document as `updatedClientMetadata`.
+   // Setup Step 5: Wait 5ms for the connection to become idle (use hangups instead).
+   bson_t *const updated_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 1: Append the `DriverInfoOptions` from the selected test case to the `MongoClient` metadata.
+   ASSERT(mongoc_client_append_metadata(client, options->name, options->version, options->platform));
+
+   // Step 2: Send a `ping` command to the server and verify:
+   _test_metadata_append_ping_check(
+      client, server, updated_client_metadata, options, _test_metadata_append_unique_check);
+
+   bson_destroy(updated_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_append_multiple_case_1(void)
+{
+   test_handshake_metadata_append_multiple_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "2.0",
+      .platform = "Framework Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_multiple_case_2(void)
+{
+   test_handshake_metadata_append_multiple_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "2.0",
+      .platform = NULL,
+   });
+}
+
+static void
+test_handshake_metadata_append_multiple_case_3(void)
+{
+   test_handshake_metadata_append_multiple_impl(&(driver_info_options){
+      .name = "framework",
+      .version = NULL,
+      .platform = "Framework Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_multiple_case_4(void)
+{
+   test_handshake_metadata_append_multiple_impl(&(driver_info_options){
+      .name = "framework",
+      .version = NULL,
+      .platform = NULL,
+   });
+}
+
+static void
+_test_metadata_append_duplicate_check(const bson_t *initial_client_metadata,
+                                      const bson_t *updated_client_metadata,
+                                      const driver_info_options *options)
+{
+   BSON_ASSERT_PARAM(initial_client_metadata);
+   BSON_ASSERT_PARAM(updated_client_metadata);
+   BSON_ASSERT_PARAM(options);
+
+   ASSERT(options->name);
+   ASSERT(options->version);
+   ASSERT(options->platform);
+
+   const char *const initial_driver_name = bson_lookup_utf8(initial_client_metadata, "driver.name");
+   const char *const initial_driver_version = bson_lookup_utf8(initial_client_metadata, "driver.version");
+   const char *const initial_driver_platform = bson_lookup_utf8(initial_client_metadata, "platform");
+
+   ASSERT(initial_driver_name);
+   ASSERT(initial_driver_version);
+   ASSERT(initial_driver_platform);
+
+   const char *const updated_driver_name = bson_lookup_utf8(updated_client_metadata, "driver.name");
+   const char *const updated_driver_version = bson_lookup_utf8(updated_client_metadata, "driver.version");
+   const char *const updated_driver_platform = bson_lookup_utf8(updated_client_metadata, "platform");
+
+   ASSERT(updated_driver_name);
+   ASSERT(updated_driver_version);
+   ASSERT(updated_driver_platform);
+
+   // If the test case's DriverInfo is identical to the driver info from setup step 2 (test case 1):
+   if (strcmp(options->name, "library") == 0 && strcmp(options->version, "1.2") == 0 &&
+       strcmp(options->platform, "Library Platform") == 0) {
+      // - Assert `metadata.driver.name` is equal to `library`
+      ASSERT_CMPSTR(updated_driver_name, initial_driver_name);
+
+      // - Assert `metadata.driver.version` is equal to `1.2`
+      ASSERT_CMPSTR(updated_driver_version, initial_driver_version);
+
+      // - Assert `metadata.platform` is equal to `Library Platform`
+      ASSERT_CMPSTR(updated_driver_platform, initial_driver_platform);
+   }
+
+   // Otherwise:
+   else {
+      // - Assert `metadata.driver.name` is equal to `library|<name>`
+      ASSERT_CMPSTR(updated_driver_name, tmp_str("%s / %s", initial_driver_name, options->name));
+
+      // - Assert `metadata.driver.version` is equal to `1.2|<version>`
+      ASSERT_CMPSTR(updated_driver_version, tmp_str("%s / %s", initial_driver_version, options->version));
+
+      // - Assert `metadata.platform` is equal to `Library Platform|<platform>`
+      ASSERT_CMPSTR(updated_driver_platform, tmp_str("%s / %s", initial_driver_platform, options->platform));
+   }
+
+   _test_metadata_append_check_other_subfields(initial_client_metadata, updated_client_metadata);
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 3: Multiple Successive Metadata Updates with
+// Duplicate Data
+static void
+test_handshake_metadata_append_duplicate_impl(const driver_info_options *options)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // Setup Step 1: Create a `MongoClient` instance with: ...
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_destroy(_handshake_metadata_append_setup(server, client, &(driver_info_options){0}));
+
+   // Setup Step 2: Append the following `DriverInfoOptions` to the `MongoClient` metadata: ...
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   // Setup Step 3: Send a `ping` command to the server and verify that the command succeeds.
+   // Setup Step 4: Save intercepted `client` document as `updatedClientMetadata`.
+   // Setup Step 5: Wait 5ms for the connection to become idle (use hangups instead).
+   bson_t *const initial_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 1: Append the `DriverInfoOptions` from the selected test case to the `MongoClient` metadata.
+   ASSERT(mongoc_client_append_metadata(client, options->name, options->version, options->platform));
+
+   // Step 2: Send a `ping` command to the server and verify:
+   _test_metadata_append_ping_check(
+      client, server, initial_client_metadata, options, _test_metadata_append_duplicate_check);
+
+   bson_destroy(initial_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_1(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "library",
+      .version = "1.2",
+      .platform = "Library Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_2(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "1.2",
+      .platform = "Library Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_3(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "library",
+      .version = "2.0",
+      .platform = "Library Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_4(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "library",
+      .version = "1.2",
+      .platform = "Framework Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_5(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "2.0",
+      .platform = "Library Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_6(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "framework",
+      .version = "1.2",
+      .platform = "Framework Platform",
+   });
+}
+
+static void
+test_handshake_metadata_append_duplicate_case_7(void)
+{
+   test_handshake_metadata_append_duplicate_impl(&(driver_info_options){
+      .name = "library",
+      .version = "2.0",
+      .platform = "Framework Platform",
+   });
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 4: Multiple Metadata Updates with Duplicate Data
+static void
+test_handshake_metadata_append_full_duplicate(void)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // Step 1: Create a `MongoClient` instance with ...
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_destroy(_handshake_metadata_append_setup(server, client, &(driver_info_options){0}));
+
+   // Step 2: Append the following `DriverInfoOptions` to the `MongoClient` metadata:
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   // Step 3: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 4: Wait 5ms for the connection to become idle (use hangups instead).
+   bson_destroy(_handshake_metadata_append_ping_capture(server, client));
+
+   // Step 5: Append the following `DriverInfoOptions` to the `MongoClient` metadata:
+   ASSERT(mongoc_client_append_metadata(client, "framework", "2.0", "Framework Platform"));
+
+   // Step 6: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 7: Save intercepted `client` document as `clientMetadata`.
+   // Step 8: Wait 5ms for the connection to become idle (use hangups instead).
+   bson_t *const client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 9: Append the following `DriverInfoOptions` to the `MongoClient` metadata:
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   // Step 10: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 11: Save intercepted `client` document as `updatedClientMetadata`.
+   bson_t *const updated_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 12: Assert that `clientMetadata` is identical to `updatedClientMetadata`.
+   ASSERT_EQUAL_BSON(client_metadata, updated_client_metadata);
+
+   bson_destroy(updated_client_metadata);
+   bson_destroy(client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 5: Metadata is not appended if identical to
+// initial metadata
+static void
+test_handshake_metadata_append_identical(void)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // Step 1: Create a `MongoClient` instance with ...
+   // Step 2: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 3: Save intercepted `client` document as `clientMetadata`.
+   // Step 4: Wait 5ms for the connection to become idle (use hangups instead).
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_t *const client_metadata = _handshake_metadata_append_setup(server,
+                                                                    client,
+                                                                    &(driver_info_options){
+                                                                       .name = "library",
+                                                                       .version = "1.2",
+                                                                       .platform = "Library Platform",
+                                                                    });
+
+   // Step 5: Append the following `DriverInfoOptions` to the `MongoClient` metadata:
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   // Step 6: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 7: Save intercepted `client` document as `updatedClientMetadata`.
+   bson_t *const updated_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 8: Assert that clientMetadata is identical to updatedClientMetadata.
+   ASSERT_EQUAL_BSON(client_metadata, updated_client_metadata);
+
+   bson_destroy(client_metadata);
+   bson_destroy(updated_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 6: Metadata is not appended if identical to
+// initial metadata (separated by non-identical metadata)
+static void
+test_handshake_metadata_append_separated_identical(void)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // Step 1: Create a `MongoClient` instance with ...
+   // Step 2: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 3: Wait 5ms for the connection to become idle (use hangups instead).
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_destroy(_handshake_metadata_append_setup(server,
+                                                 client,
+                                                 &(driver_info_options){
+                                                    .name = "library",
+                                                    .version = "1.2",
+                                                    .platform = "Library Platform",
+                                                 }));
+
+   // Step 4: Append the following `DriverInfoOptions` to the `MongoClient` metadata:
+   ASSERT(mongoc_client_append_metadata(client, "framework", "1.2", "Library Platform"));
+
+   // Step 5: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 6: Save intercepted `client` document as `updatedClientMetadata`.
+   // Step 7: Wait 5ms for the connection to become idle (use hangups instead).
+   bson_t *const client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 8: Append the following `DriverInfoOptions` to the `MongoClient` metadata:
+   ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+
+   // Step 9: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 10: Save intercepted `client` document as `updatedClientMetadata`.
+   bson_t *const updated_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 11: Assert that clientMetadata is identical to updatedClientMetadata.
+   ASSERT_EQUAL_BSON(client_metadata, updated_client_metadata);
+
+   bson_destroy(client_metadata);
+   bson_destroy(updated_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 7: Empty strings are considered unset when
+// appending duplicate metadata
+static void
+test_handshake_metadata_append_empty_duplicate_impl(const driver_info_options *appended,
+                                                    const driver_info_options *duplicate)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // Step 1: Create a `MongoClient` instance with ...
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_destroy(_handshake_metadata_append_setup(server, client, &(driver_info_options){0}));
+
+   // Step 2: Append the `DriverInfoOptions` from the selected test case from the appended metadata section.
+   ASSERT(mongoc_client_append_metadata(client, appended->name, appended->version, appended->platform));
+
+   // Step 3: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 4: Save intercepted `client` document as `clientMetadata`.
+   // Step 5: Wait 5ms for the connection to become idle (use hangups instead).
+   bson_t *const client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 6: Append the `DriverInfoOptions` from the selected test case from the duplicate metadata section.
+   ASSERT(mongoc_client_append_metadata(client, duplicate->name, duplicate->version, duplicate->platform));
+
+   // Step 7: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 8: Store the response as `updatedClientMetadata`.
+   bson_t *const updated_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 9: Assert that `clientMetadata` is identical to `updatedClientMetadata`.
+   ASSERT_EQUAL_BSON(client_metadata, updated_client_metadata);
+
+   bson_destroy(client_metadata);
+   bson_destroy(updated_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_append_empty_duplicate_case_2(void)
+{
+   test_handshake_metadata_append_empty_duplicate_impl(
+      &(driver_info_options){.name = "library", .version = NULL, .platform = "Library Platform"},
+      &(driver_info_options){.name = "library", .version = "", .platform = "Library Platform"});
+}
+
+static void
+test_handshake_metadata_append_empty_duplicate_case_3(void)
+{
+   test_handshake_metadata_append_empty_duplicate_impl(
+      &(driver_info_options){.name = "library", .version = "1.2", .platform = NULL},
+      &(driver_info_options){.name = "library", .version = "1.2", .platform = ""});
+}
+
+// MongoDB Handshake Tests: Client Metadata Update Prose Tests: Test 8: Empty strings are considered unset when
+// appending metadata identical to initial metadata
+static void
+test_handshake_metadata_append_empty_identical_impl(const driver_info_options *initial,
+                                                    const driver_info_options *appended)
+{
+   _reset_handshake();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // Step 1: Create a `MongoClient` instance with ...
+   // Step 2: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 3: Save intercepted `client` document as `initialClientMetadata`.
+   // Step 4: Wait 5ms for the connection to become idle (use hangups instead).
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   bson_t *const client_metadata = _handshake_metadata_append_setup(server, client, initial);
+
+   // Step 5: Append the `DriverInfoOptions` from the selected test case from the appended metadata section.
+   ASSERT(mongoc_client_append_metadata(client, appended->name, appended->version, appended->platform));
+
+   // Step 6: Send a `ping` command to the server and verify that the command succeeds.
+   // Step 7: Store the response as `updatedClientMetadata`.
+   bson_t *const updated_client_metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Step 8: Assert that `initialClientMetadata` is identical to `updatedClientMetadata`.
+   ASSERT_EQUAL_BSON(client_metadata, updated_client_metadata);
+
+   bson_destroy(client_metadata);
+   bson_destroy(updated_client_metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_append_empty_identical_case_2(void)
+{
+   test_handshake_metadata_append_empty_identical_impl(
+      &(driver_info_options){.name = "library", .version = NULL, .platform = "Library Platform"},
+      &(driver_info_options){.name = "library", .version = "", .platform = "Library Platform"});
+}
+
+static void
+test_handshake_metadata_append_empty_identical_case_3(void)
+{
+   test_handshake_metadata_append_empty_identical_impl(
+      &(driver_info_options){.name = "library", .version = "1.2", .platform = NULL},
+      &(driver_info_options){.name = "library", .version = "1.2", .platform = ""});
+}
+
+static void
+test_handshake_metadata_mongoc_platform_reappends_impl(bool initialize_with)
+{
+   _override_host_platform_os();
+
+   {
+      mongoc_handshake_t *const md = _mongoc_handshake_get_unfrozen();
+
+      // Start with an empty platform string.
+      bson_free(md->platform);
+      md->platform = bson_strdup("");
+   }
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+
+   if (initialize_with) {
+      ASSERT(!_mongoc_handshake_is_frozen());
+      ASSERT(mongoc_handshake_data_append("library", "1.2", "Library Platform"));
+   } else {
+      bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+      // "<mongoc platform>" is always appended as the last element whenever able (no truncation).
+      ASSERT_MATCH(metadata,
+                   "{"
+                   "  'driver': {"
+                   "    'name': 'test_e',"
+                   "    'version': '1.25.0'"
+                   "  },"
+                   "  'platform': 'CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "}");
+
+      bson_destroy(metadata);
+
+      ASSERT(mongoc_client_append_metadata(client, "library", "1.2", "Library Platform"));
+   }
+
+   {
+      bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+      // User-provided platform metadata must always come before "<mongoc platform>".
+      ASSERT_MATCH(metadata,
+                   "{"
+                   "  'driver': {"
+                   "    'name': 'test_e / library',"
+                   "    'version': '1.25.0 / 1.2'"
+                   "  },"
+                   "  'platform': 'Library Platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "}");
+
+      bson_destroy(metadata);
+   }
+
+   ASSERT(mongoc_client_append_metadata(client, "framework", "2.0", "Framework Platform"));
+
+   {
+      bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+      // "<mongoc platform>" must be reappended as the last element following an append operation.
+      ASSERT_MATCH(metadata,
+                   "{"
+                   "  'driver': {"
+                   "    'name': 'test_e / library / framework',"
+                   "    'version': '1.25.0 / 1.2 / 2.0'"
+                   "  },"
+                   "  'platform': 'Library Platform / Framework Platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                   "}");
+
+      bson_destroy(metadata);
+   }
+
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_mongoc_platform_reappends(void)
+{
+   test_handshake_metadata_mongoc_platform_reappends_impl(true);
+   test_handshake_metadata_mongoc_platform_reappends_impl(false);
+}
+
+static void
+test_handshake_metadata_mongoc_platform_truncation(void)
+{
+   // Ensure determinism of the total handshake command length.
+   _override_host_platform_os();
+
+   {
+      mongoc_handshake_t *const md = _mongoc_handshake_get_unfrozen();
+
+      // Ensure determinism of the total handshake command length.
+      md->docker = false;
+      md->kubernetes = false;
+   }
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   // This value is steadily increased until truncation occurs. The subtracted value must be large enough (the
+   // `big_platform` string must start small enough) to allow for state 0 (no truncation) to occur at least once.
+   size_t big_platform_len = (HANDSHAKE_MAX_SIZE - 147);
+   int state = 0;
+
+   int count_state_0 = 0; // No truncation.
+   int count_state_1 = 0; // Only `flags` is omitted.
+   int count_state_2 = 0; // Both `compiler_info` and `flags` are omitted.
+
+   // Repeatedly increase the length of the appended platform value to trigger incremental truncation.
+   while (state < 3) {
+      mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+
+      char *const big_platform = bson_malloc(big_platform_len);
+      memset(big_platform, 'a', big_platform_len - 1u);
+      big_platform[big_platform_len - 1u] = '\0';
+
+      ASSERT(mongoc_client_append_metadata(client, "library", "1.2", big_platform));
+
+      {
+         bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+         const char *const platform = bson_lookup_utf8(metadata, "platform");
+
+         // Initially, entire platform string should be present.
+         if (state == 0) {
+            char *const expected = bson_strdup_printf("posix=1234 / %s / CC=GCC CFLAGS=\"-fPIE\"", big_platform);
+
+            if (strcmp(platform, expected) == 0) {
+               ++count_state_0;
+            } else {
+               ++state; // Transition to state 1.
+            }
+
+            bson_free(expected);
+         }
+
+         // `flags` must be the first value to be omitted due to truncation.
+         if (state == 1) {
+            char *const expected = bson_strdup_printf("posix=1234 / %s / CC=GCC", big_platform);
+
+            if (strcmp(platform, expected) == 0) {
+               ++count_state_1;
+            } else {
+               ++state; // Transition to state 2.
+            }
+
+            bson_free(expected);
+         }
+
+         // `compiler_info` must be the next value omitted due to truncation.
+         if (state == 2) {
+            char *const expected = bson_strdup_printf("posix=1234 / %s", big_platform);
+
+            if (strcmp(platform, expected) == 0) {
+               ++count_state_2; // `big_platform` is not yet truncated.
+            } else {
+               // The truncated platform string is still a substring.
+               ASSERT(strstr(expected, platform) == expected);
+
+               // Truncation must have removed exactly one character due to `big_platform_len` being incremented by 1.
+               ASSERT_CMPSIZE_T(strlen(platform), ==, strlen(expected) - 1u);
+
+               ++state; // End iteration.
+            }
+
+            bson_free(expected);
+         }
+
+         bson_destroy(metadata);
+      }
+
+      bson_free(big_platform);
+      mongoc_client_destroy(client);
+
+      // Must be smaller than length of `compiler_info` or `flags` to ensure states 1 and 2 each occur at least once.
+      big_platform_len += 1u;
+   }
+
+   // Unlikely: one or more of the string comparisons above failed to match the expected platform string for a reason
+   // other than the expected truncation behavior. When this happens, one or more of these counters will not have been
+   // incremented as expected.
+   ASSERT_CMPINT(count_state_0, >, 0);
+   ASSERT_CMPINT(count_state_1, >, 0);
+   ASSERT_CMPINT(count_state_2, >, 0);
+
+   mock_server_destroy(server);
+
+   _reset_handshake();
+}
+
+static void
+test_handshake_metadata_append_strip_delimiters(void)
+{
+   _override_host_platform_os();
+
+   mock_server_t *const server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_t *const client = _test_metadata_append_setup_client(server);
+   ASSERT(client);
+
+   // For backward compatibility, permit string arguments to old metadata append API to contain trailing delimiters.
+   ASSERT(mongoc_handshake_data_append("driver_name / ", "driver_version / ", "platform / "));
+
+   bson_t *const metadata = _handshake_metadata_append_ping_capture(server, client);
+
+   // Resulting handshake command must not contain trailing delimiters (e.g. "driver_name / ") or double-delimiters
+   // (e.g. "posix=1234 / / CC=GCC CFLAGS=\"-fPIE\"").
+   ASSERT_MATCH(metadata,
+                "{"
+                "  'driver': {"
+                "    'name': 'test_e / driver_name',"
+                "    'version': '1.25.0 / driver_version'"
+                "  },"
+                "  'platform': 'posix=1234 / platform / CC=GCC CFLAGS=\\\"-fPIE\\\"'"
+                "}");
+
+   bson_destroy(metadata);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+
+   _reset_handshake();
 }
 
 void
@@ -1476,4 +2525,72 @@ test_handshake_install(TestSuite *suite)
    TestSuite_Add(suite, "/MongoDB/handshake/includes_c++", test_mongoc_handshake_cpp);
    TestSuite_AddMockServerTest(
       suite, "/MongoDB/handshake/includes_backpressure_flag", test_mongoc_handshake_includes_backpressure_flag);
+
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/single/case_1", test_handshake_metadata_append_single_case_1);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/single/case_2", test_handshake_metadata_append_single_case_2);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/single/case_3", test_handshake_metadata_append_single_case_3);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/single/case_4", test_handshake_metadata_append_single_case_4);
+
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/multiple/case_1", test_handshake_metadata_append_multiple_case_1);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/multiple/case_2", test_handshake_metadata_append_multiple_case_2);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/multiple/case_3", test_handshake_metadata_append_multiple_case_3);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/multiple/case_4", test_handshake_metadata_append_multiple_case_4);
+
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_1", test_handshake_metadata_append_duplicate_case_1);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_2", test_handshake_metadata_append_duplicate_case_2);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_3", test_handshake_metadata_append_duplicate_case_3);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_4", test_handshake_metadata_append_duplicate_case_4);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_5", test_handshake_metadata_append_duplicate_case_5);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_6", test_handshake_metadata_append_duplicate_case_6);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/duplicate/case_7", test_handshake_metadata_append_duplicate_case_7);
+
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/full_duplicate", test_handshake_metadata_append_full_duplicate);
+
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/identical", test_handshake_metadata_append_identical);
+
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/separated_identical",
+                               test_handshake_metadata_append_separated_identical);
+
+   // Do not implement Case 1, which requires an empty/null "name" field.
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/empty_duplicate/case_2",
+                               test_handshake_metadata_append_empty_duplicate_case_2);
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/empty_duplicate/case_3",
+                               test_handshake_metadata_append_empty_duplicate_case_3);
+
+   // Do not implement Case 1, which requires an empty/null "name" field.
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/empty_identical/case_2",
+                               test_handshake_metadata_append_empty_identical_case_2);
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/empty_identical/case_3",
+                               test_handshake_metadata_append_empty_identical_case_3);
+
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/mongoc_platform_reappends",
+                               test_handshake_metadata_mongoc_platform_reappends);
+   TestSuite_AddMockServerTest(suite,
+                               "/MongoDB/handshake/metadata_append/mongoc_platform_truncation",
+                               test_handshake_metadata_mongoc_platform_truncation);
+   TestSuite_AddMockServerTest(
+      suite, "/MongoDB/handshake/metadata_append/strip_delimiters", test_handshake_metadata_append_strip_delimiters);
 }

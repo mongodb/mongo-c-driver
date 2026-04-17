@@ -1127,6 +1127,9 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->client_sessions = mongoc_set_new(8, NULL, NULL);
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
    client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
+   client->max_adaptive_retries = _mongoc_uri_get_max_adaptive_retries(client->uri);
+   client->enable_overload_retargeting = mongoc_uri_get_option_as_bool(
+      client->uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1719,8 +1722,9 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
       .user_data = &context,
       .retry_eligibility = retry_eligibility,
       .jitter_source = client->jitter_source,
-      .token_bucket = client->topology->token_bucket,
       .initial_server_description = server_stream->sd,
+      .max_adaptive_retries = client->max_adaptive_retries,
+      .enable_overload_retargeting = client->enable_overload_retargeting,
    };
 
    const bool ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, error);
@@ -1760,14 +1764,8 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
    if (parts->is_write_command) {
       mongoc_server_stream_t *retry_server_stream = NULL;
 
-      bool ret = mongoc_cluster_run_retryable_write(&client->cluster,
-                                                    &parts->assembled,
-                                                    parts->is_retryable_write,
-                                                    client->jitter_source,
-                                                    client->topology->token_bucket,
-                                                    &retry_server_stream,
-                                                    reply,
-                                                    error);
+      bool ret = mongoc_cluster_run_retryable_write(
+         &client->cluster, &parts->assembled, parts->is_retryable_write, &retry_server_stream, reply, error);
 
       if (retry_server_stream) {
          mongoc_server_stream_cleanup(retry_server_stream);
@@ -2797,4 +2795,23 @@ _mongoc_client_set_jitter_source(mongoc_client_t *client, mongoc_jitter_source_t
 {
    _mongoc_jitter_source_destroy(client->jitter_source);
    client->jitter_source = source;
+}
+
+bool
+mongoc_client_append_metadata(mongoc_client_t *client, const char *name, const char *version, const char *platform)
+{
+   BSON_ASSERT_PARAM(client);
+   BSON_ASSERT_PARAM(name);
+   BSON_OPTIONAL_PARAM(version);
+   BSON_OPTIONAL_PARAM(platform);
+
+   BSON_ASSERT(client->topology);
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR("Cannot use mongoc_client_append_metadata on a pooled client, use "
+                   "mongoc_client_pool_append_metadata");
+      return false;
+   }
+
+   return _mongoc_topology_scanner_append_metadata(client->topology->scanner, name, version, platform);
 }

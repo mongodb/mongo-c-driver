@@ -44,6 +44,9 @@
 #include <mlib/time_point.h>
 
 #include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-stream-tls.h>
@@ -300,7 +303,11 @@ _mongoc_topology_scanner_parse_speculative_authentication(const bson_t *hello, b
 }
 
 static bson_t *
-_build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_uri_t *uri, bool is_loadbalanced)
+_build_handshake_cmd(const mongoc_handshake_t *handshake,
+                     const bson_t *basis_cmd,
+                     const char *appname,
+                     const mongoc_uri_t *uri,
+                     bool is_loadbalanced)
 {
    bson_t *doc = bson_copy(basis_cmd);
    bson_iter_t iter;
@@ -308,7 +315,7 @@ _build_handshake_cmd(const bson_t *basis_cmd, const char *appname, const mongoc_
    bson_array_builder_t *subarray;
 
    BSON_ASSERT(doc);
-   bson_t *handshake_doc = _mongoc_handshake_build_doc_with_application(appname);
+   bson_t *handshake_doc = _mongoc_handshake_build_doc_with_application(handshake, appname);
 
    if (!handshake_doc) {
       bson_destroy(doc);
@@ -350,61 +357,425 @@ _mongoc_topology_scanner_get_monitoring_cmd(mongoc_topology_scanner_t *ts, bool 
    return hello_ok || _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
-void
-_mongoc_topology_scanner_dup_handshake_cmd(mongoc_topology_scanner_t *ts, bson_t *copy_into)
+// Initialize `ts->handshake_cmd` with `_mongoc_handshake_get()`.
+//
+// Precondition: ts->handshake_cmd_mtx is locked.
+// Postcondition: ts->handshake_cmd_mtx is locked.
+static void
+_initialize_handshake_cmd(mongoc_topology_scanner_t *ts, const char *appname)
 {
-   bson_t *new_cmd;
-   const char *appname;
    BSON_ASSERT_PARAM(ts);
-   BSON_ASSERT_PARAM(copy_into);
+   BSON_OPTIONAL_PARAM(appname);
 
-   /* appname will only be changed from NULL, so a non-null pointer will never
-    * be invalidated after this fetch. */
-   appname = mcommon_atomic_ptr_fetch((void *)&ts->appname, mcommon_memory_order_relaxed);
-
-   bson_mutex_lock(&ts->handshake_cmd_mtx);
-   /* If this is the first time using the node or if it's the first time
-    * using it after a failure, build handshake doc */
+   // Double-checked lock: already initialized, no work to be done.
    if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
-      /* We're good to just return the handshake now */
-      goto after_init;
+      return;
    }
 
-   /* There is not yet a handshake command associated with this scanner.
-    * Initialize one and set it now. */
-   /* Note: Don't hold the mutex while we build our command */
-   /* Construct a new handshake command to be sent */
+   // Invariant when handshake_cmd is uninitialized.
    BSON_ASSERT(ts->handshake_cmd == NULL);
+
+   // Double-checked lock: do not hold lock while building the initial handshake command.
    bson_mutex_unlock(&ts->handshake_cmd_mtx);
-   new_cmd = _build_handshake_cmd(
-      _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd, appname, ts->uri, ts->loadbalanced);
+   _mongoc_handshake_freeze(); // Global handshake metadata MUST NOT be modified after the first client or client pool
+                               // has been initialized.
+   bson_t *const new_cmd = _build_handshake_cmd(_mongoc_handshake_get(),
+                                                _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd,
+                                                appname,
+                                                ts->uri,
+                                                ts->loadbalanced);
    bson_mutex_lock(&ts->handshake_cmd_mtx);
-   if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
-      /* Someone else updated the handshake_cmd while we were building ours.
-       * Defer to their copy and just destroy the one we created. */
+
+   // Double-checked lock: success.
+   if (ts->handshake_state == HANDSHAKE_CMD_UNINITIALIZED) {
+      BSON_ASSERT(ts->handshake_cmd == NULL);
+
+      if (new_cmd) {
+         ts->handshake_state = HANDSHAKE_CMD_OKAY;
+         ts->handshake_cmd = new_cmd; // Ownership transfer.
+      } else {
+         ts->handshake_state = HANDSHAKE_CMD_TOO_BIG;
+         MONGOC_WARNING("Handshake doc too big, not including in hello");
+      }
+   }
+
+   // Double-checked lock: failed: another thread already initialized `ts->handshake_cmd`.
+   else {
       bson_destroy(new_cmd);
-      goto after_init;
    }
-   BSON_ASSERT(ts->handshake_cmd == NULL);
-   /* We're still the one updating the command */
-   ts->handshake_cmd = new_cmd;
-   /* The "_build" may have failed. */
-   /* Even if new_cmd is NULL, this is still what we want */
-   ts->handshake_state = new_cmd == NULL ? HANDSHAKE_CMD_TOO_BIG : HANDSHAKE_CMD_OKAY;
-   if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
-      MONGOC_WARNING("Handshake doc too big, not including in hello");
+}
+
+void
+_mongoc_topology_scanner_dup_handshake_cmd(mongoc_topology_scanner_t *ts, bson_t *out_cmd)
+{
+   BSON_ASSERT_PARAM(ts);
+   BSON_ASSERT_PARAM(out_cmd);
+
+   // Only ever set at most once: when not-null, value is never subsequently changed.
+   const char *const appname = mcommon_atomic_ptr_fetch((void *)&ts->appname, mcommon_memory_order_relaxed);
+
+   bson_mutex_lock(&ts->handshake_cmd_mtx);
+
+   // It doesn't matter who initializes the handshake command first: the result is the same.
+   _initialize_handshake_cmd(ts, appname);
+
+   if (ts->handshake_state == HANDSHAKE_CMD_OKAY) {
+      bson_copy_to(ts->handshake_cmd, out_cmd);
+   } else {
+      // Fallback to the minimal hello command.
+      bson_copy_to(_should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd, out_cmd);
    }
 
-after_init:
-   /* If the doc turned out to be too big */
-   if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
-      bson_t *ret = _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd;
-      bson_copy_to(ret, copy_into);
-   } else {
-      BSON_ASSERT(ts->handshake_cmd != NULL);
-      bson_copy_to(ts->handshake_cmd, copy_into);
-   }
    bson_mutex_unlock(&ts->handshake_cmd_mtx);
+}
+
+typedef struct _metadata_field_t {
+   const char *field;
+   size_t length;
+} _metadata_field_t;
+
+
+// Note: MongoDB Handshake spec requires the delimiter be "|". However, mongoc historically uses " / " as the
+// delimiter. For backward compatibility as permitted by spec (under "Deviations"), keep using " / " as the
+// delimiter.
+static const char *const metadata_field_delim = " / ";
+static const size_t metadata_field_delim_len = 3u;
+
+
+// "a / b / c" -> ["a", "b", "c"]
+static mongoc_array_t
+_mongoc_metadata_field_to_array_view(const char *value, size_t value_len)
+{
+   BSON_OPTIONAL_PARAM(value);
+
+   mongoc_array_t ret;
+   _mongoc_array_init(&ret, sizeof(_metadata_field_t));
+
+   if (!value || value[0] == '\0') {
+      return ret;
+   }
+
+   const char *iter = value;
+
+   for (const char *next_iter = strstr(iter, metadata_field_delim); next_iter;
+        next_iter = strstr(iter, metadata_field_delim)) {
+      _metadata_field_t field = {.field = iter, .length = (size_t)(next_iter - iter)};
+      _mongoc_array_append_val(&ret, field);
+      iter = next_iter + metadata_field_delim_len;
+   }
+
+   _metadata_field_t field = {.field = iter, .length = value_len - (size_t)(iter - value)};
+   _mongoc_array_append_val(&ret, field);
+
+   return ret;
+}
+
+static bool
+_mongoc_metadata_field_has_match(const mongoc_array_t *fields, const char *value, size_t value_len)
+{
+   BSON_ASSERT_PARAM(fields);
+   BSON_OPTIONAL_PARAM(value);
+
+   // Empty strings are equivalent to an "unset" (NULL) value, which matches anything.
+   if (!value || value[0] == '\0') {
+      return true;
+   }
+
+   for (size_t idx = 0u; idx < fields->len; idx++) {
+      const _metadata_field_t field = _mongoc_array_index(fields, _metadata_field_t, idx);
+
+      if (value_len == field.length && strncmp(value, field.field, field.length) == 0) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+static char *
+_mongoc_append_metadata_value(char *current, size_t current_len, const char *value, size_t max_len)
+{
+   BSON_OPTIONAL_PARAM(current);
+   BSON_OPTIONAL_PARAM(value);
+
+   BSON_ASSERT(max_len <= HANDSHAKE_MAX_SIZE);
+   BSON_ASSERT(current_len <= max_len);
+
+   // Empty strings are equivalent to an "unset" (NULL) value.
+   if (!value || value[0] == '\0') {
+      return current;
+   }
+
+   const char *prefix = current ? current : "";
+   const size_t prefix_len = current_len;
+
+   const size_t prefix_with_delim_len = prefix_len > 0u ? prefix_len + metadata_field_delim_len : 0u;
+
+   // Unable to append due to length limits preventing the inclusion of the delimiter.
+   if (prefix_with_delim_len >= max_len) {
+      return NULL;
+   }
+
+   // Always truncate the resulting value to fit within `max_len`.
+   const int trunc_len = (int)(max_len - prefix_with_delim_len);
+
+   if (prefix_with_delim_len > 0u) {
+      return bson_strdup_printf("%.*s%s%.*s", (int)prefix_len, prefix, metadata_field_delim, trunc_len, value);
+   } else {
+      return bson_strdup_printf("%.*s", trunc_len, value);
+   }
+}
+
+// `driverInfoOptions` from the MongoDB Handshake spec.
+typedef struct _driver_info_options_t {
+   char *name;
+   char *version;
+   char *platform;
+} _driver_info_options_t;
+
+// Return owning copies of metadata fields to be potentially appended-to.
+// Precondition: `out` must not contain any owning pointers.
+static void
+_read_driver_info_options(const bson_t *handshake_cmd, _driver_info_options_t *out)
+{
+   BSON_ASSERT_PARAM(handshake_cmd);
+   BSON_ASSERT_PARAM(out);
+
+   // Invariant: valid handshake command document always contains the "client" field (_build_handshake_cmd).
+   bson_iter_t client_iter;
+   BSON_ASSERT(bson_iter_init_find(&client_iter, handshake_cmd, HANDSHAKE_FIELD));
+   BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&client_iter));
+
+   uint32_t client_len;
+   const uint8_t *client_data;
+   bson_iter_document(&client_iter, &client_len, &client_data);
+   bson_t metadata;
+   bson_init_static(&metadata, client_data, client_len);
+
+   bson_iter_t iter;
+
+   if (bson_iter_init_find(&iter, &metadata, "driver") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      uint32_t driver_len = 0u;
+      const uint8_t *driver_data = NULL;
+      bson_iter_document(&iter, &driver_len, &driver_data);
+
+      bson_t driver_doc;
+      bson_init_static(&driver_doc, driver_data, driver_len);
+
+      bson_iter_t driver_iter;
+      if (bson_iter_init_find(&driver_iter, &driver_doc, "name") && BSON_ITER_HOLDS_UTF8(&driver_iter)) {
+         out->name = bson_strdup(bson_iter_utf8(&driver_iter, NULL));
+      }
+      if (bson_iter_init_find(&driver_iter, &driver_doc, "version") && BSON_ITER_HOLDS_UTF8(&driver_iter)) {
+         out->version = bson_strdup(bson_iter_utf8(&driver_iter, NULL));
+      }
+   }
+
+   if (bson_iter_init_find(&iter, &metadata, "platform") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      out->platform = bson_strdup(bson_iter_utf8(&iter, NULL));
+   }
+}
+
+// To avoid unnecessary allocations, `updated` fields are owning only when they differ from the corresponding
+// `current` field. Conditionally destroy `updated` fields when not equal to `current`.
+static void
+_driver_info_options_destroy(_driver_info_options_t *current, _driver_info_options_t *updated)
+{
+   BSON_ASSERT_PARAM(current);
+   BSON_ASSERT_PARAM(updated);
+
+   if (updated->name != current->name) {
+      bson_free(updated->name);
+   }
+
+   if (updated->version != current->version) {
+      bson_free(updated->version);
+   }
+
+   if (updated->platform != current->platform) {
+      bson_free(updated->platform);
+   }
+
+   bson_free(current->name);
+   bson_free(current->version);
+   bson_free(current->platform);
+}
+
+bool
+_mongoc_topology_scanner_append_metadata(mongoc_topology_scanner_t *ts,
+                                         const char *name,
+                                         const char *version,
+                                         const char *platform)
+{
+   BSON_ASSERT_PARAM(ts);
+   BSON_ASSERT_PARAM(name);
+   BSON_OPTIONAL_PARAM(version);
+   BSON_OPTIONAL_PARAM(platform);
+
+   if (name[0] == '\0') {
+      MONGOC_WARNING("Metadata field 'name' must not be an empty string");
+      return false;
+   }
+
+   // MongoDB Handshake Spec: All strings provided as part of the driver info MUST NOT contain the delimiter used for
+   // metadata concatenation.
+   {
+      if (strstr(name, metadata_field_delim)) {
+         MONGOC_WARNING("Metadata field 'name' must not contain the delimiter \"%s\"", metadata_field_delim);
+         return false;
+      }
+
+      if (version && strstr(version, metadata_field_delim)) {
+         MONGOC_WARNING("Metadata field 'version' must not contain the delimiter \"%s\"", metadata_field_delim);
+         return false;
+      }
+
+      if (platform && strstr(platform, metadata_field_delim)) {
+         MONGOC_WARNING("Metadata field 'platform' must not contain the delimiter \"%s\"", metadata_field_delim);
+         return false;
+      }
+   }
+
+   // Only ever set at most once: when not-null, value is never subsequently changed.
+   const char *const appname = mcommon_atomic_ptr_fetch((void *)&ts->appname, mcommon_memory_order_relaxed);
+
+   bool ret = false;
+
+   {
+      bson_mutex_lock(&ts->handshake_cmd_mtx);
+
+      _driver_info_options_t current = {0};
+      _driver_info_options_t updated = {0};
+
+      // Handshake command must have been initialized at least once.
+      _initialize_handshake_cmd(ts, appname);
+
+      // Appends only make sense with a valid handshake command.
+      if (ts->handshake_state != HANDSHAKE_CMD_OKAY) {
+         goto fail;
+      }
+      BSON_ASSERT(ts->handshake_cmd != NULL);
+
+      _read_driver_info_options(ts->handshake_cmd, &current);
+
+      const size_t current_name_len = current.name ? strlen(current.name) : 0u;
+      const size_t current_version_len = current.version ? strlen(current.version) : 0u;
+      size_t current_platform_len = current.platform ? strlen(current.platform) : 0u;
+
+      // Duplicates are identified by a set of appendable metadata fields where empty-or-null values are always
+      // considered a match. All fields must contain a match for the set to be considered a duplicate.
+      {
+         mongoc_array_t name_fields = _mongoc_metadata_field_to_array_view(current.name, current_name_len);
+         mongoc_array_t version_fields = _mongoc_metadata_field_to_array_view(current.version, current_version_len);
+         mongoc_array_t platform_fields = _mongoc_metadata_field_to_array_view(current.platform, current_platform_len);
+
+         // Exclude the conditionally-appended "mongoc" platform values (`compiler_info` and `flags`) from the
+         // platform string to be appended-to so user-provided metadata is prioritized for inclusion. Conditionally
+         // (re-)append them later using `_build_handshake_cmd()`.
+         if (platform_fields.len > 0u) {
+            // The "mongoc" platform value is always the last element, when present.
+            const _metadata_field_t mongoc_platform =
+               _mongoc_array_index(&platform_fields, _metadata_field_t, platform_fields.len - 1u);
+
+            const char *const compiler_info = _mongoc_handshake_get()->compiler_info;
+
+            // `compiler_info` is always present when `flags` is present. Otherwise, neither are present.
+            // The unlikely possibility that user-provided platform metadata coincidentally matches `compiler_info`
+            // is considered acceptable. Use of `strstr()` is safe given `current.platform` is null-terminated and
+            // `mongoc_platform` is always the last element in the string (no intermediate delimiters).
+            if (mongoc_platform.field && compiler_info &&
+                strstr(mongoc_platform.field, compiler_info) == mongoc_platform.field) {
+               // Exclude "<mongoc-platform>" from duplicate checks.
+               platform_fields.len -= 1u;
+
+               // "... / <mongoc-platform>" -> "... / " or "<mongoc-platform>" -> ""
+               current_platform_len -= mongoc_platform.length;
+
+               // "... / " -> "..." or "" -> ""
+               current_platform_len -= platform_fields.len > 0u ? metadata_field_delim_len : 0u;
+            }
+         }
+
+         const size_t name_len = strlen(name);
+         const size_t version_len = version ? strlen(version) : 0u;
+         const size_t platform_len = platform ? strlen(platform) : 0u;
+
+         // Duplicates are permitted for a given metadata field when, given a single metadata append operation, the
+         // resulting overall metadata contains *any* changes after accounting for deduplication of individual
+         // fields:
+         //  - ("a", "b", "") + ("a", "b", "") -> ("a", "b", "")
+         //  - ("a", "b", "") + ("a", "c", "") -> ("a / a", "b / c", "")
+         //  - ("a", "b", "") + ("a", "", "c") -> ("a / a", "b", "c")
+         const bool name_match = _mongoc_metadata_field_has_match(&name_fields, name, name_len);
+         const bool version_match = _mongoc_metadata_field_has_match(&version_fields, version, version_len);
+         const bool platform_match = _mongoc_metadata_field_has_match(&platform_fields, platform, platform_len);
+
+         _mongoc_array_destroy(&name_fields);
+         _mongoc_array_destroy(&version_fields);
+         _mongoc_array_destroy(&platform_fields);
+
+         // All fields contained a duplicate: the resulting metadata does not change after deduplication.
+         if (name_match && version_match && platform_match) {
+            goto succeed; // No changes due to duplicates is still considered a success.
+         }
+      }
+
+      // Append the new set of values to each metadata field.
+      updated.name = _mongoc_append_metadata_value(current.name, current_name_len, name, HANDSHAKE_DRIVER_NAME_MAX);
+      updated.version =
+         _mongoc_append_metadata_value(current.version, current_version_len, version, HANDSHAKE_DRIVER_VERSION_MAX);
+      updated.platform =
+         _mongoc_append_metadata_value(current.platform, current_platform_len, platform, HANDSHAKE_MAX_SIZE);
+
+      // When any metadata field append fails, the entire append operation is a failure.
+      {
+         if (!updated.name) {
+            MONGOC_WARNING("Failed to append metadata due to 'name' exceeding handshake size limits");
+            goto fail;
+         }
+
+         if (!updated.version) {
+            MONGOC_WARNING("Failed to append metadata due to 'version' exceeding handshake size limits");
+            goto fail;
+         }
+
+         if (!updated.platform) {
+            MONGOC_WARNING("Failed to append metadata due to 'platform' exceeding handshake size limits");
+            goto fail;
+         }
+      }
+
+      // Non-owning copy and view of post-initial (frozen) handshake.
+      mongoc_handshake_t md = *_mongoc_handshake_get();
+
+      // Substitute updated metadata fields. All other fields remain unchanged from the initial handshake command.
+      md.driver_name = updated.name;
+      md.driver_version = updated.version;
+      md.platform = updated.platform;
+
+      bson_t *const new_cmd = _build_handshake_cmd(
+         &md, _should_use_op_msg(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd, appname, ts->uri, ts->loadbalanced);
+
+      if (new_cmd) {
+         bson_destroy(ts->handshake_cmd);
+         ts->handshake_cmd = new_cmd; // Ownership transfer.
+         goto succeed;
+      } else {
+         // Leave the previous valid handshake command unchanged.
+         MONGOC_WARNING("Failed to append metadata due to exceeding total handshake size limits");
+         goto fail;
+      }
+
+   succeed:
+      ret = true;
+
+   fail:
+      _driver_info_options_destroy(&current, &updated);
+
+      bson_mutex_unlock(&ts->handshake_cmd_mtx);
+   }
+
+   return ret;
 }
 
 static void

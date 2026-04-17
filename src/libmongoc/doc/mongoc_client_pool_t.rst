@@ -30,6 +30,7 @@ Example
     :titlesonly:
     :maxdepth: 1
 
+    mongoc_client_pool_append_metadata
     mongoc_client_pool_destroy
     mongoc_client_pool_enable_auto_encryption
     mongoc_client_pool_max_size

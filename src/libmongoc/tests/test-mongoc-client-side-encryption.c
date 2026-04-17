@@ -7389,7 +7389,7 @@ test_lookup_pre81(void *unused)
    }
 }
 
-int
+static int
 skip_if_libmongocrypt_less_than_1_17_0(void)
 {
    return get_libmongocrypt_version() >= test_framework_str_to_version("1.17.0");

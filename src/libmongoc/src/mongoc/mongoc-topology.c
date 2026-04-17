@@ -403,8 +403,9 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (mongoc_uri_get_option_as_bool(uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
-      /* retryWrites requires sessions, which require crypto - just warn */
-      MONGOC_WARNING("retryWrites not supported without an SSL crypto library");
+      // retryWrites needs crypto to retry server errors that require sessions. (See Retryable Writes spec)
+      // retryWrites does not need crypto to retry server overload errors. (See Client Backpressure spec)
+      MONGOC_WARNING("retryWrites is not fully supported without an SSL crypto library");
    }
 #endif
 
@@ -644,10 +645,6 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
    // URI and topology are valid. Try to apply to OIDC environment.
    mongoc_oidc_cache_apply_env_from_uri(topology->oidc_cache, topology->uri);
 
-   if (mongoc_uri_get_option_as_bool(topology->uri, MONGOC_URI_ADAPTIVERETRIES, false)) {
-      topology->token_bucket = _mongoc_token_bucket_new(MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY);
-   }
-
    size_t hl_array_size = 0u;
 
    BSON_ASSERT(mlib_in_range(size_t, td->max_hosts));
@@ -745,8 +742,6 @@ mongoc_topology_destroy(mongoc_topology_t *topology)
    bson_destroy(topology->encrypted_fields_map);
 
    mongoc_oidc_cache_destroy(topology->oidc_cache);
-
-   _mongoc_token_bucket_destroy(topology->token_bucket);
 
    bson_free(topology);
 }

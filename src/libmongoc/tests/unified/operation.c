@@ -26,10 +26,15 @@
 #include <mongoc/mongoc-bulkwrite.h>
 #include <mongoc/utlist.h>
 
+#include <bson/bson.h>
+#include <bsonutil/bson-parser.h>
+
 #include <mlib/cmp.h>
 #include <mlib/time_point.h>
 
+#include <test-conveniences.h>
 #include <test-libmongoc.h>
+#include <unified/entity-map.h>
 
 typedef struct {
    char *name;
@@ -513,6 +518,66 @@ operation_client_bulkwrite(test_t *test, operation_t *op, result_t *result, bson
 done:
    mongoc_bulkwriteopts_destroy(opts);
    mongoc_bulkwrite_destroy(bw);
+   return ret;
+}
+
+static bool
+operation_append_metadata(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+
+   bson_parser_t *const parser = bson_parser_new();
+
+   bson_t *driver_info_options = NULL;
+   bson_parser_doc(parser, "driverInfoOptions", &driver_info_options);
+   if (!bson_parser_parse(parser, op->arguments, error)) {
+      goto done;
+   }
+
+   const char *name = NULL;
+   const char *version = NULL;
+   const char *platform = NULL;
+   {
+      bson_iter_t iter = {0};
+      BSON_FOREACH(driver_info_options, iter)
+      {
+         const char *key = bson_iter_key(&iter);
+
+         if (strcmp(key, "name") == 0) {
+            name = bson_iter_utf8(&iter, NULL);
+         } else if (strcmp(key, "version") == 0) {
+            version = bson_iter_utf8(&iter, NULL);
+         } else if (strcmp(key, "platform") == 0) {
+            platform = bson_iter_utf8(&iter, NULL);
+         } else {
+            test_set_error(error, "unexpected option: %s", key);
+            goto done;
+         }
+      }
+   }
+
+   // Required string.
+   if (!name) {
+      test_set_error(error, "missing required field: \"driverInfoOptions.name\"");
+      goto done;
+   }
+
+   mongoc_client_t *const client = entity_map_get_client(test->entity_map, op->object, error);
+   if (!client) {
+      goto done;
+   }
+
+   if (!mongoc_client_append_metadata(client, name, version, platform)) {
+      test_set_error(error, "mongoc_client_append_metadata failed");
+      goto done;
+   }
+   result_from_val_and_reply(result, NULL, NULL, error);
+
+   ret = true;
+
+done:
+   bson_parser_destroy_with_parsed_fields(parser);
+
    return ret;
 }
 
@@ -3977,6 +4042,7 @@ operation_run(test_t *test, bson_t *op_bson, bson_error_t *error)
       {"listDatabases", operation_list_databases},
       {"listDatabaseNames", operation_list_database_names},
       {"clientBulkWrite", operation_client_bulkwrite},
+      {"appendMetadata", operation_append_metadata},
 
       /* ClientEncryption operations */
       {"createDataKey", operation_create_datakey},

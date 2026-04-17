@@ -109,7 +109,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
-   {"tests that operations retry at most maxAttempts=5 times", "collection.findOne retries at most maxAttempts=5 times"},
+   {"tests that operations retry at most maxAttempts=2 times", "collection.findOne retries at most maxAttempts=2 times"},
    {"tests that operations respect overload backoff retry loop", "collection.findOne retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.findOne retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.findOne (read) does not retry if retryReads=false"},
@@ -117,14 +117,14 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
-   {"tests that operations retry at most maxAttempts=5 times", "collection.listIndexNames retries at most maxAttempts=5 times"},
+   {"tests that operations retry at most maxAttempts=2 times", "collection.listIndexNames retries at most maxAttempts=2 times"},
    {"tests that operations respect overload backoff retry loop", "collection.listIndexNames retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.listIndexNames retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.listIndexNames (read) does not retry if retryReads=false"},
 
 
    // libmongoc does not support the optional dropIndexes helper.
-   {"tests that operations retry at most maxAttempts=5 times", "collection.dropIndexes retries at most maxAttempts=5 times"},
+   {"tests that operations retry at most maxAttempts=2 times", "collection.dropIndexes retries at most maxAttempts=2 times"},
    {"tests that operations respect overload backoff retry loop", "collection.dropIndexes retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.dropIndexes (write) does not retry if retryWrites=false"},
 
@@ -648,8 +648,9 @@ check_schema_version(test_file_t *test_file)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    // 1.23 is partially supported (automatic encryption)
    // 1.25 is partially supported (minLibmongocryptVersion)
+   // 1.28 is partially supported (accessToken)
    semver_t schema_version;
-   semver_parse("1.25", &schema_version);
+   semver_parse("1.28", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -2268,4 +2269,6 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "auth/unified");
 
    run_unified_tests(suite, JSON_DIR, "backpressure");
+
+   run_unified_tests(suite, JSON_DIR, "mongodb-handshake");
 }

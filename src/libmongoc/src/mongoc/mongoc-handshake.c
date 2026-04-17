@@ -42,6 +42,8 @@
 #include <mongoc/mongoc-log.h>
 #include <mongoc/mongoc-version.h>
 
+#include <bson/compat.h>
+
 #include <mlib/cmp.h>
 #include <mlib/config.h>
 
@@ -291,6 +293,45 @@ _get_os_name(void)
 #endif
 }
 
+#ifdef _WIN32
+static bool
+_win32_get_os_version(RTL_OSVERSIONINFOEXW *osvi)
+{
+   // not using GetVersionEx here as this function has special behavior:
+   // it returns the version the application has been "manifested" (targeted) for, or Windows 8 if not manifested
+   // instead of the version it's actually running on
+   // see: https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getversionexa
+
+   // instead, we are using RtlGetVersion
+   // this function is not publicly documented and no declaration is available in a header file as a result
+   // instead, it must be looked up manually in ntdll.dll
+
+   // ntdll.dll is always loaded into every process - this call is expected to always succeed
+   const HMODULE ntdll_handle = GetModuleHandleW(L"ntdll.dll");
+   if (!ntdll_handle) {
+      return false;
+   }
+
+   NTSTATUS(NTAPI *const rtlgetversion_ptr)(RTL_OSVERSIONINFOEXW *) =
+      (NTSTATUS(NTAPI *)(RTL_OSVERSIONINFOEXW *))GetProcAddress(ntdll_handle, "RtlGetVersion");
+   if (!rtlgetversion_ptr) {
+      return false;
+   }
+
+   ZeroMemory(osvi, sizeof(*osvi));
+   osvi->dwOSVersionInfoSize = sizeof(*osvi);
+
+   const NTSTATUS status = rtlgetversion_ptr(osvi);
+   if (status != 0) {
+      MONGOC_WARNING("RtlGetVersion() returned NTSTATUS: %08lX", (unsigned long)status);
+      return false;
+   }
+
+   return true;
+}
+#endif
+
+
 static char *
 _get_os_version(void)
 {
@@ -298,28 +339,14 @@ _get_os_version(void)
    bool found = false;
 
 #ifdef _WIN32
-   OSVERSIONINFO osvi;
-   ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 
-#if defined(_MSC_VER)
-   // CDRIVER-4263: GetVersionEx is deprecated.
-#pragma warning(suppress : 4996)
-   const BOOL res = GetVersionEx(&osvi);
-#else
-   const BOOL res = GetVersionEx(&osvi);
-#endif
-
-   if (res) {
+   RTL_OSVERSIONINFOEXW osvi;
+   if (_win32_get_os_version(&osvi)) {
       // Truncation is OK.
       int req = bson_snprintf(
          ret, HANDSHAKE_OS_VERSION_MAX, "%lu.%lu (%lu)", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
       BSON_ASSERT(req > 0);
       found = true;
-   } else {
-      char *msg = mongoc_winerr_to_string(GetLastError());
-      MONGOC_WARNING("Error with GetVersionEx(): %s", msg);
-      bson_free(msg);
    }
 
 #elif defined(_POSIX_VERSION)
@@ -344,51 +371,65 @@ _get_os_version(void)
 #endif
 
 static void
-_get_system_info(mongoc_handshake_t *handshake)
+_get_system_info(void)
 {
-   handshake->os_type = _get_os_type();
+   gMongocHandshake.os_type = _get_os_type();
 
 #ifdef MONGOC_OS_IS_LINUX
-   _mongoc_linux_distro_scanner_get_distro(&handshake->os_name, &handshake->os_version);
+   _mongoc_linux_distro_scanner_get_distro(&gMongocHandshake.os_name, &gMongocHandshake.os_version);
 #else
-   handshake->os_name = _get_os_name();
-   handshake->os_version = _get_os_version();
+   gMongocHandshake.os_name = _get_os_name();
+   gMongocHandshake.os_version = _get_os_version();
 #endif
 
-   handshake->os_architecture = _get_os_architecture();
+   gMongocHandshake.os_architecture = _get_os_architecture();
 }
 
 static void
-_get_driver_info(mongoc_handshake_t *handshake)
+_get_driver_info(void)
 {
-   handshake->driver_name = bson_strndup("mongoc", HANDSHAKE_DRIVER_NAME_MAX);
-   handshake->driver_version = bson_strndup(MONGOC_VERSION_S, HANDSHAKE_DRIVER_VERSION_MAX);
+   gMongocHandshake.driver_name = bson_strndup("mongoc", HANDSHAKE_DRIVER_NAME_MAX);
+   gMongocHandshake.driver_version = bson_strndup(MONGOC_VERSION_S, HANDSHAKE_DRIVER_VERSION_MAX);
+
+   // For backward compatibility with how the platform string is handled (appending `compiler_info` and `flags`), the
+   // platform metadata associated with the "mongoc" client field is always the LAST element in the "platform" metadata
+   // field, not the first:
+   //
+   //  - "name":     [            "mongoc",     "Library Platform",  "Framework Platform"]
+   //  - "version":  [  "<mongoc version>",    "<library version>", "<framework version>"]
+   //  - "platform": ["<library platform>", "<framework platform>",   "<mongoc platform>"] (!!)
+   //
+   // Due to handshake length limits and truncation, the "<mongoc platform>" value may be excluded completely:
+   //
+   //  - "name":     [            "mongoc",     "Library Platform"]
+   //  - "version":  [  "<mongoc version>",    "<library version>"]
+   //  - "platform": ["<library platform>"                        ] (!!)
 }
 
 static void
-_set_platform_string(mongoc_handshake_t *handshake)
+_set_platform_string(void)
 {
-   handshake->platform = bson_strdup("");
+   gMongocHandshake.platform = bson_strdup("");
 }
 
 static void
-_get_container_info(mongoc_handshake_t *handshake)
+_get_container_info(void)
 {
    char *kubernetes_env = _mongoc_getenv("KUBERNETES_SERVICE_HOST");
-   handshake->kubernetes = kubernetes_env;
+   gMongocHandshake.kubernetes = kubernetes_env;
 
-   handshake->docker = false;
+   gMongocHandshake.docker = false;
 #ifdef _WIN32
-   handshake->docker = (_access_s("C:\\.dockerenv", 0) == 0);
+   gMongocHandshake.docker = (_access_s("C:\\.dockerenv", 0) == 0);
 #else
-   handshake->docker = (access("/.dockerenv", F_OK) == 0);
+   gMongocHandshake.docker = (access("/.dockerenv", F_OK) == 0);
 #endif
 
    bson_free(kubernetes_env);
 }
 
 static void
-_get_env_info(mongoc_handshake_t *handshake)
+_get_env_info(void)
 {
    char *aws_env = _mongoc_getenv("AWS_EXECUTION_ENV");
    char *aws_lambda = _mongoc_getenv("AWS_LAMBDA_RUNTIME_API");
@@ -405,29 +446,29 @@ _get_env_info(mongoc_handshake_t *handshake)
    bool is_azure = azure_env && strlen(azure_env);
    bool is_gcp = gcp_env && strlen(gcp_env);
 
-   handshake->env = MONGOC_HANDSHAKE_ENV_NONE;
-   handshake->env_region = NULL;
-   handshake->env_memory_mb.set = false;
-   handshake->env_timeout_sec.set = false;
+   gMongocHandshake.env = MONGOC_HANDSHAKE_ENV_NONE;
+   gMongocHandshake.env_region = NULL;
+   gMongocHandshake.env_memory_mb.set = false;
+   gMongocHandshake.env_timeout_sec.set = false;
 
    if ((is_aws || is_vercel) + is_azure + is_gcp != 1) {
       goto cleanup;
    }
 
    if (is_aws && !is_vercel) {
-      handshake->env = MONGOC_HANDSHAKE_ENV_AWS;
+      gMongocHandshake.env = MONGOC_HANDSHAKE_ENV_AWS;
       region_str = _mongoc_getenv("AWS_REGION");
       memory_str = _mongoc_getenv("AWS_LAMBDA_FUNCTION_MEMORY_SIZE");
    } else if (is_vercel) {
-      handshake->env = MONGOC_HANDSHAKE_ENV_VERCEL;
+      gMongocHandshake.env = MONGOC_HANDSHAKE_ENV_VERCEL;
       region_str = _mongoc_getenv("VERCEL_REGION");
    } else if (is_gcp) {
-      handshake->env = MONGOC_HANDSHAKE_ENV_GCP;
+      gMongocHandshake.env = MONGOC_HANDSHAKE_ENV_GCP;
       region_str = _mongoc_getenv("FUNCTION_REGION");
       memory_str = _mongoc_getenv("FUNCTION_MEMORY_MB");
       timeout_str = _mongoc_getenv("FUNCTION_TIMEOUT_SEC");
    } else if (is_azure) {
-      handshake->env = MONGOC_HANDSHAKE_ENV_AZURE;
+      gMongocHandshake.env = MONGOC_HANDSHAKE_ENV_AZURE;
    }
 
    if (memory_str) {
@@ -437,8 +478,8 @@ _get_env_info(mongoc_handshake_t *handshake)
       bool in_range = mlib_in_range(int32_t, env_memory_mb);
 
       if (parse_ok && in_range) {
-         handshake->env_memory_mb.set = true;
-         handshake->env_memory_mb.value = (int32_t)env_memory_mb;
+         gMongocHandshake.env_memory_mb.set = true;
+         gMongocHandshake.env_memory_mb.value = (int32_t)env_memory_mb;
       }
    }
    if (timeout_str) {
@@ -448,12 +489,12 @@ _get_env_info(mongoc_handshake_t *handshake)
       bool in_range = mlib_in_range(int32_t, env_timeout_sec);
 
       if (parse_ok && in_range) {
-         handshake->env_timeout_sec.set = true;
-         handshake->env_timeout_sec.value = (int32_t)env_timeout_sec;
+         gMongocHandshake.env_timeout_sec.set = true;
+         gMongocHandshake.env_timeout_sec.value = (int32_t)env_timeout_sec;
       }
    }
    if (region_str && strlen(region_str)) {
-      handshake->env_region = bson_strdup(region_str);
+      gMongocHandshake.env_region = bson_strdup(region_str);
    }
 
 cleanup:
@@ -468,7 +509,7 @@ cleanup:
 }
 
 static void
-_set_compiler_info(mongoc_handshake_t *handshake)
+_set_compiler_info(void)
 {
    mcommon_string_append_t append;
    mcommon_string_new_as_append(&append);
@@ -503,11 +544,11 @@ _set_compiler_info(mongoc_handshake_t *handshake)
    }
 #endif
 
-   handshake->compiler_info = mcommon_string_from_append_destroy_with_steal(&append);
+   gMongocHandshake.compiler_info = mcommon_string_from_append_destroy_with_steal(&append);
 }
 
 static void
-_set_flags(mongoc_handshake_t *handshake)
+_set_flags(void)
 {
    mcommon_string_append_t append;
    mcommon_string_new_as_append(&append);
@@ -520,48 +561,52 @@ _set_flags(mongoc_handshake_t *handshake)
       mcommon_string_append_printf(&append, " LDFLAGS=%s", MONGOC_EVALUATE_STR(MONGOC_USER_SET_LDFLAGS));
    }
 
-   handshake->flags = mcommon_string_from_append_destroy_with_steal(&append);
+   gMongocHandshake.flags = mcommon_string_from_append_destroy_with_steal(&append);
 }
 
 void
 _mongoc_handshake_init(void)
 {
-   _get_system_info(_mongoc_handshake_get());
-   _get_driver_info(_mongoc_handshake_get());
-   _set_platform_string(_mongoc_handshake_get());
-   _get_env_info(_mongoc_handshake_get());
-   _get_container_info(_mongoc_handshake_get());
-   _set_compiler_info(_mongoc_handshake_get());
-   _set_flags(_mongoc_handshake_get());
+   _get_system_info();
+   _get_driver_info();
+   _set_platform_string();
+   _get_env_info();
+   _get_container_info();
+   _set_compiler_info();
+   _set_flags();
 
-   _mongoc_handshake_get()->frozen = false;
+   gMongocHandshake.frozen = false;
    bson_mutex_init(&gHandshakeLock);
 }
 
 void
 _mongoc_handshake_cleanup(void)
 {
-   mongoc_handshake_t *h = _mongoc_handshake_get();
-   bson_free(h->os_type);
-   bson_free(h->os_name);
-   bson_free(h->os_version);
-   bson_free(h->os_architecture);
-   bson_free(h->driver_name);
-   bson_free(h->driver_version);
-   bson_free(h->platform);
-   bson_free(h->compiler_info);
-   bson_free(h->flags);
-   bson_free(h->env_region);
-   *h = (mongoc_handshake_t){0};
+   bson_free(gMongocHandshake.os_type);
+   bson_free(gMongocHandshake.os_name);
+   bson_free(gMongocHandshake.os_version);
+   bson_free(gMongocHandshake.os_architecture);
+   bson_free(gMongocHandshake.driver_name);
+   bson_free(gMongocHandshake.driver_version);
+   bson_free(gMongocHandshake.platform);
+   bson_free(gMongocHandshake.compiler_info);
+   bson_free(gMongocHandshake.flags);
+   bson_free(gMongocHandshake.env_region);
+   gMongocHandshake = (mongoc_handshake_t){0};
 
    bson_mutex_destroy(&gHandshakeLock);
 }
 
 static void
-_append_platform_field(bson_t *doc, const char *platform, bool truncate)
+_append_platform_field(bson_t *doc, const mongoc_handshake_t *handshake, bool truncate)
 {
-   char *compiler_info = _mongoc_handshake_get()->compiler_info;
-   char *flags = _mongoc_handshake_get()->flags;
+   const char *const platform = handshake->platform;
+   const char *const compiler_info = handshake->compiler_info;
+   const char *const flags = handshake->flags;
+
+   const bool platform_is_empty = platform == NULL || platform[0] == '\0';
+   const bool compiler_info_is_empty = compiler_info == NULL || compiler_info[0] == '\0';
+   const bool flags_is_empty = flags == NULL || flags[0] == '\0';
 
    const uint32_t overhead = (/* 1 byte for utf8 tag */
                               1 +
@@ -581,9 +626,61 @@ _append_platform_field(bson_t *doc, const char *platform, bool truncate)
                                         &combined_platform,
                                         truncate ? HANDSHAKE_MAX_SIZE - overhead - doc->len : UINT32_MAX - 1u);
 
-   mcommon_string_append(&combined_platform, platform);
-   mcommon_string_append_all_or_none(&combined_platform, compiler_info);
-   mcommon_string_append_all_or_none(&combined_platform, flags);
+   if (!platform_is_empty) {
+      mcommon_string_append(&combined_platform, platform);
+   }
+
+   // `platform` must be delimited with " / " from any subsequent field values.
+   if (!compiler_info_is_empty && !flags_is_empty) {
+      bool success = false;
+
+      // First try to append both `compiler_info` and `flags`.
+      {
+         char *both = bson_strdup_printf("%s%s", compiler_info, flags);
+
+         if (platform_is_empty) {
+            success = mcommon_string_append_all_or_none(&combined_platform, both);
+         } else {
+            char *delimited = bson_strdup_printf(" / %s", both);
+            success = mcommon_string_append_all_or_none(&combined_platform, delimited);
+            bson_free(delimited);
+         }
+
+         bson_free(both);
+      }
+
+      // Fallback to only `compiler_info`.
+      if (!success) {
+         combined_platform._max_len_exceeded = false;
+
+         if (platform_is_empty) {
+            mcommon_string_append_all_or_none(&combined_platform, compiler_info);
+         } else {
+            char *delimited = bson_strdup_printf(" / %s", compiler_info);
+            mcommon_string_append_all_or_none(&combined_platform, delimited);
+            bson_free(delimited);
+         }
+      }
+   }
+
+   // Only `compiler_info` or `flags` is present.
+   else if (!compiler_info_is_empty) {
+      if (platform_is_empty) {
+         mcommon_string_append_all_or_none(&combined_platform, compiler_info);
+      } else {
+         char *delimited = bson_strdup_printf(" / %s", compiler_info);
+         mcommon_string_append_all_or_none(&combined_platform, delimited);
+         bson_free(delimited);
+      }
+   } else if (!flags_is_empty) {
+      if (platform_is_empty) {
+         mcommon_string_append_all_or_none(&combined_platform, flags);
+      } else {
+         char *delimited = bson_strdup_printf(" / %s", flags);
+         mcommon_string_append_all_or_none(&combined_platform, delimited);
+         bson_free(delimited);
+      }
+   }
 
    bson_append_utf8(doc,
                     HANDSHAKE_PLATFORM_FIELD,
@@ -610,7 +707,7 @@ _get_subdoc_static(bson_t *doc, char *subdoc_name, bson_t *out)
 }
 
 static bool
-_truncate_handshake(bson_t **doc)
+_truncate_handshake(bson_t **doc, const mongoc_handshake_t *md)
 {
    if ((*doc)->len > HANDSHAKE_MAX_SIZE) {
       bson_t env_doc;
@@ -651,11 +748,10 @@ _truncate_handshake(bson_t **doc)
       *doc = new_doc;
    }
 
-   const mongoc_handshake_t *md = _mongoc_handshake_get();
    if ((*doc)->len > HANDSHAKE_MAX_SIZE && md->platform) {
       bson_t *new_doc = bson_new();
       bson_copy_to_excluding_noinit(*doc, new_doc, "platform", NULL);
-      _append_platform_field(new_doc, md->platform, true);
+      _append_platform_field(new_doc, md, true);
       bson_destroy(*doc);
       *doc = new_doc;
    }
@@ -669,9 +765,8 @@ _truncate_handshake(bson_t **doc)
  * case, the caller shouldn't include it with hello
  */
 bson_t *
-_mongoc_handshake_build_doc_with_application(const char *appname)
+_mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const char *appname)
 {
-   const mongoc_handshake_t *md = _mongoc_handshake_get();
    char *env_name = NULL;
    switch (md->env) {
    case MONGOC_HANDSHAKE_ENV_AWS:
@@ -716,10 +811,10 @@ _mongoc_handshake_build_doc_with_application(const char *appname)
                       if (md->kubernetes, then(kv("orchestrator", cstr("kubernetes")))))))));
 
    if (md->platform) {
-      _append_platform_field(doc, md->platform, false);
+      _append_platform_field(doc, md, false);
    }
 
-   if (_truncate_handshake(&doc)) {
+   if (_truncate_handshake(&doc, md)) {
       return doc;
    } else {
       bson_destroy(doc);
@@ -730,15 +825,8 @@ _mongoc_handshake_build_doc_with_application(const char *appname)
 void
 _mongoc_handshake_freeze(void)
 {
-   bson_mutex_lock(&gHandshakeLock);
-   _mongoc_handshake_get()->frozen = true;
-   bson_mutex_unlock(&gHandshakeLock);
-}
-
-static void
-_mongoc_handshake_freeze_nolock(void)
-{
-   _mongoc_handshake_get()->frozen = true;
+   // Ensure all writes to gMongocHandshake are ordered BEFORE this store.
+   mcommon_atomic_int8_exchange(&gMongocHandshake.frozen, true, mcommon_memory_order_release);
 }
 
 /*
@@ -748,11 +836,22 @@ _mongoc_handshake_freeze_nolock(void)
 static void
 _append_and_truncate(char **s, const char *suffix, size_t max_len)
 {
-   char *old_str = *s;
-   const size_t delim_len = strlen(" / ");
-
    BSON_ASSERT_PARAM(s);
    BSON_ASSERT_PARAM(suffix);
+
+   // `max_len` is at most `HANDSHAKE_MAX_SIZE`, which fits well within the range of `int`.
+   BSON_ASSERT(mlib_in_range(int, max_len));
+
+   char *old_str = *s;
+   const char *const delim = " / ";
+   const size_t delim_len = strlen(delim);
+
+   // For backward compatibility, allow `suffix` to contain the " / " delimiter at the end of its value, but strip it so
+   // that `_append_platform_field()` can re-append it only when it is necessary.
+   size_t suffix_len = strlen(suffix);
+   if (suffix_len >= delim_len && strncmp(suffix + (suffix_len - delim_len), delim, delim_len) == 0) {
+      suffix_len -= delim_len;
+   }
 
    const char *const prefix = old_str ? old_str : "";
 
@@ -763,10 +862,13 @@ _append_and_truncate(char **s, const char *suffix, size_t max_len)
       return;
    }
 
-   const size_t space_for_suffix = max_len - required_space;
-   BSON_ASSERT(mlib_in_range(int, space_for_suffix));
+   // `INT_MAX > HANDSHAKE_MAX_SIZE >= max_len > required_space`, therefore `space_for_suffix` is always within range.
+   const int space_for_suffix = (int)(max_len - required_space);
 
-   *s = bson_strdup_printf("%s / %.*s", prefix, (int)space_for_suffix, suffix);
+   // Strip the trailing " / " delimiter and/or truncate to fit within `max_len`.
+   const int truncated_len = mlib_cmp(suffix_len, <, space_for_suffix) ? (int)suffix_len : space_for_suffix;
+
+   *s = bson_strdup_printf("%s / %.*s", prefix, truncated_len, suffix);
    BSON_ASSERT(strlen(*s) <= max_len);
 
    bson_free(old_str);
@@ -787,49 +889,67 @@ mongoc_handshake_data_append(const char *driver_name, const char *driver_version
 {
    int platform_space;
 
+   if (_mongoc_handshake_is_frozen()) {
+      return false;
+   }
+
    bson_mutex_lock(&gHandshakeLock);
 
-   if (_mongoc_handshake_get()->frozen) {
+   // TOCTOU: another thread may have frozen the handshake before this lock was acquired.
+   if (_mongoc_handshake_is_frozen()) {
       bson_mutex_unlock(&gHandshakeLock);
       return false;
    }
 
-   BSON_ASSERT(_mongoc_handshake_get()->platform);
+   BSON_ASSERT(gMongocHandshake.platform);
 
    /* allow practically any size for "platform", we'll trim it down in
     * _mongoc_handshake_build_doc_with_application */
-   platform_space = HANDSHAKE_MAX_SIZE - (int)strlen(_mongoc_handshake_get()->platform);
+   platform_space = HANDSHAKE_MAX_SIZE - (int)strlen(gMongocHandshake.platform);
 
    if (platform) {
       /* we check for an empty string as a special case to avoid an
        * unnecessary delimiter being added in front of the string by
        * _append_and_truncate */
-      if (_mongoc_handshake_get()->platform[0] == '\0') {
-         bson_free(_mongoc_handshake_get()->platform);
-         _mongoc_handshake_get()->platform = bson_strdup_printf("%.*s", platform_space, platform);
+      if (gMongocHandshake.platform[0] == '\0') {
+         bson_free(gMongocHandshake.platform);
+         gMongocHandshake.platform = bson_strdup_printf("%.*s", platform_space, platform);
       } else {
-         _append_and_truncate(&_mongoc_handshake_get()->platform, platform, HANDSHAKE_MAX_SIZE);
+         _append_and_truncate(&gMongocHandshake.platform, platform, HANDSHAKE_MAX_SIZE);
       }
    }
 
    if (driver_name) {
-      _append_and_truncate(&_mongoc_handshake_get()->driver_name, driver_name, HANDSHAKE_DRIVER_NAME_MAX);
+      _append_and_truncate(&gMongocHandshake.driver_name, driver_name, HANDSHAKE_DRIVER_NAME_MAX);
    }
 
    if (driver_version) {
-      _append_and_truncate(&_mongoc_handshake_get()->driver_version, driver_version, HANDSHAKE_DRIVER_VERSION_MAX);
+      _append_and_truncate(&gMongocHandshake.driver_version, driver_version, HANDSHAKE_DRIVER_VERSION_MAX);
    }
 
-   _mongoc_handshake_freeze_nolock();
+   _mongoc_handshake_freeze();
    bson_mutex_unlock(&gHandshakeLock);
 
    return true;
 }
 
-mongoc_handshake_t *
+const mongoc_handshake_t *
 _mongoc_handshake_get(void)
 {
+   BSON_ASSERT(_mongoc_handshake_is_frozen());
    return &gMongocHandshake;
+}
+
+mongoc_handshake_t *
+_mongoc_handshake_get_unfrozen(void)
+{
+   return &gMongocHandshake;
+}
+
+bool
+_mongoc_handshake_is_frozen(void)
+{
+   return mcommon_atomic_int8_fetch(&gMongocHandshake.frozen, mcommon_memory_order_acquire) != 0;
 }
 
 bool

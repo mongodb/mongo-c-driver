@@ -193,19 +193,17 @@ def encode_value(val: ValueType) -> bytes:
         case float(f):
             return struct.pack('<d', f)
         case (
-            (
-                Doc()
-                | Binary()
-                | Regex()
-                | UndefinedType()
-                | CodeWithScope()
-                | Code()
-                | String()
-                | Symbol()
-                | DBPointer()
-                | OID()
-            ) as d
-        ):
+            Doc()
+            | Binary()
+            | Regex()
+            | UndefinedType()
+            | CodeWithScope()
+            | Code()
+            | String()
+            | Symbol()
+            | DBPointer()
+            | OID()
+        ) as d:
             return d.__bytes__()
         case None:
             return b''

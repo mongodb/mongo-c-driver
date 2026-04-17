@@ -113,7 +113,6 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_speculative_auth_install);
    TEST_INSTALL(test_stream_install);
    TEST_INSTALL(test_thread_install);
-   TEST_INSTALL(test_token_bucket_install);
    TEST_INSTALL(test_topology_install);
    TEST_INSTALL(test_topology_description_install);
    TEST_INSTALL(test_ts_pool_install);

@@ -127,7 +127,7 @@ typedef struct _mongoc_handshake_t {
    optional_int32 env_memory_mb;
    char *env_region;
 
-   bool frozen;
+   int8_t frozen; // Atomic bool (for compatibility with MSVC, which has no atomic boolean API).
 } mongoc_handshake_t;
 
 void
@@ -137,13 +137,19 @@ void
 _mongoc_handshake_cleanup(void);
 
 bson_t *
-_mongoc_handshake_build_doc_with_application(const char *application);
+_mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const char *appname);
 
 void
 _mongoc_handshake_freeze(void);
 
-mongoc_handshake_t *
+const mongoc_handshake_t *
 _mongoc_handshake_get(void);
+
+mongoc_handshake_t *
+_mongoc_handshake_get_unfrozen(void);
+
+bool
+_mongoc_handshake_is_frozen(void);
 
 bool
 _mongoc_handshake_appname_is_valid(const char *appname);

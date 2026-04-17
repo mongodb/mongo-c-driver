@@ -67,12 +67,18 @@ _duration_double_multiply(mlib_duration duration, double factor)
    return mlib_duration((mlib_duration_rep_t)round((double)mlib_microseconds_count(duration) * factor), us);
 }
 
+static void
+_increment_attempt(mongoc_retry_backoff_generator_t *generator)
+{
+   generator->attempt = BSON_MIN(generator->attempt + 1, generator->max_attempt);
+}
+
 mlib_duration
 _mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator)
 {
    BSON_ASSERT_PARAM(generator);
 
-   generator->attempt = BSON_MIN(generator->attempt + 1, generator->max_attempt);
+   _increment_attempt(generator);
 
    const double jitter = _mongoc_jitter_source_generate(generator->jitter_source);
 
@@ -87,4 +93,12 @@ _mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator
    const double backoff_factor = pow(params->growth_factor, (double)generator->attempt - 1);
 
    return _duration_double_multiply(params->backoff_initial, jitter * backoff_factor);
+}
+
+void
+_mongoc_retry_backoff_generator_skip(mongoc_retry_backoff_generator_t *generator)
+{
+   BSON_ASSERT_PARAM(generator);
+
+   _increment_attempt(generator);
 }

@@ -1853,14 +1853,8 @@ mongoc_bulkwrite_execute(mongoc_bulkwrite_t *self, const mongoc_bulkwriteopts_t 
          // Send command.
          {
             mongoc_server_stream_t *new_ss = NULL;
-            bool ok = mongoc_cluster_run_retryable_write(&self->client->cluster,
-                                                         &parts.assembled,
-                                                         parts.is_retryable_write,
-                                                         self->client->jitter_source,
-                                                         self->client->topology->token_bucket,
-                                                         &new_ss,
-                                                         &cmd_reply,
-                                                         &error);
+            bool ok = mongoc_cluster_run_retryable_write(
+               &self->client->cluster, &parts.assembled, parts.is_retryable_write, &new_ss, &cmd_reply, &error);
             if (new_ss) {
                // A retry occurred. Save the newly created stream to use for subsequent commands.
                mongoc_server_stream_cleanup(ss);

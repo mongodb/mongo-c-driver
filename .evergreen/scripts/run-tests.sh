@@ -78,8 +78,10 @@ if [[ -n "${CLIENT_SIDE_ENCRYPTION}" ]]; then
     export MONGOC_TEST_AZURE_TENANT_ID="${FLE_AZURE_TENANTID:?}"
     export MONGOC_TEST_AZURE_CLIENT_ID="${FLE_AZURE_CLIENTID:?}"
     export MONGOC_TEST_AZURE_CLIENT_SECRET="${FLE_AZURE_CLIENTSECRET:?}"
+    export MONGOC_TEST_AZURE_ACCESS_TOKEN="${CSFLE_AZURE_ACCESS_TOKEN:?}"
     export MONGOC_TEST_GCP_EMAIL="${FLE_GCP_EMAIL:?}"
     export MONGOC_TEST_GCP_PRIVATEKEY="${FLE_GCP_PRIVATEKEY:?}"
+    export MONGOC_TEST_GCP_ACCESS_TOKEN="${CSFLE_GCP_ACCESS_TOKEN:?}"
   } &>/dev/null
   popd # "${det_dir:?}/.evergreen/csfle"
   echo "Setting KMS credentials from the environment... done."

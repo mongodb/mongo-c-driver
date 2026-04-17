@@ -28,7 +28,6 @@
 #include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-jitter-source-private.h>
 #include <mongoc/mongoc-rpc-private.h>
-#include <mongoc/mongoc-token-bucket-private.h>
 
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-host-list.h>
@@ -43,6 +42,7 @@
 #include <mongoc/mongoc-crypt-private.h>
 #include <mongoc/mongoc-shared-private.h>
 #include <mongoc/mongoc-topology-private.h>
+#include <mongoc/mongoc-uri-private.h>
 
 #include <mongoc/mongoc-stream.h>
 #include <mongoc/mongoc-write-concern.h>
@@ -92,7 +92,7 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
 
-#define MONGOC_DEFAULT_RETRY_TOKEN_CAPACITY 1000.0
+#define MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING false
 
 struct _mongoc_collection_t;
 
@@ -127,6 +127,8 @@ struct _mongoc_client_t {
    uint32_t generation;
 
    mongoc_jitter_source_t *jitter_source;
+   int32_t max_adaptive_retries;
+   bool enable_overload_retargeting;
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
