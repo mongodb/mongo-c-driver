@@ -1,9 +1,21 @@
-libbson 2.3.0 [UNRELEASED]
-==========================
+libbson 2.3.0
+=============
+
+## Improvements
+
+* `bson_t` is now trivially relocatable.
 
 ## Deprecated
 
 * `bson_append_array_begin`. Use `bson_append_array_builder_begin` or `bson_append_array_unsafe_begin` instead.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+  * Ezra Chung
+  * GitHub user: swigger
+  * GitHub user: user-45-20
 
 libbson 2.2.4
 =============
