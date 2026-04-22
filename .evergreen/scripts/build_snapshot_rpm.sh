@@ -38,7 +38,7 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-40-aarch64}
+config=${MOCK_TARGET_CONFIG:=fedora-45-aarch64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
@@ -75,12 +75,7 @@ build_dir=$(basename $(pwd))
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --clean
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --init
 mock_root=$(sudo mock -r ${config} --use-bootstrap-image --isolation=simple --print-root-path)
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python3.11 gcc openssl-devel
-
-# This step is needed to avoid the following error on rocky+epel8:
-# Problem: conflicting requests
-#  - package utf8proc-devel-2.6.1-3.module+el8.7.0+1065+42200b2e.aarch64 from powertools is filtered out by modular filtering
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --dnf-cmd --setopt=powertools.module_hotfixes=true install utf8proc-devel
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python3 gcc openssl-devel
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" .
@@ -131,10 +126,10 @@ sudo mock --resultdir="${mock_result}" --use-bootstrap-image --isolation=simple 
 )
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "${mock_result}" /tmp
 
-sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  rpm -Uvh ../mock-result/*.rpm &&
-  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0
-  )"
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c '(
+  rpm --define "_pkgverify_level digest" -Uvh ../mock-result/*.rpm &&
+  gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c $(pkgconf --libs bson2 mongoc2)
+  )'
 
 if [ ! -e "${mock_root}/tmp/${build_dir}/example-client" ]; then
   echo "Example was not built!"
