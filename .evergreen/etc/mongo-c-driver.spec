@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.30.7
+%global up_version   1.30.8
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -275,18 +275,14 @@ exit $ret
 
 
 %changelog
+* Wed Apr  8 2026 Remi Collet <remi@remirepo.net> - 1.30.8-1
+- update to 1.30.8
+
+* Thu Mar 19 2026 Remi Collet <remi@remirepo.net> - 1.30.7-2
+- add upstream fix for CVE-2026-4359
+
 * Wed Feb  4 2026 Remi Collet <remi@remirepo.net> - 1.30.7-1
 - update to 1.30.7
-
-* Tue Jan 27 2026 Remi Collet <remi@remirepo.net> - 1.30.6-3
-- re-enable man pages using upstream patch for new docutils
-
-* Thu Jan 22 2026 Remi Collet <remi@remirepo.net> - 1.30.6-2
-- temporarily drop man pages on Fedora 44 as FTBFS
-  reported as https://jira.mongodb.org/browse/CDRIVER-6210
-
-* Fri Jan 16 2026 Fedora Release Engineering <releng@fedoraproject.org> - 1.30.6-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_44_Mass_Rebuild
 
 * Wed Oct  8 2025 Remi Collet <remi@remirepo.net> - 1.30.6-1
 - update to 1.30.6
