@@ -3500,61 +3500,6 @@ test_ssl_opts_padding_not_null(void)
 }
 #endif
 
-static void
-test_mongoc_client_recv_network_error(void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   future_t *future;
-   request_t *request;
-   bson_error_t error;
-   mongoc_server_description_t const *sd;
-   int generation;
-   mcd_rpc_message *rpc = NULL;
-   mongoc_buffer_t buffer;
-   mongoc_server_stream_t *stream;
-   mc_shared_tpld td;
-
-   server = mock_server_with_auto_hello(WIRE_VERSION_MAX);
-   mock_server_run(server);
-   client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
-
-   future = future_client_command_simple(
-      client, "admin", tmp_bson("{'ping': 1}"), NULL /* read prefs */, NULL /* reply */, &error);
-   request = mock_server_receives_request(server);
-   reply_to_request_with_ok_and_destroy(request);
-   future_wait(future);
-   future_destroy(future);
-
-   /* The server should be a standalone. */
-   sd = mongoc_topology_description_server_by_id_const(mc_tpld_unsafe_get_const(client->topology), 1, &error);
-   ASSERT_OR_PRINT(sd, error);
-   generation = mc_tpl_sd_get_generation(sd, &kZeroObjectId);
-   BSON_ASSERT(sd->type == MONGOC_SERVER_STANDALONE);
-   mock_server_destroy(server);
-
-   /* A network error when calling _mongoc_client_recv should mark the server
-    * unknown and increment the generation. */
-   _mongoc_buffer_init(
-      &buffer, NULL /* initial buffer */, 0 /* initial length */, NULL /* realloc fn */, NULL /* realloc ctx */);
-   rpc = mcd_rpc_message_new();
-   stream = mongoc_cluster_stream_for_server(&client->cluster, 1, false, NULL, NULL, &error);
-   ASSERT_OR_PRINT(stream, error);
-   BSON_ASSERT(!_mongoc_client_recv(client, rpc, &buffer, stream, &error));
-
-   td = mc_tpld_take_ref(client->topology);
-   sd = mongoc_topology_description_server_by_id_const(td.ptr, 1, &error);
-   ASSERT_OR_PRINT(sd, error);
-   ASSERT_CMPINT(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, generation + 1);
-   BSON_ASSERT(sd->type == MONGOC_SERVER_UNKNOWN);
-
-   mongoc_client_destroy(client);
-   _mongoc_buffer_destroy(&buffer);
-   mcd_rpc_message_destroy(rpc);
-   mongoc_server_stream_cleanup(stream);
-   mc_tpld_drop_ref(&td);
-}
-
 void
 test_mongoc_client_get_handshake_hello_response_single(void)
 {
@@ -4014,7 +3959,6 @@ test_client_install(TestSuite *suite)
                      test_framework_skip_if_slow);
    TestSuite_Add(suite, "/Client/get_database", test_get_database);
    TestSuite_Add(suite, "/Client/invalid_server_id", test_invalid_server_id);
-   TestSuite_AddMockServerTest(suite, "/Client/recv_network_error", test_mongoc_client_recv_network_error);
    TestSuite_AddLive(suite,
                      "/Client/get_handshake_hello_response/single [timeout:30]",
                      test_mongoc_client_get_handshake_hello_response_single);

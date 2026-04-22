@@ -31,6 +31,7 @@
 
 BSON_BEGIN_DECLS
 
+#define MONGOC_DEFAULT_MAXADAPTIVERETRIES 2
 
 bool
 mongoc_uri_upsert_host_and_port(mongoc_uri_t *uri, const char *host_and_port, bson_error_t *error);
@@ -54,6 +55,9 @@ _mongoc_uri_apply_query_string(mongoc_uri_t *uri, mstr_view options, bool from_d
 
 int32_t
 mongoc_uri_get_local_threshold_option(const mongoc_uri_t *uri);
+
+int32_t
+_mongoc_uri_get_max_adaptive_retries(const mongoc_uri_t *uri);
 
 bool
 _mongoc_uri_requires_auth_negotiation(const mongoc_uri_t *uri);

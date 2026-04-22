@@ -86,10 +86,10 @@ test_bson_alloc(void)
 
    b = bson_new();
    ASSERT_CMPUINT32(b->len, ==, (uint32_t)5);
-   BSON_ASSERT((b->flags & BSON_FLAG_INLINE));
+   BSON_ASSERT((b->flags & BSON_FLAG_INLINE_DATA));
    BSON_ASSERT(!(b->flags & BSON_FLAG_CHILD));
-   BSON_ASSERT(!(b->flags & BSON_FLAG_STATIC));
-   BSON_ASSERT(!(b->flags & BSON_FLAG_NO_FREE));
+   BSON_ASSERT(!(b->flags & BSON_FLAG_NO_FREE_OBJECT));
+   BSON_ASSERT(!(b->flags & BSON_FLAG_NO_FREE_DATA));
    bson_destroy(b);
 
    /*
@@ -97,7 +97,7 @@ test_bson_alloc(void)
     */
    b = bson_sized_new(44);
    ASSERT_CMPUINT32(b->len, ==, (uint32_t)5);
-   BSON_ASSERT((b->flags & BSON_FLAG_INLINE));
+   BSON_ASSERT((b->flags & BSON_FLAG_INLINE_DATA));
    bson_destroy(b);
 
    /*
@@ -105,7 +105,7 @@ test_bson_alloc(void)
     */
    b = bson_sized_new(121);
    ASSERT_CMPUINT32(b->len, ==, (uint32_t)5);
-   BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE));
+   BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE_DATA));
    bson_destroy(b);
 
    /*
@@ -113,12 +113,12 @@ test_bson_alloc(void)
     */
    b = bson_sized_new(129);
    ASSERT_CMPUINT32(b->len, ==, (uint32_t)5);
-   BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE));
+   BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE_DATA));
    bson_destroy(b);
 
    b = bson_new_from_data(empty_bson, sizeof empty_bson);
    ASSERT_CMPUINT32(b->len, ==, (uint32_t)sizeof empty_bson);
-   BSON_ASSERT((b->flags & BSON_FLAG_INLINE));
+   BSON_ASSERT((b->flags & BSON_FLAG_INLINE_DATA));
    BSON_ASSERT(!memcmp(bson_get_data(b), empty_bson, sizeof empty_bson));
    bson_destroy(b);
 }
@@ -954,14 +954,14 @@ test_bson_init(void)
    int i;
 
    bson_init(&b);
-   BSON_ASSERT((b.flags & BSON_FLAG_INLINE));
-   BSON_ASSERT((b.flags & BSON_FLAG_STATIC));
+   BSON_ASSERT((b.flags & BSON_FLAG_INLINE_DATA));
+   BSON_ASSERT((b.flags & BSON_FLAG_NO_FREE_OBJECT));
    BSON_ASSERT(!(b.flags & BSON_FLAG_RDONLY));
    for (i = 0; i < 100; i++) {
       bson_snprintf(key, sizeof key, "%d", i);
       BSON_ASSERT(bson_append_utf8(&b, key, -1, "bar", -1));
    }
-   BSON_ASSERT(!(b.flags & BSON_FLAG_INLINE));
+   BSON_ASSERT(!(b.flags & BSON_FLAG_INLINE_DATA));
    bson_destroy(&b);
 }
 
@@ -975,6 +975,34 @@ test_bson_init_static(void)
    ASSERT(bson_init_static(&b, data, sizeof data));
    BSON_ASSERT((b.flags & BSON_FLAG_RDONLY));
    bson_destroy(&b);
+}
+
+// Constructs a bson_t and then by-value assigns through *dst
+static void
+make_bson_for_relocate(volatile bson_t *dst)
+{
+   bson_t item = BSON_INITIALIZER;
+   for (int i = 0; i < 1024; ++i) {
+      bson_append_utf8(&item, "foo", -1, "bar", -1);
+   }
+   // Do the write. This is volatile to assure the write occurs exactly once at this location.
+   *dst = item;
+}
+
+/**
+ * Test that trivial relocation (by-value assignment/copying) leaves the bson_t in a valid state.
+ */
+static void
+test_bson_relocate(void)
+{
+   bson_t doc;
+   make_bson_for_relocate(&doc);
+   bson_iter_t iter;
+   bson_iter_init(&iter, &doc);
+   while (bson_iter_next(&iter)) {
+      // Do nothing
+   }
+   bson_destroy(&doc);
 }
 
 static void *
@@ -998,7 +1026,7 @@ test_bson_new_from_buffer(void)
 
       bson_t *b = bson_new_from_buffer(&buf, &len, bson_realloc_ctx, NULL);
 
-      BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE_DATA);
       BSON_ASSERT(len == 5);
       BSON_ASSERT(b->len == 5);
 
@@ -1019,7 +1047,7 @@ test_bson_new_from_buffer(void)
 
       bson_t *b = bson_new_from_buffer(&buf, &len, bson_realloc_ctx, NULL);
 
-      BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE_DATA);
       BSON_ASSERT(len == 5);
       BSON_ASSERT(b->len == 5);
 
@@ -1038,9 +1066,9 @@ test_bson_new_from_buffer(void)
 
       bson_t *b = bson_new_from_buffer(&buf, &buf_len, realloc_func_never_called, NULL);
 
-      BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE);
+      BSON_ASSERT(b->flags & BSON_FLAG_NO_FREE_DATA);
       BSON_ASSERT(buf_len == 0x10000);
-      BSON_ASSERT(&buf_len == ((bson_impl_alloc_t *)b)->buflen);
+      BSON_ASSERT(&buf_len == ((bson_impl_alloc_t *)b)->indirect_buflen);
       BSON_ASSERT(b->len == 5);
 
       bson_append_utf8(b, "hello", -1, "world", -1);
@@ -1166,7 +1194,7 @@ test_bson_build_child_array(void)
    bson_t *child2;
 
    bson_init(&b);
-   BSON_ASSERT(bson_append_array_begin(&b, "foo", -1, &child));
+   BSON_ASSERT(bson_append_array_unsafe_begin(&b, "foo", -1, &child));
    BSON_ASSERT(bson_append_utf8(&child, "0", -1, "baz", -1));
    BSON_ASSERT(bson_append_array_end(&b, &child));
 
@@ -1192,10 +1220,10 @@ test_bson_build_child_deep_1(bson_t *b, int *count)
    (*count)++;
 
    BSON_ASSERT(bson_append_document_begin(b, "b", -1, &child));
-   BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE));
+   BSON_ASSERT(!(b->flags & BSON_FLAG_INLINE_DATA));
    BSON_ASSERT((b->flags & BSON_FLAG_IN_CHILD));
-   BSON_ASSERT(!(child.flags & BSON_FLAG_INLINE));
-   BSON_ASSERT((child.flags & BSON_FLAG_STATIC));
+   BSON_ASSERT(!(child.flags & BSON_FLAG_INLINE_DATA));
+   BSON_ASSERT((child.flags & BSON_FLAG_NO_FREE_OBJECT));
    BSON_ASSERT((child.flags & BSON_FLAG_CHILD));
 
    if (*count < 100) {
@@ -1219,14 +1247,14 @@ test_bson_build_child_deep(void)
    int count = 0;
 
    bson_init(&u.b);
-   BSON_ASSERT((u.b.flags & BSON_FLAG_INLINE));
+   BSON_ASSERT((u.b.flags & BSON_FLAG_INLINE_DATA));
    test_bson_build_child_deep_1(&u.b, &count);
-   BSON_ASSERT(!(u.b.flags & BSON_FLAG_INLINE));
-   BSON_ASSERT((u.b.flags & BSON_FLAG_STATIC));
-   BSON_ASSERT(!(u.b.flags & BSON_FLAG_NO_FREE));
+   BSON_ASSERT(!(u.b.flags & BSON_FLAG_INLINE_DATA));
+   BSON_ASSERT((u.b.flags & BSON_FLAG_NO_FREE_OBJECT));
+   BSON_ASSERT(!(u.b.flags & BSON_FLAG_NO_FREE_DATA));
    BSON_ASSERT(!(u.b.flags & BSON_FLAG_RDONLY));
    BSON_ASSERT(bson_validate(&u.b, BSON_VALIDATE_NONE, NULL));
-   BSON_ASSERT(((bson_impl_alloc_t *)&u.b)->alloclen == 1024);
+   BSON_ASSERT(((bson_impl_alloc_t *)&u.b)->own_buflen == 1024);
    BSON_ASSERT_BSON_EQUAL_FILE(&u.b, "test39.bson");
    bson_destroy(&u.b);
 }
@@ -1263,7 +1291,7 @@ test_bson_build_child_deep_no_begin_end(void)
    bson_init(&u.b);
    test_bson_build_child_deep_no_begin_end_1(&u.b, &count);
    BSON_ASSERT(bson_validate(&u.b, BSON_VALIDATE_NONE, NULL));
-   BSON_ASSERT(u.a.alloclen == 1024);
+   BSON_ASSERT(u.a.own_buflen == 1024);
    BSON_ASSERT_BSON_EQUAL_FILE(&u.b, "test39.bson");
    bson_destroy(&u.b);
 }
@@ -1513,7 +1541,7 @@ bloat(bson_t *b)
    }
 
    /* spilled over */
-   ASSERT(!(b->flags & BSON_FLAG_INLINE));
+   ASSERT(!(b->flags & BSON_FLAG_INLINE_DATA));
 }
 
 
@@ -1532,7 +1560,7 @@ test_bson_steal(void)
    BSON_APPEND_INT32(&stack_alloced, "a", 1);
    ASSERT(bson_steal(&dst, &stack_alloced));
    ASSERT(bson_has_field(&dst, "a"));
-   ASSERT(dst.flags & BSON_FLAG_INLINE);
+   ASSERT(dst.flags & BSON_FLAG_INLINE_DATA);
    /* src was invalidated */
    ASSERT(!bson_validate(&stack_alloced, BSON_VALIDATE_NONE, 0));
    bson_destroy(&dst);
@@ -1540,12 +1568,12 @@ test_bson_steal(void)
    /* spilled over, stack-allocated */
    bson_init(&stack_alloced);
    bloat(&stack_alloced);
-   alloc = ((bson_impl_alloc_t *)&stack_alloced)->alloc;
+   alloc = ((bson_impl_alloc_t *)&stack_alloced)->own_buffer;
    ASSERT(bson_steal(&dst, &stack_alloced));
    /* data was transferred */
-   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->alloc);
+   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->own_buffer);
    ASSERT(bson_has_field(&dst, "99"));
-   ASSERT(!(dst.flags & BSON_FLAG_INLINE));
+   ASSERT(!(dst.flags & BSON_FLAG_INLINE_DATA));
    ASSERT(!bson_validate(&stack_alloced, BSON_VALIDATE_NONE, 0));
    bson_destroy(&dst);
 
@@ -1554,18 +1582,18 @@ test_bson_steal(void)
    BSON_APPEND_INT32(heap_alloced, "a", 1);
    ASSERT(bson_steal(&dst, heap_alloced));
    ASSERT(bson_has_field(&dst, "a"));
-   ASSERT(dst.flags & BSON_FLAG_INLINE);
+   ASSERT(dst.flags & BSON_FLAG_INLINE_DATA);
    bson_destroy(&dst);
 
    /* spilled over, heap-allocated */
    heap_alloced = bson_new();
    bloat(heap_alloced);
-   alloc = ((bson_impl_alloc_t *)heap_alloced)->alloc;
+   alloc = ((bson_impl_alloc_t *)heap_alloced)->own_buffer;
    ASSERT(bson_steal(&dst, heap_alloced));
    /* data was transferred */
-   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->alloc);
+   ASSERT(alloc == ((bson_impl_alloc_t *)&dst)->own_buffer);
    ASSERT(bson_has_field(&dst, "99"));
-   ASSERT(!(dst.flags & BSON_FLAG_INLINE));
+   ASSERT(!(dst.flags & BSON_FLAG_INLINE_DATA));
    bson_destroy(&dst);
 
    /* test stealing from a bson created with bson_new_from_buffer */
@@ -1574,8 +1602,8 @@ test_bson_steal(void)
    mlib_write_u32le(buf, 5);
    heap_alloced = bson_new_from_buffer(&buf, &len, bson_realloc_ctx, NULL);
    ASSERT(bson_steal(&dst, heap_alloced));
-   ASSERT(dst.flags & BSON_FLAG_NO_FREE);
-   ASSERT(dst.flags & BSON_FLAG_STATIC);
+   ASSERT(dst.flags & BSON_FLAG_NO_FREE_DATA);
+   ASSERT(dst.flags & BSON_FLAG_NO_FREE_OBJECT);
    ASSERT(((bson_impl_alloc_t *)&dst)->realloc == bson_realloc_ctx);
    ASSERT(((bson_impl_alloc_t *)&dst)->realloc_func_ctx == NULL);
    bson_destroy(&dst);
@@ -1606,7 +1634,7 @@ test_bson_reserve_buffer(void)
    BSON_APPEND_UTF8(&src, "key", "value");
    ASSERT((buf = bson_reserve_buffer(&stack_alloced, src.len)));
    ASSERT_CMPUINT32(src.len, ==, stack_alloced.len);
-   ASSERT(stack_alloced.flags & BSON_FLAG_INLINE);
+   ASSERT(stack_alloced.flags & BSON_FLAG_INLINE_DATA);
    memcpy(buf, ((bson_impl_inline_t *)&src)->data, src.len);
    /* data was transferred */
    BSON_ASSERT_KEY_AND_VALUE(&stack_alloced);
@@ -1617,8 +1645,8 @@ test_bson_reserve_buffer(void)
    bson_init(&stack_alloced);
    ASSERT((buf = bson_reserve_buffer(&stack_alloced, src.len)));
    ASSERT_CMPUINT32(src.len, ==, stack_alloced.len);
-   ASSERT(!(stack_alloced.flags & BSON_FLAG_INLINE));
-   memcpy(buf, ((bson_impl_alloc_t *)&src)->alloc, src.len);
+   ASSERT(!(stack_alloced.flags & BSON_FLAG_INLINE_DATA));
+   memcpy(buf, ((bson_impl_alloc_t *)&src)->own_buffer, src.len);
    BSON_ASSERT_KEY_AND_VALUE(&stack_alloced);
    ASSERT(bson_has_field(&stack_alloced, "99"));
    bson_destroy(&src);
@@ -1630,7 +1658,7 @@ test_bson_reserve_buffer(void)
    BSON_APPEND_UTF8(&src, "key", "value");
    ASSERT((buf = bson_reserve_buffer(heap_alloced, src.len)));
    ASSERT_CMPUINT32(src.len, ==, heap_alloced->len);
-   ASSERT(heap_alloced->flags & BSON_FLAG_INLINE);
+   ASSERT(heap_alloced->flags & BSON_FLAG_INLINE_DATA);
    memcpy(buf, ((bson_impl_inline_t *)&src)->data, src.len);
    BSON_ASSERT_KEY_AND_VALUE(heap_alloced);
    bson_destroy(heap_alloced);
@@ -1640,8 +1668,8 @@ test_bson_reserve_buffer(void)
    bloat(&src);
    ASSERT((buf = bson_reserve_buffer(heap_alloced, src.len)));
    ASSERT_CMPUINT32(src.len, ==, heap_alloced->len);
-   ASSERT(!(heap_alloced->flags & BSON_FLAG_INLINE));
-   memcpy(buf, ((bson_impl_alloc_t *)&src)->alloc, src.len);
+   ASSERT(!(heap_alloced->flags & BSON_FLAG_INLINE_DATA));
+   memcpy(buf, ((bson_impl_alloc_t *)&src)->own_buffer, src.len);
    BSON_ASSERT_KEY_AND_VALUE(heap_alloced);
    ASSERT(bson_has_field(heap_alloced, "99"));
 
@@ -1971,8 +1999,8 @@ test_bson_regex_lengths(void)
       &new, "0_________1_________2_________3___4", -1, "0_________1_________2_________3_________4_________5___4", "i");
 
    ASSERT(new.len == 121);
-   ASSERT(new.flags & BSON_FLAG_STATIC);
-   ASSERT(!(new.flags & BSON_FLAG_INLINE));
+   ASSERT(new.flags & BSON_FLAG_NO_FREE_OBJECT);
+   ASSERT(!(new.flags & BSON_FLAG_INLINE_DATA));
 
    bson_destroy(&new);
 }
@@ -2880,7 +2908,28 @@ test_bson_array_builder(void)
       {
          bson_t b;
          bson_array_builder_t *bab = bson_array_builder_new();
+         ASSERT(BSON_APPEND_ARRAY_BUILDER_APPEND_UTF8(bab, "A"));
+         ASSERT(bson_array_builder_build(bab, &b));
+         ASSERT_BSON_EQUAL(b, ["A"]);
+         bson_destroy(&b);
+         bson_array_builder_destroy(bab);
+      }
+
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new();
          ASSERT(bson_array_builder_append_symbol(bab, "A", 1));
+         ASSERT(bson_array_builder_build(bab, &b));
+         ASSERT_BSON_EQUAL(b, [ {"$symbol" : "A"} ]);
+         bson_destroy(&b);
+         bson_array_builder_destroy(bab);
+      }
+
+      {
+         bson_t b;
+         bson_array_builder_t *bab = bson_array_builder_new();
+         ASSERT(BSON_APPEND_ARRAY_BUILDER_APPEND_SYMBOL(bab, "A"));
          ASSERT(bson_array_builder_build(bab, &b));
          ASSERT_BSON_EQUAL(b, [ {"$symbol" : "A"} ]);
          bson_destroy(&b);
@@ -2989,6 +3038,7 @@ test_bson_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/new_from_buffer", test_bson_new_from_buffer);
    TestSuite_Add(suite, "/bson/init", test_bson_init);
    TestSuite_Add(suite, "/bson/init_static", test_bson_init_static);
+   TestSuite_Add(suite, "/bson/relocate", test_bson_relocate);
    TestSuite_Add(suite, "/bson/basic", test_bson_alloc);
    TestSuite_Add(suite, "/bson/basic_array_alloc", test_bson_array_alloc);
    TestSuite_Add(suite, "/bson/append_overflow", test_bson_append_overflow);

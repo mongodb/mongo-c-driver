@@ -948,6 +948,10 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
       }
       bson_free(test_username);
       bson_free(test_password);
+   } else {
+      // Atlas URIs assume `SCRAM-SHA-*` and apply `authSource=admin` in their TXT records.
+      // Override this assumption with `authSource=$external` for MONGODB-OIDC.
+      mongoc_uri_set_auth_source(uri, "$external");
    }
 
    char *azure_resource = test_framework_getenv("MONGOC_AZURE_RESOURCE");
@@ -957,6 +961,19 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
                                           tmp_bson("{'ENVIRONMENT': 'azure', 'TOKEN_RESOURCE': '%s'}", azure_resource));
    }
    bson_free(azure_resource);
+
+   char *gcp_resource = test_framework_getenv("MONGOC_GCP_RESOURCE");
+   const bool testing_gcp_oidc = gcp_resource != NULL;
+   if (uri_requests_oidc && testing_gcp_oidc) {
+      mongoc_uri_set_mechanism_properties(uri,
+                                          tmp_bson("{'ENVIRONMENT': 'gcp', 'TOKEN_RESOURCE': '%s'}", gcp_resource));
+   }
+   bson_free(gcp_resource);
+
+   const bool testing_k8s_oidc = test_framework_getenv_bool("MONGOC_TEST_OIDC_K8S");
+   if (uri_requests_oidc && testing_k8s_oidc) {
+      mongoc_uri_set_mechanism_properties(uri, tmp_bson("{'ENVIRONMENT': 'k8s'}"));
+   }
 
    if (!mongoc_uri_has_option(uri, MONGOC_URI_HEARTBEATFREQUENCYMS)) {
       can_reduce_heartbeat = true;
@@ -968,7 +985,7 @@ entity_client_new(entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    client = test_framework_client_new_from_uri(uri, api);
 
-   if (uri_requests_oidc && !testing_azure_oidc) {
+   if (uri_requests_oidc && !testing_azure_oidc && !testing_gcp_oidc && !testing_k8s_oidc) {
       test_framework_set_oidc_callback(client);
    }
 
@@ -1167,8 +1184,12 @@ _parse_kms_provider_azure(
          if (!_append_kms_provider_value_or_getenv(&child, key, value, "MONGOC_TEST_AZURE_CLIENT_SECRET", error)) {
             return false;
          }
+      } else if (strcmp(key, "accessToken") == 0) {
+         if (!_append_kms_provider_value_or_getenv(&child, key, value, "MONGOC_TEST_AZURE_ACCESS_TOKEN", error)) {
+            return false;
+         }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1210,8 +1231,12 @@ _parse_kms_provider_gcp(
          if (value) {
             BSON_ASSERT(BSON_APPEND_UTF8(&child, key, value));
          }
+      } else if (strcmp(key, "accessToken") == 0) {
+         if (!_append_kms_provider_value_or_getenv(&child, key, value, "MONGOC_TEST_GCP_ACCESS_TOKEN", error)) {
+            return false;
+         }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1262,7 +1287,7 @@ _parse_kms_provider_kmip(
             BSON_ASSERT(bson_append_document_end(tls_opts, &tls_child));
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }
@@ -1306,7 +1331,7 @@ _parse_kms_provider_local(
             BSON_APPEND_BINARY(&child, "key", BSON_SUBTYPE_BINARY, data, 96);
          }
       } else {
-         test_set_error(error, "unexpected field '%s'", value);
+         test_set_error(error, "unexpected field '%s'", key);
          return false;
       }
    }

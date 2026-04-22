@@ -7,6 +7,7 @@
 
 #include <mongoc/mongoc.h>
 
+#include <mlib/duration.h>
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>
@@ -840,6 +841,13 @@ _test_cluster_time_comparison(bool pooled)
 
    mongoc_uri_destroy(uri);
    mock_server_destroy(server);
+
+   if (pooled) {
+      mongoc_client_pool_push(pool, client);
+      mongoc_client_pool_destroy(pool);
+   } else {
+      mongoc_client_destroy(client);
+   }
 }
 
 
@@ -1497,6 +1505,329 @@ test_cluster_stream_invalidation_pooled(void)
    mongoc_client_pool_destroy(pool);
 }
 
+
+typedef struct {
+   mock_server_t *server;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   char *legacy_hello_reply;
+} test_handshake_errors_fixture;
+
+typedef struct {
+   bool use_pool;
+   bool use_auth;
+} test_handshake_errors_opts;
+
+static bool
+server_has_state(mongoc_client_t *client, const char *expected_state)
+{
+   mongoc_server_description_t *sd = mongoc_client_get_server_description(client, 1);
+   bool matched = 0 == strcmp(mongoc_server_description_type(sd), expected_state);
+   mongoc_server_description_destroy(sd);
+   return matched;
+}
+
+static test_handshake_errors_fixture *
+test_handshake_errors_setup(test_handshake_errors_opts opts)
+{
+   test_handshake_errors_fixture *f = bson_malloc0(sizeof(*f));
+
+   // Start mock server:
+   f->server = mock_server_new();
+   mock_server_run(f->server);
+
+   mongoc_uri_t *uri = mongoc_uri_copy(mock_server_get_uri(f->server));
+   if (opts.use_auth) {
+      mongoc_uri_set_username(uri, "user");
+      mongoc_uri_set_password(uri, "password");
+      mongoc_uri_set_auth_mechanism(uri, "plain"); // Does not require SSL.
+   }
+
+   // Create a legacy hello reply:
+   f->legacy_hello_reply = bson_strdup_printf(BSON_STR({
+                                                 "ok" : 1.0,
+                                                 "isWritablePrimary" : true,
+                                                 "minWireVersion" : {"$numberInt" : "%d"},
+                                                 "maxWireVersion" : {"$numberInt" : "%d"}
+                                              }),
+                                              WIRE_VERSION_MIN,
+                                              WIRE_VERSION_MAX);
+
+   // Create client:
+   bson_error_t error;
+   if (opts.use_pool) {
+      f->pool = mongoc_client_pool_new_with_error(uri, &error);
+      ASSERT_OR_PRINT(f->pool, error);
+      f->client = mongoc_client_pool_pop(f->pool);
+
+      // Await legacy hello from background monitoring:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request, f->legacy_hello_reply);
+         request_destroy(request);
+      }
+
+      WAIT_UNTIL(server_has_state(f->client, "Standalone"));
+   } else {
+      f->client = mongoc_client_new_from_uri_with_error(uri, &error);
+      ASSERT_OR_PRINT(f->client, error);
+   }
+
+   // Initial state:
+   {
+      mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+      ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 0);
+      if (opts.use_pool) {
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Standalone");
+      } else {
+         // Single-threaded client has not-yet discovered server.
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");
+      }
+      mongoc_server_description_destroy(sd);
+   }
+
+   mongoc_uri_destroy(uri);
+   return f;
+}
+
+static void
+test_handshake_errors_teardown(test_handshake_errors_fixture *f)
+{
+   if (f->pool) {
+      mongoc_client_pool_push(f->pool, f->client);
+      mongoc_client_pool_destroy(f->pool);
+   } else {
+      mongoc_client_destroy(f->client);
+   }
+
+   bson_free(f->legacy_hello_reply);
+   mock_server_destroy(f->server);
+   bson_free(f);
+}
+
+// test_handshake_errors_impl tests error handling during the handshake.
+// Expect SDAM specification "Error handling" section to apply.
+static void
+test_handshake_errors_impl(bool use_pool)
+{
+   bson_error_t error;
+
+   // Test connection error triggers SDAM error handling:
+   {
+      test_handshake_errors_fixture *f =
+         test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool});
+
+      // Disconnect server before attempting to connect.
+      mock_server_destroy(f->server);
+      f->server = NULL;
+
+      bson_t reply;
+      bool ok = mongoc_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, &reply, &error);
+      ASSERT(!ok);
+
+      if (use_pool) {
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to connect");
+      } else {
+         ASSERT_ERROR_CONTAINS(
+            error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "connection refused");
+      }
+
+      // End state:
+      {
+         mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         if (use_pool) {
+            // Considered an application operation error. See: SDAM > Network error when reading or writing.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 0); // Not cleared.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Standalone");       // Not marked Unknown.
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         } else {
+            // Considered a monitoring error. See: Server Monitoring > Network or command error during server check.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         }
+         mongoc_server_description_destroy(sd);
+      }
+
+      test_handshake_errors_teardown(f);
+      bson_destroy(&reply);
+   }
+
+   // Test an error on "hello":
+   {
+      test_handshake_errors_fixture *f =
+         test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool});
+
+      bson_t reply;
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, &reply, &error);
+
+      // Hang up handshake:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_with_hang_up(request);
+         request_destroy(request);
+      }
+
+      ASSERT(!future_get_bool(future));
+      if (use_pool) {
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+      } else {
+         ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "closed");
+      }
+
+      // End state:
+      {
+         mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         if (use_pool) {
+            // Considered an application operation error. See: SDAM > Network error when reading or writing.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 0); // Not cleared.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Standalone");       // Not marked Unknown.
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         } else {
+            // Considered a monitoring error. See: Server Monitoring > Network or command error during server check.
+            ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
+            ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+            ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+         }
+         mongoc_server_description_destroy(sd);
+      }
+
+      future_destroy(future);
+      test_handshake_errors_teardown(f);
+      bson_destroy(&reply);
+   }
+
+   // Test an auth error. Use PLAIN to not require SSL.
+   {
+      test_handshake_errors_fixture *f =
+         test_handshake_errors_setup((test_handshake_errors_opts){.use_pool = use_pool, .use_auth = true});
+      bson_t reply;
+
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, &reply, &error);
+
+      // Reply to handshake:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request, f->legacy_hello_reply);
+         request_destroy(request);
+      }
+
+      // Hang up auth command:
+      {
+         request_t *request = mock_server_receives_msg(f->server, MONGOC_MSG_NONE, tmp_bson("{'saslStart': 1}"));
+         ASSERT(request);
+         reply_to_request_with_hang_up(request);
+         request_destroy(request);
+      }
+
+      ASSERT(!future_get_bool(future));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "socket error");
+
+      // End state:
+      {
+         mongoc_server_description_t *sd = mongoc_client_get_server_description(f->client, 1);
+         // Considered an authentication step error. See: CMAP > Connection Pool > Backpressure-enabled.
+         ASSERT_CMPUINT32(mc_tpl_sd_get_generation(sd, &kZeroObjectId), ==, 1); // Cleared exactly once.
+         ASSERT_CMPSTR(mongoc_server_description_type(sd), "Unknown");          // Marked Unknown.
+         mongoc_server_description_destroy(sd);
+         ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR));
+         ASSERT(!mongoc_error_has_label(&reply, MONGOC_ERROR_LABEL_RETRYABLEERROR));
+      }
+
+      future_destroy(future);
+      test_handshake_errors_teardown(f);
+      bson_destroy(&reply);
+   }
+}
+
+static void
+test_handshake_errors_pooled(void)
+{
+   test_handshake_errors_impl(true);
+}
+
+static void
+test_handshake_errors_single(void)
+{
+   test_handshake_errors_impl(false);
+}
+
+// test_single_connection_open_after_backpressure_error verifies the spec behavior:
+// > Because the scan may occur on an authenticated connection in single-threaded monitors, the server may apply
+// > backpressure by failing the command with a `SystemOverloadedError` label. The driver MUST not close the connection
+// > when this label is encountered.
+static void
+test_single_connection_open_after_backpressure_error(void)
+{
+   bson_error_t error;
+
+   test_handshake_errors_fixture *f = test_handshake_errors_setup((test_handshake_errors_opts){0});
+
+   // Send an initial ping to establish a connection and complete a handshake:
+   {
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+
+      // Reply to handshake:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request, f->legacy_hello_reply);
+         request_destroy(request);
+      }
+
+      // Reply to ping:
+      {
+         request_t *request = mock_server_receives_msg(f->server, MONGOC_MSG_NONE, tmp_bson("{'ping': 1}"));
+         ASSERT(request);
+         reply_to_request_with_ok_and_destroy(request);
+      }
+
+      ASSERT_OR_PRINT(future_get_bool(future), error);
+      future_destroy(future);
+   }
+
+   mongoc_stream_t *start_stream = mongoc_topology_scanner_get_node(f->client->topology->scanner, 1)->stream;
+
+   // Pretend last scan is old to force another monitoring check:
+   f->client->topology->last_scan = mlib_time_add(mlib_now(), mlib_duration(-60, s)).time_since_monotonic_start._rep;
+
+   {
+      future_t *future = future_client_command_simple(f->client, "db", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+
+      // Reply to handshake with command error that has ServerOverloadedError label:
+      {
+         request_t *request = mock_server_receives_legacy_hello(f->server, NULL);
+         ASSERT(request);
+         reply_to_request_simple(request,
+                                 BSON_STR({"ok" : 0, "code" : 123, "errorLabels" : ["SystemOverloadedError"]}));
+         request_destroy(request);
+      }
+
+      // TODO: Once CDRIVER-6236 is addressed, expect server selection error. Currently, the server error is ignored.
+
+      // Reply to ping:
+      {
+         request_t *request = mock_server_receives_msg(f->server, MONGOC_MSG_NONE, tmp_bson("{'ping': 1}"));
+         ASSERT(request);
+         reply_to_request_with_ok_and_destroy(request);
+      }
+
+      ASSERT_OR_PRINT(future_get_bool(future), error);
+      future_destroy(future);
+   }
+
+   mongoc_stream_t *end_stream = mongoc_topology_scanner_get_node(f->client->topology->scanner, 1)->stream;
+   ASSERT_CMPVOID(start_stream, ==, end_stream);
+
+   test_handshake_errors_teardown(f);
+}
 void
 test_cluster_install(TestSuite *suite)
 {
@@ -1575,4 +1906,9 @@ test_cluster_install(TestSuite *suite)
    */
    TestSuite_AddLive(suite, "/Cluster/stream_invalidation/single", test_cluster_stream_invalidation_single);
    TestSuite_AddLive(suite, "/Cluster/stream_invalidation/pooled", test_cluster_stream_invalidation_pooled);
+   TestSuite_AddMockServerTest(suite, "/Cluster/handshake_errors/single", test_handshake_errors_single);
+   TestSuite_AddMockServerTest(suite, "/Cluster/handshake_errors/pooled", test_handshake_errors_pooled);
+   TestSuite_AddMockServerTest(suite,
+                               "/Cluster/single_connection_open_after_backpressure_error",
+                               test_single_connection_open_after_backpressure_error);
 }

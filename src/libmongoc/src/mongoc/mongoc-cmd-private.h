@@ -91,6 +91,7 @@ typedef struct _mongoc_cmd_parts_t {
    bson_t assembled_body;
    bool is_read_command;
    bool is_write_command;
+   bool is_raw_command; // True for generic (not read/write) helpers like `mongoc_client_command_simple`.
    bool prohibit_lsid;
    mongoc_cmd_parts_allow_txn_number_t allow_txn_number;
    bool is_retryable_read;

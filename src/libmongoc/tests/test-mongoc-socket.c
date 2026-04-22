@@ -409,52 +409,6 @@ test_mongoc_socket_sendv(void *ctx)
    mongoc_cond_destroy(&data.cond);
 }
 
-static void
-test_mongoc_socket_poll_refusal(void *ctx)
-{
-   mongoc_stream_poll_t *poller;
-   mongoc_socket_t *sock;
-   mongoc_stream_t *ssock;
-   int64_t start;
-   struct sockaddr_in ipv4_addr = {0};
-
-   BSON_UNUSED(ctx);
-
-   ipv4_addr.sin_family = AF_INET;
-   BSON_ASSERT(inet_pton(AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
-   ipv4_addr.sin_port = htons(12345);
-
-   /* create a new non-blocking socket. */
-   sock = mongoc_socket_new(AF_INET, SOCK_STREAM, 0);
-
-   (void)mongoc_socket_connect(sock, (struct sockaddr *)&ipv4_addr, sizeof(ipv4_addr), 0);
-
-   start = bson_get_monotonic_time();
-
-   ssock = mongoc_stream_socket_new(sock);
-
-   poller = bson_malloc0(sizeof(*poller));
-   poller->revents = 0;
-   poller->events = POLLOUT | POLLERR | POLLHUP;
-   poller->stream = ssock;
-
-   while (bson_get_monotonic_time() - start < 5000 * 1000) {
-      BSON_ASSERT(mongoc_stream_poll(poller, 1, 10 * 1000) > 0);
-      if (poller->revents & POLLHUP) {
-         break;
-      }
-   }
-
-   mongoc_stream_destroy(ssock);
-   bson_free(poller);
-
-#ifdef _WIN32
-   ASSERT_WITHIN_TIME_INTERVAL((int)(bson_get_monotonic_time() - start), 1000 * 500, 1500 * 1000);
-#else
-   ASSERT_WITHIN_TIME_INTERVAL((int)(bson_get_monotonic_time() - start), 0, 500);
-#endif
-}
-
 void
 test_socket_install(TestSuite *suite)
 {
@@ -463,10 +417,4 @@ test_socket_install(TestSuite *suite)
       suite, "/Socket/timed_out [timeout:30]", test_mongoc_socket_timed_out, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull(
       suite, "/Socket/sendv [timeout:30]", test_mongoc_socket_sendv, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull(suite,
-                     "/Socket/connect_refusal [timeout:30]",
-                     test_mongoc_socket_poll_refusal,
-                     NULL,
-                     NULL,
-                     test_framework_skip_if_slow);
 }

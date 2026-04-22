@@ -149,7 +149,8 @@ struct _mongoc_cursor_t {
    uint32_t dblen;
 
    bson_error_t error;
-   bson_t error_doc; /* always initialized, and set with server errors. */
+   bson_t error_doc;        // Always initialized, and set with server errors.
+   bool had_stream_timeout; // True if previous command run resulted in a timeout on the mongoc_stream_t.
 
    const bson_t *current;
 
@@ -174,8 +175,7 @@ _mongoc_cursor_fetch_stream(mongoc_cursor_t *cursor, const mongoc_ss_log_context
 void
 _mongoc_cursor_collection(const mongoc_cursor_t *cursor, const char **collection, int *collection_len);
 bool
-_mongoc_cursor_run_command(
-   mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply, bool retry_prohibited);
+_mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const bson_t *opts, bson_t *reply);
 bool
 _mongoc_cursor_more(mongoc_cursor_t *cursor);
 

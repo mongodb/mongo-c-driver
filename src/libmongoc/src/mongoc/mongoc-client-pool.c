@@ -710,3 +710,21 @@ mongoc_client_pool_set_oidc_callback(mongoc_client_pool_t *pool, const mongoc_oi
    mongoc_oidc_cache_set_user_callback(pool->topology->oidc_cache, callback);
    return true;
 }
+
+bool
+mongoc_client_pool_append_metadata(mongoc_client_pool_t *pool,
+                                   const char *name,
+                                   const char *version,
+                                   const char *platform)
+{
+   BSON_ASSERT_PARAM(pool);
+   BSON_ASSERT_PARAM(name);
+   BSON_OPTIONAL_PARAM(version);
+   BSON_OPTIONAL_PARAM(platform);
+
+   bson_mutex_lock(&pool->mutex);
+   const bool ret = _mongoc_topology_scanner_append_metadata(pool->topology->scanner, name, version, platform);
+   bson_mutex_unlock(&pool->mutex);
+
+   return ret;
+}

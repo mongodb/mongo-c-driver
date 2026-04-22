@@ -23,11 +23,11 @@
 
 //
 
+#include <mongoc/mongoc-jitter-source-private.h>
+
 #include <bson/bson.h>
 
 /* error labels: see Transactions Spec */
-#define TRANSIENT_TXN_ERR "TransientTransactionError"
-#define UNKNOWN_COMMIT_RESULT "UnknownTransactionCommitResult"
 #define MAX_TIME_MS_EXPIRED "MaxTimeMSExpired"
 #define DEFAULT_MAX_COMMIT_TIME_MS 0
 #define SESSION_NEVER_USED (-1)
@@ -88,6 +88,7 @@ struct _mongoc_client_session_t {
    /* For testing only */
    int64_t with_txn_timeout_ms;
    const char *fail_commit_label;
+   mongoc_jitter_source_t *jitter_source;
 };
 
 bool
@@ -152,5 +153,8 @@ _mongoc_client_session_set_snapshot_time(mongoc_client_session_t *session, uint3
 
 void
 _mongoc_client_session_clear_snapshot_time(mongoc_client_session_t *session);
+
+void
+_mongoc_client_session_set_jitter_source(mongoc_client_session_t *session, mongoc_jitter_source_t *source);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

@@ -405,7 +405,7 @@ required for it to succeed:
 3. Download an augmented SBOM from a recent execution of the ``sbom`` task in
    an Evergreen patch or commit build and save it to ``etc/augmented-sbom.json``.
 
-Once these prerequesites are met, creating the release archive can be done using
+Once these prerequisites are met, creating the release archive can be done using
 the :any:`+signed-release` target.::
 
    $ ./tools/earthly.sh --artifact +signed-release/dist dist --version=$NEW_VERSION
@@ -676,6 +676,9 @@ __ https://github.com/conan-io/conan-center-index/issues/20879
 
 Docker
 ######
+
+.. warning::
+   This step is currently skipped. Publishing the Docker image is currently suspended. See `CXX-3042 <https://jira.mongodb.org/browse/CXX-3042>`_.
 
 The C driver does not have its own container image, but it may be useful to
 update the C driver used in the C++ container image build.

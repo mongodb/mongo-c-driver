@@ -25,6 +25,7 @@
 
 #include <bson/bson.h>
 
+#include <mlib/duration.h>
 #include <mlib/str.h>
 #include <mlib/str_vec.h>
 #include <mlib/time_point.h>
@@ -301,6 +302,23 @@ _bool_to_str(bool b)
          abort();                                                                \
       }                                                                          \
    } while (0)
+
+#define ASSERT_CMPDURATION(a, op, b)                                                     \
+   do {                                                                                  \
+      const mlib_duration _a = (a);                                                      \
+      const mlib_duration _b = (b);                                                      \
+      if (!mlib_duration_cmp(_a, op, _b)) {                                              \
+         MONGOC_STDERR_PRINTF("FAIL\n\nAssert Failure: %" PRId64 "us %s %" PRId64 "us\n" \
+                              "%s:%d  %s()\n",                                           \
+                              mlib_microseconds_count(_a),                               \
+                              BSON_STR(op),                                              \
+                              mlib_microseconds_count(_b),                               \
+                              __FILE__,                                                  \
+                              (int)(__LINE__),                                           \
+                              BSON_FUNC);                                                \
+         abort();                                                                        \
+      }                                                                                  \
+   } while (false)
 
 #define ASSERT_MEMCMP(a, b, n)                                                                            \
    do {                                                                                                   \

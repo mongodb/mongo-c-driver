@@ -108,14 +108,14 @@ _bson_impl_inline_grow(bson_impl_inline_t *impl, /* IN */
       data = bson_malloc(req);
 
       memcpy(data, impl->data, impl->len);
-      alloc->flags &= ~BSON_FLAG_INLINE;
+      alloc->flags &= ~BSON_FLAG_INLINE_DATA;
       alloc->parent = NULL;
       alloc->depth = 0;
-      alloc->buf = &alloc->alloc;
-      alloc->buflen = &alloc->alloclen;
+      alloc->indirect_buffer = NULL;
+      alloc->indirect_buflen = NULL;
       alloc->offset = 0;
-      alloc->alloc = data;
-      alloc->alloclen = req;
+      alloc->own_buffer = data;
+      alloc->own_buflen = req;
       alloc->realloc = bson_realloc_ctx;
       alloc->realloc_func_ctx = NULL;
 
@@ -160,15 +160,18 @@ _bson_impl_alloc_grow(bson_impl_alloc_t *impl, /* IN */
    MONGOC_DEBUG_ASSERT((size_t)grow_size <= BSON_MAX_SIZE);
    size_t req = impl->offset + (size_t)impl->len + (size_t)grow_size + (size_t)impl->depth;
 
-   if (req <= *impl->buflen) {
+   uint8_t **const buf_to_grow = impl->indirect_buffer ? impl->indirect_buffer : &impl->own_buffer;
+   size_t *const sz_to_grow = impl->indirect_buffer ? impl->indirect_buflen : &impl->own_buflen;
+
+   if (req <= *sz_to_grow) {
       return true;
    }
 
    req = _bson_round_up_alloc_size(req);
 
    if ((req <= BSON_MAX_SIZE) && impl->realloc) {
-      *impl->buf = impl->realloc(*impl->buf, req, impl->realloc_func_ctx);
-      *impl->buflen = req;
+      *buf_to_grow = impl->realloc(*buf_to_grow, req, impl->realloc_func_ctx);
+      *sz_to_grow = req;
       return true;
    }
 
@@ -204,7 +207,7 @@ _bson_grow(bson_t *bson,       /* IN */
 {
    BSON_ASSERT((size_t)grow_size <= BSON_MAX_SIZE);
 
-   if ((bson->flags & BSON_FLAG_INLINE)) {
+   if ((bson->flags & BSON_FLAG_INLINE_DATA)) {
       return _bson_impl_inline_grow((bson_impl_inline_t *)bson, grow_size);
    }
 
@@ -232,11 +235,12 @@ _bson_grow(bson_t *bson,       /* IN */
 static BSON_INLINE uint8_t *
 _bson_data(const bson_t *bson) /* IN */
 {
-   if ((bson->flags & BSON_FLAG_INLINE)) {
+   if ((bson->flags & BSON_FLAG_INLINE_DATA)) {
       return ((bson_impl_inline_t *)bson)->data;
    } else {
       bson_impl_alloc_t *impl = (bson_impl_alloc_t *)bson;
-      return (*impl->buf) + impl->offset;
+      uint8_t *base = impl->indirect_buffer ? *impl->indirect_buffer : impl->own_buffer;
+      return base + impl->offset;
    }
 }
 
@@ -405,12 +409,12 @@ _bson_append_bson_begin(bson_t *bson,           /* IN */
        * of child bson documents much simpler logic, as they can just
        * realloc the *buf pointer.
        */
-      if ((bson->flags & BSON_FLAG_INLINE)) {
+      if ((bson->flags & BSON_FLAG_INLINE_DATA)) {
          BSON_ASSERT(bson->len <= 120);
          if (!_bson_grow(bson, 128 - bson->len)) {
             return false;
          }
-         BSON_ASSERT(!(bson->flags & BSON_FLAG_INLINE));
+         BSON_ASSERT(!(bson->flags & BSON_FLAG_INLINE_DATA));
       }
 
       const uint8_t empty[5] = {5};
@@ -443,7 +447,7 @@ append_success:
     * buffers. This allows us to realloc directly from the child without
     * walking up to the parent bson_t.
     */
-   achild->flags = (BSON_FLAG_CHILD | BSON_FLAG_NO_FREE | BSON_FLAG_STATIC);
+   achild->flags = (BSON_FLAG_CHILD | BSON_FLAG_NO_FREE_DATA | BSON_FLAG_NO_FREE_OBJECT);
 
    if ((bson->flags & BSON_FLAG_CHILD)) {
       achild->depth = ((bson_impl_alloc_t *)bson)->depth + 1;
@@ -452,12 +456,12 @@ append_success:
    }
 
    achild->parent = bson;
-   achild->buf = aparent->buf;
-   achild->buflen = aparent->buflen;
+   achild->indirect_buffer = aparent->indirect_buffer ? aparent->indirect_buffer : &aparent->own_buffer;
+   achild->indirect_buflen = aparent->indirect_buflen ? aparent->indirect_buflen : &aparent->own_buflen;
    achild->offset = aparent->offset + aparent->len - 1 - 5;
    achild->len = 5;
-   achild->alloc = NULL;
-   achild->alloclen = 0;
+   achild->own_buffer = NULL;
+   achild->own_buflen = 0;
    achild->realloc = aparent->realloc;
    achild->realloc_func_ctx = aparent->realloc_func_ctx;
 
@@ -511,37 +515,20 @@ _bson_append_bson_end(bson_t *bson,  /* IN */
    return true;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_append_array_begin --
- *
- *       Start appending a new array.
- *
- *       Use @child to append to the data area for the given field.
- *
- *       It is a programming error to call any other bson function on
- *       @bson until bson_append_array_end() has been called. It is
- *       valid to call bson_append*() functions on @child.
- *
- *       This function is useful to allow building nested documents using
- *       a single buffer owned by the top-level bson document.
- *
- * Returns:
- *       true if successful; otherwise false and @child is invalid.
- *
- * Side effects:
- *       @child is initialized if true is returned.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 bson_append_array_begin(bson_t *bson,    /* IN */
                         const char *key, /* IN */
                         int key_length,  /* IN */
                         bson_t *child)   /* IN */
+{
+   return bson_append_array_unsafe_begin(bson, key, key_length, child);
+}
+
+bool
+bson_append_array_unsafe_begin(bson_t *bson,    /* IN */
+                               const char *key, /* IN */
+                               int key_length,  /* IN */
+                               bson_t *child)   /* IN */
 {
    BSON_ASSERT(bson);
    BSON_ASSERT(key);
@@ -1873,7 +1860,7 @@ bson_init(bson_t *bson)
 
    BSON_ASSERT(bson);
 
-   impl->flags = BSON_FLAG_INLINE | BSON_FLAG_STATIC;
+   impl->flags = BSON_FLAG_INLINE_DATA | BSON_FLAG_NO_FREE_OBJECT;
    impl->len = 5;
    impl->data[0] = 5;
    impl->data[1] = 0;
@@ -1924,15 +1911,15 @@ bson_init_static(bson_t *bson, const uint8_t *data, size_t length)
       return false;
    }
 
-   impl->flags = BSON_FLAG_STATIC | BSON_FLAG_RDONLY;
+   impl->flags = BSON_FLAG_NO_FREE_OBJECT | BSON_FLAG_RDONLY;
    impl->len = (uint32_t)length;
    impl->parent = NULL;
    impl->depth = 0;
-   impl->buf = &impl->alloc;
-   impl->buflen = &impl->alloclen;
+   impl->indirect_buffer = NULL;
+   impl->indirect_buflen = NULL;
    impl->offset = 0;
-   impl->alloc = (uint8_t *)data;
-   impl->alloclen = length;
+   impl->own_buffer = (uint8_t *)data;
+   impl->own_buflen = length;
    impl->realloc = NULL;
    impl->realloc_func_ctx = NULL;
 
@@ -1949,7 +1936,7 @@ bson_new(void)
    bson = BSON_ALIGNED_ALLOC(bson_t);
 
    impl = (bson_impl_inline_t *)bson;
-   impl->flags = BSON_FLAG_INLINE;
+   impl->flags = BSON_FLAG_INLINE_DATA;
    impl->len = 5;
    impl->data[0] = 5;
    impl->data[1] = 0;
@@ -1976,22 +1963,22 @@ bson_sized_new(size_t size)
 
    if (size <= BSON_INLINE_DATA_SIZE) {
       bson_init(b);
-      b->flags &= ~BSON_FLAG_STATIC;
+      b->flags &= ~BSON_FLAG_NO_FREE_OBJECT;
    } else {
       impl_a->flags = BSON_FLAG_NONE;
       impl_a->len = 5;
       impl_a->parent = NULL;
       impl_a->depth = 0;
-      impl_a->buf = &impl_a->alloc;
-      impl_a->buflen = &impl_a->alloclen;
+      impl_a->indirect_buffer = NULL;
+      impl_a->indirect_buflen = NULL;
       impl_a->offset = 0;
-      impl_a->alloclen = BSON_MAX(5, size);
-      impl_a->alloc = bson_malloc(impl_a->alloclen);
-      impl_a->alloc[0] = 5;
-      impl_a->alloc[1] = 0;
-      impl_a->alloc[2] = 0;
-      impl_a->alloc[3] = 0;
-      impl_a->alloc[4] = 0;
+      impl_a->own_buflen = BSON_MAX(5, size);
+      impl_a->own_buffer = bson_malloc(impl_a->own_buflen);
+      impl_a->own_buffer[0] = 5;
+      impl_a->own_buffer[1] = 0;
+      impl_a->own_buffer[2] = 0;
+      impl_a->own_buffer[3] = 0;
+      impl_a->own_buffer[4] = 0;
       impl_a->realloc = bson_realloc_ctx;
       impl_a->realloc_func_ctx = NULL;
    }
@@ -2065,10 +2052,10 @@ bson_new_from_buffer(uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_f
       return NULL;
    }
 
-   impl->flags = BSON_FLAG_NO_FREE;
+   impl->flags = BSON_FLAG_NO_FREE_DATA;
    impl->len = length;
-   impl->buf = buf;
-   impl->buflen = buf_len;
+   impl->indirect_buffer = buf;
+   impl->indirect_buflen = buf_len;
    impl->realloc = realloc_func;
    impl->realloc_func_ctx = realloc_func_ctx;
 
@@ -2098,9 +2085,9 @@ bson_copy_to(const bson_t *src, bson_t *dst)
    BSON_ASSERT(src);
    BSON_ASSERT(dst);
 
-   if ((src->flags & BSON_FLAG_INLINE)) {
+   if ((src->flags & BSON_FLAG_INLINE_DATA)) {
       memcpy(dst, src, sizeof *dst);
-      dst->flags = (BSON_FLAG_STATIC | BSON_FLAG_INLINE);
+      dst->flags = (BSON_FLAG_NO_FREE_OBJECT | BSON_FLAG_INLINE_DATA);
       return;
    }
 
@@ -2109,18 +2096,18 @@ bson_copy_to(const bson_t *src, bson_t *dst)
    MONGOC_DEBUG_ASSERT(len <= BSON_MAX_SIZE);
 
    adst = (bson_impl_alloc_t *)dst;
-   adst->flags = BSON_FLAG_STATIC;
+   adst->flags = BSON_FLAG_NO_FREE_OBJECT;
    adst->len = src->len;
    adst->parent = NULL;
    adst->depth = 0;
-   adst->buf = &adst->alloc;
-   adst->buflen = &adst->alloclen;
+   adst->indirect_buffer = NULL;
+   adst->indirect_buflen = NULL;
    adst->offset = 0;
-   adst->alloc = bson_malloc(len);
-   adst->alloclen = len;
+   adst->own_buffer = bson_malloc(len);
+   adst->own_buflen = len;
    adst->realloc = bson_realloc_ctx;
    adst->realloc_func_ctx = NULL;
-   memcpy(adst->alloc, data, src->len);
+   memcpy(adst->own_buffer, data, src->len);
 }
 
 
@@ -2189,11 +2176,16 @@ bson_destroy(bson_t *bson)
       return;
    }
 
-   if (!(bson->flags & (BSON_FLAG_RDONLY | BSON_FLAG_INLINE | BSON_FLAG_NO_FREE))) {
-      bson_free(*((bson_impl_alloc_t *)bson)->buf);
+   if (!(bson->flags & (BSON_FLAG_RDONLY | BSON_FLAG_INLINE_DATA | BSON_FLAG_NO_FREE_DATA))) {
+      bson_impl_alloc_t *const a = (bson_impl_alloc_t *)bson;
+      if (a->indirect_buffer) {
+         bson_free(*a->indirect_buffer);
+      } else {
+         bson_free(a->own_buffer);
+      }
    }
 
-   if (!(bson->flags & BSON_FLAG_STATIC)) {
+   if (!(bson->flags & BSON_FLAG_NO_FREE_OBJECT)) {
       bson_free(bson);
    }
 }
@@ -2221,14 +2213,16 @@ bson_reserve_buffer(bson_t *bson, uint32_t total_size)
       }
    }
 
-   if (bson->flags & BSON_FLAG_INLINE) {
+   if (bson->flags & BSON_FLAG_INLINE_DATA) {
       /* bson_grow didn't spill over */
       ((bson_impl_inline_t *)bson)->len = total_size;
       BSON_ASSERT(total_size <= BSON_INLINE_DATA_SIZE);
    } else {
       bson_impl_alloc_t *impl = (bson_impl_alloc_t *)bson;
       impl->len = total_size;
-      BSON_ASSERT(impl->offset <= *impl->buflen && *impl->buflen - impl->offset >= (size_t)total_size);
+      const size_t sz = impl->indirect_buffer ? *impl->indirect_buflen : impl->own_buflen;
+      (void)sz;
+      BSON_ASSERT(impl->offset <= sz && sz - impl->offset >= (size_t)total_size);
    }
 
    return _bson_data(bson);
@@ -2251,7 +2245,7 @@ bson_steal(bson_t *dst, bson_t *src)
       return false;
    }
 
-   if (src->flags & BSON_FLAG_INLINE) {
+   if (src->flags & BSON_FLAG_INLINE_DATA) {
       src_inline = (bson_impl_inline_t *)src;
       dst_inline = (bson_impl_inline_t *)dst;
       dst_inline->len = src_inline->len;
@@ -2262,12 +2256,12 @@ bson_steal(bson_t *dst, bson_t *src)
    } else {
       memcpy(dst, src, sizeof(bson_t));
       alloc = (bson_impl_alloc_t *)dst;
-      alloc->flags |= BSON_FLAG_STATIC;
-      alloc->buf = &alloc->alloc;
-      alloc->buflen = &alloc->alloclen;
+      alloc->flags |= BSON_FLAG_NO_FREE_OBJECT;
+      alloc->indirect_buffer = NULL;
+      alloc->indirect_buflen = NULL;
    }
 
-   if (!(src->flags & BSON_FLAG_STATIC)) {
+   if (!(src->flags & BSON_FLAG_NO_FREE_OBJECT)) {
       bson_free(src);
    } else {
       /* src is invalid after steal */
@@ -2296,18 +2290,19 @@ bson_destroy_with_steal(bson_t *bson, bool steal, uint32_t *length)
 
    if ((bson->flags & (BSON_FLAG_CHILD | BSON_FLAG_IN_CHILD | BSON_FLAG_RDONLY))) {
       /* Do nothing */
-   } else if ((bson->flags & BSON_FLAG_INLINE)) {
+   } else if ((bson->flags & BSON_FLAG_INLINE_DATA)) {
       bson_impl_inline_t *inl;
 
       inl = (bson_impl_inline_t *)bson;
       ret = bson_malloc(bson->len);
       memcpy(ret, inl->data, bson->len);
    } else {
-      bson_impl_alloc_t *alloc;
-
-      alloc = (bson_impl_alloc_t *)bson;
-      ret = *alloc->buf;
-      *alloc->buf = NULL;
+      bson_impl_alloc_t *const alloc = (bson_impl_alloc_t *)bson;
+      ret = alloc->indirect_buffer ? *alloc->indirect_buffer : alloc->own_buffer;
+      if (alloc->indirect_buffer) {
+         *alloc->indirect_buffer = NULL;
+      }
+      alloc->own_buffer = NULL;
    }
 
    bson_destroy(bson);
@@ -2857,7 +2852,7 @@ bson_append_array_builder_begin(bson_t *bson, const char *key, int key_length, b
    BSON_ASSERT_PARAM(key);
    BSON_ASSERT_PARAM(child);
    *child = bson_array_builder_new();
-   bool ok = bson_append_array_begin(bson, key, key_length, &(*child)->bson);
+   bool ok = bson_append_array_unsafe_begin(bson, key, key_length, &(*child)->bson);
    if (!ok) {
       bson_array_builder_destroy(*child);
       *child = NULL;

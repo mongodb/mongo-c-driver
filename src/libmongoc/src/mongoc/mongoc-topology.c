@@ -403,8 +403,9 @@ mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded)
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (mongoc_uri_get_option_as_bool(uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
-      /* retryWrites requires sessions, which require crypto - just warn */
-      MONGOC_WARNING("retryWrites not supported without an SSL crypto library");
+      // retryWrites needs crypto to retry server errors that require sessions. (See Retryable Writes spec)
+      // retryWrites does not need crypto to retry server overload errors. (See Client Backpressure spec)
+      MONGOC_WARNING("retryWrites is not fully supported without an SSL crypto library");
    }
 #endif
 
@@ -1898,6 +1899,8 @@ _mongoc_topology_handle_app_error(mongoc_topology_t *topology,
                                   uint32_t generation,
                                   const bson_oid_t *service_id)
 {
+   BSON_ASSERT_PARAM(reply);
+
    bson_error_t server_selection_error;
    const mongoc_server_description_t *sd;
    bool cleared_pool = false;
@@ -1932,6 +1935,9 @@ _mongoc_topology_handle_app_error(mongoc_topology_t *topology,
    if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
       cleared_pool = _handle_sdam_app_error_command(topology, td.ptr, server_id, generation, service_id, sd, reply);
    } else {
+      if (mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_SYSTEMOVERLOADEDERROR)) {
+         goto ignore_error;
+      }
       /* Invalidate the server that saw the error. */
       mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
       sd = mongoc_topology_description_server_by_id_const(tdmod.new_td, server_id, NULL);

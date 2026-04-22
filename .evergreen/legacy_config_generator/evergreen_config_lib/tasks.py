@@ -249,6 +249,15 @@ all_tasks = [
                 content_type='${content_type|application/x-gzip}',
             ),
         ],
+        allowed_requesters=[
+            'ad_hoc',
+            'commit',
+            # 'github_merge_queue'
+            # 'github_pr',
+            # 'github_tag',
+            'patch',
+            'trigger',
+        ],
     ),
     NamedTask(
         'rpm-package-build',
@@ -275,6 +284,15 @@ all_tasks = [
                 'export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64\n'
                 '.evergreen/scripts/build_snapshot_rpm.sh'
             ),
+        ],
+        allowed_requesters=[
+            'ad_hoc',
+            'commit',
+            # 'github_merge_queue'
+            # 'github_pr',
+            # 'github_tag',
+            'patch',
+            'trigger',
         ],
     ),
     CompileTask('debug-compile-with-warnings', CFLAGS='-Werror -Wno-cast-align'),
@@ -345,8 +363,10 @@ class CoverageTask(MatrixTask):
         extra = {'COVERAGE': 'ON'}
         if self.cse:
             extra['CLIENT_SIDE_ENCRYPTION'] = 'ON'
-            yield func('run-mock-kms-servers')
+            yield func('csfle-setup')
         yield func('run-tests', AUTH=self.display('auth'), SSL=self.display('ssl'), **extra)
+        if self.cse:
+            yield func('csfle-teardown')
         yield func('upload coverage')
         yield func('update codecov.io')
 
@@ -357,15 +377,6 @@ class CoverageTask(MatrixTask):
         require(self.setting_eq('ssl', 'openssl'))
         require(self.setting_eq('version', 'latest'))
         require(self.settings.auth is True)
-
-        if not self.cse:
-            # No further requirements
-            return True
-
-        # CSE has extra requirements
-        if self.settings.version != 'latest':
-            # We only work with 4.2 or newer for CSE
-            require(Version(str(self.settings.version)) >= Version('4.2'))
         return True
 
 
@@ -636,25 +647,26 @@ for server_version in ['8.0', '7.0', '6.0', '5.0']:
 class IPTask(MatrixTask):
     axes = OD(
         [
+            ('version', ['7.0', 'latest']),
             ('client', ['ipv6', 'ipv4', 'localhost']),
             ('server', ['ipv6', 'ipv4']),
         ]
     )
 
-    name_prefix = 'test-latest'
+    name_prefix = 'test'
 
     def additional_dependencies(self) -> Iterable[DependencySpec]:
         yield 'debug-compile-nosasl-nossl'
 
     def additional_tags(self) -> Iterable[str]:
         yield from super().additional_tags()
-        yield from ('nossl', 'nosasl', 'server', 'ipv4-ipv6', 'latest')
+        yield from ('nossl', 'nosasl', 'server', 'ipv4-ipv6', self.settings.version)
 
     def post_commands(self) -> Iterable[Value]:
         return [
             func('fetch-build', BUILD_NAME='debug-compile-nosasl-nossl'),
             func('fetch-det'),
-            func('bootstrap-mongo-orchestration'),
+            func('bootstrap-mongo-orchestration', MONGODB_VERSION=self.settings.version),
             func('run-simple-http-server'),
             func(
                 'run-tests',
@@ -669,6 +681,7 @@ class IPTask(MatrixTask):
     def name_parts(self) -> Iterable[str]:
         return (
             self.name_prefix,
+            self.display('version'),
             f'server-{self.display("server")}',
             f'client-{self.display("client")}',
             'noauth',
@@ -726,7 +739,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
-            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -781,7 +794,7 @@ class OCSPTask(MatrixTask):
             ('delegate', ['delegate', 'nodelegate']),
             ('cert', ['rsa', 'ecdsa']),
             ('ssl', ['openssl', 'darwinssl', 'winssl']),
-            ('version', ['latest', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -880,7 +893,7 @@ class OCSPTask(MatrixTask):
             prohibit(self.test == 'soft_fail_test')
 
             # Only Server 6.0+ are available on MacOS ARM64.
-            if self.settings.version != 'latest':
+            if self.settings.version not in ['rapid', 'latest']:
                 prohibit(Version(self.settings.version) < Version('6.0'))
 
         if self.settings.ssl == 'darwinssl' or self.settings.ssl == 'winssl':

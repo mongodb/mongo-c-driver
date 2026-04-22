@@ -138,7 +138,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
          message (STATUS "  Not found")
       endif ()
    # The compression format below this version isn't supported. See SERVER-43070
-   elseif (${ZSTD_VERSION} VERSION_LESS "0.8.0")
+   elseif ("${ZSTD_VERSION}" VERSION_LESS "0.8.0")
       if (ENABLE_ZSTD MATCHES "ON")
          message (FATAL_ERROR "Detected zstd version ${ZSTD_VERSION} but version 0.8.0 required")
       else ()
@@ -567,7 +567,6 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-change-stream.c
-   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd-deprecated.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-find.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
@@ -589,6 +588,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-http.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-interrupt.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-jitter-source.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-log.c
@@ -606,6 +606,8 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rpc.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-retryable-cmd.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-retry-backoff-generator.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
@@ -947,6 +949,9 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    if(SASL_BACKEND STREQUAL "Cyrus")
       set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lsasl2")
    endif()
+   if(M_LIBRARY)
+      set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS "-lm")
+   endif()
 
    set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
@@ -1048,6 +1053,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/mock_server/request.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/sync-queue.c
    ${PROJECT_SOURCE_DIR}/tests/stream-tracker.c
+   ${PROJECT_SOURCE_DIR}/tests/test-client-backpressure.c
    ${PROJECT_SOURCE_DIR}/tests/test-conveniences.c
    ${PROJECT_SOURCE_DIR}/tests/test-happy-eyeballs.c
    ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
@@ -1102,6 +1108,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retry-backoff-generator.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryability-helpers.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
@@ -1307,10 +1314,10 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
    mongoc_add_example (fam ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 
    if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
-      mongoc_add_example (client-side-encryption-schema-map ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-      mongoc_add_example (client-side-encryption-server-schema ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-      mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
-      mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+      mongoc_add_example (client-side-encryption-schema-map ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c)
+      mongoc_add_example (client-side-encryption-server-schema ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c)
+      mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c)
+      mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c)
       mongoc_add_example (client-side-encryption-doc-snippets ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
    endif ()
 

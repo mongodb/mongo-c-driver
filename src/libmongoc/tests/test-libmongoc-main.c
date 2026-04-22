@@ -93,6 +93,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_read_concern_install);
    TEST_INSTALL(test_read_write_concern_install);
    TEST_INSTALL(test_read_prefs_install);
+   TEST_INSTALL(test_retry_backoff_generator_install);
    TEST_INSTALL(test_retryable_writes_install);
    TEST_INSTALL(test_retryable_reads_install);
    TEST_INSTALL(test_socket_install);
@@ -165,6 +166,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_secure_channel_install);
    TEST_INSTALL(test_stream_tracker_install);
    TEST_INSTALL(test_oidc_auth_install);
+   TEST_INSTALL(test_backpressure_install);
 
    const int ret = TestSuite_Run(&suite);
 

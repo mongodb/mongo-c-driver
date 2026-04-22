@@ -48,6 +48,8 @@
 #include <mongoc/mongoc-queue-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
+#include <mongoc/mongoc-retry-backoff-generator-private.h>
+#include <mongoc/mongoc-retryable-cmd-private.h>
 #include <mongoc/mongoc-set-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-thread-private.h>
@@ -91,13 +93,14 @@
 #define MONGOC_LOG_DOMAIN "client"
 
 
-static void
+static bool
 _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
                                    mongoc_server_stream_t *server_stream,
                                    int64_t cursor_id,
                                    const char *db,
                                    const char *collection,
-                                   mongoc_client_session_t *cs);
+                                   mongoc_client_session_t *cs,
+                                   bson_error_t *error);
 
 #define DNS_ERROR(_msg, ...)                                                                                 \
    do {                                                                                                      \
@@ -935,23 +938,6 @@ _mongoc_client_create_stream(mongoc_client_t *client, const mongoc_host_list_t *
 }
 
 
-bool
-_mongoc_client_recv(mongoc_client_t *client,
-                    mcd_rpc_message *rpc,
-                    mongoc_buffer_t *buffer,
-                    mongoc_server_stream_t *server_stream,
-                    bson_error_t *error)
-{
-   BSON_ASSERT_PARAM(client);
-   BSON_ASSERT(rpc);
-   BSON_ASSERT(buffer);
-   BSON_ASSERT(server_stream);
-   BSON_ASSERT_PARAM(error);
-
-   return mongoc_cluster_try_recv(&client->cluster, rpc, buffer, server_stream, error);
-}
-
-
 mongoc_client_t *
 mongoc_client_new(const char *uri_string)
 {
@@ -1118,7 +1104,6 @@ mongoc_client_new_from_uri_with_error(const mongoc_uri_t *uri, bson_error_t *err
    RETURN(client);
 }
 
-
 /* precondition: topology is valid */
 mongoc_client_t *
 _mongoc_client_new_from_topology(mongoc_topology_t *topology)
@@ -1141,6 +1126,10 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->error_api_set = false;
    client->client_sessions = mongoc_set_new(8, NULL, NULL);
    client->csid_rand_seed = (unsigned int)bson_get_monotonic_time();
+   client->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
+   client->max_adaptive_retries = _mongoc_uri_get_max_adaptive_retries(client->uri);
+   client->enable_overload_retargeting = mongoc_uri_get_option_as_bool(
+      client->uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1216,6 +1205,7 @@ mongoc_client_destroy(mongoc_client_t *client)
       mongoc_uri_destroy(client->uri);
       mongoc_set_destroy(client->client_sessions);
       mongoc_server_api_destroy(client->api);
+      _mongoc_jitter_source_destroy(client->jitter_source);
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup(&client->ssl_opts, true);
@@ -1626,6 +1616,60 @@ mongoc_client_set_read_prefs(mongoc_client_t *client, const mongoc_read_prefs_t 
    }
 }
 
+typedef struct {
+   mongoc_cluster_t *cluster;
+   mongoc_cmd_parts_t *parts;
+   mongoc_server_stream_t *retry_server_stream;
+} retryable_read_context_t;
+
+static bool
+_retryable_read_execute(void *user_data, bson_t *reply, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(user_data);
+
+   retryable_read_context_t *const context = (retryable_read_context_t *)user_data;
+
+   return mongoc_cluster_run_command_monitored(context->cluster, &context->parts->assembled, reply, error);
+}
+
+static mongoc_server_description_t const *
+_retryable_read_select_retry_server(void *user_data,
+                                    mongoc_deprioritized_servers_t *deprioritized_servers,
+                                    bson_t *reply,
+                                    bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(user_data);
+   BSON_ASSERT_PARAM(deprioritized_servers);
+   BSON_UNUSED(reply);
+   BSON_UNUSED(error);
+
+   retryable_read_context_t *const context = (retryable_read_context_t *)user_data;
+
+   const mongoc_ss_log_context_t ss_log_context = {
+      .operation = context->parts->assembled.command_name,
+      .has_operation_id = true,
+      .operation_id = context->parts->assembled.operation_id,
+   };
+
+   mongoc_server_stream_cleanup(context->retry_server_stream);
+
+   context->retry_server_stream = mongoc_cluster_stream_for_reads(context->cluster,
+                                                                  &ss_log_context,
+                                                                  context->parts->read_prefs,
+                                                                  context->parts->assembled.session,
+                                                                  deprioritized_servers,
+                                                                  NULL /* reply */,
+                                                                  NULL /* error */);
+
+   if (!context->retry_server_stream) {
+      return NULL;
+   }
+
+   context->parts->assembled.server_stream = context->retry_server_stream;
+
+   return context->retry_server_stream->sd;
+}
+
 static bool
 _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                                   mongoc_cmd_parts_t *parts,
@@ -1633,13 +1677,9 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
                                                   bson_t *reply,
                                                   bson_error_t *error)
 {
-   mongoc_server_stream_t *retry_server_stream = NULL;
-   bool is_retryable = true;
-   bool ret;
-   bson_t reply_local;
+   bson_t reply_local = BSON_INITIALIZER;
 
    BSON_ASSERT_PARAM(client);
-   BSON_UNUSED(server_stream);
 
    if (reply == NULL) {
       reply = &reply_local;
@@ -1647,61 +1687,56 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
 
    ENTRY;
 
-   BSON_ASSERT(parts->is_retryable_read);
+   retryable_read_context_t context = {
+      .cluster = &client->cluster,
+      .parts = parts,
+      .retry_server_stream = NULL,
+   };
 
-retry:
-   ret = mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error);
+   mongoc_retry_eligibility_t retry_eligibility;
+   if (parts->is_retryable_read) {
+      // Meets requirements of Retryable Read.
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ;
+   } else {
+      // Check if eligible for overload retries:
+      retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
 
-   /* If a retryable error is encountered and the read is retryable, select
-    * a new readable stream and retry. If server selection fails or the selected
-    * server does not support retryable reads, fall through and allow the
-    * original error to be reported. */
-   if (is_retryable && _mongoc_read_error_get_type(ret, error, reply) == MONGOC_READ_ERR_RETRY) {
-      /* each read command may be retried at most once */
-      is_retryable = false;
-
-      {
-         mongoc_deprioritized_servers_t *const ds = mongoc_deprioritized_servers_new();
-
-         if (retry_server_stream) {
-            mongoc_deprioritized_servers_add_if_sharded(
-               ds, retry_server_stream->topology_type, retry_server_stream->sd);
-            mongoc_server_stream_cleanup(retry_server_stream);
-         } else {
-            mongoc_deprioritized_servers_add_if_sharded(ds, server_stream->topology_type, server_stream->sd);
+      // runCommand is not eligible for overload retries if retryReads=false or retryWrites=false.
+      if (parts->is_raw_command) {
+         if (!mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS) ||
+             !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+            retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
          }
-
-         const mongoc_ss_log_context_t ss_log_context = {
-            .operation = parts->assembled.command_name,
-            .has_operation_id = true,
-            .operation_id = parts->assembled.operation_id,
-         };
-         retry_server_stream = mongoc_cluster_stream_for_reads(&client->cluster,
-                                                               &ss_log_context,
-                                                               parts->read_prefs,
-                                                               parts->assembled.session,
-                                                               ds,
-                                                               NULL /* reply */,
-                                                               NULL /* error */);
-
-         mongoc_deprioritized_servers_destroy(ds);
       }
 
-      if (retry_server_stream) {
-         parts->assembled.server_stream = retry_server_stream;
-         bson_destroy(reply);
-         GOTO(retry);
+      // Reads are not eligible for overload retries if retryReads=false.
+      if (parts->is_read_command &&
+          !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
+         retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
       }
    }
 
-   if (retry_server_stream) {
-      mongoc_server_stream_cleanup(retry_server_stream);
-   }
+   const mongoc_retryable_cmd_t retryable_cmd = {
+      .execute = _retryable_read_execute,
+      .select_retry_server = _retryable_read_select_retry_server,
+      .user_data = &context,
+      .retry_eligibility = retry_eligibility,
+      .jitter_source = client->jitter_source,
+      .initial_server_description = server_stream->sd,
+      .max_adaptive_retries = client->max_adaptive_retries,
+      .enable_overload_retargeting = client->enable_overload_retargeting,
+   };
+
+   const bool ret = _mongoc_retryable_cmd_run(&retryable_cmd, reply, error);
+
+   mongoc_server_stream_cleanup(context.retry_server_stream);
 
    if (ret && error) {
       /* if a retry succeeded, clear the initial error */
       memset(error, 0, sizeof(bson_error_t));
    }
+
+   bson_destroy(&reply_local);
 
    RETURN(ret);
 }
@@ -1726,11 +1761,11 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
       return false;
    }
 
-   if (parts->is_retryable_write) {
+   if (parts->is_write_command) {
       mongoc_server_stream_t *retry_server_stream = NULL;
 
       bool ret = mongoc_cluster_run_retryable_write(
-         &client->cluster, &parts->assembled, true /* is_retryable */, &retry_server_stream, reply, error);
+         &client->cluster, &parts->assembled, parts->is_retryable_write, &retry_server_stream, reply, error);
 
       if (retry_server_stream) {
          mongoc_server_stream_cleanup(retry_server_stream);
@@ -1740,11 +1775,7 @@ _mongoc_client_command_with_stream(mongoc_client_t *client,
       RETURN(ret);
    }
 
-   if (parts->is_retryable_read) {
-      RETURN(_mongoc_client_retryable_read_command_with_stream(client, parts, server_stream, reply, error));
-   }
-
-   RETURN(mongoc_cluster_run_command_monitored(&client->cluster, &parts->assembled, reply, error));
+   RETURN(_mongoc_client_retryable_read_command_with_stream(client, parts, server_stream, reply, error));
 }
 
 
@@ -1957,6 +1988,8 @@ _mongoc_client_command_with_opts(mongoc_client_t *client,
       }
    }
 
+   parts.is_raw_command = mode == MONGOC_CMD_RAW;
+
    ret = _mongoc_client_command_with_stream(client, &parts, user_prefs, server_stream, reply_ptr, error);
 
    reply_initialized = true;
@@ -2142,8 +2175,6 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
                            const char *collection,
                            mongoc_client_session_t *cs)
 {
-   mongoc_server_stream_t *server_stream;
-
    ENTRY;
 
    BSON_ASSERT_PARAM(client);
@@ -2151,15 +2182,20 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
    BSON_ASSERT_PARAM(collection);
    BSON_ASSERT(cursor_id);
 
-   /* don't attempt reconnect if server unavailable, and ignore errors */
-   server_stream =
-      mongoc_cluster_stream_for_server(&client->cluster, server_id, false /* reconnect_ok */, NULL, NULL, NULL);
+   bson_error_t error = {0};
+   // Do not attempt to reconnect when in load balanced mode. Cursors are pinned to connections in load balanced mode. A
+   // new connection might not connect to the same backing server.
+   const bool reconnect_ok = _mongoc_topology_get_type(client->topology) != MONGOC_TOPOLOGY_LOAD_BALANCED;
+   // Try to reconnect. Log on error.
+   mongoc_server_stream_t *server_stream =
+      mongoc_cluster_stream_for_server(&client->cluster, server_id, reconnect_ok, NULL, NULL, &error);
 
    if (!server_stream) {
-      return;
+      MONGOC_INFO("Ignoring failure to connect to kill cursor %" PRId64 ": %s", cursor_id, error.message);
+   } else if (!_mongoc_client_killcursors_command(
+                 &client->cluster, server_stream, cursor_id, db, collection, cs, &error)) {
+      MONGOC_INFO("Ignoring failure to kill cursor %" PRId64 ": %s", cursor_id, error.message);
    }
-
-   _mongoc_client_killcursors_command(&client->cluster, server_stream, cursor_id, db, collection, cs);
 
    mongoc_server_stream_cleanup(server_stream);
 
@@ -2167,16 +2203,18 @@ _mongoc_client_kill_cursor(mongoc_client_t *client,
 }
 
 
-static void
+static bool
 _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
                                    mongoc_server_stream_t *server_stream,
                                    int64_t cursor_id,
                                    const char *db,
                                    const char *collection,
-                                   mongoc_client_session_t *cs)
+                                   mongoc_client_session_t *cs,
+                                   bson_error_t *error)
 {
    bson_t command = BSON_INITIALIZER;
    mongoc_cmd_parts_t parts;
+   bool ok = false;
 
    ENTRY;
 
@@ -2185,17 +2223,22 @@ _mongoc_client_killcursors_command(mongoc_cluster_t *cluster,
    parts.assembled.operation_id = ++cluster->operation_id;
    mongoc_cmd_parts_set_session(&parts, cs);
 
-   if (mongoc_cmd_parts_assemble(&parts, server_stream, NULL)) {
-      /* Find, getMore And killCursors Commands Spec: "The result from the
-       * killCursors command MAY be safely ignored."
-       */
-      (void)mongoc_cluster_run_command_monitored(cluster, &parts.assembled, NULL, NULL);
+   if (!mongoc_cmd_parts_assemble(&parts, server_stream, error)) {
+      GOTO(fail);
+   }
+   /* Find, getMore And killCursors Commands Spec: "The result from the
+    * killCursors command MAY be safely ignored."
+    */
+   if (!mongoc_cluster_run_command_monitored(cluster, &parts.assembled, NULL, error)) {
+      GOTO(fail);
    }
 
+   ok = true;
+fail:
    mongoc_cmd_parts_cleanup(&parts);
    bson_destroy(&command);
 
-   EXIT;
+   RETURN(ok);
 }
 
 
@@ -2745,4 +2788,30 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
 
    mongoc_oidc_cache_set_user_callback(client->topology->oidc_cache, callback);
    return true;
+}
+
+void
+_mongoc_client_set_jitter_source(mongoc_client_t *client, mongoc_jitter_source_t *source)
+{
+   _mongoc_jitter_source_destroy(client->jitter_source);
+   client->jitter_source = source;
+}
+
+bool
+mongoc_client_append_metadata(mongoc_client_t *client, const char *name, const char *version, const char *platform)
+{
+   BSON_ASSERT_PARAM(client);
+   BSON_ASSERT_PARAM(name);
+   BSON_OPTIONAL_PARAM(version);
+   BSON_OPTIONAL_PARAM(platform);
+
+   BSON_ASSERT(client->topology);
+
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR("Cannot use mongoc_client_append_metadata on a pooled client, use "
+                   "mongoc_client_pool_append_metadata");
+      return false;
+   }
+
+   return _mongoc_topology_scanner_append_metadata(client->topology->scanner, name, version, platform);
 }

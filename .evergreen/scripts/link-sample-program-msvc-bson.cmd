@@ -4,9 +4,9 @@ REM   LINK_STATIC              Whether to statically link to libbson
 rem Ensure Cygwin executables like sh.exe are not in PATH
 rem set PATH=C:\Windows\system32;C:\Windows
 
-rem Load environment for Visual Studio 15 2017.
-rem https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-150
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat" || goto :error
+rem Load environment for Visual Studio 17 2022.
+rem https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170
+call "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat" || goto :error
 
 echo on
 echo
@@ -27,9 +27,9 @@ set PATH=%PATH%;%INSTALL_DIR%\bin
 cd %BUILD_DIR% || goto :error
 
 if "%LINK_STATIC%"=="1" (
-  uvx cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .. || goto :error
+  uvx cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .. || goto :error
 ) else (
-  uvx cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .. || goto :error
+  uvx cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .. || goto :error
 )
 
 uvx cmake --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
@@ -43,7 +43,7 @@ if "%LINK_STATIC%"=="1" (
 )
 
 cd %EXAMPLE_DIR% || goto :error
-uvx cmake -G "Visual Studio 15 2017" -A x64 -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
+uvx cmake -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake . || goto :error
 uvx cmake --build . --config "Debug" --target ALL_BUILD -- /m || goto :error
 
 rem Yes, they should've named it "dependencies".

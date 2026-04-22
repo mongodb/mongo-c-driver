@@ -1708,6 +1708,44 @@ test_corrupt_too_small_chunk(void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_writing_beyond_end(void)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   bson_error_t error;
+
+   mongoc_gridfs_t *gridfs = mongoc_client_get_gridfs(client, "test_writing_beyond_end", NULL, &error);
+   ASSERT_OR_PRINT(gridfs, error);
+
+   // Drop prior test data:
+   ASSERT_OR_PRINT(mongoc_gridfs_drop(gridfs, &error), error);
+
+   // Write a file:
+   mongoc_gridfs_file_opt_t opts = {.filename = "test_file", .chunk_size = 100};
+   mongoc_iovec_t iov = {.iov_base = (void *)"foobar", .iov_len = 7};
+   mongoc_gridfs_file_t *file = mongoc_gridfs_create_file(gridfs, &opts);
+   ASSERT_CMPSSIZE_T(mongoc_gridfs_file_writev(file, &iov, 1, 0), ==, 7);
+
+   // Seek beyond end-of-file in same chunk:
+   ASSERT_CMPINT(0, ==, mongoc_gridfs_file_seek(file, 10, SEEK_SET));
+
+   // Write again:
+   ASSERT_CMPSIZE_T(mongoc_gridfs_file_writev(file, &iov, 1, 0), ==, 7);
+
+   // Seek beyond this chunk:
+   ASSERT_CMPINT(0, ==, mongoc_gridfs_file_seek(file, 1000, SEEK_SET));
+
+   // Write again:
+   ASSERT_CMPSIZE_T(mongoc_gridfs_file_writev(file, &iov, 1, 0), ==, 7);
+
+   BSON_ASSERT(mongoc_gridfs_file_save(file));
+   mongoc_gridfs_file_destroy(file);
+
+   mongoc_gridfs_destroy(gridfs);
+   mongoc_client_destroy(client);
+}
+
+
 void
 test_gridfs_install(TestSuite *suite)
 {
@@ -1747,4 +1785,5 @@ test_gridfs_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/gridfs_old/reading_multiple_chunks", test_reading_multiple_chunks);
    TestSuite_AddLive(suite, "/gridfs_old/corrupt/zero_chunk", test_corrupt_zero_chunk);
    TestSuite_AddLive(suite, "/gridfs_old/corrupt/too_small_chunk", test_corrupt_too_small_chunk);
+   TestSuite_AddLive(suite, "/gridfs_old/writing_beyond_end", test_writing_beyond_end);
 }

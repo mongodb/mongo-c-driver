@@ -176,6 +176,8 @@ test_framework_skip_if_not_mongos(void);
 int
 test_framework_skip_if_not_replset(void);
 int
+test_framework_skip_if_not_replset_with_secondary(void);
+int
 test_framework_skip_if_not_single(void);
 int
 test_framework_skip_if_offline(void);
@@ -295,5 +297,10 @@ test_framework_skip_if_no_server_ssl(void);
 // consuming with ASan.
 int
 skip_if_no_large_allocations(void);
+
+// `skip_if_high_server_runtime_variance` skips if the environment indicates there is high runtime variance in the
+// server. Useful to skip time sensitive tests on macOS in Evergreen.
+int
+skip_if_high_server_runtime_variance(void);
 
 #endif

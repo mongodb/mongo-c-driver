@@ -1191,7 +1191,7 @@ _mongoc_write_error_get_type(bson_t *reply)
 {
    bson_error_t error;
 
-   if (mongoc_error_has_label(reply, RETRYABLE_WRITE_ERROR)) {
+   if (mongoc_error_has_label(reply, MONGOC_ERROR_LABEL_RETRYABLEWRITEERROR)) {
       return MONGOC_WRITE_ERR_RETRY;
    }
 

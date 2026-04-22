@@ -78,6 +78,11 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"pool-clear-checkout-error", SKIP_ALL_TESTS},
    {"pool-clear-application-error", SKIP_ALL_TESTS},
    {"pool-cleared-error", "PoolClearedError does not mark server unknown"}, // requires multithreaded runner
+   {"backpressure-network-error-fail-single", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-timeout-error-single", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-error-fail-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-network-timeout-error-replicaset", SKIP_ALL_TESTS}, // Implemented in test-client-backpressure.c
+   {"backpressure-server-description-unchanged-on-min-pool-size-population-error", SKIP_ALL_TESTS}, // No minPoolSize.
 
    // Requires streaming heartbeat support
    {"rediscover-quickly-after-step-down", SKIP_ALL_TESTS},
@@ -104,10 +109,24 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not support the optional findOne helper.
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.findOne succeeds after retryable handshake server error (ShutdownInProgress)"},
+   {"tests that operations retry at most maxAttempts=2 times", "collection.findOne retries at most maxAttempts=2 times"},
+   {"tests that operations respect overload backoff retry loop", "collection.findOne retries using operation loop"},
+   {"tests that operations respect overload backoff retry loop", "collection.findOne retries using operation loop"},
+   {"tests that operations respect overload backoff retry loop", "collection.findOne (read) does not retry if retryReads=false"},
 
    // libmongoc does not support the optional listIndexNames helper.
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake network error"},
    {"retryable reads handshake failures", "collection.listIndexNames succeeds after retryable handshake server error (ShutdownInProgress)"},
+   {"tests that operations retry at most maxAttempts=2 times", "collection.listIndexNames retries at most maxAttempts=2 times"},
+   {"tests that operations respect overload backoff retry loop", "collection.listIndexNames retries using operation loop"},
+   {"tests that operations respect overload backoff retry loop", "collection.listIndexNames retries using operation loop"},
+   {"tests that operations respect overload backoff retry loop", "collection.listIndexNames (read) does not retry if retryReads=false"},
+
+
+   // libmongoc does not support the optional dropIndexes helper.
+   {"tests that operations retry at most maxAttempts=2 times", "collection.dropIndexes retries at most maxAttempts=2 times"},
+   {"tests that operations respect overload backoff retry loop", "collection.dropIndexes retries using operation loop"},
+   {"tests that operations respect overload backoff retry loop", "collection.dropIndexes (write) does not retry if retryWrites=false"},
 
    // libmongoc single-host non-replicaSet URI first transitions Unknown->Single, not Unknown->Unknown
    {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
@@ -324,7 +343,6 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
 {
    bson_t *kill_all_sessions_cmd = NULL;
    bool ret = false;
-   bool cmd_ret = false;
    bson_error_t cmd_error = {0};
 
    if (test_framework_is_oidc()) {
@@ -349,16 +367,13 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
       for (i = 0; i < server_ids.len; i++) {
          uint32_t server_id = _mongoc_array_index(&server_ids, uint32_t, i);
 
-         cmd_ret = mongoc_client_command_simple_with_server_id(test_runner->internal_client,
-                                                               "admin",
-                                                               kill_all_sessions_cmd,
-                                                               NULL /* read prefs. */,
-                                                               server_id,
-                                                               NULL,
-                                                               &cmd_error);
-
-         /* Ignore error code 11601 as a workaround for SERVER-38335. */
-         if (!cmd_ret && cmd_error.code != 11601) {
+         if (!mongoc_client_command_simple_with_server_id(test_runner->internal_client,
+                                                          "admin",
+                                                          kill_all_sessions_cmd,
+                                                          NULL /* read prefs. */,
+                                                          server_id,
+                                                          NULL,
+                                                          &cmd_error)) {
             test_set_error(
                error, "Unexpected error running killAllSessions on server (%d): %s", (int)server_id, cmd_error.message);
             _mongoc_array_destroy(&server_ids);
@@ -368,11 +383,8 @@ test_runner_terminate_open_transactions(test_runner_t *test_runner, bson_error_t
       _mongoc_array_destroy(&server_ids);
    } else {
       /* Run on primary. */
-      cmd_ret = mongoc_client_command_simple(
-         test_runner->internal_client, "admin", kill_all_sessions_cmd, NULL /* read prefs. */, NULL, &cmd_error);
-
-      /* Ignore error code 11601 as a workaround for SERVER-38335. */
-      if (!cmd_ret && cmd_error.code != 11601) {
+      if (!mongoc_client_command_simple(
+             test_runner->internal_client, "admin", kill_all_sessions_cmd, NULL /* read prefs. */, NULL, &cmd_error)) {
          test_set_error(error, "Unexpected error running killAllSessions on primary: %s", cmd_error.message);
          goto done;
       }
@@ -636,8 +648,9 @@ check_schema_version(test_file_t *test_file)
    // 1.22 is partially supported (keyExpirationMS in client encryption options)
    // 1.23 is partially supported (automatic encryption)
    // 1.25 is partially supported (minLibmongocryptVersion)
+   // 1.28 is partially supported (accessToken)
    semver_t schema_version;
-   semver_parse("1.25", &schema_version);
+   semver_parse("1.28", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -2254,4 +2267,8 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "server_discovery_and_monitoring/unified");
 
    run_unified_tests(suite, JSON_DIR, "auth/unified");
+
+   run_unified_tests(suite, JSON_DIR, "backpressure");
+
+   run_unified_tests(suite, JSON_DIR, "mongodb-handshake");
 }

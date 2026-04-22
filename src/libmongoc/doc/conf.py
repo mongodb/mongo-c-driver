@@ -170,12 +170,10 @@ rst_prolog = rf"""
     :cmake:command:`find_package() <command:find_package>`
 
 .. |bson_t-storage-ptr| replace::
-    non-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
+    non-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
 .. |bson_t-opt-storage-ptr| replace::
-    maybe-``NULL`` pointer to `overwritable storage`_ for a :symbol:`bson_t`
-
-.. _overwritable storage: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/#overwritable-storage
+    maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
 .. |encrypt-text-is-experimental| replace::
     The "TextPreview" algorithm is in preview and should be used for experimental workloads only.
@@ -210,8 +208,6 @@ rst_prolog = rf"""
 .. _cursors_tailable: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/cursors/#tailable-cursors
 
 .. _bson_errors: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/tutorials/errors/
-
-.. _bson_lifetimes: https://www.mongodb.com/docs/languages/c/c-driver/current/libbson/guides/lifetimes/
 
 .. |ssl:naming| replace::
     Though some API names include the term "ssl", the C driver only support TLS protocols, which supersede SSL.

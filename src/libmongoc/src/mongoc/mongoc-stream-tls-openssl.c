@@ -420,6 +420,7 @@ _mongoc_stream_tls_openssl_readv(
    BSON_ASSERT(iovcnt);
 
    tls->timeout_msec = timeout_msec;
+   tls->timed_out = false;
 
    if (timeout_msec >= 0) {
       expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
@@ -449,6 +450,7 @@ _mongoc_stream_tls_openssl_readv(
             if ((expire - now) < 0) {
                if (read_ret == 0) {
                   mongoc_counter_streams_timeout_inc();
+                  tls->timed_out = true;
 #ifdef _WIN32
                   errno = WSAETIMEDOUT;
 #else
@@ -668,7 +670,7 @@ _mongoc_stream_tls_openssl_timed_out(mongoc_stream_t *stream)
 
    ENTRY;
 
-   RETURN(mongoc_stream_timed_out(tls->base_stream));
+   RETURN(tls->timed_out || mongoc_stream_timed_out(tls->base_stream));
 }
 
 static bool
