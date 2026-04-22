@@ -128,7 +128,7 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "${mock
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c '(
   rpm --define "_pkgverify_level digest" -Uvh ../mock-result/*.rpm &&
-  gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c -lmongoc2 -lbson2
+  gcc $(pkgconf --cflags bson2 mongoc2) -o example-client src/libmongoc/examples/example-client.c $(pkgconf --libs bson2 mongoc2)
   )'
 
 if [ ! -e "${mock_root}/tmp/${build_dir}/example-client" ]; then
