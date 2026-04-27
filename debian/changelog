@@ -1,3 +1,9 @@
+mongo-c-driver (1.23.1-1+deb12u3) UNRELEASED; urgency=medium
+
+  * 
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 27 Apr 2026 14:01:23 -0400
+
 mongo-c-driver (1.23.1-1+deb12u2) bookworm; urgency=medium
 
   * Fix CVE-2025-12119: mongoc_bulk_operation_t may read invalid memory if
