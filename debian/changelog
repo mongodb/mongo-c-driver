@@ -1,4 +1,4 @@
-mongo-c-driver (1.23.1-1+deb12u3) UNRELEASED; urgency=medium
+mongo-c-driver (1.23.1-1+deb12u3) bookworm; urgency=medium
 
   * Fix CVE-2026-6231: bson_validate may skip validation when processing
     certain inputs
