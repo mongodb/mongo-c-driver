@@ -1,6 +1,18 @@
 mongo-c-driver (1.23.1-1+deb12u3) UNRELEASED; urgency=medium
 
-  * 
+  * Fix CVE-2026-6231: bson_validate may skip validation when processing
+    certain inputs
+  * Fix CVE-2026-4359: a compromised third party cloud server or
+    man-in-the-middle attacker could send a malformed HTTP response and cause
+    an application crash
+  * Fix: improve handling of corrupt GridFS files (upstream ticket:
+    https://jira.mongodb.org/browse/CDRIVER-6281)
+  * Fix CVE-2025-14911: user-controlled chunkSize metadata from lacks
+    appropriate validation allowing malformed GridFS metadata to overflow the
+    bounding container
+  * Fix CVE-2026-6691: Cyrus SASL integration performs unsafe string copying
+    during username canonicalization, enabling a heap buffer overflow before
+    any authentication or network traffic
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 27 Apr 2026 14:01:23 -0400
 

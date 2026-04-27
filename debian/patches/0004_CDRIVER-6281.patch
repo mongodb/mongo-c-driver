@@ -1,0 +1,82 @@
+From f70634e1d6d084f3b0f7077d03bde2d4cb95ce37 Mon Sep 17 00:00:00 2001
+From: Kevin Albertson <kevin.albertson@mongodb.com>
+Date: Fri, 3 Apr 2026 21:16:37 -0400
+Subject: [PATCH] CDRIVER-6281 improve handling of corrupt GridFS files (#2263)
+
+* add regression test for 0 chunk size
+
+* check chunkSize on read
+
+* propagate error in `mongoc_gridfs_file_list_next`
+
+* add regression test for too-small chunk
+
+* fix too-small chunk read
+---
+ src/libmongoc/src/mongoc/mongoc-gridfs-file-list.c |    7 ++++++-
+ src/libmongoc/src/mongoc/mongoc-gridfs-file-page.c |    4 ++++
+ src/libmongoc/src/mongoc/mongoc-gridfs-file.c      |   10 +++++++---
+ 3 files changed, 17 insertions(+), 4 deletions(-)
+
+--- a/src/libmongoc/src/mongoc/mongoc-gridfs-file-list.c
++++ b/src/libmongoc/src/mongoc/mongoc-gridfs-file-list.c
+@@ -105,7 +105,12 @@
+    BSON_ASSERT (list);
+ 
+    if (mongoc_cursor_next (list->cursor, &bson)) {
+-      return _mongoc_gridfs_file_new_from_bson (list->gridfs, bson);
++      mongoc_gridfs_file_t *file = _mongoc_gridfs_file_new_from_bson (list->gridfs, bson);
++      if (!file) {
++         bson_set_error (
++            &list->cursor->error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "Failed to read GridFS file");
++      }
++      return file;
+    } else {
+       return NULL;
+    }
+--- a/src/libmongoc/src/mongoc/mongoc-gridfs-file-page.c
++++ b/src/libmongoc/src/mongoc/mongoc-gridfs-file-page.c
+@@ -76,6 +76,10 @@
+    BSON_ASSERT (page);
+    BSON_ASSERT (dst);
+ 
++   if (page->offset > page->len) {
++      RETURN (-1);
++   }
++
+    bytes_read = BSON_MIN (len, page->len - page->offset);
+ 
+    src = page->read_buf ? page->read_buf : page->buf;
+--- a/src/libmongoc/src/mongoc/mongoc-gridfs-file.c
++++ b/src/libmongoc/src/mongoc/mongoc-gridfs-file.c
+@@ -244,7 +244,8 @@
+          if (!BSON_ITER_HOLDS_NUMBER (&iter)) {
+             GOTO (failure);
+          }
+-         if (bson_iter_as_int64 (&iter) > INT32_MAX) {
++         int64_t as_i64 = bson_iter_as_int64 (&iter);
++         if (as_i64 > INT32_MAX || as_i64 <= 0) {
+             GOTO (failure);
+          }
+          file->chunk_size = (int32_t) bson_iter_as_int64 (&iter);
+@@ -294,7 +295,7 @@
+ 
+ failure:
+    bson_destroy (&file->bson);
+-
++   bson_free (file);
+    RETURN (NULL);
+ }
+ 
+@@ -465,7 +466,10 @@
+             file->page,
+             (uint8_t *) iov[i].iov_base + iov_pos,
+             (uint32_t) (iov[i].iov_len - iov_pos));
+-         BSON_ASSERT (r >= 0);
++         if (r < 0) {
++            bson_set_error (&file->error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "GridFS operation failed");
++            return -1;
++         }
+ 
+          iov_pos += r;
+          file->pos += r;
