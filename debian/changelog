@@ -1,4 +1,4 @@
-mongo-c-driver (1.30.4-1+deb13u2) UNRELEASED; urgency=medium
+mongo-c-driver (1.30.4-1+deb13u2) trixie; urgency=medium
 
   * Fix CVE-2026-6231: bson_validate may skip validation when processing
     certain inputs
