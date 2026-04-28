@@ -85,12 +85,14 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MONGOS_EXHAUST 22
 /* version corresponding to server 8.0 release */
 #define WIRE_VERSION_8_0 25
+/* version corresponding to server 9.0 release */
+#define WIRE_VERSION_9_0 29
 
 /* Range of wire protocol versions this driver supports. Bumping
  * WIRE_VERSION_MAX must be accompanied by an update to
  * `_mongoc_wire_version_to_server_version`. */
 #define WIRE_VERSION_MIN WIRE_VERSION_4_2 /* a.k.a. minWireVersion */
-#define WIRE_VERSION_MAX WIRE_VERSION_8_0 /* a.k.a. maxWireVersion */
+#define WIRE_VERSION_MAX WIRE_VERSION_9_0 /* a.k.a. maxWireVersion */
 
 #define MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING false
 
