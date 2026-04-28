@@ -4,6 +4,7 @@ libmongoc 2.4.0 [UNRELEASED]
 ## Notes
 
 * Raise required version of libmongocrypt from 1.15.1 to 1.18.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+* In a future minor release the minimum supported MongoDB Server version will be raised from 4.2 to 4.4. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
 
 libmongoc 2.3.0
 ===============
