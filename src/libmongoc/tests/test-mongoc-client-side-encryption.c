@@ -4508,6 +4508,11 @@ test_explicit_encryption_case5(void *unused)
 static void
 test_explicit_encryption_text_prefix_suffix(void *unused)
 {
+   if (test_framework_get_server_version() >= test_framework_str_to_version("9.0.0")) {
+      MONGOC_DEBUG("skipping test because text prefix and suffix indexing is not supported on server versions >= 9.0");
+      return;
+   }
+
    bson_error_t error;
    bool ok;
    bson_value_t plaintext = {0};
