@@ -4506,8 +4506,13 @@ test_explicit_encryption_case5(void *unused)
 }
 
 static void
-test_explicit_encryption_text(void *unused)
+test_explicit_encryption_text_prefix_suffix(void *unused)
 {
+   if (test_framework_get_server_version() >= test_framework_str_to_version("9.0.0")) {
+      MONGOC_DEBUG("skipping test because text prefix and suffix indexing is not supported on server versions >= 9.0");
+      return;
+   }
+
    bson_error_t error;
    bool ok;
    bson_value_t plaintext = {0};
@@ -4529,11 +4534,6 @@ test_explicit_encryption_text(void *unused)
    mongoc_client_encryption_encrypt_text_suffix_opts_t *sopts = mongoc_client_encryption_encrypt_text_suffix_opts_new();
    mongoc_client_encryption_encrypt_text_suffix_opts_set_str_max_query_length(sopts, 10);
    mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length(sopts, 2);
-   mongoc_client_encryption_encrypt_text_substring_opts_t *ssopts =
-      mongoc_client_encryption_encrypt_text_substring_opts_new();
-   mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(ssopts, 10);
-   mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(ssopts, 10);
-   mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(ssopts, 2);
 
    /* Prefix and suffix tests */
    /* Insert 'foobarbaz' with both prefix and suffix indexing */
@@ -4726,13 +4726,38 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
+   mongoc_client_encryption_encrypt_text_suffix_opts_destroy(sopts);
+   mongoc_client_encryption_encrypt_text_prefix_opts_destroy(popts);
+   explicit_encryption_destroy(eef);
+}
+
+static void
+test_explicit_encryption_text_substring(void *unused)
+{
+   bson_error_t error;
+   bool ok;
+   bson_value_t plaintext = {0};
+
+   ee_fixture *eef =
+      explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                     "encryptedFields-substring.json",
+                                     "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                     "key1-document.json");
+
+   BSON_UNUSED(unused);
+
+   plaintext.value_type = BSON_TYPE_UTF8;
+   plaintext.value.v_utf8.str = "foobarbaz";
+   plaintext.value.v_utf8.len = (uint32_t)strlen(plaintext.value.v_utf8.str);
+
+   mongoc_client_encryption_encrypt_text_substring_opts_t *ssopts =
+      mongoc_client_encryption_encrypt_text_substring_opts_new();
+   mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(ssopts, 10);
+   mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(ssopts, 10);
+   mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(ssopts, 2);
+
 
    /* Substring tests */
-   explicit_encryption_destroy(eef);
-   eef = explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                                        "encryptedFields-substring.json",
-                                        "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                                        "key1-document.json");
    /* Insert 'foobarbaz' with substring indexing */
    {
       bson_value_t insertPayload;
@@ -4843,8 +4868,6 @@ test_explicit_encryption_text(void *unused)
       mongoc_client_encryption_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
-   mongoc_client_encryption_encrypt_text_prefix_opts_destroy(popts);
-   mongoc_client_encryption_encrypt_text_suffix_opts_destroy(sopts);
    mongoc_client_encryption_encrypt_text_substring_opts_destroy(ssopts);
    explicit_encryption_destroy(eef);
 }
@@ -7859,8 +7882,16 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_single, /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
-                        "/client_side_encryption/explicit_encryption/text",
-                        test_explicit_encryption_text,
+                        "/client_side_encryption/explicit_encryption/text/prefix_suffix",
+                        test_explicit_encryption_text_prefix_suffix,
+                        NULL,
+                        NULL,
+                        test_framework_skip_if_max_wire_version_less_than_27 /* require server > 8.2 for QE support */,
+                        test_framework_skip_if_single, /* QE not supported on standalone */
+                        test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/explicit_encryption/text/substring",
+                        test_explicit_encryption_text_substring,
                         NULL,
                         NULL,
                         test_framework_skip_if_max_wire_version_less_than_27 /* require server > 8.2 for QE support */,
