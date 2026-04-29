@@ -4725,6 +4725,10 @@ test_explicit_encryption_text_prefix_suffix(void *unused)
       mongoc_client_encryption_encrypt_text_opts_destroy(topts);
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
+
+   mongoc_client_encryption_encrypt_text_suffix_opts_destroy(sopts);
+   mongoc_client_encryption_encrypt_text_prefix_opts_destroy(popts);
+   explicit_encryption_destroy(eef);
 }
 
 static void
