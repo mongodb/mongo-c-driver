@@ -23,6 +23,7 @@
 typedef struct {
    int call_count;
    bool returns_null;
+   const char *expect_username;
 } callback_ctx_t;
 
 #define PLACEHOLDER_TOKEN "PLACEHOLDER_TOKEN"
@@ -36,6 +37,7 @@ oidc_callback_fn(mongoc_oidc_callback_params_t *params)
    if (ctx->returns_null) {
       return NULL;
    }
+   ASSERT_CMPSTR(mongoc_oidc_callback_params_get_username(params), ctx->expect_username);
    return mongoc_oidc_credential_new(PLACEHOLDER_TOKEN);
 }
 
@@ -59,7 +61,7 @@ test_oidc_cache_works(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_user_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, NULL, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -122,7 +124,7 @@ test_oidc_cache_waits_between_calls(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_user_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, NULL, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -183,15 +185,44 @@ test_oidc_cache_set_callback(void)
    // Can set a callback:
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
-      mongoc_oidc_cache_set_user_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, NULL, cb);
       ASSERT(mongoc_oidc_cache_has_user_callback(cache));
       mongoc_oidc_callback_destroy(cb);
    }
 
    // Can clear a callback:
    {
-      mongoc_oidc_cache_set_user_callback(cache, NULL);
+      mongoc_oidc_cache_set_user_callback(cache, NULL, NULL);
       ASSERT(!mongoc_oidc_cache_has_user_callback(cache));
+   }
+
+   mongoc_oidc_cache_destroy(cache);
+}
+
+static void
+test_oidc_cache_passes_username(void)
+{
+   bool found_in_cache = false;
+   bson_error_t error;
+   mongoc_oidc_cache_t *cache = mongoc_oidc_cache_new();
+   callback_ctx_t ctx = {.expect_username = "test_user"};
+
+   // Set a callback:
+   {
+      mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
+      mongoc_oidc_callback_set_user_data(cb, &ctx);
+      mongoc_oidc_cache_set_user_callback(cache, "test_user", cb);
+      mongoc_oidc_callback_destroy(cb);
+   }
+
+   // Expect callback is called to fetch token:
+   {
+      char *token = mongoc_oidc_cache_get_token(cache, &found_in_cache, &error);
+      ASSERT_OR_PRINT(token, error);
+      ASSERT_CMPSTR(token, PLACEHOLDER_TOKEN);
+      ASSERT_CMPINT(ctx.call_count, ==, 1);
+      ASSERT(!found_in_cache);
+      bson_free(token);
    }
 
    mongoc_oidc_cache_destroy(cache);
@@ -222,7 +253,7 @@ test_oidc_cache_set_sleep(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_user_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, NULL, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -300,7 +331,7 @@ test_oidc_cache_propagates_error(void)
    {
       mongoc_oidc_callback_t *cb = mongoc_oidc_callback_new(oidc_callback_fn);
       mongoc_oidc_callback_set_user_data(cb, &ctx);
-      mongoc_oidc_cache_set_user_callback(cache, cb);
+      mongoc_oidc_cache_set_user_callback(cache, NULL, cb);
       mongoc_oidc_callback_destroy(cb);
    }
 
@@ -388,5 +419,6 @@ test_mongoc_oidc_install(TestSuite *suite)
    TestSuite_Add(suite, "/oidc/cache/propagates_error", test_oidc_cache_propagates_error);
    TestSuite_Add(suite, "/oidc/cache/invalidate", test_oidc_cache_invalidate);
    TestSuite_Add(suite, "/oidc/cache/waits_between_calls", test_oidc_cache_waits_between_calls);
+   TestSuite_Add(suite, "/oidc/cache/passes_username", test_oidc_cache_passes_username);
    TestSuite_Add(suite, "/oidc/connection_cache", test_oidc_connection_cache);
 }

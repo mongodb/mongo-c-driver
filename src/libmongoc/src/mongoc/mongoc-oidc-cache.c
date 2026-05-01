@@ -113,9 +113,10 @@ mongoc_oidc_cache_apply_env_from_uri(mongoc_oidc_cache_t *cache, const mongoc_ur
 }
 
 void
-mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb)
+mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const char *username, const mongoc_oidc_callback_t *cb)
 {
    BSON_ASSERT_PARAM(cache);
+   BSON_OPTIONAL_PARAM(username);
    BSON_OPTIONAL_PARAM(cb);
 
    BSON_ASSERT(!cache->ever_called);
@@ -124,6 +125,8 @@ mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const mongoc_oid
       mongoc_oidc_callback_destroy(cache->user_callback);
    }
    cache->user_callback = cb ? mongoc_oidc_callback_copy(cb) : NULL;
+   bson_free(cache->username);
+   cache->username = bson_strdup(username);
 }
 
 bool
@@ -157,6 +160,7 @@ mongoc_oidc_cache_destroy(mongoc_oidc_cache_t *cache)
    bson_shared_mutex_destroy(&cache->lock);
    mongoc_oidc_callback_destroy(cache->user_callback);
    mongoc_oidc_env_callback_destroy(cache->env_callback);
+   bson_free(cache->username);
    bson_free(cache);
 }
 
