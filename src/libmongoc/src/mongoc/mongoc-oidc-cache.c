@@ -22,8 +22,6 @@
 #include <mongoc/mongoc-oidc-callback-private.h>
 #include <mongoc/mongoc-oidc-env-private.h>
 
-#include <mongoc/mcd-azure.h>
-
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
 
