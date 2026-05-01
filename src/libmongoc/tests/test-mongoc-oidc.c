@@ -42,6 +42,7 @@ read_test_token(void)
 }
 
 typedef struct {
+   const char *expect_username;
    bool validate_params;
    bool return_null;
    bool return_bad_token;
@@ -83,7 +84,7 @@ oidc_callback_fn(mongoc_oidc_callback_params_t *params)
       ASSERT_CMPINT(version, ==, 1);
 
       const char *username = mongoc_oidc_callback_params_get_username(params);
-      ASSERT(!username);
+      ASSERT_CMPSTR(username, ctx->config.expect_username);
    }
 
    char *token = read_test_token();
@@ -103,6 +104,7 @@ typedef struct {
 typedef struct {
    bool use_pool;
    bool use_error_api_v1;
+   const char *with_username;
    callback_config_t callback_config;
 } test_config_t;
 
@@ -167,6 +169,9 @@ test_fixture_new(test_config_t cfg)
    test_fixture_t *tf = bson_malloc0(sizeof(*tf));
 
    mongoc_uri_t *uri = get_test_uri();
+   if (cfg.with_username) {
+      mongoc_uri_set_username(uri, cfg.with_username);
+   }
    mongoc_uri_set_appname(uri, "mongoc-oidc");
    mongoc_uri_set_auth_mechanism(uri, "MONGODB-OIDC");
    mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYREADS, false); // Disable retryable reads per spec.
@@ -577,7 +582,9 @@ PROSE_TEST(2, 1, "Valid Callback Inputs")
 {
    bool use_pool = *(bool *)use_pool_void;
    test_fixture_t *tf =
-      test_fixture_new((test_config_t){.use_pool = use_pool, .callback_config = {.validate_params = true}});
+      test_fixture_new((test_config_t){.use_pool = use_pool,
+                                       .with_username = "foo",
+                                       .callback_config = {.validate_params = true, .expect_username = "foo"}});
 
    // Expect auth to succeed:
    bson_error_t error;
