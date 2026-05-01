@@ -119,9 +119,7 @@ mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const char *user
 
    BSON_ASSERT(!cache->ever_called);
 
-   if (cache->user_callback) {
-      mongoc_oidc_callback_destroy(cache->user_callback);
-   }
+   mongoc_oidc_callback_destroy(cache->user_callback);
    cache->user_callback = cb ? mongoc_oidc_callback_copy(cb) : NULL;
    bson_free(cache->username);
    cache->username = bson_strdup(username);
