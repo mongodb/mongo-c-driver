@@ -30,6 +30,9 @@
 #define SET_ERROR(...) _mongoc_set_error(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, __VA_ARGS__)
 
 struct mongoc_oidc_cache_t {
+   // username is copied from the URI.
+   char *username;
+
    // user_callback is owned. NULL if unset. Not guarded by lock. Set before requesting tokens.
    // If both user_callback and env_callback are set, an error occurs when requesting a token.
    mongoc_oidc_callback_t *user_callback;
@@ -103,7 +106,10 @@ mongoc_oidc_cache_apply_env_from_uri(mongoc_oidc_cache_t *cache, const mongoc_ur
                mongoc_oidc_env_requires_token_resource(env)); // Checked in mongoc_uri_finalize_auth.
 
    BSON_ASSERT(!cache->env_callback); // Not set yet.
-   cache->env_callback = mongoc_oidc_env_callback_new(env, token_resource, username);
+   cache->env_callback = mongoc_oidc_env_callback_new(env, token_resource);
+
+   BSON_ASSERT(!cache->username); // Not set yet.
+   cache->username = bson_strdup(username);
 }
 
 void
@@ -226,6 +232,7 @@ mongoc_oidc_cache_get_token(mongoc_oidc_cache_t *cache, bool *found_in_cache, bs
    // time point, not a duration. bson_get_monotonic_time() calls mlib_now(). Use mlib_now() directly.
    mongoc_oidc_callback_params_set_timeout(
       params, mlib_microseconds_count(mlib_time_add(mlib_now(), mlib_duration(60, s)).time_since_monotonic_start));
+   mongoc_oidc_callback_params_set_username(params, cache->username);
 
    // Obtain write-lock:
    {
