@@ -962,12 +962,16 @@ _mongoc_openssl_ctx_new(mongoc_ssl_opt_t *opt)
 /* only defined in special build, using:
  * --enable-system-crypto-profile (autotools)
  * -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON (cmake)  */
-#ifndef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
+#if !defined(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE)
    /* HIGH - Enable strong ciphers
     * !EXPORT - Disable export ciphers (40/56 bit)
     * !aNULL - Disable anonymous auth ciphers
     * @STRENGTH - Sort ciphers based on strength */
-   SSL_CTX_set_cipher_list(ctx, "HIGH:!EXPORT:!aNULL@STRENGTH");
+   if (!SSL_CTX_set_cipher_list(ctx, "HIGH:!EXPORT:!aNULL@STRENGTH")) {
+      MONGOC_ERROR("Could not set cipher list for TLSv1.2 and below: %s", ERR_STR);
+      SSL_CTX_free(ctx);
+      return NULL;
+   }
 #endif
 
    /* If renegotiation is needed, don't return from recv() or send() until it's
