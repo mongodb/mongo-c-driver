@@ -38,7 +38,7 @@ mongoc_oidc_cache_apply_env_from_uri(mongoc_oidc_cache_t *cache, const struct _m
 // mongoc_oidc_cache_set_user_callback sets the token callback.
 // Not thread safe. Call before any authentication can occur.
 void
-mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const mongoc_oidc_callback_t *cb);
+mongoc_oidc_cache_set_user_callback(mongoc_oidc_cache_t *cache, const char *username, const mongoc_oidc_callback_t *cb);
 
 // mongoc_oidc_cache_has_user_callback returns true if a custom callback was set.
 bool

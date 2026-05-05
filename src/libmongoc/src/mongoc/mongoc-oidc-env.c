@@ -35,7 +35,6 @@ struct _mongoc_oidc_env_t {
 struct _mongoc_oidc_env_callback_t {
    mongoc_oidc_callback_t *inner; // Contains non-owning user_data pointer back to this mongoc_oidc_env_callback_t
    char *token_resource;
-   char *username;
 };
 
 static mongoc_oidc_credential_t *
@@ -74,7 +73,7 @@ mongoc_oidc_env_fn_azure(mongoc_oidc_callback_params_t *params)
                                          0,    // Default port as well
                                          NULL, // No extra headers
                                          timer,
-                                         callback->username, // Optional client id
+                                         mongoc_oidc_callback_params_get_username(params), // Optional client id
                                          &error)) {
       MONGOC_ERROR("Failed to obtain Azure OIDC access token: %s", error.message);
       goto fail;
@@ -240,18 +239,16 @@ mongoc_oidc_env_requires_token_resource(const mongoc_oidc_env_t *env)
 }
 
 mongoc_oidc_env_callback_t *
-mongoc_oidc_env_callback_new(const mongoc_oidc_env_t *env, const char *token_resource, const char *username)
+mongoc_oidc_env_callback_new(const mongoc_oidc_env_t *env, const char *token_resource)
 {
    BSON_ASSERT_PARAM(env);
    BSON_OPTIONAL_PARAM(token_resource);
-   BSON_OPTIONAL_PARAM(username);
    mongoc_oidc_env_callback_t *env_callback = bson_malloc(sizeof *env_callback);
    // Note that the callback's user_data points back to this containing mongoc_oidc_env_callback_t.
    // We expect that the inner callback can only be destroyed via mongoc_oidc_env_callback_destroy.
    *env_callback =
       (mongoc_oidc_env_callback_t){.inner = mongoc_oidc_callback_new_with_user_data(env->callback_fn, env_callback),
-                                   .token_resource = bson_strdup(token_resource),
-                                   .username = bson_strdup(username)};
+                                   .token_resource = bson_strdup(token_resource)};
    return env_callback;
 }
 
@@ -262,7 +259,6 @@ mongoc_oidc_env_callback_destroy(mongoc_oidc_env_callback_t *env_callback)
       BSON_ASSERT(mongoc_oidc_callback_get_user_data(env_callback->inner) == (void *)env_callback);
       mongoc_oidc_callback_destroy(env_callback->inner);
       bson_free(env_callback->token_resource);
-      bson_free(env_callback->username);
       bson_free(env_callback);
    }
 }
