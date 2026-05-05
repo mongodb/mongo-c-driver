@@ -2786,7 +2786,8 @@ mongoc_client_set_oidc_callback(mongoc_client_t *client, const mongoc_oidc_callb
       return false;
    }
 
-   mongoc_oidc_cache_set_user_callback(client->topology->oidc_cache, callback);
+   mongoc_oidc_cache_set_user_callback(
+      client->topology->oidc_cache, mongoc_uri_get_username(client->topology->uri), callback);
    return true;
 }
 
