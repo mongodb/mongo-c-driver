@@ -4860,7 +4860,8 @@ test_explicit_encryption_text_prefix_suffix(void *unused)
       mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
-      plaintext.value.v_utf8.str = "caf\xc3\xa9" "barb\xc3\xa4z";
+      plaintext.value.v_utf8.str = "caf\xc3\xa9"
+                                   "barb\xc3\xa4z";
       plaintext.value.v_utf8.len = 12;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
       ASSERT_OR_PRINT(ok, error);
@@ -4907,7 +4908,9 @@ test_explicit_encryption_text_prefix_suffix(void *unused)
       cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
       ASSERT(mongoc_cursor_next(cursor, &got));
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encryptedText': 'caf\xc3\xa9" "barb\xc3\xa4z' }");
+      ASSERT_MATCH(got,
+                   "{ 'encryptedText': 'caf\xc3\xa9"
+                   "barb\xc3\xa4z' }");
       ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
 
       bson_value_destroy(&findPayload);
@@ -4948,7 +4951,9 @@ test_explicit_encryption_text_prefix_suffix(void *unused)
       cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
       ASSERT(mongoc_cursor_next(cursor, &got));
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encryptedText': 'caf\xc3\xa9" "barb\xc3\xa4z' }");
+      ASSERT_MATCH(got,
+                   "{ 'encryptedText': 'caf\xc3\xa9"
+                   "barb\xc3\xa4z' }");
       ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
 
       bson_value_destroy(&findPayload);
@@ -5191,7 +5196,8 @@ test_explicit_encryption_text_substring(void *unused)
       mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(topts, true);
       mongoc_client_encryption_encrypt_opts_set_text_opts(eo, topts);
 
-      plaintext.value.v_utf8.str = "foocaf\xc3\xa9" "baz";
+      plaintext.value.v_utf8.str = "foocaf\xc3\xa9"
+                                   "baz";
       plaintext.value.v_utf8.len = 11;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &insertPayload, &error);
       ASSERT_OR_PRINT(ok, error);
@@ -5238,7 +5244,9 @@ test_explicit_encryption_text_substring(void *unused)
       cursor = mongoc_collection_find_with_opts(eef->encryptedColl, &expr, NULL /* opts */, NULL /* read_prefs */);
       ASSERT(mongoc_cursor_next(cursor, &got));
       ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encryptedText': 'foocaf\xc3\xa9" "baz' }");
+      ASSERT_MATCH(got,
+                   "{ 'encryptedText': 'foocaf\xc3\xa9"
+                   "baz' }");
       ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
 
       bson_value_destroy(&findPayload);
