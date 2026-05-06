@@ -27,8 +27,12 @@
 #include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc-log.h>
 
+#include <bson/macros.h>
+#include <bson/memory.h>
+
 #include <mlib/intencode.h>
 
+#include <stdint.h>
 #include <string.h>
 #ifdef MONGOC_ENABLE_SSL
 #include <mongoc/mongoc-ssl-private.h>
@@ -438,9 +442,10 @@ _mongoc_cluster_run_command_opquery_recv(
       goto done;
    }
 
+   const int32_t max_msg_size = mongoc_cluster_get_max_msg_size(cluster);
    const int32_t message_length = mlib_read_i32le(buffer.data);
 
-   if (message_length < message_header_length || message_length > MONGOC_DEFAULT_MAX_MSG_SIZE) {
+   if (message_length < message_header_length || message_length > max_msg_size) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "invalid message length");
       _handle_network_error(cluster, cmd, reply, error);
       goto done;
@@ -461,7 +466,7 @@ _mongoc_cluster_run_command_opquery_recv(
 
    mcd_rpc_message_ingress(rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len, max_msg_size)) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "could not decompress server reply");
       goto done;
    }
@@ -3228,15 +3233,16 @@ _mongoc_cluster_run_opmsg_recv(
       goto done;
    }
 
+   const int32_t max_msg_size = mongoc_cluster_get_max_msg_size(cluster);
    const int32_t message_length = mlib_read_i32le(buffer.data);
 
-   if (message_length < message_header_length || message_length > server_stream->sd->max_msg_size) {
+   if (message_length < message_header_length || message_length > max_msg_size) {
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL,
                   MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                   "message length %" PRId32 " is not within valid range of %" PRId32 "-%" PRId32 " bytes",
                   message_header_length,
                   message_length,
-                  server_stream->sd->max_msg_size);
+                  max_msg_size);
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
       goto done;
@@ -3263,7 +3269,7 @@ _mongoc_cluster_run_opmsg_recv(
    void *decompressed_data = NULL;
    size_t decompressed_data_len = 0u;
 
-   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len, max_msg_size)) {
       _mongoc_set_error(
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "could not decompress message from server");
       _handle_network_error(cluster, cmd, reply, error);
@@ -3472,33 +3478,35 @@ fail:
 }
 
 bool
-mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len)
+mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len, int32_t max_msg_size)
 {
    BSON_ASSERT_PARAM(rpc);
    BSON_ASSERT_PARAM(data);
    BSON_ASSERT_PARAM(data_len);
 
-   BSON_ASSERT(mcd_rpc_header_get_op_code(rpc) == MONGOC_OP_CODE_COMPRESSED);
+   // Precondition: `maxMessageSizeBytes` must always be greater than the minimum message size.
+   BSON_ASSERT(max_msg_size > message_header_length);
 
-   const int32_t uncompressed_size_raw = mcd_rpc_op_compressed_get_uncompressed_size(rpc);
-
-   // Malformed message: invalid uncompressedSize.
-   if (BSON_UNLIKELY(uncompressed_size_raw < 0)) {
+   // Runtime invariant: `maxMessageSizeBytes` must not exceed the default maximum message size.
+   if (BSON_UNLIKELY(max_msg_size > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
       return false;
    }
 
-   const size_t uncompressed_size = (size_t)uncompressed_size_raw;
+   BSON_ASSERT(mcd_rpc_header_get_op_code(rpc) == MONGOC_OP_CODE_COMPRESSED);
 
-   // Malformed message: original message length is not representable.
-   if (BSON_UNLIKELY(uncompressed_size > SIZE_MAX - message_header_length)) {
+   // Does NOT include the message header length.
+   const int32_t uncompressed_size = mcd_rpc_op_compressed_get_uncompressed_size(rpc);
+
+   // Malformed message: invalid uncompressedSize.
+   if (BSON_UNLIKELY(uncompressed_size < 0 || mlib_cmp(uncompressed_size, >, max_msg_size - message_header_length))) {
       return false;
    }
 
    // uncompressedSize does not include msgHeader fields.
-   const size_t original_message_length = message_header_length + uncompressed_size;
+   const size_t original_message_length = (size_t)(message_header_length + uncompressed_size);
    uint8_t *const ptr = bson_malloc(original_message_length);
 
-   const int32_t message_length = original_message_length;
+   const int32_t message_length = (int32_t)original_message_length;
    const int32_t request_id = mcd_rpc_header_get_request_id(rpc);
    const int32_t response_to = mcd_rpc_header_get_response_to(rpc);
    const int32_t op_code = mcd_rpc_op_compressed_get_original_opcode(rpc);
@@ -3512,7 +3520,7 @@ mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len)
 
    // This value may be passed as an argument to an in-out parameter depending
    // on the compressor, not just an out-parameter.
-   size_t actual_uncompressed_size = uncompressed_size;
+   size_t actual_uncompressed_size = (size_t)uncompressed_size;
 
    // Populate the rest of the uncompressed message.
    if (!mongoc_uncompress(mcd_rpc_op_compressed_get_compressor_id(rpc),
@@ -3525,7 +3533,7 @@ mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len)
    }
 
    // Malformed message: size inconsistency.
-   if (BSON_UNLIKELY(uncompressed_size != actual_uncompressed_size)) {
+   if (BSON_UNLIKELY(mlib_cmp(uncompressed_size, !=, actual_uncompressed_size))) {
       bson_free(ptr);
       return false;
    }
@@ -3539,7 +3547,7 @@ mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len)
 }
 
 bool
-mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_t *data_len)
+mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_t *data_len, int32_t max_msg_size)
 {
    BSON_ASSERT_PARAM(rpc);
    BSON_ASSERT_PARAM(data);
@@ -3552,7 +3560,7 @@ mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_
       return true;
    }
 
-   return mcd_rpc_message_decompress(rpc, data, data_len);
+   return mcd_rpc_message_decompress(rpc, data, data_len, max_msg_size);
 }
 
 typedef struct {

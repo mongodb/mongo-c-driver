@@ -19,6 +19,7 @@
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-rpc-private.h>
 #include <mongoc/mongoc-server-monitor-private.h>
 #include <mongoc/mongoc-ssl-private.h>
 #include <mongoc/mongoc-stream-private.h>
@@ -29,10 +30,14 @@
 
 #include <mongoc/mcd-rpc.h>
 
+#include <bson/macros.h>
+
 #include <mlib/config.h>
 #include <mlib/intencode.h>
 
 #include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "monitor"
@@ -308,7 +313,9 @@ _server_monitor_send_and_recv_hello_opmsg(mongoc_server_monitor_t *server_monito
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof(int32_t);
 
-   if (message_length < message_header_length) {
+   // Malformed message.
+   if (BSON_UNLIKELY(message_length < message_header_length ||
+                     message_length > server_monitor->description->max_msg_size)) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_PROTOCOL,
                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -334,7 +341,8 @@ _server_monitor_send_and_recv_hello_opmsg(mongoc_server_monitor_t *server_monito
 
    mcd_rpc_message_ingress(rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary(
+          rpc, &decompressed_data, &decompressed_data_len, server_monitor->description->max_msg_size)) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_PROTOCOL,
                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -421,7 +429,8 @@ _server_monitor_send_and_recv_opquery(mongoc_server_monitor_t *server_monitor,
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof(int32_t);
 
-   if (message_length < message_header_length) {
+   if (BSON_UNLIKELY(message_length < message_header_length ||
+                     message_length > server_monitor->description->max_msg_size)) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_PROTOCOL,
                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -447,7 +456,8 @@ _server_monitor_send_and_recv_opquery(mongoc_server_monitor_t *server_monitor,
 
    mcd_rpc_message_ingress(rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary(
+          rpc, &decompressed_data, &decompressed_data_len, server_monitor->description->max_msg_size)) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_PROTOCOL,
                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -717,7 +727,8 @@ _server_monitor_awaitable_hello_recv(mongoc_server_monitor_t *server_monitor,
 
    mcd_rpc_message_ingress(rpc);
 
-   if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len)) {
+   if (!mcd_rpc_message_decompress_if_necessary(
+          rpc, &decompressed_data, &decompressed_data_len, server_monitor->description->max_msg_size)) {
       _mongoc_set_error(error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "decompression failure");
       GOTO(fail);
    }
