@@ -40,7 +40,10 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/ocsp.h>
+#include <openssl/opensslv.h>
+#include <openssl/safestack.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
 #include <limits.h>
@@ -471,14 +474,12 @@ _mongoc_openssl_setup_pem_file(SSL_CTX *ctx, const char *pem_file, const char *p
 static X509 *
 _get_issuer(X509 *cert, STACK_OF(X509) * chain)
 {
-   X509 *issuer = NULL, *candidate = NULL;
-   X509_NAME *issuer_name = NULL, *candidate_name = NULL;
-   int i;
+   X509 *issuer = NULL;
 
-   issuer_name = X509_get_issuer_name(cert);
-   for (i = 0; i < sk_X509_num(chain) && issuer == NULL; i++) {
-      candidate = sk_X509_value(chain, i);
-      candidate_name = X509_get_subject_name(candidate);
+   const X509_NAME *const issuer_name = X509_get_issuer_name(cert);
+   for (int i = 0; i < sk_X509_num(chain) && issuer == NULL; i++) {
+      X509 *const candidate = sk_X509_value(chain, i);
+      const X509_NAME *const candidate_name = X509_get_subject_name(candidate);
       if (0 == X509_NAME_cmp(candidate_name, issuer_name)) {
          issuer = candidate;
       }
@@ -602,25 +603,26 @@ _mongoc_tlsfeature_has_status_request(const uint8_t *data, int length)
 bool
 _get_must_staple(X509 *cert)
 {
-   const STACK_OF(X509_EXTENSION) *exts = NULL;
-   X509_EXTENSION *ext;
-   ASN1_STRING *ext_data;
-   int idx;
-
-   exts = _get_extensions(cert);
+   const STACK_OF(X509_EXTENSION) *const exts = _get_extensions(cert);
    if (!exts) {
       TRACE("%s", "certificate extensions not found");
       return false;
    }
 
-   idx = X509v3_get_ext_by_NID(exts, tlsfeature_nid, -1);
+   const int idx = X509v3_get_ext_by_NID(exts, tlsfeature_nid, -1);
    if (-1 == idx) {
       TRACE("%s", "tlsfeature extension not found");
       return false;
    }
 
-   ext = sk_X509_EXTENSION_value(exts, idx);
-   ext_data = X509_EXTENSION_get_data(ext);
+   X509_EXTENSION *const ext = sk_X509_EXTENSION_value(exts, idx);
+
+   // Pre-3.0.0 `ASN1_STRING_get0_data()` expects `T*`, but post-4.0.0 `X509_EXTENSION_get_data()` returns `const T*`.
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+   ASN1_STRING *const ext_data = X509_EXTENSION_get_data(ext);
+#else
+   const ASN1_STRING *const ext_data = X509_EXTENSION_get_data(ext);
+#endif
 
    /* Data is a DER encoded sequence of integers. */
    return _mongoc_tlsfeature_has_status_request(ASN1_STRING_get0_data(ext_data), ASN1_STRING_length(ext_data));
@@ -960,12 +962,16 @@ _mongoc_openssl_ctx_new(mongoc_ssl_opt_t *opt)
 /* only defined in special build, using:
  * --enable-system-crypto-profile (autotools)
  * -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON (cmake)  */
-#ifndef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
+#if !defined(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE)
    /* HIGH - Enable strong ciphers
     * !EXPORT - Disable export ciphers (40/56 bit)
     * !aNULL - Disable anonymous auth ciphers
     * @STRENGTH - Sort ciphers based on strength */
-   SSL_CTX_set_cipher_list(ctx, "HIGH:!EXPORT:!aNULL@STRENGTH");
+   if (!SSL_CTX_set_cipher_list(ctx, "HIGH:!EXPORT:!aNULL@STRENGTH")) {
+      MONGOC_ERROR("Could not set cipher list for TLSv1.2 and below: %s", ERR_STR);
+      SSL_CTX_free(ctx);
+      return NULL;
+   }
 #endif
 
    /* If renegotiation is needed, don't return from recv() or send() until it's
