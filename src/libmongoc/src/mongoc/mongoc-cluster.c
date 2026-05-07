@@ -3240,8 +3240,8 @@ _mongoc_cluster_run_opmsg_recv(
       RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL,
                   MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                   "message length %" PRId32 " is not within valid range of %" PRId32 "-%" PRId32 " bytes",
-                  message_header_length,
                   message_length,
+                  message_header_length,
                   max_msg_size);
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
