@@ -3498,7 +3498,10 @@ explicit_encryption_setup_full(const char *encrypted_fields_path, const char *ke
       bson_destroy(kms_providers);
       mongoc_auto_encryption_opts_destroy(aeOpts);
       mongoc_collection_t *ae_coll = mongoc_client_get_collection(ae_client, "db", "explicit_encryption");
-      ASSERT_OR_PRINT(mongoc_collection_insert_one(ae_coll, tmp_bson("{ 'encryptedText': 'BingQiLin' }"), NULL /* opts */, NULL /* reply */, &error), error);
+      ASSERT_OR_PRINT(
+         mongoc_collection_insert_one(
+            ae_coll, tmp_bson("{ 'encryptedText': 'BingQiLin' }"), NULL /* opts */, NULL /* reply */, &error),
+         error);
 
       mongoc_collection_destroy(ae_coll);
       mongoc_client_destroy(ae_client);
@@ -3516,7 +3519,8 @@ explicit_encryption_setup(void)
    return explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
                                          "encryptedFields.json",
                                          "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                                         "key1-document.json", false);
+                                         "key1-document.json",
+                                         false);
 }
 
 static void
@@ -4540,7 +4544,8 @@ test_explicit_encryption_text_prefix_suffix(void *unused)
       explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
                                      "encryptedFields-prefix-suffix.json",
                                      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                                     "key1-document.json", false);
+                                     "key1-document.json",
+                                     false);
 
    BSON_UNUSED(unused);
 
@@ -4754,12 +4759,11 @@ test_explicit_encryption_text_prefix_suffix(void *unused)
 static ee_fixture *
 explicit_encryption_setup_prefix_suffix_ci_di(void)
 {
-   return explicit_encryption_setup_full(
-      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-      "encryptedFields-prefix-suffix-ci-di.json",
-      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-      "key1-document.json",
-      true);
+   return explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                         "encryptedFields-prefix-suffix-ci-di.json",
+                                         "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
+                                         "key1-document.json",
+                                         true);
 }
 
 static void
@@ -4884,15 +4888,13 @@ test_explicit_encryption_text_prefix_suffix_ci_di(void *unused)
       mongoc_auto_encryption_opts_destroy(aeOpts);
 
       mongoc_collection_t *ae_coll = mongoc_client_get_collection(ae_client, "db", "explicit_encryption");
-      ASSERT_OR_PRINT(
-         mongoc_collection_insert_one(
-            ae_coll,
-            tmp_bson("{ 'encryptedText': 'caf\xc3\xa9"
-                     "barb\xc3\xa4z' }"),
-            NULL /* opts */,
-            NULL /* reply */,
-            &error),
-         error);
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(ae_coll,
+                                                   tmp_bson("{ 'encryptedText': 'caf\xc3\xa9"
+                                                            "barb\xc3\xa4z' }"),
+                                                   NULL /* opts */,
+                                                   NULL /* reply */,
+                                                   &error),
+                      error);
 
       mongoc_collection_destroy(ae_coll);
       mongoc_client_destroy(ae_client);
@@ -5000,7 +5002,8 @@ test_explicit_encryption_text_substring(void *unused)
       explicit_encryption_setup_full("./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
                                      "encryptedFields-substring.json",
                                      "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/"
-                                     "key1-document.json", true);
+                                     "key1-document.json",
+                                     true);
 
    BSON_UNUSED(unused);
 
