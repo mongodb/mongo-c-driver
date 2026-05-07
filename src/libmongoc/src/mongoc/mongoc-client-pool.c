@@ -707,7 +707,8 @@ mongoc_client_pool_set_oidc_callback(mongoc_client_pool_t *pool, const mongoc_oi
       return false;
    }
 
-   mongoc_oidc_cache_set_user_callback(pool->topology->oidc_cache, callback);
+   mongoc_oidc_cache_set_user_callback(
+      pool->topology->oidc_cache, mongoc_uri_get_username(pool->topology->uri), callback);
    return true;
 }
 
