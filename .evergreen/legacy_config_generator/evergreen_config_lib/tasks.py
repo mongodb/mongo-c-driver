@@ -225,41 +225,6 @@ all_tasks = [
     LinkTask('link-with-bson-windows', suffix_commands=[func('link sample program MSVC bson')], orchestration=False),
     LinkTask('link-with-bson-mingw', suffix_commands=[func('link sample program mingw bson')], orchestration=False),
     NamedTask(
-        'debian-package-build',
-        commands=[
-            shell_mongoc('export IS_PATCH="${is_patch}"\n.evergreen/scripts/debian_package_build.sh'),
-            s3_put(
-                local_file='deb.tar.gz',
-                remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
-                content_type='${content_type|application/x-gzip}',
-            ),
-            s3_put(
-                local_file='deb.tar.gz',
-                remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz',
-                content_type='${content_type|application/x-gzip}',
-            ),
-            s3_put(
-                local_file='deb-i386.tar.gz',
-                remote_file='${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz',
-                content_type='${content_type|application/x-gzip}',
-            ),
-            s3_put(
-                local_file='deb-i386.tar.gz',
-                remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz',
-                content_type='${content_type|application/x-gzip}',
-            ),
-        ],
-        allowed_requesters=[
-            'ad_hoc',
-            'commit',
-            # 'github_merge_queue'
-            # 'github_pr',
-            # 'github_tag',
-            'patch',
-            'trigger',
-        ],
-    ),
-    NamedTask(
         'rpm-package-build',
         commands=[
             shell_mongoc('export IS_PATCH="${is_patch}"\n.evergreen/scripts/check_rpm_spec.sh'),
