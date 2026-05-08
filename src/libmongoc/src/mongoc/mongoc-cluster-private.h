@@ -269,10 +269,10 @@ mcd_rpc_message_compress(mcd_rpc_message *rpc,
                          bson_error_t *error);
 
 bool
-mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len);
+mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len, int32_t max_msg_size);
 
 bool
-mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_t *data_len);
+mcd_rpc_message_decompress_if_necessary(mcd_rpc_message *rpc, void **data, size_t *data_len, int32_t max_msg_size);
 
 BSON_END_DECLS
 

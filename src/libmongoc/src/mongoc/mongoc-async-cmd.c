@@ -450,7 +450,8 @@ _mongoc_async_cmd_phase_recv_rpc(mongoc_async_cmd_t *acmd)
       void *decompressed_data;
       size_t decompressed_data_len;
 
-      if (!mcd_rpc_message_decompress_if_necessary(acmd->rpc, &decompressed_data, &decompressed_data_len)) {
+      if (!mcd_rpc_message_decompress_if_necessary(
+             acmd->rpc, &decompressed_data, &decompressed_data_len, MONGOC_DEFAULT_MAX_MSG_SIZE)) {
          _mongoc_set_error(&acmd->error,
                            MONGOC_ERROR_PROTOCOL,
                            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
