@@ -1684,7 +1684,6 @@ test_recovering(void *ctx)
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
-   mongoc_read_mode_t read_mode;
    mongoc_read_prefs_t *prefs;
    bson_error_t error;
 
@@ -1712,9 +1711,20 @@ test_recovering(void *ctx)
    prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    /* recovering member matches no read mode */
-   for (read_mode = MONGOC_READ_PRIMARY; read_mode <= MONGOC_READ_NEAREST; read_mode++) {
-      mongoc_read_prefs_set_mode(prefs, read_mode);
-      BSON_ASSERT(!mongoc_topology_select(client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, prefs, NULL, &error));
+   const mongoc_read_mode_t read_modes[] = {
+      MONGOC_READ_PRIMARY,
+      MONGOC_READ_SECONDARY,
+      MONGOC_READ_PRIMARY_PREFERRED,
+      MONGOC_READ_SECONDARY_PREFERRED,
+      MONGOC_READ_NEAREST,
+   };
+
+   for (size_t i = 0u; i < sizeof(read_modes) / sizeof(read_modes[0]); i++) {
+      mongoc_read_prefs_set_mode(prefs, read_modes[i]);
+      ASSERT_WITH_MSG(
+         !mongoc_topology_select(client->topology, MONGOC_SS_READ, TEST_SS_LOG_CONTEXT, prefs, NULL, &error),
+         "read mode %d should not match any member",
+         (int)read_modes[i]);
    }
 
    mongoc_read_prefs_destroy(prefs);
