@@ -380,6 +380,47 @@ vcpkg-base:
     COPY src/libmongoc/examples/cmake/vcpkg/ $src_dir
     WORKDIR $src_dir
 
+deb.packages:
+    ARG debian_version=unstable
+    FROM $default_search_registry/debian:$debian_version
+    # Prepare the packaging environment
+    COPY etc/deb/prep-env.sh /tmp/prep-env.sh
+    RUN bash /tmp/prep-env.sh
+    COPY etc/deb/build.sh /tmp/build.sh
+    # Grab the main source files
+    ENV MCD_DIR=/opt/mongo/mongo-c-driver
+    DO +COPY_SOURCE --into=$MCD_DIR
+    # The Debian package build uses information from Git, so copy in relevant files
+    COPY --dir .git/ .gitignore .gitattributes $MCD_DIR
+    # Commit all working changes for the build.
+    RUN git -C $MCD_DIR config user.email "earthly-build@localhost" && \
+        git -C $MCD_DIR config user.name "Earthly Build" && \
+        git -C $MCD_DIR add --all . && \
+        git -C $MCD_DIR commit --no-verify --allow-empty --message "Working changes for Debian package build"
+    # Run the build
+    RUN bash /tmp/build.sh
+    # Save all build results to the output
+    SAVE ARTIFACT $MCD_DIR/../*.build /
+    SAVE ARTIFACT $MCD_DIR/../*.buildinfo /
+    SAVE ARTIFACT $MCD_DIR/../*.changes /
+    SAVE ARTIFACT $MCD_DIR/../*.deb /
+    SAVE ARTIFACT $MCD_DIR/../*.dsc /
+    SAVE ARTIFACT $MCD_DIR/../*.tar.gz /
+    SAVE ARTIFACT $MCD_DIR/../*.tar.xz /
+
+deb.test:
+    ARG debian_version = "unstable"
+    FROM $default_search_registry/debian:$debian_version
+    # Basics for building
+    RUN apt-get update && apt-get -y install pkgconf gcc
+    # Install the packages built by the packaging step
+    COPY (+deb.packages/* --debian_version=$debian_version) /tmp/mcd/
+    RUN apt-get update && apt-get -y install /tmp/mcd/*.deb
+    # Try to build the example-client using the packages and pkg-config files
+    COPY src/libmongoc/examples/example-client.c /tmp/mcd/client.c
+    RUN gcc $(pkgconf --cflags bson2 mongoc2) -o example-client /tmp/mcd/client.c $(pkgconf --libs mongoc2)
+    RUN test -e example-client
+
 # verify-headers :
 #   Execute CMake header verification on the sources
 #
