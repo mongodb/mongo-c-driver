@@ -73,11 +73,8 @@ def tasks():
             commands = [
                 FetchSource.call(),
                 OpenSSLSetup.call(vars=vars),
+                FunctionCall(func='run auth tests'),
             ]
-
-            # CDRIVER-6319: Atlas test servers do not yet support connections with OpenSSL 4.0.0...?
-            if version not in ['4.0.0']:
-                commands.append(FunctionCall(func='run auth tests'))
 
             yield EvgTask(
                 name=f'{TAG}-{version}-{link_type}-{distro_str}',
