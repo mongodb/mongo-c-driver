@@ -1,5 +1,11 @@
 #include <mongoc/mongoc.h>
 
+#include <bson/memory.h>
+
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/err.h>
@@ -387,6 +393,99 @@ test_mongoc_tls_trust_dir(void)
 }
 #endif
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+typedef struct {
+   mongoc_stream_t base;
+   mongoc_stream_t *wrapped;
+   int eagain_remaining;
+} _eagain_stream_t;
+
+static ssize_t
+_eagain_readv(mongoc_stream_t *s, mongoc_iovec_t *iov, size_t iovcnt, size_t min_bytes, int32_t timeout_msec)
+{
+   _eagain_stream_t *const es = (_eagain_stream_t *)s;
+   if (es->eagain_remaining > 0) {
+      --es->eagain_remaining;
+      errno = EAGAIN;
+      return 0;
+   }
+   return mongoc_stream_readv(es->wrapped, iov, iovcnt, min_bytes, timeout_msec);
+}
+
+static ssize_t
+_eagain_writev(mongoc_stream_t *s, mongoc_iovec_t *iov, size_t iovcnt, int32_t timeout_msec)
+{
+   return mongoc_stream_writev(((_eagain_stream_t *)s)->wrapped, iov, iovcnt, timeout_msec);
+}
+
+static int
+_eagain_close(mongoc_stream_t *s)
+{
+   return mongoc_stream_close(((_eagain_stream_t *)s)->wrapped);
+}
+
+static int
+_eagain_flush(mongoc_stream_t *s)
+{
+   return mongoc_stream_flush(((_eagain_stream_t *)s)->wrapped);
+}
+
+static void
+_eagain_destroy(mongoc_stream_t *s)
+{
+   _eagain_stream_t *const es = (_eagain_stream_t *)s;
+   mongoc_stream_destroy(es->wrapped);
+   bson_free(es);
+}
+
+static bool
+_eagain_check_closed(mongoc_stream_t *s)
+{
+   return mongoc_stream_check_closed(((_eagain_stream_t *)s)->wrapped);
+}
+
+static mongoc_stream_t *
+_eagain_get_base_stream(mongoc_stream_t *s)
+{
+   return ((_eagain_stream_t *)s)->wrapped;
+}
+
+static mongoc_stream_t *
+_eagain_stream_new(mongoc_stream_t *base)
+{
+   _eagain_stream_t *const es = bson_malloc0(sizeof(*es));
+   es->base.type = base->type;
+   es->base.destroy = _eagain_destroy;
+   es->base.close = _eagain_close;
+   es->base.flush = _eagain_flush;
+   es->base.writev = _eagain_writev;
+   es->base.readv = _eagain_readv;
+   es->base.get_base_stream = _eagain_get_base_stream;
+   es->base.check_closed = _eagain_check_closed;
+   es->wrapped = base;
+   es->eagain_remaining = 3; // Return EAGAIN three times, then succeed.
+   return (mongoc_stream_t *)es;
+}
+
+static mongoc_stream_t *
+_eagain_stream_wrapper(mongoc_stream_t *s)
+{
+   return _eagain_stream_new(s);
+}
+
+static void
+test_mongoc_tls_eagain(void)
+{
+   mongoc_ssl_opt_t sopt = {.ca_file = CERT_CA, .pem_file = CERT_SERVER};
+   mongoc_ssl_opt_t copt = {.ca_file = CERT_CA, .pem_file = CERT_CLIENT};
+   ssl_test_result_t sr;
+   ssl_test_result_t cr;
+   ssl_test_with_client_stream_wrapper(&copt, &sopt, "localhost", &cr, &sr, _eagain_stream_wrapper);
+   ASSERT_CMPINT((int)cr.result, ==, SSL_TEST_SUCCESS);
+   ASSERT_CMPINT((int)sr.result, ==, SSL_TEST_SUCCESS);
+}
+#endif // defined(MONGOC_ENABLE_SSL_OPENSSL)
+
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL */
 
 void
@@ -437,6 +536,7 @@ test_stream_tls_install(TestSuite *suite)
    TestSuite_Add(suite, "/TLS/bad_password", test_mongoc_tls_bad_password);
    TestSuite_Add(suite, "/TLS/weak_cert_validation", test_mongoc_tls_weak_cert_validation);
    TestSuite_Add(suite, "/TLS/crl", test_mongoc_tls_crl);
+   TestSuite_Add(suite, "/TLS/eagain", test_mongoc_tls_eagain);
 #endif
 
 #if !defined(__APPLE__) && !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL) && \
@@ -445,5 +545,6 @@ test_stream_tls_install(TestSuite *suite)
 #endif
 
    TestSuite_AddLive(suite, "/TLS/insecure_nowarning", test_mongoc_tls_insecure_nowarning);
-#endif
+
+#endif // !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 }
