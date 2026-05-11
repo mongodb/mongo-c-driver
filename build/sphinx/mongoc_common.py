@@ -5,9 +5,8 @@ from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
 
 from docutils import nodes
 from docutils.nodes import Node, document
-from sphinx.application import Sphinx
-
 from docutils.parsers.rst import Directive
+from sphinx.application import Sphinx
 
 # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
 needs_sphinx = '1.7'
