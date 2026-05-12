@@ -557,6 +557,13 @@ Click ``Edit`` on the hook for ``https://githook.mongodb.com/``.
 Add the new release branch to the ``Payload URL``. Remove unmaintained
 release branches.
 
+Update Branch Protection Rules
+******************************
+
+Notify a repository administrator that the previous stable release branch (which will no longer recieve any further
+updates) may now be "locked" by removing the exclude rule from the "Restrict Branch Updates" ruleset and adding an
+exclude rule for the new branch.
+
 
 Comment on the Generated DOCSP Ticket
 *************************************
