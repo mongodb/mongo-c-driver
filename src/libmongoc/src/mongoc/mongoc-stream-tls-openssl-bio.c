@@ -226,15 +226,18 @@ mongoc_stream_tls_openssl_bio_read(BIO *b, char *buf, int len)
    openssl = (mongoc_stream_tls_openssl_t *)tls->ctx;
 
    errno = 0;
-   const ssize_t ret = mongoc_stream_read(tls->base_stream, buf, (size_t)len, 0, (int32_t)tls->timeout_msec);
+   ssize_t ret = mongoc_stream_read(tls->base_stream, buf, (size_t)len, 0, (int32_t)tls->timeout_msec);
    BIO_clear_retry_flags(b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN(errno)) {
-      /* this BIO is not the same as "b", which openssl passed in to this func.
-       * set its retry flag, which we check with BIO_should_retry in
-       * mongoc-stream-tls-openssl.c
-       */
+      // Set the retry flag for the BIO used by functions in mongoc-stream-tls-openssl.c.
       BIO_set_retry_read(openssl->bio);
+
+      // Also set the retry flag for the BIO used by OpenSSL.
+      BIO_set_retry_read(b);
+
+      // EAGAIN is an error (negative value), not an EOF (zero).
+      ret = -1;
    }
 
    BSON_ASSERT(mlib_in_range(int, ret));
