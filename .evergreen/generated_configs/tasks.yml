@@ -6254,6 +6254,25 @@ tasks:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.5.1
       - func: run auth tests
+  - name: openssl-compat-4.0.0-shared-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-4.0.0, openssl-shared, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: openssl-compat
+        vars:
+          OPENSSL_VERSION: 4.0.0
+      - func: run auth tests
+  - name: openssl-compat-4.0.0-static-ubuntu2404-gcc
+    run_on: ubuntu2404-large
+    tags: [openssl-compat, openssl-4.0.0, openssl-static, ubuntu2404, gcc]
+    commands:
+      - func: fetch-source
+      - func: openssl-compat
+        vars:
+          OPENSSL_USE_STATIC_LIBS: "ON"
+          OPENSSL_VERSION: 4.0.0
+      - func: run auth tests
   - name: openssl-compat-fips-3.0.9-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
     tags: [openssl-compat, openssl-fips-3.0.9, openssl-shared, ubuntu2404, gcc]

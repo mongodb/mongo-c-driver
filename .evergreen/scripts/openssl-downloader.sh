@@ -43,6 +43,7 @@ openssl_download() {
   declare openssl_checksum_3_3_4="8d1a5fc323d3fd351dc05458457fd48f78652d2a498e1d70ffea07b4d0eb3fa8"
   declare openssl_checksum_3_4_2="17b02459fc28be415470cccaae7434f3496cac1306b86b52c83886580e82834c"
   declare openssl_checksum_3_5_1="529043b15cffa5f36077a4d0af83f3de399807181d607441d734196d889b641f"
+  declare openssl_checksum_4_0_0="c32cf49a959c4f345f9606982dd36e7d28f7c58b19c2e25d75624d2b3d2f79ac"
 
   declare checksum_name
   checksum_name="openssl_checksum_$(echo "${version:?}" | perl -lpe 's|\.|_|g')" || return
