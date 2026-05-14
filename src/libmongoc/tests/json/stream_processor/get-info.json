@@ -1,0 +1,82 @@
+{
+  "description": "Atlas Stream Processor getStreamProcessor command",
+  "schemaVersion": "1.0",
+  "runOnRequirements": [
+    {
+      "topologies": ["single"],
+      "serverless": "require",
+      "auth": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "uriOptions": {
+          "tls": true,
+          "authSource": "admin"
+        }
+      }
+    }
+  ],
+  "tests": [
+    {
+      "description": "getStreamProcessor returns processor info",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "infoProcessor",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getStreamProcessor",
+            "command": {
+              "getStreamProcessor": "infoProcessor"
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1,
+            "name": "infoProcessor",
+            "state": {
+              "$$type": "string"
+            },
+            "errorMsg": {
+              "$$type": "string"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "getStreamProcessor on non-existent processor returns an error",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getStreamProcessor",
+            "command": {
+              "getStreamProcessor": "doesNotExist"
+            },
+            "dbName": "admin"
+          },
+          "expectError": {
+            "isClientError": false
+          }
+        }
+      ]
+    }
+  ]
+}

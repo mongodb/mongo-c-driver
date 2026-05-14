@@ -1,0 +1,130 @@
+{
+  "description": "Atlas Stream Processor getStreamProcessorStats command",
+  "schemaVersion": "1.0",
+  "runOnRequirements": [
+    {
+      "topologies": ["single"],
+      "serverless": "require",
+      "auth": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "uriOptions": {
+          "tls": true,
+          "authSource": "admin"
+        }
+      }
+    }
+  ],
+  "tests": [
+    {
+      "description": "getStreamProcessorStats returns stats for a STARTED processor",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "statsProcessor",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startStreamProcessor",
+            "command": {
+              "startStreamProcessor": "statsProcessor",
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getStreamProcessorStats",
+            "command": {
+              "getStreamProcessorStats": "statsProcessor",
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1,
+            "stats": {
+              "$$type": "object"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "getStreamProcessorStats on a non-STARTED processor returns an error",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "stoppedStatsProcessor",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getStreamProcessorStats",
+            "command": {
+              "getStreamProcessorStats": "stoppedStatsProcessor",
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectError": {
+            "isClientError": false
+          }
+        }
+      ]
+    },
+    {
+      "description": "getStreamProcessorStats with verbose:true returns per-operator statistics",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getStreamProcessorStats",
+            "command": {
+              "getStreamProcessorStats": "statsProcessor",
+              "options": {
+                "verbose": true
+              }
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1,
+            "stats": {
+              "$$type": "object"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

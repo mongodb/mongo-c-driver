@@ -52,6 +52,8 @@
 #include <mongoc/mongoc-stream-buffered.h>
 #include <mongoc/mongoc-stream-file.h>
 #include <mongoc/mongoc-stream-gridfs.h>
+#include <mongoc/mongoc-stream-processing-client.h>
+#include <mongoc/mongoc-stream-processor.h>
 #include <mongoc/mongoc-stream-socket.h>
 #include <mongoc/mongoc-stream.h>
 #include <mongoc/mongoc-structured-log.h>

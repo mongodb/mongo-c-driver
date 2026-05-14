@@ -1,0 +1,111 @@
+{
+  "description": "Atlas Stream Processor error cases",
+  "schemaVersion": "1.0",
+  "runOnRequirements": [
+    {
+      "topologies": ["single"],
+      "serverless": "require",
+      "auth": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "uriOptions": {
+          "tls": true,
+          "authSource": "admin"
+        }
+      }
+    }
+  ],
+  "tests": [
+    {
+      "description": "operating on a non-existent processor returns a server error",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startStreamProcessor",
+            "command": {
+              "startStreamProcessor": "doesNotExist",
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectError": {
+            "isClientError": false
+          }
+        }
+      ]
+    },
+    {
+      "description": "starting an already-STARTED processor returns a server error",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "alreadyStarted",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startStreamProcessor",
+            "command": {
+              "startStreamProcessor": "alreadyStarted",
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startStreamProcessor",
+            "command": {
+              "startStreamProcessor": "alreadyStarted",
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectError": {
+            "isClientError": false
+          }
+        }
+      ]
+    },
+    {
+      "description": "createStreamProcessor with an invalid pipeline returns FailedToParse (code 9)",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "badPipeline",
+              "pipeline": [{"$unknownStage": {}}],
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectError": {
+            "isClientError": false,
+            "errorCode": 9
+          }
+        }
+      ]
+    }
+  ]
+}

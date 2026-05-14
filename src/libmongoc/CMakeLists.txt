@@ -622,6 +622,8 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-processing-client.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-processor.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-timeout.c
@@ -1127,6 +1129,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-speculative-auth.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ssl.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-processor.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-hello.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c

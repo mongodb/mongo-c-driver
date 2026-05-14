@@ -1,0 +1,116 @@
+{
+  "description": "Atlas Stream Processor lifecycle: create, start, stop, drop",
+  "schemaVersion": "1.0",
+  "runOnRequirements": [
+    {
+      "topologies": ["single"],
+      "serverless": "require",
+      "auth": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "uriOptions": {
+          "tls": true,
+          "authSource": "admin"
+        }
+      }
+    }
+  ],
+  "tests": [
+    {
+      "description": "createStreamProcessor succeeds with minimal options",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "testProcessor",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1
+          }
+        }
+      ]
+    },
+    {
+      "description": "startStreamProcessor succeeds on a STOPPED processor",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "testProcessor2",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startStreamProcessor",
+            "command": {
+              "startStreamProcessor": "testProcessor2",
+              "options": {}
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1
+          }
+        }
+      ]
+    },
+    {
+      "description": "stopStreamProcessor succeeds on a STARTED processor",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "stopStreamProcessor",
+            "command": {
+              "stopStreamProcessor": "testProcessor2"
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1
+          }
+        }
+      ]
+    },
+    {
+      "description": "dropStreamProcessor permanently deletes the processor",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "dropStreamProcessor",
+            "command": {
+              "dropStreamProcessor": "testProcessor2"
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1
+          }
+        }
+      ]
+    }
+  ]
+}

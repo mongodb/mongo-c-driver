@@ -1,0 +1,135 @@
+{
+  "description": "Atlas Stream Processor sample cursor: startSampleStreamProcessor and getMoreSampleStreamProcessor",
+  "schemaVersion": "1.0",
+  "runOnRequirements": [
+    {
+      "topologies": ["single"],
+      "serverless": "require",
+      "auth": true
+    }
+  ],
+  "createEntities": [
+    {
+      "client": {
+        "id": "client0",
+        "uriOptions": {
+          "tls": true,
+          "authSource": "admin"
+        }
+      }
+    }
+  ],
+  "tests": [
+    {
+      "description": "startSampleStreamProcessor opens a cursor and returns a cursorId",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "createStreamProcessor",
+            "command": {
+              "createStreamProcessor": "sampleProcessor",
+              "pipeline": [],
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startStreamProcessor",
+            "command": {
+              "startStreamProcessor": "sampleProcessor",
+              "options": {}
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startSampleStreamProcessor",
+            "command": {
+              "startSampleStreamProcessor": "sampleProcessor"
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1,
+            "cursorId": {
+              "$$type": ["int", "long"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "getMoreSampleStreamProcessor returns messages and a cursorId",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getMoreSampleStreamProcessor",
+            "command": {
+              "getMoreSampleStreamProcessor": "sampleProcessor",
+              "cursorId": {
+                "$$placeholder": 1
+              }
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1,
+            "cursorId": {
+              "$$type": ["int", "long"]
+            },
+            "messages": {
+              "$$type": "array"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "cursorId of 0 in getMoreSampleStreamProcessor response signals exhaustion",
+      "operations": [
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "startSampleStreamProcessor",
+            "command": {
+              "startSampleStreamProcessor": "sampleProcessor",
+              "limit": 0
+            },
+            "dbName": "admin"
+          }
+        },
+        {
+          "name": "runCommand",
+          "object": "client0",
+          "arguments": {
+            "commandName": "getMoreSampleStreamProcessor",
+            "command": {
+              "getMoreSampleStreamProcessor": "sampleProcessor",
+              "cursorId": {
+                "$$placeholder": 1
+              }
+            },
+            "dbName": "admin"
+          },
+          "expectResult": {
+            "ok": 1,
+            "cursorId": 0,
+            "messages": []
+          }
+        }
+      ]
+    }
+  ]
+}

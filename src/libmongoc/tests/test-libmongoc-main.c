@@ -167,6 +167,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_stream_tracker_install);
    TEST_INSTALL(test_oidc_auth_install);
    TEST_INSTALL(test_backpressure_install);
+   TEST_INSTALL(test_stream_processor_install);
 
    const int ret = TestSuite_Run(&suite);
 
