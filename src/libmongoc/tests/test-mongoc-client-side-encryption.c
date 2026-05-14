@@ -44,76 +44,6 @@
 
 #include <mlib/cmp.h>
 
-static void
-_before_test(json_test_ctx_t *ctx, const bson_t *test)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *keyvault_coll;
-   bson_iter_t iter;
-   bson_error_t error;
-   bool ret;
-   mongoc_write_concern_t *wc;
-   bson_t insert_opts;
-
-   BSON_UNUSED(test);
-
-   /* Insert data into the key vault. */
-   client = test_framework_new_default_client();
-   wc = mongoc_write_concern_new();
-   mongoc_write_concern_set_w(wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
-   bson_init(&insert_opts);
-   mongoc_write_concern_append(wc, &insert_opts);
-
-   if (bson_iter_init_find(&iter, ctx->config->scenario, "key_vault_data")) {
-      keyvault_coll = mongoc_client_get_collection(client, "keyvault", "datakeys");
-
-      /* Drop and recreate, inserting data. */
-      ret = mongoc_collection_drop(keyvault_coll, &error);
-      if (!ret) {
-         /* Ignore "namespace does not exist" error. */
-         ASSERT_OR_PRINT(error.code == 26, error);
-      }
-
-      bson_iter_recurse(&iter, &iter);
-      while (bson_iter_next(&iter)) {
-         bson_t doc;
-
-         bson_iter_bson(&iter, &doc);
-         ret = mongoc_collection_insert_one(keyvault_coll, &doc, &insert_opts, NULL /* reply */, &error);
-         ASSERT_OR_PRINT(ret, error);
-      }
-      mongoc_collection_destroy(keyvault_coll);
-   }
-
-   bson_destroy(&insert_opts);
-   mongoc_write_concern_destroy(wc);
-   mongoc_client_destroy(client);
-}
-
-static bool
-_run_operation(json_test_ctx_t *ctx, const bson_t *test, const bson_t *operation)
-{
-   bson_t reply;
-   bool res;
-
-   res = json_test_operation(ctx, test, operation, ctx->collection, NULL, &reply);
-
-   bson_destroy(&reply);
-
-   return res;
-}
-
-static void
-test_client_side_encryption_cb(void *scenario)
-{
-   json_test_config_t config = JSON_TEST_CONFIG_INIT;
-   config.before_test_cb = _before_test;
-   config.run_operation_cb = _run_operation;
-   config.scenario = scenario;
-   config.command_started_events_only = true;
-   config.command_monitoring_allow_subset = false;
-   run_json_general_test(&config);
-}
 
 /* This is the hex form of the base64 encoded value:
  * Mng0NCt4ZHVUYUJCa1kxNkVyNUR1QURhZ2h2UzR2d2RrZzh0cFBwM3R6NmdWMDFBMUN3YkQ5aXRRMkhGRGdQV09wOGVNYUMxT2k3NjZKelhaQmRCZGJkTXVyZG9uSjFk
@@ -7421,11 +7351,6 @@ skip_if_libmongocrypt_less_than_1_17_0(void)
 void
 test_client_side_encryption_install(TestSuite *suite)
 {
-   install_json_test_suite_with_check(suite,
-                                      JSON_DIR,
-                                      "client_side_encryption/legacy",
-                                      test_client_side_encryption_cb,
-                                      test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */
    TestSuite_AddFull(suite,
                      "/client_side_encryption/create_datakey_with_custom_key_material [lock:live-server]",
