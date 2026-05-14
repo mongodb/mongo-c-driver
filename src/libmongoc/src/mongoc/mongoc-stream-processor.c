@@ -103,23 +103,16 @@ mongoc_stream_processors_get (mongoc_stream_processors_t *sps, const char *name)
    return sp;
 }
 
-/* Parses the getStreamProcessor reply into a mongoc_stream_processor_info_t.
- * Unknown fields are silently ignored per spec. Internal server fields
- * (tenantID, tenantId, projectId, processorId) are not surfaced. */
-static mongoc_stream_processor_info_t *
-_parse_get_stream_processor_reply (const bson_t *reply)
+/* Parses a flat BSON document of processor fields into info.
+ * Called on the "result" subdocument from getStreamProcessor, or directly on
+ * the top-level reply if no "result" wrapper is present. */
+static void
+_parse_processor_fields (mongoc_stream_processor_info_t *info, const bson_t *doc)
 {
-   mongoc_stream_processor_info_t *info;
    bson_iter_t iter;
 
-   info = bson_malloc0 (sizeof *info);
-   info->last_state_change_ms = -1;
-   info->last_modified_at_ms = -1;
-   info->error_code = -1;
-   info->error_msg = bson_strdup ("");
-
-   if (!bson_iter_init (&iter, reply)) {
-      return info;
+   if (!bson_iter_init (&iter, doc)) {
+      return;
    }
 
    while (bson_iter_next (&iter)) {
@@ -135,7 +128,6 @@ _parse_get_stream_processor_reply (const bson_t *reply)
          bson_free (info->state);
          info->state = bson_strdup (bson_iter_utf8 (&iter, NULL));
       } else if (strcmp (key, "pipeline") == 0 && BSON_ITER_HOLDS_ARRAY (&iter)) {
-         bson_t pipeline;
          uint32_t len;
          const uint8_t *data;
          bson_iter_array (&iter, &len, &data);
@@ -149,7 +141,6 @@ _parse_get_stream_processor_reply (const bson_t *reply)
          bson_free (info->tier);
          info->tier = bson_strdup (bson_iter_utf8 (&iter, NULL));
       } else if (strcmp (key, "dlq") == 0 && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_t dlq;
          uint32_t len;
          const uint8_t *data;
          bson_iter_document (&iter, &len, &data);
@@ -190,9 +181,41 @@ _parse_get_stream_processor_reply (const bson_t *reply)
       /* Internal server fields (tenantID, tenantId, projectId, processorId,
        * ok) and any unknown fields are intentionally ignored. */
    }
+}
+
+/* Parses the getStreamProcessor reply into a mongoc_stream_processor_info_t.
+ * The server wraps processor fields inside a "result" subdocument; falls back
+ * to parsing the top-level reply if no such wrapper is present.
+ * Unknown fields are silently ignored per spec. */
+static mongoc_stream_processor_info_t *
+_parse_get_stream_processor_reply (const bson_t *reply)
+{
+   mongoc_stream_processor_info_t *info;
+   bson_iter_t iter;
+
+   info = bson_malloc0 (sizeof *info);
+   info->last_state_change_ms = -1;
+   info->last_modified_at_ms = -1;
+   info->error_code = -1;
+   info->error_msg = bson_strdup ("");
+
+   /* The server returns processor fields nested under a "result" key.
+    * Parse that subdocument if present; otherwise fall back to top-level. */
+   if (bson_iter_init_find (&iter, reply, "result") &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      bson_t result_doc;
+      uint32_t len;
+      const uint8_t *data;
+      bson_iter_document (&iter, &len, &data);
+      bson_init_static (&result_doc, data, len);
+      _parse_processor_fields (info, &result_doc);
+   } else {
+      _parse_processor_fields (info, reply);
+   }
 
    return info;
 }
+
 
 bool
 mongoc_stream_processors_get_info (mongoc_stream_processors_t *sps,
@@ -260,8 +283,8 @@ mongoc_stream_processor_start (mongoc_stream_processor_t *sp,
       if (opts->start_at_operation_time_set) {
          BSON_APPEND_TIMESTAMP (&options_doc,
                                 "startAtOperationTime",
-                                opts->start_at_operation_time.timestamp,
-                                opts->start_at_operation_time.increment);
+                                opts->start_at_operation_time_ts,
+                                opts->start_at_operation_time_inc);
       }
       /* startAfter is RESERVED per spec — MUST NOT be serialized to the wire */
       if (opts->tier) {

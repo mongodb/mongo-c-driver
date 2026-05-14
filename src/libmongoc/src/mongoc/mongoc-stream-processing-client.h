@@ -109,7 +109,9 @@ typedef struct {
    /* use _set fields to distinguish "not set" from "false" */
    bool clear_checkpoints;
    bool clear_checkpoints_set;
-   bson_timestamp_t start_at_operation_time;
+   /* startAtOperationTime: BSON timestamp stored as two uint32 components */
+   uint32_t start_at_operation_time_ts;
+   uint32_t start_at_operation_time_inc;
    bool start_at_operation_time_set;
    /* startAfter: RESERVED — never sent on the wire per spec */
    bson_t *start_after; /* present for API completeness only */
