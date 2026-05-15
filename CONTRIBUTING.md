@@ -302,7 +302,7 @@ This can be useful in debugging a specific test case in a spec test file with mu
 
 ```sh
 MONGOC_JSON_SUBTEST="Insert with randomized encryption, then find it" \
-  ./cmake-build/src/libmongoc/test-libmongoc -l "/client_side_encryption/legacy/basic"
+  ./cmake-build/src/libmongoc/test-libmongoc -l "/client_side_encryption/unified/basic"
 ```
 
 To test with a declared API version, you can pass the API version using an environment variable:
