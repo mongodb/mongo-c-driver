@@ -1350,9 +1350,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1371,7 +1372,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1417,9 +1417,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1438,7 +1439,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1484,9 +1484,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1505,7 +1506,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1551,9 +1551,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1572,7 +1573,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1618,9 +1618,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1639,7 +1640,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1685,9 +1685,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1706,7 +1707,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1752,9 +1752,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1773,7 +1774,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1819,9 +1819,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1840,7 +1841,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1886,9 +1886,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1907,7 +1908,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -1953,9 +1953,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -1974,7 +1975,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2020,9 +2020,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2041,7 +2042,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2087,9 +2087,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2108,7 +2109,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2154,9 +2154,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2175,7 +2176,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2221,9 +2221,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2242,7 +2243,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2288,9 +2288,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2309,7 +2310,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2355,9 +2355,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2376,7 +2377,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2422,9 +2422,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2443,7 +2444,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2489,9 +2489,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2510,7 +2511,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2556,9 +2556,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2577,7 +2578,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2623,9 +2623,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2644,7 +2645,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2690,9 +2690,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2711,7 +2712,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2757,9 +2757,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2778,7 +2779,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2824,9 +2824,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2845,7 +2846,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
@@ -2891,9 +2891,10 @@ tasks:
         params:
           binary: ./tools/earthly.sh
           working_dir: mongoc
+          env:
+            EARTHLY_RETRY_WITH_DELAY: "1"
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
@@ -2912,7 +2913,6 @@ tasks:
           working_dir: mongoc
           include_expansions_in_env:
             - DOCKER_CONFIG
-          retry_on_failure: true
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure

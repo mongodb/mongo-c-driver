@@ -45,5 +45,14 @@ run-earthly() {
 }
 
 if is-main; then
+  if [[ "${EARTHLY_RETRY_WITH_DELAY:-}" == "1" ]]; then
+    for _delay in 1 10 30; do
+      if run-earthly "$@"; then
+        exit 0
+      fi
+      echo "Earthly failed. Retrying in ${_delay}s..." >&2
+      sleep "$_delay"
+    done
+  fi
   run-earthly "$@"
 fi
