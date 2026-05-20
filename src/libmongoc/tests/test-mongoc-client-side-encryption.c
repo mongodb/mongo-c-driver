@@ -5218,10 +5218,11 @@ test_explicit_encryption_text_substring(void *unused)
       plaintext.value.v_utf8.len = 3;
       ok = mongoc_client_encryption_encrypt(eef->clientEncryption, &plaintext, eo, &findPayload, &error);
 
-      bsonBuildDecl(expr,
-                    kv("$expr",
-                       doc(kv("$encStrContains",
-                              doc(kv("input", cstr("$encryptedTextInsensitive")), kv("substring", value(findPayload)))))));
+      bsonBuildDecl(
+         expr,
+         kv("$expr",
+            doc(kv("$encStrContains",
+                   doc(kv("input", cstr("$encryptedTextInsensitive")), kv("substring", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_cursor_t *cursor;
