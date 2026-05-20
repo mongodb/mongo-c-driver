@@ -26,6 +26,33 @@
                     "diacriticSensitive": true
                 }
             ]
+        },
+    {
+            "keyId": {
+                "$binary": {
+                    "base64": "qrvM3e7/ABEiM0RVZneImQ==",
+                    "subType": "04"
+                }
+            },
+            "path": "encryptedTextInsensitive",
+            "bsonType": "string",
+            "queries": [
+                {
+                    "queryType": "substringPreview",
+                    "strMaxLength": {
+                        "$numberInt": "10"
+                    },
+                    "strMinQueryLength": {
+                        "$numberInt": "2"
+                    },
+                    "strMaxQueryLength": {
+                        "$numberInt": "10"
+                    },
+                    "contention": 0,
+                    "caseSensitive": false,
+                    "diacriticSensitive": true
+                }
+            ]
         }
   ]
 }
