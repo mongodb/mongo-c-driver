@@ -14,14 +14,7 @@ compile_libmongocrypt() {
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
   declare -r version="1.18.0-dev"
 
-  {
-    git clone -q https://github.com/mongodb/libmongocrypt || return
-    cd libmongocrypt || return
-    git checkout 6d6bc38254a07bd47dbd0e665cffd67adf8746a9 || return
-    cd .. || return
-  }
-  # TODO: after libmongocrypt 1.18.0 is released, replace the above block with:
-  # git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch 1.18.0 || return
+  git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch 1.18.0 || return
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
