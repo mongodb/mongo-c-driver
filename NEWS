@@ -10,6 +10,14 @@ libmongoc 2.4.0 [UNRELEASED]
 
 * Improve forward compatibility with OpenSSL 4.0.0 when handling `EAGAIN` errors in old-style read callbacks where `BIO_FLAGS_AUTO_EOF` is enabled.
 
+## Breaking Changes
+
+* The previously experimental Queryable Encryption text search API (`mongoc_client_encryption_encrypt_text_*`) has been renamed to `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm. This is a backwards-incompatible change. The "substringPreview" algorithm is still documented experimental.
+
+## New Features
+
+* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix` and `suffix` query types. The `substringPreview` query type remains experimental.
+
 libmongoc 2.3.0
 ===============
 
