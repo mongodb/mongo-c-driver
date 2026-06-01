@@ -4609,7 +4609,7 @@ text_explicit_encryption_setup(void)
 
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4642,7 +4642,7 @@ text_explicit_encryption_setup(void)
 
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4705,8 +4705,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "prefix");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4751,8 +4751,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "suffix");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4797,8 +4797,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "prefix");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4843,8 +4843,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "suffix");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4889,8 +4889,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "substringPreview");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4934,8 +4934,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "substringPreview");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -4981,8 +4981,8 @@ test_text_explicit_encryption(void *unused)
       text_explicit_encryption_fixture *teef = text_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, "prefix");
+      mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
 
       mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
       mongoc_client_encryption_encrypt_text_opts_set_prefix(topts, teef->prefixOpts);
@@ -5025,8 +5025,8 @@ test_text_explicit_encryption(void *unused)
       {
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, "prefix");
+         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -5072,8 +5072,8 @@ test_text_explicit_encryption(void *unused)
       {
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, "suffix");
+         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -5134,8 +5134,8 @@ test_text_explicit_encryption(void *unused)
       {
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, "prefix");
+         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -5180,8 +5180,8 @@ test_text_explicit_encryption(void *unused)
       {
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, "suffix");
+         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_text_opts_t *topts = mongoc_client_encryption_encrypt_text_opts_new();
@@ -5241,7 +5241,7 @@ test_text_explicit_encryption(void *unused)
       {
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
+         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
          mongoc_client_encryption_encrypt_opts_set_query_type(eo, "substringPreview");
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
@@ -5302,7 +5302,7 @@ test_text_explicit_encryption(void *unused)
       {
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &teef->key1ID);
-         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, "string");
+         mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
          mongoc_client_encryption_encrypt_opts_set_query_type(eo, "substringPreview");
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
@@ -6202,7 +6202,7 @@ test_qe_docs_example(void *unused)
          "fields", "[",
             "{",
                "path", "encryptedIndexed",
-               "bsonType", "string",
+               "bsonType", MONGOC_ENCRYPT_ALGORITHM_STRING,
                "keyId", BCON_BIN (key1ID.value.v_binary.subtype,
                                   key1ID.value.v_binary.data,
                                   key1ID.value.v_binary.data_len),
@@ -6210,7 +6210,7 @@ test_qe_docs_example(void *unused)
             "}",
             "{",
                "path", "encryptedUnindexed",
-               "bsonType", "string",
+               "bsonType", MONGOC_ENCRYPT_ALGORITHM_STRING,
                "keyId", BCON_BIN (key2ID.value.v_binary.subtype,
                                   key2ID.value.v_binary.data,
                                   key2ID.value.v_binary.data_len),
@@ -6661,10 +6661,12 @@ CEC_TEST(test_create_encrypted_collection_simple, const char *kmsProvider)
    ASSERT_OR_PRINT(ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl(
-      ccOpts,
-      kv("encryptedFields",
-         doc(kv("fields", array(doc(kv("path", cstr("ssn")), kv("bsonType", cstr("string")), kv("keyId", null)))))));
+   bsonBuildDecl(ccOpts,
+                 kv("encryptedFields",
+                    doc(kv("fields",
+                           array(doc(kv("path", cstr("ssn")),
+                                     kv("bsonType", cstr(MONGOC_ENCRYPT_ALGORITHM_STRING)),
+                                     kv("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database(client, dbName);
    bson_t *const mkey = _make_kms_masterkey(kmsProvider);
    mongoc_collection_t *const coll = mongoc_client_encryption_create_encrypted_collection(
@@ -6818,11 +6820,12 @@ CEC_TEST(test_create_encrypted_collection_bad_keyId, const char *const kmsProvid
    ASSERT_OR_PRINT(ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl(
-      ccOpts,
-      kv("encryptedFields",
-         doc(kv("fields",
-                array(doc(kv("path", cstr("ssn")), kv("bsonType", cstr("string")), kv("keyId", boolean(true))))))));
+   bsonBuildDecl(ccOpts,
+                 kv("encryptedFields",
+                    doc(kv("fields",
+                           array(doc(kv("path", cstr("ssn")),
+                                     kv("bsonType", cstr(MONGOC_ENCRYPT_ALGORITHM_STRING)),
+                                     kv("keyId", boolean(true))))))));
    mongoc_database_t *const db = mongoc_client_get_database(client, dbName);
    bson_t *const mkey = _make_kms_masterkey(kmsProvider);
    mongoc_collection_t *const coll = mongoc_client_encryption_create_encrypted_collection(
@@ -6877,10 +6880,12 @@ CEC_TEST(test_create_encrypted_collection_insert, const char *const kmsProvider)
    ASSERT_OR_PRINT(ce, error);
 
    // Create the encrypted collection
-   bsonBuildDecl(
-      ccOpts,
-      kv("encryptedFields",
-         doc(kv("fields", array(doc(kv("path", cstr("ssn")), kv("bsonType", cstr("string")), kv("keyId", null)))))));
+   bsonBuildDecl(ccOpts,
+                 kv("encryptedFields",
+                    doc(kv("fields",
+                           array(doc(kv("path", cstr("ssn")),
+                                     kv("bsonType", cstr(MONGOC_ENCRYPT_ALGORITHM_STRING)),
+                                     kv("keyId", null)))))));
    mongoc_database_t *const db = mongoc_client_get_database(client, dbName);
    bson_t new_opts;
    bson_t *const mkey = _make_kms_masterkey(kmsProvider);
