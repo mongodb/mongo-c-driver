@@ -1,6 +1,6 @@
 {
-    "fields": [
-        {
+  "fields": [
+    {
             "keyId": {
                 "$binary": {
                     "base64": "EjRWeBI0mHYSNBI0VniQEg==",
@@ -11,28 +11,21 @@
             "bsonType": "string",
             "queries": [
                 {
-                    "queryType": "prefix",
+                    "queryType": "substringPreview",
+                    "strMaxLength": {
+                        "$numberInt": "10"
+                    },
                     "strMinQueryLength": {
                         "$numberInt": "2"
                     },
                     "strMaxQueryLength": {
                         "$numberInt": "10"
                     },
-                    "caseSensitive": true,
-                    "diacriticSensitive": true
-                },
-                {
-                    "queryType": "suffix",
-                    "strMinQueryLength": {
-                        "$numberInt": "2"
-                    },
-                    "strMaxQueryLength": {
-                        "$numberInt": "10"
-                    },
-                    "caseSensitive": true,
-                    "diacriticSensitive": true
+                    "contention": 0,
+                    "caseSensitive": false,
+                    "diacriticSensitive": false
                 }
             ]
         }
-    ]
+  ]
 }
