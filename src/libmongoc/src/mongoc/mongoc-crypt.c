@@ -1703,6 +1703,7 @@ _create_explicit_state_machine(_mongoc_crypt_t *crypt,
 
    if (query_type != NULL) {
       if (!mongocrypt_ctx_setopt_query_type(state_machine->ctx, query_type, -1)) {
+         _ctx_check_error(state_machine->ctx, error, true);
          goto fail;
       }
    }
