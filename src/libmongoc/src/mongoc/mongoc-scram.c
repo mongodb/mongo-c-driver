@@ -672,6 +672,7 @@ _mongoc_scram_step2(mongoc_scram_t *scram,
                         MONGOC_ERROR_SCRAM,
                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
                         "SCRAM Failure: client nonce not repeated in sasl step 2");
+      goto FAIL;
    }
 
    *outbuflen = 0;
