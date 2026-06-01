@@ -17,7 +17,7 @@ compile_libmongocrypt() {
   {
     git clone -q https://github.com/mongodb/libmongocrypt || return
     cd libmongocrypt || return
-    git checkout 6d6bc38254a07bd47dbd0e665cffd67adf8746a9 || return
+    git checkout 0ea5b7449ac2c7e774827a04495f96af14586117 || return
     cd .. || return
   }
   # TODO: after libmongocrypt 1.18.0 is released, replace the above block with:
