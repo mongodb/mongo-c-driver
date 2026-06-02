@@ -31,6 +31,8 @@ The ``realloc_func``, if provided, is called to resize ``buf`` if the document i
 
 If ``*buf`` is initially NULL then it is allocated, using ``realloc_func`` or the default allocator, and initialized with an empty BSON document, and ``*buf_len`` is set to 5, the size of an empty document.
 
+If ``*buf`` is initially non-NULL, ``*buf_len`` must be at least as large as the embedded length in the first four bytes of the BSON data in ``*buf``, but may exceed it. Remaining buffer capacity may be used to later grow the BSON document.
+
 Returns
 -------
 

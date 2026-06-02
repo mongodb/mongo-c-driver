@@ -22,6 +22,8 @@ Description
 
 The :symbol:`bson_new_from_data()` function shall create a new :symbol:`bson_t` on the heap and copy the contents of ``data``. This may be helpful when working with language bindings but is generally expected to be slower.
 
+It is an error if ``length`` does not match the length embedded in the first four bytes of the BSON data in ``data``.
+
 Returns
 -------
 
