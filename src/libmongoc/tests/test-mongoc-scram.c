@@ -88,6 +88,40 @@ test_mongoc_scram_iteration_count(void)
    test_iteration_count(10000, true);
 }
 
+/* Regression test for CDRIVER-6315. */
+static void
+test_mongoc_scram_step_nonce_mismatch(void)
+{
+   mongoc_scram_t scram;
+   uint8_t buf[4096] = {0};
+   uint32_t buflen = 0;
+   bson_error_t error;
+   const char *client_nonce = "YWJjZA==";
+   /* server-first message whose r= field does not begin with the client's nonce */
+   const char *server_response = "r=ZZZZZZZZserver-nonce,s=r6+P1iLmSJvhrRyuFi6Wsg==,i=4096";
+   bool success;
+
+   _mongoc_scram_init(&scram, MONGOC_CRYPTO_ALGORITHM_SHA_1);
+   _mongoc_scram_set_pass(&scram, "password");
+   bson_strncpy(scram.encoded_nonce, client_nonce, sizeof(scram.encoded_nonce));
+   scram.encoded_nonce_len = (int32_t)strlen(client_nonce);
+   scram.auth_message = bson_malloc0(4096);
+   scram.auth_messagemax = 4096;
+   memcpy(buf, server_response, strlen(server_response) + 1);
+   buflen = (int32_t)strlen(server_response);
+   scram.step = 1;
+
+   success = _mongoc_scram_step(&scram, buf, buflen, buf, sizeof buf, &buflen, &error);
+
+   BSON_ASSERT(!success);
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_SCRAM,
+                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                         "SCRAM Failure: client nonce not repeated in sasl step 2");
+
+   _mongoc_scram_destroy(&scram);
+}
+
 static void
 test_mongoc_scram_sasl_prep(void)
 {
@@ -744,6 +778,7 @@ test_scram_install(TestSuite *suite)
    TestSuite_Add(suite, "/scram/username_not_set", test_mongoc_scram_step_username_not_set);
    TestSuite_Add(suite, "/scram/sasl_prep", test_mongoc_scram_sasl_prep);
    TestSuite_Add(suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
+   TestSuite_Add(suite, "/scram/nonce_mismatch", test_mongoc_scram_step_nonce_mismatch);
    TestSuite_Add(suite, "/scram/utf8_char_length", test_mongoc_utf8_char_length);
    TestSuite_Add(suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);
    TestSuite_Add(suite, "/scram/utf8_to_unicode", test_mongoc_utf8_to_unicode);
