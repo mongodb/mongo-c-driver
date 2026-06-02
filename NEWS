@@ -6,9 +6,26 @@ libmongoc 2.4.0 [UNRELEASED]
 * Raise required version of libmongocrypt from 1.15.1 to 1.18.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
 * In a future minor release the minimum supported MongoDB Server version will be raised from 4.2 to 4.4. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
 
+
+libmongoc 2.3.1
+===============
+
 ## Improvements
 
 * Improve forward compatibility with OpenSSL 4.0.0 when handling `EAGAIN` errors in old-style read callbacks where `BIO_FLAGS_AUTO_EOF` is enabled.
+* Improve decompressed message length constraints.
+
+## Fixes
+
+* Fix documentation generation on Sphinx 9.0+.
+* Propagate username to custom OIDC callback.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Colby Pike
+  * Kevin Albertson
+
 
 libmongoc 2.3.0
 ===============
