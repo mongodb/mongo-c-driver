@@ -1994,7 +1994,7 @@ bson_new_from_buffer (uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_
 
       memcpy (&len_le, *buf, sizeof (len_le));
       length = BSON_UINT32_FROM_LE (len_le);
-      if ((size_t) length > *buf_len) {
+      if (length < 5 || (size_t) length > *buf_len) {
          bson_free (bson);
          return NULL;
       }
