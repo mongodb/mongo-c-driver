@@ -4430,7 +4430,7 @@ test_explicit_encryption_case5(void *unused)
    explicit_encryption_destroy(eef);
 }
 
-/* string_explicit_encryption_fixture is a fixture for the String Explicit Encryption prose test. */
+// string_explicit_encryption_fixture is a fixture for the String Explicit Encryption prose tests.
 typedef struct {
    bson_value_t key1ID;
    mongoc_client_t *keyVaultClient;
@@ -4440,6 +4440,7 @@ typedef struct {
    mongoc_client_encryption_encrypt_string_prefix_opts_t *prefixOpts;
    mongoc_client_encryption_encrypt_string_suffix_opts_t *suffixOpts;
    mongoc_client_encryption_encrypt_string_substring_opts_t *substringOpts;
+   bson_t wc_majority_opts; // bson_t opts with majority write concern appended.
 } string_explicit_encryption_fixture;
 
 static string_explicit_encryption_fixture *
@@ -4454,8 +4455,14 @@ string_explicit_encryption_setup(void)
 
    bool server_supports_prefix_suffix = test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
 
-   mongoc_write_concern_t *wc_majority = mongoc_write_concern_new();
-   mongoc_write_concern_set_w(wc_majority, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   // Create majority write concern opts for reuse.
+   {
+      bson_init(&seef->wc_majority_opts);
+      mongoc_write_concern_t *wc_majority = mongoc_write_concern_new();
+      mongoc_write_concern_set_w(wc_majority, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      ASSERT(mongoc_write_concern_append(wc_majority, &seef->wc_majority_opts));
+      mongoc_write_concern_destroy(wc_majority);
+   }
 
 
    // "drop and create" the QE collections:
@@ -4478,7 +4485,7 @@ string_explicit_encryption_setup(void)
             "./src/libmongoc/tests/client_side_encryption_prose/explicit_encryption/encryptedFields-%s.json", name);
          bson_t *encryptedFields = get_bson_from_json_file(encryptedFields_path);
          opts = BCON_NEW("encryptedFields", BCON_DOCUMENT(encryptedFields));
-         ASSERT(mongoc_write_concern_append(wc_majority, opts));
+         ASSERT(bson_concat(opts, &seef->wc_majority_opts));
 
          mongoc_database_t *db = mongoc_client_get_database(setupClient, "db");
          mongoc_collection_t *coll = mongoc_database_get_collection(db, name);
@@ -4518,7 +4525,6 @@ string_explicit_encryption_setup(void)
       mongoc_database_t *db = mongoc_client_get_database(setupClient, "keyvault");
       mongoc_collection_t *coll = mongoc_database_get_collection(db, "datakeys");
       bson_error_t error;
-      bson_t opts = BSON_INITIALIZER;
 
 
       if (!mongoc_collection_drop(coll, &error)) {
@@ -4532,9 +4538,9 @@ string_explicit_encryption_setup(void)
       ASSERT_OR_PRINT(coll, error);
 
       // "Insert `keyDocument1` in `keyvault.datakeys` with write concern majority"
-      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, key1Document, &opts, NULL /* reply */, &error), error);
+      ASSERT_OR_PRINT(
+         mongoc_collection_insert_one(coll, key1Document, &seef->wc_majority_opts, NULL /* reply */, &error), error);
 
-      bson_destroy(&opts);
       mongoc_collection_destroy(coll);
       mongoc_database_destroy(db);
    }
@@ -4635,7 +4641,7 @@ string_explicit_encryption_setup(void)
       ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
-      ok = mongoc_collection_insert_one(coll, &to_insert, NULL /* opts */, NULL /* reply */, &error);
+      ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_destroy(coll);
@@ -4667,7 +4673,7 @@ string_explicit_encryption_setup(void)
       ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring");
-      ok = mongoc_collection_insert_one(coll, &to_insert, NULL /* opts */, NULL /* reply */, &error);
+      ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_destroy(coll);
@@ -4677,7 +4683,6 @@ string_explicit_encryption_setup(void)
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
-   mongoc_write_concern_destroy(wc_majority);
    mongoc_client_destroy(setupClient);
    bson_destroy(key1Document);
    return seef;
@@ -4690,6 +4695,7 @@ string_explicit_encryption_destroy(string_explicit_encryption_fixture *seef)
       return;
    }
 
+   bson_destroy(&seef->wc_majority_opts);
    mongoc_client_encryption_encrypt_string_prefix_opts_destroy(seef->prefixOpts);
    mongoc_client_encryption_encrypt_string_suffix_opts_destroy(seef->suffixOpts);
    mongoc_client_encryption_encrypt_string_substring_opts_destroy(seef->substringOpts);
@@ -5029,8 +5035,9 @@ test_string_explicit_encryption(void *unused)
       {
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->autoEncryptedClient, "db", "prefix-suffix-ci-di");
-         ASSERT_OR_PRINT(
-            mongoc_collection_insert_one(coll, tmp_bson("{'encryptedText': 'BingQiLin'}"), NULL, NULL, &error), error);
+         ASSERT_OR_PRINT(mongoc_collection_insert_one(
+                            coll, tmp_bson("{'encryptedText': 'BingQiLin'}"), &seef->wc_majority_opts, NULL, &error),
+                         error);
          mongoc_collection_destroy(coll);
       }
 
@@ -5129,8 +5136,9 @@ test_string_explicit_encryption(void *unused)
       {
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->autoEncryptedClient, "db", "prefix-suffix-ci-di");
-         ASSERT_OR_PRINT(
-            mongoc_collection_insert_one(coll, tmp_bson("{'encryptedText': 'cafébarbäz'}"), NULL, NULL, &error), error);
+         ASSERT_OR_PRINT(mongoc_collection_insert_one(
+                            coll, tmp_bson("{'encryptedText': 'cafébarbäz'}"), &seef->wc_majority_opts, NULL, &error),
+                         error);
          mongoc_collection_destroy(coll);
       }
 
@@ -5228,8 +5236,9 @@ test_string_explicit_encryption(void *unused)
       // "Use `autoEncryptedClient` to insert"
       {
          mongoc_collection_t *coll = mongoc_client_get_collection(seef->autoEncryptedClient, "db", "substring-ci-di");
-         ASSERT_OR_PRINT(
-            mongoc_collection_insert_one(coll, tmp_bson("{'encryptedText': 'FooBarBaz'}"), NULL, NULL, &error), error);
+         ASSERT_OR_PRINT(mongoc_collection_insert_one(
+                            coll, tmp_bson("{'encryptedText': 'FooBarBaz'}"), &seef->wc_majority_opts, NULL, &error),
+                         error);
          mongoc_collection_destroy(coll);
       }
 
@@ -5285,8 +5294,9 @@ test_string_explicit_encryption(void *unused)
       // "Use `autoEncryptedClient` to insert"
       {
          mongoc_collection_t *coll = mongoc_client_get_collection(seef->autoEncryptedClient, "db", "substring-ci-di");
-         ASSERT_OR_PRINT(
-            mongoc_collection_insert_one(coll, tmp_bson("{'encryptedText': 'foocafébaz'}"), NULL, NULL, &error), error);
+         ASSERT_OR_PRINT(mongoc_collection_insert_one(
+                            coll, tmp_bson("{'encryptedText': 'foocafébaz'}"), &seef->wc_majority_opts, NULL, &error),
+                         error);
          mongoc_collection_destroy(coll);
       }
 
