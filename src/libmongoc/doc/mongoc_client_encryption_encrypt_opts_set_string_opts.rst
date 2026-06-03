@@ -11,7 +11,7 @@ Synopsis
    void
    mongoc_client_encryption_encrypt_opts_set_string_opts(
       mongoc_client_encryption_encrypt_opts_t *opts,
-      const mongoc_client_encryption_encrypt_string_opts_t *text_opts);
+      const mongoc_client_encryption_encrypt_string_opts_t *string_opts);
 
 .. versionchanged:: 2.4.0
 
@@ -24,7 +24,7 @@ Parameters
 ----------
 
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_opts_t`.
-* ``text_opts``: A :symbol:`mongoc_client_encryption_encrypt_string_opts_t` specifying text search options.
+* ``string_opts``: A :symbol:`mongoc_client_encryption_encrypt_string_opts_t` specifying string search options.
 
 .. seealso::
    | :symbol:`mongoc_client_encryption_encrypt_string_opts_t`
