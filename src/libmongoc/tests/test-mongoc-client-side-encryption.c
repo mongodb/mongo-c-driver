@@ -5246,7 +5246,7 @@ test_string_explicit_encryption(void *unused)
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
          mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, "substringPreview");
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -5304,7 +5304,7 @@ test_string_explicit_encryption(void *unused)
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
          mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, "substringPreview");
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
