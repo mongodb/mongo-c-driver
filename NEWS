@@ -12,7 +12,7 @@ libmongoc 2.4.0 [UNRELEASED]
 
 ## Breaking Changes
 
-* The previously experimental Queryable Encryption text search API (`mongoc_client_encryption_encrypt_text_*`) has been renamed to `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm. This is a backwards-incompatible change. The "substringPreview" algorithm is still documented experimental.
+* The previously experimental Queryable Encryption text search API (`mongoc_client_encryption_encrypt_text_*`) has been renamed to `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm. This is a change is included in a minor release since text APIs were documented experimental and subject to backwards incompatible changes. The "substringPreview" algorithm is still documented experimental.
 
 ## New Features
 
