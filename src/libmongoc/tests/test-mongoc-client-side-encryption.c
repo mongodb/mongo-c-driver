@@ -4692,6 +4692,28 @@ string_explicit_encryption_destroy(string_explicit_encryption_fixture *seef)
    bson_free(seef);
 }
 
+#define assert_cursor_matches(cursor, expected_json)                                       \
+   {                                                                                       \
+      const bson_t *got;                                                                   \
+      bool found = mongoc_cursor_next(cursor, &got);                                       \
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);                        \
+      ASSERT(found);                                                                       \
+      ASSERT_MATCH(got, expected_json);                                                    \
+      if (mongoc_cursor_next(cursor, &got)) {                                              \
+         test_error("expected one document to be returned, got extra: %s", tmp_json(got)); \
+      }                                                                                    \
+   }
+
+#define assert_cursor_empty(cursor)                                                        \
+   {                                                                                       \
+      const bson_t *got;                                                                   \
+      bool found = mongoc_cursor_next(cursor, &got);                                       \
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);                        \
+      if (found) {                                                                         \
+         test_error("expected no documents to be returned, but found: %s", tmp_json(got)); \
+      }                                                                                    \
+   }
+
 static void
 test_string_explicit_encryption(void *unused)
 {
@@ -4731,11 +4753,7 @@ test_string_explicit_encryption(void *unused)
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-      const bson_t *got;
-      ASSERT(mongoc_cursor_next(cursor, &got));
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
-      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+      assert_cursor_matches(cursor, "{ 'encryptedText': 'foobarbaz' }");
 
       mongoc_collection_destroy(coll);
       bson_value_destroy(&findPayload);
@@ -4777,11 +4795,7 @@ test_string_explicit_encryption(void *unused)
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-      const bson_t *got;
-      ASSERT(mongoc_cursor_next(cursor, &got));
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
-      ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+      assert_cursor_matches(cursor, "{ 'encryptedText': 'foobarbaz' }");
 
       mongoc_collection_destroy(coll);
       bson_value_destroy(&findPayload);
@@ -4823,11 +4837,7 @@ test_string_explicit_encryption(void *unused)
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-      const bson_t *got;
-      if (mongoc_cursor_next(cursor, &got)) {
-         test_error("expected no documents to be returned, but got: %s", tmp_json(got));
-      }
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      assert_cursor_empty(cursor);
 
       mongoc_collection_destroy(coll);
       bson_value_destroy(&findPayload);
@@ -4869,11 +4879,7 @@ test_string_explicit_encryption(void *unused)
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-      const bson_t *got;
-      if (mongoc_cursor_next(cursor, &got)) {
-         test_error("expected no documents to be returned, but got: %s", tmp_json(got));
-      }
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      assert_cursor_empty(cursor);
 
       mongoc_collection_destroy(coll);
       bson_value_destroy(&findPayload);
@@ -4915,10 +4921,7 @@ test_string_explicit_encryption(void *unused)
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-      const bson_t *got;
-      ASSERT(mongoc_cursor_next(cursor, &got));
-      ASSERT_MATCH(got, "{ 'encryptedText': 'foobarbaz' }");
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      assert_cursor_matches(cursor, "{ 'encryptedText': 'foobarbaz' }");
 
       mongoc_collection_destroy(coll);
       bson_value_destroy(&findPayload);
@@ -4961,11 +4964,7 @@ test_string_explicit_encryption(void *unused)
       mongoc_collection_t *coll =
          mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-      const bson_t *got;
-      if (mongoc_cursor_next(cursor, &got)) {
-         test_error("expected no documents to be returned, but got: %s", tmp_json(got));
-      }
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      assert_cursor_empty(cursor);
 
       mongoc_collection_destroy(coll);
       bson_value_destroy(&findPayload);
@@ -5053,12 +5052,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         const bson_t *got;
-         bool found = mongoc_cursor_next(cursor, &got);
-         ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-         ASSERT(found);
-         ASSERT_MATCH(got, "{ 'encryptedText': 'BingQiLin' }");
-         ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'BingQiLin' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5100,11 +5094,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         const bson_t *got;
-         ASSERT(mongoc_cursor_next(cursor, &got));
-         ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-         ASSERT_MATCH(got, "{ 'encryptedText': 'BingQiLin' }");
-         ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'BingQiLin' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5162,11 +5152,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         const bson_t *got;
-         ASSERT(mongoc_cursor_next(cursor, &got));
-         ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-         ASSERT_MATCH(got, "{ 'encryptedText': 'cafébarbäz' }");
-         ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'cafébarbäz' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5208,11 +5194,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         const bson_t *got;
-         ASSERT(mongoc_cursor_next(cursor, &got));
-         ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-         ASSERT_MATCH(got, "{ 'encryptedText': 'cafébarbäz' }");
-         ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'cafébarbäz' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5269,11 +5251,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         const bson_t *got;
-         ASSERT(mongoc_cursor_next(cursor, &got));
-         ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-         ASSERT_MATCH(got, "{ 'encryptedText': 'FooBarBaz' }");
-         ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'FooBarBaz' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5330,11 +5308,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         const bson_t *got;
-         ASSERT(mongoc_cursor_next(cursor, &got));
-         ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-         ASSERT_MATCH(got, "{ 'encryptedText': 'foocafébaz' }");
-         ASSERT(!mongoc_cursor_next(cursor, &got) && "expected one document to be returned, got more than one");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'foocafébaz' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
