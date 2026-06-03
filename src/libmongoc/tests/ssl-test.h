@@ -33,6 +33,7 @@ typedef struct ssl_test_data {
    bson_mutex_t cond_mutex;
    ssl_test_result_t *client_result;
    ssl_test_result_t *server_result;
+   mongoc_stream_t *(*client_stream_wrapper)(mongoc_stream_t *stream); /* optional */
 } ssl_test_data_t;
 
 void
@@ -41,3 +42,11 @@ ssl_test(mongoc_ssl_opt_t *client,
          const char *host,
          ssl_test_result_t *client_result,
          ssl_test_result_t *server_result);
+
+void
+ssl_test_with_client_stream_wrapper(mongoc_ssl_opt_t *client,
+                                    mongoc_ssl_opt_t *server,
+                                    const char *host,
+                                    ssl_test_result_t *client_result,
+                                    ssl_test_result_t *server_result,
+                                    mongoc_stream_t *(*wrapper)(mongoc_stream_t *stream));

@@ -1,6 +1,6 @@
 # remirepo/fedora spec file for mongo-c-driver
 #
-# SPDX-FileCopyrightText:  Copyright 2015-2025 Remi Collet
+# SPDX-FileCopyrightText:  Copyright 2015-2026 Remi Collet
 # SPDX-License-Identifier: CECILL-2.1
 # http://www.cecill.info/licences/Licence_CeCILL_V2-en.txt
 #
@@ -9,11 +9,14 @@
 %global gh_owner     mongodb
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
-%global libver       1.0
-%global up_version   1.30.2
+%global soname       2
+%global up_version   2.3.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
+
+# enable/disable man pages
+%bcond_without       manpages
 
 # disable for bootstrap (libmongocrypt needs libbson)
 %bcond_without       libmongocrypt
@@ -53,12 +56,15 @@ BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
 # grep VERSION_LESS src/*/CMakeLists.txt
-BuildRequires: cmake(mongocrypt) >= 1.12.0
+# use 1.17 to ensure libbson2 is used
+BuildRequires: cmake(mongocrypt) >= 1.17
 %endif
 BuildRequires: perl-interpreter
 # From man pages
+%if %{with manpages}
 BuildRequires: python3
 BuildRequires: python3-sphinx >= 5.0
+%endif
 
 Requires:   %{name}-libs%{?_isa} = %{version}-%{release}
 # Sub package removed
@@ -88,8 +94,14 @@ Requires:   %{name}%{?_isa} = %{version}-%{release}
 Requires:   pkgconfig
 Requires:   cmake-filesystem
 Requires:   pkgconfig(libzstd)
+Requires:   cmake(bson) = %{version}
 %if %{with libmongocrypt}
 Requires:   cmake(mongocrypt)
+%endif
+Requires:   openssl-devel
+Requires:   pkgconfig(libsasl2)
+%if %{with libutf8proc}
+Requires:   pkgconfig(libutf8proc)
 %endif
 
 %description devel
@@ -137,9 +149,13 @@ Documentation: http://mongoc.org/libbson/%{version}/
     -DENABLE_SSL:STRING=OPENSSL \
     -DENABLE_SASL:STRING=CYRUS \
     -DENABLE_MONGODB_AWS_AUTH:STRING=ON \
-    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
     -DENABLE_CRYPTO_SYSTEM_PROFILE:BOOL=ON \
+%if %{with manpages}
     -DENABLE_MAN_PAGES:BOOL=ON \
+%else
+    -DENABLE_MAN_PAGES:BOOL=OFF \
+%endif
+    -DENABLE_HTML_DOCS:BOOL=OFF \
     -DENABLE_SHARED:BOOL=ON \
     -DENABLE_STATIC:STRING=OFF \
     -DENABLE_ZLIB:STRING=SYSTEM \
@@ -215,50 +231,91 @@ make check || ret=1
 [ -s server.pid ] && kill $(cat server.pid)
 %endif
 
-if grep -r static %{buildroot}%{_libdir}/cmake; then
-  : cmake configuration file contain reference to static library
-  ret=1
-fi
 exit $ret
 
 
 
 %files
-%{_bindir}/mongoc-stat
+%{_bindir}/mongoc2-stat
 
 %files libs
 %license COPYING
 %license THIRD_PARTY_NOTICES
-%{_libdir}/%{libname}-%{libver}.so.*
+%{_libdir}/%{libname}2.so.%{soname}
+%{_libdir}/%{libname}2.so.%{soname}.*
 
 %files devel
 %doc src/%{libname}/examples
 %doc NEWS
-%{_includedir}/%{libname}-%{libver}
-%{_libdir}/%{libname}-%{libver}.so
-%{_libdir}/pkgconfig/%{libname}-*.pc
-%{_libdir}/cmake/%{libname}-%{libver}
-%{_libdir}/cmake/mongoc-%{libver}
+%{_includedir}/mongoc-%{version}
+%{_libdir}/%{libname}2.so
+%{_libdir}/pkgconfig/mongoc2.pc
+%{_libdir}/cmake/mongoc-%{version}
+%if %{with manpages}
 %{_mandir}/man3/mongoc*
+%endif
 
 %files -n libbson
 %license COPYING
 %license THIRD_PARTY_NOTICES
-%{_libdir}/libbson*.so.*
+%{_libdir}/libbson2.so.%{soname}
+%{_libdir}/libbson2.so.%{soname}.*
 
 %files -n libbson-devel
 %doc src/libbson/examples
 %doc src/libbson/NEWS
-%{_includedir}/libbson-%{libver}
+%{_includedir}/bson-%{version}
 %{_libdir}/libbson*.so
-%{_libdir}/cmake/libbson-%{libver}
-%{_libdir}/cmake/bson-%{libver}
-%{_libdir}/pkgconfig/libbson-*.pc
+%{_libdir}/cmake/bson-%{version}
+%{_libdir}/pkgconfig/bson2.pc
+%if %{with manpages}
 %{_mandir}/man3/bson*
 %{_mandir}/man3/libbson*
+%endif
 
 
 %changelog
+* Fri Apr 17 2026 Remi Collet <remi@remirepo.net> - 2.3.0-1
+- update to 2.3.0
+
+* Wed Apr  8 2026 Remi Collet <remi@remirepo.net> - 2.2.4-1
+- update to 2.2.4
+
+* Wed Mar  4 2026 Remi Collet <remi@remirepo.net> - 2.2.3-1
+- update to 2.2.3
+
+* Thu Feb 19 2026 Remi Collet <remi@remirepo.net> - 2.2.2-1
+- update to 2.2.2
+
+* Wed Feb  4 2026 Remi Collet <remi@remirepo.net> - 1.30.7-1
+- update to 1.30.7
+
+* Tue Jan 27 2026 Remi Collet <remi@remirepo.net> - 1.30.6-3
+- re-enable man pages using upstream patch for new docutils
+
+* Thu Jan 22 2026 Remi Collet <remi@remirepo.net> - 1.30.6-2
+- temporarily drop man pages on Fedora 44 as FTBFS
+  reported as https://jira.mongodb.org/browse/CDRIVER-6210
+
+* Fri Jan 16 2026 Fedora Release Engineering <releng@fedoraproject.org> - 1.30.6-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_44_Mass_Rebuild
+
+* Wed Oct  8 2025 Remi Collet <remi@remirepo.net> - 1.30.6-1
+- update to 1.30.6
+
+* Thu Jul 24 2025 Fedora Release Engineering <releng@fedoraproject.org> - 1.30.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_43_Mass_Rebuild
+
+* Wed Jun 18 2025 Remi Collet <remi@remirepo.net> - 1.30.5-1
+- update to 1.30.5
+
+* Wed May  7 2025 Remi Collet <remi@remirepo.net> - 1.30.4-1
+- update to 1.30.4
+
+* Wed Apr  9 2025 Remi Collet <remi@remirepo.net> - 1.30.3-1
+- update to 1.30.3
+- add configuration for mongoc and bson cmake targets
+
 * Wed Mar  5 2025 Remi Collet <remi@remirepo.net> - 1.30.2-1
 - update to 1.30.2
 

@@ -211,6 +211,7 @@ def earthly_exec(
     *,
     kind: Literal['test', 'setup', 'system'],
     target: str,
+    platform: str | None = None,
     secrets: Mapping[str, str] | None = None,
     args: Mapping[str, str] | None = None,
     retry_on_failure: Optional[bool] = None,
@@ -223,6 +224,7 @@ def earthly_exec(
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
             f'--buildkit-image={_ECR_HOST}/dockerhub/earthly/buildkitd:v0.8.3',
             *(f'--secret={k}' for k in (secrets or ())),
+            *([f'--platform={platform}'] if platform else ()),
             f'+{target}',
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
             f'--default_search_registry={_ECR_HOST}/dockerhub/library',
@@ -326,6 +328,16 @@ def tasks() -> Iterable[EvgTask]:
         tags=['pr-merge-gate'],
         run_on=CONTAINER_RUN_DISTROS,
     )
+    for plat in ('amd64', 'i386'):
+        yield EvgTask(
+            name=f'debian-package-{plat}',
+            commands=[
+                DockerLoginAmazonECR.call(),
+                earthly_exec(kind='test', target='deb.test', platform=f'linux/{plat}'),
+            ],
+            tags=['packaging', 'pr-merge-gate'],
+            run_on=CONTAINER_RUN_DISTROS,
+        )
 
 
 def variants() -> Iterable[BuildVariant]:

@@ -14,7 +14,7 @@ TAG = 'openssl-compat'
 # pylint: disable=line-too-long
 # fmt: off
 OPENSSL_MATRIX = [
-    ('ubuntu2404', 'gcc', ['shared', 'static'], ['1.0.2', '1.1.1', '3.0.9', '3.1.2', '3.2.5', '3.3.4', '3.4.2', '3.5.1']),
+    ('ubuntu2404', 'gcc', ['shared', 'static'], ['1.0.2', '1.1.1', '3.0.9', '3.1.2', '3.2.5', '3.3.4', '3.4.2', '3.5.1', '4.0.0']),
 ]
 # fmt: on
 
@@ -70,15 +70,17 @@ def tasks():
             if link_type == 'static':
                 vars |= {'OPENSSL_USE_STATIC_LIBS': 'ON'}
 
+            commands = [
+                FetchSource.call(),
+                OpenSSLSetup.call(vars=vars),
+                FunctionCall(func='run auth tests'),
+            ]
+
             yield EvgTask(
                 name=f'{TAG}-{version}-{link_type}-{distro_str}',
                 run_on=find_large_distro(distro_name).name,
                 tags=[TAG, f'openssl-{version}', f'openssl-{link_type}', distro_name, compiler],
-                commands=[
-                    FetchSource.call(),
-                    OpenSSLSetup.call(vars=vars),
-                    FunctionCall(func='run auth tests'),
-                ],
+                commands=commands,
             )
 
     for distro_name, compiler, link_types, versions in OPENSSL_FIPS_MATRIX:

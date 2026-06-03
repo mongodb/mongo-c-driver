@@ -572,58 +572,6 @@ tasks:
 - name: link-with-bson-mingw
   commands:
   - func: link sample program mingw bson
-- name: debian-package-build
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        export IS_PATCH="${is_patch}"
-        .evergreen/scripts/debian_package_build.sh
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz
-      bucket: mciuploads
-      permissions: public-read
-      local_file: deb.tar.gz
-      content_type: ${content_type|application/x-gzip}
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz
-      bucket: mciuploads
-      permissions: public-read
-      local_file: deb.tar.gz
-      content_type: ${content_type|application/x-gzip}
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz
-      bucket: mciuploads
-      permissions: public-read
-      local_file: deb-i386.tar.gz
-      content_type: ${content_type|application/x-gzip}
-  - command: s3.put
-    params:
-      aws_key: ${aws_key}
-      aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz
-      bucket: mciuploads
-      permissions: public-read
-      local_file: deb-i386.tar.gz
-      content_type: ${content_type|application/x-gzip}
-  allowed_requesters:
-  - ad_hoc
-  - commit
-  - patch
-  - trigger
 - name: rpm-package-build
   commands:
   - command: shell.exec
@@ -669,17 +617,7 @@ tasks:
       script: |-
         set -o errexit
         sudo rm -rf ../build ../mock-result ../rpm.tar.gz
-        export MOCK_TARGET_CONFIG=rocky+epel-9-aarch64
-        .evergreen/scripts/build_snapshot_rpm.sh
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        sudo rm -rf ../build ../mock-result ../rpm.tar.gz
-        export MOCK_TARGET_CONFIG=rocky+epel-8-aarch64
+        export MOCK_TARGET_CONFIG=centos-stream+epel-10-aarch64
         .evergreen/scripts/build_snapshot_rpm.sh
   allowed_requesters:
   - ad_hoc
@@ -11826,10 +11764,10 @@ buildvariants:
   display_name: Linux Distro Packaging
   run_on: debian12-latest-small
   tasks:
-  - debian-package-build
   - name: rpm-package-build
     distros:
     - rhel90-arm64-small
+  - .packaging
   tags:
   - pr-merge-gate
 - name: versioned-api

@@ -1,3 +1,23 @@
+libmongoc 2.3.1
+===============
+
+## Improvements
+
+* Improve forward compatibility with OpenSSL 4.0.0 when handling `EAGAIN` errors in old-style read callbacks where `BIO_FLAGS_AUTO_EOF` is enabled.
+* Improve decompressed message length constraints.
+
+## Fixes
+
+* Fix documentation generation on Sphinx 9.0+.
+* Propagate username to custom OIDC callback.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Ezra Chung
+  * Colby Pike
+  * Kevin Albertson
+
+
 libmongoc 2.3.0
 ===============
 
@@ -129,7 +149,7 @@ libmongoc 2.2.0
 
 ## Fixed
 
-* Do not try to resume when iterating a closed change stream. 
+* Do not try to resume when iterating a closed change stream.
 
 ## Notes
 

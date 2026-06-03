@@ -329,8 +329,8 @@ all_variants = [
         'Linux Distro Packaging',
         'debian12-latest-small',
         [
-            'debian-package-build',
             OD([('name', 'rpm-package-build'), ('distros', ['rhel90-arm64-small'])]),
+            '.packaging',
         ],
         {},
         tags=['pr-merge-gate'],

@@ -6,13 +6,7 @@ from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
 from docutils import nodes
 from docutils.nodes import Node, document
 from sphinx.application import Sphinx
-from sphinx.application import logger as sphinx_log
 
-try:
-    from sphinx.builders.dirhtml import DirectoryHTMLBuilder
-except ImportError:
-    # Try importing from older Sphinx version path.
-    from sphinx.builders.html import DirectoryHTMLBuilder
 from docutils.parsers.rst import Directive
 
 # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
@@ -136,38 +130,8 @@ class VersionList(Directive):
         return [header, blist]
 
 
-def generate_html_redirs(app: Sphinx, page: str, templatename: str, context: Dict[str, Any], doctree: Any) -> None:
-    builder = app.builder
-    if not isinstance(builder, DirectoryHTMLBuilder) or 'writing-redirect' in context:
-        return
-    if page == 'index' or page.endswith('.index'):
-        return
-    path = app.project.doc2path(page, True)
-    out_index_html = Path(builder.get_outfilename(page))
-    slug = out_index_html.parent.name
-    redirect_file = out_index_html.parent.parent / f'{slug}.html'
-    # HACK: handle_page() is not properly reentrant. Save and restore state for
-    # this page while we generate our redirects page:
-    prev_scripts = builder.script_files[:]
-    prev_css = builder.css_files[:]
-    builder.handle_page(
-        f'redirect-for-{page}',
-        {'target': page, 'writing-redirect': 1},
-        str(Path(__file__).parent.resolve() / 'redirect.t.html'),
-        # Note: In Sphinx 8.2, this argument changed from `str` to `Path`, but
-        # continues to work with `str`. A future version might need this changed
-        # to pass a `Path`, but we can keep `str` for now.
-        outfilename=str(redirect_file),  # type: ignore
-    )
-    # Restore prior state:
-    builder.script_files[:] = prev_scripts
-    builder.css_files[:] = prev_css
-    sphinx_log.debug('Wrote redirect: %r -> %r', path, page)
-
-
 def mongoc_common_setup(app: Sphinx):
     _collect_man(app)
-    app.connect('html-page-context', generate_html_redirs)
     app.connect('html-page-context', add_ga_javascript)
     # Run sphinx-build -D analytics=1 to enable Google Analytics.
     app.add_config_value('analytics', False, 'html')
