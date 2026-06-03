@@ -17,14 +17,14 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-Sets whether text search is case sensitive.
+Sets whether string search is case sensitive.
 
 
 Parameters
 ----------
 
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_string_opts_t`.
-* ``case_sensitive``: If true, text search is case sensitive.
+* ``case_sensitive``: If true, string search is case sensitive.
 
 .. seealso::
    | :symbol:`mongoc_client_encryption_encrypt_string_opts_t`

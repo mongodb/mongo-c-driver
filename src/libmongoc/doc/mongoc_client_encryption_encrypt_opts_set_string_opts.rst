@@ -17,7 +17,7 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-Sets the text search encryption options for explicit encryption.
+Sets the string search encryption options for explicit encryption.
 
 
 Parameters

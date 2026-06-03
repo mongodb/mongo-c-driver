@@ -17,7 +17,7 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-Sets the suffix options for text search encryption.
+Sets the suffix options for string search encryption.
 
 
 Parameters

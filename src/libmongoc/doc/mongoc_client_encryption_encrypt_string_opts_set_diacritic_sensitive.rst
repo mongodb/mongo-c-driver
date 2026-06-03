@@ -17,14 +17,14 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-Sets whether text search is diacritic sensitive.
+Sets whether string search is diacritic sensitive.
 
 
 Parameters
 ----------
 
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_string_opts_t`.
-* ``diacritic_sensitive``: If true, text search is diacritic sensitive.
+* ``diacritic_sensitive``: If true, string search is diacritic sensitive.
 
 .. seealso::
    | :symbol:`mongoc_client_encryption_encrypt_string_opts_t`

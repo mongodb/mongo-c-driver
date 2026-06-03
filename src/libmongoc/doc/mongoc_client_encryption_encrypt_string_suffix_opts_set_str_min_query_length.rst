@@ -17,7 +17,7 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-Sets the minimum query length for suffix text search encryption options.
+Sets the minimum query length for suffix string search encryption options.
 
 
 Parameters

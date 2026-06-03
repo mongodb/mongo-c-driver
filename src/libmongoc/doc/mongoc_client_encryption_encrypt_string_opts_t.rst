@@ -14,7 +14,7 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-StringOpts specifies index options for a Queryable Encryption field supporting "textPreview" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
+StringOpts specifies index options for a Queryable Encryption field supporting "string" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
 
 Case sensitive and diacritic sensitive must be set. If prefix or suffix are set, substring must not be set.
 

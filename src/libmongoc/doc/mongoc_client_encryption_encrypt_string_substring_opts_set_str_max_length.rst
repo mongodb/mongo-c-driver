@@ -17,7 +17,7 @@ Synopsis
 
    Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
 
-Sets the maximum string length for substring text search encryption options.
+Sets the maximum string length for substring string search encryption options.
 
 
 Parameters
