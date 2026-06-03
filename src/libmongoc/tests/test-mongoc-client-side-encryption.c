@@ -4764,12 +4764,12 @@ test_string_explicit_encryption(void *unused)
 
       bson_value_t findPayload;
       ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
 
       bsonBuildDecl(
          expr,
          kv("$expr",
             doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
-      ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
@@ -4806,12 +4806,12 @@ test_string_explicit_encryption(void *unused)
 
       bson_value_t findPayload;
       ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
 
       bsonBuildDecl(
          expr,
          kv("$expr",
             doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
-      ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
@@ -4848,12 +4848,12 @@ test_string_explicit_encryption(void *unused)
 
       bson_value_t findPayload;
       ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
 
       bsonBuildDecl(
          expr,
          kv("$expr",
             doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
-      ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
@@ -4890,12 +4890,12 @@ test_string_explicit_encryption(void *unused)
 
       bson_value_t findPayload;
       ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
 
       bsonBuildDecl(
          expr,
          kv("$expr",
             doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
-      ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
@@ -4932,12 +4932,12 @@ test_string_explicit_encryption(void *unused)
 
       bson_value_t findPayload;
       ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
 
       bsonBuildDecl(
          expr,
          kv("$expr",
             doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
-      ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
@@ -4974,12 +4974,12 @@ test_string_explicit_encryption(void *unused)
 
       bson_value_t findPayload;
       ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+      ASSERT_OR_PRINT(ok, error);
 
       bsonBuildDecl(
          expr,
          kv("$expr",
             doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
-      ASSERT_OR_PRINT(ok, error);
 
       mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
@@ -5061,12 +5061,12 @@ test_string_explicit_encryption(void *unused)
 
          bson_value_t findPayload;
          ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+         ASSERT_OR_PRINT(ok, error);
 
          bsonBuildDecl(expr,
                        kv("$expr",
                           doc(kv("$encStrStartsWith",
                                  doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
-         ASSERT_OR_PRINT(ok, error);
 
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
@@ -5103,12 +5103,12 @@ test_string_explicit_encryption(void *unused)
 
          bson_value_t findPayload;
          ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+         ASSERT_OR_PRINT(ok, error);
 
          bsonBuildDecl(
             expr,
             kv("$expr",
                doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
-         ASSERT_OR_PRINT(ok, error);
 
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
@@ -5162,12 +5162,12 @@ test_string_explicit_encryption(void *unused)
 
          bson_value_t findPayload;
          ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+         ASSERT_OR_PRINT(ok, error);
 
          bsonBuildDecl(expr,
                        kv("$expr",
                           doc(kv("$encStrStartsWith",
                                  doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
-         ASSERT_OR_PRINT(ok, error);
 
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
@@ -5204,12 +5204,12 @@ test_string_explicit_encryption(void *unused)
 
          bson_value_t findPayload;
          ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+         ASSERT_OR_PRINT(ok, error);
 
          bsonBuildDecl(
             expr,
             kv("$expr",
                doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
-         ASSERT_OR_PRINT(ok, error);
 
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
@@ -5262,12 +5262,12 @@ test_string_explicit_encryption(void *unused)
 
          bson_value_t findPayload;
          ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+         ASSERT_OR_PRINT(ok, error);
 
          bsonBuildDecl(expr,
                        kv("$expr",
                           doc(kv("$encStrContains",
                                  doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
-         ASSERT_OR_PRINT(ok, error);
 
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring-ci-di");
@@ -5320,12 +5320,12 @@ test_string_explicit_encryption(void *unused)
 
          bson_value_t findPayload;
          ok = mongoc_client_encryption_encrypt(seef->clientEncryption, &plaintext, eo, &findPayload, &error);
+         ASSERT_OR_PRINT(ok, error);
 
          bsonBuildDecl(expr,
                        kv("$expr",
                           doc(kv("$encStrContains",
                                  doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
-         ASSERT_OR_PRINT(ok, error);
 
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring-ci-di");
