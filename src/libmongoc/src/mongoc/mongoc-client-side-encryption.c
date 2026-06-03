@@ -1274,7 +1274,7 @@ append_bson_range_opts(bson_t *bson_range_opts, const mongoc_client_encryption_e
 }
 
 static void
-append_bson_text_per_index_opts(bson_t *out, const struct _encrypt_string_per_index_opts_t *opts)
+append_bson_string_per_index_opts(bson_t *out, const struct _encrypt_string_per_index_opts_t *opts)
 {
    BSON_ASSERT_PARAM(out);
    BSON_ASSERT_PARAM(opts);
@@ -1306,19 +1306,19 @@ append_bson_string_opts(bson_t *bson_string_opts, const mongoc_client_encryption
    if (opts->prefix) {
       bson_t per_index_spec;
       BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(bson_string_opts, "prefix", &per_index_spec));
-      append_bson_text_per_index_opts(&per_index_spec, &opts->prefix->per_index_opts);
+      append_bson_string_per_index_opts(&per_index_spec, &opts->prefix->per_index_opts);
       BSON_ASSERT(bson_append_document_end(bson_string_opts, &per_index_spec));
    }
    if (opts->suffix) {
       bson_t per_index_spec;
       BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(bson_string_opts, "suffix", &per_index_spec));
-      append_bson_text_per_index_opts(&per_index_spec, &opts->suffix->per_index_opts);
+      append_bson_string_per_index_opts(&per_index_spec, &opts->suffix->per_index_opts);
       BSON_ASSERT(bson_append_document_end(bson_string_opts, &per_index_spec));
    }
    if (opts->substring) {
       bson_t per_index_spec;
       BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(bson_string_opts, "substring", &per_index_spec));
-      append_bson_text_per_index_opts(&per_index_spec, &opts->substring->per_index_opts);
+      append_bson_string_per_index_opts(&per_index_spec, &opts->substring->per_index_opts);
       BSON_ASSERT(bson_append_document_end(bson_string_opts, &per_index_spec));
    }
 }
