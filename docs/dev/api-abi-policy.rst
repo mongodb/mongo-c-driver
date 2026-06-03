@@ -16,21 +16,22 @@ is explicitly *not* covered by these guarantees.
 Versioning Scheme
 #################
 
-The C libraries use a ``<major>.<minor>.<micro>`` versioning scheme that is
+The C libraries use a ``<major>.<minor>.<patch>`` versioning scheme that is
 based on `Semantic Versioning <https://semver.org>`_. Prerelease and development
 versions include a suffix to indicate that the contents of the libraries are
 unstable and subject to change.
 
 - A **major** version indicates overall breaking changes. Different major
-  versions offer very few compatibility guarantees in their API and ABI.
+  versions offer no compatibility guarantees in their API and ABI.
 - A **minor** version indicates the addition of new APIs and features to the
   libraries, or possible deprecation of APIs. Programs written against earlier
   minor versions should continue to compile and link with a newer minor version
   with minimal or no changes.
-- A **micro** (also known as "patch") version indicates bugfixes and tweaks and
-  will not deprecate or add any major features to libraries. Programs written
-  against earlier micro versions should compile and link against newer micro
-  with no changes unless security considerations require API or ABI changes.
+- A **patch** version (also known as the "micro" version at some locations in
+  the source code) indicates bugfixes and tweaks and will not deprecate or add
+  any major features to libraries. Programs written against earlier patch
+  versions should compile and link against newer patch versions with no changes
+  unless security considerations require API or ABI changes.
 
 
 .. _api-abi-policy.public-api:
@@ -44,7 +45,8 @@ The public API consists of:
   — a header that is installed alongside the library and has no ``-private``
   suffix in its name (e.g. ``mongoc/mongoc-client.h``, ``bson/bson.h``), except
   for those noted below.
-* Every function annotated with ``MONGOC_EXPORT(...)`` or ``BSON_EXPORT(...)``.
+* Every symbol annotated with ``MONGOC_EXPORT`` or ``BSON_EXPORT``.
+* The *documented* behavior of any API function.
 
 The following are **not** part of the public API and carry **no stability
 guarantee**:
@@ -57,6 +59,7 @@ guarantee**:
   even when the opaque ``typedef`` is public.
 * The content of ``src/kms-message/``, a vendored library with its own
   versioning.
+* The *undocumented, incidental* behavior of any function.
 
 
 Header Inclusion
@@ -75,16 +78,20 @@ Instead, users should include the umbrella headers
 ``<bson/bson.h>``/``<mongoc/mongoc.h>`` or they may directly include one of the
 headers without the ``bson-`` or ``mongoc-`` prefix in its filename.
 
+By default, libbson and libmongoc headers are not installed as direct children
+of the platform's default header include-search-path directory, and live in a
+subdirectory that is qualified by the library version. Users should never use
+this intermediate directory in their include directives, and should rely on
+CMake or pkg-config to set the appropriate flags to update their
+include-search-path to find the relevant headers in this versioned subdirectory.
+
 
 .. _api-abi-policy.api:
 
 API Stability
 #############
 
-Within a **major** version series the project guarantees source-level backward
-compatibility: a program that compiles cleanly against version ``X.Y.Z`` using
-only the public API is expected to compile without modification against any later
-``X.Y'.Z'`` release in the same major series. Specifically:
+Within a **major** version series, the project makes the following guarantees:
 
 * **No removal** of public symbols — functions, types, macros, and constants
   present in a release remain available in all subsequent releases within the
@@ -93,8 +100,8 @@ only the public API is expected to compile without modification against any late
   the original name.
 * **No incompatible signature changes** — the parameter and return types of
   public functions do not change in ways that require callers to be updated.
-  Note that cv-qualifiers may be added or removed from parameter or return types
-  in ways that do not affect existing callers.
+  Note that type-qualifiers may be added or removed from parameter or return
+  types in ways that do not affect existing callers.
 * **No change in documented contract** — the observable behavior, preconditions,
   postconditions, and error semantics of a public function do not change in a way
   that causes a previously-correct caller to misbehave.
@@ -106,7 +113,7 @@ expected to compile and link without modification against any later ``X.Y'.Z'``
 release in the same major series, provided the program only uses the public API.
 
 Within a **minor** release, new public symbols may be added (see
-:ref:`api-abi-policy.additions`). Within a **micro** release, no new public
+:ref:`api-abi-policy.additions`). Within a **patch** release, no new public
 symbols are introduced and existing behavior changes only to correct bugs.
 
 Deprecation (see :ref:`api-abi-policy.deprecation`) is the only mechanism by
@@ -128,6 +135,16 @@ may change between releases — for example, to replace a function-like macro wi
 an inline function or to add internal casts. Code that depends on a specific
 expansion rather than on the macro's documented behavior is unsupported.
 
+.. note::
+
+  Whether an API function is implemented as a preprocessor macro is an
+  implementation detail unless documented otherwise. Relying on whether an API
+  function name is a macro is not supported.
+
+  Do not attempt to take the address of an API function or perform an ``#ifdef``
+  on an API function name, unless such an operation is said to be supported in
+  the documentation.
+
 .. rubric:: Error codes
 
 New error codes and domain values may be introduced in any **minor** release.
@@ -140,13 +157,14 @@ of possible values as exhaustive.
 ABI Stability
 #############
 
-Within a **major** version series the project guarantees:
+Except in the case of security patches, within a **major** version series, the
+project guarantees the following:
 
 * **No removal** of exported symbols, and no change to an exported symbol's
-  link name or DLL ordinal.
+  link name.
 * **No signature changes** to exported functions (parameter types, return type,
-  calling convention), except for the possible addition of cv-qualifiers to
-  pointer parameters or removal of cv-qualifiers from pointer return types.
+  calling convention), except for the possible addition of type-qualifiers to
+  pointer parameters or removal of type-qualifiers from pointer return types.
 * **No breaking changes** to the size or layout of any completely-defined struct
   reachable in the public API, even if the contents of that struct are not
   themselves part of the API. Where feasible, structs are kept opaque (accessed
@@ -155,6 +173,23 @@ Within a **major** version series the project guarantees:
 As a result, a program compiled against version ``X.Y.Z`` is expected to load
 and run correctly against any later ``X.Y'.Z'`` shared library, provided the
 program only uses the public API.
+
+Additionally, the ``soname`` of a built dynamic library is part of the ABI and
+guaranteed stable within a major version. The ``soname`` of the resulting
+libraries includes the major version of the library, preventing collisions
+between major versions. The CMake ``SOVERSION`` property of resulting dynamic
+library artifacts is always equivalent to the major API version of the library.
+(The ``soname`` and ``SOVERSION`` are not applicable to Windows DLLs.)
+
+In the uncommon case that a security patch requires breaking any of the above
+guarantees, it will be noted in the release notes for the corresponding version.
+
+.. rubric:: Exported symbols
+
+The ``BSON_EXPORT`` and ``MONGOC_EXPORT`` macros are used to add appropriate
+attributes to external-linkage symbols that are visible in a dynamic library
+build. The presence of such symbols in a built artifact is part of the ABI of
+that artifact.
 
 .. rubric:: Incomplete types
 
@@ -173,7 +208,7 @@ and are therefore prohibited within a **major** version series.
 
 Certain preprocessor macros and CMake configure-time build parameters may affect
 the ABI of the resulting build. When possible, programs should not attempt to
-link translation units together that are not compiled with the same set of
+combine translation units together that are not compiled with the same set of
 preprocessor definitions.
 
 Users should not manually define preprocessor macros during their compilation
@@ -232,6 +267,17 @@ prefix).
 Other Notes
 ###########
 
+Build configuration compatibility
+*********************************
+
+The build parameters are themselves subject to the same stability guarantees as
+the C API, and follow the same deprecation policy.
+
+The C API and ABI guarantees only hold within the same build configuration.
+Attempting to mix build configurations is unsupported, as build settings may
+affect the API or ABI of the resulting artifacts.
+
+
 Pre-release versions
 ********************
 
@@ -248,10 +294,15 @@ release, including patch releases, regardless of the usual policy. Such APIs
 will be clearly marked in the documentation.
 
 
-CMake integration API
-*********************
+Build system integration API
+****************************
 
+The CMake config-file packages are the recommended way to import the project.
 The CMake targets (``mongoc::shared``, ``bson::static``, etc.) and the
 properties they expose are considered public and follow the same versioning
 rules as the C API. However, the internal CMake helper modules under
 ``build/cmake/`` are not public and may change without notice.
+
+The pkg-config files are also supported for building against the libraries, and
+will ensure that the compilation settings match the ABI of the corresponding
+binaries.
