@@ -4981,8 +4981,7 @@ test_string_explicit_encryption(void *unused)
             doc(kv("$encStrContains", doc(kv("input", cstr("$encryptedText")), kv("substring", value(findPayload)))))));
       ASSERT_OR_PRINT(ok, error);
 
-      mongoc_collection_t *coll =
-         mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring");
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
       assert_cursor_empty(cursor);
 
