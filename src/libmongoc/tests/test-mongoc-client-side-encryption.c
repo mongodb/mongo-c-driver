@@ -4452,16 +4452,26 @@ string_explicit_encryption_setup(void)
       (string_explicit_encryption_fixture *)bson_malloc0(sizeof(string_explicit_encryption_fixture));
    mongoc_client_t *setupClient = test_framework_new_default_client();
 
+   bool server_supports_prefix_suffix = test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
+
    mongoc_write_concern_t *wc_majority = mongoc_write_concern_new();
    mongoc_write_concern_set_w(wc_majority, MONGOC_WRITE_CONCERN_W_MAJORITY);
 
 
    // "drop and create" the QE collections:
    {
-      char *names[] = {"prefix-suffix", "prefix-suffix-ci-di", "substring", "substring-ci-di"};
+      char *names[5] = {0}; // NULL terminated.
 
-      for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
-         char *name = names[i];
+      names[0] = "substring";
+      names[1] = "substring-ci-di";
+
+      if (server_supports_prefix_suffix) {
+         names[2] = "prefix-suffix";
+         names[3] = "prefix-suffix-ci-di";
+      }
+
+      for (char **name_iter = names; *name_iter; name_iter++) {
+         const char *name = *name_iter;
          bson_t *opts;
 
          char *encryptedFields_path = bson_strdup_printf(
@@ -4719,11 +4729,15 @@ test_string_explicit_encryption(void *unused)
 {
    bson_error_t error;
    bool ok;
+   bool server_supports_prefix_suffix = test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
+   if (!server_supports_prefix_suffix) {
+      MONGOC_DEBUG("skipping prefix/suffix cases because server does not support them");
+   }
 
    BSON_UNUSED(unused);
 
    // Case 1: can find a document by prefix
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -4765,7 +4779,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 2: can find a document by suffix
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -4807,7 +4821,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 3: assert no document found by prefix
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -4849,7 +4863,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 4: assert no document found by suffix
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -4976,7 +4990,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 7: assert `contentionFactor` is required
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -5008,7 +5022,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 8: can find a case-insensitively indexed document by prefix and suffix
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
 
       // "Use `autoEncryptedClient` to insert"
@@ -5108,7 +5122,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 9: can find a case and diacritic-insensitively indexed document by prefix and suffix
-   {
+   if (server_supports_prefix_suffix) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
 
       // "Use `autoEncryptedClient` to insert"
@@ -8332,9 +8346,8 @@ test_client_side_encryption_install(TestSuite *suite)
          test_string_explicit_encryption,
          NULL,
          NULL,
-         test_framework_skip_if_max_wire_version_less_than_29 /* require server > 9.0 for "prefix" and "suffix" */
-         ,
-         test_framework_skip_if_single, /* QE not supported on standalone */
+         test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ for "substringPreview" */
+         test_framework_skip_if_single,                        /* QE not supported on standalone */
          test_framework_skip_if_no_client_side_encryption);
    }
 }
