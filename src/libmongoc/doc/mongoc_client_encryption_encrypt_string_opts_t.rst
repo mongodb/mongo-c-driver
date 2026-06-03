@@ -1,7 +1,7 @@
 :man_page: mongoc_client_encryption_encrypt_string_opts_t
 
 mongoc_client_encryption_encrypt_string_opts_t
-=============================================
+==============================================
 
 Synopsis
 --------
