@@ -37,13 +37,16 @@ struct _mongoc_database_t;
 #define MONGOC_ENCRYPT_ALGORITHM_UNINDEXED "Unindexed"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGE "Range"
 #define MONGOC_ENCRYPT_ALGORITHM_RANGEPREVIEW "RangePreview"
+#define MONGOC_ENCRYPT_ALGORITHM_TEXTPREVIEW "TextPreview" // Deprecated.
 #define MONGOC_ENCRYPT_ALGORITHM_STRING "String"
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview"
 #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW "prefixPreview" // Deprecated.
 #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIX "prefix"
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW "suffixPreview" // Deprecated.
 #define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX "suffix"
 
 
@@ -112,6 +115,14 @@ typedef struct _encrypt_string_prefix_opts_t mongoc_client_encryption_encrypt_st
 typedef struct _encrypt_string_suffix_opts_t mongoc_client_encryption_encrypt_string_suffix_opts_t;
 typedef struct _encrypt_string_substring_opts_t mongoc_client_encryption_encrypt_string_substring_opts_t;
 typedef struct _mongoc_client_encryption_encrypt_string_opts_t mongoc_client_encryption_encrypt_string_opts_t;
+typedef mongoc_client_encryption_encrypt_string_prefix_opts_t mongoc_client_encryption_encrypt_text_prefix_opts_t
+   BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_prefix_opts_t);
+typedef mongoc_client_encryption_encrypt_string_suffix_opts_t mongoc_client_encryption_encrypt_text_suffix_opts_t
+   BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_suffix_opts_t);
+typedef mongoc_client_encryption_encrypt_string_substring_opts_t mongoc_client_encryption_encrypt_text_substring_opts_t
+   BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_substring_opts_t);
+typedef mongoc_client_encryption_encrypt_string_opts_t mongoc_client_encryption_encrypt_text_opts_t
+   BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_t);
 typedef struct _mongoc_client_encryption_encrypt_opts_t mongoc_client_encryption_encrypt_opts_t;
 typedef struct _mongoc_client_encryption_datakey_opts_t mongoc_client_encryption_datakey_opts_t;
 typedef struct _mongoc_client_encryption_rewrap_many_datakey_result_t
@@ -401,6 +412,98 @@ mongoc_client_encryption_create_encrypted_collection(mongoc_client_encryption_t 
                                                      const char *const kms_provider,
                                                      const bson_t *opt_masterkey,
                                                      bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+
+/* Deprecated aliases for the previously experimental "text" API. The API has
+ * been renamed to "string" for the GA release. These aliases will be removed
+ * in a future release. */
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_prefix_opts_new)
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_string_prefix_opts_t *)
+   mongoc_client_encryption_encrypt_text_prefix_opts_new(void);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_suffix_opts_new)
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_string_suffix_opts_t *)
+   mongoc_client_encryption_encrypt_text_suffix_opts_new(void);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_substring_opts_new)
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_string_substring_opts_t *)
+   mongoc_client_encryption_encrypt_text_substring_opts_new(void);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_prefix_opts_destroy)
+MONGOC_EXPORT(void)
+   mongoc_client_encryption_encrypt_text_prefix_opts_destroy(mongoc_client_encryption_encrypt_string_prefix_opts_t *);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_suffix_opts_destroy)
+MONGOC_EXPORT(void)
+   mongoc_client_encryption_encrypt_text_suffix_opts_destroy(mongoc_client_encryption_encrypt_string_suffix_opts_t *);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_substring_opts_destroy)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_substring_opts_destroy(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_prefix_opts_set_str_max_query_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_prefix_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_string_prefix_opts_t *opts, int32_t str_max_query_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_prefix_opts_set_str_min_query_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_prefix_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_string_prefix_opts_t *opts, int32_t str_min_query_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_suffix_opts_set_str_max_query_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_suffix_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_string_suffix_opts_t *opts, int32_t str_max_query_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_suffix_opts_set_str_min_query_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_string_suffix_opts_t *opts, int32_t str_min_query_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_substring_opts_set_str_max_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts, int32_t str_max_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_substring_opts_set_str_max_query_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts, int32_t str_max_query_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_substring_opts_set_str_min_query_length)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts, int32_t str_min_query_length);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_set_prefix)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_prefix(
+   mongoc_client_encryption_encrypt_string_opts_t *opts,
+   const mongoc_client_encryption_encrypt_string_prefix_opts_t *popts);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_set_suffix)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_suffix(
+   mongoc_client_encryption_encrypt_string_opts_t *opts,
+   const mongoc_client_encryption_encrypt_string_suffix_opts_t *sopts);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_set_substring)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_substring(
+   mongoc_client_encryption_encrypt_string_opts_t *opts,
+   const mongoc_client_encryption_encrypt_string_substring_opts_t *ssopts);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_new)
+MONGOC_EXPORT(mongoc_client_encryption_encrypt_string_opts_t *) mongoc_client_encryption_encrypt_text_opts_new(void);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_destroy)
+MONGOC_EXPORT(void)
+   mongoc_client_encryption_encrypt_text_opts_destroy(mongoc_client_encryption_encrypt_string_opts_t *topts);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_opts_set_string_opts)
+MONGOC_EXPORT(void)
+   mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_encrypt_opts_t *opts,
+                                                       const mongoc_client_encryption_encrypt_string_opts_t *text_opts);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_set_case_sensitive)
+MONGOC_EXPORT(void)
+   mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(mongoc_client_encryption_encrypt_string_opts_t *opts,
+                                                                 bool case_sensitive);
+
+BSON_DEPRECATED_FOR(mongoc_client_encryption_encrypt_string_opts_set_diacritic_sensitive)
+MONGOC_EXPORT(void) mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(
+   mongoc_client_encryption_encrypt_string_opts_t *opts, bool diacritic_sensitive);
 
 BSON_END_DECLS
 

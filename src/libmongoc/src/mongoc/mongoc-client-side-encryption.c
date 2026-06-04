@@ -669,6 +669,153 @@ mongoc_client_encryption_encrypt_string_opts_destroy(mongoc_client_encryption_en
    bson_free(topts);
 }
 
+/*--------------------------------------------------------------------------
+ * Deprecated "text" API wrappers. These forward to the "string" equivalents.
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_encryption_encrypt_string_prefix_opts_t *
+mongoc_client_encryption_encrypt_text_prefix_opts_new(void)
+{
+   return mongoc_client_encryption_encrypt_string_prefix_opts_new();
+}
+
+mongoc_client_encryption_encrypt_string_suffix_opts_t *
+mongoc_client_encryption_encrypt_text_suffix_opts_new(void)
+{
+   return mongoc_client_encryption_encrypt_string_suffix_opts_new();
+}
+
+mongoc_client_encryption_encrypt_string_substring_opts_t *
+mongoc_client_encryption_encrypt_text_substring_opts_new(void)
+{
+   return mongoc_client_encryption_encrypt_string_substring_opts_new();
+}
+
+void
+mongoc_client_encryption_encrypt_text_prefix_opts_destroy(mongoc_client_encryption_encrypt_string_prefix_opts_t *opts)
+{
+   mongoc_client_encryption_encrypt_string_prefix_opts_destroy(opts);
+}
+
+void
+mongoc_client_encryption_encrypt_text_suffix_opts_destroy(mongoc_client_encryption_encrypt_string_suffix_opts_t *opts)
+{
+   mongoc_client_encryption_encrypt_string_suffix_opts_destroy(opts);
+}
+
+void
+mongoc_client_encryption_encrypt_text_substring_opts_destroy(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts)
+{
+   mongoc_client_encryption_encrypt_string_substring_opts_destroy(opts);
+}
+
+void
+mongoc_client_encryption_encrypt_text_prefix_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_string_prefix_opts_t *opts, int32_t str_max_query_length)
+{
+   mongoc_client_encryption_encrypt_string_prefix_opts_set_str_max_query_length(opts, str_max_query_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_prefix_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_string_prefix_opts_t *opts, int32_t str_min_query_length)
+{
+   mongoc_client_encryption_encrypt_string_prefix_opts_set_str_min_query_length(opts, str_min_query_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_suffix_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_string_suffix_opts_t *opts, int32_t str_max_query_length)
+{
+   mongoc_client_encryption_encrypt_string_suffix_opts_set_str_max_query_length(opts, str_max_query_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_suffix_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_string_suffix_opts_t *opts, int32_t str_min_query_length)
+{
+   mongoc_client_encryption_encrypt_string_suffix_opts_set_str_min_query_length(opts, str_min_query_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_length(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts, int32_t str_max_length)
+{
+   mongoc_client_encryption_encrypt_string_substring_opts_set_str_max_length(opts, str_max_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_substring_opts_set_str_max_query_length(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts, int32_t str_max_query_length)
+{
+   mongoc_client_encryption_encrypt_string_substring_opts_set_str_max_query_length(opts, str_max_query_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_substring_opts_set_str_min_query_length(
+   mongoc_client_encryption_encrypt_string_substring_opts_t *opts, int32_t str_min_query_length)
+{
+   mongoc_client_encryption_encrypt_string_substring_opts_set_str_min_query_length(opts, str_min_query_length);
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_set_prefix(
+   mongoc_client_encryption_encrypt_string_opts_t *opts,
+   const mongoc_client_encryption_encrypt_string_prefix_opts_t *popts)
+{
+   mongoc_client_encryption_encrypt_string_opts_set_prefix(opts, popts);
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_set_suffix(
+   mongoc_client_encryption_encrypt_string_opts_t *opts,
+   const mongoc_client_encryption_encrypt_string_suffix_opts_t *sopts)
+{
+   mongoc_client_encryption_encrypt_string_opts_set_suffix(opts, sopts);
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_set_substring(
+   mongoc_client_encryption_encrypt_string_opts_t *opts,
+   const mongoc_client_encryption_encrypt_string_substring_opts_t *ssopts)
+{
+   mongoc_client_encryption_encrypt_string_opts_set_substring(opts, ssopts);
+}
+
+mongoc_client_encryption_encrypt_string_opts_t *
+mongoc_client_encryption_encrypt_text_opts_new(void)
+{
+   return mongoc_client_encryption_encrypt_string_opts_new();
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_destroy(mongoc_client_encryption_encrypt_string_opts_t *topts)
+{
+   mongoc_client_encryption_encrypt_string_opts_destroy(topts);
+}
+
+void
+mongoc_client_encryption_encrypt_opts_set_text_opts(mongoc_client_encryption_encrypt_opts_t *opts,
+                                                    const mongoc_client_encryption_encrypt_string_opts_t *text_opts)
+{
+   mongoc_client_encryption_encrypt_opts_set_string_opts(opts, text_opts);
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_set_case_sensitive(mongoc_client_encryption_encrypt_string_opts_t *opts,
+                                                              bool case_sensitive)
+{
+   mongoc_client_encryption_encrypt_string_opts_set_case_sensitive(opts, case_sensitive);
+}
+
+void
+mongoc_client_encryption_encrypt_text_opts_set_diacritic_sensitive(mongoc_client_encryption_encrypt_string_opts_t *opts,
+                                                                   bool diacritic_sensitive)
+{
+   mongoc_client_encryption_encrypt_string_opts_set_diacritic_sensitive(opts, diacritic_sensitive);
+}
+
 void
 mongoc_client_encryption_encrypt_range_opts_destroy(mongoc_client_encryption_encrypt_range_opts_t *range_opts)
 {
