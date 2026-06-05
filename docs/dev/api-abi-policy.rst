@@ -41,22 +41,19 @@ What Is the Public API?
 
 The public API consists of:
 
-* Every symbol (function, type, macro, constant) declared in a **public header**
-  — a header that is installed alongside the library and has no ``-private``
-  suffix in its name (e.g. ``mongoc/mongoc-client.h``, ``bson/bson.h``), except
-  for those noted below.
-* Every symbol annotated with ``MONGOC_EXPORT`` or ``BSON_EXPORT``.
-* The *documented* behavior of any API function.
+* Every entity (function, type, macro, constant) declared in a **public header**
+  (a header that is installed alongside the library), except for those noted
+  below.
+* The *documented* behavior of any API function or macro.
 
 The following are **not** part of the public API and carry **no stability
 guarantee**:
 
-* Headers with a ``-private.h`` suffix (e.g. ``mongoc-client-private.h``) and
-  the contents thereof.
 * Anything under ``src/common/`` (the internal shared utility library).
-* Symbols prefixed with an underscore or otherwise documented as internal.
-* The layout of any struct whose definition lives in a ``-private.h`` header,
-  even when the opaque ``typedef`` is public.
+* Symbols prefixed with an underscore or otherwise documented as internal or
+  experimental.
+* The layout of any struct whose definition lives in a private header, even when
+  the opaque ``typedef`` is public.
 * The content of ``src/kms-message/``, a vendored library with its own
   versioning.
 * The *undocumented, incidental* behavior of any function.
@@ -114,7 +111,8 @@ release in the same major series, provided the program only uses the public API.
 
 Within a **minor** release, new public symbols may be added (see
 :ref:`api-abi-policy.additions`). Within a **patch** release, no new public
-symbols are introduced and existing behavior changes only to correct bugs.
+symbols are introduced and existing behavior changes only to correct bugs or
+security issues.
 
 Deprecation (see :ref:`api-abi-policy.deprecation`) is the only mechanism by
 which a public symbol can eventually be removed; removal only occurs at a
@@ -157,8 +155,8 @@ of possible values as exhaustive.
 ABI Stability
 #############
 
-Except in the case of security patches, within a **major** version series, the
-project guarantees the following:
+Except in the case of security patches, the project guarantees the following
+within a **major** version series:
 
 * **No removal** of exported symbols, and no change to an exported symbol's
   link name.
@@ -270,8 +268,9 @@ Other Notes
 Build configuration compatibility
 *********************************
 
-The build parameters are themselves subject to the same stability guarantees as
-the C API, and follow the same deprecation policy.
+The build parameters that affect the API/ABI of built artifacts are themselves
+subject to the same stability guarantees as the C API, and follow the same
+deprecation policy.
 
 The C API and ABI guarantees only hold within the same build configuration.
 Attempting to mix build configurations is unsupported, as build settings may
