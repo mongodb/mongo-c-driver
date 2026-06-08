@@ -13,7 +13,7 @@ Synopsis
 
 .. versionchanged:: 2.4.0
 
-   Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
+   Renamed from the now-deprecated ``text`` API.
 
 
 Returns

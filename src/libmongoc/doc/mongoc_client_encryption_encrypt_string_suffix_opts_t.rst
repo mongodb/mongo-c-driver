@@ -12,7 +12,7 @@ Synopsis
 
 .. versionchanged:: 2.4.0
 
-   Renamed from the previously experimental ``encrypt_text_*`` API. This is a backwards-incompatible change.
+   Renamed from the now-deprecated ``text`` API.
 
 StringSuffixOpts specifies options for a Queryable Encryption field supporting "suffix" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt_string_opts_set_suffix()`.
 
