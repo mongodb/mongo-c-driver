@@ -74,10 +74,9 @@ and the existing codes or domains are inappropriate.
                               
 ### Adding a new symbol
 
-This should be done rarely but there are several things that you need to do
-when adding a new symbol.
-
- - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.rst`
+See the *Adding New Symbols* section of the [API and ABI Policy](docs/dev/api-abi-policy.rst)
+for the full procedure (header declaration, `MONGOC_EXPORT`/`BSON_EXPORT`
+annotation, documentation, and ABI compliance check).
 
 ### Documentation
 
