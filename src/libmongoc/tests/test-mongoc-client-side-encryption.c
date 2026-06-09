@@ -5919,7 +5919,7 @@ _kms_proxy_address(kms_proxy_transport_t transport, const char **host_out, int *
 static mongoc_stream_t *
 _kms_connect_callback_record_and_fail(const char *host, int32_t port, void *userdata, bson_error_t *error)
 {
-   struct kms_connect_data *data = (struct kms_connect_data *) userdata;
+   struct kms_connect_data *data = (struct kms_connect_data *)userdata;
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
@@ -5929,7 +5929,7 @@ _kms_connect_callback_record_and_fail(const char *host, int32_t port, void *user
                      MONGOC_ERROR_STREAM_CONNECT,
                      "test: refusing to connect to %s:%d",
                      host,
-                     (int) port);
+                     (int)port);
    }
    return NULL;
 }
@@ -5944,7 +5944,7 @@ _kms_connect_callback_record_and_fail(const char *host, int32_t port, void *user
 static mongoc_stream_t *
 _kms_connect_callback_via_proxy(const char *host, int32_t port, void *userdata, bson_error_t *error)
 {
-   struct kms_connect_data *data = (struct kms_connect_data *) userdata;
+   struct kms_connect_data *data = (struct kms_connect_data *)userdata;
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
@@ -5992,10 +5992,10 @@ _kms_connect_callback_via_proxy(const char *host, int32_t port, void *userdata, 
    /* Send the CONNECT request. */
    char req[512];
    int req_len = bson_snprintf(
-      req, sizeof(req), "CONNECT %s:%d HTTP/1.1\r\nHost: %s:%d\r\n\r\n", host, (int) port, host, (int) port);
+      req, sizeof(req), "CONNECT %s:%d HTTP/1.1\r\nHost: %s:%d\r\n\r\n", host, (int)port, host, (int)port);
    mongoc_iovec_t iov;
    iov.iov_base = req;
-   iov.iov_len = (size_t) req_len;
+   iov.iov_len = (size_t)req_len;
    if (!_mongoc_stream_writev_full(proxy_stream, &iov, 1, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error)) {
       mongoc_stream_destroy(proxy_stream);
       return NULL;
@@ -6013,7 +6013,7 @@ _kms_connect_callback_via_proxy(const char *host, int32_t port, void *userdata, 
          mongoc_stream_destroy(proxy_stream);
          return NULL;
       }
-      resp_len += (size_t) r;
+      resp_len += (size_t)r;
       if (resp_len >= 4 && 0 == memcmp(resp + resp_len - 4, "\r\n\r\n", 4)) {
          break;
       }
@@ -6023,7 +6023,7 @@ _kms_connect_callback_via_proxy(const char *host, int32_t port, void *userdata, 
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_CONNECT,
                      "proxy CONNECT failed: %.*s",
-                     (int) (resp_len > 64 ? 64 : resp_len),
+                     (int)(resp_len > 64 ? 64 : resp_len),
                      resp);
       mongoc_stream_destroy(proxy_stream);
       return NULL;
@@ -6059,7 +6059,8 @@ test_kms_connect_callback_wiring(void *unused)
    mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
    mongoc_client_encryption_datakey_opts_set_masterkey(
       dk_opts,
-      tmp_bson("{ 'region': 'us-east-1', 'key': 'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
+      tmp_bson("{ 'region': 'us-east-1', 'key': "
+               "'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
 
    bson_value_t keyid;
    bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
@@ -6103,13 +6104,14 @@ _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
    mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
    mongoc_client_encryption_datakey_opts_set_masterkey(
       dk_opts,
-      tmp_bson("{ 'region': 'us-east-1', 'key': 'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
+      tmp_bson("{ 'region': 'us-east-1', 'key': "
+               "'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
 
    bson_value_t keyid;
    /* AWS will reject the bogus credentials, but only after the KMS request
     * has been routed through our proxy. The callback must have been invoked
     * with the AWS KMS endpoint. */
-   (void) mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   (void)mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
    BSON_ASSERT(data.call_count >= 1);
    ASSERT_CMPSTR(data.last_host, "kms.us-east-1.amazonaws.com");
    BSON_ASSERT(data.last_port == 443);
