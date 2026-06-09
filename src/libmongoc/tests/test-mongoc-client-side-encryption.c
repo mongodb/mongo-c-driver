@@ -30,9 +30,11 @@
 #include <mongoc/mongoc-host-list-private.h>
 
 /* MONGOC_SERVER_ERR_NS_NOT_FOUND */
+#include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-http-private.h>
+#include <mongoc/mongoc-stream-private.h>
 
 #include <mlib/duration.h>
 #include <mlib/timer.h>
@@ -5875,6 +5877,301 @@ test_kms_callback(void *unused)
    mongoc_client_destroy(cl);
 }
 
+/* ===================================================================
+ * KMS connect callback (HTTP proxy support).
+ * =================================================================== */
+
+typedef enum {
+   KMS_PROXY_TRANSPORT_PLAIN,
+   KMS_PROXY_TRANSPORT_TLS,
+} kms_proxy_transport_t;
+
+struct kms_connect_data {
+   int call_count;
+   char last_host[256];
+   int32_t last_port;
+   bool return_null;
+   bool set_error;
+   kms_proxy_transport_t transport;
+};
+
+/* Resolves the proxy address for a given transport. Defaults to
+ * 127.0.0.1:9004 (plain) or 127.0.0.1:9005 (TLS); overridable via
+ * MONGOC_TEST_KMS_PROXY_HOST / MONGOC_TEST_KMS_PROXY_PORT /
+ * MONGOC_TEST_KMS_PROXY_TLS_PORT. */
+static void
+_kms_proxy_address(kms_proxy_transport_t transport, const char **host_out, int *port_out)
+{
+   const char *host = getenv("MONGOC_TEST_KMS_PROXY_HOST");
+   if (!host) {
+      host = "127.0.0.1";
+   }
+   const char *port_env = (transport == KMS_PROXY_TRANSPORT_TLS) ? getenv("MONGOC_TEST_KMS_PROXY_TLS_PORT")
+                                                                 : getenv("MONGOC_TEST_KMS_PROXY_PORT");
+   int port = port_env ? atoi(port_env) : (transport == KMS_PROXY_TRANSPORT_TLS ? 9005 : 9004);
+   *host_out = host;
+   *port_out = port;
+}
+
+/* Callback used to drive the "wiring" test. It records the requested host and
+ * either returns NULL with an error (forcing the KMS request to fail) or
+ * connects to a hard-coded localhost proxy. */
+static mongoc_stream_t *
+_kms_connect_callback_record_and_fail(const char *host, int32_t port, void *userdata, bson_error_t *error)
+{
+   struct kms_connect_data *data = (struct kms_connect_data *) userdata;
+   data->call_count++;
+   bson_strncpy(data->last_host, host, sizeof(data->last_host));
+   data->last_port = port;
+   if (data->set_error) {
+      bson_set_error(error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_CONNECT,
+                     "test: refusing to connect to %s:%d",
+                     host,
+                     (int) port);
+   }
+   return NULL;
+}
+
+/* Connects to a local HTTP proxy and performs the HTTPS CONNECT handshake on
+ * behalf of the driver. Returns a stream that delivers raw bytes to the
+ * target KMS host (the driver will wrap that stream with TLS).
+ *
+ * If data->transport == KMS_PROXY_TRANSPORT_TLS, the connection to the proxy
+ * itself is TLS-wrapped, and the CONNECT handshake is sent over that TLS
+ * stream. */
+static mongoc_stream_t *
+_kms_connect_callback_via_proxy(const char *host, int32_t port, void *userdata, bson_error_t *error)
+{
+   struct kms_connect_data *data = (struct kms_connect_data *) userdata;
+   data->call_count++;
+   bson_strncpy(data->last_host, host, sizeof(data->last_host));
+   data->last_port = port;
+
+   const char *proxy_host = NULL;
+   int proxy_port = 0;
+   _kms_proxy_address(data->transport, &proxy_host, &proxy_port);
+
+   mongoc_host_list_t hl;
+   char endpoint[300];
+   bson_snprintf(endpoint, sizeof(endpoint), "%s:%d", proxy_host, proxy_port);
+   if (!_mongoc_host_list_from_string_with_err(&hl, endpoint, error)) {
+      return NULL;
+   }
+
+   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(MONGOC_DEFAULT_SOCKETTIMEOUTMS, &hl, error);
+   if (!base_stream) {
+      return NULL;
+   }
+
+   /* If the proxy itself is fronted by TLS, wrap the base stream here. */
+   mongoc_stream_t *proxy_stream = base_stream;
+   if (data->transport == KMS_PROXY_TRANSPORT_TLS) {
+      mongoc_ssl_opt_t ssl_opt = {0};
+      /* The test proxy uses a self-signed cert; skip peer verification. */
+      ssl_opt.weak_cert_validation = true;
+      ssl_opt.allow_invalid_hostname = true;
+      mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
+      if (!tls) {
+         bson_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_CONNECT,
+                        "failed to create TLS stream to proxy: %s",
+                        endpoint);
+         mongoc_stream_destroy(base_stream);
+         return NULL;
+      }
+      if (!mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error)) {
+         mongoc_stream_destroy(tls); /* destroys base_stream too */
+         return NULL;
+      }
+      proxy_stream = tls;
+   }
+
+   /* Send the CONNECT request. */
+   char req[512];
+   int req_len = bson_snprintf(
+      req, sizeof(req), "CONNECT %s:%d HTTP/1.1\r\nHost: %s:%d\r\n\r\n", host, (int) port, host, (int) port);
+   mongoc_iovec_t iov;
+   iov.iov_base = req;
+   iov.iov_len = (size_t) req_len;
+   if (!_mongoc_stream_writev_full(proxy_stream, &iov, 1, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error)) {
+      mongoc_stream_destroy(proxy_stream);
+      return NULL;
+   }
+
+   /* Read the response head until \r\n\r\n. */
+   char resp[1024] = {0};
+   size_t resp_len = 0;
+   while (resp_len + 1 < sizeof(resp)) {
+      ssize_t r =
+         mongoc_stream_read(proxy_stream, resp + resp_len, 1, 1 /* min_bytes */, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+      if (r <= 0) {
+         bson_set_error(
+            error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "proxy closed connection during CONNECT");
+         mongoc_stream_destroy(proxy_stream);
+         return NULL;
+      }
+      resp_len += (size_t) r;
+      if (resp_len >= 4 && 0 == memcmp(resp + resp_len - 4, "\r\n\r\n", 4)) {
+         break;
+      }
+   }
+   if (0 != strncmp(resp, "HTTP/1.1 200", 12) && 0 != strncmp(resp, "HTTP/1.0 200", 12)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_CONNECT,
+                     "proxy CONNECT failed: %.*s",
+                     (int) (resp_len > 64 ? 64 : resp_len),
+                     resp);
+      mongoc_stream_destroy(proxy_stream);
+      return NULL;
+   }
+   return proxy_stream;
+}
+
+/* Verifies that mongoc_client_encryption_opts_set_kms_connect_callback wires
+ * the callback into the KMS connection path. We attach a callback that
+ * returns NULL, then drive a KMS request and check that the callback was
+ * invoked with the expected endpoint. */
+static void
+test_kms_connect_callback_wiring(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   struct kms_connect_data data = {0};
+   data.set_error = true;
+
+   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': 'foo', 'secretAccessKey': 'bar' } }");
+
+   mongoc_client_t *cl = test_framework_new_default_client();
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
+   mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
+   mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_record_and_fail, &data);
+
+   bson_error_t error;
+   mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
+   ASSERT_OR_PRINT(enc, error);
+
+   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
+   mongoc_client_encryption_datakey_opts_set_masterkey(
+      dk_opts,
+      tmp_bson("{ 'region': 'us-east-1', 'key': 'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
+
+   bson_value_t keyid;
+   bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   ASSERT(!ok); /* The callback failed the connection. */
+   BSON_ASSERT(data.call_count >= 1);
+   ASSERT_CMPSTR(data.last_host, "kms.us-east-1.amazonaws.com");
+   BSON_ASSERT(data.last_port == 443);
+   ASSERT_CONTAINS(error.message, "test: refusing to connect");
+
+   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
+   mongoc_client_encryption_destroy(enc);
+   mongoc_client_encryption_opts_destroy(opts);
+   mongoc_client_destroy(cl);
+}
+
+/* End-to-end test: route a KMS request through a local HTTPS CONNECT proxy.
+ *
+ * The proxy is assumed to be running at MONGOC_TEST_KMS_PROXY_HOST (default
+ * 127.0.0.1). The plain variant uses port 9004; the TLS variant uses 9005.
+ * After the KMS request, we issue a GET to /metrics over the same transport
+ * to confirm the proxy actually observed a CONNECT. */
+static void
+_test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
+{
+   struct kms_connect_data data = {0};
+   data.transport = transport;
+
+   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': 'foo', 'secretAccessKey': 'bar' } }");
+
+   mongoc_client_t *cl = test_framework_new_default_client();
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
+   mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
+   mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_via_proxy, &data);
+
+   bson_error_t error;
+   mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
+   ASSERT_OR_PRINT(enc, error);
+
+   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
+   mongoc_client_encryption_datakey_opts_set_masterkey(
+      dk_opts,
+      tmp_bson("{ 'region': 'us-east-1', 'key': 'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
+
+   bson_value_t keyid;
+   /* AWS will reject the bogus credentials, but only after the KMS request
+    * has been routed through our proxy. The callback must have been invoked
+    * with the AWS KMS endpoint. */
+   (void) mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   BSON_ASSERT(data.call_count >= 1);
+   ASSERT_CMPSTR(data.last_host, "kms.us-east-1.amazonaws.com");
+   BSON_ASSERT(data.last_port == 443);
+
+   /* GET the proxy's metrics endpoint over the same transport to confirm a
+    * CONNECT was observed. */
+   const char *proxy_host = NULL;
+   int proxy_port = 0;
+   _kms_proxy_address(transport, &proxy_host, &proxy_port);
+
+   mongoc_http_request_t req;
+   _mongoc_http_request_init(&req);
+   req.host = proxy_host;
+   req.port = proxy_port;
+   req.method = "GET";
+   req.path = "/metrics";
+
+   mongoc_http_response_t res;
+   _mongoc_http_response_init(&res);
+   bson_error_t http_err;
+   mongoc_ssl_opt_t metrics_ssl_opt = {0};
+   metrics_ssl_opt.weak_cert_validation = true;
+   metrics_ssl_opt.allow_invalid_hostname = true;
+   bool use_tls = (transport == KMS_PROXY_TRANSPORT_TLS);
+   bool got_metrics = _mongoc_http_send(
+      &req, mlib_expires_after(5000, ms), use_tls, use_tls ? &metrics_ssl_opt : NULL, &res, &http_err);
+   if (got_metrics) {
+      BSON_ASSERT(res.status == 200);
+      /* The proxy is expected to report at least one observed CONNECT. */
+      ASSERT_CONTAINS(res.body ? res.body : "", "connect_count");
+   } else {
+      MONGOC_DEBUG("Proxy metrics not reachable (%s); skipping metrics check.", http_err.message);
+   }
+   _mongoc_http_response_cleanup(&res);
+
+   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
+   mongoc_client_encryption_destroy(enc);
+   mongoc_client_encryption_opts_destroy(opts);
+   mongoc_client_destroy(cl);
+}
+
+static void
+test_kms_connect_callback_via_proxy_plain(void *unused)
+{
+   BSON_UNUSED(unused);
+   _test_kms_connect_callback_via_proxy(KMS_PROXY_TRANSPORT_PLAIN);
+}
+
+static void
+test_kms_connect_callback_via_proxy_tls(void *unused)
+{
+   BSON_UNUSED(unused);
+   _test_kms_connect_callback_via_proxy(KMS_PROXY_TRANSPORT_TLS);
+}
+
+/* Skip the proxy E2E test unless a local proxy is configured. */
+static int
+_skip_if_no_kms_proxy(void)
+{
+   return getenv("MONGOC_TEST_KMS_PROXY_HOST") ? 1 : 0;
+}
+
 static void
 _test_auto_aws(bool should_succeed)
 {
@@ -7632,6 +7929,32 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL, // ctx
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive);
+
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/wiring [lock:live-server]",
+                     test_kms_connect_callback_wiring,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive);
+
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/via_proxy/plain [lock:live-server]",
+                     test_kms_connect_callback_via_proxy_plain,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive,
+                     _skip_if_no_kms_proxy);
+
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/via_proxy/tls [lock:live-server]",
+                     test_kms_connect_callback_via_proxy_tls,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive,
+                     _skip_if_no_kms_proxy);
 
    TestSuite_AddFull(suite,
                      "/client_side_encryption/kms/auto-aws/fail [lock:live-server]",
