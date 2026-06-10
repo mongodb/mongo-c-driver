@@ -5135,8 +5135,15 @@ test_string_explicit_encryption(void *unused)
       {
          mongoc_collection_t *coll =
             mongoc_client_get_collection(seef->autoEncryptedClient, "db", "prefix-suffix-ci-di");
-         ASSERT_OR_PRINT(mongoc_collection_insert_one(
-                            coll, tmp_bson("{'encryptedText': 'cafébarbäz'}"), &seef->wc_majority_opts, NULL, &error),
+
+#define E_ACCENT "\xC3\xA9"
+#define A_UMLAUT "\xC3\xA4"
+
+         ASSERT_OR_PRINT(mongoc_collection_insert_one(coll,
+                                                      tmp_bson("{'encryptedText': 'caf" E_ACCENT "barb" A_UMLAUT "z'}"),
+                                                      &seef->wc_majority_opts,
+                                                      NULL,
+                                                      &error),
                          error);
          mongoc_collection_destroy(coll);
       }
@@ -5173,7 +5180,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         assert_cursor_matches(cursor, "{ 'encryptedText': 'cafébarbäz' }");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'caf" E_ACCENT "barb" A_UMLAUT "z' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5215,7 +5222,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         assert_cursor_matches(cursor, "{ 'encryptedText': 'cafébarbäz' }");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'caf" E_ACCENT "barb" A_UMLAUT "z' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5293,9 +5300,10 @@ test_string_explicit_encryption(void *unused)
       // "Use `autoEncryptedClient` to insert"
       {
          mongoc_collection_t *coll = mongoc_client_get_collection(seef->autoEncryptedClient, "db", "substring-ci-di");
-         ASSERT_OR_PRINT(mongoc_collection_insert_one(
-                            coll, tmp_bson("{'encryptedText': 'foocafébaz'}"), &seef->wc_majority_opts, NULL, &error),
-                         error);
+         ASSERT_OR_PRINT(
+            mongoc_collection_insert_one(
+               coll, tmp_bson("{'encryptedText': 'caf" E_ACCENT "barbaz'}"), &seef->wc_majority_opts, NULL, &error),
+            error);
          mongoc_collection_destroy(coll);
       }
 
@@ -5331,7 +5339,7 @@ test_string_explicit_encryption(void *unused)
             mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring-ci-di");
          mongoc_cursor_t *cursor =
             mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
-         assert_cursor_matches(cursor, "{ 'encryptedText': 'foocafébaz' }");
+         assert_cursor_matches(cursor, "{ 'encryptedText': 'caf" E_ACCENT "barbaz' }");
 
          mongoc_collection_destroy(coll);
          bson_value_destroy(&findPayload);
@@ -5340,6 +5348,9 @@ test_string_explicit_encryption(void *unused)
          mongoc_client_encryption_encrypt_string_opts_destroy(topts);
          mongoc_client_encryption_encrypt_opts_destroy(eo);
       }
+
+#undef E_ACCENT
+#undef A_UMLAUT
 
       string_explicit_encryption_destroy(seef);
    }
