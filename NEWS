@@ -27,6 +27,14 @@ Thanks to everyone who contributed to the development of this release.
   * Kevin Albertson
 
 
+## Deprecations
+
+* The previously experimental Queryable Encryption text search API (`mongoc_client_encryption_encrypt_text_*`) has been renamed to `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm. The old `_text_` names are deprecated and will be removed in a future release. The "substringPreview" algorithm is still documented experimental.
+
+## New Features
+
+* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix` and `suffix` query types. The `substringPreview` query type remains experimental.
+
 libmongoc 2.3.0
 ===============
 

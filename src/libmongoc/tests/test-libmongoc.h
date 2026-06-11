@@ -218,7 +218,8 @@ WIRE_VERSION_CHECK_DECLS(25)
 WIRE_VERSION_CHECK_DECLS(26)
 /* wire version 27 begins with the 8.2 release. */
 WIRE_VERSION_CHECK_DECLS(27)
-
+/* wire version 29 begins with the 9.0 release. */
+WIRE_VERSION_CHECK_DECLS(29)
 #undef WIRE_VERSION_CHECK_DECLS
 
 typedef struct _debug_stream_stats_t {

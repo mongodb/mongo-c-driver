@@ -49,7 +49,8 @@ SASLOption = Literal['Cyrus', 'off']
 'Valid options for the SASL configuration parameter'
 TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal['master', 'r4.1.0', 'none']
+# TODO: restore C++ driver tests after CXX-3503 to update for API renames.
+CxxVersion = Literal['none'] # Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
 SnappyOption = Literal['false', 'true']
 """Should we enable Snappy compression in this build?"""
