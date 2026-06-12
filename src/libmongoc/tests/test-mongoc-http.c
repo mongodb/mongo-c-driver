@@ -19,6 +19,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/duration.h>
+#include <mlib/test.h>
 #include <mlib/timer.h>
 
 #include <TestSuite.h>
@@ -88,9 +89,106 @@ test_mongoc_http_post(void *unused)
    _mongoc_http_response_cleanup(&res);
 }
 
+static void
+_init_valid_req(mongoc_http_request_t *req)
+{
+   _mongoc_http_request_init(req);
+   req->method = "GET";
+   req->host = "localhost";
+   req->path = "/foo";
+   req->port = 80;
+}
+
+static void
+test_mongoc_http_validate(void)
+{
+   mongoc_http_request_t req;
+   bson_error_t error;
+
+   /* baseline: a well-formed request passes */
+   _init_valid_req(&req);
+   mlib_check(_mongoc_http_request_validate(&req, &error));
+
+   /* method: empty */
+   _init_valid_req(&req);
+   req.method = "";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "method");
+
+   /* method: contains CR */
+   _init_valid_req(&req);
+   req.method = "GET\r";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "method");
+
+   /* method: contains LF */
+   _init_valid_req(&req);
+   req.method = "GET\n";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "method");
+
+   /* method: contains space (would split the request line) */
+   _init_valid_req(&req);
+   req.method = "GE T";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "method");
+
+   /* host: empty */
+   _init_valid_req(&req);
+   req.host = "";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "host");
+
+   /* host: CRLF injection */
+   _init_valid_req(&req);
+   req.host = "evil.com\r\nInjected: header";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "host");
+
+   /* path: CRLF injection */
+   _init_valid_req(&req);
+   req.path = "/legit\r\nInjected: header";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "path");
+
+   /* path: bare LF injection */
+   _init_valid_req(&req);
+   req.path = "/legit\nInjected";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "path");
+
+   /* path: space splits the request line (GET /le git HTTP/1.0) */
+   _init_valid_req(&req);
+   req.path = "/le git";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "path");
+
+   /* path: NULL is allowed (defaults to /) */
+   _init_valid_req(&req);
+   req.path = NULL;
+   mlib_check(_mongoc_http_request_validate(&req, &error));
+
+   /* extra_headers: well-formed headers pass */
+   _init_valid_req(&req);
+   req.extra_headers = "X-Foo: bar\r\nX-Baz: qux\r\n";
+   mlib_check(_mongoc_http_request_validate(&req, &error));
+
+   /* extra_headers: blank line terminates headers, allowing body injection */
+   _init_valid_req(&req);
+   req.extra_headers = "X-Foo: bar\r\n\r\nINJECTED BODY";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "extra_headers");
+
+   /* extra_headers: NULL is allowed */
+   _init_valid_req(&req);
+   req.extra_headers = NULL;
+   mlib_check(_mongoc_http_request_validate(&req, &error));
+}
+
 void
 test_http_install(TestSuite *suite)
 {
+   TestSuite_Add(suite, "/http/validate", test_mongoc_http_validate);
    TestSuite_AddFull(suite,
                      "/http/get [uses:simple-http-server-18000]",
                      test_mongoc_http_get,
