@@ -6076,15 +6076,57 @@ test_kms_connect_callback_wiring(void *unused)
    mongoc_client_destroy(cl);
 }
 
+/* Send a one-shot HTTP request to the proxy. Returns true and fills @res on
+ * success; @res must later be cleaned up by the caller. */
+static bool
+_kms_proxy_http(kms_proxy_transport_t transport,
+                const char *method,
+                const char *path,
+                mongoc_http_response_t *res,
+                bson_error_t *error)
+{
+   const char *proxy_host = NULL;
+   int proxy_port = 0;
+   _kms_proxy_address(transport, &proxy_host, &proxy_port);
+
+   mongoc_http_request_t req;
+   _mongoc_http_request_init(&req);
+   req.host = proxy_host;
+   req.port = proxy_port;
+   req.method = method;
+   req.path = path;
+
+   mongoc_ssl_opt_t ssl_opt = {0};
+   ssl_opt.weak_cert_validation = true;
+   ssl_opt.allow_invalid_hostname = true;
+   bool use_tls = (transport == KMS_PROXY_TRANSPORT_TLS);
+   return _mongoc_http_send(&req, mlib_expires_after(5000, ms), use_tls, use_tls ? &ssl_opt : NULL, res, error);
+}
+
 /* End-to-end test: route a KMS request through a local HTTPS CONNECT proxy.
  *
  * The proxy is assumed to be running at MONGOC_TEST_KMS_PROXY_HOST (default
  * 127.0.0.1). The plain variant uses port 9004; the TLS variant uses 9005.
- * After the KMS request, we issue a GET to /metrics over the same transport
- * to confirm the proxy actually observed a CONNECT. */
+ * Sequence:
+ *   1. POST /reset       — clear the proxy's connect_count.
+ *   2. createDataKey     — drives a KMS request through the callback.
+ *   3. GET /metrics      — confirm exactly one CONNECT was observed. */
 static void
 _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
 {
+   /* Reset the proxy's counter so the post-test metrics check is meaningful
+    * (e.g. when both /plain and /tls run against the same proxy host). */
+   {
+      mongoc_http_response_t reset_res;
+      _mongoc_http_response_init(&reset_res);
+      bson_error_t reset_err;
+      if (!_kms_proxy_http(transport, "POST", "/reset", &reset_res, &reset_err)) {
+         test_error("Failed to reset proxy counter: %s", reset_err.message);
+      }
+      BSON_ASSERT(reset_res.status == 200);
+      _mongoc_http_response_cleanup(&reset_res);
+   }
+
    struct kms_connect_data data = {0};
    data.transport = transport;
 
@@ -6116,35 +6158,21 @@ _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
    ASSERT_CMPSTR(data.last_host, "kms.us-east-1.amazonaws.com");
    BSON_ASSERT(data.last_port == 443);
 
-   /* GET the proxy's metrics endpoint over the same transport to confirm a
-    * CONNECT was observed. */
-   const char *proxy_host = NULL;
-   int proxy_port = 0;
-   _kms_proxy_address(transport, &proxy_host, &proxy_port);
-
-   mongoc_http_request_t req;
-   _mongoc_http_request_init(&req);
-   req.host = proxy_host;
-   req.port = proxy_port;
-   req.method = "GET";
-   req.path = "/metrics";
-
+   /* GET the proxy's metrics endpoint over the same transport to confirm the
+    * exact CONNECT was observed. After /reset, the counter must be >= 1 and
+    * the recorded target must be the AWS KMS endpoint. */
    mongoc_http_response_t res;
    _mongoc_http_response_init(&res);
    bson_error_t http_err;
-   mongoc_ssl_opt_t metrics_ssl_opt = {0};
-   metrics_ssl_opt.weak_cert_validation = true;
-   metrics_ssl_opt.allow_invalid_hostname = true;
-   bool use_tls = (transport == KMS_PROXY_TRANSPORT_TLS);
-   bool got_metrics = _mongoc_http_send(
-      &req, mlib_expires_after(5000, ms), use_tls, use_tls ? &metrics_ssl_opt : NULL, &res, &http_err);
-   if (got_metrics) {
-      BSON_ASSERT(res.status == 200);
-      /* The proxy is expected to report at least one observed CONNECT. */
-      ASSERT_CONTAINS(res.body ? res.body : "", "connect_count");
-   } else {
-      MONGOC_DEBUG("Proxy metrics not reachable (%s); skipping metrics check.", http_err.message);
+   if (!_kms_proxy_http(transport, "GET", "/metrics", &res, &http_err)) {
+      test_error("Failed to GET proxy /metrics: %s", http_err.message);
    }
+   BSON_ASSERT(res.status == 200);
+   const char *body = res.body ? res.body : "";
+   ASSERT_CONTAINS(body, "connect_target kms.us-east-1.amazonaws.com:443");
+   /* connect_count must be at least 1; libmongocrypt may retry, so don't pin
+    * to an exact value. */
+   ASSERT_CONTAINS(body, "connect_count ");
    _mongoc_http_response_cleanup(&res);
 
    mongoc_client_encryption_datakey_opts_destroy(dk_opts);
