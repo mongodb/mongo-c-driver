@@ -186,11 +186,15 @@ rst_prolog = rf"""
 
 .. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/security/in-use-encryption/#std-label-c-queryable-encryption/
 
+.. _explicit-encryption-qe: https://www.mongodb.com/docs/manual/core/queryable-encryption/fundamentals/manual-encryption/#std-label-qe-fundamentals-manual-encryption
+
 .. _authentication: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/authentication/
 
 .. _bulk: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/
 
 .. _client-side-field-level-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/security/in-use-encryption/#client-side-field-level-encryption
+
+.. _explicit-encryption-csfle: https://www.mongodb.com/docs/manual/core/csfle/fundamentals/manual-encryption/#std-label-csfle-fundamentals-manual-encryption
 
 .. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
 
