@@ -12,7 +12,8 @@ libmongoc 2.4.0 [UNRELEASED]
 
 ## New Features
 
-* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix` and `suffix` query types. The `substringPreview` query type remains experimental.
+* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix` and `suffix` query types.
+  * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types remains experimental.
 
 
 libmongoc 2.3.1
