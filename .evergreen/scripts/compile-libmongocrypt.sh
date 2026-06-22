@@ -14,7 +14,6 @@ compile_libmongocrypt() {
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
   declare -r version="1.19.1"
 
-  # TODO: after libmongocrypt 1.19.1 is released, replace the above block with:
   git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch "${version:?}" || return
 
   declare -a crypt_cmake_flags=(
