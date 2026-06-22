@@ -2,7 +2,7 @@
 cmake_policy(VERSION 3.15...4.0)
 
 # Avoid CMake Issue 26678: https://gitlab.kitware.com/cmake/cmake/-/issues/26678
-if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.27")
+if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.27" AND CMAKE_GENERATOR MATCHES "Visual Studio")
     cmake_policy(SET CMP0147 OLD)
 endif()
 
