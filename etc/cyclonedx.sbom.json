@@ -1,16 +1,16 @@
 {
   "components": [
     {
-      "bom-ref": "pkg:github/juliastrings/utf8proc@v2.8.0",
+      "bom-ref": "pkg:github/juliastrings/utf8proc@v2.11.3",
       "copyright": "Copyright \u00a9 2014-2021 by Steven G. Johnson, Jiahao Chen, Tony Kelman, Jonas Fonseca, and other contributors listed in the git history.",
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://github.com/juliastrings/utf8proc/archive/refs/tags/v2.8.0.tar.gz"
+          "url": "https://github.com/juliastrings/utf8proc/archive/v2.11.3.tar.gz"
         },
         {
           "type": "website",
-          "url": "https://github.com/juliastrings/utf8proc/tree/v2.8.0"
+          "url": "https://github.com/juliastrings/utf8proc/tree/v2.11.3"
         }
       ],
       "group": "juliastrings",
@@ -28,9 +28,9 @@
         }
       ],
       "name": "utf8proc",
-      "purl": "pkg:github/juliastrings/utf8proc@v2.8.0",
+      "purl": "pkg:github/juliastrings/utf8proc@v2.11.3",
       "type": "library",
-      "version": "v2.8.0"
+      "version": "v2.11.3"
     },
     {
       "bom-ref": "pkg:github/madler/zlib@v1.3.1",
@@ -108,7 +108,7 @@
   ],
   "dependencies": [
     {
-      "ref": "pkg:github/juliastrings/utf8proc@v2.8.0"
+      "ref": "pkg:github/juliastrings/utf8proc@v2.11.3"
     },
     {
       "ref": "pkg:github/madler/zlib@v1.3.1"
@@ -121,7 +121,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-04-17T11:32:21.208791+00:00",
+    "timestamp": "2026-06-22T20:20:36.337182+00:00",
     "tools": [
       {
         "externalReferences": [
