@@ -787,7 +787,7 @@ set(UTF8PROC_INCLUDE_DIRS, "")
 if (USE_BUNDLED_UTF8PROC)
    set (
       UTF8PROC_INCLUDE_DIRS
-      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0"
+      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.11.3"
    )
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
