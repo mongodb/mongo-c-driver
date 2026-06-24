@@ -5893,6 +5893,7 @@ struct kms_connect_data {
    bool return_null;
    bool set_error;
    kms_proxy_transport_t transport;
+   const char *ca_file; /* path to CA PEM; used when transport == TLS to verify proxy cert */
 };
 
 /* Resolves the proxy address for a given transport. Defaults to
@@ -5969,8 +5970,12 @@ _kms_connect_callback_via_proxy(const char *host, int32_t port, void *userdata, 
    mongoc_stream_t *proxy_stream = base_stream;
    if (data->transport == KMS_PROXY_TRANSPORT_TLS) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      /* The test proxy uses a self-signed cert; skip peer verification. */
-      ssl_opt.weak_cert_validation = true;
+      if (data->ca_file) {
+         ssl_opt.ca_file = data->ca_file;
+      } else {
+         ssl_opt.weak_cert_validation = true;
+      }
+      /* Connecting to 127.0.0.1 by IP; allow hostname mismatch. */
       ssl_opt.allow_invalid_hostname = true;
       mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
       if (!tls) {
@@ -6077,11 +6082,13 @@ test_kms_connect_callback_wiring(void *unused)
 }
 
 /* Send a one-shot HTTP request to the proxy. Returns true and fills @res on
- * success; @res must later be cleaned up by the caller. */
+ * success; @res must later be cleaned up by the caller.
+ * ca_file: path to CA PEM for TLS; if NULL uses weak cert validation. */
 static bool
 _kms_proxy_http(kms_proxy_transport_t transport,
                 const char *method,
                 const char *path,
+                const char *ca_file,
                 mongoc_http_response_t *res,
                 bson_error_t *error)
 {
@@ -6097,30 +6104,63 @@ _kms_proxy_http(kms_proxy_transport_t transport,
    req.path = path;
 
    mongoc_ssl_opt_t ssl_opt = {0};
-   ssl_opt.weak_cert_validation = true;
+   if (ca_file) {
+      ssl_opt.ca_file = ca_file;
+   } else {
+      ssl_opt.weak_cert_validation = true;
+   }
    ssl_opt.allow_invalid_hostname = true;
    bool use_tls = (transport == KMS_PROXY_TRANSPORT_TLS);
    return _mongoc_http_send(&req, mlib_expires_after(5000, ms), use_tls, use_tls ? &ssl_opt : NULL, res, error);
 }
 
-/* End-to-end test: route a KMS request through a local HTTPS CONNECT proxy.
+/* Parse connect_count from a proxy metrics body. The body format is:
+ *   connect_count N
+ *   connect_target host:port
+ *   ...
+ * Asserts that the "connect_count" line is present. */
+static int
+_parse_proxy_connect_count(const char *body)
+{
+   const char *p = strstr(body, "connect_count ");
+   if (!p) {
+      test_error("metrics body missing 'connect_count': %s", body);
+   }
+   return atoi(p + strlen("connect_count "));
+}
+
+/* Prose test 28, Cases 1 & 2: create a real AWS data key routed through a
+ * local proxy.
  *
- * The proxy is assumed to be running at MONGOC_TEST_KMS_PROXY_HOST (default
- * 127.0.0.1). The plain variant uses port 9004; the TLS variant uses 9005.
+ * Setup requirements:
+ *   - Plain HTTP proxy: python kms_http_proxy.py --port 9004
+ *   - HTTPS proxy:      python kms_http_proxy.py --ca_file ca.pem
+ *                        --cert_file server.pem --port 9005
+ *   - MONGOC_TEST_KMS_PROXY_HOST set (or defaults to 127.0.0.1).
+ *   - Real AWS credentials in MONGOC_TEST_AWS_ACCESS_KEY_ID /
+ *     MONGOC_TEST_AWS_SECRET_ACCESS_KEY.
+ *   - Optionally MONGOC_TEST_CSFLE_TLS_CA_FILE for strict proxy cert
+ *     verification in the HTTPS case (uses weak_cert_validation otherwise).
+ *
  * Sequence:
- *   1. POST /reset       — clear the proxy's connect_count.
- *   2. createDataKey     — drives a KMS request through the callback.
- *   3. GET /metrics      — confirm exactly one CONNECT was observed. */
+ *   1. POST /reset to the proxy — clear connect_count.
+ *   2. createDataKey with real AWS ARN — routes KMS traffic through the proxy.
+ *   3. Expect success.
+ *   4. GET /metrics — assert connect_count == 1. */
 static void
 _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
 {
-   /* Reset the proxy's counter so the post-test metrics check is meaningful
-    * (e.g. when both /plain and /tls run against the same proxy host). */
+   char *aws_access_key_id = test_framework_getenv_required("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   char *aws_secret_access_key = test_framework_getenv_required("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   /* ca_file is optional: used only to strictly verify the HTTPS proxy cert. */
+   const char *ca_file = getenv("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+
+   /* Reset the proxy's counter so the post-test metrics check is meaningful. */
    {
       mongoc_http_response_t reset_res;
       _mongoc_http_response_init(&reset_res);
       bson_error_t reset_err;
-      if (!_kms_proxy_http(transport, "POST", "/reset", &reset_res, &reset_err)) {
+      if (!_kms_proxy_http(transport, "POST", "/reset", ca_file, &reset_res, &reset_err)) {
          test_error("Failed to reset proxy counter: %s", reset_err.message);
       }
       BSON_ASSERT(reset_res.status == 200);
@@ -6129,8 +6169,11 @@ _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
 
    struct kms_connect_data data = {0};
    data.transport = transport;
+   data.ca_file = ca_file; /* used when transport == TLS to verify proxy cert */
 
-   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': 'foo', 'secretAccessKey': 'bar' } }");
+   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }",
+                                    aws_access_key_id,
+                                    aws_secret_access_key);
 
    mongoc_client_t *cl = test_framework_new_default_client();
    mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
@@ -6146,39 +6189,32 @@ _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
    mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
    mongoc_client_encryption_datakey_opts_set_masterkey(
       dk_opts,
-      tmp_bson("{ 'region': 'us-east-1', 'key': "
-               "'arn:aws:kms:us-east-1:111122223333:key/00000000-0000-0000-0000-000000000000' }"));
+      tmp_bson("{ 'region': 'us-east-1',"
+               "  'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
 
    bson_value_t keyid;
-   /* AWS will reject the bogus credentials, but only after the KMS request
-    * has been routed through our proxy. The callback must have been invoked
-    * with the AWS KMS endpoint. */
-   (void)mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
-   BSON_ASSERT(data.call_count >= 1);
-   ASSERT_CMPSTR(data.last_host, "kms.us-east-1.amazonaws.com");
-   BSON_ASSERT(data.last_port == 443);
+   bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   ASSERT_OR_PRINT(ok, error);
+   bson_value_destroy(&keyid);
 
-   /* GET the proxy's metrics endpoint over the same transport to confirm the
-    * exact CONNECT was observed. After /reset, the counter must be >= 1 and
-    * the recorded target must be the AWS KMS endpoint. */
+   /* GET proxy metrics and verify exactly one CONNECT was routed through. */
    mongoc_http_response_t res;
    _mongoc_http_response_init(&res);
    bson_error_t http_err;
-   if (!_kms_proxy_http(transport, "GET", "/metrics", &res, &http_err)) {
+   if (!_kms_proxy_http(transport, "GET", "/metrics", ca_file, &res, &http_err)) {
       test_error("Failed to GET proxy /metrics: %s", http_err.message);
    }
    BSON_ASSERT(res.status == 200);
    const char *body = res.body ? res.body : "";
-   ASSERT_CONTAINS(body, "connect_target kms.us-east-1.amazonaws.com:443");
-   /* connect_count must be at least 1; libmongocrypt may retry, so don't pin
-    * to an exact value. */
-   ASSERT_CONTAINS(body, "connect_count ");
+   BSON_ASSERT(_parse_proxy_connect_count(body) == 1);
    _mongoc_http_response_cleanup(&res);
 
    mongoc_client_encryption_datakey_opts_destroy(dk_opts);
    mongoc_client_encryption_destroy(enc);
    mongoc_client_encryption_opts_destroy(opts);
    mongoc_client_destroy(cl);
+   bson_free(aws_access_key_id);
+   bson_free(aws_secret_access_key);
 }
 
 static void
@@ -6195,11 +6231,189 @@ test_kms_connect_callback_via_proxy_tls(void *unused)
    _test_kms_connect_callback_via_proxy(KMS_PROXY_TRANSPORT_TLS);
 }
 
-/* Skip the proxy E2E test unless a local proxy is configured. */
+/* Skip proxy tests unless a local proxy host is configured (or defaults to
+ * 127.0.0.1 are acceptable).  AWS credentials are checked separately via
+ * _have_aws_creds_env. */
 static int
 _skip_if_no_kms_proxy(void)
 {
    return getenv("MONGOC_TEST_KMS_PROXY_HOST") ? 1 : 0;
+}
+
+/* Prose test 28, Case 3: full auto encryption pipeline via proxy.
+ *
+ * Exercises the complete encrypt/decrypt flow with kmsConnectCallback routing
+ * all KMS traffic through the plain HTTP proxy at 127.0.0.1:9004.  Real AWS
+ * credentials are required; the test is skipped when they are not present. */
+static void
+test_kms_connect_callback_via_proxy_pipeline(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   char *aws_access_key_id = test_framework_getenv_required("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   char *aws_secret_access_key = test_framework_getenv_required("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+
+   /* Step 1: plain client used for setup and verification. */
+   mongoc_client_t *client = test_framework_new_default_client();
+
+   /* Step 2: drop collections used by the test. */
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection(client, "keyvault", "datakeys");
+      (void) mongoc_collection_drop(coll, NULL);
+      mongoc_collection_destroy(coll);
+      coll = mongoc_client_get_collection(client, "db", "coll");
+      (void) mongoc_collection_drop(coll, NULL);
+      mongoc_collection_destroy(coll);
+   }
+
+   /* Proxy callback data for ClientEncryption (plain HTTP proxy). */
+   struct kms_connect_data ce_proxy_data = {0};
+   ce_proxy_data.transport = KMS_PROXY_TRANSPORT_PLAIN;
+
+   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }",
+                                    aws_access_key_id,
+                                    aws_secret_access_key);
+
+   /* Step 3: ClientEncryption with AWS credentials and proxy callback. */
+   mongoc_client_encryption_opts_t *ce_opts = mongoc_client_encryption_opts_new();
+   mongoc_client_encryption_opts_set_keyvault_client(ce_opts, client);
+   mongoc_client_encryption_opts_set_keyvault_namespace(ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_kms_providers(ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_kms_connect_callback(ce_opts, _kms_connect_callback_via_proxy, &ce_proxy_data);
+
+   bson_error_t error;
+   mongoc_client_encryption_t *ce = mongoc_client_encryption_new(ce_opts, &error);
+   ASSERT_OR_PRINT(ce, error);
+
+   /* Step 4: createDataKey using the real AWS KMS endpoint (no custom endpoint
+    * → the proxy forwards CONNECT to the real kms.us-east-1.amazonaws.com). */
+   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
+   mongoc_client_encryption_datakey_opts_set_masterkey(
+      dk_opts,
+      tmp_bson("{ 'region': 'us-east-1',"
+               "  'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
+
+   bson_value_t datakey_id;
+   bool ok = mongoc_client_encryption_create_datakey(ce, "aws", dk_opts, &datakey_id, &error);
+   ASSERT_OR_PRINT(ok, error);
+   BSON_ASSERT(datakey_id.value_type == BSON_TYPE_BINARY);
+
+   /* Step 5: build a JSON schema that encrypts the "encrypted_string" field
+    * using the data key we just created. */
+   bson_t *schema_map = bson_new();
+   {
+      bson_t coll_schema, props, field, enc_doc, key_arr;
+      BSON_APPEND_DOCUMENT_BEGIN(schema_map, "db.coll", &coll_schema);
+      BSON_APPEND_UTF8(&coll_schema, "bsonType", "object");
+      BSON_APPEND_DOCUMENT_BEGIN(&coll_schema, "properties", &props);
+      BSON_APPEND_DOCUMENT_BEGIN(&props, "encrypted_string", &field);
+      BSON_APPEND_DOCUMENT_BEGIN(&field, "encrypt", &enc_doc);
+      BSON_APPEND_ARRAY_BEGIN(&enc_doc, "keyId", &key_arr);
+      BSON_ASSERT(bson_append_binary(&key_arr,
+                                     "0",
+                                     1,
+                                     datakey_id.value.v_binary.subtype,
+                                     datakey_id.value.v_binary.data,
+                                     datakey_id.value.v_binary.data_len));
+      bson_append_array_end(&enc_doc, &key_arr);
+      BSON_APPEND_UTF8(&enc_doc, "bsonType", "string");
+      BSON_APPEND_UTF8(&enc_doc, "algorithm", "AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic");
+      bson_append_document_end(&field, &enc_doc);
+      bson_append_document_end(&props, &field);
+      bson_append_document_end(&coll_schema, &props);
+      bson_append_document_end(schema_map, &coll_schema);
+   }
+
+   /* Step 6: reset proxy metrics so the final check starts from zero. */
+   {
+      mongoc_http_response_t reset_res;
+      _mongoc_http_response_init(&reset_res);
+      bson_error_t reset_err;
+      if (!_kms_proxy_http(KMS_PROXY_TRANSPORT_PLAIN, "POST", "/reset", NULL, &reset_res, &reset_err)) {
+         test_error("Failed to reset proxy counter: %s", reset_err.message);
+      }
+      BSON_ASSERT(reset_res.status == 200);
+      _mongoc_http_response_cleanup(&reset_res);
+   }
+
+   /* Step 7: auto-encrypted client with schema map and proxy callback. */
+   struct kms_connect_data enc_proxy_data = {0};
+   enc_proxy_data.transport = KMS_PROXY_TRANSPORT_PLAIN;
+
+   mongoc_auto_encryption_opts_t *ae_opts = mongoc_auto_encryption_opts_new();
+   mongoc_auto_encryption_opts_set_keyvault_namespace(ae_opts, "keyvault", "datakeys");
+   mongoc_auto_encryption_opts_set_kms_providers(ae_opts, kms_providers);
+   mongoc_auto_encryption_opts_set_schema_map(ae_opts, schema_map);
+   mongoc_auto_encryption_opts_set_kms_connect_callback(ae_opts, _kms_connect_callback_via_proxy, &enc_proxy_data);
+   _set_extra(ae_opts);
+
+   mongoc_client_t *client_encrypted = test_framework_new_default_client();
+   ok = mongoc_client_enable_auto_encryption(client_encrypted, ae_opts, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   /* Step 8: insert a document — auto encryption will call KMS through the
+    * proxy to obtain the DEK. */
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection(client_encrypted, "db", "coll");
+      ok = mongoc_collection_insert_one(
+         coll, tmp_bson("{ '_id': 1, 'encrypted_string': 'hello' }"), NULL, NULL, &error);
+      ASSERT_OR_PRINT(ok, error);
+      mongoc_collection_destroy(coll);
+   }
+
+   /* Step 9: read back with the encrypted client; value must be decrypted. */
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection(client_encrypted, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{ '_id': 1 }"), NULL, NULL);
+      const bson_t *doc;
+      BSON_ASSERT(mongoc_cursor_next(cursor, &doc));
+      bson_iter_t iter;
+      BSON_ASSERT(bson_iter_init_find(&iter, doc, "encrypted_string"));
+      BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
+      ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), "hello");
+      BSON_ASSERT(!mongoc_cursor_error(cursor, &error));
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+
+   /* Step 10: read with the unencrypted client; value must still be binary. */
+   {
+      mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{ '_id': 1 }"), NULL, NULL);
+      const bson_t *doc;
+      BSON_ASSERT(mongoc_cursor_next(cursor, &doc));
+      bson_iter_t iter;
+      BSON_ASSERT(bson_iter_init_find(&iter, doc, "encrypted_string"));
+      BSON_ASSERT(BSON_ITER_HOLDS_BINARY(&iter));
+      BSON_ASSERT(!mongoc_cursor_error(cursor, &error));
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(coll);
+   }
+
+   /* Step 11: verify proxy recorded at least one CONNECT. */
+   {
+      mongoc_http_response_t metrics_res;
+      _mongoc_http_response_init(&metrics_res);
+      bson_error_t http_err;
+      if (!_kms_proxy_http(KMS_PROXY_TRANSPORT_PLAIN, "GET", "/metrics", NULL, &metrics_res, &http_err)) {
+         test_error("Failed to GET proxy /metrics: %s", http_err.message);
+      }
+      BSON_ASSERT(metrics_res.status == 200);
+      const char *body = metrics_res.body ? metrics_res.body : "";
+      BSON_ASSERT(_parse_proxy_connect_count(body) == 1);
+      _mongoc_http_response_cleanup(&metrics_res);
+   }
+
+   bson_value_destroy(&datakey_id);
+   bson_destroy(schema_map);
+   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
+   mongoc_client_encryption_destroy(ce);
+   mongoc_client_encryption_opts_destroy(ce_opts);
+   mongoc_auto_encryption_opts_destroy(ae_opts);
+   mongoc_client_destroy(client_encrypted);
+   mongoc_client_destroy(client);
+   bson_free(aws_access_key_id);
+   bson_free(aws_secret_access_key);
 }
 
 static void
@@ -7975,7 +8189,8 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL, // ctx
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive,
-                     _skip_if_no_kms_proxy);
+                     _skip_if_no_kms_proxy,
+                     _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
                      "/client_side_encryption/kms/connect_callback/via_proxy/tls [lock:live-server]",
@@ -7984,7 +8199,18 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL, // ctx
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive,
-                     _skip_if_no_kms_proxy);
+                     _skip_if_no_kms_proxy,
+                     _have_aws_creds_env);
+
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/via_proxy/pipeline [lock:live-server]",
+                     test_kms_connect_callback_via_proxy_pipeline,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive,
+                     _skip_if_no_kms_proxy,
+                     _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
                      "/client_side_encryption/kms/auto-aws/fail [lock:live-server]",
