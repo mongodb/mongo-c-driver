@@ -6724,9 +6724,8 @@ _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
    data.transport = transport;
    data.ca_file = ca_file; /* used when transport == TLS to verify proxy cert */
 
-   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }",
-                                    aws_access_key_id,
-                                    aws_secret_access_key);
+   bson_t *kms_providers =
+      tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }", aws_access_key_id, aws_secret_access_key);
 
    mongoc_client_t *cl = test_framework_new_default_client();
    mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
@@ -6812,10 +6811,10 @@ test_kms_connect_callback_via_proxy_pipeline(void *unused)
    /* Step 2: drop collections used by the test. */
    {
       mongoc_collection_t *coll = mongoc_client_get_collection(client, "keyvault", "datakeys");
-      (void) mongoc_collection_drop(coll, NULL);
+      (void)mongoc_collection_drop(coll, NULL);
       mongoc_collection_destroy(coll);
       coll = mongoc_client_get_collection(client, "db", "coll");
-      (void) mongoc_collection_drop(coll, NULL);
+      (void)mongoc_collection_drop(coll, NULL);
       mongoc_collection_destroy(coll);
    }
 
@@ -6823,9 +6822,8 @@ test_kms_connect_callback_via_proxy_pipeline(void *unused)
    struct kms_connect_data ce_proxy_data = {0};
    ce_proxy_data.transport = KMS_PROXY_TRANSPORT_PLAIN;
 
-   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }",
-                                    aws_access_key_id,
-                                    aws_secret_access_key);
+   bson_t *kms_providers =
+      tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }", aws_access_key_id, aws_secret_access_key);
 
    /* Step 3: ClientEncryption with AWS credentials and proxy callback. */
    mongoc_client_encryption_opts_t *ce_opts = mongoc_client_encryption_opts_new();
@@ -6908,8 +6906,8 @@ test_kms_connect_callback_via_proxy_pipeline(void *unused)
     * proxy to obtain the DEK. */
    {
       mongoc_collection_t *coll = mongoc_client_get_collection(client_encrypted, "db", "coll");
-      ok = mongoc_collection_insert_one(
-         coll, tmp_bson("{ '_id': 1, 'encrypted_string': 'hello' }"), NULL, NULL, &error);
+      ok =
+         mongoc_collection_insert_one(coll, tmp_bson("{ '_id': 1, 'encrypted_string': 'hello' }"), NULL, NULL, &error);
       ASSERT_OR_PRINT(ok, error);
       mongoc_collection_destroy(coll);
    }
