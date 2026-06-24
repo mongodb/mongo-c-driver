@@ -2041,7 +2041,7 @@ bson_new_from_buffer(uint8_t **buf, size_t *buf_len, bson_realloc_func realloc_f
          return NULL;
       }
       length = mlib_read_u32le(*buf);
-      if (length > *buf_len) {
+      if (length < 5 || length > *buf_len) {
          bson_free(bson);
          return NULL;
       }
