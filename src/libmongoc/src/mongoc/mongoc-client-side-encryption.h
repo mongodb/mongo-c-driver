@@ -63,7 +63,7 @@ typedef bool(BSON_CALL *mongoc_kms_credentials_provider_callback_fn)(void *userd
 /* Returns a connected stream to (host, port). The driver wraps the returned
  * stream with TLS. Return NULL and set @error on failure. */
 typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn)(const char *host,
-                                                                     int32_t port,
+                                                                     uint16_t port,
                                                                      void *userdata,
                                                                      bson_error_t *error);
 

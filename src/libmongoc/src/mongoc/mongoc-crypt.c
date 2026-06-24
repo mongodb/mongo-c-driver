@@ -528,7 +528,7 @@ _get_stream(const char *endpoint,
    }
 
    if (connect_cb && connect_cb->fn) {
-      base_stream = connect_cb->fn(host.host, (int32_t)host.port, connect_cb->userdata, error);
+      base_stream = connect_cb->fn(host.host, host.port, connect_cb->userdata, error);
       if (!base_stream) {
          if (error && error->code == 0) {
             _mongoc_set_error(error,
