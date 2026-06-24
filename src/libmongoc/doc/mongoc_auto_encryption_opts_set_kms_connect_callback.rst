@@ -27,8 +27,11 @@ Parameters
 - ``opts`` - The options object to update.
 - ``fn`` - The connect callback to set.  May be ``NULL`` to clear a previously
   set callback.  Refer to:
-  :c:type:`mongoc_kms_connect_callback_fn`
+  :doc:`mongoc_kms_connect_callback_fn`
 - ``userdata`` - An arbitrary pointer passed unchanged to ``fn`` each time it
   is called.
 
-.. seealso:: :doc:`mongoc_client_encryption_opts_set_kms_connect_callback`
+.. seealso::
+
+  - :doc:`mongoc_client_encryption_opts_set_kms_connect_callback`
+  - :doc:`mongoc_kms_connect_callback_fn`
