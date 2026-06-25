@@ -6471,7 +6471,8 @@ _kms_proxy_address(kms_proxy_transport_t transport, const char **host_out, int *
  * either returns NULL with an error (forcing the KMS request to fail) or
  * connects to a hard-coded localhost proxy. */
 static mongoc_stream_t *
-_kms_connect_callback_record_and_fail(const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
+_kms_connect_callback_record_and_fail(
+   const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
 {
    struct kms_connect_data *data = (struct kms_connect_data *)userdata;
    data->call_count++;
@@ -6496,7 +6497,8 @@ _kms_connect_callback_record_and_fail(const char *host, uint16_t port, int32_t c
  * itself is TLS-wrapped, and the CONNECT handshake is sent over that TLS
  * stream. */
 static mongoc_stream_t *
-_kms_connect_callback_via_proxy(const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
+_kms_connect_callback_via_proxy(
+   const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
 {
    struct kms_connect_data *data = (struct kms_connect_data *)userdata;
    data->call_count++;
