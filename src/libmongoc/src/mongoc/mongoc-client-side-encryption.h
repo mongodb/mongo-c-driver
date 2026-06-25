@@ -64,6 +64,7 @@ typedef bool(BSON_CALL *mongoc_kms_credentials_provider_callback_fn)(void *userd
  * stream with TLS. Return NULL and set @error on failure. */
 typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn)(const char *host,
                                                                      uint16_t port,
+                                                                     int32_t connecttimeoutms,
                                                                      void *userdata,
                                                                      bson_error_t *error);
 

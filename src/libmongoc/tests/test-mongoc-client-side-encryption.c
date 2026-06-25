@@ -6471,7 +6471,7 @@ _kms_proxy_address(kms_proxy_transport_t transport, const char **host_out, int *
  * either returns NULL with an error (forcing the KMS request to fail) or
  * connects to a hard-coded localhost proxy. */
 static mongoc_stream_t *
-_kms_connect_callback_record_and_fail(const char *host, uint16_t port, void *userdata, bson_error_t *error)
+_kms_connect_callback_record_and_fail(const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
 {
    struct kms_connect_data *data = (struct kms_connect_data *)userdata;
    data->call_count++;
@@ -6496,7 +6496,7 @@ _kms_connect_callback_record_and_fail(const char *host, uint16_t port, void *use
  * itself is TLS-wrapped, and the CONNECT handshake is sent over that TLS
  * stream. */
 static mongoc_stream_t *
-_kms_connect_callback_via_proxy(const char *host, uint16_t port, void *userdata, bson_error_t *error)
+_kms_connect_callback_via_proxy(const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
 {
    struct kms_connect_data *data = (struct kms_connect_data *)userdata;
    data->call_count++;
@@ -6514,7 +6514,7 @@ _kms_connect_callback_via_proxy(const char *host, uint16_t port, void *userdata,
       return NULL;
    }
 
-   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(MONGOC_DEFAULT_SOCKETTIMEOUTMS, &hl, error);
+   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(connecttimeoutms, &hl, error);
    if (!base_stream) {
       return NULL;
    }
@@ -6540,7 +6540,7 @@ _kms_connect_callback_via_proxy(const char *host, uint16_t port, void *userdata,
          mongoc_stream_destroy(base_stream);
          return NULL;
       }
-      if (!mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error)) {
+      if (!mongoc_stream_tls_handshake_block(tls, proxy_host, connecttimeoutms, error)) {
          mongoc_stream_destroy(tls); /* destroys base_stream too */
          return NULL;
       }
