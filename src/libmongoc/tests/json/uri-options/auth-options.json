@@ -28,6 +28,26 @@
         "authMechanism": "SCRAM-SHA-1",
         "authSource": "authSourceDB"
       }
+    },
+    {
+      "description": "maxScramIterations is parsed correctly",
+      "uri": "mongodb://example.com/?maxScramIterations=123456",
+      "valid": true,
+      "warning": false,
+      "hosts": null,
+      "auth": null,
+      "options": {
+        "maxScramIterations": 123456
+      }
+    },
+    {
+      "description": "maxScramIterations with value less than 4096 causes a warning",
+      "uri": "mongodb://example.com/?maxScramIterations=4095",
+      "valid": true,
+      "warning": true,
+      "hosts": null,
+      "auth": null,
+      "options": null
     }
   ]
 }
