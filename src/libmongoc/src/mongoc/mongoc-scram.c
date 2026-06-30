@@ -223,6 +223,8 @@ _mongoc_scram_init(mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo)
    memset(scram, 0, sizeof *scram);
 
    mongoc_crypto_init(&scram->crypto, algo);
+
+   scram->max_iterations = MONGOC_DEFAULT_MAXSCRAMITERATIONS;
 }
 
 
@@ -733,14 +735,25 @@ _mongoc_scram_step2(mongoc_scram_t *scram,
       goto FAIL;
    }
 
-   /* drivers MUST enforce a minimum iteration count of 4096 and MUST error if
+   /* drivers MUST enforce a minimum iteration count and MUST error if
     * the authentication conversation specifies a lower count. This mitigates
     * downgrade attacks by a man-in-the-middle attacker. */
-   if (iterations < 4096) {
+   if (iterations < MONGOC_SCRAM_MIN_ITERATIONS) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_SCRAM,
                         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                        "SCRAM Failure: iterations must be at least 4096");
+                        "SCRAM Failure: iterations must be at least %d",
+                        MONGOC_SCRAM_MIN_ITERATIONS);
+      goto FAIL;
+   }
+
+   if ((uint32_t)iterations > scram->max_iterations) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_SCRAM,
+                        MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                        "SCRAM Failure: iterations %d exceeds maximum of %u",
+                        iterations,
+                        scram->max_iterations);
       goto FAIL;
    }
 
