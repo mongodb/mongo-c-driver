@@ -4442,6 +4442,22 @@ typedef struct {
    bson_t wc_majority_opts; // bson_t opts with majority write concern appended.
 } string_explicit_encryption_fixture;
 
+static bool
+server_supports_queryType(const char *queryType)
+{
+   if (0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX) ||
+       0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX)) {
+      return test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
+   } else if (0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW) ||
+              0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW)) {
+      return test_framework_get_server_version() >= test_framework_str_to_version("8.2.0") &&
+             test_framework_get_server_version() < test_framework_str_to_version("9.0.0");
+   } else {
+      test_error("Do not know server support for queryType: %s", queryType);
+   }
+   return false;
+}
+
 static string_explicit_encryption_fixture *
 string_explicit_encryption_setup(void)
 {
@@ -4452,7 +4468,8 @@ string_explicit_encryption_setup(void)
       (string_explicit_encryption_fixture *)bson_malloc0(sizeof(string_explicit_encryption_fixture));
    mongoc_client_t *setupClient = test_framework_new_default_client();
 
-   bool server_supports_prefix_suffix = test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
+   bool server_supports_prefix_suffix = server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_PREFIX) &&
+                                        server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
 
    // Create majority write concern opts for reuse.
    {
@@ -4474,6 +4491,8 @@ string_explicit_encryption_setup(void)
       if (server_supports_prefix_suffix) {
          names[2] = "prefix-suffix";
          names[3] = "prefix-suffix-ci-di";
+      } else {
+         names[2] = "prefix-suffix-preview";
       }
 
       for (char **name_iter = names; *name_iter; name_iter++) {
@@ -4617,7 +4636,7 @@ string_explicit_encryption_setup(void)
    plaintext.value.v_utf8.str = "foobarbaz";
    plaintext.value.v_utf8.len = (uint32_t)strlen(plaintext.value.v_utf8.str);
 
-   // Insert "foobarbaz" into db.prefix-suffix:
+   // Insert "foobarbaz" into db.prefix-suffix and db.prefix-suffix-preview:
    {
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
@@ -4639,11 +4658,12 @@ string_explicit_encryption_setup(void)
 
       ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
+      const char *coll_name = server_supports_prefix_suffix ? "prefix-suffix" : "prefix-suffix-preview";
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", coll_name);
       ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
-
       mongoc_collection_destroy(coll);
+
       bson_value_destroy(&insertPayload);
       bson_destroy(&to_insert);
       mongoc_client_encryption_encrypt_string_opts_destroy(topts);
@@ -4734,20 +4754,34 @@ test_string_explicit_encryption(void *unused)
 {
    bson_error_t error;
    bool ok;
-   bool server_supports_prefix_suffix = test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
-   if (!server_supports_prefix_suffix) {
-      MONGOC_DEBUG("skipping prefix/suffix cases because server does not support them");
-   }
 
    BSON_UNUSED(unused);
 
+   typedef struct {
+      const char *queryType;
+      const char *collection;
+   } text_subcase_t;
+
+   text_subcase_t prefix_subcases[] = {
+      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_PREFIX, .collection = "prefix-suffix"},
+      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW, .collection = "prefix-suffix-preview"}};
+   text_subcase_t suffix_subcases[] = {
+      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX, .collection = "prefix-suffix"},
+      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW, .collection = "prefix-suffix-preview"}};
+
+
    // Case 1: can find a document by prefix
-   if (server_supports_prefix_suffix) {
+   for (size_t i = 0; i < sizeof(prefix_subcases) / sizeof(text_subcase_t); i++) {
+      text_subcase_t subcase = prefix_subcases[i];
+      if (!server_supports_queryType(subcase.queryType)) {
+         MONGOC_DEBUG("skipping unsupported queryType: %s", subcase.queryType);
+         continue;
+      }
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, subcase.queryType);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -4770,7 +4804,7 @@ test_string_explicit_encryption(void *unused)
          kv("$expr",
             doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
 
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", subcase.collection);
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
       assert_cursor_matches(cursor, "{ 'encryptedText': 'foobarbaz' }");
 
@@ -4784,12 +4818,17 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 2: can find a document by suffix
-   if (server_supports_prefix_suffix) {
+   for (size_t i = 0; i < sizeof(suffix_subcases) / sizeof(text_subcase_t); i++) {
+      text_subcase_t subcase = suffix_subcases[i];
+      if (!server_supports_queryType(subcase.queryType)) {
+         MONGOC_DEBUG("skipping unsupported queryType: %s", subcase.queryType);
+         continue;
+      }
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, subcase.queryType);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -4812,7 +4851,7 @@ test_string_explicit_encryption(void *unused)
          kv("$expr",
             doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
 
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", subcase.collection);
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
       assert_cursor_matches(cursor, "{ 'encryptedText': 'foobarbaz' }");
 
@@ -4826,12 +4865,17 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 3: assert no document found by prefix
-   if (server_supports_prefix_suffix) {
+   for (size_t i = 0; i < sizeof(prefix_subcases) / sizeof(text_subcase_t); i++) {
+      text_subcase_t subcase = prefix_subcases[i];
+      if (!server_supports_queryType(subcase.queryType)) {
+         MONGOC_DEBUG("skipping unsupported queryType: %s", subcase.queryType);
+         continue;
+      }
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_PREFIX);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, subcase.queryType);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -4854,7 +4898,7 @@ test_string_explicit_encryption(void *unused)
          kv("$expr",
             doc(kv("$encStrStartsWith", doc(kv("input", cstr("$encryptedText")), kv("prefix", value(findPayload)))))));
 
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", subcase.collection);
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
       assert_cursor_empty(cursor);
 
@@ -4868,12 +4912,17 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 4: assert no document found by suffix
-   if (server_supports_prefix_suffix) {
+   for (size_t i = 0; i < sizeof(suffix_subcases) / sizeof(text_subcase_t); i++) {
+      text_subcase_t subcase = suffix_subcases[i];
+      if (!server_supports_queryType(subcase.queryType)) {
+         MONGOC_DEBUG("skipping unsupported queryType: %s", subcase.queryType);
+         continue;
+      }
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
       mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-      mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
+      mongoc_client_encryption_encrypt_opts_set_query_type(eo, subcase.queryType);
       mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
       mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -4896,7 +4945,7 @@ test_string_explicit_encryption(void *unused)
          kv("$expr",
             doc(kv("$encStrEndsWith", doc(kv("input", cstr("$encryptedText")), kv("suffix", value(findPayload)))))));
 
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", subcase.collection);
       mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, &expr, NULL /* opts */, NULL /* read_prefs */);
       assert_cursor_empty(cursor);
 
@@ -4994,7 +5043,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 7: assert `contentionFactor` is required
-   if (server_supports_prefix_suffix) {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_PREFIX)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -5026,7 +5075,8 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 8: can find a case-insensitively indexed document by prefix and suffix
-   if (server_supports_prefix_suffix) {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_PREFIX) &&
+       server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
 
       // "Use `autoEncryptedClient` to insert"
@@ -5127,7 +5177,8 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 9: can find a case and diacritic-insensitively indexed document by prefix and suffix
-   if (server_supports_prefix_suffix) {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_PREFIX) &&
+       server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
 
       // "Use `autoEncryptedClient` to insert"
