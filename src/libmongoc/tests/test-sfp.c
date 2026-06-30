@@ -104,6 +104,8 @@ test_sfp_new(sfp_auth_t auth, sfp_variant_t variant)
       abort();
    }
 
+   // Setting serverSelectionTryOnce=false is to make tests more resilient to transient errors and more consistent with other
+   // non-single-threaded Drivers which implicitly set this by default.
    mongoc_uri_set_option_as_bool(uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
    if (variant == SFP_VARIANT_COMPRESSED) {
       mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_COMPRESSORS, "zlib,snappy,zstd");
