@@ -15,7 +15,7 @@ add_library(mongo::mlib ALIAS mongo-mlib)
 target_include_directories(mongo-mlib INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src>)
 set_property(TARGET mongo-mlib PROPERTY EXPORT_NAME mongo::mlib)
 
-if(CMAKE_CXX_COMPILER)
+if(BUILD_TESTING AND CMAKE_CXX_COMPILER)
     add_executable(mlib-ckdint-test src/mlib/ckdint.test.cpp)
     set_target_properties(mlib-ckdint-test PROPERTIES
         COMPILE_FEATURES cxx_std_11
