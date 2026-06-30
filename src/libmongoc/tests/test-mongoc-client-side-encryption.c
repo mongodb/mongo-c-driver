@@ -4658,20 +4658,11 @@ string_explicit_encryption_setup(void)
 
       ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
-      if (server_supports_prefix_suffix) {
-         mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
-         ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
-         ASSERT_OR_PRINT(ok, error);
-         mongoc_collection_destroy(coll);
-      }
-
-      if (!server_supports_prefix_suffix) {
-         mongoc_collection_t *coll =
-            mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix-preview");
-         ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
-         ASSERT_OR_PRINT(ok, error);
-         mongoc_collection_destroy(coll);
-      }
+      const char *coll_name = server_supports_prefix_suffix ? "prefix-suffix" : "prefix-suffix-preview";
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", coll_name);
+      ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
+      ASSERT_OR_PRINT(ok, error);
+      mongoc_collection_destroy(coll);
 
       bson_value_destroy(&insertPayload);
       bson_destroy(&to_insert);
