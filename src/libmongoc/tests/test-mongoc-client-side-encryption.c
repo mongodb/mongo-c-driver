@@ -6445,6 +6445,7 @@ struct kms_connect_data {
    uint16_t last_port;
    bool return_null;
    bool set_error;
+   const char *error_msg; /* if set_error and non-NULL, used verbatim as error message */
    kms_proxy_transport_t transport;
    const char *ca_file; /* path to CA PEM; used when transport == TLS to verify proxy cert */
 };
@@ -6479,12 +6480,16 @@ _kms_connect_callback_record_and_fail(
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
    if (data->set_error) {
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_CONNECT,
-                     "test: refusing to connect to %s:%d",
-                     host,
-                     (int)port);
+      if (data->error_msg) {
+         bson_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "%s", data->error_msg);
+      } else {
+         bson_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_CONNECT,
+                        "test: refusing to connect to %s:%d",
+                        host,
+                        (int)port);
+      }
    }
    return NULL;
 }
@@ -6629,6 +6634,50 @@ test_kms_connect_callback_wiring(void *unused)
    ASSERT_CMPSTR(data.last_host, "kms.us-east-1.amazonaws.com");
    BSON_ASSERT(data.last_port == 443);
    ASSERT_CONTAINS(error.message, "test: refusing to connect");
+
+   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
+   mongoc_client_encryption_destroy(enc);
+   mongoc_client_encryption_opts_destroy(opts);
+   mongoc_client_destroy(cl);
+}
+
+/* Prose test 28, Case 4: an error from the kmsConnectCallback propagates.
+ *
+ * The callback immediately returns NULL with the message "Test Error".  Real
+ * AWS credentials are not required because the callback fires before any
+ * network connection is attempted. */
+static void
+test_kms_connect_callback_error(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   struct kms_connect_data data = {0};
+   data.set_error = true;
+   data.error_msg = "Test Error";
+
+   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': 'foo', 'secretAccessKey': 'bar' } }");
+
+   mongoc_client_t *cl = test_framework_new_default_client();
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
+   mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
+   mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_record_and_fail, &data);
+
+   bson_error_t error;
+   mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
+   ASSERT_OR_PRINT(enc, error);
+
+   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
+   mongoc_client_encryption_datakey_opts_set_masterkey(
+      dk_opts,
+      tmp_bson("{ 'region': 'us-east-1',"
+               "  'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
+
+   bson_value_t keyid;
+   bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   BSON_ASSERT(!ok);
+   ASSERT_CONTAINS(error.message, "Test Error");
 
    mongoc_client_encryption_datakey_opts_destroy(dk_opts);
    mongoc_client_encryption_destroy(enc);
