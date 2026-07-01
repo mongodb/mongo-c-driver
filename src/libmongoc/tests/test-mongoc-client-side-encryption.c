@@ -4449,7 +4449,8 @@ server_supports_queryType(const char *queryType)
        0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX)) {
       return test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
    } else if (0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW) ||
-              0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW)) {
+              0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW) ||
+              0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW)) {
       return test_framework_get_server_version() >= test_framework_str_to_version("8.2.0") &&
              test_framework_get_server_version() < test_framework_str_to_version("9.0.0");
    } else {
@@ -4471,6 +4472,8 @@ string_explicit_encryption_setup(void)
    bool server_supports_prefix_suffix = server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_PREFIX) &&
                                         server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX);
 
+   bool server_supports_substringPreview = server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
+
    // Create majority write concern opts for reuse.
    {
       bson_init(&seef->wc_majority_opts);
@@ -4485,14 +4488,18 @@ string_explicit_encryption_setup(void)
    {
       char *names[5] = {0}; // NULL terminated.
 
-      names[0] = "substring";
-      names[1] = "substring-ci-di";
+      size_t idx = 0;
+
+      if (server_supports_substringPreview) {
+         names[idx++] = "substring";
+         names[idx++] = "substring-ci-di";
+      }
 
       if (server_supports_prefix_suffix) {
-         names[2] = "prefix-suffix";
-         names[3] = "prefix-suffix-ci-di";
+         names[idx++] = "prefix-suffix";
+         names[idx++] = "prefix-suffix-ci-di";
       } else {
-         names[2] = "prefix-suffix-preview";
+         names[idx++] = "prefix-suffix-preview";
       }
 
       for (char **name_iter = names; *name_iter; name_iter++) {
@@ -4671,7 +4678,7 @@ string_explicit_encryption_setup(void)
    }
 
    // Insert "foobarbaz" into db.substring:
-   {
+   if (server_supports_substringPreview) {
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
 
@@ -4959,7 +4966,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 5: can find a document by substring
-   {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -5001,7 +5008,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 6: assert no document found by substring
-   {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
       mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
       mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
@@ -5286,7 +5293,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 10: can find a case-insensitively indexed document by substring
-   {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
 
       // "Use `autoEncryptedClient` to insert"
@@ -5344,7 +5351,7 @@ test_string_explicit_encryption(void *unused)
    }
 
    // Case 11: can find a diacritic-insensitively indexed document by substring
-   {
+   if (server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW)) {
       string_explicit_encryption_fixture *seef = string_explicit_encryption_setup();
 
       // "Use `autoEncryptedClient` to insert"
