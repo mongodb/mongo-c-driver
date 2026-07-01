@@ -4775,7 +4775,7 @@ test_string_explicit_encryption(void *unused)
       {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX, .collection = "prefix-suffix"},
       {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW, .collection = "prefix-suffix-preview"}};
    text_subcase_t substring_subcases[] = {
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING, .collection = "substring-suffix"},
+      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING, .collection = "substring"},
       {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW, .collection = "substring-preview"}};
 
 
