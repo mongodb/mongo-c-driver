@@ -1077,7 +1077,7 @@ mstr_replace(mstr *str, mstr_view needle, mstr_view sub)
    // Do the same with the sub string:
    if (okay && _mstr_overlaps(str, sub)) {
       sub_dup = mstr_copy(sub);
-      okay = !!needle_dup.data;
+      okay = !!sub_dup.data;
       sub = mstr_view_from(sub_dup);
    }
    // Scan forward, starting from the first position:
