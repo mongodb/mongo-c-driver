@@ -242,9 +242,7 @@ mongoc_auto_encryption_opts_set_kms_connect_callback(mongoc_auto_encryption_opts
                                                      mongoc_kms_connect_callback_fn fn,
                                                      void *userdata)
 {
-   if (!opts) {
-      return;
-   }
+   BSON_ASSERT_PARAM(opts);
    opts->connect_cb.fn = fn;
    opts->connect_cb.userdata = userdata;
 }
