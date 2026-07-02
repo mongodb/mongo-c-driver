@@ -6443,7 +6443,6 @@ struct kms_connect_data {
    int call_count;
    char last_host[256];
    uint16_t last_port;
-   bool return_null;
    bool set_error;
    const char *error_msg; /* if set_error and non-NULL, used verbatim as error message */
    kms_proxy_transport_t transport;

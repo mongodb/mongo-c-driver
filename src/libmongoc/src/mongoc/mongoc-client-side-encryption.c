@@ -276,6 +276,7 @@ mongoc_client_encryption_opts_destroy(mongoc_client_encryption_opts_t *opts)
    if (!opts) {
       return;
    }
+   opts->connect_cb = (mc_kms_connect_callback){0};
    _set_creds_callback(&opts->creds_cb, NULL, NULL);
    bson_free(opts->keyvault_db);
    bson_free(opts->keyvault_coll);
