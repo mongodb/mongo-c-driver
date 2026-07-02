@@ -20,6 +20,7 @@
 #define MONGOC_CLIENT_SIDE_ENCRYPTION_H
 
 #include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
 
@@ -58,6 +59,11 @@ typedef bool(BSON_CALL *mongoc_kms_credentials_provider_callback_fn)(void *userd
                                                                      const bson_t *params,
                                                                      bson_t *out,
                                                                      bson_error_t *error);
+
+/* Returns a connected stream to (host, port). The driver wraps the returned
+ * stream with TLS. Return NULL and set @error on failure. */
+typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn)(
+   const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error);
 
 MONGOC_EXPORT(mongoc_auto_encryption_opts_t *)
 mongoc_auto_encryption_opts_new(void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -108,6 +114,11 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
                                                                  mongoc_kms_credentials_provider_callback_fn fn,
                                                                  void *userdata);
 
+MONGOC_EXPORT(void)
+mongoc_auto_encryption_opts_set_kms_connect_callback(mongoc_auto_encryption_opts_t *opts,
+                                                     mongoc_kms_connect_callback_fn fn,
+                                                     void *userdata);
+
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
@@ -153,6 +164,11 @@ MONGOC_EXPORT(void)
 mongoc_client_encryption_opts_set_kms_credential_provider_callback(mongoc_client_encryption_opts_t *opts,
                                                                    mongoc_kms_credentials_provider_callback_fn fn,
                                                                    void *userdata);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_opts_set_kms_connect_callback(mongoc_client_encryption_opts_t *opts,
+                                                       mongoc_kms_connect_callback_fn fn,
+                                                       void *userdata);
 
 MONGOC_EXPORT(void)
 mongoc_client_encryption_opts_set_key_expiration(mongoc_client_encryption_opts_t *opts, uint64_t cache_expiration_ms);

@@ -29,6 +29,11 @@ typedef struct mc_kms_credentials_callback {
    void *userdata;
 } mc_kms_credentials_callback;
 
+typedef struct mc_kms_connect_callback {
+   mongoc_kms_connect_callback_fn fn;
+   void *userdata;
+} mc_kms_connect_callback;
+
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 /* For interacting with libmongocrypt */
@@ -53,6 +58,7 @@ _mongoc_crypt_new(const bson_t *kms_providers,
                   bool bypass_auto_encryption,
                   bool bypass_query_analysis,
                   mc_kms_credentials_callback creds_cb,
+                  mc_kms_connect_callback connect_cb,
                   mcd_optional_u64_t cache_expiration_ms,
                   bson_error_t *error);
 
