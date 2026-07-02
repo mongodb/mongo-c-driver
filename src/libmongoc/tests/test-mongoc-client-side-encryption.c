@@ -6797,15 +6797,6 @@ test_kms_connect_callback_via_proxy_tls(void *unused)
    _test_kms_connect_callback_via_proxy(KMS_PROXY_TRANSPORT_TLS);
 }
 
-/* Skip proxy tests unless a local proxy host is configured (or defaults to
- * 127.0.0.1 are acceptable).  AWS credentials are checked separately via
- * _have_aws_creds_env. */
-static int
-_skip_if_no_kms_proxy(void)
-{
-   return getenv("MONGOC_TEST_KMS_PROXY_HOST") ? 1 : 0;
-}
-
 /* Prose test 28, Case 3: full auto encryption pipeline via proxy.
  *
  * Exercises the complete encrypt/decrypt flow with kmsConnectCallback routing
@@ -8762,7 +8753,6 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL, // ctx
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive,
-                     _skip_if_no_kms_proxy,
                      _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
@@ -8772,7 +8762,6 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL, // ctx
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive,
-                     _skip_if_no_kms_proxy,
                      _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
@@ -8782,7 +8771,6 @@ test_client_side_encryption_install(TestSuite *suite)
                      NULL, // ctx
                      test_framework_skip_if_no_client_side_encryption,
                      TestSuite_CheckLive,
-                     _skip_if_no_kms_proxy,
                      _have_aws_creds_env);
 
    TestSuite_AddFull(suite,
