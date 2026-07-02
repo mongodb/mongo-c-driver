@@ -80,7 +80,7 @@ Provides:   %{name}-tools%{?_isa} = %{version}
 %package libs
 Summary:    Shared libraries for %{name}
 %if %{without libutf8proc}
-Provides:   bundled(libutf8proc) = 2.8.0
+Provides:   bundled(libutf8proc) = 2.11.3
 %endif
 Provides:   bundled(uthash) = 2.3.0
 

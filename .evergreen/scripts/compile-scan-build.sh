@@ -165,6 +165,14 @@ fi
 # If scan-build emits warnings, continue the task and upload scan results before marking task as a failure.
 declare -r continue_command='{"status":"failed", "type":"test", "should_continue":true, "desc":"scan-build emitted one or more warnings or errors"}'
 
+declare -a scan_build_args
+scan_build_args+=("--use-cc=${CC}")
+scan_build_args+=("--use-c++=${CXX}")
+scan_build_args+=("-o" "scan")
+# Exclude utf8proc to avoid false positive warning of core.uninitialized.Assign
+scan_build_args+=("--exclude" "${mongoc_dir}/src/utf8proc-2.11.3")
+scan_build_args+=("--status-bugs")
+
 # Put clang static analyzer results in scan/ and fail build if warnings found.
-"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs cmake --build . -- -j "$(nproc)" ||
+"${scan_build_binary}" "${scan_build_args[@]}" cmake --build . -- -j "$(nproc)" ||
   curl -sS -d "${continue_command}" -H "Content-Type: application/json" -X POST localhost:2285/task_status
