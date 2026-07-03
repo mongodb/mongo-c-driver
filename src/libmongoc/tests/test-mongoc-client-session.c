@@ -2661,6 +2661,11 @@ test_sessions_snapshot_prose_test_22(void *ctx)
    mongoc_client_destroy(client);
 }
 
+/* Prose test 23, "Ensure snapshotTime is Read-Only", is intentionally not implemented.
+ * mongoc_client_session_t is an opaque struct exposed only through accessor functions, and
+ * the spec allows drivers to skip this test if snapshotTime is exposed as a read-only property via an accessor method
+ * only. */
+
 
 typedef struct {
    bson_t *last_sent_clusterTime;
