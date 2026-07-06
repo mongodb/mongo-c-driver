@@ -1233,6 +1233,54 @@ done:
 }
 
 static bool
+operation_drop_database(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *parser = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_database_t *db = NULL;
+   char *database = NULL;
+   bson_error_t op_error = {0};
+   bson_t *opts = NULL;
+
+   /* The dropDatabase operation's object is a client; the database to drop is
+    * named by the "database" argument (and an optional "session"). */
+   parser = bson_parser_new();
+   bson_parser_allow_extra(parser, true);
+   bson_parser_utf8(parser, "database", &database);
+   if (!bson_parser_parse(parser, op->arguments, error)) {
+      goto done;
+   }
+
+   opts = bson_new();
+   if (op->session) {
+      if (!mongoc_client_session_append(op->session, opts, error)) {
+         goto done;
+      }
+   }
+
+   /* Forward all arguments other than the database name as-is. */
+   BSON_ASSERT(bson_concat(opts, bson_parser_get_extra(parser)));
+
+   client = entity_map_get_client(test->entity_map, op->object, error);
+   if (!client) {
+      goto done;
+   }
+
+   db = mongoc_client_get_database(client, database);
+   mongoc_database_drop_with_opts(db, opts, &op_error);
+
+   result_from_val_and_reply(result, NULL, NULL, &op_error);
+
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields(parser);
+   mongoc_database_destroy(db);
+   bson_destroy(opts);
+   return ret;
+}
+
+static bool
 operation_list_collections(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
@@ -4059,6 +4107,7 @@ operation_run(test_t *test, bson_t *op_bson, bson_error_t *error)
       /* Database operations */
       {"createCollection", operation_create_collection},
       {"dropCollection", operation_drop_collection},
+      {"dropDatabase", operation_drop_database},
       {"listCollections", operation_list_collections},
       {"listCollectionNames", operation_list_collection_names},
       {"listIndexes", operation_list_indexes},
