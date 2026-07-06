@@ -11,7 +11,8 @@ Synopsis
    #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
    #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
    #define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview" // Deprecated.
-   #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview"
+   #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview" // Deprecated.
+   #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substring"
    #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW "prefixPreview" // Deprecated.
    #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIX "prefix"
    #define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW "suffixPreview" // Deprecated.
@@ -23,9 +24,6 @@ Synopsis
 .. versionadded:: 1.22.0
 
 Sets the query type for explicit encryption.
-
-.. warning::
-   The "substringPreview" query type is in preview and should be used for experimental workloads only. This feature is unstable and its security is not guaranteed until released as Generally Available (GA). The GA version of this feature may not be backwards compatible with the preview version.
 
 Parameters
 ----------
