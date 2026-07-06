@@ -140,6 +140,7 @@ void
 _mongoc_client_session_append_read_concern(const mongoc_client_session_t *cs,
                                            const bson_t *user_read_concern,
                                            bool is_read_command,
+                                           const char *command_name,
                                            bson_t *cmd);
 
 void

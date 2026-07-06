@@ -1604,7 +1604,7 @@ run_session_test_bulk_operation(void *ctx)
    session_test_fn_t const test_fn = ((session_test_helper_t *)ctx)->test_fn;
    _test_explicit_session_lsid(test_fn);
    _test_implicit_session_lsid(test_fn);
-   _test_causal_consistency(test_fn, false /* read concern */);
+   _test_causal_consistency(test_fn, true /* read concern */);
 }
 
 
@@ -2883,33 +2883,33 @@ test_session_install(TestSuite *suite)
     * consistent sessions, "false" is for tests that prohibit readConcern */
    add_session_test(suite, "/Session/cmd", test_cmd, false);
    add_session_test(suite, "/Session/read_cmd", test_read_cmd, true);
-   add_session_test(suite, "/Session/write_cmd", test_write_cmd, false);
+   add_session_test(suite, "/Session/write_cmd", test_write_cmd, true);
    add_session_test(suite, "/Session/read_write_cmd", test_read_write_cmd, true);
    add_session_test(suite, "/Session/db_cmd", test_db_cmd, false);
    add_session_test(suite, "/Session/cursor", test_cursor, true);
-   add_session_test(suite, "/Session/drop", test_drop, false);
-   add_session_test(suite, "/Session/drop_index", test_drop_index, false);
-   add_session_test(suite, "/Session/create_index", test_create_index, false);
-   add_session_test(suite, "/Session/replace_one", test_replace_one, false);
-   add_session_test(suite, "/Session/update_one", test_update_one, false);
-   add_session_test(suite, "/Session/update_many", test_update_many, false);
-   add_session_test(suite, "/Session/insert_one", test_insert_one, false);
-   add_session_test(suite, "/Session/insert_many", test_insert_many, false);
-   add_session_test(suite, "/Session/delete_one", test_delete_one, false);
-   add_session_test(suite, "/Session/delete_many", test_delete_many, false);
+   add_session_test(suite, "/Session/drop", test_drop, true);
+   add_session_test(suite, "/Session/drop_index", test_drop_index, true);
+   add_session_test(suite, "/Session/create_index", test_create_index, true);
+   add_session_test(suite, "/Session/replace_one", test_replace_one, true);
+   add_session_test(suite, "/Session/update_one", test_update_one, true);
+   add_session_test(suite, "/Session/update_many", test_update_many, true);
+   add_session_test(suite, "/Session/insert_one", test_insert_one, true);
+   add_session_test(suite, "/Session/insert_many", test_insert_many, true);
+   add_session_test(suite, "/Session/delete_one", test_delete_one, true);
+   add_session_test(suite, "/Session/delete_many", test_delete_many, true);
    add_session_test(suite, "/Session/rename", test_rename, false);
    add_session_test(suite, "/Session/fam", test_fam, true);
-   add_session_test(suite, "/Session/db_drop", test_db_drop, false);
+   add_session_test(suite, "/Session/db_drop", test_db_drop, true);
    add_session_test(suite, "/Session/gridfs_find", test_gridfs_find, true);
    add_session_test(suite, "/Session/gridfs_find_one", test_gridfs_find_one, true);
    add_session_test_wc(suite, "/Session/watch", test_watch, true, test_framework_skip_if_not_replset);
    add_session_test(suite, "/Session/aggregate", test_aggregate, true);
-   add_session_test(suite, "/Session/create", test_create, false);
+   add_session_test(suite, "/Session/create", test_create, true);
    add_session_test(suite, "/Session/database_names", test_database_names, true);
    add_session_test(suite, "/Session/find_databases", test_find_databases, true);
    add_session_test(suite, "/Session/find_collections", test_find_collections, true);
    add_session_test(suite, "/Session/collection_names", test_collection_names, true);
-   add_session_test(suite, "/Session/bulk", test_bulk, false);
+   add_session_test(suite, "/Session/bulk", test_bulk, true);
    add_session_test(suite, "/Session/find_indexes", test_find_indexes, true);
    {
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));

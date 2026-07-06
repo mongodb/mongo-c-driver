@@ -1243,8 +1243,6 @@ operation_drop_database(test_t *test, operation_t *op, result_t *result, bson_er
    bson_error_t op_error = {0};
    bson_t *opts = NULL;
 
-   /* The dropDatabase operation's object is a client; the database to drop is
-    * named by the "database" argument (and an optional "session"). */
    parser = bson_parser_new();
    bson_parser_allow_extra(parser, true);
    bson_parser_utf8(parser, "database", &database);
