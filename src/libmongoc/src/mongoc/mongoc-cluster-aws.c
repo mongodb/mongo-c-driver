@@ -31,6 +31,7 @@
 #include <mongoc/mongoc-util-private.h>
 
 #include <mlib/duration.h>
+#include <mlib/str.h>
 #include <mlib/timer.h>
 
 #undef MONGOC_LOG_DOMAIN
@@ -511,13 +512,15 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
       token_file_contents = mcommon_string_from_append(&append);
    }
 
+   // Token files commonly end with a trailing newline; strip it before embedding in the path.
+   const mstr_view jwt_token = mstr_trim_right(mstr_cstring(token_file_contents->str));
    path_and_query = bson_strdup_printf("/?Action=AssumeRoleWithWebIdentity"
                                        "&RoleSessionName=%s"
                                        "&RoleArn=%s"
-                                       "&WebIdentityToken=%s&Version=2011-06-15",
+                                       "&WebIdentityToken=%.*s&Version=2011-06-15",
                                        aws_role_session_name,
                                        aws_role_arn,
-                                       token_file_contents->str);
+                                       MSTR_FMT(jwt_token));
 
    // send an HTTP request to sts.amazonaws.com.
    if (!_send_http_request(true /* use_tls */,
@@ -667,7 +670,9 @@ _obtain_creds_from_ec2(_mongoc_aws_credentials_t *creds, bson_error_t *error)
 
    bson_free(http_response_headers);
    http_response_headers = NULL;
-   token_header = bson_strdup_printf("X-aws-ec2-metadata-token: %s\r\n", token);
+   // IMDS response bodies may end with a trailing newline; strip it before embedding in the header.
+   const mstr_view troken_trimmed = mstr_trim_right(mstr_cstring(token));
+   token_header = bson_strdup_printf("X-aws-ec2-metadata-token: %.*s\r\n", MSTR_FMT(troken_trimmed));
 
    /* Get the role name. */
    if (!_send_http_request(false /* use_tls */,
@@ -687,7 +692,9 @@ _obtain_creds_from_ec2(_mongoc_aws_credentials_t *creds, bson_error_t *error)
    }
 
    /* Get the creds. */
-   path_with_role = bson_strdup_printf("/latest/meta-data/iam/security-credentials/%s", role_name);
+   // IMDS response bodies may end with a trailing newline; strip it before embedding in the path.
+   const mstr_view role_trimmed = mstr_trim_right(mstr_cstring(role_name));
+   path_with_role = bson_strdup_printf("/latest/meta-data/iam/security-credentials/%.*s", MSTR_FMT(role_trimmed));
    bson_free(http_response_headers);
    http_response_headers = NULL;
    if (!_send_http_request(false /* use_tls */,
