@@ -31,6 +31,16 @@ information that was available at that time.
 > appear in this document.
 
 ## `Zlib`
+### CVE-2026-27171 - Infinite loop
+
+- **Date Detected**: 2026-07-07
+- **CVE Number**: [CVE-2026-27171](https://www.cve.org/CVERecord?id=CVE-2026-27171)
+- **Snyk Entry**: [SNYK-UNMANAGED-MADLERZLIB-15317565](https://security.snyk.io/vuln/SNYK-UNMANAGED-MADLERZLIB-15317565)
+- **Severity**: Low
+- **Description**: Affected versions of this package are vulnerable to Infinite loop in the `crc32_combine_gen64()` function. An attacker can cause excessive CPU consumption by providing negative argument that triggers a loop with no termination condition.
+- **Upstream Fix Status**: Fix available (1.3.2, 2026-02-17)
+- **mongo-c-driver Fix Status**: Fix pending
+- **Notes**: This issue is related to APIs not used by mongo-c-driver.
 
 ## `jsonsl`, `utf8proc`, and `uthash`
 
