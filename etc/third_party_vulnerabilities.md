@@ -32,20 +32,6 @@ information that was available at that time.
 
 ## `Zlib`
 
-### CVE-2023-45853 - Integer Overflow or Wraparound
-
-- **Date Detected**: 2024-06-24
-- **CVE Number**: [CVE-2023-45853](https://www.cve.org/CVERecord?id=CVE-2023-45853)
-- **Snyk Entry**: [SNYK-UNMANAGED-MADLERZLIB-5969359](https://security.snyk.io/vuln/SNYK-UNMANAGED-MADLERZLIB-5969359)
-- **Severity**: High
-- **Description**: Affected versions of this package are vulnerable to Integer
-  Overflow or Wraparound via the `MiniZip` function in `zlib`, by providing a
-  long filename, comment, or extra field.
-- **Upstream Fix Status**: Fix available (1.3.1, 2024-01-22)
-- **mongo-c-driver Fix Status**: Fix available (1.27.3, 2024-06-26)
-- **Notes**: This issue was related to Zip file handling, which was not used by
-  mongo-c-driver. This errant code was never reachable via the C driver APIs.
-
 ## `jsonsl`, `utf8proc`, and `uthash`
 
 These bundled dependencies are present within the release archive, but are not
