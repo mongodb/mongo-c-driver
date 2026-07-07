@@ -179,6 +179,12 @@ test_mongoc_http_validate(void)
    mlib_check(!_mongoc_http_request_validate(&req, &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "extra_headers");
 
+   /* extra_headers: leading CRLF combines with the preceding header's terminator to end headers early */
+   _init_valid_req(&req);
+   req.extra_headers = "\r\nX-Injected: header";
+   mlib_check(!_mongoc_http_request_validate(&req, &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "extra_headers");
+
    /* extra_headers: NULL is allowed */
    _init_valid_req(&req);
    req.extra_headers = NULL;

@@ -88,9 +88,9 @@ _mongoc_http_request_validate(const mongoc_http_request_t *req, bson_error_t *er
       return false;
    }
 
-   // extra_headers is optional; a blank line (\r\n\r\n) would prematurely end
-   // the header section and allow body-content injection
-   if (req->extra_headers && strstr(req->extra_headers, "\r\n\r\n")) {
+   // extra_headers is optional; a leading or embedded \r\n\r\n would prematurely
+   // end the header section and allow body-content injection
+   if (req->extra_headers && (strncmp(req->extra_headers, "\r\n", 2) == 0 || strstr(req->extra_headers, "\r\n\r\n"))) {
       _mongoc_set_error(error,
                         MONGOC_ERROR_STREAM,
                         MONGOC_ERROR_STREAM_INVALID_STATE,
