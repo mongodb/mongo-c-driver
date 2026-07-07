@@ -1,3 +1,18 @@
+libmongoc 2.3.2
+===============
+
+## Fixes
+
+* Fix possible abort on failed `killCursors` (introduced in 2.3.0).
+* Fix error handling in SCRAM authentication.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Ezra Chung
+  * Kevin Albertson
+
+
 libmongoc 2.3.1
 ===============
 
