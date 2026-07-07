@@ -431,7 +431,7 @@ mongoc_session_opts_set_snapshot_time(mongoc_session_opt_t *opts, uint32_t times
 {
    ENTRY;
 
-   BSON_ASSERT(opts);
+   BSON_ASSERT_PARAM(opts);
 
    opts->snapshot_time_timestamp = timestamp;
    opts->snapshot_time_increment = increment;
