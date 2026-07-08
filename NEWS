@@ -3,8 +3,34 @@ libmongoc 2.4.0 [UNRELEASED]
 
 ## Notes
 
-* Raise required version of libmongocrypt from 1.15.1 to 1.18.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+* Raise required version of libmongocrypt from 1.15.1 to 1.20.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
 * In a future minor release the minimum supported MongoDB Server version will be raised from 4.2 to 4.4. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
+## Deprecations
+
+* The Queryable Encryption "Text" APIs are deprecated for "String" APIs
+  * `mongoc_client_encryption_encrypt_text_*` is deprecated for `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm.
+  * The `TextPreview` algorithm is deprecated. Use `String` instead.
+
+## New Features
+
+* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix`, `suffix`, and `substring` query types.
+  * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types remains experimental.
+
+
+libmongoc 2.3.2
+===============
+
+## Fixes
+
+* Fix possible abort on failed `killCursors` (introduced in 2.3.0).
+* Fix error handling in SCRAM authentication.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Ezra Chung
+  * Kevin Albertson
 
 
 libmongoc 2.3.1
@@ -25,15 +51,6 @@ Thanks to everyone who contributed to the development of this release.
   * Ezra Chung
   * Colby Pike
   * Kevin Albertson
-
-
-## Deprecations
-
-* The previously experimental Queryable Encryption text search API (`mongoc_client_encryption_encrypt_text_*`) has been renamed to `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm. The old `_text_` names are deprecated and will be removed in a future release. The "substringPreview" algorithm is still documented experimental.
-
-## New Features
-
-* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix` and `suffix` query types. The `substringPreview` query type remains experimental.
 
 libmongoc 2.3.0
 ===============

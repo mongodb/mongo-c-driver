@@ -1,5 +1,5 @@
 {
-  "description": "QE-Text-substringPreview",
+  "description": "QE-Text-suffixPreview",
   "schemaVersion": "1.25",
   "runOnRequirements": [
     {
@@ -11,7 +11,7 @@
         "load-balanced"
       ],
       "csfle": {
-        "minLibmongocryptVersion": "1.15.0"
+        "minLibmongocryptVersion": "1.19.1"
       }
     }
   ],
@@ -102,7 +102,7 @@
               "bsonType": "string",
               "queries": [
                 {
-                  "queryType": "substringPreview",
+                  "queryType": "suffixPreview",
                   "contention": {
                     "$numberLong": "0"
                   },
@@ -110,10 +110,7 @@
                     "$numberLong": "3"
                   },
                   "strMaxQueryLength": {
-                    "$numberLong": "6"
-                  },
-                  "strMaxLength": {
-                    "$numberLong": "20"
+                    "$numberLong": "30"
                   },
                   "caseSensitive": true,
                   "diacriticSensitive": true
@@ -127,7 +124,7 @@
   ],
   "tests": [
     {
-      "description": "Insert QE substringPreview",
+      "description": "Insert QE suffixPreview",
       "operations": [
         {
           "name": "insertOne",
@@ -210,7 +207,7 @@
       ]
     },
     {
-      "description": "Query with matching $encStrContains",
+      "description": "Query with matching $encStrEndsWith",
       "operations": [
         {
           "name": "insertOne",
@@ -227,9 +224,9 @@
           "arguments": {
             "filter": {
               "$expr": {
-                "$encStrContains": {
+                "$encStrEndsWith": {
                   "input": "$encryptedText",
-                  "substring": "oba"
+                  "suffix": "bar"
                 }
               }
             }
@@ -250,181 +247,55 @@
                 },
                 {
                   "$binary": {
-                    "base64": "IpY3x/jjm8j/74jAdUhgxdM5hk68zR0zv/lTKm/72Vg=",
+                    "base64": "uDCWsucUsJemUP7pmeb+Kd8B9qupVzI8wnLFqX1rkiU=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "G+ky260C6QiOfIxKz14FmaMbAxvui1BKJO/TnLOHlGk=",
+                    "base64": "W3E1x4bHZ8SEHFz4zwXM0G5Z5WSwBhnxE8x5/qdP6JM=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "7dv3gAKe9vwJMZmpB40pRCwRTmc7ds9UkGhxH8j084E=",
+                    "base64": "6g/TXVDDf6z+ntResIvTKWdmIy4ajQ1rhwdNZIiEG7A=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "o0V+Efn6x8XQdE80F1tztNaT3qxHjcsd9DOQ47BtmQk=",
+                    "base64": "hU+u/T3D6dHDpT3d/v5AlgtRoAufCXCAyO2jQlgsnCw=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "sJvrCjyVot7PIZFsdRehWFANKAj6fmBaj3FLbz/dZLE=",
+                    "base64": "vrPnq0AtBIURNgNGA6HJL+5/p5SBWe+qz8505TRo/dE=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "e98auxFmu02h5MfBIARk29MI7hSmvN3F9DaQ0xjqoEM=",
+                    "base64": "W5pylBxdv2soY2NcBfPiHDVLTS6tx+0ULkI8gysBeFY=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "US83krGNov/ezL6IhsY5eEOCxv1xUPDIEL/nmY0IKi0=",
+                    "base64": "oWO3xX3x0bYUJGK2S1aPAmlU3Xtfsgb9lTZ6flGAlsg=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "P2Aq5+OHZPG0CWIdmZvWq9c/18ZKVYW3vbxd+WU/TXU=",
+                    "base64": "SjZGucTEUbdpd86O8yj1pyMyBOOKxvAQ9C8ngZ9C5UE=",
                     "subType": "00"
                   }
                 },
                 {
                   "$binary": {
-                    "base64": "8AdPRPnSzcd5uhq4TZfNvNeF0XjLNVwAsJJMTtktw84=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "9O6u/G51I4ZHFLhL4ZLuudbr0s202A2QnPfThmOXPhI=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "N7AjYVyVlv6+lVSTM+cIxRL3SMgs3G5LgxSs+jrgDkI=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "RbGF7dQbPGYQFd9DDO1hPz1UlLOJ77FAC6NsjGwJeos=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "m7srHMgKm6kZwsNx8rc45pmw0/9Qro6xuQ8lZS3+RYk=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "K75CNU3JyKFqZWPiIsVi4+n7DhYmcPl/nEhQ3d88mVI=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "c7bwGpUZc/7JzEnMS7qQ/TPuXZyrmMihFaAV6zIqbZc=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "rDvEdUgEk8u4Srt3ETokWs2FXcnyJaRGQ+NbkFwi2rQ=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "VcdZj9zfveRBRlpCR2OYWau2+GokOFb73TE3gpElNiU=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "eOa9o2xfA6OgkbYUxd6wQJicaeN6guhy2V66W3ALsaA=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "1xGkJh+um70XiRd8lKLDtyHgDqrf7/59Mg7X0+KZh8k=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "OSvllqHxycbcZN4phR6NDujY3ttA59o7nQJ6V9eJpX0=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "ZTX1pyk8Vdw0BSbJx7GeJNcQf3tGKxbrrNSTqBqUWkg=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "cn7V05zb5iXwYrePGMHztC+GRq+Tj8IMpRDraauPhSE=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "E9bV9KyrZxHJSUmMg0HrDK4gGN+75ruelAnrM6hXQgY=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "WrssTNmdgXoTGpbaF0JLRCGH6cDQuz1XEFNTy98nrb0=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "jZmyOJP35dsxQ/OY5U4ISpVRIYr8iedNfcwZiKt29Qc=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "d2mocORMbX9MX+/itAW8r1kxVw2/uii4vzXtc+2CIRQ=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "JBnJy58eRPhDo3DuZvsHbvQDiHXxdtAx1Eif66k5SfA=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "OjbDulC8s62v0pgweBSsQqtJjJBwH5JinfJpj7nVr+A=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "85i7KT2GP9nSda3Gsil5LKubhq0LDtc22pxBxHpR+nE=",
-                    "subType": "00"
-                  }
-                },
-                {
-                  "$binary": {
-                    "base64": "u9Fvsclwrs9lwIcMPV/fMZD7L3d5anSfJQVjQb9mgLg=",
+                    "base64": "CEaMZkxVDVbnXr+To0DOyvsva04UQkIYP3KtgYVVwf8=",
                     "subType": "00"
                   }
                 }
@@ -435,7 +306,7 @@
       ]
     },
     {
-      "description": "Query with non-matching $encStrContains",
+      "description": "Query with non-matching $encStrEndsWith",
       "operations": [
         {
           "name": "insertOne",
@@ -452,9 +323,9 @@
           "arguments": {
             "filter": {
               "$expr": {
-                "$encStrContains": {
+                "$encStrEndsWith": {
                   "input": "$encryptedText",
-                  "substring": "blah"
+                  "suffix": "foo"
                 }
               }
             }
