@@ -8,6 +8,7 @@ VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
 
 # Allow setting the "default" container image registries to use for image short names (e.g. to Amazon ECR).
 ARG --global default_docker_registry=docker.io
+ARG --global default_quay_registry=quay.io
 
 # Set a base container image at the root so that this project can be imported
 FROM $default_docker_registry/alpine:3.20
@@ -435,7 +436,7 @@ verify-headers:
         --from $default_docker_registry/alpine:3.19 \
         --from $default_docker_registry/almalinux:8 \
         --from $default_docker_registry/ubuntu:20.04 \
-        --from quay.io/centos/centos:stream10 \
+        --from $default_quay_registry/centos/centos:stream10 \
         --sasl=off --tls=off --compiler=gcc --with_cxx=true --snappy=off
 
 do-verify-headers-impl:

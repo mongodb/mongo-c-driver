@@ -1358,6 +1358,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1376,6 +1377,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1394,6 +1396,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1425,6 +1428,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1443,6 +1447,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1461,6 +1466,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=OpenSSL
@@ -1492,6 +1498,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1510,6 +1517,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1528,6 +1536,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=off
@@ -1559,6 +1568,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1577,6 +1587,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=Cyrus
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1595,6 +1606,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=Cyrus
             - --tls=off
@@ -1626,6 +1638,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1644,6 +1657,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1662,6 +1676,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=off
             - --tls=OpenSSL
@@ -1693,6 +1708,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1711,6 +1727,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=OpenSSL
             - --test_mongocxx_ref=none
@@ -1729,6 +1746,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=off
             - --tls=OpenSSL
@@ -1760,6 +1778,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1778,6 +1797,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1796,6 +1816,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=off
             - --tls=off
@@ -1827,6 +1848,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +build-environment
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1845,6 +1867,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +configure
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --sasl=off
             - --tls=off
             - --test_mongocxx_ref=none
@@ -1863,6 +1886,7 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +run
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
             - --targets=test-example
             - --sasl=off
             - --tls=off
@@ -4548,6 +4572,7 @@ tasks:
             - --platform=linux/amd64
             - +deb.test
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
   - name: debian-package-i386
     run_on:
       - amazon2
@@ -4570,6 +4595,7 @@ tasks:
             - --platform=linux/i386
             - +deb.test
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
@@ -8865,3 +8891,4 @@ tasks:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - +verify-headers
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
