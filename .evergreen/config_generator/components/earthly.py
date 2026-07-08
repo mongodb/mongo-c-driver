@@ -50,7 +50,7 @@ SASLOption = Literal['Cyrus', 'off']
 TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
 # TODO: restore C++ driver tests after CXX-3503 to update for API renames.
-CxxVersion = Literal['none'] # Literal['master', 'r4.1.0', 'none']
+CxxVersion = Literal['none']  # Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
 SnappyOption = Literal['false', 'true']
 """Should we enable Snappy compression in this build?"""
@@ -230,7 +230,7 @@ def earthly_exec(
             *([f'--platform={platform}'] if platform else ()),
             f'+{target}',
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            f'--default_search_registry={_ECR_HOST}/dockerhub/library',
+            f'--default_docker_registry={_ECR_HOST}/dockerhub/library',
             *(f'--{arg}={val}' for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),
