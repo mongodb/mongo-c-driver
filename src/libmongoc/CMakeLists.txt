@@ -1235,6 +1235,7 @@ if (ENABLE_TESTS)
    target_link_libraries (test-libmongoc PUBLIC test-libmongoc-lib)
 
    mongoc_add_test (test-mongoc-gssapi ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
+   mongoc_add_test (test-sfp ${PROJECT_SOURCE_DIR}/tests/test-sfp.c)
    mongoc_add_test (test-mongoc-cache ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
    mongoc_add_test (test-azurekms ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
    mongoc_add_test (test-gcpkms ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)
