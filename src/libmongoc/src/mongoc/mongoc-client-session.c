@@ -1500,7 +1500,7 @@ _mongoc_write_command_supports_after_cluster_time(const char *command_name)
  *
  *       In a causally-consistent session, afterClusterTime is also sent on
  *       the allowlisted write commands (see
- *       _mongoc_client_session_is_cc_write_command), identified by
+ *       _mongoc_write_command_supports_after_cluster_time), identified by
  *       command_name.
  *
  * Side effects:
