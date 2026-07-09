@@ -1479,7 +1479,7 @@ _mongoc_write_command_supports_after_cluster_time(const char *command_name)
    }
 
    for (size_t i = 0; i < sizeof(allowlist) / sizeof(allowlist[0]); i++) {
-      if (!bson_strcasecmp(command_name, allowlist[i])) {
+      if (!strcmp(command_name, allowlist[i])) {
          return true;
       }
    }
