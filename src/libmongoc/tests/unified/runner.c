@@ -127,6 +127,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"tests that operations retry at most maxAttempts=2 times", "collection.dropIndexes retries at most maxAttempts=2 times"},
    {"tests that operations respect overload backoff retry loop", "collection.dropIndexes retries using operation loop"},
    {"tests that operations respect overload backoff retry loop", "collection.dropIndexes (write) does not retry if retryWrites=false"},
+   {"causal consistency write commands include afterClusterTime", "dropIndexes includes afterClusterTime in causally consistent session"},
 
    // libmongoc single-host non-replicaSet URI first transitions Unknown->Single, not Unknown->Unknown
    {"standalone-emit-topology-description-changed-before-close", "Topology lifecycle"},
@@ -2247,6 +2248,8 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "collection-management");
 
    run_unified_tests(suite, JSON_DIR, "sessions/unified");
+
+   run_unified_tests(suite, JSON_DIR, "causal_consistency");
 
    run_unified_tests(suite, JSON_DIR, "change_streams/unified");
 

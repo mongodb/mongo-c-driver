@@ -1456,6 +1456,37 @@ _mongoc_client_session_append_txn(mongoc_client_session_t *session, bson_t *cmd,
 }
 
 
+/* Write commands that carry readConcern.afterClusterTime in a
+ * causally-consistent session (DRIVERS-3274). */
+static bool
+_mongoc_write_command_supports_after_cluster_time(const char *command_name)
+{
+   static const char *const allowlist[] = {
+      "insert",
+      "update",
+      "findAndModify",
+      "delete",
+      "bulkWrite",
+      "create",
+      "createIndexes",
+      "drop",
+      "dropDatabase",
+      "dropIndexes",
+   };
+
+   if (!command_name) {
+      return false;
+   }
+
+   for (size_t i = 0; i < sizeof(allowlist) / sizeof(allowlist[0]); i++) {
+      if (!strcmp(command_name, allowlist[i])) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1467,6 +1498,11 @@ _mongoc_client_session_append_txn(mongoc_client_session_t *session, bson_t *cmd,
  *       are "level" and/or "afterClusterTime" - if both are empty, don't add
  *       read concern.
  *
+ *       In a causally-consistent session, afterClusterTime is also sent on
+ *       the allowlisted write commands (see
+ *       _mongoc_write_command_supports_after_cluster_time), identified by
+ *       command_name.
+ *
  * Side effects:
  *       None.
  *
@@ -1477,6 +1513,8 @@ void
 _mongoc_client_session_append_read_concern(const mongoc_client_session_t *cs,
                                            const bson_t *rc,
                                            bool is_read_command,
+                                           bool is_write_command,
+                                           const char *command_name,
                                            bson_t *cmd)
 {
    const mongoc_read_concern_t *txn_rc;
@@ -1499,7 +1537,10 @@ _mongoc_client_session_append_read_concern(const mongoc_client_session_t *cs,
       return;
    }
 
-   has_timestamp = (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
+   const bool after_cluster_time_is_supported =
+      is_read_command || (is_write_command && _mongoc_write_command_supports_after_cluster_time(command_name));
+
+   has_timestamp = (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || after_cluster_time_is_supported) &&
                    mongoc_session_opts_get_causal_consistency(&cs->opts) && cs->operation_timestamp;
    is_snapshot = mongoc_session_opts_get_snapshot(&cs->opts);
    user_rc_has_level = rc && bson_has_field(rc, "level");
