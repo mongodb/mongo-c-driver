@@ -1510,8 +1510,12 @@ _mongoc_write_command_supports_after_cluster_time(const char *command_name)
  */
 
 void
-_mongoc_client_session_append_read_concern(
-   const mongoc_client_session_t *cs, const bson_t *rc, bool is_read_command, const char *command_name, bson_t *cmd)
+_mongoc_client_session_append_read_concern(const mongoc_client_session_t *cs,
+                                           const bson_t *rc,
+                                           bool is_read_command,
+                                           bool is_write_command,
+                                           const char *command_name,
+                                           bson_t *cmd)
 {
    const mongoc_read_concern_t *txn_rc;
    mongoc_internal_transaction_state_t txn_state;
@@ -1534,7 +1538,7 @@ _mongoc_client_session_append_read_concern(
    }
 
    const bool after_cluster_time_is_supported =
-      is_read_command || _mongoc_write_command_supports_after_cluster_time(command_name);
+      is_read_command || (is_write_command && _mongoc_write_command_supports_after_cluster_time(command_name));
 
    has_timestamp = (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || after_cluster_time_is_supported) &&
                    mongoc_session_opts_get_causal_consistency(&cs->opts) && cs->operation_timestamp;

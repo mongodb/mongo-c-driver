@@ -881,6 +881,7 @@ mongoc_cmd_parts_assemble(mongoc_cmd_parts_t *parts, mongoc_server_stream_t *ser
             _mongoc_client_session_append_read_concern(cs,
                                                        &parts->read_concern_document,
                                                        parts->is_read_command,
+                                                       parts->is_write_command,
                                                        parts->assembled.command_name,
                                                        &parts->assembled_body);
          } else if (!bson_empty(&parts->read_concern_document)) {

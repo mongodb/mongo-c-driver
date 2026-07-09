@@ -1634,10 +1634,23 @@ insert_10_docs(session_test_t *test)
 
 
 static void
-test_cmd(session_test_t *test)
+test_raw_read_cmd(session_test_t *test)
 {
    test->succeeded = mongoc_client_command_with_opts(
       test->client, "db", tmp_bson("{'listCollections': 1}"), NULL, &test->opts, NULL, &test->error);
+}
+
+static void
+test_raw_write_cmd(session_test_t *test)
+{
+   test->succeeded =
+      mongoc_client_command_with_opts(test->client,
+                                      "db",
+                                      tmp_bson("{'delete': 'collection', 'deletes': [{'q': {}, 'limit': 1}]}"),
+                                      NULL,
+                                      &test->opts,
+                                      NULL,
+                                      &test->error);
 }
 
 
@@ -2881,7 +2894,8 @@ test_session_install(TestSuite *suite)
 
    /* "true" is for tests that expect readConcern: afterClusterTime for causally
     * consistent sessions, "false" is for tests that prohibit readConcern */
-   add_session_test(suite, "/Session/cmd", test_cmd, false);
+   add_session_test(suite, "/Session/raw_read_cmd", test_raw_read_cmd, false);
+   add_session_test(suite, "/Session/raw_write_cmd", test_raw_write_cmd, false);
    add_session_test(suite, "/Session/read_cmd", test_read_cmd, true);
    add_session_test(suite, "/Session/write_cmd", test_write_cmd, true);
    add_session_test(suite, "/Session/read_write_cmd", test_read_write_cmd, true);
