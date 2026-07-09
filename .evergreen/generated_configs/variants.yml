@@ -250,28 +250,28 @@ buildvariants:
     display_name: CentOS 10 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream10
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream10
     tasks:
       - name: .quay.io/centos/centos:stream10-clang
   - name: quay.io/centos/centos:stream10-gcc
     display_name: CentOS 10 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream10
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream10
     tasks:
       - name: .quay.io/centos/centos:stream10-gcc
   - name: quay.io/centos/centos:stream9-clang
     display_name: CentOS 9 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream9
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream9
     tasks:
       - name: .quay.io/centos/centos:stream9-clang
   - name: quay.io/centos/centos:stream9-gcc
     display_name: CentOS 9 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream9
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream9
     tasks:
       - name: .quay.io/centos/centos:stream9-gcc
   - name: sanitizers-matrix-asan
