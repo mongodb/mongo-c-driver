@@ -1,5 +1,6 @@
 #include <mongoc/mongoc-crypto-private.h>
 #include <mongoc/mongoc-scram-private.h>
+#include <mongoc/mongoc-uri-private.h>
 
 #include <mongoc/mongoc.h>
 
@@ -86,6 +87,59 @@ test_mongoc_scram_iteration_count(void)
    test_iteration_count(4095, false);
    test_iteration_count(4096, true);
    test_iteration_count(10000, true);
+}
+
+/* test that an error is reported if the server responds with an iteration
+ * count that exceeds the configured maximum. uri_str controls the
+ * maxScramIterations option (pass NULL to use the default). */
+static void
+test_max_iteration_count(const char *uri_str, int count, bool should_succeed)
+{
+   mongoc_uri_t *const uri = mongoc_uri_new(uri_str);
+   ASSERT(uri);
+
+   char *const server_response = bson_strdup_printf("r=YWJjZA==YWJjZA==,s=r6+P1iLmSJvhrRyuFi6Wsg==,i=%d", count);
+
+   mongoc_scram_t scram;
+   _mongoc_uri_init_scram(uri, &scram, MONGOC_CRYPTO_ALGORITHM_SHA_1);
+
+   const char *const client_nonce = "YWJjZA==";
+   bson_strncpy(scram.encoded_nonce, client_nonce, sizeof(scram.encoded_nonce));
+
+   scram.encoded_nonce_len = (int32_t)strlen(client_nonce);
+   scram.auth_message = bson_malloc0(4096);
+   scram.auth_messagemax = 4096;
+
+   uint8_t buf[4096] = {0};
+   memcpy(buf, server_response, strlen(server_response) + 1);
+   uint32_t buflen = (int32_t)strlen(server_response);
+
+   scram.step = 1;
+
+   bson_error_t error;
+   const bool success = _mongoc_scram_step(&scram, buf, buflen, buf, sizeof buf, &buflen, &error);
+
+   if (should_succeed) {
+      ASSERT_OR_PRINT(success, error);
+   } else {
+      BSON_ASSERT(!success);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SCRAM, MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, "SCRAM Failure: iterations");
+   }
+
+   bson_free(server_response);
+   _mongoc_scram_destroy(&scram);
+   mongoc_uri_destroy(uri);
+}
+
+static void
+test_mongoc_scram_max_iteration_count(void)
+{
+   /* default max (100000): at boundary and just above */
+   test_max_iteration_count("mongodb://user:pass@localhost", MONGOC_DEFAULT_MAXSCRAMITERATIONS, true);
+   test_max_iteration_count("mongodb://user:pass@localhost", MONGOC_DEFAULT_MAXSCRAMITERATIONS + 1, false);
+   /* custom max via URI option: at boundary and just above */
+   test_max_iteration_count("mongodb://user:pass@localhost/?maxScramIterations=10000", 10000, true);
+   test_max_iteration_count("mongodb://user:pass@localhost/?maxScramIterations=10000", 10001, false);
 }
 
 /* Regression test for CDRIVER-6315. */
@@ -778,6 +832,7 @@ test_scram_install(TestSuite *suite)
    TestSuite_Add(suite, "/scram/username_not_set", test_mongoc_scram_step_username_not_set);
    TestSuite_Add(suite, "/scram/sasl_prep", test_mongoc_scram_sasl_prep);
    TestSuite_Add(suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
+   TestSuite_Add(suite, "/scram/max_iteration_count", test_mongoc_scram_max_iteration_count);
    TestSuite_Add(suite, "/scram/nonce_mismatch", test_mongoc_scram_step_nonce_mismatch);
    TestSuite_Add(suite, "/scram/utf8_char_length", test_mongoc_utf8_char_length);
    TestSuite_Add(suite, "/scram/utf8_string_length", test_mongoc_utf8_string_length);

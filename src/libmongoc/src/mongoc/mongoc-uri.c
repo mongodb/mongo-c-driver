@@ -692,7 +692,7 @@ mongoc_uri_option_is_int32(const char *key)
           !strcasecmp(key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp(key, MONGOC_URI_MAXPOOLSIZE) ||
           !strcasecmp(key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp(key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
           !strcasecmp(key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) || !strcasecmp(key, MONGOC_URI_SRVMAXHOSTS) ||
-          !strcasecmp(key, MONGOC_URI_MAXADAPTIVERETRIES);
+          !strcasecmp(key, MONGOC_URI_MAXADAPTIVERETRIES) || !strcasecmp(key, MONGOC_URI_MAXSCRAMITERATIONS);
 }
 
 bool
@@ -1015,6 +1015,12 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
 
             if (!bson_strcasecmp(canon, MONGOC_URI_MAXADAPTIVERETRIES) && i32 < 0) {
                MONGOC_WARNING("Invalid \"%s\" of %" PRId32 ": must be a non-negative integer", key, i32);
+               continue;
+            }
+
+            if (!bson_strcasecmp(canon, MONGOC_URI_MAXSCRAMITERATIONS) && i32 < MONGOC_SCRAM_MIN_ITERATIONS) {
+               MONGOC_WARNING(
+                  "Invalid \"%s\" of %" PRId32 ": must be at least %d", key, i32, MONGOC_SCRAM_MIN_ITERATIONS);
                continue;
             }
 
@@ -3460,6 +3466,19 @@ mongoc_uri_init_with_srv_host_list(mongoc_uri_t *uri, mongoc_host_list_t *host_l
 }
 
 #ifdef MONGOC_ENABLE_CRYPTO
+static uint32_t
+_mongoc_uri_get_max_scram_iterations(const mongoc_uri_t *uri)
+{
+   const int32_t val =
+      mongoc_uri_get_option_as_int32(uri, MONGOC_URI_MAXSCRAMITERATIONS, MONGOC_DEFAULT_MAXSCRAMITERATIONS);
+
+   if (val < MONGOC_SCRAM_MIN_ITERATIONS) {
+      return MONGOC_DEFAULT_MAXSCRAMITERATIONS;
+   }
+
+   return (uint32_t)val;
+}
+
 void
 _mongoc_uri_init_scram(const mongoc_uri_t *uri, mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo)
 {
@@ -3470,6 +3489,8 @@ _mongoc_uri_init_scram(const mongoc_uri_t *uri, mongoc_scram_t *scram, mongoc_cr
 
    _mongoc_scram_set_pass(scram, mongoc_uri_get_password(uri));
    _mongoc_scram_set_user(scram, mongoc_uri_get_username(uri));
+
+   scram->max_iterations = _mongoc_uri_get_max_scram_iterations(uri);
 }
 #endif
 
