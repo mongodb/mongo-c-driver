@@ -51,7 +51,7 @@ build:
         -D ENABLE_SSL=$(echo $tls | __str upper) \
         -D ENABLE_COVERAGE=ON \
         -D ENABLE_DEBUG_ASSERTIONS=ON \
-        -Werror
+        -Werror=author
     RUN --mount=type=cache,target=$CCACHE_HOME \
         env CCACHE_BASE="$source_dir" \
             cmake --build $build_dir --config $config
