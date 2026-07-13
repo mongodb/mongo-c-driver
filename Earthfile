@@ -53,7 +53,7 @@ configure:
         -D ENABLE_SSL=$(echo $tls | __str upper) \
         -D ENABLE_COVERAGE=OFF \
         -D ENABLE_DEBUG_ASSERTIONS=ON \
-        -Werror \
+        -Werror=author \
         -B "$build_dir" -S "$source_dir"
 
 # build :
