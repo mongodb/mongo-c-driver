@@ -423,8 +423,10 @@ function (mongoc_get_accept_args ARG2 ARG3)
    ")
 
    TRY_COMPILE (RES ${CMAKE_CURRENT_BINARY_DIR}
-   ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c CMAKE_FLAGS
-   "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
+   ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c
+   COMPILE_DEFINITIONS "-Werror"
+   CMAKE_FLAGS "-DCMAKE_C_LINK_EXECUTABLE=echo not linking now..."
+   OUTPUT_VARIABLE LOG2)
 
    if (RES)
       message (
