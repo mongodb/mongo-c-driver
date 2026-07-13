@@ -12,20 +12,13 @@ compile_libmongocrypt() {
   # `src/kms-message`.
   #
   # Run `.evergreen/scripts/kms-divergence-check.sh` to ensure that there is no divergence in the copied files.
-  declare -r version="1.21.0-dev"
-
-  {
+  declare -r version="1.21.0-dev" # TODO: set to 1.21.0 once released and change `if true` to `if false`.
+  if true; then
     git clone -q https://github.com/mongodb/libmongocrypt || return
-    cd libmongocrypt || return
-    # Check out libmongocrypt commit that pins to CMake 4.3.4 to work around MONGOCRYPT-952 until libmongocrypt updates the C driver.
-    git checkout c2f80a7153da3537fe32916eef8ff1d4cc08bc67 || return
-    cd .. || return
-  }
-  # TODO: after libmongocrypt is updated to use C driver 1.21.0, update the above to:
-  # git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch 1.21.0 || return
-
-
-  git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch "${version:?}" || return
+    git -C libmongocrypt checkout --detach "${version:?}" || return
+  else
+    git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch "${version:?}" || return
+  fi
 
   declare -a crypt_cmake_flags=(
     "-DMONGOCRYPT_MONGOC_DIR=${mongoc_dir}"
