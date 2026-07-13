@@ -16,7 +16,7 @@ compile_libmongocrypt() {
   if true; then
     git clone -q https://github.com/mongodb/libmongocrypt || return
     cd libmongocrypt || return
-    git libmongocrypt checkout --detach "63fee9ff9e2748818bfe9204038e07d455777ab3" || return
+    git checkout --detach "63fee9ff9e2748818bfe9204038e07d455777ab3" || return
     cd .. || return
   else
     git clone --depth=1 -q https://github.com/mongodb/libmongocrypt --branch "${version:?}" || return
