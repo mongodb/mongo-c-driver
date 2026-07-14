@@ -1374,24 +1374,23 @@ _bulkwritereturn_apply_result(mongoc_bulkwritereturn_t *self,
 
    // Parse `idx`.
    int64_t idx;
-   {
-      if (!lookup_as_int64(result, "idx", &idx, "result", self->exc)) {
-         return false;
-      }
-      if (idx < 0) {
-         _mongoc_set_error(&error,
-                           MONGOC_ERROR_COMMAND,
-                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                           "expected to find non-negative int64 `idx` in "
-                           "result, but did not");
-         _bulkwriteexception_set_error(self->exc, &error);
-         return false;
-      }
+   if (!lookup_as_int64(result, "idx", &idx, "result", self->exc)) {
+      return false;
    }
 
-   BSON_ASSERT(mlib_in_range(size_t, idx));
    // `models_idx` is the index of the model that produced this result.
-   size_t models_idx = (size_t)idx + ops_doc_offset;
+   size_t models_idx;
+   if (mlib_add(&models_idx, idx, ops_doc_offset) || models_idx >= arrayof_modeldata->len) {
+      _mongoc_set_error(&error,
+                        MONGOC_ERROR_COMMAND,
+                        MONGOC_ERROR_COMMAND_INVALID_ARG,
+                        "bulk write result index %" PRId64 " with offset %zu is out of range for %zu operations",
+                        idx,
+                        ops_doc_offset,
+                        arrayof_modeldata->len);
+      _bulkwriteexception_set_error(self->exc, &error);
+      return false;
+   }
    if (ok == 0) {
       if (!self->res->first_error_index.isset) {
          self->res->first_error_index.isset = true;
