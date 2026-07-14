@@ -1379,7 +1379,7 @@ _bulkwritereturn_apply_result(mongoc_bulkwritereturn_t *self,
    }
 
    // `models_idx` is the index of the model that produced this result.
-   size_t models_idx;
+   size_t models_idx = 0;
    if (mlib_add(&models_idx, idx, ops_doc_offset) || models_idx >= arrayof_modeldata->len) {
       _mongoc_set_error(&error,
                         MONGOC_ERROR_COMMAND,
