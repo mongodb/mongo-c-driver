@@ -1,3 +1,18 @@
+libmongoc 2.3.3
+===============
+
+## Fixes
+
+* Fix error configuring with CMake 4.4.0.
+* Fix issues when built with `UNICODE` on Windows.
+* Add stricter validation to HTTP handling.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Colby Pike
+
+
 libmongoc 2.3.2
 ===============
 
