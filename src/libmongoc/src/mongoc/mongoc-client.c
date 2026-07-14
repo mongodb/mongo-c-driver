@@ -127,12 +127,18 @@ srv_callback(const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, 
 
    mongoc_host_list_t new_host;
 
+   /* DnsQuery_UTF8 returns records whose string fields are UTF-8-encoded (per its
+    * documented "for UTF-8 encoding" variant), even though the out-param is typed
+    * PDNS_RECORD -> PDNS_RECORDW under UNICODE. Reinterpret the string pointer as
+    * char* rather than treating it as wide.
+    * https://learn.microsoft.com/en-us/windows/win32/api/windns/nf-windns-dnsquery_utf8 */
+   const char *name_target = (const char *)pdns->Data.SRV.pNameTarget;
+
    if (rr_data && rr_data->hosts) {
-      _mongoc_host_list_remove_host(&(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
+      _mongoc_host_list_remove_host(&(rr_data->hosts), name_target, pdns->Data.SRV.wPort);
    }
 
-   if (!_mongoc_host_list_from_hostport_with_err(
-          &new_host, mstr_cstring(pdns->Data.SRV.pNameTarget), pdns->Data.SRV.wPort, error)) {
+   if (!_mongoc_host_list_from_hostport_with_err(&new_host, mstr_cstring(name_target), pdns->Data.SRV.wPort, error)) {
       return false;
    }
    _mongoc_host_list_upsert(&rr_data->hosts, &new_host);
@@ -153,7 +159,9 @@ txt_callback(const char *hostname, PDNS_RECORD pdns, mongoc_rr_data_t *rr_data, 
    mcommon_string_new_with_capacity_as_append(&txt, pdns->wDataLength);
 
    for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
-      mcommon_string_append(&txt, pdns->Data.TXT.pStringArray[i]);
+      /* pStringArray holds UTF-8 char data from DnsQuery_UTF8, not wide strings
+       * (see srv_callback for reference). */
+      mcommon_string_append(&txt, (const char *)pdns->Data.TXT.pStringArray[i]);
    }
 
    rr_data->txt_record_opts = mcommon_string_from_append_destroy_with_steal(&txt);

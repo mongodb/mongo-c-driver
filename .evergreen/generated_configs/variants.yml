@@ -431,3 +431,12 @@ buildvariants:
       MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:24.04
     tasks:
       - name: .ubuntu:24.04-gcc
+  - name: unicode-compile
+    display_name: UNICODE Compile
+    expansions:
+      CFLAGS: /we4133 /DUNICODE /D_UNICODE
+      CMAKE_GENERATOR: Visual Studio 17 2022
+      CMAKE_GENERATOR_PLATFORM: x64
+      CXXFLAGS: /we4133 /DUNICODE /D_UNICODE
+    tasks:
+      - name: unicode-compile
