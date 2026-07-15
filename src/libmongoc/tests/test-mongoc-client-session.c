@@ -3107,6 +3107,13 @@ test_session_install(TestSuite *suite)
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull(suite,
+                     "/Session/prose_test_3 [lock:live-server]",
+                     test_sessions_prose_3,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_cluster_time,
+                     test_framework_skip_if_no_sessions);
+   TestSuite_AddFull(suite,
                      "/Session/snapshot/prose_test_21 [lock:live-server]",
                      test_sessions_snapshot_prose_test_21,
                      NULL,
@@ -3120,11 +3127,4 @@ test_session_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_sessions,
                      test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
-   TestSuite_AddFull(suite,
-                     "/Session/prose_test_3 [lock:live-server]",
-                     test_sessions_prose_3,
-                     NULL,
-                     NULL,
-                     test_framework_skip_if_no_cluster_time,
-                     test_framework_skip_if_no_sessions);
 }
