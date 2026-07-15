@@ -884,7 +884,7 @@ _mongoc_scram_step3(mongoc_scram_t *scram,
 
       ptr++;
 
-      if (*ptr != '=') {
+      if (ptr >= inbuf + inbuflen || *ptr != '=') {
          _mongoc_set_error(error,
                            MONGOC_ERROR_SCRAM,
                            MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
