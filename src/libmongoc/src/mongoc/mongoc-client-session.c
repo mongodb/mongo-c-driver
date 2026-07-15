@@ -426,6 +426,39 @@ mongoc_session_opts_set_snapshot(mongoc_session_opt_t *opts, bool snapshot)
    EXIT;
 }
 
+void
+mongoc_session_opts_set_snapshot_time(mongoc_session_opt_t *opts, uint32_t timestamp, uint32_t increment)
+{
+   ENTRY;
+
+   BSON_ASSERT_PARAM(opts);
+
+   opts->snapshot_time_timestamp = timestamp;
+   opts->snapshot_time_increment = increment;
+   opts->snapshot_time_set = true;
+
+   EXIT;
+}
+
+bool
+mongoc_session_opts_get_snapshot_time(const mongoc_session_opt_t *opts, uint32_t *timestamp, uint32_t *increment)
+{
+   ENTRY;
+
+   BSON_ASSERT_PARAM(opts);
+   BSON_ASSERT_PARAM(timestamp);
+   BSON_ASSERT_PARAM(increment);
+
+   if (!opts->snapshot_time_set) {
+      RETURN(false);
+   }
+
+   *timestamp = opts->snapshot_time_timestamp;
+   *increment = opts->snapshot_time_increment;
+
+   RETURN(true);
+}
+
 mongoc_session_opt_t *
 mongoc_session_opts_new(void)
 {
@@ -485,6 +518,9 @@ _mongoc_session_opts_copy(const mongoc_session_opt_t *src, mongoc_session_opt_t 
 {
    mongoc_optional_copy(&src->causal_consistency, &dst->causal_consistency);
    mongoc_optional_copy(&src->snapshot, &dst->snapshot);
+   dst->snapshot_time_timestamp = src->snapshot_time_timestamp;
+   dst->snapshot_time_increment = src->snapshot_time_increment;
+   dst->snapshot_time_set = src->snapshot_time_set;
    txn_opts_copy(&src->default_txn_opts, &dst->default_txn_opts);
 }
 
@@ -758,6 +794,10 @@ _mongoc_client_session_new(mongoc_client_t *client,
    /* snapshot_time_set is false by default */
    _mongoc_client_session_clear_snapshot_time(session);
 
+   if (opts && opts->snapshot_time_set) {
+      _mongoc_client_session_set_snapshot_time(session, opts->snapshot_time_timestamp, opts->snapshot_time_increment);
+   }
+
    /* these values are used for testing only. */
    session->with_txn_timeout_ms = 0;
    session->fail_commit_label = NULL;
@@ -812,6 +852,34 @@ mongoc_client_session_get_server_id(const mongoc_client_session_t *session)
    BSON_ASSERT(session);
 
    return session->server_id;
+}
+
+bool
+mongoc_client_session_get_snapshot_time(const mongoc_client_session_t *session,
+                                        uint32_t *timestamp,
+                                        uint32_t *increment,
+                                        bson_error_t *error)
+{
+   BSON_ASSERT(session);
+   BSON_ASSERT(timestamp);
+   BSON_ASSERT(increment);
+
+   if (!mongoc_session_opts_get_snapshot(&session->opts)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_CLIENT,
+                        MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                        "Cannot get snapshotTime on a non-snapshot session");
+      return false;
+   }
+
+   if (!session->snapshot_time_set) {
+      return false;
+   }
+
+   *timestamp = session->snapshot_time_timestamp;
+   *increment = session->snapshot_time_increment;
+
+   return true;
 }
 
 void

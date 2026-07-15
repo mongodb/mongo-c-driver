@@ -2609,6 +2609,76 @@ test_sessions_snapshot_prose_test_1(void *ctx)
    mongoc_client_destroy(client);
 }
 
+void
+test_sessions_snapshot_prose_test_21(void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   mongoc_client_session_t *r;
+
+   BSON_UNUSED(ctx);
+
+   client = test_framework_new_default_client();
+   BSON_ASSERT(client);
+
+   session_opts = mongoc_session_opts_new();
+   mongoc_session_opts_set_snapshot(session_opts, false);
+   mongoc_session_opts_set_snapshot_time(session_opts, 1, 0);
+
+   /* assert that starting a session with snapshotTime set and snapshot set to
+    * false results in an error. */
+   r = mongoc_client_start_session(client, session_opts, &error);
+   ASSERT(!r);
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                         "Cannot set snapshotTime unless snapshot is enabled.");
+
+   mongoc_session_opts_destroy(session_opts);
+   mongoc_client_destroy(client);
+}
+
+void
+test_sessions_snapshot_prose_test_22(void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   mongoc_client_session_t *session = NULL;
+   uint32_t timestamp, increment;
+   bool ret;
+
+   BSON_UNUSED(ctx);
+
+   client = test_framework_new_default_client();
+   BSON_ASSERT(client);
+
+   session_opts = mongoc_session_opts_new();
+   mongoc_session_opts_set_snapshot(session_opts, false);
+
+   session = mongoc_client_start_session(client, session_opts, &error);
+   ASSERT_OR_PRINT(session, error);
+
+   /* assert that retrieving snapshotTime on a non-snapshot session results in
+    * an error. */
+   ret = mongoc_client_session_get_snapshot_time(session, &timestamp, &increment, &error);
+   ASSERT(!ret);
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                         "Cannot get snapshotTime on a non-snapshot session");
+
+   mongoc_session_opts_destroy(session_opts);
+   mongoc_client_session_destroy(session);
+   mongoc_client_destroy(client);
+}
+
+/* Prose test 23, "Ensure snapshotTime is Read-Only", is intentionally not implemented.
+ * mongoc_client_session_t is an opaque struct exposed only through accessor functions, and
+ * the spec allows drivers to skip this test if snapshotTime is exposed as a read-only property via an accessor method
+ * only. */
+
 
 typedef struct {
    bson_t *last_sent_clusterTime;
@@ -3043,4 +3113,18 @@ test_session_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_sessions);
+   TestSuite_AddFull(suite,
+                     "/Session/snapshot/prose_test_21 [lock:live-server]",
+                     test_sessions_snapshot_prose_test_21,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_sessions,
+                     test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
+   TestSuite_AddFull(suite,
+                     "/Session/snapshot/prose_test_22 [lock:live-server]",
+                     test_sessions_snapshot_prose_test_22,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_sessions,
+                     test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
 }

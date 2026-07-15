@@ -46,5 +46,6 @@ Example
     mongoc_client_session_get_operation_time
     mongoc_client_session_get_opts
     mongoc_client_session_get_lsid
+    mongoc_client_session_get_snapshot_time
     mongoc_client_session_get_server_id
     mongoc_client_session_destroy

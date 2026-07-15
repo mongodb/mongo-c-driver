@@ -44,6 +44,9 @@ struct _mongoc_transaction_opt_t {
 struct _mongoc_session_opt_t {
    mongoc_optional_t causal_consistency;
    mongoc_optional_t snapshot;
+   uint32_t snapshot_time_timestamp;
+   uint32_t snapshot_time_increment;
+   bool snapshot_time_set;
    mongoc_transaction_opt_t default_txn_opts;
 };
 

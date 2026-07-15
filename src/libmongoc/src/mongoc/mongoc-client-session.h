@@ -92,6 +92,12 @@ MONGOC_EXPORT(bool)
 mongoc_session_opts_get_snapshot(const mongoc_session_opt_t *opts);
 
 MONGOC_EXPORT(void)
+mongoc_session_opts_set_snapshot_time(mongoc_session_opt_t *opts, uint32_t timestamp, uint32_t increment);
+
+MONGOC_EXPORT(bool)
+mongoc_session_opts_get_snapshot_time(const mongoc_session_opt_t *opts, uint32_t *timestamp, uint32_t *increment);
+
+MONGOC_EXPORT(void)
 mongoc_session_opts_set_default_transaction_opts(mongoc_session_opt_t *opts, const mongoc_transaction_opt_t *txn_opts);
 
 MONGOC_EXPORT(const mongoc_transaction_opt_t *)
@@ -125,6 +131,12 @@ MONGOC_EXPORT(void)
 mongoc_client_session_get_operation_time(const mongoc_client_session_t *session,
                                          uint32_t *timestamp,
                                          uint32_t *increment);
+
+MONGOC_EXPORT(bool)
+mongoc_client_session_get_snapshot_time(const mongoc_client_session_t *session,
+                                        uint32_t *timestamp,
+                                        uint32_t *increment,
+                                        bson_error_t *error);
 
 MONGOC_EXPORT(uint32_t)
 mongoc_client_session_get_server_id(const mongoc_client_session_t *session);

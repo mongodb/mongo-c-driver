@@ -3002,6 +3002,38 @@ done:
 }
 
 static bool
+operation_get_snapshot_time(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_client_session_t *session = NULL;
+   bson_error_t op_error = {0};
+   uint32_t timestamp = 0;
+   uint32_t increment = 0;
+   bson_val_t *val = NULL;
+
+   session = entity_map_get_session(test->entity_map, op->object, error);
+   if (!session) {
+      goto done;
+   }
+
+   if (mongoc_client_session_get_snapshot_time(session, &timestamp, &increment, &op_error)) {
+      bson_value_t value = {0};
+
+      value.value_type = BSON_TYPE_TIMESTAMP;
+      value.value.v_timestamp.timestamp = timestamp;
+      value.value.v_timestamp.increment = increment;
+      val = bson_val_from_value(&value);
+   }
+
+   result_from_val_and_reply(result, val, NULL, &op_error);
+
+   ret = true;
+done:
+   bson_val_destroy(val);
+   return ret;
+}
+
+static bool
 operation_start_transaction(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
@@ -4172,6 +4204,7 @@ operation_run(test_t *test, bson_t *op_bson, bson_error_t *error)
 
       /* Session operations */
       {"endSession", operation_end_session},
+      {"getSnapshotTime", operation_get_snapshot_time},
       {"startTransaction", operation_start_transaction},
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},
