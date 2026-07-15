@@ -42,8 +42,9 @@ struct _mongoc_database_t;
 
 #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
 #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
-#define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview" // Deprecated.
-#define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview"
+#define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview"         // Deprecated.
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview" // Deprecated.
+#define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING "substring"
 #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW "prefixPreview" // Deprecated.
 #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIX "prefix"
 #define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW "suffixPreview" // Deprecated.
