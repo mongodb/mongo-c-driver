@@ -3098,14 +3098,14 @@ test_session_install(TestSuite *suite)
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
-                     test_framework_skip_if_no_crypto);
+                     test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
    TestSuite_AddFull(suite,
                      "/Session/snapshot/prose_test_22 [lock:live-server]",
                      test_sessions_snapshot_prose_test_22,
                      NULL,
                      NULL,
                      test_framework_skip_if_no_sessions,
-                     test_framework_skip_if_no_crypto);
+                     test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
    TestSuite_AddFull(suite,
                      "/Session/prose_test_3 [lock:live-server]",
                      test_sessions_prose_3,
