@@ -32,12 +32,12 @@ parse_query_params (kms_request_str_t *q)
    kms_request_str_t *k, *v;
 
    do {
-      equals = strchr ((const char *) p, '=');
+      equals = strchr (p, '=');
       if (!equals) {
          kms_kv_list_destroy (lst);
          return NULL;
       }
-      amp = strchr ((const char *) equals, '&');
+      amp = strchr (equals, '&');
       if (!amp) {
          amp = end;
       }
