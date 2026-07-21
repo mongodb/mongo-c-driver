@@ -1216,6 +1216,7 @@ extern void kms_kmip_reader_test (void);
 extern void kms_kmip_reader_negative_int_test (void);
 extern void kms_kmip_reader_find_test (void);
 extern void kms_kmip_reader_find_and_recurse_test (void);
+extern void kms_kmip_reader_find_and_recurse_invalid_test (void);
 extern void kms_kmip_reader_find_and_read_enum_test (void);
 extern void kms_kmip_reader_find_and_read_bytes_test (void);
 extern void kms_kmip_request_register_secretdata_test (void);
@@ -1229,6 +1230,7 @@ extern void kms_kmip_response_get_secretdata_notfound_test (void);
 extern void kms_kmip_response_parser_reuse_test (void);
 extern void kms_kmip_response_parser_excess_test (void);
 extern void kms_kmip_response_parser_notenough_test (void);
+extern void kms_response_parser_response_too_big_test (void);
 
 int
 main (int argc, char *argv[])
@@ -1280,6 +1282,7 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_reader_negative_int_test);
    RUN_TEST (kms_kmip_reader_test);
    RUN_TEST (kms_kmip_reader_find_and_recurse_test);
+   RUN_TEST (kms_kmip_reader_find_and_recurse_invalid_test);
    RUN_TEST (kms_kmip_reader_find_and_read_enum_test);
    RUN_TEST (kms_kmip_reader_find_and_read_bytes_test);
    RUN_TEST (kms_kmip_request_register_secretdata_test);
@@ -1294,6 +1297,7 @@ main (int argc, char *argv[])
    RUN_TEST (kms_kmip_response_parser_reuse_test);
    RUN_TEST (kms_kmip_response_parser_excess_test);
    RUN_TEST (kms_kmip_response_parser_notenough_test);
+   RUN_TEST (kms_response_parser_response_too_big_test);
    RUN_TEST (test_request_newlines);
    RUN_TEST (test_kms_util);
 
