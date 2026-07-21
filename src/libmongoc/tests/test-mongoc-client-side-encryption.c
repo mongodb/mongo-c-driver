@@ -245,7 +245,7 @@ _make_kms_masterkey(char const *provider)
    }
 
    if (strcmp(provider, "azure") == 0) {
-      return BCON_NEW("keyVaultEndpoint", "key-vault-csfle.vault.azure.net", "keyName", "key-name-csfle");
+      return BCON_NEW("keyVaultEndpoint", "drivers-3392-key-vault.vault.azure.net", "keyName", "drivers-3392-keyname");
    }
 
    if (strcmp(provider, "gcp") == 0) {
@@ -578,8 +578,8 @@ test_datakey_and_double_encryption_creating_and_using(mongoc_client_encryption_t
    } else if (0 == strcmp(kms_provider, "azure")) {
       mongoc_client_encryption_datakey_opts_set_masterkey(
          opts,
-         tmp_bson("{'keyVaultEndpoint': 'key-vault-csfle.vault.azure.net', "
-                  "'keyName': 'key-name-csfle'}"));
+         tmp_bson("{'keyVaultEndpoint': 'drivers-3392-key-vault.vault.azure.net', "
+                  "'keyName': 'drivers-3392-keyname'}"));
    } else if (0 == strcmp(kms_provider, "gcp")) {
       mongoc_client_encryption_datakey_opts_set_masterkey(opts,
                                                           tmp_bson("{'projectId': 'devprod-drivers','location': "
@@ -1362,7 +1362,8 @@ test_custom_endpoint(void *unused)
 
    /* Case 7: Azure successful case */
    _endpoint_setup(keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW("keyVaultEndpoint", "key-vault-csfle.vault.azure.net", "keyName", "key-name-csfle");
+   masterkey =
+      BCON_NEW("keyVaultEndpoint", "drivers-3392-key-vault.vault.azure.net", "keyName", "drivers-3392-keyname");
    mongoc_client_encryption_datakey_opts_set_masterkey(datakey_opts, masterkey);
    res = mongoc_client_encryption_create_datakey(client_encryption, "azure", datakey_opts, &keyid, &error);
    ASSERT_OR_PRINT(res, error);
