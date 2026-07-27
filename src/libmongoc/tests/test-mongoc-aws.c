@@ -214,6 +214,11 @@ test_derive_region(void *unused)
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free(region);
 
+   ret = _mongoc_validate_and_derive_region(WITH_LEN(".abc"), &region, &error);
+   ASSERT(!ret);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
+   bson_free(region);
+
    ret = _mongoc_validate_and_derive_region(WITH_LEN("..."), &region, &error);
    ASSERT(!ret);
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
