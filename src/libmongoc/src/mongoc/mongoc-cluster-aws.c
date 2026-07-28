@@ -900,8 +900,7 @@ _mongoc_validate_and_derive_region(char *sts_fqdn, size_t sts_fqdn_len, char **r
    if (ptr) {
       second_part = ptr + 1;
    }
-   /* Compare the pointers rather than subtracting them: `ptr` is null when the host contains no ".", and pointer
-    * subtraction from a null pointer is undefined. */
+   // Check if `.` is the first character in the string, indicating an empty part to start
    if (ptr == sts_fqdn) {
       AUTH_ERROR_AND_FAIL("invalid STS host: empty part");
    }
