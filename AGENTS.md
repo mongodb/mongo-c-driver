@@ -139,8 +139,6 @@ uv run --frozen tools/ruff-format-all.sh  # Python scripts.
 uv run --frozen tools/shfmt-format-all.sh # Shell scripts.
 ```
 
-`--frozen` ensures the pinned lockfile is used; if it fails with a lockfile error, update it with `uv sync`.
-
 ## Contributing
 
 See `CONTRIBUTING.md` for guidance on:
