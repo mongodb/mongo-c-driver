@@ -148,7 +148,7 @@ Set the user and password environment variables, then build and run the tests:
 ```
 $ export MONGOC_TEST_USER=bob
 $ export MONGOC_TEST_PASSWORD=pwd123
-$ ./test-libmongoc
+$ ./cmake-build/src/libmongoc/test-libmongoc
 ```
 
 Additional environment variables:
@@ -343,7 +343,7 @@ The test runner can be configured with command-line options. Run `test-libmongoc
 To run just a specific portion of the test suite use the -l option like so:
 
 ```
-$ ./test-libmongoc -l "/server_selection/*"
+$ ./cmake-build/src/libmongoc/test-libmongoc -l "/server_selection/*"
 ```
 
 The full list of tests is shown in the help.
