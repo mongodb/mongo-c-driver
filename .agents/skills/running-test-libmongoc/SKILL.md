@@ -36,7 +36,7 @@ Run `./cmake-build/src/libmongoc/test-libmongoc --help` for the full flag list.
 Matching against a test's name (`TestSuite_TestMatchesName` in `TestSuite.c`) is **exact string**, with one exception: a **trailing** `*` makes it a prefix match. There is no other wildcard support.
 
 - `-l "*aggregate"` does **not** work — a `*` is only special as the last character.
-- A trailing `*` is a *prefix* match and over-matches siblings: `-l "/crud/unified/aggregate*"` also matches `/crud/unified/aggregate-let`, `-merge`, etc. To run exactly one test, pass its full name without a `*` (e.g. `-l "/crud/unified/aggregate"`).
+- A trailing `*` is a *prefix* match and over-matches siblings: `-l "/crud/unified/aggregate*"` also matches `/crud/unified/aggregate-let`, `/crud/unified/aggregate-merge`, etc. To run exactly one test, pass its full name without a `*` (e.g. `-l "/crud/unified/aggregate"`).
 
 ## Finding a test's name
 
