@@ -124,7 +124,7 @@ Documentation is authored as separate `.rst` files under `src/libbson/doc` and `
 To build `libmongoc` documentation from a fresh environment with warnings treated as errors:
 
 ```bash
-uv run --frozen sphinx-build -WEn src/libmongoc/doc src/libmongoc/doc/html
+uv run --frozen sphinx-build -j auto -WEn src/libmongoc/doc src/libmongoc/doc/html
 ```
 
 Replace `libmongoc` with `libbson` in the above command for `libbson` documentation.
