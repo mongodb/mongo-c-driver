@@ -337,7 +337,7 @@ Though Evergreen logs are private, avoid logging any sensitive data. This is int
 
 #### Configuring the test runner
 
-The test runner can be configured with command-line options. Run `test-libmongoc --help` for details. Agents should refer to to the `running-test-libmongoc` skill under `.agents/skills` for more details on how to build, run, filter, and debug tests.
+The test runner can be configured with command-line options. Run `test-libmongoc --help` for details. Agents should refer to the `running-test-libmongoc` skill under `.agents/skills` for more details on how to build, run, filter, and debug tests.
 
 To run just a specific portion of the test suite use the -l option like so:
 
