@@ -95,7 +95,7 @@ The public MongoDB C Driver. Depends on the `libbson` library.
 
 #### `kms-message`
 
-A library used to generate requests for Amazon Web Services Key Management Service (KMS) and Azure Key Vault.
+A library used to create signed Amazon Web Services (AWS) requests for the `MONGODB-AWS` auth mechanism.
 
 #### `mlib` (found under `src/common/src/mlib`)
 
