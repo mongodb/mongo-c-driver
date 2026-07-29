@@ -635,6 +635,10 @@ _mongoc_scram_step2(mongoc_scram_t *scram,
       }
 
       *current_val = (uint8_t *)bson_malloc(*current_val_len + 1);
+      if (!*current_val) {
+         *current_val_len = 0u;
+         return false;
+      }
       memcpy(*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
@@ -905,6 +909,10 @@ _mongoc_scram_step3(mongoc_scram_t *scram,
       }
 
       *current_val = (uint8_t *)bson_malloc(*current_val_len + 1);
+      if (!*current_val) {
+         *current_val_len = 0u;
+         return false;
+      }
       memcpy(*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
