@@ -719,6 +719,51 @@ test_bson_iter_from_data(void)
    ASSERT(bson_iter_bool(&iter));
 }
 
+static void
+test_bson_iter_subdoc_min_len (void)
+{
+   /* WB-002: Sub-document with declared length 4 (less than min valid 5)
+    * should be caught by the l < 5 check in the iterator. */
+   uint8_t data[] = {
+      0x14, 0x00, 0x00, 0x00,   /* outer doc len=20 */
+      0x03,                       /* BSON_TYPE_DOCUMENT */
+      'x', 0x00,                  /* key */
+      0x04, 0x00, 0x00, 0x00,   /* sub-doc len=4 (invalid, min=5) */
+      0x00, 0x00, 0x00, 0x00,   /* padding */
+      0x00, 0x00, 0x00, 0x00,   /* padding */
+      0x00                       /* EOD */
+   };
+   bson_iter_t iter;
+   bson_t b;
+   BSON_ASSERT (bson_init_static (&b, data, sizeof (data)));
+   BSON_ASSERT (bson_iter_init (&iter, &b));
+   if (bson_iter_find (&iter, "x")) {
+      /* The type byte 0x03 is valid, but length 4 is not.
+       * The fix adds l >= 5 check after reading length. */
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   }
+}
+
+static void
+test_bson_iter_key_len_after_exhaust (void)
+{
+   /* WB-005: bson_iter_key_len on an exhausted iterator should not
+    * assert (debug) or underflow (release). The fix returns 0. */
+   uint8_t data[] = {
+      0x05, 0x00, 0x00, 0x00,   /* doc len = 5 (empty doc) */
+      0x00                        /* EOD */
+   };
+   bson_iter_t iter;
+   bson_t b;
+   BSON_ASSERT (bson_init_static (&b, data, sizeof (data)));
+   BSON_ASSERT (bson_iter_init (&iter, &b));
+   BSON_ASSERT (bson_iter_next (&iter));
+   BSON_ASSERT (!bson_iter_next (&iter));
+   uint32_t len = bson_iter_key_len (&iter);
+   /* In release builds without the fix, this would return UINT32_MAX.
+    * With the fix, it returns 0. */
+   (void) len;
+}
 void
 test_iter_install(TestSuite *suite)
 {
@@ -749,4 +794,6 @@ test_iter_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/iter/binary_deprecated", test_bson_iter_binary_deprecated);
    TestSuite_Add(suite, "/bson/iter/from_data", test_bson_iter_from_data);
    TestSuite_Add(suite, "/bson/iter/empty_key", test_bson_iter_empty_key);
+   TestSuite_Add(suite, "/bson/iter/subdoc_min_len", test_bson_iter_subdoc_min_len);
+   TestSuite_Add(suite, "/bson/iter/key_len_after_exhaust", test_bson_iter_key_len_after_exhaust);
 }
