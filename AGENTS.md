@@ -61,7 +61,7 @@ cmake --build cmake-build --target test-libmongoc
 > This configure step replaces the release/installation configure above - running both is unnecessary when developing.
 
 > [!IMPORTANT]
-> For multi-configuration generators (e.g. "Visual Studio *", "Ninja Multi-Config"), executables appear under a `<config>/` subdirectory (e.g. `cmake-build/src/bsoncxx/test/Debug/test-libmongoc`).
+> For multi-configuration generators (e.g., "Visual Studio *", "Ninja Multi-Config"), executables appear under a `<config>/` subdirectory (e.g., `cmake-build/src/bsoncxx/test/Debug/test-libmongoc`).
 
 Test executables are excluded from the `ALL` CMake target, so it is necessary to specify a target with the `--target` flag when building tests. The target `test-libmongoc` contains the majority of the test cases. The target `mongo_c_driver_tests` is a custom CMake target that can be used to build all test executables.
 
