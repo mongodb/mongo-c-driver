@@ -965,6 +965,11 @@ _mongoc_cursor_collection(const mongoc_cursor_t *cursor, const char **collection
    *collection = cursor->ns + (cursor->dblen + 1);
    /* Collection name's length is ns length, minus length of db name and ".". */
    *collection_len = cursor->nslen - cursor->dblen - 1;
+   if (*collection_len < 0) {
+      *collection = NULL;
+      return;
+   }
+
 
    BSON_ASSERT(*collection_len > 0);
 }
