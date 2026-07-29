@@ -91,11 +91,11 @@ A public standalone BSON document library with no MongoDB dependency.
 
 The public MongoDB C Driver. Depends on the `libbson` library.
 
+### Private Libraries
+
 #### `kms-message`
 
 A library used to generate requests for Amazon Web Services Key Management Service (KMS) and Azure Key Vault.
-
-### Private Libraries
 
 #### `mlib` (found under `src/common/src/mlib`)
 
