@@ -65,7 +65,7 @@ cmake --build cmake-build --target test-libmongoc
 
 Test executables are excluded from the `ALL` CMake target, so it is necessary to specify a target with the `--target` flag when building tests. The target `test-libmongoc` contains the majority of the test cases. The target `mongo_c_driver_tests` is a custom CMake target that can be used to build all test executables.
 
-Most tests require a live MongoDB server. Server-dependent tests are skipped when no server is available.
+Most tests require a live MongoDB server. Server-dependent tests may be skipped with the environment variable `MONGOC_TEST_SKIP_LIVE`.
 
 Test executables include:
 
