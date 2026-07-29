@@ -651,6 +651,10 @@ fill_data_fields:
       }
 
       const uint32_t l = mlib_read_u32le(iter->raw + iter->d1);
+      if (l < 5) {
+         iter->err_off = o;
+         goto mark_invalid;
+      }
       if ((l > len) || (l > (len - o))) {
          iter->err_off = o;
          goto mark_invalid;
@@ -2583,6 +2587,9 @@ bson_iter_key_len(const bson_iter_t *iter)
     *
     */
    BSON_ASSERT(iter->d1 > iter->key);
+   if (iter->d1 <= iter->key) {
+      return 0u;
+   }
    return iter->d1 - iter->key - 1;
 }
 
