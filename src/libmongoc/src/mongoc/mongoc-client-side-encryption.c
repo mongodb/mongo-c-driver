@@ -37,6 +37,69 @@
 #include <mongoc/mongoc.h>
 
 /*--------------------------------------------------------------------------
+ * KMS connect callback.
+ *--------------------------------------------------------------------------
+ */
+struct _mongoc_kms_connect_callback_t {
+   mongoc_kms_connect_callback_fn_t fn;
+   void *user_data;
+};
+
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_new(mongoc_kms_connect_callback_fn_t fn)
+{
+   return mongoc_kms_connect_callback_new_with_user_data(fn, NULL);
+}
+
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_new_with_user_data(mongoc_kms_connect_callback_fn_t fn, void *user_data)
+{
+   if (!fn) {
+      return NULL;
+   }
+
+   mongoc_kms_connect_callback_t *const ret = bson_malloc(sizeof(*ret));
+   *ret = (mongoc_kms_connect_callback_t){.fn = fn, .user_data = user_data};
+   return ret;
+}
+
+void
+mongoc_kms_connect_callback_destroy(mongoc_kms_connect_callback_t *callback)
+{
+   bson_free(callback);
+}
+
+mongoc_kms_connect_callback_fn_t
+mongoc_kms_connect_callback_get_fn(const mongoc_kms_connect_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(callback);
+   return callback->fn;
+}
+
+void *
+mongoc_kms_connect_callback_get_user_data(const mongoc_kms_connect_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(callback);
+   return callback->user_data;
+}
+
+void
+mongoc_kms_connect_callback_set_user_data(mongoc_kms_connect_callback_t *callback, void *user_data)
+{
+   BSON_ASSERT_PARAM(callback);
+   callback->user_data = user_data;
+}
+
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_copy(const mongoc_kms_connect_callback_t *callback)
+{
+   if (!callback) {
+      return NULL;
+   }
+   return mongoc_kms_connect_callback_new_with_user_data(callback->fn, callback->user_data);
+}
+
+/*--------------------------------------------------------------------------
  * Auto Encryption options.
  *--------------------------------------------------------------------------
  */
@@ -54,7 +117,7 @@ struct _mongoc_auto_encryption_opts_t {
    bool bypass_auto_encryption;
    bool bypass_query_analysis;
    mc_kms_credentials_callback creds_cb;
-   mc_kms_connect_callback connect_cb;
+   mongoc_kms_connect_callback_t *connect_cb;
    bson_t *extra;
    mcd_optional_u64_t cache_expiration_ms;
 };
@@ -86,6 +149,7 @@ mongoc_auto_encryption_opts_destroy(mongoc_auto_encryption_opts_t *opts)
    bson_free(opts->keyvault_db);
    bson_free(opts->keyvault_coll);
    bson_destroy(opts->tls_opts);
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
    bson_free(opts);
 }
 
@@ -239,12 +303,11 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
 
 void
 mongoc_auto_encryption_opts_set_kms_connect_callback(mongoc_auto_encryption_opts_t *opts,
-                                                     mongoc_kms_connect_callback_fn fn,
-                                                     void *userdata)
+                                                     const mongoc_kms_connect_callback_t *callback)
 {
    BSON_ASSERT_PARAM(opts);
-   opts->connect_cb.fn = fn;
-   opts->connect_cb.userdata = userdata;
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
+   opts->connect_cb = mongoc_kms_connect_callback_copy(callback);
 }
 
 /*--------------------------------------------------------------------------
@@ -258,7 +321,7 @@ struct _mongoc_client_encryption_opts_t {
    bson_t *kms_providers;
    bson_t *tls_opts;
    mc_kms_credentials_callback creds_cb;
-   mc_kms_connect_callback connect_cb;
+   mongoc_kms_connect_callback_t *connect_cb;
    mcd_optional_u64_t cache_expiration_ms;
 };
 
@@ -274,6 +337,9 @@ mongoc_client_encryption_opts_destroy(mongoc_client_encryption_opts_t *opts)
    if (!opts) {
       return;
    }
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
+   opts->connect_cb = NULL;
+   _set_creds_callback(&opts->creds_cb, NULL, NULL);
    bson_free(opts->keyvault_db);
    bson_free(opts->keyvault_coll);
    bson_destroy(opts->kms_providers);
@@ -342,14 +408,13 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback(mongoc_client
 
 void
 mongoc_client_encryption_opts_set_kms_connect_callback(mongoc_client_encryption_opts_t *opts,
-                                                       mongoc_kms_connect_callback_fn fn,
-                                                       void *userdata)
+                                                       const mongoc_kms_connect_callback_t *callback)
 {
    if (!opts) {
       return;
    }
-   opts->connect_cb.fn = fn;
-   opts->connect_cb.userdata = userdata;
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
+   opts->connect_cb = mongoc_kms_connect_callback_copy(callback);
 }
 
 void

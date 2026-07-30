@@ -60,10 +60,31 @@ typedef bool(BSON_CALL *mongoc_kms_credentials_provider_callback_fn)(void *userd
                                                                      bson_t *out,
                                                                      bson_error_t *error);
 
+typedef struct _mongoc_kms_connect_callback_t mongoc_kms_connect_callback_t;
+
 /* Returns a connected stream to (host, port). The driver wraps the returned
  * stream with TLS. Return NULL and set @error on failure. */
-typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn)(
-   const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error);
+typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn_t)(
+   const char *host, uint16_t port, int32_t connecttimeoutms, void *user_data, bson_error_t *error);
+
+MONGOC_EXPORT(mongoc_kms_connect_callback_t *)
+mongoc_kms_connect_callback_new(mongoc_kms_connect_callback_fn_t fn) BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT(mongoc_kms_connect_callback_t *)
+mongoc_kms_connect_callback_new_with_user_data(mongoc_kms_connect_callback_fn_t fn, void *user_data)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT(void)
+mongoc_kms_connect_callback_destroy(mongoc_kms_connect_callback_t *callback);
+
+MONGOC_EXPORT(mongoc_kms_connect_callback_fn_t)
+mongoc_kms_connect_callback_get_fn(const mongoc_kms_connect_callback_t *callback);
+
+MONGOC_EXPORT(void *)
+mongoc_kms_connect_callback_get_user_data(const mongoc_kms_connect_callback_t *callback);
+
+MONGOC_EXPORT(void)
+mongoc_kms_connect_callback_set_user_data(mongoc_kms_connect_callback_t *callback, void *user_data);
 
 MONGOC_EXPORT(mongoc_auto_encryption_opts_t *)
 mongoc_auto_encryption_opts_new(void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -116,8 +137,7 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
 
 MONGOC_EXPORT(void)
 mongoc_auto_encryption_opts_set_kms_connect_callback(mongoc_auto_encryption_opts_t *opts,
-                                                     mongoc_kms_connect_callback_fn fn,
-                                                     void *userdata);
+                                                     const mongoc_kms_connect_callback_t *callback);
 
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
@@ -167,8 +187,7 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback(mongoc_client
 
 MONGOC_EXPORT(void)
 mongoc_client_encryption_opts_set_kms_connect_callback(mongoc_client_encryption_opts_t *opts,
-                                                       mongoc_kms_connect_callback_fn fn,
-                                                       void *userdata);
+                                                       const mongoc_kms_connect_callback_t *callback);
 
 MONGOC_EXPORT(void)
 mongoc_client_encryption_opts_set_key_expiration(mongoc_client_encryption_opts_t *opts, uint64_t cache_expiration_ms);

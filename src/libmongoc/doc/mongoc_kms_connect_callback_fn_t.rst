@@ -1,22 +1,21 @@
-:man_page: mongoc_kms_connect_callback_fn
+:man_page: mongoc_kms_connect_callback_fn_t
 
-mongoc_kms_connect_callback_fn
-==============================
+mongoc_kms_connect_callback_fn_t
+================================
 
 Synopsis
 --------
 
 .. code-block:: c
 
-  typedef mongoc_stream_t *(*mongoc_kms_connect_callback_fn) (const char *host,
-                                                              uint16_t port,
-                                                              int32_t connecttimeoutms,
-                                                              void *userdata,
-                                                              bson_error_t *error);
+  typedef mongoc_stream_t *(*mongoc_kms_connect_callback_fn_t) (const char *host,
+                                                                uint16_t port,
+                                                                int32_t connecttimeoutms,
+                                                                void *user_data,
+                                                                bson_error_t *error);
 
-The type of the callback that opens a transport connection to a KMS endpoint,
-used by :symbol:`mongoc_client_encryption_opts_set_kms_connect_callback` and
-:symbol:`mongoc_auto_encryption_opts_set_kms_connect_callback`.
+The type of the function pointer stored by :symbol:`mongoc_kms_connect_callback_t`. It opens a transport
+connection to a KMS endpoint.
 
 The driver calls this function instead of opening a direct TCP connection to
 ``host:port``.  After the callback returns a connected stream, the driver wraps
@@ -48,5 +47,6 @@ A connected :symbol:`mongoc_stream_t` on success, or ``NULL`` on failure
 
 .. seealso::
 
+  - :symbol:`mongoc_kms_connect_callback_t`
   - :symbol:`mongoc_client_encryption_opts_set_kms_connect_callback`
   - :symbol:`mongoc_auto_encryption_opts_set_kms_connect_callback`

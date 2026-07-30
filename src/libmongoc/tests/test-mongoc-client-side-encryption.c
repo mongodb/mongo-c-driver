@@ -6529,7 +6529,7 @@ _kms_connect_callback_via_proxy(
    mongoc_stream_t *proxy_stream = base_stream;
    if (data->transport == KMS_PROXY_TRANSPORT_TLS) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      ASSERT (data->ca_file);
+      ASSERT(data->ca_file);
       ssl_opt.ca_file = data->ca_file;
       mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
       ASSERT(tls);
@@ -6581,7 +6581,10 @@ test_kms_connect_callback_wiring(void *unused)
    mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
    mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
-   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_record_and_fail, &data);
+   mongoc_kms_connect_callback_t *connect_cb =
+      mongoc_kms_connect_callback_new_with_user_data(_kms_connect_callback_record_and_fail, &data);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, connect_cb);
+   mongoc_kms_connect_callback_destroy(connect_cb);
 
    bson_error_t error;
    mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
@@ -6702,7 +6705,10 @@ _test_kms_connect_callback_via_proxy(kms_proxy_transport_t transport)
    mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
    mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
-   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_via_proxy, &data);
+   mongoc_kms_connect_callback_t *connect_cb =
+      mongoc_kms_connect_callback_new_with_user_data(_kms_connect_callback_via_proxy, &data);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, connect_cb);
+   mongoc_kms_connect_callback_destroy(connect_cb);
 
    bson_error_t error;
    mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
@@ -6791,7 +6797,10 @@ test_kms_connect_callback_via_proxy_pipeline(void *unused)
    mongoc_client_encryption_opts_set_keyvault_client(ce_opts, client);
    mongoc_client_encryption_opts_set_keyvault_namespace(ce_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_kms_providers(ce_opts, kms_providers);
-   mongoc_client_encryption_opts_set_kms_connect_callback(ce_opts, _kms_connect_callback_via_proxy, &ce_proxy_data);
+   mongoc_kms_connect_callback_t *ce_connect_cb =
+      mongoc_kms_connect_callback_new_with_user_data(_kms_connect_callback_via_proxy, &ce_proxy_data);
+   mongoc_client_encryption_opts_set_kms_connect_callback(ce_opts, ce_connect_cb);
+   mongoc_kms_connect_callback_destroy(ce_connect_cb);
 
    bson_error_t error;
    mongoc_client_encryption_t *ce = mongoc_client_encryption_new(ce_opts, &error);
@@ -6856,7 +6865,10 @@ test_kms_connect_callback_via_proxy_pipeline(void *unused)
    mongoc_auto_encryption_opts_set_keyvault_namespace(ae_opts, "keyvault", "datakeys");
    mongoc_auto_encryption_opts_set_kms_providers(ae_opts, kms_providers);
    mongoc_auto_encryption_opts_set_schema_map(ae_opts, schema_map);
-   mongoc_auto_encryption_opts_set_kms_connect_callback(ae_opts, _kms_connect_callback_via_proxy, &enc_proxy_data);
+   mongoc_kms_connect_callback_t *ae_connect_cb =
+      mongoc_kms_connect_callback_new_with_user_data(_kms_connect_callback_via_proxy, &enc_proxy_data);
+   mongoc_auto_encryption_opts_set_kms_connect_callback(ae_opts, ae_connect_cb);
+   mongoc_kms_connect_callback_destroy(ae_connect_cb);
    _set_extra(ae_opts);
 
    mongoc_client_t *client_encrypted = test_framework_new_default_client();
@@ -6949,7 +6961,10 @@ test_kms_connect_callback_error(void *unused)
    mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
    mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
-   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_record_and_fail, &data);
+   mongoc_kms_connect_callback_t *connect_cb =
+      mongoc_kms_connect_callback_new_with_user_data(_kms_connect_callback_record_and_fail, &data);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, connect_cb);
+   mongoc_kms_connect_callback_destroy(connect_cb);
 
    bson_error_t error;
    mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);

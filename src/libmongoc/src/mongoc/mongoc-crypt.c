@@ -137,7 +137,7 @@ struct __mongoc_crypt_t {
    /// Optional callback to obtain the base socket to KMS. When set, the
    /// driver uses it instead of `mongoc_client_connect_tcp` and still wraps
    /// the returned stream with TLS.
-   mc_kms_connect_callback connect_cb;
+   mongoc_kms_connect_callback_t *connect_cb;
 
    /// The most recently auto-acquired Azure token, on null if it was destroyed
    /// or not yet acquired.
@@ -514,7 +514,7 @@ static mongoc_stream_t *
 _get_stream(const char *endpoint,
             int32_t connecttimeoutms,
             const mongoc_ssl_opt_t *ssl_opt,
-            const mc_kms_connect_callback *connect_cb,
+            const mongoc_kms_connect_callback_t *connect_cb,
             bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
@@ -527,8 +527,9 @@ _get_stream(const char *endpoint,
       goto fail;
    }
 
-   if (connect_cb && connect_cb->fn) {
-      base_stream = connect_cb->fn(host.host, host.port, connecttimeoutms, connect_cb->userdata, error);
+   if (connect_cb) {
+      base_stream = mongoc_kms_connect_callback_get_fn(connect_cb)(
+         host.host, host.port, connecttimeoutms, mongoc_kms_connect_callback_get_user_data(connect_cb), error);
       if (!base_stream) {
          if (error && error->code == 0) {
             _mongoc_set_error(error,
@@ -624,11 +625,11 @@ _state_need_kms(_state_machine_t *state_machine, bson_error_t *error)
       mlib_sleep_for(sleep_usec, us);
 
       mongoc_stream_destroy(tls_stream);
-      tls_stream = _get_stream(endpoint, sockettimeout, ssl_opt, &state_machine->crypt->connect_cb, error);
+      tls_stream = _get_stream(endpoint, sockettimeout, ssl_opt, state_machine->crypt->connect_cb, error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
       /* Retry once with schannel as a workaround for CDRIVER-3566. */
       if (!tls_stream) {
-         tls_stream = _get_stream(endpoint, sockettimeout, ssl_opt, &state_machine->crypt->connect_cb, error);
+         tls_stream = _get_stream(endpoint, sockettimeout, ssl_opt, state_machine->crypt->connect_cb, error);
       }
 #endif
       if (!tls_stream) {
@@ -1425,7 +1426,7 @@ _mongoc_crypt_new(const bson_t *kms_providers,
                   bool bypass_auto_encryption,
                   bool bypass_query_analysis,
                   mc_kms_credentials_callback creds_cb,
-                  mc_kms_connect_callback connect_cb,
+                  const mongoc_kms_connect_callback_t *connect_cb,
                   mcd_optional_u64_t cache_expiration_ms,
                   bson_error_t *error)
 {
@@ -1540,7 +1541,7 @@ _mongoc_crypt_new(const bson_t *kms_providers,
    }
 
    crypt->creds_cb = creds_cb;
-   crypt->connect_cb = connect_cb;
+   crypt->connect_cb = mongoc_kms_connect_callback_copy(connect_cb);
 
    success = true;
 fail:
@@ -1563,6 +1564,7 @@ _mongoc_crypt_destroy(_mongoc_crypt_t *crypt)
    if (!crypt) {
       return;
    }
+   mongoc_kms_connect_callback_destroy(crypt->connect_cb);
    mongocrypt_destroy(crypt->handle);
    _mongoc_ssl_opts_cleanup(&crypt->kmip_tls_opt, true /* free_internal */);
    _mongoc_ssl_opts_cleanup(&crypt->aws_tls_opt, true /* free_internal */);
