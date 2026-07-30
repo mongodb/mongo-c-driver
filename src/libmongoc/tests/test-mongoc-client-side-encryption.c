@@ -6446,7 +6446,8 @@ struct kms_connect_data {
    bool set_error;
    const char *error_msg; /* if set_error and non-NULL, used verbatim as error message */
    kms_proxy_transport_t transport;
-   const char *ca_file; /* path to CA PEM; used when transport == TLS to verify proxy cert */
+   const char *ca_file;  /* path to CA PEM; used when transport == TLS to verify proxy cert */
+   bool fail_first_call; /* if set, the first proxy callback invocation fails with a network error */
 };
 
 /* Resolves the proxy address for a given transport. Defaults to
@@ -6508,6 +6509,11 @@ _kms_connect_callback_via_proxy(
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
+
+   if (data->fail_first_call && data->call_count == 1) {
+      bson_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "test: simulated network error");
+      return NULL;
+   }
 
    const char *proxy_host = NULL;
    int proxy_port = 0;
@@ -6985,6 +6991,67 @@ test_kms_connect_callback_error(void *unused)
    mongoc_client_encryption_destroy(enc);
    mongoc_client_encryption_opts_destroy(opts);
    mongoc_client_destroy(cl);
+}
+
+/* Prose test 28, Case 5: skipped as the C driver does not implement CSOT (CDRIVER-3786) */
+
+/* Prose test 28, Case 6: the kmsConnectCallback is retried after a failure.
+ *
+ * The callback fails with a network error on its first invocation, then routes
+ * through the plain HTTP proxy on subsequent invocations. Creating the data key
+ * is expected to succeed, confirming the driver retried the callback.
+ *
+ * Requires the plain HTTP proxy (python kms_http_proxy.py --port 9004) and real
+ * AWS credentials. See _test_kms_connect_callback_via_proxy for details. */
+static void
+test_kms_connect_callback_retry(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   char *aws_access_key_id = test_framework_getenv_required("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   char *aws_secret_access_key = test_framework_getenv_required("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+
+   struct kms_connect_data data = {0};
+   data.transport = KMS_PROXY_TRANSPORT_PLAIN;
+   data.fail_first_call = true;
+
+   bson_t *kms_providers =
+      tmp_bson("{ 'aws': { 'accessKeyId': '%s', 'secretAccessKey': '%s' } }", aws_access_key_id, aws_secret_access_key);
+
+   mongoc_client_t *cl = test_framework_new_default_client();
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
+   mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
+   mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
+   mongoc_kms_connect_callback_t *connect_cb =
+      mongoc_kms_connect_callback_new_with_user_data(_kms_connect_callback_via_proxy, &data);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, connect_cb);
+   mongoc_kms_connect_callback_destroy(connect_cb);
+
+   bson_error_t error;
+   mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
+   ASSERT_OR_PRINT(enc, error);
+
+   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
+   mongoc_client_encryption_datakey_opts_set_masterkey(
+      dk_opts,
+      tmp_bson("{ 'region': 'us-east-1',"
+               "  'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
+
+   bson_value_t keyid;
+   bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   ASSERT_OR_PRINT(ok, error);
+   bson_value_destroy(&keyid);
+
+   /* The first invocation failed, so a successful result implies a retry. */
+   ASSERT_CMPINT(data.call_count, >=, 2);
+
+   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
+   mongoc_client_encryption_destroy(enc);
+   mongoc_client_encryption_opts_destroy(opts);
+   mongoc_client_destroy(cl);
+   bson_free(aws_access_key_id);
+   bson_free(aws_secret_access_key);
 }
 
 static void
@@ -8833,30 +8900,6 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_no_client_side_encryption,
                      test_framework_skip_if_max_wire_version_less_than_17,
                      _skip_if_no_crypt_shared);
-   TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/via_proxy/plain [lock:live-server]",
-                     test_kms_connect_callback_via_proxy_plain,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive);
-
-   TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/via_proxy/tls [lock:live-server]",
-                     test_kms_connect_callback_via_proxy_tls,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive);
-
-   TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/via_proxy/pipeline [lock:live-server]",
-                     test_kms_connect_callback_via_proxy_pipeline,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive);
-
 
    // Add test cases for prose test: 22. Range Explicit Encryption.
    {
@@ -8967,5 +9010,36 @@ test_client_side_encryption_install(TestSuite *suite)
          test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ for "substringPreview" */
          test_framework_skip_if_single,                        /* QE not supported on standalone */
          test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/kms/connect_callback/via_proxy/plain [lock:live-server]",
+                        test_kms_connect_callback_via_proxy_plain,
+                        NULL, // dtor
+                        NULL, // ctx
+                        test_framework_skip_if_no_client_side_encryption,
+                        TestSuite_CheckLive);
+
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/kms/connect_callback/via_proxy/tls [lock:live-server]",
+                        test_kms_connect_callback_via_proxy_tls,
+                        NULL, // dtor
+                        NULL, // ctx
+                        test_framework_skip_if_no_client_side_encryption,
+                        TestSuite_CheckLive);
+
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/kms/connect_callback/via_proxy/pipeline [lock:live-server]",
+                        test_kms_connect_callback_via_proxy_pipeline,
+                        NULL, // dtor
+                        NULL, // ctx
+                        test_framework_skip_if_no_client_side_encryption,
+                        TestSuite_CheckLive);
+
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/kms/connect_callback/retry [lock:live-server]",
+                        test_kms_connect_callback_retry,
+                        NULL, // dtor
+                        NULL, // ctx
+                        test_framework_skip_if_no_client_side_encryption,
+                        TestSuite_CheckLive);
    }
 }
