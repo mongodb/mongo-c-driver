@@ -29,7 +29,6 @@
 BSON_BEGIN_DECLS
 
 #define HANDSHAKE_BACKPRESSURE_FIELD "backpressure"
-
 // The version of the Client Backpressure specification supported by this driver. Must be sent as a UTF-8 string, not as
 // a number.
 #define HANDSHAKE_BACKPRESSURE_VERSION "2"
