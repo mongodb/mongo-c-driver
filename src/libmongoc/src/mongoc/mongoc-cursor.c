@@ -588,6 +588,9 @@ mongoc_cursor_destroy(mongoc_cursor_t *cursor)
       }
    } else if (cursor->client_generation == cursor->client->generation) {
       if (cursor->cursor_id) {
+         // Invariant: a non-zero cursor ID has a namespace with a collection.
+         // Enforced in `_mongoc_cursor_start_reading_response`.
+         BSON_ASSERT(cursor->dblen < cursor->nslen);
          db = bson_strndup(cursor->ns, cursor->dblen);
 
          _mongoc_client_kill_cursor(cursor->client,
@@ -1397,7 +1400,7 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
 {
    bson_iter_t iter;
    bson_iter_t child;
-   const char *ns;
+   const char *ns = NULL;
    uint32_t nslen;
    bool in_batch = false;
 
@@ -1408,15 +1411,6 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
             cursor->cursor_id = bson_iter_as_int64(&child);
          } else if (BSON_ITER_IS_KEY(&child, "ns")) {
             ns = bson_iter_utf8(&child, &nslen);
-            _mongoc_set_cursor_ns(cursor, ns, nslen);
-            if (!strchr(cursor->ns, '.')) {
-               _mongoc_set_error(&cursor->error,
-                                  MONGOC_ERROR_CURSOR,
-                                  MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                                  "Invalid cursor namespace \"%s\": expected db.collection format",
-                                  cursor->ns);
-               return false;
-            }
          } else if (BSON_ITER_IS_KEY(&child, "firstBatch") || BSON_ITER_IS_KEY(&child, "nextBatch")) {
             if (BSON_ITER_HOLDS_ARRAY(&child) && bson_iter_recurse(&child, &response->batch_iter)) {
                in_batch = true;
@@ -1432,6 +1426,27 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
    if (cursor->cursor_id == 0 && cursor->client_session && !cursor->explicit_session) {
       mongoc_client_session_destroy(cursor->client_session);
       cursor->client_session = NULL;
+   }
+
+   if (ns) {
+      // Expect a reply namespace (if present) to have the form "<db>.<coll>".
+      // Note: a database aggregate cursor returns a namespace like "<db>.$cmd.aggregate".
+      const char *const dot = memchr(ns, '.', nslen);
+      const bool has_collection = dot && mlib_cmp((dot - ns) + 1, <, nslen);
+      if (has_collection) {
+         _mongoc_set_cursor_ns(cursor, ns, nslen);
+      } else if (cursor->cursor_id) {
+         // Set 0 cursor ID to prevent sending killCursors.
+         cursor->cursor_id = 0;
+         return false;
+      }
+   }
+
+   // A non-zero cursor ID requires a collection to send "getMore" and "killCursors".
+   if (cursor->cursor_id && cursor->dblen + 1 >= cursor->nslen) {
+      // Set 0 cursor ID to prevent sending killCursors.
+      cursor->cursor_id = 0;
+      return false;
    }
 
    return in_batch;
