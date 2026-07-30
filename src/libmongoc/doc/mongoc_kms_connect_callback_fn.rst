@@ -34,9 +34,7 @@ Parameters
   ``"kms.us-east-1.amazonaws.com"``).
 - ``port`` - The KMS port number (typically ``443``).
 - ``connecttimeoutms`` - The connect timeout in milliseconds.  Use this as the
-  deadline for establishing the transport connection (e.g. pass it to
-  :symbol:`mongoc_client_connect_tcp` and to
-  :symbol:`mongoc_stream_tls_handshake_block`).
+  deadline for establishing the transport connection.
 - ``userdata`` - The pointer supplied to ``userdata`` when the callback was
   registered.
 - ``error`` - Output parameter.  Set a descriptive error message and domain/code
