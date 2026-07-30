@@ -6529,27 +6529,11 @@ _kms_connect_callback_via_proxy(
    mongoc_stream_t *proxy_stream = base_stream;
    if (data->transport == KMS_PROXY_TRANSPORT_TLS) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      if (data->ca_file) {
-         ssl_opt.ca_file = data->ca_file;
-      } else {
-         ssl_opt.weak_cert_validation = true;
-      }
-      /* Connecting to 127.0.0.1 by IP; allow hostname mismatch. */
-      ssl_opt.allow_invalid_hostname = true;
+      ASSERT (data->ca_file);
+      ssl_opt.ca_file = data->ca_file;
       mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
-      if (!tls) {
-         bson_set_error(error,
-                        MONGOC_ERROR_STREAM,
-                        MONGOC_ERROR_STREAM_CONNECT,
-                        "failed to create TLS stream to proxy: %s",
-                        endpoint);
-         mongoc_stream_destroy(base_stream);
-         return NULL;
-      }
-      if (!mongoc_stream_tls_handshake_block(tls, proxy_host, connecttimeoutms, error)) {
-         mongoc_stream_destroy(tls); /* destroys base_stream too */
-         return NULL;
-      }
+      ASSERT(tls);
+      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, connecttimeoutms, error), (*error));
       proxy_stream = tls;
    }
 
@@ -6560,10 +6544,7 @@ _kms_connect_callback_via_proxy(
    mongoc_iovec_t iov;
    iov.iov_base = req;
    iov.iov_len = (size_t)req_len;
-   if (!_mongoc_stream_writev_full(proxy_stream, &iov, 1, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error)) {
-      mongoc_stream_destroy(proxy_stream);
-      return NULL;
-   }
+   ASSERT_OR_PRINT(_mongoc_stream_writev_full(proxy_stream, &iov, 1, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error), (*error));
 
    /* Read the response head until \r\n\r\n. */
    char resp[1024] = {0};
@@ -6571,27 +6552,13 @@ _kms_connect_callback_via_proxy(
    while (resp_len + 1 < sizeof(resp)) {
       ssize_t r =
          mongoc_stream_read(proxy_stream, resp + resp_len, 1, 1 /* min_bytes */, MONGOC_DEFAULT_SOCKETTIMEOUTMS);
-      if (r <= 0) {
-         bson_set_error(
-            error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "proxy closed connection during CONNECT");
-         mongoc_stream_destroy(proxy_stream);
-         return NULL;
-      }
+      ASSERT_CMPSSIZE_T(r, >, 0);
       resp_len += (size_t)r;
       if (resp_len >= 4 && 0 == memcmp(resp + resp_len - 4, "\r\n\r\n", 4)) {
          break;
       }
    }
-   if (0 != strncmp(resp, "HTTP/1.1 200", 12) && 0 != strncmp(resp, "HTTP/1.0 200", 12)) {
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_CONNECT,
-                     "proxy CONNECT failed: %.*s",
-                     (int)(resp_len > 64 ? 64 : resp_len),
-                     resp);
-      mongoc_stream_destroy(proxy_stream);
-      return NULL;
-   }
+   ASSERT_CONTAINS(resp, "HTTP/1.1 200");
    return proxy_stream;
 }
 
@@ -6709,10 +6676,7 @@ _kms_proxy_http(kms_proxy_transport_t transport,
    mongoc_ssl_opt_t ssl_opt = {0};
    if (ca_file) {
       ssl_opt.ca_file = ca_file;
-   } else {
-      ssl_opt.weak_cert_validation = true;
    }
-   ssl_opt.allow_invalid_hostname = true;
    bool use_tls = (transport == KMS_PROXY_TRANSPORT_TLS);
    return _mongoc_http_send(&req, mlib_expires_after(5000, ms), use_tls, use_tls ? &ssl_opt : NULL, res, error);
 }
