@@ -6607,50 +6607,6 @@ test_kms_connect_callback_wiring(void *unused)
    mongoc_client_destroy(cl);
 }
 
-/* Prose test 28, Case 4: an error from the kmsConnectCallback propagates.
- *
- * The callback immediately returns NULL with the message "Test Error".  Real
- * AWS credentials are not required because the callback fires before any
- * network connection is attempted. */
-static void
-test_kms_connect_callback_error(void *unused)
-{
-   BSON_UNUSED(unused);
-
-   struct kms_connect_data data = {0};
-   data.set_error = true;
-   data.error_msg = "Test Error";
-
-   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': 'foo', 'secretAccessKey': 'bar' } }");
-
-   mongoc_client_t *cl = test_framework_new_default_client();
-   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
-   mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
-   mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
-   mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
-   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_record_and_fail, &data);
-
-   bson_error_t error;
-   mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
-   ASSERT_OR_PRINT(enc, error);
-
-   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
-   mongoc_client_encryption_datakey_opts_set_masterkey(
-      dk_opts,
-      tmp_bson("{ 'region': 'us-east-1',"
-               "  'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
-
-   bson_value_t keyid;
-   bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
-   BSON_ASSERT(!ok);
-   ASSERT_CONTAINS(error.message, "Test Error");
-
-   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
-   mongoc_client_encryption_destroy(enc);
-   mongoc_client_encryption_opts_destroy(opts);
-   mongoc_client_destroy(cl);
-}
-
 /* Send a one-shot HTTP request to the proxy. Returns true and fills @res on
  * success; @res must later be cleaned up by the caller.
  * ca_file: path to CA PEM for TLS; if NULL uses weak cert validation. */
@@ -6970,6 +6926,50 @@ test_kms_connect_callback_via_proxy_pipeline(void *unused)
    mongoc_client_destroy(client);
    bson_free(aws_access_key_id);
    bson_free(aws_secret_access_key);
+}
+
+/* Prose test 28, Case 4: an error from the kmsConnectCallback propagates.
+ *
+ * The callback immediately returns NULL with the message "Test Error".  Real
+ * AWS credentials are not required because the callback fires before any
+ * network connection is attempted. */
+static void
+test_kms_connect_callback_error(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   struct kms_connect_data data = {0};
+   data.set_error = true;
+   data.error_msg = "Test Error";
+
+   bson_t *kms_providers = tmp_bson("{ 'aws': { 'accessKeyId': 'foo', 'secretAccessKey': 'bar' } }");
+
+   mongoc_client_t *cl = test_framework_new_default_client();
+   mongoc_client_encryption_opts_t *opts = mongoc_client_encryption_opts_new();
+   mongoc_client_encryption_opts_set_keyvault_client(opts, cl);
+   mongoc_client_encryption_opts_set_keyvault_namespace(opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_kms_providers(opts, kms_providers);
+   mongoc_client_encryption_opts_set_kms_connect_callback(opts, _kms_connect_callback_record_and_fail, &data);
+
+   bson_error_t error;
+   mongoc_client_encryption_t *enc = mongoc_client_encryption_new(opts, &error);
+   ASSERT_OR_PRINT(enc, error);
+
+   mongoc_client_encryption_datakey_opts_t *dk_opts = mongoc_client_encryption_datakey_opts_new();
+   mongoc_client_encryption_datakey_opts_set_masterkey(
+      dk_opts,
+      tmp_bson("{ 'region': 'us-east-1',"
+               "  'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0' }"));
+
+   bson_value_t keyid;
+   bool ok = mongoc_client_encryption_create_datakey(enc, "aws", dk_opts, &keyid, &error);
+   BSON_ASSERT(!ok);
+   ASSERT_CONTAINS(error.message, "Test Error");
+
+   mongoc_client_encryption_datakey_opts_destroy(dk_opts);
+   mongoc_client_encryption_destroy(enc);
+   mongoc_client_encryption_opts_destroy(opts);
+   mongoc_client_destroy(cl);
 }
 
 static void
@@ -8747,33 +8747,6 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/via_proxy/plain [lock:live-server]",
-                     test_kms_connect_callback_via_proxy_plain,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive,
-                     _have_aws_creds_env);
-
-   TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/via_proxy/tls [lock:live-server]",
-                     test_kms_connect_callback_via_proxy_tls,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive,
-                     _have_aws_creds_env);
-
-   TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/via_proxy/pipeline [lock:live-server]",
-                     test_kms_connect_callback_via_proxy_pipeline,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive,
-                     _have_aws_creds_env);
-
-   TestSuite_AddFull(suite,
                      "/client_side_encryption/kms/auto-aws/fail [lock:live-server]",
                      test_auto_aws_fail,
                      NULL,
@@ -8845,6 +8818,30 @@ test_client_side_encryption_install(TestSuite *suite)
                      test_framework_skip_if_no_client_side_encryption,
                      test_framework_skip_if_max_wire_version_less_than_17,
                      _skip_if_no_crypt_shared);
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/via_proxy/plain [lock:live-server]",
+                     test_kms_connect_callback_via_proxy_plain,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive);
+
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/via_proxy/tls [lock:live-server]",
+                     test_kms_connect_callback_via_proxy_tls,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive);
+
+   TestSuite_AddFull(suite,
+                     "/client_side_encryption/kms/connect_callback/via_proxy/pipeline [lock:live-server]",
+                     test_kms_connect_callback_via_proxy_pipeline,
+                     NULL, // dtor
+                     NULL, // ctx
+                     test_framework_skip_if_no_client_side_encryption,
+                     TestSuite_CheckLive);
+
 
    // Add test cases for prose test: 22. Range Explicit Encryption.
    {
