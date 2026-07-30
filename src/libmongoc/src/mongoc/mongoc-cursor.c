@@ -965,11 +965,6 @@ _mongoc_cursor_collection(const mongoc_cursor_t *cursor, const char **collection
    *collection = cursor->ns + (cursor->dblen + 1);
    /* Collection name's length is ns length, minus length of db name and ".". */
    *collection_len = cursor->nslen - cursor->dblen - 1;
-   if (*collection_len < 0) {
-      *collection = NULL;
-      return;
-   }
-
 
    BSON_ASSERT(*collection_len > 0);
 }
@@ -1414,6 +1409,14 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
          } else if (BSON_ITER_IS_KEY(&child, "ns")) {
             ns = bson_iter_utf8(&child, &nslen);
             _mongoc_set_cursor_ns(cursor, ns, nslen);
+            if (!strchr(cursor->ns, '.')) {
+               _mongoc_set_error(&cursor->error,
+                                  MONGOC_ERROR_CURSOR,
+                                  MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                                  "Invalid cursor namespace \"%s\": expected db.collection format",
+                                  cursor->ns);
+               return false;
+            }
          } else if (BSON_ITER_IS_KEY(&child, "firstBatch") || BSON_ITER_IS_KEY(&child, "nextBatch")) {
             if (BSON_ITER_HOLDS_ARRAY(&child) && bson_iter_recurse(&child, &response->batch_iter)) {
                in_batch = true;
