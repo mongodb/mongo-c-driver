@@ -15,6 +15,8 @@
  */
 
 
+#include <common-bits-private.h>
+#include <common-cmp-private.h>
 #include <mongoc/mongoc-array-private.h>
 
 
@@ -100,10 +102,13 @@ _mongoc_array_append_vals (mongoc_array_t *array, const void *data, uint32_t n_e
    BSON_ASSERT (array);
    BSON_ASSERT (data);
 
-   off = array->element_size * array->len;
-   len = (size_t) n_elements * array->element_size;
-   if ((off + len) > array->allocated) {
-      next_size = bson_next_power_of_two (off + len);
+   off = mcommon_assert_mul_size_t (array->element_size, array->len);
+   len = mcommon_assert_mul_size_t ((size_t) n_elements, array->element_size);
+
+   const size_t needed = mcommon_assert_add_size_t (off, len);
+
+   if (needed > array->allocated) {
+      next_size = mcommon_next_power_of_two_size_t (needed);
 
       if (array->element_alignment == 0) {
          array->data = bson_realloc (array->data, next_size);

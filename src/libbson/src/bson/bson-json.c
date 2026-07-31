@@ -28,6 +28,7 @@
 
 #include <common-b64-private.h>
 #include <jsonsl/jsonsl.h>
+#include <common-bits-private.h>
 #include <common-cmp-private.h>
 
 #ifdef _WIN32
@@ -465,7 +466,7 @@ _bson_json_buf_ensure (bson_json_buf_t *buf, /* IN */
    if (buf->n_bytes < len) {
       bson_free (buf->buf);
 
-      buf->n_bytes = bson_next_power_of_two (len);
+      buf->n_bytes = mcommon_next_power_of_two_size_t (len);
       buf->buf = bson_malloc (buf->n_bytes);
    }
 }
@@ -474,7 +475,9 @@ _bson_json_buf_ensure (bson_json_buf_t *buf, /* IN */
 static void
 _bson_json_buf_set (bson_json_buf_t *buf, const void *from, size_t len)
 {
-   _bson_json_buf_ensure (buf, len + 1);
+   const size_t len_with_null = mcommon_assert_add_size_t (len, 1u);
+
+   _bson_json_buf_ensure (buf, len_with_null);
    memcpy (buf->buf, from, len);
    buf->buf[len] = '\0';
    buf->len = len;
@@ -484,13 +487,17 @@ _bson_json_buf_set (bson_json_buf_t *buf, const void *from, size_t len)
 static void
 _bson_json_buf_append (bson_json_buf_t *buf, const void *from, size_t len)
 {
-   size_t len_with_null = len + 1;
+   const size_t len_with_null = mcommon_assert_add_size_t (len, 1u);
 
    if (buf->len == 0) {
       _bson_json_buf_ensure (buf, len_with_null);
-   } else if (buf->n_bytes < buf->len + len_with_null) {
-      buf->n_bytes = bson_next_power_of_two (buf->len + len_with_null);
-      buf->buf = bson_realloc (buf->buf, buf->n_bytes);
+   } else {
+      const size_t needed = mcommon_assert_add_size_t (buf->len, len_with_null);
+
+      if (buf->n_bytes < needed) {
+         buf->n_bytes = mcommon_next_power_of_two_size_t (needed);
+         buf->buf = bson_realloc (buf->buf, buf->n_bytes);
+      }
    }
 
    memcpy (buf->buf + buf->len, from, len);

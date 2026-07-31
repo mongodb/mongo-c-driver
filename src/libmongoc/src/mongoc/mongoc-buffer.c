@@ -15,6 +15,9 @@
  */
 
 
+#include <common-bits-private.h>
+#include <common-cmp-private.h>
+
 #include <bson/bson.h>
 #include <stdarg.h>
 
@@ -35,8 +38,10 @@
 static void
 make_space_for (mongoc_buffer_t *buffer, size_t data_size)
 {
-   if (buffer->len + data_size > buffer->datalen) {
-      buffer->datalen = bson_next_power_of_two (buffer->len + data_size);
+   const size_t needed = mcommon_assert_add_size_t (buffer->len, data_size);
+
+   if (needed > buffer->datalen) {
+      buffer->datalen = mcommon_next_power_of_two_size_t (needed);
       buffer->data = (uint8_t *) buffer->realloc_func (buffer->data, buffer->datalen, buffer->realloc_data);
    }
 }

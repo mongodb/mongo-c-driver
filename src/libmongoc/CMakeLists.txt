@@ -1037,6 +1037,7 @@ endif ()
 
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-bits.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-cmp.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c

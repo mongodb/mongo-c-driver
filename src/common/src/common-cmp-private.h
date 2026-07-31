@@ -168,6 +168,24 @@ MCOMMON_IN_RANGE_SET_UNSIGNED (size_t, SIZE_MAX)
 #define mcommon_in_range_unsigned(Type, value) BSON_CONCAT3 (mcommon_in_range, _##Type, _unsigned) (value)
 
 
+/* Checked size_t arithmetic. Ports the `mlib_assert_add` / `mlib_assert_mul`
+ * helpers used upstream, which are unavailable on this branch. Both assert
+ * rather than wrap, matching upstream behavior. */
+static BSON_INLINE size_t
+mcommon_assert_add_size_t (size_t a, size_t b)
+{
+   BSON_ASSERT (a <= SIZE_MAX - b);
+   return a + b;
+}
+
+static BSON_INLINE size_t
+mcommon_assert_mul_size_t (size_t a, size_t b)
+{
+   BSON_ASSERT (a == 0u || b <= SIZE_MAX / a);
+   return a * b;
+}
+
+
 BSON_END_DECLS
 
 
