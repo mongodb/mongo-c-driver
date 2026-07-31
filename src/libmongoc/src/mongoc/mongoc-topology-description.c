@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <common-bits-private.h>
 #include <common-oid-private.h>
 #include <mongoc/mongoc-array-private.h>
 #include <mongoc/mongoc-client-private.h>
@@ -146,7 +147,7 @@ _mongoc_topology_description_copy_to(const mongoc_topology_description_t *src, m
    dst->heartbeat_msec = src->heartbeat_msec;
    dst->rand_seed = src->rand_seed;
 
-   nitems = bson_next_power_of_two(mc_tpld_servers_const(src)->items_len);
+   nitems = mcommon_next_power_of_two_size_t(mc_tpld_servers_const(src)->items_len);
    dst->_servers_ = mongoc_set_new(nitems, _mongoc_topology_server_dtor, NULL);
    for (size_t i = 0u; i < mc_tpld_servers_const(src)->items_len; i++) {
       sd = mongoc_set_get_item_and_id_const(mc_tpld_servers_const(src), i, &id);
