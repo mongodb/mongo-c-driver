@@ -83,7 +83,7 @@ gcp_request_destroy(gcp_request *req);
 /**
  * @brief Destroy and zero-fill GCP service account token
  *
- * @param token The service account token to destory
+ * @param token The service account token to destroy
  */
 void
 gcp_access_token_destroy(gcp_service_account_token *token);
