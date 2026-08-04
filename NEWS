@@ -1,5 +1,5 @@
-libmongoc 2.4.0 [UNRELEASED]
-============================
+libmongoc 2.4.0
+===============
 
 ## Notes
 
@@ -16,6 +16,23 @@ libmongoc 2.4.0 [UNRELEASED]
 
 * The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix`, `suffix`, and `substring` query types.
   * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types remains experimental.
+* Snapshot sessions expose APIs to get and set snapshot times.
+* Support AWS STS regional endpoints.
+
+## Fixes
+
+* Fix handling of verbose results in `bulkWrite` replies.
+* Fix handling of SCRAM replies.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Connor MacDonald
+  * Adrian Dole
+  * bvalente
 
 libmongoc 2.3.3
 ===============
