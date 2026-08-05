@@ -456,6 +456,26 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
    mongoc_uri_destroy (uri);
 }
 
+// Return `minWaitForStreamingHelloMillis` from the server or 0 if unsupported.
+static int64_t
+min_wait_for_streaming_hello_ms (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   bson_t reply;
+   bson_iter_t iter;
+   int64_t value = 0;
+
+   if (mongoc_client_command_simple (
+          client, "admin", tmp_bson ("{'getParameter': 1, 'minWaitForStreamingHelloMillis': 1}"), NULL, &reply, NULL) &&
+       bson_iter_init_find (&iter, &reply, "minWaitForStreamingHelloMillis") && BSON_ITER_HOLDS_NUMBER (&iter)) {
+      value = bson_iter_as_int64 (&iter);
+   }
+
+   bson_destroy (&reply);
+   mongoc_client_destroy (client);
+   return value;
+}
+
 static void
 test_sdam_integration_cb (void *scenario_vp)
 {
@@ -473,6 +493,12 @@ test_sdam_integration_cb (void *scenario_vp)
       return;
    }
 
+   // TODO(CDRIVER-6415) remove this skip once SERVER-132246 is backported.
+   const int64_t streaming_hello_floor_ms = min_wait_for_streaming_hello_ms ();
+   const test_skip_t skips[] = {
+      {.description = "Driver extends timeout while streaming", .reason = "SERVER-132246"}, {0} // NULL terminated.
+   };
+
    ASSERT (bson_iter_init_find (&tests_iter, scenario, "tests"));
    ASSERT (bson_iter_recurse (&tests_iter, &tests_iter));
 
@@ -481,6 +507,11 @@ test_sdam_integration_cb (void *scenario_vp)
 
       ASSERT (BSON_ITER_HOLDS_DOCUMENT (&tests_iter));
       bson_iter_bson (&tests_iter, &test);
+
+      if (streaming_hello_floor_ms > 500 && test_should_be_skipped (skips, bson_lookup_utf8 (&test, "description"))) {
+         continue;
+      }
+
       run_one_integration_test (&config, &test);
    }
 }
