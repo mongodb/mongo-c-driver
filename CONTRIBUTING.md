@@ -11,6 +11,11 @@ Whenever in doubt, feel free to ask others that have contributed or look at the 
 
 The mongo-c-driver has a few guidelines that help direct the process.
 
+### AI Usage
+All changes must be reviewed by a human. We may reject PRs that appear
+AI generated, have little human involvement, or provide little value as
+these take developer time to review.
+
 
 ### Portability
 
