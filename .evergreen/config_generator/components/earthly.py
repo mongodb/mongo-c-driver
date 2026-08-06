@@ -50,7 +50,7 @@ SASLOption = Literal['Cyrus', 'off']
 TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
 # TODO: restore C++ driver tests after CXX-3503 to update for API renames.
-CxxVersion = Literal['none'] # Literal['master', 'r4.1.0', 'none']
+CxxVersion = Literal['none']  # Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
 SnappyOption = Literal['false', 'true']
 """Should we enable Snappy compression in this build?"""
@@ -86,6 +86,8 @@ def from_container_image(img: EnvImage) -> str:
 
     NOTE: This will be potentially unnecessary pending the completion of DEVPROD-21478
     """
+    if img.startswith('quay.io/'):
+        return f'{_ECR_HOST}/quay/{img.removeprefix("quay.io/")}'
     if '/' in img or img.startswith('+'):
         return img
     return f'{_ECR_HOST}/dockerhub/library/{img}'
@@ -230,7 +232,9 @@ def earthly_exec(
             *([f'--platform={platform}'] if platform else ()),
             f'+{target}',
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            f'--default_search_registry={_ECR_HOST}/dockerhub/library',
+            f'--default_docker_registry={_ECR_HOST}/dockerhub/library',
+            # Use Amazon ECR as pull-through cache for Quay to avoid spurious network failures.
+            f'--default_quay_registry={_ECR_HOST}/quay',
             *(f'--{arg}={val}' for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),

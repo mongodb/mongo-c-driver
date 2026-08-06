@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global soname       2
-%global up_version   2.3.1
+%global up_version   2.3.3
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -275,6 +275,15 @@ exit $ret
 
 
 %changelog
+* Thu Jul 16 2026 Fedora Release Engineering <releng@fedoraproject.org> - 2.3.3-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_45_Mass_Rebuild
+
+* Wed Jul 15 2026 Remi Collet <remi@remirepo.net> - 2.3.3-1
+- update to 2.3.3
+
+* Wed Jul  8 2026 Remi Collet <remi@remirepo.net> - 2.3.2-1
+- update to 2.3.2
+
 * Fri Jun 12 2026 Yaakov Selkowitz <yselkowi@redhat.com> - 2.3.1-2
 - Rebuilt for openssl 4.0
 

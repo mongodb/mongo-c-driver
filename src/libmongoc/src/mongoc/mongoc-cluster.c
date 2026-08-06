@@ -1107,7 +1107,7 @@ _stream_run_hello(mongoc_cluster_t *cluster,
 
    mongoc_server_stream_cleanup(server_stream);
    bson_destroy(&handshake_command);
-   if (!ret_handshake_sd || ret_handshake_sd->type == MONGOC_SERVER_UNKNOWN) {
+   if (reply && (!ret_handshake_sd || ret_handshake_sd->type == MONGOC_SERVER_UNKNOWN)) {
       // Move hello_reply on error, which may include errorLabels.
       bson_steal(reply, &hello_reply);
    } else {

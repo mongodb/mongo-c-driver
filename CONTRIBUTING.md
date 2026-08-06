@@ -11,6 +11,11 @@ Whenever in doubt, feel free to ask others that have contributed or look at the 
 
 The mongo-c-driver has a few guidelines that help direct the process.
 
+### AI Usage
+All changes must be reviewed by a human. We may reject PRs that appear
+AI generated, have little human involvement, or provide little value as
+these take developer time to review.
+
 
 ### Portability
 
@@ -148,7 +153,7 @@ Set the user and password environment variables, then build and run the tests:
 ```
 $ export MONGOC_TEST_USER=bob
 $ export MONGOC_TEST_PASSWORD=pwd123
-$ ./test-libmongoc
+$ ./cmake-build/src/libmongoc/test-libmongoc
 ```
 
 Additional environment variables:
@@ -337,13 +342,12 @@ Though Evergreen logs are private, avoid logging any sensitive data. This is int
 
 #### Configuring the test runner
 
-The test runner can be configured with command-line options. Run `test-libmongoc
---help` for details.
+The test runner can be configured with command-line options. Run `test-libmongoc --help` for details. Agents should refer to the `running-test-libmongoc` skill under `.agents/skills` for more details on how to build, run, filter, and debug tests.
 
 To run just a specific portion of the test suite use the -l option like so:
 
 ```
-$ ./test-libmongoc -l "/server_selection/*"
+$ ./cmake-build/src/libmongoc/test-libmongoc -l "/server_selection/*"
 ```
 
 The full list of tests is shown in the help.

@@ -2514,6 +2514,119 @@ test_killCursors_failure_logs(void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_killCursors_fails_hello(bool pooled)
+{
+   mock_server_t *server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+
+   if (pooled) {
+      pool = mongoc_client_pool_new(mock_server_get_uri(server));
+      client = mongoc_client_pool_pop(pool);
+   } else {
+      client = mongoc_client_new_from_uri(mock_server_get_uri(server));
+   }
+
+   const bson_t *hello_reply = tmp_bson("{'ok': 1.0,"
+                                        " 'isWritablePrimary': true,"
+                                        " 'minWireVersion': %d,"
+                                        " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_MIN,
+                                        WIRE_VERSION_MAX);
+
+   // Expect connection for monitoring:
+   if (pooled) {
+      request_t *request = mock_server_receives_any_hello(server);
+      reply_to_op_msg_request(request, MONGOC_MSG_NONE, hello_reply);
+      request_destroy(request);
+   }
+
+   mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
+   bson_t *empty = tmp_bson("{}");
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, empty, empty, NULL);
+
+   // First iteration connects and gets cursor ID:
+   {
+      const bson_t *doc;
+      future_t *future = future_cursor_next(cursor, &doc);
+
+      // Establish connection:
+      {
+         request_t *request = mock_server_receives_any_hello(server);
+         reply_to_op_msg_request(request, MONGOC_MSG_NONE, hello_reply);
+         request_destroy(request);
+      }
+
+      // Send 'find' and get cursor ID:
+      {
+         request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll'}"));
+         reply_to_op_msg_request(request,
+                                 MONGOC_MSG_NONE,
+                                 tmp_bson("{'ok': 1,"
+                                          " 'cursor': {"
+                                          "    'id': {'$numberLong': '1234'},"
+                                          "    'ns': 'db.coll',"
+                                          "    'firstBatch': [{}]}}"));
+         request_destroy(request);
+      }
+
+      ASSERT(future_get_bool(future));
+      ASSERT(bson_empty(doc));
+      future_destroy(future);
+   }
+
+   // Send 'getMore' and disconnect:
+   {
+      const bson_t *doc;
+      future_t *future = future_cursor_next(cursor, &doc);
+
+      request_t *request =
+         mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'getMore': {'$numberLong': '1234'}}"));
+      reply_to_request_with_hang_up(request);
+      request_destroy(request);
+
+      ASSERT(!future_get_bool(future));
+      future_destroy(future);
+   }
+
+   // Send 'killCursors' and fail to connect:
+   {
+      future_t *future = future_cursor_destroy(cursor);
+      request_t *request = mock_server_receives_any_hello(server);
+      // The failed 'hello' tests the bug of CDRIVER-6354:
+      reply_to_request_with_hang_up(request);
+      request_destroy(request);
+      ASSERT(future_wait(future));
+      future_destroy(future);
+   }
+
+
+   mongoc_collection_destroy(collection);
+   if (pooled) {
+      mongoc_client_pool_push(pool, client);
+      mongoc_client_pool_destroy(pool);
+   } else {
+      mongoc_client_destroy(client);
+   }
+   mock_server_destroy(server);
+}
+
+static void
+test_killCursors_fails_hello_pooled(void)
+{
+   test_killCursors_fails_hello(true);
+}
+
+static void
+test_killCursors_fails_hello_single(void)
+{
+   test_killCursors_fails_hello(false);
+}
+
+
 void
 test_cursor_install(TestSuite *suite)
 {
@@ -2573,4 +2686,6 @@ test_cursor_install(TestSuite *suite)
                      TestSuite_CheckLive,
                      skip_if_high_server_runtime_variance);
    TestSuite_AddLive(suite, "/Cursor/killCursors_failure_logs", test_killCursors_failure_logs);
+   TestSuite_AddMockServerTest(suite, "/Cursor/killCursors_fails_hello/single", test_killCursors_fails_hello_single);
+   TestSuite_AddMockServerTest(suite, "/Cursor/killCursors_fails_hello/pooled", test_killCursors_fails_hello_pooled);
 }
