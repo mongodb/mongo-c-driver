@@ -310,7 +310,7 @@ mcd_rpc_op_msg_section_set_kind(mcd_rpc_message *rpc, size_t index, uint8_t kind
 // Set the length of the OP_MSG document sequence section at the given index.
 //
 // Note: the section length of an OP_MSG body section is equal to the length
-// of the single BSON object, thus does not require a seperate setter.
+// of the single BSON object, thus does not require a separate setter.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_MSG.
 // The given index MUST be a valid index into the OP_MSG sections array.
@@ -330,7 +330,7 @@ mcd_rpc_op_msg_section_set_identifier(mcd_rpc_message *rpc, size_t index, const 
 // Set the BSON object for the OP_MSG body section at the given index.
 //
 // Note: the section length of an OP_MSG body section is equal to the length
-// of the single BSON object, thus does not require a seperate setter.
+// of the single BSON object, thus does not require a separate setter.
 //
 // The msgHeader.opCode field MUST equal MONGOC_OP_CODE_MSG.
 // The given index MUST be a valid index into the OP_MSG sections array.
