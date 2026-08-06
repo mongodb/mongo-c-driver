@@ -378,7 +378,7 @@ test_disconnect_mid_batch(void)
    coll = mongoc_client_get_collection(client, "db", "coll");
 
    future = future_collection_insert_many(coll, (const bson_t **)docs, n_docs, NULL, NULL, &error);
-   /* Mock server recieves first insert. */
+   /* Mock server receives first insert. */
    request = mock_server_receives_request(server);
    BSON_ASSERT(request);
    reply_to_request_with_hang_up(request);
