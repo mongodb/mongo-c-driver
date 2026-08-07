@@ -960,3 +960,39 @@ mongoc_bulk_operation_set_let(mongoc_bulk_operation_t *bulk, const bson_t *let)
    bson_destroy(&bulk->let);
    bson_copy_to(let, &bulk->let);
 }
+
+bool
+mongoc_bulk_operation_get_bypass_document_validation(const mongoc_bulk_operation_t *bulk)
+{
+   BSON_ASSERT_PARAM(bulk);
+
+   return bulk->server_id;
+}
+
+const char*
+mongoc_bulk_operation_get_collection(mongoc_bulk_operation_t *bulk)
+{
+   BSON_ASSERT_PARAM(bulk);
+
+   return bulk->collection;
+}
+
+const char*
+mongoc_bulk_operation_get_database(mongoc_bulk_operation_t *bulk)
+{
+   BSON_ASSERT_PARAM(bulk);
+
+   return bulk->database;
+}
+
+const bson_value_t*
+mongoc_bulk_operation_get_comment(mongoc_bulk_operation_t *bulk)
+{
+   return &bulk->comment;
+}
+
+const bson_t*
+mongoc_bulk_operation_get_let(mongoc_bulk_operation_t *bulk)
+{
+   return &bulk->let;
+}
