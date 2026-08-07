@@ -154,19 +154,19 @@ mongoc_bulk_operation_get_server_id(const mongoc_bulk_operation_t *bulk);
 MONGOC_EXPORT(const mongoc_write_concern_t *)
 mongoc_bulk_operation_get_write_concern(const mongoc_bulk_operation_t *bulk);
 
-bool
+MONGOC_EXPORT(bool)
 mongoc_bulk_operation_get_bypass_document_validation(const mongoc_bulk_operation_t *bulk);
 
-const char*
+MONGOC_EXPORT(const char*)
 mongoc_bulk_operation_get_collection(mongoc_bulk_operation_t *bulk);
 
-const char*
+MONGOC_EXPORT(const char*)
 mongoc_bulk_operation_get_database(mongoc_bulk_operation_t *bulk);
 
-const bson_value_t*
+MONGOC_EXPORT(const bson_value_t*)
 mongoc_bulk_operation_get_comment(mongoc_bulk_operation_t *bulk);
 
-const bson_t*
+MONGOC_EXPORT(const bson_t*)
 mongoc_bulk_operation_get_let(mongoc_bulk_operation_t *bulk);
 
 BSON_END_DECLS
