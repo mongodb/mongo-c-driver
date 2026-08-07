@@ -45,6 +45,20 @@ Returns
 A connected :symbol:`mongoc_stream_t` on success, or ``NULL`` on failure
 (``error`` must be set).
 
+Example
+-------
+
+The following implementation of :symbol:`mongoc_kms_connect_callback_fn_t` opens a connection to an HTTP
+``CONNECT`` proxy, then performs the ``CONNECT`` handshake to establish a tunnel to the KMS endpoint:
+
+.. literalinclude:: ../examples/client-side-encryption-kms-http-proxy.c
+   :caption: Excerpt from examples/client-side-encryption-kms-http-proxy.c
+   :start-after: BEGIN:mongoc_kms_connect_callback_fn_t
+   :end-before: END:mongoc_kms_connect_callback_fn_t
+
+See the full example, which registers this callback on a :symbol:`mongoc_client_encryption_opts_t`, in
+``examples/client-side-encryption-kms-http-proxy.c``.
+
 .. seealso::
 
   - :symbol:`mongoc_kms_connect_callback_t`

@@ -1323,6 +1323,7 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
       mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c)
       mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c)
       mongoc_add_example (client-side-encryption-doc-snippets ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
+      mongoc_add_example (client-side-encryption-kms-http-proxy ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-kms-http-proxy.c)
    endif ()
 
    # examples/tutorial

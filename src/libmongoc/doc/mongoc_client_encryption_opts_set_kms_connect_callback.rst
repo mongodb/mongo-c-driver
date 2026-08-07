@@ -34,6 +34,22 @@ Parameters
   clear a previously set callback.  Refer to:
   :doc:`mongoc_kms_connect_callback_t`.
 
+Example: Routing KMS Traffic Through an HTTP CONNECT Proxy
+------------------------------------------------------------
+
+Registers a :symbol:`mongoc_kms_connect_callback_t` on a :symbol:`mongoc_client_encryption_opts_t` so that all KMS
+requests made by the resulting :symbol:`mongoc_client_encryption_t` are tunnelled through an HTTP ``CONNECT``
+proxy:
+
+.. literalinclude:: ../examples/client-side-encryption-kms-http-proxy.c
+   :caption: Excerpt from examples/client-side-encryption-kms-http-proxy.c
+   :start-after: BEGIN:mongoc_client_encryption_opts_set_kms_connect_callback
+   :end-before: END:mongoc_client_encryption_opts_set_kms_connect_callback
+   :dedent: 3
+
+See the full example, including the implementation of ``kms_connect_via_http_proxy`` that performs the
+``CONNECT`` handshake, in ``examples/client-side-encryption-kms-http-proxy.c``.
+
 .. seealso::
 
   - :doc:`mongoc_auto_encryption_opts_set_kms_connect_callback`
