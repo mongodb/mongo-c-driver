@@ -966,7 +966,7 @@ mongoc_bulk_operation_get_bypass_document_validation(const mongoc_bulk_operation
 {
    BSON_ASSERT_PARAM(bulk);
 
-   return bulk->bypass_document_validation;
+   return bulk->flags.bypass_document_validation;
 }
 
 const char*
