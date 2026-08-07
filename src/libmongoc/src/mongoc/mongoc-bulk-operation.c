@@ -966,7 +966,7 @@ mongoc_bulk_operation_get_bypass_document_validation(const mongoc_bulk_operation
 {
    BSON_ASSERT_PARAM(bulk);
 
-   return bulk->server_id;
+   return bulk->bypass_document_validation;
 }
 
 const char*
@@ -988,11 +988,15 @@ mongoc_bulk_operation_get_database(mongoc_bulk_operation_t *bulk)
 const bson_value_t*
 mongoc_bulk_operation_get_comment(mongoc_bulk_operation_t *bulk)
 {
+   BSON_ASSERT_PARAM(bulk);
+
    return &bulk->comment;
 }
 
 const bson_t*
 mongoc_bulk_operation_get_let(mongoc_bulk_operation_t *bulk)
 {
+   BSON_ASSERT_PARAM(bulk);
+
    return &bulk->let;
 }
