@@ -8887,22 +8887,6 @@ test_client_side_encryption_install(TestSuite *suite)
                      TestSuite_CheckLive);
 
    TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/wiring [lock:live-server]",
-                     test_kms_connect_callback_wiring,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive);
-
-   TestSuite_AddFull(suite,
-                     "/client_side_encryption/kms/connect_callback/error [lock:live-server]",
-                     test_kms_connect_callback_error,
-                     NULL, // dtor
-                     NULL, // ctx
-                     test_framework_skip_if_no_client_side_encryption,
-                     TestSuite_CheckLive);
-
-   TestSuite_AddFull(suite,
                      "/client_side_encryption/kms/auto-aws/fail [lock:live-server]",
                      test_auto_aws_fail,
                      NULL,
@@ -9084,6 +9068,22 @@ test_client_side_encryption_install(TestSuite *suite)
          test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ for "substringPreview" */
          test_framework_skip_if_single,                        /* QE not supported on standalone */
          test_framework_skip_if_no_client_side_encryption);
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/kms/connect_callback/wiring [lock:live-server]",
+                        test_kms_connect_callback_wiring,
+                        NULL, // dtor
+                        NULL, // ctx
+                        test_framework_skip_if_no_client_side_encryption,
+                        TestSuite_CheckLive);
+
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/kms/connect_callback/error [lock:live-server]",
+                        test_kms_connect_callback_error,
+                        NULL, // dtor
+                        NULL, // ctx
+                        test_framework_skip_if_no_client_side_encryption,
+                        TestSuite_CheckLive);
+
       TestSuite_AddFull(suite,
                         "/client_side_encryption/kms/connect_callback/via_proxy/plain [lock:live-server]",
                         test_kms_connect_callback_via_proxy_plain,
