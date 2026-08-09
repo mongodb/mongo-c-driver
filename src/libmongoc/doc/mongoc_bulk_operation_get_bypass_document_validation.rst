@@ -22,6 +22,11 @@ Description
 
 Whether to bypass document validation for all operations part of this :doc:`bulk <mongoc_bulk_operation_t>`.
 
+Returns
+-------
+
+A C string that should not be modified or freed.
+
 .. seealso::
 
   | `Bulk Operation Bypassing Document Validation <bulk_operation_bypassing_document_validation_>`_
