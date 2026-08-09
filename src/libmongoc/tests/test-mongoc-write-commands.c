@@ -189,6 +189,7 @@ test_bypass_validation(void *context)
    /* {{{ bypass_document_validation=false Fails validation */
    bulk = mongoc_collection_create_bulk_operation_with_opts(collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation(bulk, false);
+   BSON_ASSERT(mongoc_bulk_operation_get_bypass_document_validation(bulk) == false);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson("{'number': 3, 'high': %d }", i);
 
@@ -205,6 +206,8 @@ test_bypass_validation(void *context)
    /* {{{ bypass_document_validation=true ignores validation */
    bulk = mongoc_collection_create_bulk_operation_with_opts(collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation(bulk, true);
+   BSON_ASSERT(mongoc_bulk_operation_get_bypass_document_validation(bulk));
+   
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson("{'number': 3, 'high': %d }", i);
 
@@ -222,6 +225,8 @@ test_bypass_validation(void *context)
    mongoc_write_concern_set_w(wr, 0);
    mongoc_bulk_operation_set_write_concern(bulk, wr);
    mongoc_bulk_operation_set_bypass_document_validation(bulk, true);
+   BSON_ASSERT(mongoc_bulk_operation_get_bypass_document_validation(bulk));
+
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson("{'number': 3, 'high': %d }", i);
 
@@ -292,6 +297,7 @@ test_bypass_not_sent(void)
 
    /* we explicitly set this to false to test that it isn't sent */
    mongoc_bulk_operation_set_bypass_document_validation(bulk, false);
+   BSON_ASSERT(mongoc_bulk_operation_get_bypass_document_validation(bulk) == false);
 
    /* insert a doc */
    doc = BCON_NEW("x", BCON_INT32(31));
