@@ -207,7 +207,7 @@ test_bypass_validation(void *context)
    bulk = mongoc_collection_create_bulk_operation_with_opts(collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation(bulk, true);
    BSON_ASSERT(mongoc_bulk_operation_get_bypass_document_validation(bulk));
-   
+
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson("{'number': 3, 'high': %d }", i);
 

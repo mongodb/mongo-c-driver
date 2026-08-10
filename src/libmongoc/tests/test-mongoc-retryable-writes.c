@@ -1370,7 +1370,7 @@ retryable_writes_prose_test_6_case_2(void *ctx)
    }));
 
    // Step 3: Via the command monitoring CommandFailedEvent, configure a fail point with error code `10107`
-    // (NotWritablePrimary) and a NoWritesPerformed label. Configure the `10107` fail point command only if the
+   // (NotWritablePrimary) and a NoWritesPerformed label. Configure the `10107` fail point command only if the
    // failed event is for the `91` error configured in step 2.
    prose_test_6_case_1_to_3_apm_ctx_t apm_ctx = {
       .first_fail_point_error_code = 91u,
