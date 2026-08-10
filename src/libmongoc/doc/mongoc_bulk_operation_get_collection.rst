@@ -1,7 +1,7 @@
 :man_page: mongoc_bulk_operation_get_collection
 
 mongoc_bulk_operation_get_collection()
-===================================
+======================================
 
 Synopsis
 --------

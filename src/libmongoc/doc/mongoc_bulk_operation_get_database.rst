@@ -1,7 +1,7 @@
 :man_page: mongoc_bulk_operation_get_database
 
 mongoc_bulk_operation_get_database()
-===================================
+====================================
 
 Synopsis
 --------
