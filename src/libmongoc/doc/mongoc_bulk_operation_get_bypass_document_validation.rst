@@ -25,7 +25,7 @@ Whether to bypass document validation for all operations part of this :doc:`bulk
 Returns
 -------
 
-A C string that should not be modified or freed.
+A boolean.
 
 .. seealso::
 
