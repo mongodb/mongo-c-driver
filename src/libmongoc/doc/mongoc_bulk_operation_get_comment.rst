@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const bson_value_t*
-  mongoc_bulk_operation_get_comment (mongoc_bulk_operation_t *bulk);
+  mongoc_bulk_operation_get_comment (const mongoc_bulk_operation_t *bulk);
 
 Parameters
 ----------

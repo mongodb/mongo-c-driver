@@ -158,16 +158,16 @@ MONGOC_EXPORT(bool)
 mongoc_bulk_operation_get_bypass_document_validation(const mongoc_bulk_operation_t *bulk);
 
 MONGOC_EXPORT(const char *)
-mongoc_bulk_operation_get_collection(mongoc_bulk_operation_t *bulk);
+mongoc_bulk_operation_get_collection(const mongoc_bulk_operation_t *bulk);
 
 MONGOC_EXPORT(const char *)
-mongoc_bulk_operation_get_database(mongoc_bulk_operation_t *bulk);
+mongoc_bulk_operation_get_database(const mongoc_bulk_operation_t *bulk);
 
 MONGOC_EXPORT(const bson_value_t *)
-mongoc_bulk_operation_get_comment(mongoc_bulk_operation_t *bulk);
+mongoc_bulk_operation_get_comment(const mongoc_bulk_operation_t *bulk);
 
 MONGOC_EXPORT(const bson_t *)
-mongoc_bulk_operation_get_let(mongoc_bulk_operation_t *bulk);
+mongoc_bulk_operation_get_let(const mongoc_bulk_operation_t *bulk);
 
 BSON_END_DECLS
 

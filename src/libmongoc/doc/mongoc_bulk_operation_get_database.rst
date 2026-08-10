@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const char*
-  mongoc_bulk_operation_get_database (mongoc_bulk_operation_t *bulk);
+  mongoc_bulk_operation_get_database (const mongoc_bulk_operation_t *bulk);
 
 Parameters
 ----------

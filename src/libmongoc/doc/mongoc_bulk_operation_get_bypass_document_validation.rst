@@ -10,7 +10,7 @@ Synopsis
 
   bool
   mongoc_bulk_operation_get_bypass_document_validation (
-     mongoc_bulk_operation_t *bulk);
+     const mongoc_bulk_operation_t *bulk);
 
 Parameters
 ----------
