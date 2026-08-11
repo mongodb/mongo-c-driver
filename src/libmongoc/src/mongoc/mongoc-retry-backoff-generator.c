@@ -94,8 +94,8 @@ _mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator
 
    const mongoc_retry_backoff_params_t *const params = &generator->params;
 
-   // `pow` may overflow to INFINITY, so clamp to `backoff_max` before converting to a duration: casting an
-   // out-of-range double to an integer type is undefined behavior.
+   // May overflow to INFINITY, so clamp to `backoff_max` before converting to a duration: casting an out-of-range
+   // double to an integer type is undefined behavior.
    const double backoff_us =
       fmin((double)mlib_microseconds_count(params->backoff_max),
            (double)mlib_microseconds_count(backoff_base) * pow(params->growth_factor, (double)generator->attempt));
