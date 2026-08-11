@@ -1383,8 +1383,8 @@ test_mongoc_handshake_includes_backpressure_version(void)
    ASSERT(bson_iter_init_find(&iter, request_doc, HANDSHAKE_BACKPRESSURE_FIELD));
    // The value MUST be the string "2", not a literal number 2.
    ASSERT_WITH_MSG(BSON_ITER_HOLDS_UTF8(&iter),
-                   "expected \"" HANDSHAKE_BACKPRESSURE_FIELD "\" to hold a UTF-8 string, got type %d",
-                   (int)bson_iter_type(&iter));
+                   "expected \"" HANDSHAKE_BACKPRESSURE_FIELD "\" to hold a UTF-8 string, got type %s",
+                   _mongoc_bson_type_to_str(bson_iter_type(&iter)));
    uint32_t len;
    const char *const value = bson_iter_utf8(&iter, &len);
    ASSERT_CMPUINT32(len, ==, 1u);
