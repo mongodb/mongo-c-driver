@@ -770,16 +770,7 @@ test_backpressure_prose_5(void *ctx)
    BSON_UNUSED(ctx);
 
    // Step 1: Let `client` be a `mongoc_client_t`.
-   mongoc_client_t *client = NULL;
-   {
-      mongoc_uri_t *const uri = test_framework_get_uri();
-      mongoc_uri_set_option_as_bool(uri, MONGOC_URI_RETRYWRITES, true);
-
-      client = test_framework_client_new_from_uri(uri, NULL);
-
-      mongoc_uri_destroy(uri);
-   }
-   test_framework_set_ssl_opts(client);
+   mongoc_client_t *const client = test_framework_new_default_client();
 
    base_backoff_ms_observer_ctx_t apm_ctx = {0};
 
