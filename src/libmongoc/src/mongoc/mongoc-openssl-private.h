@@ -28,6 +28,7 @@
 #include <mongoc/mongoc-stream-tls-openssl-private.h>
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_OCSP) && !defined(LIBRESSL_VERSION_NUMBER)
+#include <openssl/ocsp.h>
 #define MONGOC_ENABLE_OCSP_OPENSSL
 #endif
 
@@ -46,6 +47,9 @@ _mongoc_openssl_cleanup (void);
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 int
 _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts);
+
+OCSP_RESPONSE *
+_mongoc_contact_ocsp_responder (OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts, int *ocsp_uri_count);
 #endif
 
 bool

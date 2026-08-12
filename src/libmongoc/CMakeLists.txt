@@ -1190,6 +1190,7 @@ if (MONGOC_ENABLE_SSL)
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp-cache.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp.c
    )
 endif ()
 
