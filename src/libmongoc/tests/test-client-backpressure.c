@@ -1087,13 +1087,13 @@ test_backpressure_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
 
-   TestSuite_AddFull(
-      suite,
-      "/backpressure/prose_test_5",
-      test_backpressure_prose_5,
-      NULL,
-      NULL,
-      test_framework_skip_if_max_wire_version_less_than_29 /* Require server 9.0+ for `baseBackoffMS` */);
+   TestSuite_AddFull(suite,
+                     "/backpressure/prose_test_5",
+                     test_backpressure_prose_5,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_29 /* Require server 9.0+ for `baseBackoffMS` */,
+                     test_framework_skip_if_no_crypto /* Require SSL for retryable writes */);
 
    TestSuite_AddFull(suite,
                      "/backpressure/max_adaptive_retries_zero",
