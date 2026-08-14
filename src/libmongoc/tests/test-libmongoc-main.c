@@ -119,6 +119,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_uri_install);
    TEST_INSTALL(test_usleep_install);
    TEST_INSTALL(test_util_install);
+   TEST_INSTALL(test_ns_validation_install);
    TEST_INSTALL(test_version_install);
    TEST_INSTALL(test_with_transaction_install);
    TEST_INSTALL(test_write_concern_install);

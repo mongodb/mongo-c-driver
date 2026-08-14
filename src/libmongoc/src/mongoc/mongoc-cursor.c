@@ -179,6 +179,21 @@ _mongoc_set_cursor_ns(mongoc_cursor_t *cursor, const char *ns, uint32_t nslen)
 }
 
 
+bool
+_mongoc_cursor_check_db_name(mongoc_cursor_t *cursor, const char *db)
+{
+   BSON_ASSERT_PARAM(cursor);
+   BSON_ASSERT_PARAM(db);
+
+   // Preserve an error already recorded by cursor construction.
+   if (CURSOR_FAILED(cursor)) {
+      return false;
+   }
+
+   return _mongoc_validate_db_name(db, -1, &cursor->error);
+}
+
+
 /* return first key beginning with $, or NULL. precondition: bson is valid. */
 static const char *
 _first_dollar_field(const bson_t *bson)

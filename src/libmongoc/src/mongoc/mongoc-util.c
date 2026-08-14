@@ -46,6 +46,7 @@
 #include <windows.h>
 #endif
 
+#include <limits.h>
 #include <string.h>
 
 /**
@@ -427,6 +428,81 @@ _mongoc_validate_update(const bson_t *update, bson_validate_flags_t vflags, bson
 
          return false;
       }
+   }
+
+   return true;
+}
+
+
+// _validate_name checks a database or collection name argument for characters the driver's own encoding cannot
+// faithfully forward to the server. See `_mongoc_validate_db_name` and `_mongoc_validate_collection_name`.
+static bool
+_validate_name(const char *name, int64_t name_len, bool is_db, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(name);
+   BSON_OPTIONAL_PARAM(error);
+
+   size_t len = 0;
+   if (name_len < 0) {
+      len = strlen(name);
+   } else if (mlib_in_range(size_t, name_len)) {
+      len = (size_t)name_len;
+   } else {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_NAMESPACE,
+                        MONGOC_ERROR_NAMESPACE_INVALID,
+                        "%s name invalid: too large",
+                        is_db ? "database" : "collection");
+      return false;
+   }
+
+   if (memchr(name, '\0', len)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_NAMESPACE,
+                        MONGOC_ERROR_NAMESPACE_INVALID,
+                        "%s name invalid: contains a NUL byte",
+                        is_db ? "database" : "collection");
+      return false;
+   }
+
+   if (is_db && memchr(name, '.', len)) {
+      const int print_len = mlib_in_range(int, len) ? (int)len : INT_MAX;
+
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_NAMESPACE,
+                        MONGOC_ERROR_NAMESPACE_INVALID,
+                        "database name \"%.*s\" invalid: contains \".\"",
+                        print_len,
+                        name);
+      return false;
+   }
+
+   return true;
+}
+
+
+bool
+_mongoc_validate_db_name(const char *db, int64_t db_len, bson_error_t *error)
+{
+   return _validate_name(db, db_len, true /* is_db */, error);
+}
+
+
+bool
+_mongoc_validate_collection_name(const char *collection, int64_t collection_len, bson_error_t *error)
+{
+   return _validate_name(collection, collection_len, false /* is_db */, error);
+}
+
+
+bool
+_mongoc_validate_db_name_or_log(const char *db)
+{
+   bson_error_t error;
+
+   if (!_mongoc_validate_db_name(db, -1, &error)) {
+      MONGOC_ERROR("%s", error.message);
+      return false;
    }
 
    return true;

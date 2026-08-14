@@ -1535,6 +1535,15 @@ mongoc_uri_finalize_auth(mongoc_uri_t *uri, bson_error_t *error)
       return false;
    }
 
+   // Validate `authSource`:
+   {
+      bson_error_t validate_error;
+      if (source && !_mongoc_validate_db_name(source, -1, &validate_error)) {
+         MONGOC_URI_ERROR(error, "%s", validate_error.message);
+         return false;
+      }
+   }
+
    // Copy `mechanism` to avoid invalidation by updates to `uri->credentials`.
    char *const mechanism = bson_strdup(mongoc_uri_get_auth_mechanism(uri));
 
@@ -2448,6 +2457,12 @@ mongoc_uri_set_database(mongoc_uri_t *uri, const char *database)
       return false;
    }
 
+   // Match the validation applied to a database name parsed from the URI path. `_parse_path` rejects a larger set of
+   // characters; a "." is rejected here because it would silently retarget the namespace.
+   if (!_mongoc_validate_db_name_or_log(database)) {
+      return false;
+   }
+
    if (uri->database) {
       bson_free(uri->database);
    }
@@ -2520,6 +2535,11 @@ mongoc_uri_set_auth_source(mongoc_uri_t *uri, const char *value)
    len = strlen(value);
 
    if (!bson_utf8_validate(value, len, false)) {
+      return false;
+   }
+
+   // `authSource` is a database name. See `mongoc_uri_finalize_auth`.
+   if (!_mongoc_validate_db_name_or_log(value)) {
       return false;
    }
 
