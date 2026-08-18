@@ -10,8 +10,6 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global soname       2
-%global up_version   2.3.3
-#global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
 
@@ -29,13 +27,13 @@
 
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
-Version:   %{up_version}%{?up_prever:~%{up_prever}}
-Release:   2%{?dist}
+Version:   2.4.0
+Release:   1%{?dist}
 # See THIRD_PARTY_NOTICES
 License:   Apache-2.0 AND ISC AND MIT AND Zlib
 URL:       https://github.com/%{gh_owner}/%{gh_project}
 
-Source0:   https://github.com/%{gh_owner}/%{gh_project}/archive/refs/tags/%{up_version}%{?up_prever:-%{up_prever}}.tar.gz
+Source0:   https://github.com/%{gh_owner}/%{gh_project}/archive/refs/tags/%{version}.tar.gz
 
 BuildRequires: cmake >= 3.15
 BuildRequires: gcc
@@ -56,8 +54,7 @@ BuildRequires: openssl
 %endif
 %if %{with libmongocrypt}
 # grep VERSION_LESS src/*/CMakeLists.txt
-# use 1.17 to ensure libbson2 is used
-BuildRequires: cmake(mongocrypt) >= 1.17
+BuildRequires: cmake(mongocrypt) >= 1.20
 %endif
 BuildRequires: perl-interpreter
 # From man pages
@@ -138,12 +135,12 @@ Documentation: http://mongoc.org/libbson/%{version}/
 
 
 %prep
-%setup -q -n %{gh_project}-%{up_version}%{?up_prever:-%{up_prever}}
+%setup -q -n %{gh_project}-%{version}
 
 
 %build
 %cmake \
-    -DBUILD_VERSION=%{up_version}%{?up_prever:-%{up_prever}} \
+    -DBUILD_VERSION=%{version} \
     -DENABLE_MONGOC:BOOL=ON \
     -DENABLE_SHM_COUNTERS:BOOL=ON \
     -DENABLE_SSL:STRING=OPENSSL \
@@ -275,6 +272,9 @@ exit $ret
 
 
 %changelog
+* Wed Aug  5 2026 Remi Collet <remi@remirepo.net> - 2.4.0-1
+- update to 2.4.0
+
 * Thu Jul 16 2026 Fedora Release Engineering <releng@fedoraproject.org> - 2.3.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_45_Mass_Rebuild
 
