@@ -1308,6 +1308,21 @@ mongoc_client_start_session(mongoc_client_t *client, const mongoc_session_opt_t 
       _mongoc_client_push_server_session(client, ss);
       RETURN(NULL);
    }
+
+   /* snapshotTime may only be set if snapshot is also enabled. */
+   {
+      uint32_t snapshot_time_t, snapshot_time_i;
+      if (opts && !mongoc_session_opts_get_snapshot(opts) &&
+          mongoc_session_opts_get_snapshot_time(opts, &snapshot_time_t, &snapshot_time_i)) {
+         _mongoc_set_error(error,
+                           MONGOC_ERROR_CLIENT,
+                           MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                           "Cannot set snapshotTime unless snapshot is enabled.");
+         _mongoc_client_push_server_session(client, ss);
+         RETURN(NULL);
+      }
+   }
+
    cs = _mongoc_client_session_new(client, ss, opts, csid);
 
    /* remember session so if we see its client_session_id in a command, we can

@@ -199,3 +199,53 @@ kms_kmip_response_parser_notenough_test (void)
    kms_response_parser_destroy (parser);
    free (data);
 }
+
+
+void kms_response_parser_response_too_big_test (void); // -Wmissing-prototypes: for testing only.
+void
+kms_response_parser_response_too_big_test (void)
+{
+   uint8_t *data = (uint8_t*) malloc(KMS_PARSER_MAX_RESPONSE_LEN); // 16 MiB
+   memset(data, 0, KMS_PARSER_MAX_RESPONSE_LEN);
+
+   // Test HTTP parser:
+   {
+      kms_response_parser_t *parser = kms_response_parser_new ();
+
+      // Feed max length:
+      {
+         bool ok = kms_response_parser_feed (parser, data, KMS_PARSER_MAX_RESPONSE_LEN);
+         ASSERT (ok);
+      }
+
+      // Feed one more byte:
+      {
+         bool ok = kms_response_parser_feed (parser, data, 1);
+         ASSERT_PARSER_ERROR (parser, "KMS response too large");
+         ASSERT (!ok);
+      }
+
+      kms_response_parser_destroy (parser);
+   }
+
+   // Test KMIP parser:
+   {
+      kms_response_parser_t *parser = kms_kmip_response_parser_new (NULL);
+
+      // Feed max length:
+      {
+         bool ok = kms_response_parser_feed (parser, data, KMS_PARSER_MAX_RESPONSE_LEN);
+         ASSERT (ok);
+      }
+
+      // Feed one more byte:
+      {
+         bool ok = kms_response_parser_feed (parser, data, 1);
+         ASSERT_PARSER_ERROR (parser, "KMS response too large");
+         ASSERT (!ok);
+      }
+
+      kms_response_parser_destroy (parser);
+   }
+   free (data);
+}

@@ -5,9 +5,8 @@ from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
 
 from docutils import nodes
 from docutils.nodes import Node, document
-from sphinx.application import Sphinx
-
 from docutils.parsers.rst import Directive
+from sphinx.application import Sphinx
 
 # Do not require newer sphinx. EPEL packages build man pages with Sphinx 1.7.6. Refer: CDRIVER-4767
 needs_sphinx = '1.7'
@@ -69,27 +68,6 @@ man_pages: List[Tuple[str, str, str, List[str], int]] = []
 # -- Sphinx customization ---------------------------------------
 
 
-def add_ga_javascript(app: Sphinx, pagename: str, templatename: str, context: Dict[str, Any], doctree: document):
-    if not app.env.config.analytics:
-        return
-
-    # Add google analytics.
-    context['metatags'] = (
-        context.get('metatags', '')
-        + """
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-56KD6L3MDX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-56KD6L3MDX');
-</script>
-"""
-    )
-
-
 class VersionList(Directive):
     """Custom directive to generate the version list from an environment variable"""
 
@@ -132,7 +110,6 @@ class VersionList(Directive):
 
 def mongoc_common_setup(app: Sphinx):
     _collect_man(app)
-    app.connect('html-page-context', add_ga_javascript)
-    # Run sphinx-build -D analytics=1 to enable Google Analytics.
     app.add_config_value('analytics', False, 'html')
     app.add_directive('versionlist', VersionList)
+    app.config.templates_path += [str(Path(__file__).parent / '_templates')]

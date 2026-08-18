@@ -6,11 +6,12 @@ VERSION --arg-scope-and-set --pass-args --use-function-keyword 0.7
 # For more detailed documentation, use to the "devdocs" target in this file (ctrl+f "devdocs:"),
 # and read the resulting "Earthly" page that is generated.
 
-# Allow setting the "default" container image registry to use for image short names (e.g. to Amazon ECR).
-ARG --global default_search_registry=docker.io
+# Allow setting the "default" container image registries to use for image short names (e.g. to Amazon ECR).
+ARG --global default_docker_registry=docker.io
+ARG --global default_quay_registry=quay.io
 
 # Set a base container image at the root so that this project can be imported
-FROM $default_search_registry/alpine:3.20
+FROM $default_docker_registry/alpine:3.20
 
 # Not intended to be overridden, but provide some defaults used across targets
 ARG --global __source_dir = "/opt/mcd/source"
@@ -132,7 +133,7 @@ test-cxx-driver:
 # release-archive :
 #   Create a release archive of the source tree. (Refer to dev docs)
 release-archive:
-    FROM $default_search_registry/alpine:3.20
+    FROM $default_docker_registry/alpine:3.20
     RUN apk add git bash
     ARG --required prefix
     ARG --required ref
@@ -177,7 +178,7 @@ release-archive:
 
 # Obtain the signing public key. Exported as an artifact /c-driver.pub
 signing-pubkey:
-    FROM +init --from=$default_search_registry/alpine:3.20 --uv_version=none
+    FROM +init --from=$default_docker_registry/alpine:3.20 --uv_version=none
     RUN __download --from="https://pgp.mongodb.com/c-driver.pub" --to=/c-driver.pub --hash=unchecked
     SAVE ARTIFACT /c-driver.pub
 
@@ -206,7 +207,7 @@ sign-file:
 #   Generate a signed release artifact. Refer to the "Earthly" page of our dev docs for more information.
 #   (Refer to dev docs)
 signed-release:
-    FROM $default_search_registry/alpine:3.20
+    FROM $default_docker_registry/alpine:3.20
     RUN apk add git
     # The version of the release. This affects the filepaths of the output and is the default for --ref
     ARG --required version
@@ -295,7 +296,7 @@ sbom-validate:
             --exclude jira
 
 snyk:
-    FROM --platform=linux/amd64 +init --from=$default_search_registry/ubuntu:24.04
+    FROM --platform=linux/amd64 +init --from=$default_docker_registry/ubuntu:24.04
     RUN __download --from=https://github.com/snyk/cli/releases/download/v1.1291.1/snyk-linux \
         --to=/usr/local/bin/snyk \
         --hash=md5sum=1dafaff658906ca3d0656dcd838cc09b
@@ -368,7 +369,7 @@ test-vcpkg-manifest-mode:
         make test-manifest-mode
 
 vcpkg-base:
-    FROM $default_search_registry/alpine:3.18
+    FROM $default_docker_registry/alpine:3.18
     RUN apk add cmake curl gcc g++ musl-dev ninja-is-really-ninja zip unzip tar \
                 build-base git pkgconf perl bash linux-headers
     ENV VCPKG_ROOT=/opt/vcpkg-git
@@ -382,7 +383,7 @@ vcpkg-base:
 
 deb.packages:
     ARG debian_version=unstable
-    FROM $default_search_registry/debian:$debian_version
+    FROM $default_docker_registry/debian:$debian_version
     # Prepare the packaging environment
     COPY etc/deb/prep-env.sh /tmp/prep-env.sh
     RUN bash /tmp/prep-env.sh
@@ -410,7 +411,7 @@ deb.packages:
 
 deb.test:
     ARG debian_version = "unstable"
-    FROM $default_search_registry/debian:$debian_version
+    FROM $default_docker_registry/debian:$debian_version
     # Basics for building
     RUN apt-get update && apt-get -y install pkgconf gcc
     # Install the packages built by the packaging step
@@ -432,10 +433,10 @@ verify-headers:
     # need to specify. In the future, it is possible that we will need to test
     # other environments and build settings.
     BUILD +do-verify-headers-impl \
-        --from $default_search_registry/alpine:3.19 \
-        --from $default_search_registry/almalinux:8 \
-        --from $default_search_registry/ubuntu:20.04 \
-        --from quay.io/centos/centos:stream10 \
+        --from $default_docker_registry/alpine:3.19 \
+        --from $default_docker_registry/almalinux:8 \
+        --from $default_docker_registry/ubuntu:20.04 \
+        --from $default_quay_registry/centos/centos:stream10 \
         --sasl=off --tls=off --compiler=gcc --with_cxx=true --snappy=off
 
 do-verify-headers-impl:

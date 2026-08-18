@@ -459,28 +459,6 @@ _apm_match_error_context(const bson_t *actual, const bson_t *expectations)
    bson_free(expectations_str);
 }
 
-bool
-skip_cse_list_collections(const bson_t *doc)
-{
-   /* see CDRIVER-3856: Sharing a MongoClient for metadata lookup can lead to
-    * deadlock in drivers using automatic encryption. Since the C driver does
-    * not use a separate 'mongoc_client_t' for listCollections and finds on the
-    * key vault, we skip these checks. */
-   const char *val;
-
-   if (!bson_has_field(doc, "command_started_event.command.listCollections"))
-      return false;
-
-   if (!bson_has_field(doc, "command_started_event.command.$db"))
-      return false;
-
-   val = bson_lookup_utf8(doc, "command_started_event.command.$db");
-   if (0 != strcmp(val, "keyvault"))
-      return false;
-
-   return true;
-}
-
 /*
  *-----------------------------------------------------------------------
  *
@@ -561,10 +539,6 @@ check_json_apm_events(json_test_ctx_t *ctx, const bson_t *expectations)
             continue;
          }
 
-         if (skip_cse_list_collections(&actual)) {
-            continue;
-         }
-
          _apm_match_error_context(&ctx->events, expectations);
          test_error("could not match APM event\n"
                     "\texpected: %s\n\n"
@@ -591,11 +565,9 @@ check_json_apm_events(json_test_ctx_t *ctx, const bson_t *expectations)
       bson_t extra;
       while (bson_iter_next(&actual_iter)) {
          bson_iter_bson(&actual_iter, &extra);
-         if (!skip_cse_list_collections(&extra)) {
-            _apm_match_error_context(&ctx->events, expectations);
-            test_error("extra actual event was not found in expectations: %s\n",
-                       bson_as_canonical_extended_json(&extra, NULL));
-         }
+         _apm_match_error_context(&ctx->events, expectations);
+         test_error("extra actual event was not found in expectations: %s\n",
+                    bson_as_canonical_extended_json(&extra, NULL));
       }
    }
 

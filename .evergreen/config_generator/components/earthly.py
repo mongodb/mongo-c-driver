@@ -49,7 +49,8 @@ SASLOption = Literal['Cyrus', 'off']
 'Valid options for the SASL configuration parameter'
 TLSOption = Literal['OpenSSL', 'off']
 "Options for the TLS backend configuration parameter (AKA 'ENABLE_SSL')"
-CxxVersion = Literal['master', 'r4.1.0', 'none']
+# TODO: restore C++ driver tests after CXX-3503 to update for API renames.
+CxxVersion = Literal['none']  # Literal['master', 'r4.1.0', 'none']
 'C++ driver refs that are under CI test'
 SnappyOption = Literal['false', 'true']
 """Should we enable Snappy compression in this build?"""
@@ -85,6 +86,8 @@ def from_container_image(img: EnvImage) -> str:
 
     NOTE: This will be potentially unnecessary pending the completion of DEVPROD-21478
     """
+    if img.startswith('quay.io/'):
+        return f'{_ECR_HOST}/quay/{img.removeprefix("quay.io/")}'
     if '/' in img or img.startswith('+'):
         return img
     return f'{_ECR_HOST}/dockerhub/library/{img}'
@@ -214,10 +217,12 @@ def earthly_exec(
     platform: str | None = None,
     secrets: Mapping[str, str] | None = None,
     args: Mapping[str, str] | None = None,
-    retry_on_failure: Optional[bool] = None,
+    retry_with_delay: bool = False,
 ) -> BuiltInCommandWithRetry:
     """Create a subprocess_exec command that runs Earthly with the given arguments"""
     env: dict[str, str] = {k: v for k, v in (secrets or {}).items()}
+    if retry_with_delay:
+        env['EARTHLY_RETRY_WITH_DELAY'] = '1'
     return subprocess_exec_with_retry(
         './tools/earthly.sh',
         args=[
@@ -227,14 +232,15 @@ def earthly_exec(
             *([f'--platform={platform}'] if platform else ()),
             f'+{target}',
             # Use Amazon ECR as pull-through cache for DockerHub to avoid rate limits.
-            f'--default_search_registry={_ECR_HOST}/dockerhub/library',
+            f'--default_docker_registry={_ECR_HOST}/dockerhub/library',
+            # Use Amazon ECR as pull-through cache for Quay to avoid spurious network failures.
+            f'--default_quay_registry={_ECR_HOST}/quay',
             *(f'--{arg}={val}' for arg, val in (args or {}).items()),
         ],
         command_type=EvgCommandType(kind),
         include_expansions_in_env=['DOCKER_CONFIG'],
         env=env if env else None,
         working_dir='mongoc',
-        retry_on_failure=retry_on_failure,
     )
 
 
@@ -274,8 +280,8 @@ def earthly_task(
             # This won't generate any output, but allows EVG to track it as a separate build step
             # for timing and logging purposes. The subequent build step will cache-hit the
             # warmed-up build environments.
-            earthly_exec(kind='setup', target='build-environment', args=earthly_args, retry_on_failure=True),
-            earthly_exec(kind='setup', target='configure', args=earthly_args, retry_on_failure=True),
+            earthly_exec(kind='setup', target='build-environment', args=earthly_args, retry_with_delay=True),
+            earthly_exec(kind='setup', target='configure', args=earthly_args),
             # Now execute the main tasks:
             earthly_exec(
                 kind='test',

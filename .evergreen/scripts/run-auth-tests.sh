@@ -79,32 +79,38 @@ fi
 
 declare mongoc_ping
 declare test_gssapi
+declare test_sfp
 declare ip_addr
 case "${OSTYPE}" in
 cygwin)
   mongoc_ping="${mongoc_build_dir:?}/src/libmongoc/Debug/mongoc-ping.exe"
   test_gssapi="${mongoc_build_dir:?}/src/libmongoc/Debug/test-mongoc-gssapi.exe"
+  test_sfp="${mongoc_build_dir:?}/src/libmongoc/Debug/test-sfp.exe"
   ip_addr="$(getent hosts "${auth_host:?}" | head -n 1 | awk '{print $1}')"
   ;;
 
 darwin*)
   mongoc_ping="${mongoc_build_dir:?}/src/libmongoc/mongoc-ping"
   test_gssapi="${mongoc_build_dir:?}/src/libmongoc/test-mongoc-gssapi"
+  test_sfp="${mongoc_build_dir:?}/src/libmongoc/test-sfp"
   ip_addr="$(dig "${auth_host:?}" +short | tail -1)"
   ;;
 
 *)
   mongoc_ping="${mongoc_build_dir:?}/src/libmongoc/mongoc-ping"
   test_gssapi="${mongoc_build_dir:?}/src/libmongoc/test-mongoc-gssapi"
+  test_sfp="${mongoc_build_dir:?}/src/libmongoc/test-sfp"
   ip_addr="$(getent hosts "${auth_host:?}" | head -n 1 | awk '{print $1}')"
   ;;
 esac
 : "${mongoc_ping:?}"
 : "${test_gssapi:?}"
+: "${test_sfp:?}"
 : "${ip_addr:?}"
 
 command -V "${mongoc_ping:?}"
 command -V "${test_gssapi:?}"
+command -V "${test_sfp:?}"
 
 # Custom OpenSSL library may be installed. Only prepend to LD_LIBRARY_PATH when
 # necessary to avoid conflicting with system binary requirements.
@@ -128,10 +134,12 @@ ulimit -c unlimited || true
 if command -v ldd >/dev/null; then
   ldd "${mongoc_ping:?}" | grep "libssl" || true
   ldd "${test_gssapi:?}" | grep "libssl" || true
+  ldd "${test_sfp:?}" | grep "libssl" || true
 elif command -v otool >/dev/null; then
   # Try using otool on MacOS if ldd is not available.
   otool -L "${mongoc_ping:?}" | grep "libssl" || true
   otool -L "${test_gssapi:?}" | grep "libssl" || true
+  otool -L "${test_sfp:?}" | grep "libssl" || true
 fi
 
 # libkrb5.so.3 and libgssapi_krb5.so.2 and report memory leaks on Ubuntu.
@@ -216,3 +224,19 @@ if [[ "${sasl}" != "OFF" ]]; then
     maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi_utf8:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
   fi
 fi
+
+echo "Testing Atlas Secure Front-End Processor (SFP) ..."
+export SFP_ATLAS_URI="${SFP_ATLAS_URI:?}"
+export SFP_ATLAS_USER="${SFP_ATLAS_USER:?}"
+export SFP_ATLAS_PASSWORD="${SFP_ATLAS_PASSWORD:?}"
+export SFP_ATLAS_X509_URI="${SFP_ATLAS_X509_URI:?}"
+echo "${SFP_ATLAS_X509_BASE64:?}" | base64 --decode >"${secrets_dir:?}/atlas_x509_sfp.pem"
+export SFP_ATLAS_X509_CERT="${secrets_dir:?}/atlas_x509_sfp.pem"
+# CDRIVER-5791: SASL plugin reports leak.
+supps="$(pwd)/.lsan-suppressions-ubuntu"
+cat >|"${supps:?}" <<DOC
+leak:sasl_client_add_plugin
+DOC
+export LSAN_OPTIONS="suppressions=${supps:?}"
+"${test_sfp:?}"
+echo "Testing Atlas Secure Front-End Processor (SFP) ... OK"

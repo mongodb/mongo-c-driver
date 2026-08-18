@@ -74,10 +74,9 @@ and the existing codes or domains are inappropriate.
                               
 ### Adding a new symbol
 
-This should be done rarely but there are several things that you need to do
-when adding a new symbol.
-
- - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.rst`
+See the *Adding New Symbols* section of the [API and ABI Policy](docs/dev/api-abi-policy.rst)
+for the full procedure (header declaration, `MONGOC_EXPORT`/`BSON_EXPORT`
+annotation, documentation, and ABI compliance check).
 
 ### Documentation
 
@@ -149,7 +148,7 @@ Set the user and password environment variables, then build and run the tests:
 ```
 $ export MONGOC_TEST_USER=bob
 $ export MONGOC_TEST_PASSWORD=pwd123
-$ ./test-libmongoc
+$ ./cmake-build/src/libmongoc/test-libmongoc
 ```
 
 Additional environment variables:
@@ -302,7 +301,7 @@ This can be useful in debugging a specific test case in a spec test file with mu
 
 ```sh
 MONGOC_JSON_SUBTEST="Insert with randomized encryption, then find it" \
-  ./cmake-build/src/libmongoc/test-libmongoc -l "/client_side_encryption/legacy/basic"
+  ./cmake-build/src/libmongoc/test-libmongoc -l "/client_side_encryption/unified/basic"
 ```
 
 To test with a declared API version, you can pass the API version using an environment variable:
@@ -338,13 +337,12 @@ Though Evergreen logs are private, avoid logging any sensitive data. This is int
 
 #### Configuring the test runner
 
-The test runner can be configured with command-line options. Run `test-libmongoc
---help` for details.
+The test runner can be configured with command-line options. Run `test-libmongoc --help` for details. Agents should refer to the `running-test-libmongoc` skill under `.agents/skills` for more details on how to build, run, filter, and debug tests.
 
 To run just a specific portion of the test suite use the -l option like so:
 
 ```
-$ ./test-libmongoc -l "/server_selection/*"
+$ ./cmake-build/src/libmongoc/test-libmongoc -l "/server_selection/*"
 ```
 
 The full list of tests is shown in the help.

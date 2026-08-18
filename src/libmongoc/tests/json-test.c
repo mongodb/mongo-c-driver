@@ -18,7 +18,6 @@
 #include <json-test.h>
 
 #include <common-oid-private.h>
-#include <mongoc/mongoc-client-side-encryption-private.h>
 #include <mongoc/mongoc-server-description-private.h>
 #include <mongoc/mongoc-topology-description-private.h>
 #include <mongoc/mongoc-topology-private.h>
@@ -1008,9 +1007,6 @@ check_topology_type(const bson_t *test)
 }
 
 /* _recreate drops and creates db_name.collection_name.
- * If 'scenario' contains 'json_schema', the collection is created with a JSON
- * schema validator. Refer:
- * https://github.com/mongodb/specifications/tree/d68e85c33c5a3b02bcd8a32a0bec9f11471e41ad/source/client-side-encryption/tests#spec-test-format
  */
 static void
 _recreate(const char *db_name, const char *collection_name, const bson_t *scenario)
@@ -1018,8 +1014,6 @@ _recreate(const char *db_name, const char *collection_name, const bson_t *scenar
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_database_t *db;
-   bson_t *opts;
-   bson_iter_t iter;
    bson_error_t error;
    bson_t *drop_opts;
 
@@ -1031,12 +1025,6 @@ _recreate(const char *db_name, const char *collection_name, const bson_t *scenar
 
    drop_opts = bson_new();
    collection = mongoc_client_get_collection(client, db_name, collection_name);
-   if (bson_iter_init_find(&iter, scenario, "encrypted_fields")) {
-      bson_t encrypted_fields;
-
-      bson_iter_bson(&iter, &encrypted_fields);
-      BCON_APPEND(drop_opts, "encryptedFields", BCON_DOCUMENT(&encrypted_fields));
-   }
    if (!mongoc_collection_drop_with_opts(collection, drop_opts, &error)) {
       /* Ignore "namespace does not exist" error. */
       ASSERT_OR_PRINT(error.code == 26, error);
@@ -1046,25 +1034,9 @@ _recreate(const char *db_name, const char *collection_name, const bson_t *scenar
    mongoc_collection_drop(collection, NULL);
    mongoc_collection_destroy(collection);
 
-   opts = bson_new();
-   if (bson_iter_init_find(&iter, scenario, "json_schema")) {
-      bson_t json_schema;
-
-      bson_iter_bson(&iter, &json_schema);
-      BCON_APPEND(opts, "validator", "{", "$jsonSchema", BCON_DOCUMENT(&json_schema), "}");
-   }
-
-   if (bson_iter_init_find(&iter, scenario, "encrypted_fields")) {
-      bson_t encrypted_fields;
-
-      bson_iter_bson(&iter, &encrypted_fields);
-      BCON_APPEND(opts, "encryptedFields", BCON_DOCUMENT(&encrypted_fields));
-   }
-
    db = mongoc_client_get_database(client, db_name);
-   collection = mongoc_database_create_collection(db, collection_name, opts, &error);
+   collection = mongoc_database_create_collection(db, collection_name, NULL, &error);
    ASSERT_OR_PRINT(collection, error);
-   bson_destroy(opts);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(db);
    mongoc_client_destroy(client);
@@ -1288,15 +1260,7 @@ execute_test(const json_test_config_t *config,
 
    json_test_ctx_cleanup(&ctx);
 
-   if (!_mongoc_cse_is_enabled(client)) {
-      /* The configureFailpoint command is not supported for CSE.
-       * But we need to disable failpoints on the client that knows
-       * the server description for "server_id". I.e. we cannot use
-       * a separate client. So, as a special case, skip disabling
-       * failpoints if CSE is enabled. (the CSE tests don't currently
-       * use failpoints). */
-      deactivate_fail_points(client, server_id);
-   }
+   deactivate_fail_points(client, server_id);
 }
 
 
@@ -1410,8 +1374,6 @@ set_uri_opts_from_bson(mongoc_uri_t *uri, const bson_t *opts)
          mongoc_read_prefs_t *read_prefs = mongoc_read_prefs_new(read_mode_from_test(bson_iter_utf8(&iter, NULL)));
          mongoc_uri_set_read_prefs_t(uri, read_prefs);
          mongoc_read_prefs_destroy(read_prefs);
-      } else if (!strcmp(key, "autoEncryptOpts")) {
-         /* Auto encrypt options are set on constructed client, not in URI. */
       } else if (!strcmp(key, "writeConcern")) {
          mongoc_write_concern_t *wc = bson_lookup_write_concern(opts, "writeConcern");
          mongoc_uri_set_write_concern(uri, wc);
@@ -1428,262 +1390,6 @@ set_uri_opts_from_bson(mongoc_uri_t *uri, const bson_t *opts)
    }
 }
 
-static void
-set_auto_encryption_opts(mongoc_client_t *client, bson_t *test)
-{
-   bson_t opts;
-   bson_iter_t iter;
-   mongoc_auto_encryption_opts_t *auto_encryption_opts;
-   bson_error_t error;
-   bool ret;
-   bson_t extra;
-
-   ASSERT(client);
-
-   if (!bson_has_field(test, "clientOptions.autoEncryptOpts")) {
-      return;
-   }
-
-   bson_lookup_doc(test, "clientOptions.autoEncryptOpts", &opts);
-   auto_encryption_opts = mongoc_auto_encryption_opts_new();
-
-   if (bson_iter_init_find(&iter, &opts, "kmsProviders")) {
-      bson_t kms_providers = BSON_INITIALIZER;
-      bson_t tls_opts = BSON_INITIALIZER;
-      bson_t tmp;
-
-      bson_iter_bson(&iter, &tmp);
-      bson_copy_to_excluding_noinit(
-         &tmp, &kms_providers, "aws", "awsTemporary", "awsTemporaryNoSessionToken", "azure", "gcp", "kmip", NULL);
-
-      /* AWS credentials are set from environment variables. */
-      if (bson_has_field(&opts, "kmsProviders.aws")) {
-         char *const secret_access_key = test_framework_getenv("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-         char *const access_key_id = test_framework_getenv("MONGOC_TEST_AWS_ACCESS_KEY_ID");
-
-         if (!secret_access_key || !access_key_id) {
-            test_error("Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-                       "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to "
-                       "run Client Side Encryption tests.");
-         }
-
-         {
-            bson_t aws = BSON_INITIALIZER;
-
-            BSON_ASSERT(BSON_APPEND_UTF8(&aws, "secretAccessKey", secret_access_key));
-            BSON_ASSERT(BSON_APPEND_UTF8(&aws, "accessKeyId", access_key_id));
-
-            BSON_APPEND_DOCUMENT(&kms_providers, "aws", &aws);
-
-            bson_destroy(&aws);
-         }
-
-         bson_free(secret_access_key);
-         bson_free(access_key_id);
-      }
-
-      const bool need_aws_with_session_token = bson_has_field(&opts, "kmsProviders.awsTemporary");
-      const bool need_aws_with_temp_creds =
-         need_aws_with_session_token || bson_has_field(&opts, "kmsProviders.awsTemporaryNoSessionToken");
-
-      if (need_aws_with_temp_creds) {
-         char *const secret_access_key = test_framework_getenv("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
-         char *const access_key_id = test_framework_getenv("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
-         char *const session_token = test_framework_getenv("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
-
-         if (!secret_access_key || !access_key_id) {
-            test_error("Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY and "
-                       "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID environment variables "
-                       "to run Client Side Encryption tests.");
-         }
-
-         // Only require session token when requested.
-         if (!session_token && need_aws_with_session_token) {
-            test_error("Set MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
-                       "variable to run Client Side Encryption tests.");
-         }
-
-         {
-            bson_t aws = BSON_INITIALIZER;
-
-            BSON_ASSERT(BSON_APPEND_UTF8(&aws, "secretAccessKey", secret_access_key));
-            BSON_ASSERT(BSON_APPEND_UTF8(&aws, "accessKeyId", access_key_id));
-
-            if (need_aws_with_session_token) {
-               BSON_ASSERT(BSON_APPEND_UTF8(&aws, "sessionToken", session_token));
-            }
-
-            BSON_APPEND_DOCUMENT(&kms_providers, "aws", &aws);
-
-            bson_destroy(&aws);
-         }
-
-         bson_free(secret_access_key);
-         bson_free(access_key_id);
-         bson_free(session_token);
-      }
-
-      if (bson_has_field(&opts, "kmsProviders.azure")) {
-         char *azure_tenant_id;
-         char *azure_client_id;
-         char *azure_client_secret;
-
-         azure_tenant_id = test_framework_getenv("MONGOC_TEST_AZURE_TENANT_ID");
-         azure_client_id = test_framework_getenv("MONGOC_TEST_AZURE_CLIENT_ID");
-         azure_client_secret = test_framework_getenv("MONGOC_TEST_AZURE_CLIENT_SECRET");
-
-         if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-            test_error("Set MONGOC_TEST_AZURE_TENANT_ID, "
-                       "MONGOC_TEST_AZURE_CLIENT_ID, and "
-                       "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
-                       "tests.");
-         }
-
-         bson_concat(&kms_providers,
-                     tmp_bson("{ 'azure': { 'tenantId': '%s', 'clientId': "
-                              "'%s', 'clientSecret': '%s' }}",
-                              azure_tenant_id,
-                              azure_client_id,
-                              azure_client_secret));
-
-         bson_free(azure_tenant_id);
-         bson_free(azure_client_id);
-         bson_free(azure_client_secret);
-      }
-
-      if (bson_has_field(&opts, "kmsProviders.gcp")) {
-         char *gcp_email;
-         char *gcp_privatekey;
-
-         gcp_email = test_framework_getenv("MONGOC_TEST_GCP_EMAIL");
-         gcp_privatekey = test_framework_getenv("MONGOC_TEST_GCP_PRIVATEKEY");
-
-         if (!gcp_email || !gcp_privatekey) {
-            test_error("Set MONGOC_TEST_GCP_EMAIL and "
-                       "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
-                       "tests.");
-         }
-
-         bson_concat(&kms_providers,
-                     tmp_bson("{ 'gcp': { 'email': '%s', 'privateKey': '%s' }}", gcp_email, gcp_privatekey));
-
-         bson_free(gcp_email);
-         bson_free(gcp_privatekey);
-      }
-
-      if (bson_has_field(&opts, "kmsProviders.kmip")) {
-         char *kmip_tls_ca_file;
-         char *kmip_tls_certificate_key_file;
-
-         kmip_tls_ca_file = test_framework_getenv("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-         kmip_tls_certificate_key_file = test_framework_getenv("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
-         if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
-            test_error("Set MONGOC_TEST_CSFLE_TLS_CA_FILE, and "
-                       "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE to enable "
-                       "CSFLE tests.");
-         }
-
-         bson_concat(&kms_providers, tmp_bson("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
-
-         bson_concat(&tls_opts,
-                     tmp_bson("{'kmip': { 'tlsCAFile': '%s', "
-                              "'tlsCertificateKeyFile': '%s' } }",
-                              kmip_tls_ca_file,
-                              kmip_tls_certificate_key_file));
-
-         bson_free(kmip_tls_ca_file);
-         bson_free(kmip_tls_certificate_key_file);
-      }
-
-      mongoc_auto_encryption_opts_set_kms_providers(auto_encryption_opts, &kms_providers);
-      mongoc_auto_encryption_opts_set_tls_opts(auto_encryption_opts, &tls_opts);
-      bson_destroy(&kms_providers);
-      bson_destroy(&tls_opts);
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "schemaMap")) {
-      bson_t schema_map;
-
-      bson_iter_bson(&iter, &schema_map);
-      mongoc_auto_encryption_opts_set_schema_map(auto_encryption_opts, &schema_map);
-      bson_destroy(&schema_map);
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "bypassAutoEncryption")) {
-      mongoc_auto_encryption_opts_set_bypass_auto_encryption(auto_encryption_opts, bson_iter_as_bool(&iter));
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "bypassQueryAnalysis")) {
-      mongoc_auto_encryption_opts_set_bypass_query_analysis(auto_encryption_opts, bson_iter_as_bool(&iter));
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "keyVaultNamespace")) {
-      const char *keyvault_ns;
-      char *db_name;
-      char *coll_name;
-      char *dot;
-
-      BSON_ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
-      keyvault_ns = bson_iter_utf8(&iter, NULL);
-      dot = strstr(keyvault_ns, ".");
-      BSON_ASSERT(dot);
-      db_name = bson_strndup(keyvault_ns, dot - keyvault_ns);
-      coll_name = bson_strdup(dot + 1);
-      mongoc_auto_encryption_opts_set_keyvault_namespace(auto_encryption_opts, db_name, coll_name);
-
-      bson_free(db_name);
-      bson_free(coll_name);
-   } else {
-      /* "If ``autoEncryptOpts`` does not include ``keyVaultNamespace``, default
-       * it to ``keyvault.datakeys``" */
-      mongoc_auto_encryption_opts_set_keyvault_namespace(auto_encryption_opts, "keyvault", "datakeys");
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "extra")) {
-      bson_t tmp;
-
-      bson_iter_bson(&iter, &tmp);
-      bson_copy_to(&tmp, &extra);
-   } else {
-      bson_init(&extra);
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "encryptedFieldsMap")) {
-      BSON_ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
-      bson_t efm;
-
-      bson_iter_bson(&iter, &efm);
-      mongoc_auto_encryption_opts_set_encrypted_fields_map(auto_encryption_opts, &efm);
-      bson_destroy(&efm);
-   }
-
-   if (test_framework_getenv_bool("MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN") &&
-       !bson_iter_init_find(&iter, &extra, "mongocryptdBypassSpawn")) {
-      /* forking is disallowed in test runner, bypass spawning mongocryptd and
-       * assume it is running in the background. */
-      BSON_APPEND_BOOL(&extra, "mongocryptdBypassSpawn", true);
-   }
-
-   char *env_cryptSharedLibPath = test_framework_getenv("MONGOC_TEST_CRYPT_SHARED_LIB_PATH");
-   if (env_cryptSharedLibPath) {
-      BSON_APPEND_UTF8(&extra, "cryptSharedLibPath", env_cryptSharedLibPath);
-      bson_free(env_cryptSharedLibPath);
-   }
-
-   if (bson_iter_init_find(&iter, &opts, "keyExpirationMS")) {
-      BSON_ASSERT(BSON_ITER_HOLDS_INT(&iter));
-      const int expiration = bson_iter_as_int64(&iter);
-      BSON_ASSERT(expiration > 0);
-      mongoc_auto_encryption_opts_set_key_expiration(auto_encryption_opts, (uint64_t)expiration);
-   }
-
-   mongoc_auto_encryption_opts_set_extra(auto_encryption_opts, &extra);
-   bson_destroy(&extra);
-
-   ret = mongoc_client_enable_auto_encryption(client, auto_encryption_opts, &error);
-   ASSERT_OR_PRINT(ret, error);
-   mongoc_auto_encryption_opts_destroy(auto_encryption_opts);
-}
 
 static bool
 _in_deny_list(const bson_t *test, char **deny_list, uint32_t deny_list_len)
@@ -1843,7 +1549,6 @@ run_json_general_test(const json_test_config_t *config)
          MONGOC_WARNING("Error in killAllSessions: %s", error.message);
       }
 
-      set_auto_encryption_opts(client, &test);
       /* Drop and recreate test database/collection if necessary. */
       _recreate(db_name, collection_name, scenario);
       _recreate(db2_name, collection2_name, scenario);

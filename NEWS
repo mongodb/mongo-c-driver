@@ -1,3 +1,39 @@
+libmongoc 2.4.0
+===============
+
+## Notes
+
+* Raise required version of libmongocrypt from 1.15.1 to 1.20.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+* In a future minor release the minimum supported MongoDB Server version will be raised from 4.2 to 4.4. This is in accordance with [MongoDB Software Lifecycle Schedules](https://www.mongodb.com/legal/support-policy/lifecycles).
+
+## Deprecations
+
+* The Queryable Encryption "Text" APIs are deprecated for "String" APIs
+  * `mongoc_client_encryption_encrypt_text_*` is deprecated for `mongoc_client_encryption_encrypt_string_*` to match the generally available "String" algorithm.
+  * The `TextPreview` algorithm is deprecated. Use `String` instead.
+
+## New Features
+
+* The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix`, `suffix`, and `substring` query types.
+  * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types remains experimental.
+* Snapshot sessions expose APIs to get and set snapshot times.
+* Support AWS STS regional endpoints.
+
+## Fixes
+
+* Fix handling of verbose results in `bulkWrite` replies.
+* Fix handling of SCRAM replies.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Connor MacDonald
+  * Adrian Dole
+  * bvalente
+
 libmongoc 2.3.3
 ===============
 
@@ -11,7 +47,6 @@ Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
   * Colby Pike
-
 
 libmongoc 2.3.2
 ===============
@@ -47,7 +82,6 @@ Thanks to everyone who contributed to the development of this release.
   * Colby Pike
   * Kevin Albertson
 
-
 libmongoc 2.3.0
 ===============
 
@@ -81,6 +115,10 @@ Thanks to everyone who contributed to the development of this release.
   * Connor MacDonald
   * Ezra Chung
   * GitHub user: user-45-20
+
+## Removed
+
+* Support for macOS versions 13 and older. These versions are EOL and not tested. Use macOS version 14 or newer.
 
 libmongoc 2.2.4
 ===============
