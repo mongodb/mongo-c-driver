@@ -528,6 +528,7 @@ _get_stream(const char *endpoint,
    }
 
    if (connect_cb) {
+      bson_error_reset(error);
       base_stream = mongoc_kms_connect_callback_get_fn(connect_cb)(
          host.host, host.port, connecttimeoutms, mongoc_kms_connect_callback_get_user_data(connect_cb), error);
       if (!base_stream) {
