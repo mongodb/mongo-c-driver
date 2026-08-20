@@ -54,6 +54,9 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"gridfs-downloadByName", SKIP_ALL_TESTS},
    {"gridfs-downloadByName-serverErrors", SKIP_ALL_TESTS},
 
+   // CDRIVER-5782: libmongoc does not have a GridFS bucket rename helper.
+   {"gridfs-queriesUseEq", "rename uses $eq to update the files collection document"},
+   {"gridfs-queriesUseEq", "rename with a file id containing a query operator does not rename any files"},
 
    // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
@@ -2248,6 +2251,8 @@ test_install_unified(TestSuite *suite)
    run_unified_tests(suite, JSON_DIR, "unified");
 
    run_unified_tests(suite, JSON_DIR, "crud/unified");
+
+   run_unified_tests(suite, JSON_DIR, "gridfs/unified");
 
    run_unified_tests(suite, JSON_DIR, "transactions/unified");
 
