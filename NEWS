@@ -1,3 +1,23 @@
+libmongoc 2.5.0
+===============
+
+## New Features
+
+* Honor the server-supplied `baseBackoffMS` on responses labeled `SystemOverloadedError`, using it in place of the driver's default base delay when calculating how long to wait before retrying.
+* Add collection bulk write getters.
+
+## Improvements
+
+* Update bundled utf8proc to 2.11.3.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Christian Schmitz
+  * Connor MacDonald
+  * dfengliu
+
+
 libmongoc 2.4.0
 ===============
 

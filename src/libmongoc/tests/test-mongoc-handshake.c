@@ -1361,10 +1361,10 @@ test_mongoc_handshake_cpp(void)
    bson_destroy(handshake);
 }
 
-// Prose test 9 in the Handshake spec validates the presence of the backpressure flag, but we instead use a mock server
-// test because the C Driver lacks a mechanism for inspecting handshake documents sent to the server.
+// Prose test 9 in the Handshake spec validates the presence of the backpressure version, but we instead use a mock
+// server test because the C Driver lacks a mechanism for inspecting handshake documents sent to the server.
 static void
-test_mongoc_handshake_includes_backpressure_flag(void)
+test_mongoc_handshake_includes_backpressure_version(void)
 {
    mock_server_t *const server = mock_server_new();
    mock_server_run(server);
@@ -1381,8 +1381,14 @@ test_mongoc_handshake_includes_backpressure_flag(void)
    ASSERT(bson_has_field(request_doc, HANDSHAKE_BACKPRESSURE_FIELD));
    bson_iter_t iter;
    ASSERT(bson_iter_init_find(&iter, request_doc, HANDSHAKE_BACKPRESSURE_FIELD));
-   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
-   ASSERT(bson_iter_bool(&iter));
+   // The value MUST be the string "2", not a literal number 2.
+   ASSERT_WITH_MSG(BSON_ITER_HOLDS_UTF8(&iter),
+                   "expected \"" HANDSHAKE_BACKPRESSURE_FIELD "\" to hold a UTF-8 string, got type %s",
+                   _mongoc_bson_type_to_str(bson_iter_type(&iter)));
+   uint32_t len;
+   const char *const value = bson_iter_utf8(&iter, &len);
+   ASSERT_CMPUINT32(len, ==, 1u);
+   ASSERT_CMPSTR(value, "2");
 
    reply_to_request_simple(request, "{'ok': 1, 'isWritablePrimary': true}");
 
@@ -2524,7 +2530,7 @@ test_handshake_install(TestSuite *suite)
                      test_framework_skip_if_no_setenv);
    TestSuite_Add(suite, "/MongoDB/handshake/includes_c++", test_mongoc_handshake_cpp);
    TestSuite_AddMockServerTest(
-      suite, "/MongoDB/handshake/includes_backpressure_flag", test_mongoc_handshake_includes_backpressure_flag);
+      suite, "/MongoDB/handshake/includes_backpressure_version", test_mongoc_handshake_includes_backpressure_version);
 
    TestSuite_AddMockServerTest(
       suite, "/MongoDB/handshake/metadata_append/single/case_1", test_handshake_metadata_append_single_case_1);

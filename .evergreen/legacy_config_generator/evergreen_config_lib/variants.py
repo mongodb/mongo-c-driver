@@ -291,6 +291,7 @@ all_variants = [
             '.test-aws .6.0',
             '.test-aws .7.0',
             '.test-aws .8.0',
+            '.test-aws .9.0',
             '.test-aws .latest',
         ],
         {'CC': 'clang'},
