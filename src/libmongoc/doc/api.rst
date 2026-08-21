@@ -42,6 +42,9 @@ API Reference
    mongoc_host_list_t
    mongoc_insert_flags_t
    mongoc_iovec_t
+   mongoc_kms_connect_callback_fn_t
+   mongoc_kms_connect_callback_params_t
+   mongoc_kms_connect_callback_t
    mongoc_oidc_callback_fn_t
    mongoc_oidc_callback_params_t
    mongoc_oidc_callback_t
