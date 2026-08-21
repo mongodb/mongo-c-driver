@@ -1,5 +1,25 @@
-libmongoc 2.4.0 [UNRELEASED]
-============================
+libmongoc 2.5.0
+===============
+
+## New Features
+
+* Honor the server-supplied `baseBackoffMS` on responses labeled `SystemOverloadedError`, using it in place of the driver's default base delay when calculating how long to wait before retrying.
+* Add collection bulk write getters.
+
+## Improvements
+
+* Update bundled utf8proc to 2.11.3.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Christian Schmitz
+  * Connor MacDonald
+  * dfengliu
+
+
+libmongoc 2.4.0
+===============
 
 ## Notes
 
@@ -16,7 +36,24 @@ libmongoc 2.4.0 [UNRELEASED]
 
 * The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix`, `suffix`, and `substring` query types.
   * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types remains experimental.
-* Honor the server-supplied `baseBackoffMS` on responses labeled `SystemOverloadedError`, using it in place of the driver's default base delay when calculating how long to wait before retrying.
+* Snapshot sessions expose APIs to get and set snapshot times.
+* Support AWS STS regional endpoints.
+
+## Fixes
+
+* Fix handling of verbose results in `bulkWrite` replies.
+* Fix handling of SCRAM replies.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Connor MacDonald
+  * Adrian Dole
+  * bvalente
+
 
 libmongoc 2.3.3
 ===============
