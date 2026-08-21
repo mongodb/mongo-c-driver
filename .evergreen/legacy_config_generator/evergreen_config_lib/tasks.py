@@ -674,10 +674,14 @@ aws_compile_task = NamedTask(
             . .evergreen/scripts/find-ccache.sh
             find_ccache_and_export_vars "$(pwd)" || true
 
-            # Ubuntu 20.04 does not have uv.
-            if ! command -v uv >/dev/null; then
+            # Ubuntu 20.04 does not have uv. Test for `uvx` rather than `uv`: `uvx` is what is
+            # invoked below, and a host may have the `uv` package installed in a site-packages
+            # directory that is not on PATH. Use --ignore-installed so that such an existing
+            # installation does not cause pip to skip installing into "$prefix", which would
+            # leave "$prefix/bin" empty and `uvx` still not found.
+            if ! command -v uvx >/dev/null; then
                 prefix="$(mktemp -d)"
-                python3 -m pip install --prefix "$prefix" uv
+                python3 -m pip install --ignore-installed --prefix "$prefix" uv
                 PATH="$prefix/bin:$PATH"
             fi
 
