@@ -400,6 +400,7 @@ deb.packages:
         git -C $MCD_DIR commit --no-verify --allow-empty --message "Working changes for Debian package build"
     # Run the build
     RUN bash /tmp/build.sh
+    RUN tar zcvf $MCD_DIR/../deb-pkg.tgz $MCD_DIR/../*.deb
     # Save all build results to the output
     SAVE ARTIFACT $MCD_DIR/../*.build /
     SAVE ARTIFACT $MCD_DIR/../*.buildinfo /
@@ -408,6 +409,7 @@ deb.packages:
     SAVE ARTIFACT $MCD_DIR/../*.dsc /
     SAVE ARTIFACT $MCD_DIR/../*.tar.gz /
     SAVE ARTIFACT $MCD_DIR/../*.tar.xz /
+    SAVE ARTIFACT $MCD_DIR/../deb-pkg.tgz AS LOCAL deb-pkg.tgz
 
 deb.test:
     ARG debian_version = "unstable"

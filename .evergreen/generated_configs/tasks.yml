@@ -5064,9 +5064,40 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - --platform=linux/amd64
+            - +deb.packages
+            - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --platform=linux/amd64
             - +deb.test
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
+      - command: s3.put
+        params:
+          aws_key: ${aws_key}
+          aws_secret: ${aws_secret}
+          bucket: mciuploads
+          content_type: ${content_type|application/x-gzip}
+          local_file: mongoc/deb-pkg.tgz
+          permissions: public-read
+          remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-amd64-${CURRENT_VERSION}.tar.gz
+      - command: s3.put
+        params:
+          aws_key: ${aws_key}
+          aws_secret: ${aws_secret}
+          bucket: mciuploads
+          content_type: ${content_type|application/x-gzip}
+          local_file: mongoc/deb-pkg.tgz
+          permissions: public-read
+          remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-amd64.tar.gz
   - name: debian-package-i386
     run_on:
       - amazon2
@@ -5087,9 +5118,40 @@ tasks:
           args:
             - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
             - --platform=linux/i386
+            - +deb.packages
+            - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
+            - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: ./tools/earthly.sh
+          working_dir: mongoc
+          include_expansions_in_env:
+            - DOCKER_CONFIG
+          args:
+            - --buildkit-image=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/earthly/buildkitd:v0.8.3
+            - --platform=linux/i386
             - +deb.test
             - --default_docker_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library
             - --default_quay_registry=901841024863.dkr.ecr.us-east-1.amazonaws.com/quay
+      - command: s3.put
+        params:
+          aws_key: ${aws_key}
+          aws_secret: ${aws_secret}
+          bucket: mciuploads
+          content_type: ${content_type|application/x-gzip}
+          local_file: mongoc/deb-pkg.tgz
+          permissions: public-read
+          remote_file: ${project}/${branch_name}/mongo-c-driver-debian-packages-i386-${CURRENT_VERSION}.tar.gz
+      - command: s3.put
+        params:
+          aws_key: ${aws_key}
+          aws_secret: ${aws_secret}
+          bucket: mciuploads
+          content_type: ${content_type|application/x-gzip}
+          local_file: mongoc/deb-pkg.tgz
+          permissions: public-read
+          remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check
