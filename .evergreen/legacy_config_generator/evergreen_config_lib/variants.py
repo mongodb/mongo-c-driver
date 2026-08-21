@@ -269,8 +269,8 @@ all_variants = [
         patchable=False,
         batchtime=days(1),
     ),
-    # Run AWS tests for MongoDB 4.4 and 5.0 on Ubuntu 20.04. AWS setup scripts
-    # expect Ubuntu 20.04+. MongoDB 4.4 and 5.0 are not available on 22.04.
+    # Run AWS tests for MongoDB 4.4 - 7.0 on Ubuntu 20.04. AWS setup scripts
+    # expect Ubuntu 20.04 or 24.04. MongoDB 4.4 - 7.0 are not available on 24.04.
     Variant(
         'aws-ubuntu2004',
         'AWS Tests (Ubuntu 20.04)',
@@ -279,17 +279,17 @@ all_variants = [
             'debug-compile-aws',
             '.test-aws .4.4',
             '.test-aws .5.0',
+            '.test-aws .6.0',
+            '.test-aws .7.0',
         ],
         {'CC': 'clang'},
     ),
     Variant(
-        'aws-ubuntu2204',
-        'AWS Tests (Ubuntu 22.04)',
+        'aws-ubuntu2404',
+        'AWS Tests (Ubuntu 24.04)',
         'ubuntu2204-small',
         [
             'debug-compile-aws',
-            '.test-aws .6.0',
-            '.test-aws .7.0',
             '.test-aws .8.0',
             '.test-aws .9.0',
             '.test-aws .latest',
