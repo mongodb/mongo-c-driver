@@ -6551,8 +6551,7 @@ _kms_connect_callback_record_and_fail(mongoc_kms_connect_callback_params_t *para
    const char *host = mongoc_kms_connect_callback_params_get_host(params);
    const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
    bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
-   struct kms_connect_data *data =
-      (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
+   struct kms_connect_data *data = (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
@@ -6584,8 +6583,7 @@ _kms_connect_callback_via_proxy(mongoc_kms_connect_callback_params_t *params)
    const char *host = mongoc_kms_connect_callback_params_get_host(params);
    const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
    bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
-   struct kms_connect_data *data =
-      (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
+   struct kms_connect_data *data = (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
@@ -6619,7 +6617,8 @@ _kms_connect_callback_via_proxy(mongoc_kms_connect_callback_params_t *params)
       ssl_opt.ca_file = data->ca_file;
       mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
       ASSERT(tls);
-      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_CONNECTTIMEOUTMS, error), (*error));
+      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_CONNECTTIMEOUTMS, error),
+                      (*error));
       proxy_stream = tls;
    }
 

@@ -97,8 +97,7 @@ kms_connect_via_http_proxy(mongoc_kms_connect_callback_params_t *params)
    bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
    const kms_proxy_config_t *config = (kms_proxy_config_t *)mongoc_kms_connect_callback_params_get_user_data(params);
 
-   mongoc_stream_t *proxy_stream =
-      tcp_connect(config->proxy_host, config->proxy_port, PROXY_CONNECT_TIMEOUT_MS, error);
+   mongoc_stream_t *proxy_stream = tcp_connect(config->proxy_host, config->proxy_port, PROXY_CONNECT_TIMEOUT_MS, error);
    if (!proxy_stream) {
       return NULL;
    }
