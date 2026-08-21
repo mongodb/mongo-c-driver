@@ -528,12 +528,14 @@ _get_stream(const char *endpoint,
    }
 
    if (connect_cb) {
-      bson_error_reset(error);
-      base_stream = mongoc_kms_connect_callback_get_fn(connect_cb)(
-         host.host, host.port, connecttimeoutms, mongoc_kms_connect_callback_get_user_data(connect_cb), error);
+      // The callback reports failure via this error. Clear it first: it may carry a stale error from a prior attempt.
+      bson_error_t local_error;
+      bson_error_t *const cb_error = error ? error : &local_error;
+      bson_error_reset(cb_error);
+      base_stream = mongoc_kms_connect_callback_invoke(connect_cb, host.host, host.port, cb_error);
       if (!base_stream) {
-         if (error && error->code == 0) {
-            _mongoc_set_error(error,
+         if (cb_error->code == 0) {
+            _mongoc_set_error(cb_error,
                               MONGOC_ERROR_STREAM,
                               MONGOC_ERROR_STREAM_CONNECT,
                               "KMS connect callback returned NULL for endpoint: %s",

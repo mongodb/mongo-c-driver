@@ -45,6 +45,56 @@ struct _mongoc_kms_connect_callback_t {
    void *user_data;
 };
 
+struct _mongoc_kms_connect_callback_params_t {
+   const char *host;
+   uint16_t port;
+   void *user_data;
+   bson_error_t *error;
+};
+
+const char *
+mongoc_kms_connect_callback_params_get_host(const mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->host;
+}
+
+uint16_t
+mongoc_kms_connect_callback_params_get_port(const mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->port;
+}
+
+void *
+mongoc_kms_connect_callback_params_get_user_data(const mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->user_data;
+}
+
+bson_error_t *
+mongoc_kms_connect_callback_params_get_error(mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->error;
+}
+
+mongoc_stream_t *
+mongoc_kms_connect_callback_invoke(const mongoc_kms_connect_callback_t *callback,
+                                   const char *host,
+                                   uint16_t port,
+                                   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(callback);
+   BSON_ASSERT_PARAM(host);
+   BSON_ASSERT_PARAM(error);
+
+   mongoc_kms_connect_callback_params_t params = {
+      .host = host, .port = port, .user_data = callback->user_data, .error = error};
+   return callback->fn(&params);
+}
+
 mongoc_kms_connect_callback_t *
 mongoc_kms_connect_callback_new(mongoc_kms_connect_callback_fn_t fn)
 {
@@ -410,9 +460,7 @@ void
 mongoc_client_encryption_opts_set_kms_connect_callback(mongoc_client_encryption_opts_t *opts,
                                                        const mongoc_kms_connect_callback_t *callback)
 {
-   if (!opts) {
-      return;
-   }
+   BSON_ASSERT_PARAM(opts);
    mongoc_kms_connect_callback_destroy(opts->connect_cb);
    opts->connect_cb = mongoc_kms_connect_callback_copy(callback);
 }

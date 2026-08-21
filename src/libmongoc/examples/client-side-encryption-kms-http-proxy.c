@@ -83,16 +83,22 @@ tcp_connect(const char *host, uint16_t port, int32_t connecttimeoutms, bson_erro
 }
 
 // BEGIN:mongoc_kms_connect_callback_fn_t
+// The callback chooses its own deadline for reaching the proxy and completing the CONNECT handshake.
+#define PROXY_CONNECT_TIMEOUT_MS 10000
+
 // A mongoc_kms_connect_callback_fn_t implementation. Connects to an HTTP CONNECT proxy and asks it to open a
-// tunnel to the KMS endpoint at `host`:`port`. The driver applies TLS to the returned stream itself, so this
+// tunnel to the KMS endpoint described by `params`. The driver applies TLS to the returned stream itself, so this
 // callback only needs to hand back a connected, un-encrypted tunnel.
 static mongoc_stream_t *
-kms_connect_via_http_proxy(
-   const char *host, uint16_t port, int32_t connecttimeoutms, void *user_data, bson_error_t *error)
+kms_connect_via_http_proxy(mongoc_kms_connect_callback_params_t *params)
 {
-   const kms_proxy_config_t *config = (kms_proxy_config_t *)user_data;
+   const char *host = mongoc_kms_connect_callback_params_get_host(params);
+   const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
+   bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
+   const kms_proxy_config_t *config = (kms_proxy_config_t *)mongoc_kms_connect_callback_params_get_user_data(params);
 
-   mongoc_stream_t *proxy_stream = tcp_connect(config->proxy_host, config->proxy_port, connecttimeoutms, error);
+   mongoc_stream_t *proxy_stream =
+      tcp_connect(config->proxy_host, config->proxy_port, PROXY_CONNECT_TIMEOUT_MS, error);
    if (!proxy_stream) {
       return NULL;
    }
@@ -101,7 +107,7 @@ kms_connect_via_http_proxy(
    char req[512];
    int req_len =
       bson_snprintf(req, sizeof(req), "CONNECT %s:%hu HTTP/1.1\r\nHost: %s:%hu\r\n\r\n", host, port, host, port);
-   if (mongoc_stream_write(proxy_stream, req, (size_t)req_len, connecttimeoutms) != req_len) {
+   if (mongoc_stream_write(proxy_stream, req, (size_t)req_len, PROXY_CONNECT_TIMEOUT_MS) != req_len) {
       bson_set_error(
          error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to send CONNECT request to proxy");
       mongoc_stream_destroy(proxy_stream);
@@ -112,7 +118,7 @@ kms_connect_via_http_proxy(
    char resp[1024] = {0};
    size_t resp_len = 0;
    while (resp_len + 1 < sizeof(resp)) {
-      ssize_t r = mongoc_stream_read(proxy_stream, resp + resp_len, 1, 1 /* min_bytes */, connecttimeoutms);
+      ssize_t r = mongoc_stream_read(proxy_stream, resp + resp_len, 1, 1 /* min_bytes */, PROXY_CONNECT_TIMEOUT_MS);
       if (r <= 0) {
          bson_set_error(
             error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to read CONNECT response from proxy");

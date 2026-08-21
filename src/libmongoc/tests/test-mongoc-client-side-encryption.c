@@ -6546,10 +6546,13 @@ _kms_proxy_address(kms_proxy_transport_t transport, const char **host_out, int *
  * either returns NULL with an error (forcing the KMS request to fail) or
  * connects to a hard-coded localhost proxy. */
 static mongoc_stream_t *
-_kms_connect_callback_record_and_fail(
-   const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
+_kms_connect_callback_record_and_fail(mongoc_kms_connect_callback_params_t *params)
 {
-   struct kms_connect_data *data = (struct kms_connect_data *)userdata;
+   const char *host = mongoc_kms_connect_callback_params_get_host(params);
+   const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
+   bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
+   struct kms_connect_data *data =
+      (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
@@ -6576,10 +6579,13 @@ _kms_connect_callback_record_and_fail(
  * itself is TLS-wrapped, and the CONNECT handshake is sent over that TLS
  * stream. */
 static mongoc_stream_t *
-_kms_connect_callback_via_proxy(
-   const char *host, uint16_t port, int32_t connecttimeoutms, void *userdata, bson_error_t *error)
+_kms_connect_callback_via_proxy(mongoc_kms_connect_callback_params_t *params)
 {
-   struct kms_connect_data *data = (struct kms_connect_data *)userdata;
+   const char *host = mongoc_kms_connect_callback_params_get_host(params);
+   const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
+   bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
+   struct kms_connect_data *data =
+      (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
@@ -6600,7 +6606,7 @@ _kms_connect_callback_via_proxy(
       return NULL;
    }
 
-   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(connecttimeoutms, &hl, error);
+   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(MONGOC_DEFAULT_CONNECTTIMEOUTMS, &hl, error);
    if (!base_stream) {
       return NULL;
    }
@@ -6613,7 +6619,7 @@ _kms_connect_callback_via_proxy(
       ssl_opt.ca_file = data->ca_file;
       mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
       ASSERT(tls);
-      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, connecttimeoutms, error), (*error));
+      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_CONNECTTIMEOUTMS, error), (*error));
       proxy_stream = tls;
    }
 
