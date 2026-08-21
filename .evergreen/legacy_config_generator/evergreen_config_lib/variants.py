@@ -287,7 +287,7 @@ all_variants = [
     Variant(
         'aws-ubuntu2404',
         'AWS Tests (Ubuntu 24.04)',
-        'ubuntu2204-small',
+        'ubuntu2404-small',
         [
             'debug-compile-aws',
             '.test-aws .8.0',

@@ -13176,7 +13176,7 @@ buildvariants:
   display_name: AWS Tests (Ubuntu 24.04)
   expansions:
     CC: clang
-  run_on: ubuntu2204-small
+  run_on: ubuntu2404-small
   tasks:
   - debug-compile-aws
   - .test-aws .8.0
