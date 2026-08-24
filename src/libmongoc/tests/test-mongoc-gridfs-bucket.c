@@ -820,7 +820,7 @@ test_gridfs_cb(void *scenario_vp)
 static void
 test_all_spec_tests(TestSuite *suite)
 {
-   install_json_test_suite(suite, JSON_DIR, "gridfs", &test_gridfs_cb);
+   install_json_test_suite(suite, JSON_DIR, "gridfs/legacy", &test_gridfs_cb);
 }
 
 static void
