@@ -1822,7 +1822,7 @@ done:
 }
 
 mongoc_session_opt_t *
-session_opts_new(bson_t *bson, bson_error_t *error)
+session_opts_new(entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
 {
    bool ret = false;
    mongoc_session_opt_t *opts = NULL;
@@ -1830,6 +1830,8 @@ session_opts_new(bson_t *bson, bson_error_t *error)
    bson_parser_t *bp_opts = NULL;
    bool *causal_consistency = NULL;
    bool *snapshot = NULL;
+   char *snapshot_time_entity_id = NULL;
+   bson_val_t *snapshot_time_val = NULL;
    bson_t *default_transaction_opts = NULL;
    mongoc_write_concern_t *wc = NULL;
    mongoc_read_concern_t *rc = NULL;
@@ -1839,6 +1841,7 @@ session_opts_new(bson_t *bson, bson_error_t *error)
    bp = bson_parser_new();
    bson_parser_bool_optional(bp, "causalConsistency", &causal_consistency);
    bson_parser_bool_optional(bp, "snapshot", &snapshot);
+   bson_parser_utf8_optional(bp, "snapshotTime", &snapshot_time_entity_id);
    bson_parser_doc_optional(bp, "defaultTransactionOptions", &default_transaction_opts);
    if (!bson_parser_parse(bp, bson, error)) {
       goto done;
@@ -1850,6 +1853,21 @@ session_opts_new(bson_t *bson, bson_error_t *error)
    }
    if (snapshot) {
       mongoc_session_opts_set_snapshot(opts, *snapshot);
+   }
+   if (snapshot_time_entity_id) {
+      const bson_value_t *value;
+
+      snapshot_time_val = entity_map_get_bson(entity_map, snapshot_time_entity_id, error);
+      if (!snapshot_time_val) {
+         goto done;
+      }
+      value = bson_val_to_value(snapshot_time_val);
+      if (value->value_type != BSON_TYPE_TIMESTAMP) {
+         test_set_error(error, "expected entity '%s' to be a timestamp for snapshotTime", snapshot_time_entity_id);
+         goto done;
+      }
+      mongoc_session_opts_set_snapshot_time(
+         opts, value->value.v_timestamp.timestamp, value->value.v_timestamp.increment);
    }
 
    if (default_transaction_opts) {
@@ -1925,7 +1943,7 @@ entity_session_new(entity_map_t *entity_map,
       goto done;
    }
    if (session_opts_bson) {
-      session_opts = session_opts_new(session_opts_bson, error);
+      session_opts = session_opts_new(entity_map, session_opts_bson, error);
       if (!session_opts) {
          goto done;
       }

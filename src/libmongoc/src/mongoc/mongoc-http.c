@@ -24,6 +24,8 @@
 
 #include <mongoc/mongoc-stream-tls.h>
 
+#include <bson/error.h>
+
 #include <mlib/cmp.h>
 #include <mlib/duration.h>
 #include <mlib/timer.h>
@@ -48,6 +50,55 @@ _mongoc_http_response_cleanup(mongoc_http_response_t *response)
    }
    bson_free(response->headers);
    bson_free(response->body);
+}
+
+bool
+_mongoc_http_request_validate(const mongoc_http_request_t *req, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(req);
+
+   bson_error_clear(error);
+
+   // method must be present and free of CR/LF/space to preserve the request line
+   if (!req->method || !*req->method) {
+      _mongoc_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "HTTP method must not be empty");
+      return false;
+   }
+   if (strpbrk(req->method, " \r\n")) {
+      _mongoc_set_error(
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "HTTP method contains invalid characters");
+      return false;
+   }
+
+   // host must be present and free of CR/LF to preserve the Host header
+   if (!req->host || !*req->host) {
+      _mongoc_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "HTTP host must not be empty");
+      return false;
+   }
+   if (strpbrk(req->host, "\r\n")) {
+      _mongoc_set_error(
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "HTTP host contains invalid characters");
+      return false;
+   }
+
+   // path is optional; if present it must not contain spaces or CR/LF
+   if (req->path && strpbrk(req->path, " \r\n")) {
+      _mongoc_set_error(
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_INVALID_STATE, "HTTP path contains invalid characters");
+      return false;
+   }
+
+   // extra_headers is optional; a leading or embedded \r\n\r\n would prematurely
+   // end the header section and allow body-content injection
+   if (req->extra_headers && (strncmp(req->extra_headers, "\r\n", 2) == 0 || strstr(req->extra_headers, "\r\n\r\n"))) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_INVALID_STATE,
+                        "HTTP extra_headers contains header section terminator");
+      return false;
+   }
+
+   return true;
 }
 
 void
@@ -120,6 +171,10 @@ _mongoc_http_send(const mongoc_http_request_t *req,
 
    memset(res, 0, sizeof(*res));
    _mongoc_buffer_init(&http_response_buf, NULL, 0, NULL, NULL);
+
+   if (!_mongoc_http_request_validate(req, error)) {
+      goto fail;
+   }
 
    if (!_mongoc_host_list_from_hostport_with_err(&host_list, mstr_cstring(req->host), (uint16_t)req->port, error)) {
       goto fail;

@@ -402,7 +402,7 @@ static int
 TestSuite_RunFuncInChild(TestSuite *suite, /* IN */
                          Test *test)       /* IN */
 {
-   STARTUPINFO si;
+   STARTUPINFOA si;
    PROCESS_INFORMATION pi;
    char *cmdline;
    DWORD exit_code = -1;
@@ -413,16 +413,16 @@ TestSuite_RunFuncInChild(TestSuite *suite, /* IN */
 
    cmdline = bson_strdup_printf("%s --silent --no-fork -l %.*s", suite->prgname, MSTR_FMT(test->name));
 
-   if (!CreateProcess(NULL,
-                      cmdline,
-                      NULL,  /* Process handle not inheritable  */
-                      NULL,  /* Thread handle not inheritable   */
-                      FALSE, /* Set handle inheritance to FALSE */
-                      0,     /* No creation flags               */
-                      NULL,  /* Use parent's environment block  */
-                      NULL,  /* Use parent's starting directory */
-                      &si,
-                      &pi)) {
+   if (!CreateProcessA(NULL,
+                       cmdline,
+                       NULL,  /* Process handle not inheritable  */
+                       NULL,  /* Thread handle not inheritable   */
+                       FALSE, /* Set handle inheritance to FALSE */
+                       0,     /* No creation flags               */
+                       NULL,  /* Use parent's environment block  */
+                       NULL,  /* Use parent's starting directory */
+                       &si,
+                       &pi)) {
       test_error("CreateProcess failed (%lu).", GetLastError());
       bson_free(cmdline);
 

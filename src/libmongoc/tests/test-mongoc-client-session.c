@@ -1604,7 +1604,7 @@ run_session_test_bulk_operation(void *ctx)
    session_test_fn_t const test_fn = ((session_test_helper_t *)ctx)->test_fn;
    _test_explicit_session_lsid(test_fn);
    _test_implicit_session_lsid(test_fn);
-   _test_causal_consistency(test_fn, false /* read concern */);
+   _test_causal_consistency(test_fn, true /* read concern */);
 }
 
 
@@ -1634,10 +1634,23 @@ insert_10_docs(session_test_t *test)
 
 
 static void
-test_cmd(session_test_t *test)
+test_raw_read_cmd(session_test_t *test)
 {
    test->succeeded = mongoc_client_command_with_opts(
       test->client, "db", tmp_bson("{'listCollections': 1}"), NULL, &test->opts, NULL, &test->error);
+}
+
+static void
+test_raw_write_cmd(session_test_t *test)
+{
+   test->succeeded =
+      mongoc_client_command_with_opts(test->client,
+                                      "db",
+                                      tmp_bson("{'delete': 'collection', 'deletes': [{'q': {}, 'limit': 1}]}"),
+                                      NULL,
+                                      &test->opts,
+                                      NULL,
+                                      &test->error);
 }
 
 
@@ -2088,6 +2101,9 @@ test_bulk_set_client(session_test_t *test)
    mongoc_bulk_operation_set_database(bulk, mongoc_database_get_name(test->db));
 
    mongoc_bulk_operation_set_collection(bulk, mongoc_collection_get_name(test->collection));
+
+   ASSERT_CMPSTR(mongoc_bulk_operation_get_database(bulk), mongoc_database_get_name(test->db));
+   ASSERT_CMPSTR(mongoc_bulk_operation_get_collection(bulk), mongoc_collection_get_name(test->collection));
 
    _test_bulk(test, bulk);
 }
@@ -2596,6 +2612,76 @@ test_sessions_snapshot_prose_test_1(void *ctx)
    mongoc_client_destroy(client);
 }
 
+void
+test_sessions_snapshot_prose_test_21(void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   mongoc_client_session_t *r;
+
+   BSON_UNUSED(ctx);
+
+   client = test_framework_new_default_client();
+   BSON_ASSERT(client);
+
+   session_opts = mongoc_session_opts_new();
+   mongoc_session_opts_set_snapshot(session_opts, false);
+   mongoc_session_opts_set_snapshot_time(session_opts, 1, 0);
+
+   /* assert that starting a session with snapshotTime set and snapshot set to
+    * false results in an error. */
+   r = mongoc_client_start_session(client, session_opts, &error);
+   ASSERT(!r);
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                         "Cannot set snapshotTime unless snapshot is enabled.");
+
+   mongoc_session_opts_destroy(session_opts);
+   mongoc_client_destroy(client);
+}
+
+void
+test_sessions_snapshot_prose_test_22(void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   mongoc_client_session_t *session = NULL;
+   uint32_t timestamp, increment;
+   bool ret;
+
+   BSON_UNUSED(ctx);
+
+   client = test_framework_new_default_client();
+   BSON_ASSERT(client);
+
+   session_opts = mongoc_session_opts_new();
+   mongoc_session_opts_set_snapshot(session_opts, false);
+
+   session = mongoc_client_start_session(client, session_opts, &error);
+   ASSERT_OR_PRINT(session, error);
+
+   /* assert that retrieving snapshotTime on a non-snapshot session results in
+    * an error. */
+   ret = mongoc_client_session_get_snapshot_time(session, &timestamp, &increment, &error);
+   ASSERT(!ret);
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                         "Cannot get snapshotTime on a non-snapshot session");
+
+   mongoc_session_opts_destroy(session_opts);
+   mongoc_client_session_destroy(session);
+   mongoc_client_destroy(client);
+}
+
+/* Prose test 23, "Ensure snapshotTime is Read-Only", is intentionally not implemented.
+ * mongoc_client_session_t is an opaque struct exposed only through accessor functions, and
+ * the spec allows drivers to skip this test if snapshotTime is exposed as a read-only property via an accessor method
+ * only. */
+
 
 typedef struct {
    bson_t *last_sent_clusterTime;
@@ -2881,35 +2967,36 @@ test_session_install(TestSuite *suite)
 
    /* "true" is for tests that expect readConcern: afterClusterTime for causally
     * consistent sessions, "false" is for tests that prohibit readConcern */
-   add_session_test(suite, "/Session/cmd", test_cmd, false);
+   add_session_test(suite, "/Session/raw_read_cmd", test_raw_read_cmd, false);
+   add_session_test(suite, "/Session/raw_write_cmd", test_raw_write_cmd, false);
    add_session_test(suite, "/Session/read_cmd", test_read_cmd, true);
-   add_session_test(suite, "/Session/write_cmd", test_write_cmd, false);
+   add_session_test(suite, "/Session/write_cmd", test_write_cmd, true);
    add_session_test(suite, "/Session/read_write_cmd", test_read_write_cmd, true);
    add_session_test(suite, "/Session/db_cmd", test_db_cmd, false);
    add_session_test(suite, "/Session/cursor", test_cursor, true);
-   add_session_test(suite, "/Session/drop", test_drop, false);
-   add_session_test(suite, "/Session/drop_index", test_drop_index, false);
-   add_session_test(suite, "/Session/create_index", test_create_index, false);
-   add_session_test(suite, "/Session/replace_one", test_replace_one, false);
-   add_session_test(suite, "/Session/update_one", test_update_one, false);
-   add_session_test(suite, "/Session/update_many", test_update_many, false);
-   add_session_test(suite, "/Session/insert_one", test_insert_one, false);
-   add_session_test(suite, "/Session/insert_many", test_insert_many, false);
-   add_session_test(suite, "/Session/delete_one", test_delete_one, false);
-   add_session_test(suite, "/Session/delete_many", test_delete_many, false);
+   add_session_test(suite, "/Session/drop", test_drop, true);
+   add_session_test(suite, "/Session/drop_index", test_drop_index, true);
+   add_session_test(suite, "/Session/create_index", test_create_index, true);
+   add_session_test(suite, "/Session/replace_one", test_replace_one, true);
+   add_session_test(suite, "/Session/update_one", test_update_one, true);
+   add_session_test(suite, "/Session/update_many", test_update_many, true);
+   add_session_test(suite, "/Session/insert_one", test_insert_one, true);
+   add_session_test(suite, "/Session/insert_many", test_insert_many, true);
+   add_session_test(suite, "/Session/delete_one", test_delete_one, true);
+   add_session_test(suite, "/Session/delete_many", test_delete_many, true);
    add_session_test(suite, "/Session/rename", test_rename, false);
    add_session_test(suite, "/Session/fam", test_fam, true);
-   add_session_test(suite, "/Session/db_drop", test_db_drop, false);
+   add_session_test(suite, "/Session/db_drop", test_db_drop, true);
    add_session_test(suite, "/Session/gridfs_find", test_gridfs_find, true);
    add_session_test(suite, "/Session/gridfs_find_one", test_gridfs_find_one, true);
    add_session_test_wc(suite, "/Session/watch", test_watch, true, test_framework_skip_if_not_replset);
    add_session_test(suite, "/Session/aggregate", test_aggregate, true);
-   add_session_test(suite, "/Session/create", test_create, false);
+   add_session_test(suite, "/Session/create", test_create, true);
    add_session_test(suite, "/Session/database_names", test_database_names, true);
    add_session_test(suite, "/Session/find_databases", test_find_databases, true);
    add_session_test(suite, "/Session/find_collections", test_find_collections, true);
    add_session_test(suite, "/Session/collection_names", test_collection_names, true);
-   add_session_test(suite, "/Session/bulk", test_bulk, false);
+   add_session_test(suite, "/Session/bulk", test_bulk, true);
    add_session_test(suite, "/Session/find_indexes", test_find_indexes, true);
    {
       session_test_helper_t *const helper = bson_malloc(sizeof(*helper));
@@ -3029,4 +3116,18 @@ test_session_install(TestSuite *suite)
                      NULL,
                      test_framework_skip_if_no_cluster_time,
                      test_framework_skip_if_no_sessions);
+   TestSuite_AddFull(suite,
+                     "/Session/snapshot/prose_test_21 [lock:live-server]",
+                     test_sessions_snapshot_prose_test_21,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_sessions,
+                     test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
+   TestSuite_AddFull(suite,
+                     "/Session/snapshot/prose_test_22 [lock:live-server]",
+                     test_sessions_snapshot_prose_test_22,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_no_sessions,
+                     test_framework_skip_if_max_wire_version_less_than_13 /* skip on pre 5.0 server */);
 }

@@ -195,6 +195,9 @@ static BSON_THREAD_FUN(ssl_test_client, ptr)
 
    sock_stream = mongoc_stream_socket_new(conn_sock);
    BSON_ASSERT(sock_stream);
+   if (data->client_stream_wrapper) {
+      sock_stream = data->client_stream_wrapper(sock_stream);
+   }
    ssl_stream = mongoc_stream_tls_new_with_hostname(sock_stream, data->host, data->client, 1);
    if (!ssl_stream) {
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
@@ -263,13 +266,25 @@ static BSON_THREAD_FUN(ssl_test_client, ptr)
 }
 
 
-/** This is the testing function for the ssl-test lib
- *
- * The basic idea is that you spin up a client and server, which will
- * communicate over a mongoc-stream-tls, with varying mongoc_ssl_opt's.  The
- * client and server speak a simple echo protocol, so all we're really testing
- * here is that any given configuration succeeds or fails as it should
- */
+static void
+_ssl_test_run(ssl_test_data_t *data)
+{
+   bson_thread_t server;
+   bson_thread_t client;
+
+   bson_mutex_init(&data->cond_mutex);
+   mongoc_cond_init(&data->cond);
+
+   ASSERT_CMPINT(mcommon_thread_create(&server, &ssl_test_server, data), ==, 0);
+   ASSERT_CMPINT(mcommon_thread_create(&client, &ssl_test_client, data), ==, 0);
+
+   mcommon_thread_join(server);
+   mcommon_thread_join(client);
+
+   bson_mutex_destroy(&data->cond_mutex);
+   mongoc_cond_destroy(&data->cond);
+}
+
 void
 ssl_test(mongoc_ssl_opt_t *client,
          mongoc_ssl_opt_t *server,
@@ -277,30 +292,29 @@ ssl_test(mongoc_ssl_opt_t *client,
          ssl_test_result_t *client_result,
          ssl_test_result_t *server_result)
 {
-   ssl_test_data_t data = {0};
-   bson_thread_t threads[2];
-   int i, r;
+   _ssl_test_run(&(ssl_test_data_t){
+      .client = client,
+      .server = server,
+      .client_result = client_result,
+      .server_result = server_result,
+      .host = host,
+   });
+}
 
-   data.server = server;
-   data.client = client;
-   data.client_result = client_result;
-   data.server_result = server_result;
-   data.host = host;
-
-   bson_mutex_init(&data.cond_mutex);
-   mongoc_cond_init(&data.cond);
-
-   r = mcommon_thread_create(threads, &ssl_test_server, &data);
-   BSON_ASSERT(r == 0);
-
-   r = mcommon_thread_create(threads + 1, &ssl_test_client, &data);
-   BSON_ASSERT(r == 0);
-
-   for (i = 0; i < 2; i++) {
-      r = mcommon_thread_join(threads[i]);
-      BSON_ASSERT(r == 0);
-   }
-
-   bson_mutex_destroy(&data.cond_mutex);
-   mongoc_cond_destroy(&data.cond);
+void
+ssl_test_with_client_stream_wrapper(mongoc_ssl_opt_t *client,
+                                    mongoc_ssl_opt_t *server,
+                                    const char *host,
+                                    ssl_test_result_t *client_result,
+                                    ssl_test_result_t *server_result,
+                                    mongoc_stream_t *(*wrapper)(mongoc_stream_t *stream))
+{
+   _ssl_test_run(&(ssl_test_data_t){
+      .client = client,
+      .server = server,
+      .client_result = client_result,
+      .server_result = server_result,
+      .host = host,
+      .client_stream_wrapper = wrapper,
+   });
 }

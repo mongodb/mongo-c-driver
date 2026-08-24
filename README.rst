@@ -12,7 +12,9 @@ mongo-c-driver is a project that includes two libraries:
 
 If libmongoc is not needed, it is possible to build and install only libbson.
 
-This project uses `Semantic Versioning <https://semver.org/>`_.
+This project uses `Semantic Versioning <https://semver.org/>`_. See
+`docs/dev/api-abi-policy.rst <docs/dev/api-abi-policy.rst>`_ for the project's
+full API and ABI stability policy.
 
 Documentation / Support / Feedback
 ==================================

@@ -1105,6 +1105,17 @@ test_bson_new_from_buffer(void)
       bson_destroy(minimal);
       bson_free(buf);
    }
+
+   // Buffer embeds a zero document length. Must be rejected without underflowing.
+   {
+      size_t buf_len = 5;
+      uint8_t *buf = bson_malloc0(buf_len); // All zeroes.
+
+      bson_t *b = bson_new_from_buffer(&buf, &buf_len, realloc_func_never_called, NULL);
+
+      BSON_ASSERT(b == NULL);
+      bson_free(buf);
+   }
 }
 
 static void

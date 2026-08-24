@@ -321,7 +321,7 @@ _build_handshake_cmd(const mongoc_handshake_t *handshake,
       bson_destroy(doc);
       return NULL;
    }
-   BSON_APPEND_BOOL(doc, HANDSHAKE_BACKPRESSURE_FIELD, true);
+   BSON_APPEND_UTF8(doc, HANDSHAKE_BACKPRESSURE_FIELD, HANDSHAKE_BACKPRESSURE_VERSION);
    bson_append_document(doc, HANDSHAKE_FIELD, -1, handshake_doc);
    bson_destroy(handshake_doc);
 

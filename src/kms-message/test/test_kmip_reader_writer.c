@@ -443,6 +443,26 @@ kms_kmip_reader_find_and_recurse_test (void)
    free (data);
 }
 
+void kms_kmip_reader_find_and_recurse_invalid_test (void); // -Wmissing-prototypes: for testing only.
+void
+kms_kmip_reader_find_and_recurse_invalid_test (void)
+{
+   uint8_t *data;
+   size_t datalen;
+   kmip_reader_t *reader;
+
+   // Structure with overly large length:
+   data = hex_to_data (
+      "42 00 20 | 01 | 00 00 00 FF", // Struct with bad length
+      &datalen);
+
+   reader = kmip_reader_new (data, datalen);
+   // Expect error:
+   ASSERT (!kmip_reader_find_and_recurse (reader, KMIP_TAG_CompromiseDate));
+   kmip_reader_destroy (reader);
+   free (data);
+}
+
 void kms_kmip_reader_find_and_read_enum_test (void); // -Wmissing-prototypes: for testing only.
 void
 kms_kmip_reader_find_and_read_enum_test (void)

@@ -25,6 +25,8 @@ The :symbol:`bson_init_static()` function shall initialize a read-only :symbol:`
 
 The resulting `bson_t` has internal references and therefore must not be copied to avoid dangling pointers in the copy.
 
+It is an error if ``length`` does not match the length embedded in the first four bytes of the BSON data in ``data``.
+
 Returns
 -------
 

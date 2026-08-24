@@ -79,7 +79,7 @@ json_with_all_types(void);
 #endif
 
 #ifdef _WIN32
-#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
+#define realpath(path, expanded) GetFullPathNameA(path, PATH_MAX, expanded, NULL)
 #endif
 
 void

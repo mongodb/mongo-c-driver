@@ -834,24 +834,24 @@ mongoc_secure_channel_handshake_step_1(mongoc_stream_tls_t *tls, char *hostname,
    secure_channel->ctxt = (mongoc_secure_channel_ctxt *)bson_malloc0(sizeof(mongoc_secure_channel_ctxt));
 
    /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx */
-   sspi_status = InitializeSecurityContext(&secure_channel->cred_handle->cred_handle, /* phCredential */
-                                           NULL,                                      /* phContext */
-                                           hostname,                                  /* pszTargetName */
-                                           secure_channel->req_flags,                 /* fContextReq */
-                                           0,                                         /* Reserved1, must be 0 */
-                                           0,                                         /* TargetDataRep, unused */
-                                           NULL,                                      /* pInput */
-                                           0,                                         /* Reserved2, must be 0 */
-                                           &secure_channel->ctxt->ctxt_handle,        /* phNewContext OUT param */
-                                           &outbuf_desc,                              /* pOutput OUT param */
-                                           &secure_channel->ret_flags,                /* pfContextAttr OUT param */
-                                           &secure_channel->ctxt->time_stamp          /* ptsExpiry OUT param */
+   sspi_status = InitializeSecurityContextA(&secure_channel->cred_handle->cred_handle, /* phCredential */
+                                            NULL,                                      /* phContext */
+                                            hostname,                                  /* pszTargetName */
+                                            secure_channel->req_flags,                 /* fContextReq */
+                                            0,                                         /* Reserved1, must be 0 */
+                                            0,                                         /* TargetDataRep, unused */
+                                            NULL,                                      /* pInput */
+                                            0,                                         /* Reserved2, must be 0 */
+                                            &secure_channel->ctxt->ctxt_handle,        /* phNewContext OUT param */
+                                            &outbuf_desc,                              /* pOutput OUT param */
+                                            &secure_channel->ret_flags,                /* pfContextAttr OUT param */
+                                            &secure_channel->ctxt->time_stamp          /* ptsExpiry OUT param */
    );
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
       // Cast signed SECURITY_STATUS to unsigned DWORD. FormatMessage expects DWORD.
       char *msg = mongoc_winerr_to_string((DWORD)sspi_status);
       MONGOC_LOG_AND_SET_ERROR(
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "initial InitializeSecurityContext failed: %s", msg);
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "initial InitializeSecurityContextA failed: %s", msg);
       bson_free(msg);
       return false;
    }
@@ -972,18 +972,18 @@ mongoc_secure_channel_handshake_step_2(mongoc_stream_tls_t *tls, char *hostname,
 
       /* https://msdn.microsoft.com/en-us/library/windows/desktop/aa375924.aspx
        */
-      sspi_status = InitializeSecurityContext(&secure_channel->cred_handle->cred_handle,
-                                              &secure_channel->ctxt->ctxt_handle,
-                                              hostname,
-                                              secure_channel->req_flags,
-                                              0,
-                                              0,
-                                              &inbuf_desc,
-                                              0,
-                                              NULL,
-                                              &outbuf_desc,
-                                              &secure_channel->ret_flags,
-                                              &secure_channel->ctxt->time_stamp);
+      sspi_status = InitializeSecurityContextA(&secure_channel->cred_handle->cred_handle,
+                                               &secure_channel->ctxt->ctxt_handle,
+                                               hostname,
+                                               secure_channel->req_flags,
+                                               0,
+                                               0,
+                                               &inbuf_desc,
+                                               0,
+                                               NULL,
+                                               &outbuf_desc,
+                                               &secure_channel->ret_flags,
+                                               &secure_channel->ctxt->time_stamp);
 
       /* free buffer for received handshake data */
       bson_free(inbuf[0].pvBuffer);

@@ -285,12 +285,13 @@ all_variants = [
     Variant(
         'aws-ubuntu2204',
         'AWS Tests (Ubuntu 22.04)',
-        'ubuntu2004-small',
+        'ubuntu2204-small',
         [
             'debug-compile-aws',
             '.test-aws .6.0',
             '.test-aws .7.0',
             '.test-aws .8.0',
+            '.test-aws .9.0',
             '.test-aws .latest',
         ],
         {'CC': 'clang'},

@@ -422,9 +422,12 @@ function (mongoc_get_accept_args ARG2 ARG3)
    }
    ")
 
-   TRY_COMPILE (RES ${CMAKE_CURRENT_BINARY_DIR}
-   ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c CMAKE_FLAGS
-   "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
+   TRY_COMPILE (RES
+      "${CMAKE_CURRENT_BINARY_DIR}"
+      SOURCES "${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c"
+      CMAKE_FLAGS "-DCOMPILE_DEFINITIONS=-Werror" "-DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'"
+      OUTPUT_VARIABLE LOG2
+   )
 
    if (RES)
       message (
@@ -489,10 +492,10 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
       find_package (mongocrypt QUIET)
    endif ()
 
-   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.18.0)
+   if (mongocrypt_FOUND AND "${mongocrypt_VERSION}" VERSION_LESS 1.20.0)
       message (STATUS "  libmongocrypt found at ${mongocrypt_DIR}")
       message (STATUS "  libmongocrypt version ${mongocrypt_VERSION} found")
-      message (STATUS "  libmongocrypt version 1.18.0 is required to enable In-Use Encryption Support.")
+      message (STATUS "  libmongocrypt version 1.20.0 is required to enable In-Use Encryption Support.")
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND OFF)
    elseif (mongocrypt_FOUND)
       set (REQUIRED_MONGOCRYPT_VERSION_FOUND ON)
@@ -787,7 +790,7 @@ set(UTF8PROC_INCLUDE_DIRS, "")
 if (USE_BUNDLED_UTF8PROC)
    set (
       UTF8PROC_INCLUDE_DIRS
-      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0"
+      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.11.3"
    )
    list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
 else()
@@ -876,7 +879,7 @@ if (ENABLE_SHARED)
    set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
    target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC bson::shared mongo::detail::c_dependencies)
    target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
-   target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+   target_include_directories (mongoc_shared SYSTEM PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -955,7 +958,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
 
    set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
-   target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+   target_include_directories (mongoc_static SYSTEM PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -1235,6 +1238,7 @@ if (ENABLE_TESTS)
    target_link_libraries (test-libmongoc PUBLIC test-libmongoc-lib)
 
    mongoc_add_test (test-mongoc-gssapi ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
+   mongoc_add_test (test-sfp ${PROJECT_SOURCE_DIR}/tests/test-sfp.c)
    mongoc_add_test (test-mongoc-cache ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
    mongoc_add_test (test-azurekms ${PROJECT_SOURCE_DIR}/tests/test-azurekms.c)
    mongoc_add_test (test-gcpkms ${PROJECT_SOURCE_DIR}/tests/test-gcpkms.c)

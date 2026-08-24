@@ -2321,6 +2321,8 @@ WIRE_VERSION_CHECKS(25)
 WIRE_VERSION_CHECKS(26)
 /* wire version 27 begins with the 8.2 release. */
 WIRE_VERSION_CHECKS(27)
+/* wire version 29 begins with the 9.0 release. */
+WIRE_VERSION_CHECKS(29)
 
 int
 test_framework_skip_if_no_dual_ip_hostname(void)

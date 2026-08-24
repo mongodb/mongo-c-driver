@@ -175,27 +175,32 @@ rst_prolog = rf"""
 .. |bson_t-opt-storage-ptr| replace::
     maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
-.. |encrypt-text-is-experimental| replace::
-    The "TextPreview" algorithm is in preview and should be used for experimental workloads only.
-    These features are unstable and their security is not guaranteed until released as Generally
-    Available (GA). The GA version of these features may not be backwards compatible with the
+.. |encrypt-string-substring-is-experimental| replace::
+    The "substringPreview" query type is in preview and should be used for experimental workloads only.
+    This feature is unstable and its security is not guaranteed until released as Generally
+    Available (GA). The GA version of this feature may not be backwards compatible with the
     preview version.
+
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
-.. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/queryable-encryption/
+.. _queryable-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/security/in-use-encryption/#std-label-c-queryable-encryption/
+
+.. _explicit-encryption-qe: https://www.mongodb.com/docs/manual/core/queryable-encryption/fundamentals/manual-encryption/#std-label-qe-fundamentals-manual-encryption
 
 .. _authentication: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/authentication/
 
 .. _bulk: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/bulk/
 
-.. _client-side-field-level-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/client-side-field-level-encryption/
+.. _client-side-field-level-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/security/in-use-encryption/#client-side-field-level-encryption
+
+.. _explicit-encryption-csfle: https://www.mongodb.com/docs/manual/core/csfle/fundamentals/manual-encryption/#std-label-csfle-fundamentals-manual-encryption
 
 .. _configuring_tls: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/configuring_tls/
 
 .. _connection-pooling: https://www.mongodb.com/docs/languages/c/c-driver/current/connect/connection-pools/.
 
-.. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/in-use-encryption/
+.. _in-use-encryption: https://www.mongodb.com/docs/languages/c/c-driver/current/security/in-use-encryption
 
 .. _manage-collection-indexes: https://www.mongodb.com/docs/languages/c/c-driver/current/libmongoc/guides/manage-collection-indexes/
 

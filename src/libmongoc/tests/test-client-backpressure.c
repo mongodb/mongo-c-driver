@@ -555,11 +555,11 @@ test_backpressure_prose_1(void *ctx)
    // Step 3.5: Execute step 3.3 again.
    const mlib_duration with_backoff_duration = backpressure_prose_1_step_3_3(collection);
 
-   // Step 3.6: Compare the time between the two runs. The sum of 2 backoffs is 0.3 seconds. There is a 0.3-second
+   // Step 3.6: Compare the time between the two runs. The sum of 2 backoffs is 0.6 seconds. There is a 0.6-second
    // window to account for potential variance between the two runs.
-   const mlib_duration diff = mlib_duration(with_backoff_duration, minus, (no_backoff_duration, plus, (300, ms)));
+   const mlib_duration diff = mlib_duration(with_backoff_duration, minus, (no_backoff_duration, plus, (600, ms)));
    const mlib_duration abs_diff = mlib_duration(imaxabs(mlib_microseconds_count(diff)), us);
-   ASSERT_CMPDURATION(abs_diff, <, mlib_duration(300, ms));
+   ASSERT_CMPDURATION(abs_diff, <, mlib_duration(600, ms));
 
    disable_fail_point();
 
@@ -710,6 +710,125 @@ test_backpressure_prose_4(void *ctx)
    ASSERT_CMPINT(apm_ctx.find_commands_started_count, ==, 2);
 
    disable_fail_point();
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
+typedef struct {
+   int insert_failed_count;
+   bool base_backoff_ms_is_set;
+   int64_t base_backoff_ms;
+} base_backoff_ms_observer_ctx_t;
+
+// prose_test_5_command_failed_cb records whether the server attached `baseBackoffMS` to a failed `insert` reply.
+static void
+prose_test_5_command_failed_cb(const mongoc_apm_command_failed_t *event)
+{
+   base_backoff_ms_observer_ctx_t *const ctx =
+      (base_backoff_ms_observer_ctx_t *)mongoc_apm_command_failed_get_context(event);
+
+   if (strcmp(mongoc_apm_command_failed_get_command_name(event), "insert") != 0) {
+      return;
+   }
+
+   ctx->insert_failed_count++;
+
+   bson_iter_t iter;
+   if (bson_iter_init_find(&iter, mongoc_apm_command_failed_get_reply(event), "baseBackoffMS") &&
+       BSON_ITER_HOLDS_NUMBER(&iter)) {
+      ctx->base_backoff_ms = bson_iter_as_int64(&iter);
+      ctx->base_backoff_ms_is_set = true;
+   }
+}
+
+// backpressure_prose_5_step_5 inserts the document `{ a: 1 }`, expects the command to error, and measures the duration
+// of the command execution.
+static mlib_duration
+backpressure_prose_5_step_5(mongoc_collection_t *collection)
+{
+   const mlib_time_point start = mlib_now();
+
+   bson_error_t error;
+   ASSERT(!mongoc_collection_insert_one(collection, tmp_bson("{'a': 1}"), NULL, NULL, &error));
+   ASSERT(error.domain == MONGOC_ERROR_QUERY);
+
+   return mlib_elapsed_since(start);
+}
+
+static void
+backpressure_prose_5_set_external_client_base_backoff_ms(int value)
+{
+   char *const cmd = bson_strdup_printf("{'setParameter': 1, 'externalClientBaseBackoffMS': %d}", value);
+   run_admin_command(cmd);
+   bson_free(cmd);
+}
+
+static void
+test_backpressure_prose_5(void *ctx)
+{
+   BSON_UNUSED(ctx);
+
+   // Step 1: Let `client` be a `mongoc_client_t`.
+   mongoc_client_t *const client = test_framework_new_default_client();
+
+   base_backoff_ms_observer_ctx_t apm_ctx = {0};
+
+   {
+      mongoc_apm_callbacks_t *const callbacks = mongoc_apm_callbacks_new();
+      mongoc_apm_set_command_failed_cb(callbacks, prose_test_5_command_failed_cb);
+      mongoc_client_set_apm_callbacks(client, callbacks, &apm_ctx);
+      mongoc_apm_callbacks_destroy(callbacks);
+   }
+
+   // Step 2: Let `coll` be a collection.
+   mongoc_collection_t *const coll = mongoc_client_get_collection(client, "db", "coll");
+
+   // Step 3: Configure the random number generator used for exponential backoff jitter to always return a number as
+   // close as possible to `1`.
+   _mongoc_client_set_jitter_source(client, _mongoc_jitter_source_new(always_1_jitter_source_generate));
+
+   // Step 4: Configure a failPoint to trigger with `SystemOverloadedError` and `RetryableError` labels on `insert`.
+   run_admin_command(BSON_STR({
+      "configureFailPoint" : "failCommand",
+      "mode" : "alwaysOn",
+      "data" : {
+         "failCommands" : ["insert"],
+         "errorCode" : 462, // IngressRequestRateLimitExceeded
+         "errorLabels" : [ "SystemOverloadedError", "RetryableError" ]
+      }
+   }));
+
+   // Step 5: Insert the document `{ a: 1 }`. Expect that the command errors. Measure the duration of the command
+   // execution.
+   const mlib_duration exponential_backoff_duration = backpressure_prose_5_step_5(coll);
+
+   // Only the replies observed during step 7 are relevant to step 8.
+   apm_ctx = (base_backoff_ms_observer_ctx_t){0};
+
+   // Step 6: Set up `baseBackoffMS` on overload errors.
+   backpressure_prose_5_set_external_client_base_backoff_ms(50);
+
+   // Step 7: Execute step 5 again.
+   const mlib_duration with_base_backoff_ms_duration = backpressure_prose_5_step_5(coll);
+
+   // Step 9: Disable `baseBackoffMS` on overload errors. Performed before the assertions of steps 8 so that server
+   // state is restored even when an assertion aborts the test.
+   backpressure_prose_5_set_external_client_base_backoff_ms(0);
+   disable_fail_point();
+
+   // Step 8: Assert that the server attached `baseBackoffMS` to the error and that the driver parsed it. That the
+   // driver parsed the value is observable in the backoff durations asserted by step 10.
+   ASSERT_CMPINT(apm_ctx.insert_failed_count, >, 0);
+   ASSERT_WITH_MSG(apm_ctx.base_backoff_ms_is_set, "server did not attach `baseBackoffMS` to the overload error");
+   ASSERT_CMPINT64(apm_ctx.base_backoff_ms, ==, INT64_C(50));
+
+   // Step 10: Assert absolute bounds on each run's duration. A run can never be faster than the sum of its backoffs.
+   // With jitter pinned to 1, the default backoffs are `0.2 + 0.4 = 0.6s` and the `baseBackoffMS=50` backoffs are
+   // `0.1 + 0.2 = 0.3s`.
+   ASSERT_CMPDURATION(exponential_backoff_duration, >=, mlib_duration(600, ms));
+   ASSERT_CMPDURATION(with_base_backoff_ms_duration, >=, mlib_duration(300, ms));
+   ASSERT_CMPDURATION(with_base_backoff_ms_duration, <, mlib_duration(600, ms));
 
    mongoc_collection_destroy(coll);
    mongoc_client_destroy(client);
@@ -967,6 +1086,14 @@ test_backpressure_install(TestSuite *suite)
                      NULL,
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_9 /* Require server 4.3.1+ for `errorLabels` */);
+
+   TestSuite_AddFull(suite,
+                     "/backpressure/prose_test_5",
+                     test_backpressure_prose_5,
+                     NULL,
+                     NULL,
+                     test_framework_skip_if_max_wire_version_less_than_29 /* Require server 9.0+ for `baseBackoffMS` */,
+                     test_framework_skip_if_no_crypto /* Require SSL for retryable writes */);
 
    TestSuite_AddFull(suite,
                      "/backpressure/max_adaptive_retries_zero",

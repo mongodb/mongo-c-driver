@@ -100,7 +100,7 @@ echo "Verifying the correct OpenSSL library was found..."
 echo "Verifying the correct OpenSSL library was found... done."
 
 echo "Building..."
-cmake --build "${mongoc_build_dir:?}" --target all mongoc-ping test-mongoc-gssapi >/dev/null
+cmake --build "${mongoc_build_dir:?}" --target all mongoc-ping test-mongoc-gssapi test-sfp >/dev/null
 echo "Building... done."
 
 echo "Installing..."

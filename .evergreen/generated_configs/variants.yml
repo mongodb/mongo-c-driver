@@ -148,6 +148,9 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-9.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-9.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-9.0-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-sharded-auth
@@ -173,6 +176,9 @@ buildvariants:
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-sharded-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-9.0-replica-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-9.0-server-auth
+      - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-9.0-sharded-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-replica-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
       - name: cse-sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-sharded-auth
@@ -210,6 +216,9 @@ buildvariants:
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-replica-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-server-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-8.0-sharded-auth
+      - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-9.0-replica-auth
+      - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-9.0-server-auth
+      - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-9.0-sharded-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-replica-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
       - name: cse-sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-sharded-auth
@@ -250,28 +259,28 @@ buildvariants:
     display_name: CentOS 10 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream10
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream10
     tasks:
       - name: .quay.io/centos/centos:stream10-clang
   - name: quay.io/centos/centos:stream10-gcc
     display_name: CentOS 10 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream10
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream10
     tasks:
       - name: .quay.io/centos/centos:stream10-gcc
   - name: quay.io/centos/centos:stream9-clang
     display_name: CentOS 9 (LLVM/Clang)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: clang
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream9
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream9
     tasks:
       - name: .quay.io/centos/centos:stream9-clang
   - name: quay.io/centos/centos:stream9-gcc
     display_name: CentOS 9 (GCC)
     expansions:
       MONGOC_EARTHLY_C_COMPILER: gcc
-      MONGOC_EARTHLY_FROM: quay.io/centos/centos:stream9
+      MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/quay/centos/centos:stream9
     tasks:
       - name: .quay.io/centos/centos:stream9-gcc
   - name: sanitizers-matrix-asan
@@ -307,6 +316,9 @@ buildvariants:
     expansions: {}
     tasks:
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-compile
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-9.0-replica-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-9.0-server-auth
+      - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-9.0-sharded-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-replica-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-amazon2023-arm64-latest-large-m8g-gcc-test-latest-sharded-auth
@@ -318,6 +330,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-6.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-7.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-9.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-rhel8-arm64-latest-gcc-test-rapid-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-compile
@@ -327,6 +340,7 @@ buildvariants:
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-6.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-7.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-8.0-server-auth
+      - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-9.0-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-latest-server-auth
       - name: sasl-cyrus-openssl-rhel8-latest-gcc-test-rapid-server-auth
       - name: sasl-cyrus-openssl-rhel8-power-gcc-compile
@@ -343,6 +357,8 @@ buildvariants:
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-8.0-server-auth
         batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel8-power-gcc-test-9.0-server-auth
+        batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-latest-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-power-gcc-test-rapid-server-auth
@@ -357,6 +373,8 @@ buildvariants:
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-8.0-server-auth
         batchtime: 1440
+      - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-9.0-server-auth
+        batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-latest-server-auth
         batchtime: 1440
       - name: sasl-cyrus-openssl-rhel8-zseries-gcc-test-rapid-server-auth
@@ -370,6 +388,7 @@ buildvariants:
       - name: sasl-sspi-openssl-windows-2019-vs2019-x64-compile
       - name: sasl-sspi-openssl-windows-2019-vs2022-x64-compile
       - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-compile
+      - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-9.0-server-auth
       - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-latest-server-auth
       - name: sasl-sspi-openssl-windows-2022-latest-vs2022x64-test-rapid-server-auth
   - name: sasl-matrix-winssl
@@ -431,3 +450,12 @@ buildvariants:
       MONGOC_EARTHLY_FROM: 901841024863.dkr.ecr.us-east-1.amazonaws.com/dockerhub/library/ubuntu:24.04
     tasks:
       - name: .ubuntu:24.04-gcc
+  - name: unicode-compile
+    display_name: UNICODE Compile
+    expansions:
+      CFLAGS: /we4133 /DUNICODE /D_UNICODE
+      CMAKE_GENERATOR: Visual Studio 17 2022
+      CMAKE_GENERATOR_PLATFORM: x64
+      CXXFLAGS: /we4133 /DUNICODE /D_UNICODE
+    tasks:
+      - name: unicode-compile

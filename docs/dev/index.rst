@@ -19,6 +19,7 @@ the mongo-c-driver project directory:
 
 .. toctree::
 
+   api-abi-policy
    debian
    earthly
    deps

@@ -1233,6 +1233,52 @@ done:
 }
 
 static bool
+operation_drop_database(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   bson_parser_t *parser = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_database_t *db = NULL;
+   char *database = NULL;
+   bson_error_t op_error = {0};
+   bson_t *opts = NULL;
+
+   parser = bson_parser_new();
+   bson_parser_allow_extra(parser, true);
+   bson_parser_utf8(parser, "database", &database);
+   if (!bson_parser_parse(parser, op->arguments, error)) {
+      goto done;
+   }
+
+   opts = bson_new();
+   if (op->session) {
+      if (!mongoc_client_session_append(op->session, opts, error)) {
+         goto done;
+      }
+   }
+
+   /* Forward all arguments other than the database name as-is. */
+   BSON_ASSERT(bson_concat(opts, bson_parser_get_extra(parser)));
+
+   client = entity_map_get_client(test->entity_map, op->object, error);
+   if (!client) {
+      goto done;
+   }
+
+   db = mongoc_client_get_database(client, database);
+   mongoc_database_drop_with_opts(db, opts, &op_error);
+
+   result_from_val_and_reply(result, NULL, NULL, &op_error);
+
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields(parser);
+   mongoc_database_destroy(db);
+   bson_destroy(opts);
+   return ret;
+}
+
+static bool
 operation_list_collections(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
@@ -2956,6 +3002,38 @@ done:
 }
 
 static bool
+operation_get_snapshot_time(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_client_session_t *session = NULL;
+   bson_error_t op_error = {0};
+   uint32_t timestamp = 0;
+   uint32_t increment = 0;
+   bson_val_t *val = NULL;
+
+   session = entity_map_get_session(test->entity_map, op->object, error);
+   if (!session) {
+      goto done;
+   }
+
+   if (mongoc_client_session_get_snapshot_time(session, &timestamp, &increment, &op_error)) {
+      bson_value_t value = {0};
+
+      value.value_type = BSON_TYPE_TIMESTAMP;
+      value.value.v_timestamp.timestamp = timestamp;
+      value.value.v_timestamp.increment = increment;
+      val = bson_val_from_value(&value);
+   }
+
+   result_from_val_and_reply(result, val, NULL, &op_error);
+
+   ret = true;
+done:
+   bson_val_destroy(val);
+   return ret;
+}
+
+static bool
 operation_start_transaction(test_t *test, operation_t *op, result_t *result, bson_error_t *error)
 {
    bool ret = false;
@@ -4059,6 +4137,7 @@ operation_run(test_t *test, bson_t *op_bson, bson_error_t *error)
       /* Database operations */
       {"createCollection", operation_create_collection},
       {"dropCollection", operation_drop_collection},
+      {"dropDatabase", operation_drop_database},
       {"listCollections", operation_list_collections},
       {"listCollectionNames", operation_list_collection_names},
       {"listIndexes", operation_list_indexes},
@@ -4125,6 +4204,7 @@ operation_run(test_t *test, bson_t *op_bson, bson_error_t *error)
 
       /* Session operations */
       {"endSession", operation_end_session},
+      {"getSnapshotTime", operation_get_snapshot_time},
       {"startTransaction", operation_start_transaction},
       {"commitTransaction", operation_commit_transaction},
       {"withTransaction", operation_with_transaction},

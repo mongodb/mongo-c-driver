@@ -66,6 +66,20 @@ _mongoc_http_response_cleanup(mongoc_http_response_t *response);
 void
 _mongoc_http_render_request_head(mcommon_string_append_t *append, const mongoc_http_request_t *req);
 
+/**
+ * @brief Validate request parameters against CRLF injection.
+ *
+ * Checks that method, host, path, and extra_headers do not contain CR or LF
+ * characters that could be used to inject arbitrary HTTP headers.
+ *
+ * @param req The request to validate (required)
+ * @param error Output error (optional)
+ * @return true if the request parameters are valid
+ * @return false otherwise, with @p error set
+ */
+bool
+_mongoc_http_request_validate(const mongoc_http_request_t *req, bson_error_t *error);
+
 
 /**
  * @brief Convenience function to send an HTTP request and receive an HTTP
