@@ -258,7 +258,7 @@ test_remove_operator_injection(void)
    mongoc_gridfs_t *gridfs;
 
    ASSERT_OR_PRINT(gridfs = get_test_gridfs(client, "operator_injection", &error), error);
-   mongoc_gridfs_drop(gridfs, NULL); // Ignore error from "ns not found".
+   drop_collections(gridfs, NULL); // Ignore error from "ns not found".
 
    // Create two files.
    for (int i = 0; i < 2; i++) {
@@ -297,7 +297,6 @@ test_remove_operator_injection(void)
       ASSERT_CMPINT64(count, ==, 2);
    }
 
-   ASSERT_OR_PRINT(drop_collections(gridfs, &error), error);
    mongoc_gridfs_destroy(gridfs);
    mongoc_client_destroy(client);
 }
