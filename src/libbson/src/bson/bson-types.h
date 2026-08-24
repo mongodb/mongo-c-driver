@@ -411,7 +411,7 @@ typedef struct {
 BSON_ALIGNED_BEGIN (8)
 typedef struct {
    /* run before / after descending into a document */
-   bool (*visit_before) (const bson_iter_t *iter, const char *key, void *data);
+   bool (*visit_before) (const bson_iter_t *iter, const char *key, uint32_t key_len, void *data);
    bool (*visit_after) (const bson_iter_t *iter, const char *key, void *data);
    /* corrupt BSON, or unsupported type and visit_unsupported_type not set */
    void (*visit_corrupt) (const bson_iter_t *iter, void *data);

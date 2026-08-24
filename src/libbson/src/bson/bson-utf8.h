@@ -31,7 +31,7 @@ BSON_BEGIN_DECLS
 BSON_EXPORT (bool)
 bson_utf8_validate (const char *utf8, size_t utf8_len, bool allow_null);
 BSON_EXPORT (char *)
-bson_utf8_escape_for_json (const char *utf8, ssize_t utf8_len);
+bson_utf8_escape_for_json (const char *utf8, ssize_t utf8_len, uint32_t *escaped_len);
 BSON_EXPORT (bson_unichar_t)
 bson_utf8_get_char (const char *utf8);
 BSON_EXPORT (const char *)

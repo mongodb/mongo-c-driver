@@ -27,6 +27,12 @@
 #include <bson/bson-types.h>
 
 
+/* Expands a string literal at compile time to: "text", (sizeof("text") - 1).
+ * Useful when passing a string literal at compile time to bson_string_append
+ * and bson_string_new_n functions.
+*/
+#define STR_AND_LEN(s) (s), (sizeof(s) - 1)
+
 BSON_BEGIN_DECLS
 
 
@@ -39,10 +45,12 @@ typedef struct {
 
 BSON_EXPORT (bson_string_t *)
 bson_string_new (const char *str);
+BSON_EXPORT (bson_string_t *)
+bson_string_new_n (const char *str, uint32_t len);
 BSON_EXPORT (char *)
 bson_string_free (bson_string_t *string, bool free_segment);
 BSON_EXPORT (void)
-bson_string_append (bson_string_t *string, const char *str);
+bson_string_append (bson_string_t *string, const char *str, uint32_t len);
 BSON_EXPORT (void)
 bson_string_append_c (bson_string_t *string, char str);
 BSON_EXPORT (void)
@@ -56,7 +64,7 @@ bson_strdup (const char *str);
 BSON_EXPORT (char *)
 bson_strdup_printf (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 BSON_EXPORT (char *)
-bson_strdupv_printf (const char *format, va_list args) BSON_GNUC_PRINTF (1, 0);
+bson_strdupv_printf (const char *format, int expected_len, int *actual_len, va_list args) BSON_GNUC_PRINTF (1, 0);
 BSON_EXPORT (char *)
 bson_strndup (const char *str, size_t n_bytes);
 BSON_EXPORT (void)

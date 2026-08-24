@@ -1899,18 +1899,20 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
 {
    uint32_t bson_type = 0;
    const char *key = NULL;
+   uint32_t key_len;
    bool unsupported;
 
    BSON_ASSERT (iter);
    BSON_ASSERT (visitor);
 
    while (_bson_iter_next_internal (iter, 0, &key, &bson_type, &unsupported)) {
-      if (*key && !bson_utf8_validate (key, strlen (key), false)) {
+      key_len = bson_iter_key_len (iter);
+      if (*key && !bson_utf8_validate (key, key_len, false)) {
          iter->err_off = iter->off;
          break;
       }
 
-      if (VISIT_BEFORE (iter, key, data)) {
+      if (VISIT_BEFORE (iter, key, key_len, data)) {
          return true;
       }
 
