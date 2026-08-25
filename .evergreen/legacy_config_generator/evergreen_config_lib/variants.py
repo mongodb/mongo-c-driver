@@ -269,7 +269,7 @@ all_variants = [
         patchable=False,
         batchtime=days(1),
     ),
-    # Run AWS ECS test set-up is only supported on Ubuntu 20.04 and 24.04 distros.
+    # AWS ECS test set-up is only supported on Ubuntu 20.04 and 24.04 distros.
     # Use RHEL 8 for other AWS tasks. AWS EC2 tests fail to assign an instance policy on Ubuntu 24.04.
     Variant(
         'aws-rhel8',
