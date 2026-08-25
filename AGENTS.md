@@ -6,7 +6,9 @@ This file provides guidance to AI coding agents working with code in this reposi
 
 This project uses CMake.
 
-`<build-dir>` below stands for the CMake binary directory. Use whichever directory the user specifies; `cmake-build/` and `_build/` are both already listed in `.gitignore`.
+`<build-dir>` below stands for the CMake binary directory. Use whichever
+directory the user specifies. `cmake-build/` and `_build/` are both already
+listed in `.gitignore`.
 
 > [!IMPORTANT]
 > Do not use `build/` as the binary directory. Unlike in most CMake projects, `build/` here is a tracked source directory holding the project's CMake modules, so configuring into it mixes build output into the working tree.
@@ -100,21 +102,41 @@ Public headers have no `private` suffix (e.g., `mongoc-client.h`). Internal head
 
 ### Navigating libmongoc
 
-Implementation files are named `mongoc-<subsystem>*.c`, so the file listing is itself a serviceable index: `mongoc-uri.c` (connection string parsing), `mongoc-collection.c` / `mongoc-database.c`, `mongoc-bulkwrite.c` / `mongoc-bulk-operation.c`, `mongoc-client-session.c` (sessions and transactions), `mongoc-gridfs*.c`, `mongoc-structured-log.c`, and so on. The `mcd-` prefix marks assorted newer internal components rather than one subsystem (`mcd-rpc.c` is the wire protocol message representation).
+Implementation files are named `mongoc-<subsystem>*.c`, so the file listing is
+itself a serviceable index: `mongoc-uri.c` (connection string parsing),
+`mongoc-collection.c` / `mongoc-database.c`, `mongoc-bulkwrite.c` /
+`mongoc-bulk-operation.c`, `mongoc-client-session.c` (sessions and
+transactions), `mongoc-gridfs*.c`, `mongoc-structured-log.c`, and so on. The
+`mcd-` prefix marks assorted newer internal components rather than one subsystem
+(`mcd-rpc.c` is the wire protocol message representation).
 
 The relationships that the file names do *not* convey:
 
-- **Client, pool, and topology.** A single-threaded `mongoc_client_t` owns its `mongoc_topology_t` directly, while every client handed out by a `mongoc_client_pool_t` shares the pool's single topology. Which objects are shared between threads follows from this split.
-- **SDAM** spans more than `mongoc-topology*.c`: `mongoc-server-description.c`, `mongoc-server-monitor.c`, and `mongoc-topology-background-monitoring.c` are all part of it.
-- **Cluster** (`mongoc-cluster.c`) owns the open connections to servers and dispatches commands — the layer between a client operation and the wire. Authentication mechanisms are *also* here, as `mongoc-cluster-<mechanism>.c` (`-aws`, `-cyrus`, `-oidc`, `-sasl`, `-sspi`), alongside `mongoc-scram.c`.
-- **Cursor** is one public type over several backends: `mongoc-cursor-find.c`, `-cmd.c`, `-array.c`, `-change-stream.c`.
-- **Streams** are layered behind the `mongoc_stream_t` vtable: a TLS stream (`mongoc-stream-tls-*.c`, one per TLS backend) wraps a base socket or buffered stream.
-- **In-Use Encryption** is split between `mongoc-client-side-encryption.c` (the public API) and `mongoc-crypt.c` (the binding to libmongocrypt).
-- **APM** (`mongoc-apm.c`) exposes 12 callbacks, covering command, server/topology, and heartbeat events. There are no connection-pool (CMAP) callbacks.
+- **Client, pool, and topology.** A single-threaded `mongoc_client_t` owns its
+  `mongoc_topology_t` directly, while every client handed out by a
+  `mongoc_client_pool_t` shares the pool's single topology. Which objects are
+  shared between threads follows from this split.
+- **SDAM** spans more than `mongoc-topology*.c`: `mongoc-server-description.c`,
+  `mongoc-server-monitor.c`, and `mongoc-topology-background-monitoring.c` are
+  all part of it.
+- **Cluster** (`mongoc-cluster.c`) owns the open connections to servers and
+  dispatches commands — the layer between a client operation and the wire.
+  Authentication mechanisms are *also* here, as `mongoc-cluster-<mechanism>.c`
+  (`-aws`, `-cyrus`, `-oidc`, `-sasl`, `-sspi`), alongside `mongoc-scram.c`.
+- **Cursor** is one public type over several backends: `mongoc-cursor-find.c`,
+  `-cmd.c`, `-array.c`, `-change-stream.c`.
+- **Streams** are layered behind the `mongoc_stream_t` vtable: a TLS stream
+  (`mongoc-stream-tls-*.c`, one per TLS backend) wraps a base socket or buffered
+  stream.
+- **In-Use Encryption** is split between `mongoc-client-side-encryption.c` (the
+  public API) and `mongoc-crypt.c` (the binding to libmongocrypt).
+- **APM** (`mongoc-apm.c`) exposes callbacks, covering command, server/topology,
+  and heartbeat events. There are no connection-pool (CMAP) callbacks.
 
 ### Vendored Third-Party Libraries
 
-There are several third-party libraries in the repository source tree to enable self-contained builds:
+There are several third-party libraries in the repository source tree to enable
+self-contained builds:
 
 | Repository | Source Tree Location (where `<version>` is a placeholder for the version number) |
 |---|---|
@@ -131,10 +153,19 @@ Uses C99. Contributions shall not use features from newer standards.
 
 See *Coding Style* in `CONTRIBUTING.md` and `.clang-format` for indentation. In addition:
 
-- **Column limit**: 120 characters.
-- **clangd**: requires configuring with `-D CMAKE_EXPORT_COMPILE_COMMANDS=ON`, which is not enabled by default. If clangd reports unknown headers or missing symbols, check that `<build-dir>/compile_commands.json` exists before looking anywhere else.
-- Include directives for `mlib/`, `bson/`, and `mongoc/` headers use angle brackets (`<mlib/str.h>`, not `"mlib/str.h"`).
-- New `.c`/`.h` files carry an Apache 2.0 license header; copy the boilerplate from an existing file rather than composing it from memory.
+- Format using formatting scripts. Don't try to manipulate things by hand when
+  you can just run the formatters described below.
+- **clangd**: requires configuring with `-D CMAKE_EXPORT_COMPILE_COMMANDS=ON`,
+  which is not enabled by default. If clangd reports unknown headers or missing
+  symbols, check that `<build-dir>/compile_commands.json` exists before looking
+  anywhere else. You may also require a `.clangd` configuration file that
+  directs clangd where to find the compilation database.
+- Include directives for `mlib/`, `bson/`, and `mongoc/` headers use angle
+  brackets (`<mlib/str.h>`, not `"mlib/str.h"`). This will be enforced
+  automatically by the formatting scripts. Be aware that formatting may
+  rearrange `#include` directives.
+- New `.c`/`.h` files carry an Apache 2.0 license header. Copy the boilerplate
+  from an existing file rather than composing it from memory.
 
 ## Documentation
 

@@ -52,7 +52,7 @@ Cases run with the working directory set to the source root, and a case that rep
 Typical invocation:
 
 ```bash
-./<build-dir>/src/libmongoc/test-libmongoc -d -f -l "<test-name-or-pattern>"
+<build-dir>/src/libmongoc/test-libmongoc -d -f -l "<test-name-or-pattern>"
 ```
 
 | Flag | Meaning |
@@ -61,7 +61,7 @@ Typical invocation:
 | `-d` | Print debug output. Useful when a test hangs. |
 | `-f` | Do not fork a process per test; abort on the first error. |
 
-Run `./<build-dir>/src/libmongoc/test-libmongoc --help` for the full flag list.
+Run `<build-dir>/src/libmongoc/test-libmongoc --help` for the full flag list.
 
 ### `-l` matching rules
 
