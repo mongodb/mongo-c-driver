@@ -2,7 +2,7 @@ libmongoc 2.5.1
 ===============
 
 ## Fixes
-- Validate database and collection name arguments against "." and NUL bytes
+- Validate database and collection name arguments against "." and NUL bytes.
 
 Thanks to everyone who contributed to the development of this release.
 
