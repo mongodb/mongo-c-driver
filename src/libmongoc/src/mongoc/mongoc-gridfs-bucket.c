@@ -24,6 +24,7 @@
 #include <mongoc/mongoc-stream-gridfs-download-private.h>
 #include <mongoc/mongoc-stream-gridfs-upload-private.h>
 #include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-write-concern-private.h>
 
 #include <mongoc/mongoc.h>
@@ -95,6 +96,21 @@ mongoc_gridfs_bucket_new(mongoc_database_t *db,
    if (!_mongoc_gridfs_bucket_opts_parse(db->client, opts, &gridfs_opts, error)) {
       _mongoc_gridfs_bucket_opts_cleanup(&gridfs_opts);
       return NULL;
+   }
+
+   // Validate `bucketName` from the BSON options since it may contain an embedded NUL.
+   {
+      bson_iter_t iter;
+
+      if (opts && bson_iter_init_find(&iter, opts, "bucketName") && BSON_ITER_HOLDS_UTF8(&iter)) {
+         uint32_t bucket_name_len;
+         const char *const bucket_name = bson_iter_utf8(&iter, &bucket_name_len);
+
+         if (!_mongoc_validate_collection_name(bucket_name, bucket_name_len, error)) {
+            _mongoc_gridfs_bucket_opts_cleanup(&gridfs_opts);
+            return NULL;
+         }
+      }
    }
 
    /* Initialize the bucket fields */
