@@ -1,3 +1,9 @@
+mongo-c-driver (1.30.4-1+deb13u3) UNRELEASED; urgency=medium
+
+  * Fix CVE-2026-81524: validate db and collection names
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 28 Aug 2026 14:49:01 -0400
+
 mongo-c-driver (1.30.4-1+deb13u2) trixie; urgency=medium
 
   * Fix CVE-2026-6231: bson_validate may skip validation when processing
