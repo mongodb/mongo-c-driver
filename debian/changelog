@@ -1,8 +1,8 @@
-mongo-c-driver (1.30.4-1+deb13u3) UNRELEASED; urgency=medium
+mongo-c-driver (1.30.4-1+deb13u3) trixie; urgency=medium
 
   * Fix CVE-2026-81524: validate db and collection names
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 28 Aug 2026 14:49:01 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Sat, 29 Aug 2026 11:06:27 -0400
 
 mongo-c-driver (1.30.4-1+deb13u2) trixie; urgency=medium
 
