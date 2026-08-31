@@ -530,7 +530,7 @@ _get_stream(const char *endpoint,
    if (connect_cb) {
       // The callback reports failure via this error. Clear it first: it may carry a stale error from a prior attempt.
       bson_error_t local_error;
-      bson_error_t *const cb_error = error ? error : &local_error;
+      bson_error_t *cb_error = error ? error : &local_error;
       bson_error_reset(cb_error);
       base_stream = mongoc_kms_connect_callback_invoke(connect_cb, host.host, host.port, cb_error);
       if (!base_stream) {
