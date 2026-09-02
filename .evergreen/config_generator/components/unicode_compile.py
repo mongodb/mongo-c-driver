@@ -8,7 +8,7 @@ from config_generator.etc.utils import bash_exec
 # Compile-only task for CDRIVER-6346: build on Windows with UNICODE/_UNICODE defined.
 
 # Enable C4133 as error to identify string pointer mismatch.
-_UNICODE_FLAGS = "/we4133 /DUNICODE /D_UNICODE"
+_UNICODE_FLAGS = '/we4133 /DUNICODE /D_UNICODE'
 
 
 def tasks():
