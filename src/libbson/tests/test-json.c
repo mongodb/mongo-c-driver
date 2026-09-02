@@ -6,6 +6,7 @@
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include "test-libmongoc.h"
 #include <common-string-private.h>
 #include <common-cmp-private.h>
 #include <common-json-private.h>
@@ -3792,6 +3793,37 @@ test_bson_as_json_all_formats (void)
 }
 
 
+// Regression test for CDRIVER-6405:
+static void
+test_json_big_string (void *ctx)
+{
+   BSON_UNUSED (ctx);
+
+   // Create a JSON string like { "a": "b\0" + "c" * INT32_MAX ) }
+   static const char prefix[] = "{ \"a\": \"b\\u0000";
+   static const char suffix[] = "\" }";
+   const size_t prefix_len = sizeof prefix - 1u;
+   const size_t suffix_len = sizeof suffix - 1u;
+   const size_t filler_len = (size_t) INT32_MAX;
+   const size_t json_str_len = prefix_len + filler_len + suffix_len;
+
+   char *json_str = bson_malloc (json_str_len + 1u);
+   memcpy (json_str, prefix, prefix_len);
+   memset (json_str + prefix_len, 'c', filler_len);
+   memcpy (json_str + prefix_len + filler_len, suffix, suffix_len);
+   json_str[json_str_len] = '\0';
+
+   // Try to parse with bson_init_from_json
+   bson_t b;
+   bson_error_t error = {0};
+   BSON_ASSERT (mcommon_in_range_unsigned (ssize_t, json_str_len));
+   const bool ok = bson_init_from_json (&b, json_str, (ssize_t) json_str_len, &error);
+   // Expect error:
+   ASSERT (!ok);
+   ASSERT_ERROR_CONTAINS (error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "string length out of range");
+   bson_free (json_str);
+}
+
 void
 test_json_install (TestSuite *suite)
 {
@@ -3897,4 +3929,5 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/parse_array", test_parse_array);
    TestSuite_Add (suite, "/bson/decimal128_overflowing_exponent", test_decimal128_overflowing_exponent);
    TestSuite_Add (suite, "/bson/as_json/all_formats", test_bson_as_json_all_formats);
+   TestSuite_AddFull (suite, "/bson/json/big_string", test_json_big_string, NULL, NULL, skip_if_no_large_allocations);
 }
