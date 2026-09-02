@@ -1,3 +1,13 @@
+libmongoc 1.30.9 [Unreleased]
+=============================
+
+## Fixes
+
+* Fix OCSP error handling.
+* Fix unsafe casts during JSON parsing.
+* Fix possible unsafe truncation when logging base64.
+* Fix unsafe calls to `bson_next_power_of_two`.
+
 libmongoc 1.30.8
 ================
 
