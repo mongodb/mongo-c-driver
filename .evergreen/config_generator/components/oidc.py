@@ -188,7 +188,8 @@ def tasks():
         ),
         EvgTask(
             name='oidc-gcp-auth-test-task',
-            run_on=['debian11-small'],  # TODO: switch to 'debian11-latest' after DEVPROD-23011 fixed.
+            # Must match the GCE VM image family (GCPKMS_IMAGEFAMILY in DET).
+            run_on=['debian12-latest-small'],
             commands=[
                 FetchSource.call(),
                 bash_exec(
