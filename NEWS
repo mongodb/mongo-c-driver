@@ -8,6 +8,16 @@ libmongoc 2.5.2
 * Fix possible unsafe truncation when logging base64.
 * Fix unsafe calls to `bson_next_power_of_two`.
 
+libmongoc 1.30.9
+================
+
+## Fixes
+
+* Fix OCSP error handling.
+* Fix unsafe casts during JSON parsing.
+* Fix possible unsafe truncation when logging base64.
+* Fix unsafe calls to `bson_next_power_of_two`.
+
 libmongoc 2.5.1
 ===============
 
