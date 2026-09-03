@@ -13296,7 +13296,7 @@ buildvariants:
   batchtime: 20160
 - name: testgcpkms-variant
   display_name: GCP KMS
-  run_on: debian11-latest-small
+  run_on: debian12-latest-small
   tasks:
   - testgcpkms_task_group
   - testgcpkms-fail-task
