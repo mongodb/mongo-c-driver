@@ -18,6 +18,7 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
+#include <common-bits-private.h>
 #include <common-string-private.h>
 #include <mongoc/mongoc-crypto-private.h> // mongoc_crypto_hash
 #include <mongoc/mongoc-errno-private.h>
@@ -749,7 +750,7 @@ mongoc_secure_channel_write(mongoc_stream_tls_t *tls, const void *data, size_t d
 void
 mongoc_secure_channel_realloc_buf(size_t *size, uint8_t **buf, size_t new_size)
 {
-   *size = bson_next_power_of_two(new_size);
+   *size = mcommon_next_power_of_two_size_t(new_size);
    *buf = bson_realloc(*buf, *size);
 }
 

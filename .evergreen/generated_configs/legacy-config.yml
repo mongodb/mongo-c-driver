@@ -1390,6 +1390,7 @@ tasks:
   tags:
   - latest
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1410,6 +1411,7 @@ tasks:
   tags:
   - rapid
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1430,6 +1432,7 @@ tasks:
   tags:
   - '9.0'
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1450,6 +1453,7 @@ tasks:
   tags:
   - '8.0'
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1470,6 +1474,7 @@ tasks:
   tags:
   - '7.0'
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1490,6 +1495,7 @@ tasks:
   tags:
   - '6.0'
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1510,6 +1516,7 @@ tasks:
   tags:
   - '5.0'
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1530,6 +1537,7 @@ tasks:
   tags:
   - '4.4'
   - test-aws
+  - test-aws-regular
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1550,6 +1558,7 @@ tasks:
   tags:
   - latest
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1570,6 +1579,7 @@ tasks:
   tags:
   - rapid
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1590,6 +1600,7 @@ tasks:
   tags:
   - '9.0'
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1610,6 +1621,7 @@ tasks:
   tags:
   - '8.0'
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1630,6 +1642,7 @@ tasks:
   tags:
   - '7.0'
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1650,6 +1663,7 @@ tasks:
   tags:
   - '6.0'
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1670,6 +1684,7 @@ tasks:
   tags:
   - '5.0'
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1690,6 +1705,7 @@ tasks:
   tags:
   - '4.4'
   - test-aws
+  - test-aws-ec2
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1710,6 +1726,7 @@ tasks:
   tags:
   - latest
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1730,6 +1747,7 @@ tasks:
   tags:
   - rapid
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1750,6 +1768,7 @@ tasks:
   tags:
   - '9.0'
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1770,6 +1789,7 @@ tasks:
   tags:
   - '8.0'
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1790,6 +1810,7 @@ tasks:
   tags:
   - '7.0'
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1810,6 +1831,7 @@ tasks:
   tags:
   - '6.0'
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1830,6 +1852,7 @@ tasks:
   tags:
   - '5.0'
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1850,6 +1873,7 @@ tasks:
   tags:
   - '4.4'
   - test-aws
+  - test-aws-ecs
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1870,6 +1894,7 @@ tasks:
   tags:
   - latest
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1890,6 +1915,7 @@ tasks:
   tags:
   - rapid
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1910,6 +1936,7 @@ tasks:
   tags:
   - '9.0'
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1930,6 +1957,7 @@ tasks:
   tags:
   - '8.0'
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1950,6 +1978,7 @@ tasks:
   tags:
   - '7.0'
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1970,6 +1999,7 @@ tasks:
   tags:
   - '6.0'
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -1990,6 +2020,7 @@ tasks:
   tags:
   - '5.0'
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2010,6 +2041,7 @@ tasks:
   tags:
   - '4.4'
   - test-aws
+  - test-aws-lambda
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2030,6 +2062,7 @@ tasks:
   tags:
   - latest
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2050,6 +2083,7 @@ tasks:
   tags:
   - rapid
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2070,6 +2104,7 @@ tasks:
   tags:
   - '9.0'
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2090,6 +2125,7 @@ tasks:
   tags:
   - '8.0'
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2110,6 +2146,7 @@ tasks:
   tags:
   - '7.0'
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2130,6 +2167,7 @@ tasks:
   tags:
   - '6.0'
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2150,6 +2188,7 @@ tasks:
   tags:
   - '5.0'
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2170,6 +2209,7 @@ tasks:
   tags:
   - '4.4'
   - test-aws
+  - test-aws-assume_role
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2190,6 +2230,7 @@ tasks:
   tags:
   - latest
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2210,6 +2251,7 @@ tasks:
   tags:
   - rapid
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2230,6 +2272,7 @@ tasks:
   tags:
   - '9.0'
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2250,6 +2293,7 @@ tasks:
   tags:
   - '8.0'
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2270,6 +2314,7 @@ tasks:
   tags:
   - '7.0'
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2290,6 +2335,7 @@ tasks:
   tags:
   - '6.0'
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2310,6 +2356,7 @@ tasks:
   tags:
   - '5.0'
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -2330,6 +2377,7 @@ tasks:
   tags:
   - '4.4'
   - test-aws
+  - test-aws-assume_role_with_web_identity
   depends_on:
     name: debug-compile-aws
   commands:
@@ -13161,27 +13209,35 @@ buildvariants:
   - .latest .nossl
   patchable: false
   batchtime: 1440
-- name: aws-ubuntu2004
-  display_name: AWS Tests (Ubuntu 20.04)
+- name: aws-rhel8
+  display_name: AWS Tests (RHEL 8)
+  expansions:
+    CC: clang
+  run_on: rhel87-small
+  tasks:
+  - debug-compile-aws
+  - .test-aws !.test-aws-ecs
+- name: aws-ecs-ubuntu2004
+  display_name: AWS ECS Tests (Ubuntu 20.04)
   expansions:
     CC: clang
   run_on: ubuntu2004-small
   tasks:
   - debug-compile-aws
-  - .test-aws .4.4
-  - .test-aws .5.0
-- name: aws-ubuntu2204
-  display_name: AWS Tests (Ubuntu 22.04)
+  - .test-aws-ecs .4.4
+  - .test-aws-ecs .5.0
+  - .test-aws-ecs .6.0
+  - .test-aws-ecs .7.0
+- name: aws-ecs-ubuntu2404
+  display_name: AWS ECS Tests (Ubuntu 24.04)
   expansions:
     CC: clang
-  run_on: ubuntu2004-small
+  run_on: ubuntu2404-small
   tasks:
   - debug-compile-aws
-  - .test-aws .6.0
-  - .test-aws .7.0
-  - .test-aws .8.0
-  - .test-aws .9.0
-  - .test-aws .latest
+  - .test-aws-ecs .8.0
+  - .test-aws-ecs .9.0
+  - .test-aws-ecs .latest
 - name: ocsp
   display_name: OCSP tests
   run_on: ubuntu2204-small

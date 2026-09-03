@@ -1016,6 +1016,7 @@ endif ()
 
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-bits.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-mlib.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
    ${mongo-c-driver_SOURCE_DIR}/src/libbson/tests/corpus-test.c
@@ -1171,6 +1172,7 @@ if (MONGOC_ENABLE_SSL)
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp-cache.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp.c
    )
 endif ()
 

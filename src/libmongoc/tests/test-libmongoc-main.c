@@ -2,6 +2,11 @@
 
 #include <mongoc/mongoc.h>
 
+/* For MONGOC_ENABLE_OCSP_OPENSSL, which gates the OCSP test suites below. */
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include <mongoc/mongoc-openssl-private.h>
+#endif
+
 #include <bson/bson.h>
 
 #include <TestSuite.h>
@@ -49,6 +54,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_writer_install);
    TEST_INSTALL(test_b64_install);
    TEST_INSTALL(test_mcommon_atomic_install);
+   TEST_INSTALL(test_mcommon_bits_install);
    TEST_INSTALL(test_mcommon_oid_install);
    TEST_INSTALL(test_mlib_install);
 
@@ -141,6 +147,7 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_streamable_hello_install);
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
    TEST_INSTALL(test_ocsp_cache_install);
+   TEST_INSTALL(test_ocsp_install);
 #endif
    TEST_INSTALL(test_interrupt_install);
    TEST_INSTALL(test_monitoring_install);
