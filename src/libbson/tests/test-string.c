@@ -15,6 +15,7 @@
  */
 
 
+#include <common-b64-private.h>
 #include <common-bits-private.h>
 #include <common-string-private.h>
 
@@ -202,6 +203,56 @@ test_bson_strcasecmp(void)
    BSON_ASSERT(bson_strcasecmp("FoZ", "foo") > 0);
 }
 
+// Test truncating a base64 append at various lengths. Regression test for CDRIVER-6410.
+static void
+test_string_append_base64_encode_truncated(void)
+{
+   const uint8_t data[12] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'};
+   char expected[17];
+   // 12 input bytes encode to 16 base64 characters.
+   ASSERT_CMPINT(mcommon_b64_ntop(data, sizeof data, expected, sizeof expected), ==, 16);
+
+   const uint8_t guard_byte = 0xa5;
+   const uint32_t guard_len = 8;
+
+   // Truncate at every possible alignment within a 4 character base64 group.
+   for (uint32_t max_len = 4; max_len < 8; max_len++) {
+      // Over-allocate and fill the excess with a guard pattern to a write-past-the-end.
+      char *buffer = bson_malloc(max_len + 1u + guard_len);
+      buffer[0] = '\0';
+      memset(buffer + max_len + 1u, guard_byte, guard_len);
+
+      mcommon_string_t *string = mcommon_string_new_with_buffer(buffer, 0, max_len + 1u);
+      mcommon_string_append_t append;
+      mcommon_string_set_append_with_limit(string, &append, max_len);
+
+      // Expect the append to return false indicating truncation.
+      ASSERT(!mcommon_string_append_base64_encode(&append, data, sizeof data));
+
+      // Expect exactly `max_len` characters of the encoding, NUL terminated.
+      ASSERT_CMPUINT32(string->len, ==, max_len);
+      ASSERT_MEMCMP(string->str, expected, max_len);
+      ASSERT_CMPINT(string->str[max_len], ==, '\0');
+
+      // Expect nothing written past the NUL terminator.
+      uint32_t overwritten = 0;
+      for (uint32_t i = 0; i < guard_len; i++) {
+         if ((uint8_t)string->str[max_len + 1u + i] != guard_byte) {
+            overwritten++;
+         }
+      }
+      if (overwritten > 0) {
+         test_error("wrote %" PRIu32 " byte(s) past the end of a %" PRIu32 " byte buffer (max_len=%" PRIu32 ")",
+                    overwritten,
+                    max_len + 1u,
+                    max_len);
+      }
+
+      mcommon_string_destroy(string);
+   }
+}
+
+
 void
 test_string_install(TestSuite *suite)
 {
@@ -213,4 +264,5 @@ test_string_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/string/snprintf", test_bson_snprintf);
    TestSuite_Add(suite, "/bson/string/strnlen", test_bson_strnlen);
    TestSuite_Add(suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
+   TestSuite_Add(suite, "/bson/string/append_base64_encode/truncated", test_string_append_base64_encode_truncated);
 }
