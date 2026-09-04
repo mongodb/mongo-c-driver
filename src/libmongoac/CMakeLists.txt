@@ -96,6 +96,7 @@ configure_file (
    "${CMAKE_CURRENT_SOURCE_DIR}/include/mongoac/version.h.in"
    "${include_dir}/mongoac/version.h"
 )
+set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
 
 set_source_files_properties ("${include_dir}/mongoac/version.h" PROPERTIES LANGUAGE C)
 
@@ -139,6 +140,8 @@ if ("$CACHE{ENABLE_SHARED}" OR "$CACHE{ENABLE_STATIC}" STREQUAL "ON")
     DESTINATION "${MONGOAC_INSTALL_CMAKEDIR}"
   )
 endif ()
+
+add_subdirectory (cmake)
 
 if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
    find_package (Sphinx REQUIRED)
