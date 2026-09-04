@@ -1,7 +1,12 @@
-libbson 2.5.1
+libbson 2.5.2
 =============
 
 No changes since 2.5.1. Version incremented to match the libmongoc version.
+
+libbson 2.5.1
+=============
+
+No changes since 2.5.0. Version incremented to match the libmongoc version.
 
 libbson 2.5.0
 =============
