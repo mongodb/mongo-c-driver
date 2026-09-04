@@ -92,6 +92,54 @@ else ()
    set (MONGOAC_VERSION_PRERELEASE "")
 endif ()
 
+configure_file (
+   "${CMAKE_CURRENT_SOURCE_DIR}/include/mongoac/version.h.in"
+   "${include_dir}/mongoac/version.h"
+)
+
+set_source_files_properties ("${include_dir}/mongoac/version.h" PROPERTIES LANGUAGE C)
+
+set (mongoac_file_set_headers
+  FILE_SET HEADERS
+    BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include"
+    FILES "${include_dir}/mongoac/version.h"
+)
+
+if ("$CACHE{ENABLE_SHARED}")
+  add_library (mongoac_shared INTERFACE)
+  set_target_properties (mongoac_shared PROPERTIES
+    EXPORT_NAME mongoac::shared
+    SOVERSION "${PROJECT_VERSION_MAJOR}"
+  )
+  target_sources (mongoac_shared INTERFACE ${mongoac_file_set_headers})
+  add_library (mongoac::shared ALIAS mongoac_shared)
+
+  install (TARGETS mongoac_shared EXPORT mongoac-targets
+    FILE_SET HEADERS DESTINATION "${MONGOAC_INSTALL_INCLUDEDIR}"
+  )
+endif ()
+
+if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
+  add_library (mongoac_static INTERFACE)
+  set_target_properties (mongoac_static PROPERTIES EXPORT_NAME mongoac::static)
+  target_compile_definitions (mongoac_static INTERFACE MONGOAC_STATIC)
+  target_sources (mongoac_static INTERFACE ${mongoac_file_set_headers})
+  add_library (mongoac::static ALIAS mongoac_static)
+
+  if ("$CACHE{ENABLE_STATIC}" STREQUAL "ON")
+    install (TARGETS mongoac_static EXPORT mongoac-targets
+      FILE_SET HEADERS DESTINATION "${MONGOAC_INSTALL_INCLUDEDIR}"
+    )
+  endif ()
+endif ()
+
+if ("$CACHE{ENABLE_SHARED}" OR "$CACHE{ENABLE_STATIC}" STREQUAL "ON")
+  install (EXPORT mongoac-targets
+    FILE mongoac-targets.cmake
+    DESTINATION "${MONGOAC_INSTALL_CMAKEDIR}"
+  )
+endif ()
+
 if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
    find_package (Sphinx REQUIRED)
    add_subdirectory (doc)
