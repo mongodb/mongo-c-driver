@@ -96,21 +96,117 @@ configure_file (
    "${CMAKE_CURRENT_SOURCE_DIR}/include/mongoac/version.h.in"
    "${include_dir}/mongoac/version.h"
 )
-set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
 
-set_source_files_properties ("${include_dir}/mongoac/version.h" PROPERTIES LANGUAGE C)
+set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
+set (cargo_library_shared "${cargo_target_build_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set (cargo_library_static "${cargo_target_build_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
+set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_shared_filename}")
+set (library_shared_soversion_full "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_shared_filename}.${PROJECT_VERSION}")
+set (library_shared_soversion "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
+set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set (library_static "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_static_filename}")
+
+file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
+file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_BINARY_DIR}/include/*.h")
+
+set (cargo_dependencies
+  ${cargo_sources}
+  "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.lock"
+)
+
+set_source_files_properties (${mongoac_headers} PROPERTIES LANGUAGE C)
 
 set (mongoac_file_set_headers
   FILE_SET HEADERS
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include"
+    FILES ${mongoac_headers}
+  FILE_SET HEADERS
+    BASE_DIRS "${include_dir}"
     FILES "${include_dir}/mongoac/version.h"
 )
 
 if ("$CACHE{ENABLE_SHARED}")
+  if (LINUX)
+    # Patch shared library with SONAME.
+    find_program (PATCHELF_EXECUTABLE patchelf)
+
+    if (PATCHELF_EXECUTABLE)
+      set (patchelf_command
+        COMMAND
+          "${PATCHELF_EXECUTABLE}"
+          --set-soname
+          "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
+          "${library_shared_soversion_full}"
+      )
+    else ()
+      message (WARNING "patchelf not found: mongoac shared library will not have an ELF SONAME!")
+      set (patchelf_command "")
+    endif ()
+  endif()
+
+  if (WIN32)
+    message (WARNING "The mongoac shared library has not yet been tested on Windows!")
+  endif ()
+
+  if (APPLE)
+    message (WARNING "The mongoac shared library has not yet been tested on macOS!")
+  endif ()
+
+  add_custom_command (
+    OUTPUT
+      "${library_shared}"
+      "${library_shared_soversion}"
+      "${library_shared_soversion_full}"
+    COMMENT "Building the mongoac shared library"
+    COMMAND
+      "${CMAKE_COMMAND}" -E env
+        "MONGOAC_CMAKE_BUILD_TYPE=$<CONFIG>"
+        "MONGOAC_LIBRARY_TYPE=shared"
+      "${CARGO_EXECUTABLE}" rustc
+        --manifest-path "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
+        --locked
+        --lib
+        --crate-type cdylib
+        --target-dir "${cargo_target_dir}"
+        "$<$<NOT:$<CONFIG:Debug>>:--release>"
+    COMMAND
+      "${CMAKE_COMMAND}" -E copy
+        "${cargo_library_shared}"
+        "${library_shared_soversion_full}"
+    COMMAND
+      "${CMAKE_COMMAND}" -E create_symlink
+        "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION}"
+        "${library_shared_soversion}"
+    COMMAND
+      "${CMAKE_COMMAND}" -E create_symlink
+        "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
+        "${library_shared}"
+    ${patchelf_command}
+    DEPENDS
+      ${cargo_dependencies}
+    BYPRODUCTS
+      "${cargo_library_shared}"
+  )
+
+  add_custom_target (mongoac_shared_target ALL DEPENDS
+    "${library_shared}"
+    "${library_shared_soversion}"
+    "${library_shared_soversion_full}"
+  )
+
   add_library (mongoac_shared INTERFACE)
   set_target_properties (mongoac_shared PROPERTIES
     EXPORT_NAME mongoac::shared
     SOVERSION "${PROJECT_VERSION_MAJOR}"
+  )
+  add_dependencies (mongoac_shared mongoac_shared_target)
+  target_link_libraries (mongoac_shared INTERFACE
+    "$<BUILD_INTERFACE:${library_shared}>"
+    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/${library_shared_filename}>"
   )
   target_sources (mongoac_shared INTERFACE ${mongoac_file_set_headers})
   add_library (mongoac::shared ALIAS mongoac_shared)
@@ -118,18 +214,60 @@ if ("$CACHE{ENABLE_SHARED}")
   install (TARGETS mongoac_shared EXPORT mongoac-targets
     FILE_SET HEADERS DESTINATION "${MONGOAC_INSTALL_INCLUDEDIR}"
   )
+  install (
+    FILES
+      "${library_shared_soversion_full}"
+      "${library_shared_soversion}"
+      "${library_shared}"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  )
 endif ()
 
 if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
+  add_custom_command (
+    OUTPUT "${library_static}"
+    COMMENT "Building the mongoac static library"
+    COMMAND
+      "${CMAKE_COMMAND}" -E env
+        "MONGOAC_CMAKE_BUILD_TYPE=$<CONFIG>"
+        "MONGOAC_LIBRARY_TYPE=static"
+      "${CARGO_EXECUTABLE}" rustc
+        --manifest-path "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
+        --locked
+        --lib
+        --crate-type staticlib
+        --target-dir "${cargo_target_dir}"
+        "$<$<NOT:$<CONFIG:Debug>>:--release>"
+    COMMAND
+      "${CMAKE_COMMAND}" -E copy
+        "${cargo_library_static}"
+        "${library_static}"
+    DEPENDS
+      ${cargo_dependencies}
+    BYPRODUCTS
+      "${cargo_library_static}"
+  )
+
+  add_custom_target (mongoac_static_target ALL DEPENDS "${library_static}")
+
   add_library (mongoac_static INTERFACE)
   set_target_properties (mongoac_static PROPERTIES EXPORT_NAME mongoac::static)
+  add_dependencies (mongoac_static mongoac_static_target)
   target_compile_definitions (mongoac_static INTERFACE MONGOAC_STATIC)
+  target_link_libraries (mongoac_static INTERFACE
+    "$<BUILD_INTERFACE:${library_static}>"
+    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/${library_static_filename}>"
+  )
   target_sources (mongoac_static INTERFACE ${mongoac_file_set_headers})
   add_library (mongoac::static ALIAS mongoac_static)
 
   if ("$CACHE{ENABLE_STATIC}" STREQUAL "ON")
     install (TARGETS mongoac_static EXPORT mongoac-targets
       FILE_SET HEADERS DESTINATION "${MONGOAC_INSTALL_INCLUDEDIR}"
+    )
+    install (
+      FILES "${library_static}"
+      DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     )
   endif ()
 endif ()
