@@ -23,7 +23,7 @@ To use a prebuilt mongoac library, the following requirements must be satisfied:
 - **CMake: 3.23 or newer**
     - The recommended method to import the mongoac library via ``find_package(mongoac)`` and targets ``mongoac::shared`` or ``mongoac::static``.
 - **pkgconf / pkg-config**
-    - An alternative to CMake via ``pkg-config`` (``libmongoac0.pc`` and ``libmongoac0-static.pc``).
+    - An alternative method to CMake via ``pkgconf`` or ``pkg-config`` (``mongoac0.pc`` and ``mongoac0-static.pc``).
 
 Build Requirements
 ------------------
