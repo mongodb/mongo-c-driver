@@ -5522,7 +5522,7 @@ tasks:
       - func: run-tests
   - name: oidc-azure-auth-test-task
     run_on:
-      - debian11-small
+      - ubuntu2204-small
     commands:
       - func: fetch-source
       - command: subprocess.exec
