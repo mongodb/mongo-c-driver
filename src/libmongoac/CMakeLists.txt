@@ -130,6 +130,23 @@ set (mongoac_file_set_headers
 )
 
 if ("$CACHE{ENABLE_SHARED}")
+  if (LINUX)
+    # Patch shared library with SONAME.
+    find_program (PATCHELF_EXECUTABLE patchelf)
+
+    if (PATCHELF_EXECUTABLE)
+      set (patchelf_command
+        COMMAND
+          "${PATCHELF_EXECUTABLE}"
+          --set-soname
+          "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
+          "${library_shared_soversion_full}"
+      )
+    else ()
+      message (WARNING "patchelf not found: mongoac shared library will not have an ELF SONAME!")
+      set (patchelf_command "")
+    endif ()
+  endif ()
 
   add_custom_command (
     OUTPUT
