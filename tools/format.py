@@ -142,6 +142,7 @@ Recursive source file patterns, based on file extensions.
 SOURCE_DIRS = [
     'src/common',
     'src/libbson',
+    'src/libmongoac',
     'src/libmongoc',
     'tests',
 ]
@@ -151,6 +152,7 @@ Directories that contain our own source files (not vendored code)
 
 EXCLUDE_SOURCES = [
     'src/libbson/src/jsonsl/**/*',
+    'src/libmongoac/target/**/*',
 ]
 """
 Globbing patterns that select files that are contained in our source directories,
