@@ -735,6 +735,11 @@ _bson_json_read_integer(bson_json_reader_t *reader, uint64_t val, int64_t sign)
 static bool
 _bson_json_parse_double(bson_json_reader_t *reader, const char *val, size_t vlen, double *d)
 {
+   if (!mlib_in_range(int, vlen)) {
+      _bson_json_read_corrupt(reader, "string length out of range");
+      return false;
+   }
+
    errno = 0;
    *d = strtod(val, NULL);
 
@@ -845,6 +850,11 @@ _bson_json_parse_binary_elem(bson_json_reader_t *reader, const char *val_w_null,
    int binary_len;
 
    BASIC_CB_PREAMBLE;
+
+   if (!mlib_in_range(int, vlen)) {
+      _bson_json_read_corrupt(reader, "string length out of range");
+      return;
+   }
 
    bs = bson->bson_state;
    data = &bson->bson_type_data;
@@ -974,6 +984,11 @@ _bson_json_read_string(bson_json_reader_t *reader, /* IN */
 
    rs = bson->read_state;
    bs = bson->bson_state;
+
+   if (!mlib_in_range(int, vlen)) {
+      _bson_json_read_corrupt(reader, "string length out of range");
+      return;
+   }
 
    if (!bson_utf8_validate((const char *)val, vlen, allow_null)) {
       _bson_json_read_corrupt(reader, "invalid bytes in UTF8 string");
