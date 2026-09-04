@@ -146,6 +146,14 @@ if ("$CACHE{ENABLE_SHARED}")
       message (WARNING "patchelf not found: mongoac shared library will not have an ELF SONAME!")
       set (patchelf_command "")
     endif ()
+  endif()
+
+  if (WIN32)
+    message (WARNING "The mongoac shared library has not yet been tested on Windows!")
+  endif ()
+
+  if (APPLE)
+    message (WARNING "The mongoac shared library has not yet been tested on macOS!")
   endif ()
 
   add_custom_command (
