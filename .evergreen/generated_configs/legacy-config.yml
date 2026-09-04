@@ -13289,14 +13289,14 @@ buildvariants:
   - .versioned-api .8.0
 - name: testazurekms-variant
   display_name: Azure KMS
-  run_on: debian11-small
+  run_on: ubuntu2204-small
   tasks:
   - testazurekms_task_group
   - testazurekms-fail-task
   batchtime: 20160
 - name: testgcpkms-variant
   display_name: GCP KMS
-  run_on: debian11-latest-small
+  run_on: debian12-latest-small
   tasks:
   - testgcpkms_task_group
   - testgcpkms-fail-task
