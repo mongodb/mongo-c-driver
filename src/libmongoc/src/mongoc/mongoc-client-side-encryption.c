@@ -37,6 +37,119 @@
 #include <mongoc/mongoc.h>
 
 /*--------------------------------------------------------------------------
+ * KMS connect callback.
+ *--------------------------------------------------------------------------
+ */
+struct _mongoc_kms_connect_callback_t {
+   mongoc_kms_connect_callback_fn_t fn;
+   void *user_data;
+};
+
+struct _mongoc_kms_connect_callback_params_t {
+   const char *host;
+   uint16_t port;
+   void *user_data;
+   bson_error_t *error;
+};
+
+const char *
+mongoc_kms_connect_callback_params_get_host(const mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->host;
+}
+
+uint16_t
+mongoc_kms_connect_callback_params_get_port(const mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->port;
+}
+
+void *
+mongoc_kms_connect_callback_params_get_user_data(const mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->user_data;
+}
+
+bson_error_t *
+mongoc_kms_connect_callback_params_get_error(mongoc_kms_connect_callback_params_t *params)
+{
+   BSON_ASSERT_PARAM(params);
+   return params->error;
+}
+
+mongoc_stream_t *
+mongoc_kms_connect_callback_invoke(const mongoc_kms_connect_callback_t *callback,
+                                   const char *host,
+                                   uint16_t port,
+                                   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(callback);
+   BSON_ASSERT_PARAM(host);
+   BSON_ASSERT_PARAM(error);
+
+   mongoc_kms_connect_callback_params_t params = {
+      .host = host, .port = port, .user_data = callback->user_data, .error = error};
+   return callback->fn(&params);
+}
+
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_new(mongoc_kms_connect_callback_fn_t fn)
+{
+   return mongoc_kms_connect_callback_new_with_user_data(fn, NULL);
+}
+
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_new_with_user_data(mongoc_kms_connect_callback_fn_t fn, void *user_data)
+{
+   if (!fn) {
+      return NULL;
+   }
+
+   mongoc_kms_connect_callback_t *const ret = bson_malloc(sizeof(*ret));
+   *ret = (mongoc_kms_connect_callback_t){.fn = fn, .user_data = user_data};
+   return ret;
+}
+
+void
+mongoc_kms_connect_callback_destroy(mongoc_kms_connect_callback_t *callback)
+{
+   bson_free(callback);
+}
+
+mongoc_kms_connect_callback_fn_t
+mongoc_kms_connect_callback_get_fn(const mongoc_kms_connect_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(callback);
+   return callback->fn;
+}
+
+void *
+mongoc_kms_connect_callback_get_user_data(const mongoc_kms_connect_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(callback);
+   return callback->user_data;
+}
+
+void
+mongoc_kms_connect_callback_set_user_data(mongoc_kms_connect_callback_t *callback, void *user_data)
+{
+   BSON_ASSERT_PARAM(callback);
+   callback->user_data = user_data;
+}
+
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_copy(const mongoc_kms_connect_callback_t *callback)
+{
+   if (!callback) {
+      return NULL;
+   }
+   return mongoc_kms_connect_callback_new_with_user_data(callback->fn, callback->user_data);
+}
+
+/*--------------------------------------------------------------------------
  * Auto Encryption options.
  *--------------------------------------------------------------------------
  */
@@ -54,6 +167,7 @@ struct _mongoc_auto_encryption_opts_t {
    bool bypass_auto_encryption;
    bool bypass_query_analysis;
    mc_kms_credentials_callback creds_cb;
+   mongoc_kms_connect_callback_t *connect_cb;
    bson_t *extra;
    mcd_optional_u64_t cache_expiration_ms;
 };
@@ -85,6 +199,7 @@ mongoc_auto_encryption_opts_destroy(mongoc_auto_encryption_opts_t *opts)
    bson_free(opts->keyvault_db);
    bson_free(opts->keyvault_coll);
    bson_destroy(opts->tls_opts);
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
    bson_free(opts);
 }
 
@@ -236,6 +351,15 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
    _set_creds_callback(&opts->creds_cb, fn, userdata);
 }
 
+void
+mongoc_auto_encryption_opts_set_kms_connect_callback(mongoc_auto_encryption_opts_t *opts,
+                                                     const mongoc_kms_connect_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(opts);
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
+   opts->connect_cb = mongoc_kms_connect_callback_copy(callback);
+}
+
 /*--------------------------------------------------------------------------
  * Client Encryption options.
  *--------------------------------------------------------------------------
@@ -247,6 +371,7 @@ struct _mongoc_client_encryption_opts_t {
    bson_t *kms_providers;
    bson_t *tls_opts;
    mc_kms_credentials_callback creds_cb;
+   mongoc_kms_connect_callback_t *connect_cb;
    mcd_optional_u64_t cache_expiration_ms;
 };
 
@@ -262,6 +387,8 @@ mongoc_client_encryption_opts_destroy(mongoc_client_encryption_opts_t *opts)
    if (!opts) {
       return;
    }
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
+   opts->connect_cb = NULL;
    _set_creds_callback(&opts->creds_cb, NULL, NULL);
    bson_free(opts->keyvault_db);
    bson_free(opts->keyvault_coll);
@@ -327,6 +454,15 @@ mongoc_client_encryption_opts_set_kms_credential_provider_callback(mongoc_client
    BSON_ASSERT_PARAM(opts);
    opts->creds_cb.fn = fn;
    opts->creds_cb.userdata = userdata;
+}
+
+void
+mongoc_client_encryption_opts_set_kms_connect_callback(mongoc_client_encryption_opts_t *opts,
+                                                       const mongoc_kms_connect_callback_t *callback)
+{
+   BSON_ASSERT_PARAM(opts);
+   mongoc_kms_connect_callback_destroy(opts->connect_cb);
+   opts->connect_cb = mongoc_kms_connect_callback_copy(callback);
 }
 
 void
@@ -2242,6 +2378,7 @@ _mongoc_cse_client_enable_auto_encryption(mongoc_client_t *client,
                         opts->bypass_auto_encryption,
                         opts->bypass_query_analysis,
                         opts->creds_cb,
+                        opts->connect_cb,
                         opts->cache_expiration_ms,
                         error);
    if (!client->topology->crypt) {
@@ -2386,6 +2523,7 @@ _mongoc_cse_client_pool_enable_auto_encryption(mongoc_topology_t *topology,
                                        opts->bypass_auto_encryption,
                                        opts->bypass_query_analysis,
                                        opts->creds_cb,
+                                       opts->connect_cb,
                                        opts->cache_expiration_ms,
                                        error);
    if (!topology->crypt) {
@@ -2489,6 +2627,7 @@ mongoc_client_encryption_new(mongoc_client_encryption_opts_t *opts, bson_error_t
                                                 false,
                                                 /* bypass_query_analysis. Not applicable. */
                                                 opts->creds_cb,
+                                                opts->connect_cb,
                                                 opts->cache_expiration_ms,
                                                 error);
    if (!client_encryption->crypt) {
