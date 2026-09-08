@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.30.8
+%global up_version   1.30.9
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -275,6 +275,9 @@ exit $ret
 
 
 %changelog
+* Fri Sep  4 2026 Remi Collet <remi@remirepo.net> - 1.30.9-1
+- update to 1.30.9
+
 * Wed Apr  8 2026 Remi Collet <remi@remirepo.net> - 1.30.8-1
 - update to 1.30.8
 
@@ -286,9 +289,6 @@ exit $ret
 
 * Wed Oct  8 2025 Remi Collet <remi@remirepo.net> - 1.30.6-1
 - update to 1.30.6
-
-* Thu Jul 24 2025 Fedora Release Engineering <releng@fedoraproject.org> - 1.30.5-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_43_Mass_Rebuild
 
 * Wed Jun 18 2025 Remi Collet <remi@remirepo.net> - 1.30.5-1
 - update to 1.30.5
@@ -303,18 +303,8 @@ exit $ret
 * Wed Mar  5 2025 Remi Collet <remi@remirepo.net> - 1.30.2-1
 - update to 1.30.2
 
-* Tue Feb 25 2025 Remi Collet <remi@remirepo.net> - 1.30.1-1
-- update to 1.30.1
-
-* Tue Feb 18 2025 Remi Collet <remi@remirepo.net> - 1.30.0-2
-- add upstream patch for GCC 15
-  https://jira.mongodb.org/browse/CDRIVER-5889
-
 * Thu Feb  6 2025 Remi Collet <remi@remirepo.net> - 1.30.0-1
 - update to 1.30.0
-
-* Fri Jan 17 2025 Fedora Release Engineering <releng@fedoraproject.org> - 1.29.2-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_42_Mass_Rebuild
 
 * Tue Jan  7 2025 Remi Collet <remi@remirepo.net> - 1.29.2-1
 - update to 1.29.2
@@ -330,9 +320,6 @@ exit $ret
 * Thu Oct 10 2024 Remi Collet <remi@remirepo.net> - 1.28.1-1
 - update to 1.28.1
 
-* Mon Oct  7 2024 Remi Collet <remi@remirepo.net> - 1.28.0-2
-- rebuild for utf8proc #2316935
-
 * Thu Sep 19 2024 Remi Collet <remi@remirepo.net> - 1.28.0-1
 - update to 1.28.0
 - raise dependency to libmongocrypt 1.11.0
@@ -343,14 +330,8 @@ exit $ret
 * Wed Aug  7 2024 Remi Collet <remi@remirepo.net> - 1.27.5-1
 - update to 1.27.5
 
-* Thu Jul 18 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.27.4-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_41_Mass_Rebuild
-
 * Wed Jul  3 2024 Remi Collet <remi@remirepo.net> - 1.27.4-1
 - update to 1.27.4
-
-* Tue Jul  2 2024 Remi Collet <remi@remirepo.net> - 1.27.3-1
-- update to 1.27.3
 
 * Wed Jun  5 2024 Remi Collet <remi@remirepo.net> - 1.27.2-1
 - update to 1.27.2
@@ -361,58 +342,14 @@ exit $ret
 * Thu May  2 2024 Remi Collet <remi@remirepo.net> - 1.27.0-1
 - update to 1.27.0
 - raise dependency to libmongocrypt 1.10.0
-
-* Wed Apr  3 2024 Remi Collet <remi@remirepo.net> - 1.26.2-1
-- update to 1.26.2
-
-* Wed Mar  6 2024 Remi Collet <remi@remirepo.net> - 1.26.1-1
-- update to 1.26.1
-
-* Fri Feb 16 2024 Remi Collet <remi@remirepo.net> - 1.26.0-1
-- update to 1.26.0
-- raise dependency to libmongocrypt 1.8.0
-
-* Thu Jan 25 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.25.4-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
-
-* Sun Jan 21 2024 Fedora Release Engineering <releng@fedoraproject.org> - 1.25.4-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
-
-* Wed Jan  3 2024 Remi Collet <remi@remirepo.net> - 1.25.4-1
-- update to 1.25.4
-
-* Wed Dec 13 2023 Remi Collet <remi@remirepo.net> - 1.25.3-1
-- update to 1.25.3
-
-* Wed Dec  6 2023 Remi Collet <remi@remirepo.net> - 1.25.2-1
-- update to 1.25.2
-
-* Wed Nov  8 2023 Remi Collet <remi@remirepo.net> - 1.25.1-1
-- update to 1.25.1
-
-* Mon Nov  6 2023 Remi Collet <remi@remirepo.net> - 1.25.0-1
-- update to 1.25.0
 - drop dependency on libicu
 - add dependency on libutf8proc
-- open https://jira.mongodb.org/browse/CDRIVER-4767 unusable archive
-
-* Wed Sep  6 2023 Remi Collet <remi@remirepo.net> - 1.24.4-1
-- update to 1.24.4 (no change)
 
 * Thu Aug 17 2023 Remi Collet <remi@remirepo.net> - 1.24.3-1
 - update to 1.24.3
 
-* Thu Jul 20 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.24.2-3
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
-
-* Thu Jul 13 2023 František Zatloukal <fzatlouk@redhat.com> - 1.24.2-2
-- Rebuilt for ICU 73.2
-
 * Thu Jul 13 2023 Remi Collet <remi@remirepo.net> - 1.24.2-1
 - update to 1.24.2
-
-* Tue Jul 11 2023 František Zatloukal <fzatlouk@redhat.com> - 1.24.1-2
-- Rebuilt for ICU 73.2
 
 * Wed Jun 21 2023 Remi Collet <remi@remirepo.net> - 1.24.1-1
 - update to 1.24.1
@@ -428,18 +365,9 @@ exit $ret
 
 * Wed Apr  5 2023 Remi Collet <remi@remirepo.net> - 1.23.3-1
 - update to 1.23.3
-
-* Thu Jan 19 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.23.2-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
-
-* Wed Jan  4 2023 Remi Collet <remi@remirepo.net> - 1.23.2-1
-- update to 1.23.2
 - use SPDX license ID
 
-* Sat Dec 31 2022 Pete Walter <pwalter@fedoraproject.org> - 1.23.1-3
-- Rebuild for ICU 72
-
-* Thu Oct 20 2022 Remi Collet <remi@remirepo.net> - 1.23.1-2
+* Thu Oct 20 2022 Remi Collet <remi@remirepo.net> - 1.23.1-1
 - update to 1.23.1
 
 * Thu Sep  8 2022 Remi Collet <remi@remirepo.net> - 1.23.0-1
@@ -449,27 +377,15 @@ exit $ret
 - update to 1.22.1
 - raise dependency to libmongocrypt 1.5.2
 
-* Mon Aug 01 2022 Frantisek Zatloukal <fzatlouk@redhat.com> - 1.22.0-3
-- Rebuilt for ICU 71.1
-
-* Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.22.0-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
-
 * Mon Jul 18 2022 Remi Collet <remi@remirepo.net> - 1.22.0-1
 - update to 1.22.0
 - raise dependency to libmongocrypt 1.5.0
-
-* Wed Jun  8 2022 Remi Collet <remi@remirepo.net> - 1.21.2-1
-- update to 1.21.2 (no change)
 
 * Wed Mar  2 2022 Remi Collet <remi@remirepo.net> - 1.21.1-1
 - update to 1.21.1
 
 * Wed Feb  2 2022 Remi Collet <remi@remirepo.net> - 1.21.0-1
 - update to 1.21.0
-
-* Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.20.1-2
-- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
 
 * Thu Jan  6 2022 Remi Collet <remi@remirepo.net> - 1.20.1-1
 - update to 1.20.1
