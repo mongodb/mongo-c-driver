@@ -75,6 +75,13 @@ bson_utf8_validate(const char *utf8, /* IN */
 
    BSON_ASSERT(utf8);
 
+   /*
+    * Check for NULL bytes afterwards.
+    */
+   if (!allow_null && memchr (utf8, '\0', utf8_len)) {
+      return false;
+   }
+
    for (i = 0; i < utf8_len; i += seq_length) {
       mcommon_utf8_get_sequence(&utf8[i], &seq_length, &first_mask);
 
@@ -105,22 +112,6 @@ bson_utf8_validate(const char *utf8, /* IN */
          c = (c << 6) | (utf8[j] & 0x3F);
          if ((utf8[j] & 0xC0) != 0x80) {
             return false;
-         }
-      }
-
-      /*
-       * Check for NULL bytes afterwards.
-       *
-       * Hint: if you want to optimize this function, starting here to do
-       * this in the same pass as the data above would probably be a good
-       * idea. You would add a branch into the inner loop, but save possibly
-       * on cache-line bouncing on larger strings. Just a thought.
-       */
-      if (!allow_null) {
-         for (j = 0; j < seq_length; j++) {
-            if (((i + j) > utf8_len) || !utf8[i + j]) {
-               return false;
-            }
          }
       }
 
