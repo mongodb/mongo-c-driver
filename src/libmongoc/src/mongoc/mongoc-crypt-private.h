@@ -29,6 +29,19 @@ typedef struct mc_kms_credentials_callback {
    void *userdata;
 } mc_kms_credentials_callback;
 
+// `mongoc_kms_connect_callback_copy` returns an owned copy of `callback`, or NULL if `callback` is NULL.
+mongoc_kms_connect_callback_t *
+mongoc_kms_connect_callback_copy(const mongoc_kms_connect_callback_t *callback) BSON_GNUC_WARN_UNUSED_RESULT;
+
+// `mongoc_kms_connect_callback_invoke` calls `callback` with a `mongoc_kms_connect_callback_params_t` describing the
+// requested KMS endpoint. Returns the stream returned by the callback, or NULL. `error` is passed to the callback and
+// is expected to be set by the callback when NULL is returned.
+mongoc_stream_t *
+mongoc_kms_connect_callback_invoke(const mongoc_kms_connect_callback_t *callback,
+                                   const char *host,
+                                   uint16_t port,
+                                   bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 /* For interacting with libmongocrypt */
@@ -53,6 +66,7 @@ _mongoc_crypt_new(const bson_t *kms_providers,
                   bool bypass_auto_encryption,
                   bool bypass_query_analysis,
                   mc_kms_credentials_callback creds_cb,
+                  const mongoc_kms_connect_callback_t *connect_cb,
                   mcd_optional_u64_t cache_expiration_ms,
                   bson_error_t *error);
 
