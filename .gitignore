@@ -7,6 +7,7 @@ _build/
 dist_manifest.txt
 test-results.json
 *.pyc
+target/
 
 # Windows things
 *.sdf
