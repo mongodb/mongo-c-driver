@@ -14,12 +14,14 @@ block ()
     @ONLY
   )
 
-  install (
-    FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/mongoacConfigVersion.cmake"
-      "${CMAKE_CURRENT_BINARY_DIR}/mongoacConfig.cmake"
-    DESTINATION "${MONGOAC_INSTALL_CMAKEDIR}"
-  )
+  if ("$CACHE{ENABLE_SHARED}" OR "$CACHE{ENABLE_STATIC}" STREQUAL "ON")
+    install (
+      FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/mongoacConfigVersion.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/mongoacConfig.cmake"
+      DESTINATION "${MONGOAC_INSTALL_CMAKEDIR}"
+    )
+  endif ()
 endblock ()
 
 # Generate and install pkg-config package config files.
