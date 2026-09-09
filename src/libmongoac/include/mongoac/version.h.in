@@ -30,7 +30,7 @@ extern "C" {
 
 #define MONGOAC_VERSION_HEX (MONGOAC_VERSION_MAJOR << 24 | MONGOAC_VERSION_MINOR << 16 | MONGOAC_VERSION_PATCH << 8 | 0)
 
-#define MONGOAC_VERSION_CHECK(major, minor, patch)                                                              \
+#define MONGOAC_CHECK_VERSION(major, minor, patch)                                                              \
    (MONGOAC_VERSION_MAJOR > (major) || (MONGOAC_VERSION_MAJOR == (major) && MONGOAC_VERSION_MINOR > (minor)) || \
     (MONGOAC_VERSION_MAJOR == (major) && MONGOAC_VERSION_MINOR == (minor) && MONGOAC_VERSION_PATCH >= (patch)))
 
