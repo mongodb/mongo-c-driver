@@ -16,7 +16,7 @@ Synopsis
 
    #define MONGOAC_VERSION_HEX // e.g. 0x01020300
 
-   #define MONGOAC_VERSION_CHECK(major, minor, patch)
+   #define MONGOAC_CHECK_VERSION(major, minor, patch)
 
 Description
 -----------
