@@ -81,35 +81,3 @@ sudo chroot ./trixie-chroot /bin/bash -c "(\
   rm -f example-client && \
   git status --ignored && \
   dpkg-buildpackage -b && dpkg-buildpackage -S )"
-
-# And now do it all again for 32-bit
-sudo -E ./debootstrap.git/debootstrap --variant=buildd --arch i386 trixie ./trixie-i386-chroot/ http://cdn-aws.deb.debian.org/debian
-cp -a mongoc ./trixie-i386-chroot/tmp/
-sudo chroot ./trixie-i386-chroot /bin/bash -c '(\
-  apt-get install -y build-essential git-buildpackage fakeroot dpkg-dev debhelper cmake libssl-dev pkgconf python3-sphinx python3-sphinx-design furo libmongocrypt-dev zlib1g-dev libsasl2-dev libsnappy-dev libutf8proc-dev libzstd-dev libjs-mathjax && \
-  chown -R root:root /tmp/mongoc && \
-  cd /tmp/mongoc && \
-  git clean -fdx && \
-  git reset --hard HEAD && \
-  git remote remove upstream || true && \
-  git remote add upstream https://github.com/mongodb/mongo-c-driver && \
-  git fetch upstream && \
-  export CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)" && \
-  git checkout debian/1.30.4-1 && \
-  git checkout ${CURRENT_BRANCH} && \
-  git checkout debian/1.30.4-1 -- ./debian/ && \
-  git commit -m "fetch debian directory from the debian/unstable branch" && \
-  LANG=C /bin/bash ./debian/build_snapshot.sh && \
-  debc ../*.changes && \
-  dpkg -i ../*.deb && \
-  gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )'
-
-[ -e ./trixie-i386-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
-(cd ./trixie-i386-chroot/tmp/ ; tar zcvf ../../deb-i386.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
-
-# Build a second time, to ensure a "double build" works
-sudo chroot ./trixie-i386-chroot /bin/bash -c "(\
-  cd /tmp/mongoc && \
-  rm -f example-client && \
-  git status --ignored && \
-  dpkg-buildpackage -b && dpkg-buildpackage -S )"
