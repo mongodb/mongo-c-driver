@@ -15,6 +15,7 @@
  */
 
 #include <mongoc/mongoc.h>
+#include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-gridfs-bucket-file-private.h>
 #include <mongoc/mongoc-gridfs-bucket-private.h>
 #include <mongoc/mongoc-trace-private.h>
@@ -168,11 +169,10 @@ _mongoc_gridfs_bucket_init_cursor (mongoc_gridfs_bucket_file_t *file)
 
    BSON_ASSERT (file);
 
-   bson_init (&filter);
    bson_init (&opts);
    bson_init (&sort);
 
-   BSON_APPEND_VALUE (&filter, "files_id", file->file_id);
+   bsonBuild (filter, kv ("files_id", doc (kv ("$eq", value (*file->file_id)))));
    BSON_APPEND_INT32 (&sort, "n", 1);
    BSON_APPEND_DOCUMENT (&opts, "sort", &sort);
 

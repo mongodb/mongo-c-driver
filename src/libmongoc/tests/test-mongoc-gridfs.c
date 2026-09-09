@@ -249,6 +249,60 @@ test_remove (void)
 }
 
 
+// Test that a file ID containing query operators is matched exactly, and does
+// not remove other files. Regression test for CDRIVER-6427.
+static void
+test_remove_operator_injection (void)
+{
+   mongoc_client_t *client = test_framework_new_default_client ();
+   bson_error_t error;
+   mongoc_gridfs_t *gridfs;
+
+   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "operator_injection", &error), error);
+   drop_collections (gridfs, NULL); // Ignore error from "ns not found".
+
+   // Create two files.
+   for (int i = 0; i < 2; i++) {
+      mongoc_gridfs_file_t *file = mongoc_gridfs_create_file (gridfs, NULL);
+      ASSERT (file);
+
+      const mongoc_iovec_t iov = {.iov_base = (void *) "data", .iov_len = 4};
+      ASSERT_CMPSSIZE_T (mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, 4);
+      ASSERT (mongoc_gridfs_file_save (file));
+      mongoc_gridfs_file_destroy (file);
+   }
+
+   // Attempt to remove with a file ID that is an operator document.
+   {
+      mongoc_gridfs_file_t *file = mongoc_gridfs_create_file (gridfs, NULL);
+      ASSERT (file);
+
+      // `{"$ne": null}` matches every file if interpreted as an operator.
+      bson_t *injected = tmp_bson ("{'$ne': null}");
+      const bson_value_t id = {.value_type = BSON_TYPE_DOCUMENT,
+                               .value.v_doc.data = (uint8_t *) bson_get_data (injected),
+                               .value.v_doc.data_len = injected->len};
+      ASSERT_OR_PRINT (mongoc_gridfs_file_set_id (file, &id, &error), error);
+
+      // Expect no match. Ignore possible error. Server 8.2+ returns an error trying to match `_id` to a $-prefixed key.
+      (void) mongoc_gridfs_file_remove (file, &error);
+
+      mongoc_gridfs_file_destroy (file);
+   }
+
+   // Expect both files remain.
+   {
+      int64_t count = mongoc_collection_count_documents (
+         mongoc_gridfs_get_files (gridfs), tmp_bson ("{}"), NULL, NULL, NULL, &error);
+      ASSERT_OR_PRINT (count != -1, error);
+      ASSERT_CMPINT64 (count, ==, 2);
+   }
+
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 prep_files (mongoc_gridfs_t *gridfs)
 {
@@ -1375,14 +1429,14 @@ test_inherit_client_config (void)
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db', 'delete': 'fs.files', 'writeConcern': {'w': 2}}"),
-                                       tmp_bson ("{'q': {'_id': 1}, 'limit': 1}"));
+                                       tmp_bson ("{'q': {'_id': {'$eq': 1}}, 'limit': 1}"));
 
    reply_to_request_with_ok_and_destroy (request);
 
    request = mock_server_receives_msg (server,
                                        MONGOC_MSG_NONE,
                                        tmp_bson ("{'$db': 'db', 'delete': 'fs.chunks', 'writeConcern': {'w': 2}}"),
-                                       tmp_bson ("{'q': {'files_id': 1}, 'limit': 0}"));
+                                       tmp_bson ("{'q': {'files_id': {'$eq': 1}}, 'limit': 0}"));
 
    reply_to_request_with_ok_and_destroy (request);
    ASSERT (future_get_bool (future));
@@ -1729,6 +1783,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/gridfs_old/seek", test_seek);
    TestSuite_AddLive (suite, "/gridfs_old/stream", test_stream);
    TestSuite_AddLive (suite, "/gridfs_old/remove", test_remove);
+   TestSuite_AddLive (suite, "/gridfs_old/remove/operator_injection", test_remove_operator_injection);
    TestSuite_AddLive (suite, "/gridfs_old/write", test_write);
    TestSuite_AddLive (suite, "/gridfs_old/write_at_boundary", test_write_at_boundary);
    TestSuite_AddLive (suite, "/gridfs_old/write_past_end", test_write_past_end);

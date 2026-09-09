@@ -40,6 +40,15 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
 
+   // libmongoc does not implement the optional advanced GridFS API, so it has no
+   // "download by name" helper.
+   {"gridfs-downloadByName", SKIP_ALL_TESTS},
+   {"gridfs-downloadByName-serverErrors", SKIP_ALL_TESTS},
+
+   // CDRIVER-5782: libmongoc does not have a GridFS bucket rename helper.
+   {"gridfs-queriesUseEq", "rename uses $eq to update the files collection document"},
+   {"gridfs-queriesUseEq", "rename with a file id containing a query operator does not rename any files"},
+
    // libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
@@ -2206,6 +2215,8 @@ void
 test_install_unified (TestSuite *suite)
 {
    run_unified_tests (suite, JSON_DIR, "unified");
+
+   run_unified_tests (suite, JSON_DIR, "gridfs/unified");
 
    run_unified_tests (suite, JSON_DIR, "crud/unified");
 
