@@ -13,7 +13,7 @@ exclude = [
 
 [dependencies]
 mongodb = {
-  version = "3.8.0",
+  version = "3.9.0",
   features = [
     # BSON.
     "bson-3",
