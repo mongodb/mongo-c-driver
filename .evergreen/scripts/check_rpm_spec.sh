@@ -38,6 +38,7 @@ if [ "${IS_PATCH}" = "true" ]; then
 fi
 
 SPEC_FILE=$(mktemp --tmpdir -u mongo-c-driver.XXXXXXXX.spec)
-curl --retry 5 https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec -sS --max-time 120 --fail --output "${SPEC_FILE}"
+# Check against the spec file for the EPEL9 branch, as that is where 1.30.x releases are landed
+curl --retry 5 https://src.fedoraproject.org/rpms/mongo-c-driver/raw/epel9/f/mongo-c-driver.spec -sS --max-time 120 --fail --output "${SPEC_FILE}"
 
 diff -q .evergreen/etc/mongo-c-driver.spec "${SPEC_FILE}" || (echo "Synchronize RPM spec from downstream to fix this failure. See instructions here: https://docs.google.com/document/d/1ItyBC7VN383zNXu3oUOQJYR7adfYI8ECjLMJ5kqA9X8/edit#heading=h.ahdrr3b5xv3"; exit 1)
