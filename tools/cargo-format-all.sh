@@ -3,7 +3,7 @@
 # format.sh
 #
 # Usage:
-#   etc/shfmt-format-all.sh
+#   tools/cargo-format-all.sh
 #
 # This script is meant to be run from the project root directory.
 
