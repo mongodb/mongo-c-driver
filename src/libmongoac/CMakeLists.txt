@@ -84,7 +84,7 @@ endif ()
 
 # Direct cargo to reuse the existing CMake directory structure (source vs. binary).
 set (cargo_target_dir "${CMAKE_CURRENT_BINARY_DIR}/target")
-set (include_dir "${CMAKE_CURRENT_BINARY_DIR}/include")
+set (binary_include_dir "${CMAKE_CURRENT_BINARY_DIR}/include")
 
 if (MONGOAC_VERSION_FULL MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+-([^+]+)")
    string (STRIP "${CMAKE_MATCH_1}" MONGOAC_VERSION_PRERELEASE)
@@ -94,7 +94,7 @@ endif ()
 
 configure_file (
    "${CMAKE_CURRENT_SOURCE_DIR}/include/mongoac/version.h.in"
-   "${include_dir}/mongoac/version.h"
+   "${binary_include_dir}/mongoac/version.h"
 )
 
 set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
@@ -125,8 +125,8 @@ set (mongoac_file_set_headers
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include"
     FILES ${mongoac_headers}
   FILE_SET HEADERS
-    BASE_DIRS "${include_dir}"
-    FILES "${include_dir}/mongoac/version.h"
+    BASE_DIRS "${binary_include_dir}"
+    FILES "${binary_include_dir}/mongoac/version.h"
 )
 
 if ("$CACHE{ENABLE_SHARED}")
