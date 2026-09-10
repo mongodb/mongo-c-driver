@@ -1,3 +1,16 @@
+libmongoc 2.5.3
+===============
+
+## Fixes
+
+* Use exact match for file ID in GridFS delete methods
+* Validate SASL username
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Kevin Albertson
+
 libmongoc 2.5.2
 ===============
 
