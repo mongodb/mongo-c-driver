@@ -617,12 +617,7 @@ _get_must_staple(X509 *cert)
 
    X509_EXTENSION *const ext = sk_X509_EXTENSION_value(exts, idx);
 
-   // Pre-3.0.0 `ASN1_STRING_get0_data()` expects `T*`, but post-4.0.0 `X509_EXTENSION_get_data()` returns `const T*`.
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
    ASN1_STRING *const ext_data = X509_EXTENSION_get_data(ext);
-#else
-   const ASN1_STRING *const ext_data = X509_EXTENSION_get_data(ext);
-#endif
 
    /* Data is a DER encoded sequence of integers. */
    return _mongoc_tlsfeature_has_status_request(ASN1_STRING_get0_data(ext_data), ASN1_STRING_length(ext_data));
