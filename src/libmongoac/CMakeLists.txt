@@ -84,6 +84,7 @@ endif ()
 
 # Direct cargo to reuse the existing CMake directory structure (source vs. binary).
 set (cargo_target_dir "${CMAKE_CURRENT_BINARY_DIR}/target")
+set (source_include_dir "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set (binary_include_dir "${CMAKE_CURRENT_BINARY_DIR}/include")
 
 if (MONGOAC_VERSION_FULL MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+-([^+]+)")
@@ -93,7 +94,7 @@ else ()
 endif ()
 
 configure_file (
-   "${CMAKE_CURRENT_SOURCE_DIR}/include/mongoac/version.h.in"
+   "${source_include_dir}/mongoac/version.h.in"
    "${binary_include_dir}/mongoac/version.h"
 )
 
@@ -110,7 +111,7 @@ set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STA
 set (library_static "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_static_filename}")
 
 file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
-file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_BINARY_DIR}/include/*.h")
+file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h" "${binary_include_dir}/*.h")
 
 set (cargo_dependencies
   ${cargo_sources}
@@ -122,7 +123,7 @@ set_source_files_properties (${mongoac_headers} PROPERTIES LANGUAGE C)
 
 set (mongoac_file_set_headers
   FILE_SET HEADERS
-    BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include"
+    BASE_DIRS "${source_include_dir}" "${binary_include_dir}"
     FILES ${mongoac_headers}
 )
 
