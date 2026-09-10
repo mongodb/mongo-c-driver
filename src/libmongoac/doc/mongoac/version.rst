@@ -8,6 +8,8 @@ Synopsis
 
 .. code-block:: c
 
+   #include <mongoac/version.h>
+
    #define MONGOAC_VERSION            // e.g. "1.2.3-dev"
    #define MONGOAC_VERSION_MAJOR      // e.g. 1
    #define MONGOAC_VERSION_MINOR      // e.g. 2
