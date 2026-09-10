@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-database-private.h>
 #include <mongoc/mongoc-error-private.h>
@@ -58,9 +59,7 @@ _mongoc_gridfs_find_file_with_id(mongoc_gridfs_bucket_t *bucket,
    BSON_ASSERT(bucket);
    BSON_ASSERT(file_id);
 
-   bson_init(&filter);
-
-   BSON_APPEND_VALUE(&filter, "_id", file_id);
+   bsonBuild(filter, kv("_id", doc(kv("$eq", value(*file_id)))));
 
    cursor = mongoc_collection_find_with_opts(bucket->files, &filter, NULL, NULL);
    bson_destroy(&filter);
@@ -439,9 +438,7 @@ mongoc_gridfs_bucket_delete_by_id(mongoc_gridfs_bucket_t *bucket, const bson_val
    BSON_ASSERT(bucket);
    BSON_ASSERT(file_id);
 
-   bson_init(&files_selector);
-
-   BSON_APPEND_VALUE(&files_selector, "_id", file_id);
+   bsonBuild(files_selector, kv("_id", doc(kv("$eq", value(*file_id)))));
 
    r = mongoc_collection_delete_one(bucket->files, &files_selector, NULL, &reply, error);
    bson_destroy(&files_selector);
@@ -460,9 +457,7 @@ mongoc_gridfs_bucket_delete_by_id(mongoc_gridfs_bucket_t *bucket, const bson_val
 
    bson_destroy(&reply);
 
-   bson_init(&chunks_selector);
-
-   BSON_APPEND_VALUE(&chunks_selector, "files_id", file_id);
+   bsonBuild(chunks_selector, kv("files_id", doc(kv("$eq", value(*file_id)))));
 
    r = mongoc_collection_delete_many(bucket->chunks, &chunks_selector, NULL, NULL, error);
    bson_destroy(&chunks_selector);
@@ -539,9 +534,7 @@ mongoc_gridfs_bucket_abort_upload(mongoc_stream_t *stream)
     * collection when the stream is closed */
    file->saved = true;
 
-   bson_init(&chunks_selector);
-   BSON_APPEND_VALUE(&chunks_selector, "files_id", file->file_id);
-
+   bsonBuild(chunks_selector, kv("files_id", doc(kv("$eq", value(*file->file_id)))));
    r = mongoc_collection_delete_many(file->bucket->chunks, &chunks_selector, NULL, NULL, &file->err);
    bson_destroy(&chunks_selector);
    return r;

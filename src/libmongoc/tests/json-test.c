@@ -1590,9 +1590,7 @@ static bson_t *
 _skip_if_unsupported(const char *test_name, bson_t *original)
 {
    bool skip = false;
-   const char *unsupported_tests[] = {"/retryable_reads/legacy/gridfs-downloadByName",
-                                      "/retryable_reads/legacy/gridfs-downloadByName-serverErrors",
-                                      "/retryable_reads/legacy/listCollectionObjects",
+   const char *unsupported_tests[] = {"/retryable_reads/legacy/listCollectionObjects",
                                       "/retryable_reads/legacy/listCollectionObjects-serverErrors",
                                       "/retryable_reads/legacy/listDatabaseObjects",
                                       "/retryable_reads/legacy/listDatabaseObjects-serverErrors",
