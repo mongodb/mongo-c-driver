@@ -124,9 +124,6 @@ set (mongoac_file_set_headers
   FILE_SET HEADERS
     BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include"
     FILES ${mongoac_headers}
-  FILE_SET HEADERS
-    BASE_DIRS "${binary_include_dir}"
-    FILES "${binary_include_dir}/mongoac/version.h"
 )
 
 if ("$CACHE{ENABLE_SHARED}")
