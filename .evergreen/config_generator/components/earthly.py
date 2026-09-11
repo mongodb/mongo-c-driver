@@ -10,6 +10,7 @@ from shrub.v3.evg_command import (
     KeyValueParam,
     ec2_assume_role,
     expansions_update,
+    s3_put,
     subprocess_exec,
 )
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
@@ -339,7 +340,28 @@ def tasks() -> Iterable[EvgTask]:
             name=f'debian-package-{plat}',
             commands=[
                 DockerLoginAmazonECR.call(),
+                # An explicit invocation of deb.packages is needed so that the
+                # earthly COPY .. AS LOCAL will copy the artifact out into the filesystem
+                earthly_exec(kind='test', target='deb.packages', platform=f'linux/{plat}'),
                 earthly_exec(kind='test', target='deb.test', platform=f'linux/{plat}'),
+                s3_put(
+                    aws_key='${aws_key}',
+                    aws_secret='${aws_secret}',
+                    remote_file='${project}/${branch_name}/mongo-c-driver-debian-packages-' + plat + '-${CURRENT_VERSION}.tar.gz',
+                    bucket='mciuploads',
+                    permissions='public-read',
+                    local_file='mongoc/deb-pkg.tgz',
+                    content_type='${content_type|application/x-gzip}',
+                ),
+                s3_put(
+                    aws_key='${aws_key}',
+                    aws_secret='${aws_secret}',
+                    remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-' + plat + '.tar.gz',
+                    bucket='mciuploads',
+                    permissions='public-read',
+                    local_file='mongoc/deb-pkg.tgz',
+                    content_type='${content_type|application/x-gzip}',
+                ),
             ],
             tags=['packaging', 'pr-merge-gate'],
             run_on=CONTAINER_RUN_DISTROS,
