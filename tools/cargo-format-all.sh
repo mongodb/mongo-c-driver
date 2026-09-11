@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# format.sh
+# cargo-format-all.sh
 #
 # Usage:
 #   tools/cargo-format-all.sh
