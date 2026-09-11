@@ -23,6 +23,8 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
+#include <limits.h>
+
 
 static void
 test_sasl_properties(void)
@@ -64,6 +66,74 @@ test_sasl_properties(void)
 }
 
 
+#define CANON_OUT_MAX 255u
+
+static void
+test_sasl_canon_user(void)
+{
+   char *const out = bson_malloc(CANON_OUT_MAX);
+   unsigned out_len = 0u;
+   const char in[] = {'u', 's', 'e', 'r'};
+
+   ASSERT_CMPINT(
+      _mongoc_cyrus_canon_user(NULL, NULL, in, sizeof in, 0u, NULL, out, CANON_OUT_MAX, &out_len), ==, SASL_OK);
+
+   // The output is deliberately not NUL terminated; Cyrus-SASL reads exactly `out_len` bytes.
+   ASSERT_CMPUINT(out_len, ==, (unsigned)sizeof in);
+   ASSERT(0 == memcmp(out, in, sizeof in));
+
+   bson_free(out);
+}
+
+// A username of exactly `out_max` bytes is a full-length username, not an overflow.
+static void
+test_sasl_canon_user_longest_accepted(void)
+{
+   const unsigned inlen = CANON_OUT_MAX;
+   char *const out = bson_malloc(inlen);
+   char *const in = bson_malloc(inlen);
+   unsigned out_len = 0u;
+
+   memset(in, 'x', inlen);
+
+   ASSERT_CMPINT(_mongoc_cyrus_canon_user(NULL, NULL, in, inlen, 0u, NULL, out, CANON_OUT_MAX, &out_len), ==, SASL_OK);
+
+   ASSERT_CMPUINT(out_len, ==, inlen);
+   ASSERT(0 == memcmp(out, in, inlen));
+
+   bson_free(in);
+   bson_free(out);
+}
+
+// Regression test for CDRIVER-6416.
+static void
+test_sasl_canon_user_too_large(void)
+{
+   const unsigned oversized[] = {CANON_OUT_MAX + 1u, UINT_MAX - 1u, UINT_MAX};
+
+   capture_logs(true);
+
+   for (size_t i = 0u; i < sizeof oversized / sizeof *oversized; i++) {
+      char *const out = bson_malloc(CANON_OUT_MAX);
+      unsigned out_len = 0u;
+      const char in[] = {'x'};
+
+      ASSERT_WITH_MSG(_mongoc_cyrus_canon_user(NULL, NULL, in, oversized[i], 0u, NULL, out, CANON_OUT_MAX, &out_len) ==
+                         SASL_BUFOVER,
+                      "expected SASL_BUFOVER for inlen %u",
+                      oversized[i]);
+
+      ASSERT_CAPTURED_LOG("oversized SASL username", MONGOC_LOG_LEVEL_ERROR, "SASL username too large");
+      clear_captured_logs();
+
+      bson_free(out);
+   }
+
+   capture_logs(false);
+}
+
+#undef CANON_OUT_MAX
+
 static void
 test_sasl_canonicalize_hostname(void *ctx)
 {
@@ -91,6 +161,9 @@ void
 test_cyrus_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/SASL/properties", test_sasl_properties);
+   TestSuite_Add(suite, "/SASL/canon_user", test_sasl_canon_user);
+   TestSuite_Add(suite, "/SASL/canon_user/longest_accepted", test_sasl_canon_user_longest_accepted);
+   TestSuite_Add(suite, "/SASL/canon_user/too_large", test_sasl_canon_user_too_large);
    TestSuite_AddFull(suite,
                      "/SASL/canonicalize [lock:live-server]",
                      test_sasl_canonicalize_hostname,
