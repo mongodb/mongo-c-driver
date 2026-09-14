@@ -3,7 +3,7 @@
 mongoc_kms_connect_callback_set_user_data()
 ===========================================
 
-.. versionadded:: 2.4.0
+.. versionadded:: 2.6.0
 
 Synopsis
 --------

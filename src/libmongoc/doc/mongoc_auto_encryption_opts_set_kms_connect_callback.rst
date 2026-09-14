@@ -3,7 +3,7 @@
 mongoc_auto_encryption_opts_set_kms_connect_callback()
 ======================================================
 
-.. versionadded:: 2.4.0
+.. versionadded:: 2.6.0
 
 Synopsis
 --------
