@@ -65,8 +65,8 @@ typedef struct _mongoc_kms_connect_callback_t mongoc_kms_connect_callback_t;
 typedef struct _mongoc_kms_connect_callback_params_t mongoc_kms_connect_callback_params_t;
 
 /* Returns a connected stream to the KMS host and port described by @params. The
- * driver wraps the returned stream with TLS. Return NULL and set the error
- * obtained from `mongoc_kms_connect_callback_params_get_error` on failure. */
+ * driver wraps the returned stream with TLS. On failure, call
+ * `mongoc_kms_connect_callback_params_set_error` and return NULL. */
 typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn_t)(mongoc_kms_connect_callback_params_t *params);
 
 MONGOC_EXPORT(const char *)
@@ -78,8 +78,10 @@ mongoc_kms_connect_callback_params_get_port(const mongoc_kms_connect_callback_pa
 MONGOC_EXPORT(void *)
 mongoc_kms_connect_callback_params_get_user_data(const mongoc_kms_connect_callback_params_t *params);
 
-MONGOC_EXPORT(bson_error_t *)
-mongoc_kms_connect_callback_params_get_error(mongoc_kms_connect_callback_params_t *params);
+/* Called by a `mongoc_kms_connect_callback_fn_t` to report failure to connect. `msg` is an optional
+ * descriptive error message; pass NULL to omit. Always returns NULL. */
+MONGOC_EXPORT(mongoc_stream_t *)
+mongoc_kms_connect_callback_params_set_error(mongoc_kms_connect_callback_params_t *params, const char *msg);
 
 MONGOC_EXPORT(mongoc_kms_connect_callback_t *)
 mongoc_kms_connect_callback_new(mongoc_kms_connect_callback_fn_t fn) BSON_GNUC_WARN_UNUSED_RESULT;

@@ -73,11 +73,17 @@ mongoc_kms_connect_callback_params_get_user_data(const mongoc_kms_connect_callba
    return params->user_data;
 }
 
-bson_error_t *
-mongoc_kms_connect_callback_params_get_error(mongoc_kms_connect_callback_params_t *params)
+mongoc_stream_t *
+mongoc_kms_connect_callback_params_set_error(mongoc_kms_connect_callback_params_t *params, const char *msg)
 {
    BSON_ASSERT_PARAM(params);
-   return params->error;
+   if (msg) {
+      _mongoc_set_error(params->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "%s", msg);
+   } else {
+      _mongoc_set_error(
+         params->error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "KMS connect callback failed to connect");
+   }
+   return NULL;
 }
 
 mongoc_stream_t *

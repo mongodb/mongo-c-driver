@@ -29,18 +29,16 @@ Parameters
 ----------
 
 - ``params`` - A :symbol:`mongoc_kms_connect_callback_params_t`.  Use its
-  accessors to obtain the KMS host and port to connect to, the user data stored
-  by the :symbol:`mongoc_kms_connect_callback_t`, and the
-  :symbol:`bson_error_t` to set on failure.  Only valid for the duration of the
-  call.
+  accessors to obtain the KMS host and port to connect to and the user data
+  stored by the :symbol:`mongoc_kms_connect_callback_t`. Only valid for the
+  duration of the call.
 
 Returns
 -------
 
 A connected :symbol:`mongoc_stream_t` on success, or ``NULL`` on failure. When
-returning ``NULL``, set a descriptive error message and domain/code on the
-:symbol:`bson_error_t` returned by
-:symbol:`mongoc_kms_connect_callback_params_get_error`.
+returning ``NULL``, call :symbol:`mongoc_kms_connect_callback_params_set_error`
+and return the ``NULL`` it returns.
 
 Example
 -------

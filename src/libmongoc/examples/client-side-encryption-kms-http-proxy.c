@@ -94,12 +94,13 @@ kms_connect_via_http_proxy(mongoc_kms_connect_callback_params_t *params)
 {
    const char *host = mongoc_kms_connect_callback_params_get_host(params);
    const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
-   bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
    const kms_proxy_config_t *config = (kms_proxy_config_t *)mongoc_kms_connect_callback_params_get_user_data(params);
 
-   mongoc_stream_t *proxy_stream = tcp_connect(config->proxy_host, config->proxy_port, PROXY_CONNECT_TIMEOUT_MS, error);
+   bson_error_t error;
+   mongoc_stream_t *proxy_stream =
+      tcp_connect(config->proxy_host, config->proxy_port, PROXY_CONNECT_TIMEOUT_MS, &error);
    if (!proxy_stream) {
-      return NULL;
+      return mongoc_kms_connect_callback_params_set_error(params, error.message);
    }
 
    // Ask the proxy to open a tunnel to the KMS endpoint:
@@ -107,10 +108,8 @@ kms_connect_via_http_proxy(mongoc_kms_connect_callback_params_t *params)
    int req_len =
       bson_snprintf(req, sizeof(req), "CONNECT %s:%hu HTTP/1.1\r\nHost: %s:%hu\r\n\r\n", host, port, host, port);
    if (mongoc_stream_write(proxy_stream, req, (size_t)req_len, PROXY_CONNECT_TIMEOUT_MS) != req_len) {
-      bson_set_error(
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to send CONNECT request to proxy");
       mongoc_stream_destroy(proxy_stream);
-      return NULL;
+      return mongoc_kms_connect_callback_params_set_error(params, "Failed to send CONNECT request to proxy");
    }
 
    // Read the proxy's response headers, one byte at a time, until the blank line that ends them:
@@ -119,10 +118,8 @@ kms_connect_via_http_proxy(mongoc_kms_connect_callback_params_t *params)
    while (resp_len + 1 < sizeof(resp)) {
       ssize_t r = mongoc_stream_read(proxy_stream, resp + resp_len, 1, 1 /* min_bytes */, PROXY_CONNECT_TIMEOUT_MS);
       if (r <= 0) {
-         bson_set_error(
-            error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Failed to read CONNECT response from proxy");
          mongoc_stream_destroy(proxy_stream);
-         return NULL;
+         return mongoc_kms_connect_callback_params_set_error(params, "Failed to read CONNECT response from proxy");
       }
       resp_len += (size_t)r;
       if (resp_len >= 4 && 0 == memcmp(resp + resp_len - 4, "\r\n\r\n", 4)) {
@@ -131,9 +128,10 @@ kms_connect_via_http_proxy(mongoc_kms_connect_callback_params_t *params)
    }
 
    if (!strstr(resp, " 200 ")) {
-      bson_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "Proxy CONNECT failed: %s", resp);
+      char msg[1024 + 32];
+      bson_snprintf(msg, sizeof(msg), "Proxy CONNECT failed: %s", resp);
       mongoc_stream_destroy(proxy_stream);
-      return NULL;
+      return mongoc_kms_connect_callback_params_set_error(params, msg);
    }
 
    // `proxy_stream` now delivers raw bytes to `host`:`port`. The driver wraps it with TLS before sending any KMS

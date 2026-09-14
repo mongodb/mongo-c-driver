@@ -30,7 +30,7 @@ New accessors may be added in the future to pass additional information to the c
     mongoc_kms_connect_callback_params_get_host
     mongoc_kms_connect_callback_params_get_port
     mongoc_kms_connect_callback_params_get_user_data
-    mongoc_kms_connect_callback_params_get_error
+    mongoc_kms_connect_callback_params_set_error
 
 Lifecycle
 ---------

@@ -6550,22 +6550,17 @@ _kms_connect_callback_record_and_fail(mongoc_kms_connect_callback_params_t *para
 {
    const char *host = mongoc_kms_connect_callback_params_get_host(params);
    const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
-   bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
    struct kms_connect_data *data = (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
    if (data->set_error) {
       if (data->error_msg) {
-         bson_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "%s", data->error_msg);
-      } else {
-         bson_set_error(error,
-                        MONGOC_ERROR_STREAM,
-                        MONGOC_ERROR_STREAM_CONNECT,
-                        "test: refusing to connect to %s:%d",
-                        host,
-                        (int)port);
+         return mongoc_kms_connect_callback_params_set_error(params, data->error_msg);
       }
+      char msg[300];
+      bson_snprintf(msg, sizeof(msg), "test: refusing to connect to %s:%d", host, (int)port);
+      return mongoc_kms_connect_callback_params_set_error(params, msg);
    }
    return NULL;
 }
@@ -6582,31 +6577,30 @@ _kms_connect_callback_via_proxy(mongoc_kms_connect_callback_params_t *params)
 {
    const char *host = mongoc_kms_connect_callback_params_get_host(params);
    const uint16_t port = mongoc_kms_connect_callback_params_get_port(params);
-   bson_error_t *error = mongoc_kms_connect_callback_params_get_error(params);
    struct kms_connect_data *data = (struct kms_connect_data *)mongoc_kms_connect_callback_params_get_user_data(params);
    data->call_count++;
    bson_strncpy(data->last_host, host, sizeof(data->last_host));
    data->last_port = port;
 
    if (data->fail_first_call && data->call_count == 1) {
-      bson_set_error(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "test: simulated network error");
-      return NULL;
+      return mongoc_kms_connect_callback_params_set_error(params, "test: simulated network error");
    }
 
    const char *proxy_host = NULL;
    int proxy_port = 0;
    _kms_proxy_address(data->transport, &proxy_host, &proxy_port);
 
+   bson_error_t error;
    mongoc_host_list_t hl;
    char endpoint[300];
    bson_snprintf(endpoint, sizeof(endpoint), "%s:%d", proxy_host, proxy_port);
-   if (!_mongoc_host_list_from_string_with_err(&hl, endpoint, error)) {
-      return NULL;
+   if (!_mongoc_host_list_from_string_with_err(&hl, endpoint, &error)) {
+      return mongoc_kms_connect_callback_params_set_error(params, error.message);
    }
 
-   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(MONGOC_DEFAULT_CONNECTTIMEOUTMS, &hl, error);
+   mongoc_stream_t *base_stream = mongoc_client_connect_tcp(MONGOC_DEFAULT_CONNECTTIMEOUTMS, &hl, &error);
    if (!base_stream) {
-      return NULL;
+      return mongoc_kms_connect_callback_params_set_error(params, error.message);
    }
 
    /* If the proxy itself is fronted by TLS, wrap the base stream here. */
@@ -6617,8 +6611,8 @@ _kms_connect_callback_via_proxy(mongoc_kms_connect_callback_params_t *params)
       ssl_opt.ca_file = data->ca_file;
       mongoc_stream_t *tls = mongoc_stream_tls_new_with_hostname(base_stream, proxy_host, &ssl_opt, 1 /* client */);
       ASSERT(tls);
-      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_CONNECTTIMEOUTMS, error),
-                      (*error));
+      ASSERT_OR_PRINT(mongoc_stream_tls_handshake_block(tls, proxy_host, MONGOC_DEFAULT_CONNECTTIMEOUTMS, &error),
+                      error);
       proxy_stream = tls;
    }
 
@@ -6629,7 +6623,7 @@ _kms_connect_callback_via_proxy(mongoc_kms_connect_callback_params_t *params)
    mongoc_iovec_t iov;
    iov.iov_base = req;
    iov.iov_len = (size_t)req_len;
-   ASSERT_OR_PRINT(_mongoc_stream_writev_full(proxy_stream, &iov, 1, MONGOC_DEFAULT_SOCKETTIMEOUTMS, error), (*error));
+   ASSERT_OR_PRINT(_mongoc_stream_writev_full(proxy_stream, &iov, 1, MONGOC_DEFAULT_SOCKETTIMEOUTMS, &error), error);
 
    /* Read the response head until \r\n\r\n. */
    char resp[1024] = {0};

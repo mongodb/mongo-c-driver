@@ -34,8 +34,8 @@ mongoc_kms_connect_callback_t *
 mongoc_kms_connect_callback_copy(const mongoc_kms_connect_callback_t *callback) BSON_GNUC_WARN_UNUSED_RESULT;
 
 // `mongoc_kms_connect_callback_invoke` calls `callback` with a `mongoc_kms_connect_callback_params_t` describing the
-// requested KMS endpoint. Returns the stream returned by the callback, or NULL. `error` is passed to the callback and
-// is expected to be set by the callback when NULL is returned.
+// requested KMS endpoint. Returns the stream returned by the callback, or NULL. `error` backs
+// `mongoc_kms_connect_callback_params_set_error`, and is set by the callback when NULL is returned.
 mongoc_stream_t *
 mongoc_kms_connect_callback_invoke(const mongoc_kms_connect_callback_t *callback,
                                    const char *host,
