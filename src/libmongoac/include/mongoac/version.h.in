@@ -16,6 +16,7 @@
 #define MONGOAC_VERSION_H
 
 #include <mongoac/export.h>
+#include <mongoac/string.h>
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -44,6 +45,12 @@ mongoac_version_minor(void);
 
 MONGOAC_ABI_EXPORT int32_t
 mongoac_version_patch(void);
+
+MONGOAC_ABI_EXPORT mongoac_string_view_t
+mongoac_version_prerelease(void);
+
+MONGOAC_ABI_EXPORT mongoac_string_view_t
+mongoac_version(void);
 
 MONGOAC_ABI_EXPORT int32_t
 mongoac_version_hex(void);
