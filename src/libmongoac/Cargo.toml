@@ -11,6 +11,9 @@ exclude = [
   "include/**",
 ]
 
+[workspace]
+members = ["tools/generate-crate-headers"]
+
 [dependencies]
 mongodb = {
   version = "3.9.0",

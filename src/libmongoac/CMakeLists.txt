@@ -120,12 +120,63 @@ set (cargo_dependencies
   "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
 )
 
-set_source_files_properties (${mongoac_headers} PROPERTIES LANGUAGE C)
+set (cargo_headers "")
+foreach (source IN LISTS cargo_sources)
+  cmake_path (GET source FILENAME filename)
+
+  # Keep synchronized with `SKIP_CARGO_HEADERS` in tools/generate-crate-headers/src/main.rs.
+  set (skip_cargo_headers "lib.rs" "version.rs")
+  if (filename IN_LIST skip_cargo_headers)
+    continue ()
+  endif ()
+
+  cmake_path (RELATIVE_PATH source BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src" OUTPUT_VARIABLE header)
+  if (header MATCHES "^private/")
+    continue () # Always exclude private crates.
+  endif ()
+  cmake_path (REPLACE_EXTENSION header LAST_ONLY ".h" OUTPUT_VARIABLE header)
+  list (APPEND cargo_headers "${binary_include_dir}/mongoac/${header}")
+
+  # Keep synchronized with `SKIP_FORWARD_HEADERS` in tools/generate-crate-headers/src/main.rs.
+  set (skip_forward_headers "string")
+  cmake_path (GET header STEM LAST_ONLY fwd_name)
+  if (NOT fwd_name IN_LIST skip_forward_headers)
+    cmake_path (REMOVE_EXTENSION header LAST_ONLY OUTPUT_VARIABLE fwd_stem)
+    list (APPEND cargo_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
+  endif ()
+endforeach ()
+
+add_custom_command (
+  OUTPUT ${cargo_headers}
+  COMMENT "Generating mongoac crate headers"
+  COMMAND
+    "${CMAKE_COMMAND}" -E env
+      "MONGOAC_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src"
+      "MONGOAC_INCLUDE_DIR=${binary_include_dir}/mongoac"
+    "${CARGO_EXECUTABLE}" run
+      --manifest-path "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/Cargo.toml"
+      --locked
+      --target-dir "${cargo_target_dir}"
+      "$<$<NOT:$<CONFIG:Debug>>:--release>"
+  DEPENDS
+    ${cargo_sources}
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.lock"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/Cargo.toml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/src/main.rs"
+)
+add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${cargo_headers})
+
+set_source_files_properties (${mongoac_headers} ${cargo_headers} PROPERTIES LANGUAGE C)
 
 set (mongoac_file_set_headers
   FILE_SET HEADERS
-    BASE_DIRS "${source_include_dir}" "${binary_include_dir}"
-    FILES ${mongoac_headers}
+    BASE_DIRS
+      "${source_include_dir}"
+      "${binary_include_dir}"
+    FILES
+      ${mongoac_headers}
+      ${cargo_headers}
 )
 
 if ("$CACHE{ENABLE_SHARED}")
@@ -203,7 +254,7 @@ if ("$CACHE{ENABLE_SHARED}")
     EXPORT_NAME mongoac::shared
     SOVERSION "${PROJECT_VERSION_MAJOR}"
   )
-  add_dependencies (mongoac_shared mongoac_shared_target)
+  add_dependencies (mongoac_shared mongoac_shared_target mongoac_crate_headers_target)
   target_link_libraries (mongoac_shared INTERFACE
     "$<BUILD_INTERFACE:${library_shared}>"
     "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/${library_shared_filename}>"
@@ -253,7 +304,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
 
   add_library (mongoac_static INTERFACE)
   set_target_properties (mongoac_static PROPERTIES EXPORT_NAME mongoac::static)
-  add_dependencies (mongoac_static mongoac_static_target)
+  add_dependencies (mongoac_static mongoac_static_target mongoac_crate_headers_target)
   target_compile_definitions (mongoac_static INTERFACE MONGOAC_STATIC)
   target_link_libraries (mongoac_static INTERFACE
     "$<BUILD_INTERFACE:${library_static}>"

@@ -1,0 +1,9 @@
+[package]
+name = "generate-crate-headers"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+[dependencies]
+cbindgen = "0.29"
