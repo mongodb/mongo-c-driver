@@ -20,7 +20,16 @@ Synopsis
 
    #define MONGOAC_CHECK_VERSION(major, minor, patch)
 
+   int32_t mongoac_version_major(void); // Runtime equivalent to MONGOAC_VERSION_MAJOR.
+   int32_t mongoac_version_minor(void); // Runtime equivalent to MONGOAC_VERSION_MINOR.
+   int32_t mongoac_version_patch(void); // Runtime equivalent to MONGOAC_VERSION_PATCH.
+
+   int32_t mongoac_version_hex(void); // Runtime equivalent to MONGOAC_VERSION_HEX.
+
+   // Runtime equivalent to MONGOAC_CHECK_VERSION.
+   bool mongoac_check_version(int32_t required_major, int32_t required_minor, int32_t required_patch);
+
 Description
 -----------
 
-Defines preprocessor macros describing the mongoac library version.
+Defines preprocessor macros and functions describing the mongoac library version.
