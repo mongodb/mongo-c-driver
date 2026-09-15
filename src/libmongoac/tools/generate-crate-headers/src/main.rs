@@ -21,7 +21,7 @@ macro_rules! includes {
 }
 
 // Keep synchronized with `skip_cargo_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_CARGO_HEADERS: &[&str] = &["lib", "version"];
+const SKIP_CARGO_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
 const SKIP_FORWARD_HEADERS: &[&str] = &["string"];
