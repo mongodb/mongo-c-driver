@@ -125,7 +125,7 @@ foreach (source IN LISTS cargo_sources)
   cmake_path (GET source FILENAME filename)
 
   # Keep synchronized with `SKIP_CARGO_HEADERS` in tools/generate-crate-headers/src/main.rs.
-  set (skip_cargo_headers "lib.rs" "version.rs")
+  set (skip_cargo_headers "lib.rs" "mod.rs" "version.rs")
   if (filename IN_LIST skip_cargo_headers)
     continue ()
   endif ()
