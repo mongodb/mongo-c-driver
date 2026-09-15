@@ -12,5 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod string;
-pub mod version;
+use std::ffi::c_char;
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct StringViewT {
+    pub ptr: *const c_char,
+    pub len: usize,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_string_view_destroy(_string: StringViewT) {
+    // Force cbindgen to declare `StringViewT` in the crate header.
+}
+
+impl From<&str> for StringViewT {
+    fn from(s: &str) -> Self {
+        StringViewT {
+            ptr: s.as_ptr().cast::<c_char>(),
+            len: s.len(),
+        }
+    }
+}
