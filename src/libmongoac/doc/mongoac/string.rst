@@ -10,10 +10,10 @@ Synopsis
 
    #include <mongoac/string.h>
 
-   struct mongoac_string_view_t {
+   typedef struct mongoac_string_view_t {
        const char *ptr;
        uintptr_t len;
-   };
+   } mongoac_string_view_t;
 
 Description
 -----------
