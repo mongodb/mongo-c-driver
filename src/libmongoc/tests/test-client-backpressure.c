@@ -823,11 +823,15 @@ test_backpressure_prose_5(void *ctx)
    ASSERT_WITH_MSG(apm_ctx.base_backoff_ms_is_set, "server did not attach `baseBackoffMS` to the overload error");
    ASSERT_CMPINT64(apm_ctx.base_backoff_ms, ==, INT64_C(50));
 
-   // Step 10: Assert absolute bounds on each run's duration. A run can never be faster than the sum of its backoffs.
-   // With jitter pinned to 1, the default backoffs are `0.2 + 0.4 = 0.6s` and the `baseBackoffMS=50` backoffs are
-   // `0.1 + 0.2 = 0.3s`.
-   ASSERT_CMPDURATION(exponential_backoff_duration, >=, mlib_duration(600, ms));
-   ASSERT_CMPDURATION(with_base_backoff_ms_duration, >=, mlib_duration(300, ms));
+   // Step 10: Assert absolute bounds on each run's duration. A run cannot be meaningfully faster than the sum of its
+   // backoffs. With jitter pinned to 1, the default backoffs are `0.2 + 0.4 = 0.6s` and the `baseBackoffMS=50` backoffs
+   // are `0.1 + 0.2 = 0.3s`. The lower bounds include a small tolerance because on some platforms sleep timers run on a
+   // millisecond-granularity clock, so a sleep can complete marginally earlier than the requested duration when
+   // measured with a higher-resolution clock. Drivers MAY adjust the tolerance to fit the timing behavior of their
+   // platform.
+   const mlib_duration tolerance = mlib_duration(5, ms);
+   ASSERT_CMPDURATION(exponential_backoff_duration, >=, mlib_duration((600, ms), minus, tolerance));
+   ASSERT_CMPDURATION(with_base_backoff_ms_duration, >=, mlib_duration((300, ms), minus, tolerance));
    ASSERT_CMPDURATION(with_base_backoff_ms_duration, <, mlib_duration(600, ms));
 
    mongoc_collection_destroy(coll);
