@@ -32,7 +32,7 @@ pub extern "C" fn mongoac_version_patch() -> i32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_version_hex() -> i32 {
-    MONGOAC_VERSION_MAJOR << 24 | MONGOAC_VERSION_MINOR << 16 | MONGOAC_VERSION_PATCH << 8 | 0
+    MONGOAC_VERSION_MAJOR << 24 | MONGOAC_VERSION_MINOR << 16 | MONGOAC_VERSION_PATCH << 8
 }
 
 #[unsafe(no_mangle)]
