@@ -53,6 +53,8 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
+#include <common-cmp-private.h>
+
 #include <bson/bson.h>
 
 #include <mongoc/mongoc-trace-private.h>
@@ -489,11 +491,15 @@ _mongoc_stream_tls_secure_channel_decrypt (mongoc_stream_tls_secure_channel_t *s
             TRACE ("decrypted data length: %lu", inbuf[1].cbBuffer);
 
             size = inbuf[1].cbBuffer;
+            BSON_ASSERT (secure_channel->decdata_length >= secure_channel->decdata_offset);
             remaining = secure_channel->decdata_length - secure_channel->decdata_offset;
 
             if (remaining < size) {
+               /* Grow to hold the bytes already buffered plus the new record.
+                * Expect no overflow since input is bounded by TLS record length. */
+               const size_t needed = mcommon_assert_add_size_t (secure_channel->decdata_offset, size);
                mongoc_secure_channel_realloc_buf (
-                  &secure_channel->decdata_length, &secure_channel->decdata_buffer, size);
+                  &secure_channel->decdata_length, &secure_channel->decdata_buffer, needed);
             }
 
             /* copy decrypted data to internal buffer */
