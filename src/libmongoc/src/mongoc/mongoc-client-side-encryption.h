@@ -20,6 +20,7 @@
 #define MONGOC_CLIENT_SIDE_ENCRYPTION_H
 
 #include <mongoc/mongoc-macros.h>
+#include <mongoc/mongoc-stream.h>
 
 #include <bson/bson.h>
 
@@ -59,6 +60,47 @@ typedef bool(BSON_CALL *mongoc_kms_credentials_provider_callback_fn)(void *userd
                                                                      const bson_t *params,
                                                                      bson_t *out,
                                                                      bson_error_t *error);
+
+typedef struct _mongoc_kms_connect_callback_t mongoc_kms_connect_callback_t;
+typedef struct _mongoc_kms_connect_callback_params_t mongoc_kms_connect_callback_params_t;
+
+/* Returns a connected stream to the KMS host and port described by @params. The
+ * driver wraps the returned stream with TLS. On failure, call
+ * `mongoc_kms_connect_callback_params_set_error` and return NULL. */
+typedef mongoc_stream_t *(BSON_CALL *mongoc_kms_connect_callback_fn_t)(mongoc_kms_connect_callback_params_t *params);
+
+MONGOC_EXPORT(const char *)
+mongoc_kms_connect_callback_params_get_host(const mongoc_kms_connect_callback_params_t *params);
+
+MONGOC_EXPORT(uint16_t)
+mongoc_kms_connect_callback_params_get_port(const mongoc_kms_connect_callback_params_t *params);
+
+MONGOC_EXPORT(void *)
+mongoc_kms_connect_callback_params_get_user_data(const mongoc_kms_connect_callback_params_t *params);
+
+/* Called by a `mongoc_kms_connect_callback_fn_t` to report failure to connect. `msg` is an optional
+ * descriptive error message; pass NULL to omit. Always returns NULL. */
+MONGOC_EXPORT(mongoc_stream_t *)
+mongoc_kms_connect_callback_params_set_error(mongoc_kms_connect_callback_params_t *params, const char *msg);
+
+MONGOC_EXPORT(mongoc_kms_connect_callback_t *)
+mongoc_kms_connect_callback_new(mongoc_kms_connect_callback_fn_t fn) BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT(mongoc_kms_connect_callback_t *)
+mongoc_kms_connect_callback_new_with_user_data(mongoc_kms_connect_callback_fn_t fn, void *user_data)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT(void)
+mongoc_kms_connect_callback_destroy(mongoc_kms_connect_callback_t *callback);
+
+MONGOC_EXPORT(mongoc_kms_connect_callback_fn_t)
+mongoc_kms_connect_callback_get_fn(const mongoc_kms_connect_callback_t *callback);
+
+MONGOC_EXPORT(void *)
+mongoc_kms_connect_callback_get_user_data(const mongoc_kms_connect_callback_t *callback);
+
+MONGOC_EXPORT(void)
+mongoc_kms_connect_callback_set_user_data(mongoc_kms_connect_callback_t *callback, void *user_data);
 
 MONGOC_EXPORT(mongoc_auto_encryption_opts_t *)
 mongoc_auto_encryption_opts_new(void) BSON_GNUC_WARN_UNUSED_RESULT;
@@ -109,6 +151,10 @@ mongoc_auto_encryption_opts_set_kms_credential_provider_callback(mongoc_auto_enc
                                                                  mongoc_kms_credentials_provider_callback_fn fn,
                                                                  void *userdata);
 
+MONGOC_EXPORT(void)
+mongoc_auto_encryption_opts_set_kms_connect_callback(mongoc_auto_encryption_opts_t *opts,
+                                                     const mongoc_kms_connect_callback_t *callback);
+
 typedef struct _mongoc_client_encryption_opts_t mongoc_client_encryption_opts_t;
 typedef struct _mongoc_client_encryption_t mongoc_client_encryption_t;
 typedef struct _mongoc_client_encryption_encrypt_range_opts_t mongoc_client_encryption_encrypt_range_opts_t;
@@ -154,6 +200,10 @@ MONGOC_EXPORT(void)
 mongoc_client_encryption_opts_set_kms_credential_provider_callback(mongoc_client_encryption_opts_t *opts,
                                                                    mongoc_kms_credentials_provider_callback_fn fn,
                                                                    void *userdata);
+
+MONGOC_EXPORT(void)
+mongoc_client_encryption_opts_set_kms_connect_callback(mongoc_client_encryption_opts_t *opts,
+                                                       const mongoc_kms_connect_callback_t *callback);
 
 MONGOC_EXPORT(void)
 mongoc_client_encryption_opts_set_key_expiration(mongoc_client_encryption_opts_t *opts, uint64_t cache_expiration_ms);
