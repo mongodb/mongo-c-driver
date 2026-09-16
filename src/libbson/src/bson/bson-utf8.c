@@ -78,7 +78,7 @@ bson_utf8_validate(const char *utf8, /* IN */
    /*
     * Check for NULL bytes afterwards.
     */
-   if (!allow_null && memchr (utf8, '\0', utf8_len)) {
+   if (!allow_null && memchr(utf8, '\0', utf8_len)) {
       return false;
    }
 
