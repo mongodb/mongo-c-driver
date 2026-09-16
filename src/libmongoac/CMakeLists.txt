@@ -115,8 +115,9 @@ file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h"
 
 set (cargo_dependencies
   ${cargo_sources}
-  "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
+  "${CMAKE_CURRENT_SOURCE_DIR}/build.rs"
   "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.lock"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
 )
 
 set_source_files_properties (${mongoac_headers} PROPERTIES LANGUAGE C)
@@ -162,6 +163,7 @@ if ("$CACHE{ENABLE_SHARED}")
     COMMENT "Building the mongoac shared library"
     COMMAND
       "${CMAKE_COMMAND}" -E env
+        "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
         "MONGOAC_CMAKE_BUILD_TYPE=$<CONFIG>"
         "MONGOAC_LIBRARY_TYPE=shared"
       "${CARGO_EXECUTABLE}" rustc
@@ -227,6 +229,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
     COMMENT "Building the mongoac static library"
     COMMAND
       "${CMAKE_COMMAND}" -E env
+        "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
         "MONGOAC_CMAKE_BUILD_TYPE=$<CONFIG>"
         "MONGOAC_LIBRARY_TYPE=static"
       "${CARGO_EXECUTABLE}" rustc

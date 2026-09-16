@@ -15,6 +15,8 @@
 #ifndef MONGOAC_VERSION_H
 #define MONGOAC_VERSION_H
 
+#include <mongoac/export.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -33,6 +35,21 @@ extern "C" {
 #define MONGOAC_CHECK_VERSION(major, minor, patch)                                                              \
    (MONGOAC_VERSION_MAJOR > (major) || (MONGOAC_VERSION_MAJOR == (major) && MONGOAC_VERSION_MINOR > (minor)) || \
     (MONGOAC_VERSION_MAJOR == (major) && MONGOAC_VERSION_MINOR == (minor) && MONGOAC_VERSION_PATCH >= (patch)))
+
+MONGOAC_ABI_EXPORT int32_t
+mongoac_version_major(void);
+
+MONGOAC_ABI_EXPORT int32_t
+mongoac_version_minor(void);
+
+MONGOAC_ABI_EXPORT int32_t
+mongoac_version_patch(void);
+
+MONGOAC_ABI_EXPORT int32_t
+mongoac_version_hex(void);
+
+MONGOAC_ABI_EXPORT bool
+mongoac_check_version(int32_t required_major, int32_t required_minor, int32_t required_patch);
 
 #ifdef __cplusplus
 } // extern "C"

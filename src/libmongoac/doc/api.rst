@@ -5,4 +5,5 @@ API Reference
    :titlesonly:
    :maxdepth: 1
 
+   mongoac/export
    mongoac/version
