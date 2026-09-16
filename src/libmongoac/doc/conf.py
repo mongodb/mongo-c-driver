@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*-
+import os
+import os.path
+import sys
+
+# Ensure we can import "mongoc" extension module.
+this_path = os.path.dirname(__file__)
+sys.path.append(os.path.normpath(os.path.join(this_path, '../../../build/sphinx')))
+
+from mongoc_common import *  # noqa: E402, F403
+
+extensions = [
+    'mongoc',
+]
+
+# General information about the project.
+project = 'libmongoac'
+copyright = '2009-present, MongoDB, Inc.'
+author = 'MongoDB, Inc'
+
+version_path = os.path.join(os.path.dirname(__file__), '../', 'VERSION_CURRENT')  # src/libmongoac/VERSION_CURRENT
+version = open(version_path).read().strip()
+
+language = 'en'
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+master_doc = 'index'
+
+# -- Options for HTML output ----------------------------------------------
+
+html_theme = 'furo'
+html_title = html_shorttitle = 'libmongoac %s' % version
+# html_favicon = None
+
+html_sidebars = {}
+
+html_use_index = False
+
+rst_prolog = r"""
+
+.. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
+
+"""
+
+
+def add_canonical_link(app, pagename, templatename, context, doctree):
+    link = f'<link rel="canonical" href="https://www.mongoc.org/libmongoac/current/{pagename}"/>'
+
+    context['metatags'] = context.get('metatags', '') + link
+
+
+def setup(app):
+    mongoc_common_setup(app)  # noqa: F405
+    app.connect('html-page-context', add_canonical_link)

@@ -31,12 +31,13 @@ include (GeneratePkgConfig)
 include (VerifyHeaders)
 
 # Subcomponents:
-mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C database driver)")
+mongo_bool_setting(ENABLE_MONGOC "Enable the build of libmongoc libraries (The MongoDB C Driver)")
 mongo_bool_setting(
    USE_SYSTEM_LIBBSON [[Use an existing libbson library (via find_package()) instead of building one from source]]
    DEFAULT VALUE OFF
    ADVANCED
 )
+mongo_bool_setting(ENABLE_MONGOAC "Enable the build of libmongoac libraries (The MongoDB Async C Driver)" DEFAULT VALUE OFF ADVANCED)
 
 # Deprecated option "ENABLE_BSON" is gone, but old caches may rely on SYSTEM to
 # disable the libbson build. Allow ENABLE_BSON=SYSTEM only if USE_SYSTEM_LIBBSON
@@ -454,6 +455,7 @@ if (ENABLE_MONGOC)
          DEPENDS
             $<$<NOT:$<BOOL:${USE_SYSTEM_LIBBSON}>>:bson-doc>
             $<$<BOOL:${ENABLE_MONGOC}>:mongoc-doc>
+            $<$<BOOL:${ENABLE_MONGOAC}>:mongoac-doc>
       )
    endif ()
 
@@ -462,6 +464,11 @@ if (ENABLE_MONGOC)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/kms-message' was already included if appropriate
    # 'src/libmongoc' was already included, so 'src' will not include it directly
+endif ()
+
+if (ENABLE_MONGOAC)
+   message(WARNING "ENABLE_MONGOAC is an experimental feature!")
+   add_subdirectory (src/libmongoac)
 endif ()
 
 install (FILES COPYING NEWS README.rst THIRD_PARTY_NOTICES

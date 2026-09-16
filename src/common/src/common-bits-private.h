@@ -47,4 +47,32 @@ mcommon_next_power_of_two_u32(uint32_t v)
 }
 
 
+// Round up to the next power of two size_t value. Saturates on overflow.
+static BSON_INLINE size_t
+mcommon_next_power_of_two_size_t(size_t v)
+{
+   if (v == 0) {
+      return 1;
+   }
+
+   // https://graphics.stanford.edu/%7Eseander/bithacks.html#RoundUpPowerOf2
+   v--;
+   v |= v >> 1;
+   v |= v >> 2;
+   v |= v >> 4;
+   v |= v >> 8;
+   v |= v >> 16;
+#if SIZE_MAX > 0xFFFFFFFFu
+   v |= v >> 32;
+#endif
+   v++;
+
+   if (v == 0) {
+      return SIZE_MAX;
+   } else {
+      return v;
+   }
+}
+
+
 #endif /* MONGO_C_DRIVER_COMMON_BITS_PRIVATE_H */

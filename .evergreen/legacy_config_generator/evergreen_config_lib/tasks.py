@@ -712,6 +712,7 @@ class AWSTestTask(MatrixTask):
         yield from super().additional_tags()
         yield f'{self.settings.version}'
         yield 'test-aws'
+        yield f'test-aws-{self.settings.testcase}'
 
     def post_commands(self) -> Iterable[Value]:
         return [

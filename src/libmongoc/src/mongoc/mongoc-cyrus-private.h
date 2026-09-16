@@ -51,6 +51,17 @@ struct _mongoc_cyrus_t {
 
 int
 _mongoc_cyrus_verifyfile_cb(void *context, const char *file, sasl_verify_type_t type);
+// `_mongoc_cyrus_canon_user` is the SASL_CB_CANON_USER callback. Exported for testing.
+int
+_mongoc_cyrus_canon_user(sasl_conn_t *conn,
+                         mongoc_cyrus_t *sasl,
+                         const char *in,
+                         unsigned inlen,
+                         unsigned flags,
+                         const char *user_realm,
+                         char *out,
+                         unsigned out_max,
+                         unsigned *out_len);
 void
 _mongoc_cyrus_init(mongoc_cyrus_t *sasl);
 bool

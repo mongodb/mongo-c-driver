@@ -738,6 +738,13 @@ mongoc_cmd_parts_assemble(mongoc_cmd_parts_t *parts, mongoc_server_stream_t *ser
    BSON_ASSERT(!parts->assembled.command);
    BSON_ASSERT(bson_empty(&parts->assembled_body));
 
+   // The database name is sent as "$db" for OP_MSG or as "<db>.$cmd" for OP_QUERY.
+   // Reject a name the driver cannot forward faithfully, rather than silently targeting a different database.
+   BSON_ASSERT(parts->assembled.db_name);
+   if (!_mongoc_validate_db_name(parts->assembled.db_name, -1, error)) {
+      GOTO(done);
+   }
+
    /* begin with raw flags/cmd as assembled flags/cmd, might change below */
    parts->assembled.command = parts->body;
    /* unused in OP_MSG: */

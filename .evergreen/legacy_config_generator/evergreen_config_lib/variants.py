@@ -269,30 +269,42 @@ all_variants = [
         patchable=False,
         batchtime=days(1),
     ),
-    # Run AWS tests for MongoDB 4.4 and 5.0 on Ubuntu 20.04. AWS setup scripts
-    # expect Ubuntu 20.04+. MongoDB 4.4 and 5.0 are not available on 22.04.
+    # AWS ECS test set-up is only supported on Ubuntu 20.04 and 24.04 distros.
+    # Use RHEL 8 for other AWS tasks. AWS EC2 tests fail to assign an instance policy on Ubuntu 24.04.
     Variant(
-        'aws-ubuntu2004',
-        'AWS Tests (Ubuntu 20.04)',
+        'aws-rhel8',
+        'AWS Tests (RHEL 8)',
+        'rhel87-small',
+        [
+            'debug-compile-aws',
+            '.test-aws !.test-aws-ecs',
+        ],
+        {'CC': 'clang'},
+    ),
+    # Use Ubuntu for ECS tasks. ECS set-up is only supported on Ubuntu distros.
+    # Ubuntu 24.04 supports server 8.0+. Use Ubuntu 20.04 for prior server versions (Ubuntu 22.04 does not support ECS set-up).
+    Variant(
+        'aws-ecs-ubuntu2004',
+        'AWS ECS Tests (Ubuntu 20.04)',
         'ubuntu2004-small',
         [
             'debug-compile-aws',
-            '.test-aws .4.4',
-            '.test-aws .5.0',
+            '.test-aws-ecs .4.4',
+            '.test-aws-ecs .5.0',
+            '.test-aws-ecs .6.0',
+            '.test-aws-ecs .7.0',
         ],
         {'CC': 'clang'},
     ),
     Variant(
-        'aws-ubuntu2204',
-        'AWS Tests (Ubuntu 22.04)',
-        'ubuntu2204-small',
+        'aws-ecs-ubuntu2404',
+        'AWS ECS Tests (Ubuntu 24.04)',
+        'ubuntu2404-small',
         [
             'debug-compile-aws',
-            '.test-aws .6.0',
-            '.test-aws .7.0',
-            '.test-aws .8.0',
-            '.test-aws .9.0',
-            '.test-aws .latest',
+            '.test-aws-ecs .8.0',
+            '.test-aws-ecs .9.0',
+            '.test-aws-ecs .latest',
         ],
         {'CC': 'clang'},
     ),

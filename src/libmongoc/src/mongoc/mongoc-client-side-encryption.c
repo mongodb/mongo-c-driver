@@ -2210,6 +2210,10 @@ _mongoc_cse_client_enable_auto_encryption(mongoc_client_t *client,
       GOTO(fail);
    }
 
+   if (!_mongoc_validate_db_name(opts->keyvault_db, -1, error)) {
+      GOTO(fail);
+   }
+
    if (!opts->kms_providers) {
       _mongoc_set_error(
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "KMS providers option required");
@@ -2341,6 +2345,10 @@ _mongoc_cse_client_pool_enable_auto_encryption(mongoc_topology_t *topology,
       GOTO(fail);
    }
 
+   if (!_mongoc_validate_db_name(opts->keyvault_db, -1, error)) {
+      GOTO(fail);
+   }
+
    if (!opts->kms_providers) {
       _mongoc_set_error(
          error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "KMS providers option required");
@@ -2447,6 +2455,10 @@ mongoc_client_encryption_new(mongoc_client_encryption_opts_t *opts, bson_error_t
                         MONGOC_ERROR_CLIENT,
                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
                         "Key vault client and namespace option required");
+      goto fail;
+   }
+
+   if (!_mongoc_validate_db_name(opts->keyvault_db, -1, error)) {
       goto fail;
    }
 

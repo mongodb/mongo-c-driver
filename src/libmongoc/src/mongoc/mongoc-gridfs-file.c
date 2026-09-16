@@ -20,6 +20,7 @@
 
 #include <mongoc/mongoc-gridfs-file.h>
 
+#include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-gridfs-file-page-private.h>
@@ -155,7 +156,7 @@ mongoc_gridfs_file_save(mongoc_gridfs_file_t *file)
    metadata = mongoc_gridfs_file_get_metadata(file);
 
    selector = bson_new();
-   bson_append_value(selector, "_id", -1, &file->files_id);
+   bsonBuildAppend(*selector, kv("_id", doc(kv("$eq", value(file->files_id)))));
 
    update = bson_new();
    bson_append_document_begin(update, "$set", -1, &child);
@@ -676,7 +677,7 @@ _mongoc_gridfs_file_flush_page(mongoc_gridfs_file_t *file)
 
    selector = bson_new();
 
-   bson_append_value(selector, "files_id", -1, &file->files_id);
+   bsonBuildAppend(*selector, kv("files_id", doc(kv("$eq", value(file->files_id)))));
    bson_append_int32(selector, "n", -1, file->n);
 
    update = bson_sized_new(file->chunk_size + 100);
@@ -839,8 +840,7 @@ _mongoc_gridfs_file_refresh_page(mongoc_gridfs_file_t *file)
 
       if (!file->cursor) {
          bson_t query;
-         bson_init(&query);
-         BSON_APPEND_VALUE(&query, "files_id", &file->files_id);
+         bsonBuild(query, kv("files_id", doc(kv("$eq", value(file->files_id)))));
 
          bson_t child;
          BSON_APPEND_DOCUMENT_BEGIN(&query, "n", &child);
@@ -1124,14 +1124,14 @@ mongoc_gridfs_file_remove(mongoc_gridfs_file_t *file, bson_error_t *error)
 
    BSON_ASSERT(file);
 
-   BSON_APPEND_VALUE(&sel, "_id", &file->files_id);
+   bsonBuildAppend(sel, kv("_id", doc(kv("$eq", value(file->files_id)))));
 
    if (!mongoc_collection_delete_one(file->gridfs->files, &sel, NULL, NULL, error)) {
       goto cleanup;
    }
 
    bson_reinit(&sel);
-   BSON_APPEND_VALUE(&sel, "files_id", &file->files_id);
+   bsonBuildAppend(sel, kv("files_id", doc(kv("$eq", value(file->files_id)))));
 
    if (!mongoc_collection_delete_many(file->gridfs->chunks, &sel, NULL, NULL, error)) {
       goto cleanup;

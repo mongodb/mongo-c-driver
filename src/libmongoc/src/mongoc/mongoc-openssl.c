@@ -631,15 +631,12 @@ _get_must_staple(X509 *cert)
 #define ERR_STR (ERR_error_string(ERR_get_error(), NULL))
 #define MONGOC_OCSP_REQUEST_TIMEOUT mlib_duration(5, s)
 
-static OCSP_RESPONSE *
-_contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts, int *ocsp_uri_count)
+OCSP_RESPONSE *
+_mongoc_contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts, int *ocsp_uri_count)
 {
    STACK_OF(OPENSSL_STRING) *url_stack = NULL;
-   OPENSSL_STRING url = NULL, host = NULL, path = NULL, port = NULL;
-   OCSP_REQUEST *req = NULL;
-   const unsigned char *resp_data;
    OCSP_RESPONSE *resp = NULL;
-   int i, ssl;
+   int i;
 
    url_stack = X509_get1_ocsp(peer);
    *ocsp_uri_count = sk_OPENSSL_STRING_num(url_stack);
@@ -652,9 +649,12 @@ _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts,
 
       _mongoc_http_request_init(&http_req);
       _mongoc_http_response_init(&http_res);
-      url = sk_OPENSSL_STRING_value(url_stack, i);
+      const OPENSSL_STRING url = sk_OPENSSL_STRING_value(url_stack, i);
       TRACE("Contacting OCSP responder '%s'", url);
 
+      OCSP_REQUEST *req = NULL;
+      OPENSSL_STRING host = NULL, path = NULL, port = NULL;
+      int ssl;
       /* splits the given url into its host, port and path components */
       if (!OCSP_parse_url(url, &host, &port, &path, &ssl)) {
          MONGOC_DEBUG("Could not parse URL");
@@ -697,7 +697,7 @@ _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts,
          GOTO(retry);
       }
 
-      resp_data = (const unsigned char *)http_res.body;
+      const unsigned char *resp_data = (const unsigned char *)http_res.body;
 
       if (http_res.body_len == 0 || !d2i_OCSP_RESPONSE(&resp, &resp_data, http_res.body_len)) {
          MONGOC_DEBUG("Could not parse OCSP response from HTTP response");
@@ -706,21 +706,15 @@ _contact_ocsp_responder(OCSP_CERTID *id, X509 *peer, mongoc_ssl_opt_t *ssl_opts,
       }
 
    retry:
-      if (host)
-         OPENSSL_free(host);
-      if (port)
-         OPENSSL_free(port);
-      if (path)
-         OPENSSL_free(path);
-      if (req)
-         OCSP_REQUEST_free(req);
-      if (request_der)
-         OPENSSL_free(request_der);
+      OPENSSL_free(host);
+      OPENSSL_free(port);
+      OPENSSL_free(path);
+      OCSP_REQUEST_free(req);
+      OPENSSL_free(request_der);
       _mongoc_http_response_cleanup(&http_res);
    }
 
-   if (url_stack)
-      X509_email_free(url_stack);
+   X509_email_free(url_stack);
    RETURN(resp);
 }
 
@@ -801,7 +795,7 @@ _mongoc_ocsp_tlsext_status(SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
       }
 
       if (opts->disable_endpoint_check ||
-          !(resp = _contact_ocsp_responder(id, peer, &opts->ssl_opts, &ocsp_uri_count))) {
+          !(resp = _mongoc_contact_ocsp_responder(id, peer, &opts->ssl_opts, &ocsp_uri_count))) {
          if (ocsp_uri_count > 0) {
             /* Only log a soft failure if there were OCSP responders listed in
              * the certificate. */

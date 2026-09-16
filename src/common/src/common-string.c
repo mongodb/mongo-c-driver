@@ -239,7 +239,7 @@ mcommon_string_append_base64_encode(mcommon_string_append_t *append, const uint8
       const int t2 = mcommon_b64_ntop(
          bytes + direct_input_len, (size_t)remainder_input_len, remainder_buffer, sizeof remainder_buffer);
       BSON_ASSERT(mlib_cmp(remainder_encoded_len, ==, t2));
-      memcpy(buffer + old_len + direct_encoded_len, remainder_buffer, remainder_encoded_len);
+      memcpy(buffer + old_len + direct_encoded_len, remainder_buffer, remainder_truncated_len);
 
       BSON_ASSERT(old_len + direct_encoded_len + remainder_truncated_len == max_len);
       buffer[max_len] = '\0';

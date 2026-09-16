@@ -28,6 +28,7 @@
 
 #include <mlib/cmp.h>
 
+#include <limits.h>
 #include <string.h>
 
 #undef MONGOC_LOG_DOMAIN
@@ -97,7 +98,7 @@ _mongoc_cyrus_get_pass(mongoc_cyrus_t *sasl, int param_id, const char **result, 
 }
 
 
-static int
+int
 _mongoc_cyrus_canon_user(sasl_conn_t *conn,
                          mongoc_cyrus_t *sasl,
                          const char *in,
@@ -113,18 +114,19 @@ _mongoc_cyrus_canon_user(sasl_conn_t *conn,
    BSON_UNUSED(flags);
    BSON_UNUSED(user_realm);
 
-   // `inlen` is a string length (excluding trailing NULL).
-   // Cyrus-SASL passes an `out` buffer of size `out_max + 1`. Assume `out_max` is the max to be safe.
-   unsigned inlen_1 = 0;
-   if (mlib_add(&inlen_1, inlen, 1) || inlen_1 + 1 >= out_max) {
+   if (inlen > out_max) {
       MONGOC_ERROR("SASL username too large");
       return SASL_BUFOVER;
    }
 
-   TRACE("Canonicalizing %s (%" PRIu32 ")\n", in, inlen);
+   // Print with a precision: `in` is length-delimited, and Cyrus-SASL documents it as "may not be NUL terminated", so
+   // `%s` would read past the end. The precision argument is an `int`, and a negative one "is taken as if the precision
+   // were omitted" (C99 7.19.6.1) — quietly restoring that `%s` overread — so clamp rather than cast blindly. The check
+   // above already bounds `inlen` by `out_max`, so this only matters if a caller ever passes an `out_max` above
+   // `INT_MAX`.
+   TRACE("Canonicalizing %.*s (%u)\n", (int)BSON_MIN(inlen, (unsigned)INT_MAX), in, inlen);
    // Use memmove in case buffers overlap. From Cyrus-SASL: "output buffers and the input buffers may be the same"
    memmove(out, in, inlen);
-   out[inlen] = '\0';
    *out_len = inlen;
    return SASL_OK;
 }

@@ -165,7 +165,9 @@ def tasks():
         ),
         EvgTask(
             name='oidc-azure-auth-test-task',
-            run_on=['debian11-small'],  # TODO: switch to 'debian11-latest' after DEVPROD-23011 fixed.
+            # The Azure VM image (AZUREOIDC_IMAGE in DET) is Debian 12. Debian 12 hosts lack a
+            # working `az` (DEVPROD-23011), so use Ubuntu 22.04, which also has OpenSSL 3.
+            run_on=['ubuntu2204-small'],
             commands=[
                 FetchSource.call(),
                 bash_exec(
@@ -188,7 +190,8 @@ def tasks():
         ),
         EvgTask(
             name='oidc-gcp-auth-test-task',
-            run_on=['debian11-small'],  # TODO: switch to 'debian11-latest' after DEVPROD-23011 fixed.
+            # Must match the GCE VM image family (GCPKMS_IMAGEFAMILY in DET).
+            run_on=['debian12-latest-small'],
             commands=[
                 FetchSource.call(),
                 bash_exec(

@@ -1471,6 +1471,10 @@ mongoc_client_get_gridfs(mongoc_client_t *client, const char *db, const char *pr
       prefix = "fs";
    }
 
+   if (!_mongoc_validate_db_name(db, -1, error)) {
+      return NULL;
+   }
+
    return _mongoc_gridfs_new(client, db, prefix, error);
 }
 

@@ -184,6 +184,7 @@ fail:
  *       information on how to build aggregation pipelines.
  *
  * Parameters:
+ *       @db: Database name used. Separated from @ns to validate.
  *       @ns: Namespace (or database name for database-level aggregation).
  *       @flags: Bitwise or of mongoc_query_flags_t or 0.
  *       @pipeline: A bson_t containing the pipeline request. @pipeline
@@ -210,6 +211,7 @@ fail:
 mongoc_cursor_t *
 _mongoc_aggregate(mongoc_client_t *client,
                   const char *ns,
+                  const char *db,
                   mongoc_query_flags_t flags,
                   const bson_t *pipeline,
                   const bson_t *opts,
@@ -236,6 +238,7 @@ _mongoc_aggregate(mongoc_client_t *client,
 
    BSON_ASSERT(client);
    BSON_ASSERT(ns);
+   BSON_ASSERT_PARAM(db);
    BSON_ASSERT(pipeline);
 
    bson_init(&cursor_opts);
@@ -270,6 +273,11 @@ _mongoc_aggregate(mongoc_client_t *client,
    }
 
    if (mongoc_cursor_error(cursor, NULL)) {
+      GOTO(done);
+   }
+
+   // `ns` is already joined and cannot be split back into `db` reliably. Check `db` while it is still separate.
+   if (!_mongoc_cursor_check_db_name(cursor, db)) {
       GOTO(done);
    }
 
