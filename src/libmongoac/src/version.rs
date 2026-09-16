@@ -36,16 +36,12 @@ pub extern "C" fn mongoac_version_hex() -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_check_version(
-    required_major: i32,
-    required_minor: i32,
-    required_patch: i32,
-) -> bool {
-    let major = mongoac_version_major();
-    let minor = mongoac_version_minor();
-    let patch = mongoac_version_patch();
+pub extern "C" fn mongoac_check_version(major: i32, minor: i32, patch: i32) -> bool {
+    let current_major = MONGOAC_VERSION_MAJOR;
+    let current_minor = MONGOAC_VERSION_MINOR;
+    let current_patch = MONGOAC_VERSION_PATCH;
 
-    major > required_major
-        || (major == required_major && minor > required_minor)
-        || (major == required_major && minor == required_minor && patch >= required_patch)
+    current_major > major
+        || (current_major == major && current_minor > minor)
+        || (current_major == major && current_minor == minor && current_patch >= patch)
 }

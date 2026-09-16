@@ -38,7 +38,7 @@ Synopsis
    int32_t mongoac_version_hex(void); // Runtime equivalent to MONGOAC_VERSION_HEX.
 
    // Runtime equivalent to MONGOAC_CHECK_VERSION.
-   bool mongoac_check_version(int32_t required_major, int32_t required_minor, int32_t required_patch);
+   bool mongoac_check_version(int32_t major, int32_t minor, int32_t patch);
 
 Description
 -----------
