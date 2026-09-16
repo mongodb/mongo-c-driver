@@ -47,5 +47,5 @@ Defines preprocessor macros and functions which describe the mongoac library ver
 
 .. note::
 
-   ``MONGOAC_CHECK_VERSION`` and ``mongoac_check_version()`` return ``true`` when the library version is *greater than or equal to* the required version.
+   ``MONGOAC_CHECK_VERSION`` and ``mongoac_check_version()`` return ``true`` when the library version is *greater than or equal to* the specified version.
    To ensure major version compatibility, use ``MONGOAC_VERSION_MAJOR`` or ``mongoac_version_major()``.
