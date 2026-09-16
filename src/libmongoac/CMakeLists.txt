@@ -131,7 +131,7 @@ foreach (source IN LISTS cargo_sources)
   endif ()
 
   cmake_path (RELATIVE_PATH source BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src" OUTPUT_VARIABLE header)
-  if (header MATCHES "^private/")
+  if (header MATCHES "(^|/)private/")
     continue () # Always exclude private crates.
   endif ()
   cmake_path (REPLACE_EXTENSION header LAST_ONLY ".h" OUTPUT_VARIABLE header)
