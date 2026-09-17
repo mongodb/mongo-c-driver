@@ -1,3 +1,14 @@
+libbson 1.30.11
+===============
+
+## Fixes
+
+* Fix length check in `bson_new_from_buffer`.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Colby Pike
+
 libbson 1.30.10
 ===============
 

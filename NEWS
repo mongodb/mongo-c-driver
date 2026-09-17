@@ -1,3 +1,17 @@
+libmongoc 1.30.11
+=================
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+* Fix error handling in SCRAM authentication.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.30.10
 =================
 
