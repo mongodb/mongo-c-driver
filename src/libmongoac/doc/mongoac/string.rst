@@ -30,14 +30,3 @@ Defines string representations.
 - When ``ptr`` is not null, the range ``[ptr, ptr + len)`` is valid and accessible.
 
 The object from which a view is obtained MUST outlive any access to the pointed-to data.
-
-.. only:: html
-
-  Functions
-  ---------
-
-  .. toctree::
-    :titlesonly:
-    :maxdepth: 1
-
-    mongoac_string_view_destroy

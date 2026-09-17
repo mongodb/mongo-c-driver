@@ -46,6 +46,19 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             .sys_includes
             .extend(headers.iter().map(|v| v.to_string()));
     }
+
+    // Structs which need to be explicitly exported (due to no exported function referencing the struct).
+    {
+        let exports: &[&str] = match name {
+            "string" => &["StringViewT"],
+            _ => &[],
+        };
+
+        config
+            .export
+            .include
+            .extend(exports.iter().map(|v| v.to_string()));
+    }
 }
 
 fn default_config() -> cbindgen::Config {

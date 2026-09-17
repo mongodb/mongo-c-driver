@@ -21,11 +21,6 @@ pub struct StringViewT {
     pub len: usize,
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn mongoac_string_view_destroy(_string: StringViewT) {
-    // Force cbindgen to declare `StringViewT` in the crate header.
-}
-
 impl From<&str> for StringViewT {
     fn from(s: &str) -> Self {
         StringViewT {
