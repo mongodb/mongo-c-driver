@@ -128,10 +128,14 @@ fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Pat
             .expect("invalid UTF-8")
     ));
 
-    let mut config = default_config();
+    let config = {
+        let mut config = default_config();
 
-    // Only forward declarations of opaque structs.
-    config.export.item_types = vec![cbindgen::ItemType::OpaqueItems];
+        // Only forward declarations of opaque structs.
+        config.export.item_types = vec![cbindgen::ItemType::OpaqueItems];
+
+        config
+    };
 
     // Generate the forward header.
     cbindgen::Builder::new()
@@ -176,29 +180,33 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
     }
 
     // Default cbindgen configuration for all crates.
-    let mut config = default_config();
+    let config = {
+        let mut config = default_config();
 
-    // All except `OpaqueItems` (which is declared in the forward header).
-    config.export.item_types = vec![
-        cbindgen::ItemType::Functions,
-        cbindgen::ItemType::Typedefs,
-        cbindgen::ItemType::Constants,
-        cbindgen::ItemType::Enums,
-        cbindgen::ItemType::Structs,
-        cbindgen::ItemType::Unions,
-    ];
+        // All except `OpaqueItems` (which is declared in the forward header).
+        config.export.item_types = vec![
+            cbindgen::ItemType::Functions,
+            cbindgen::ItemType::Typedefs,
+            cbindgen::ItemType::Constants,
+            cbindgen::ItemType::Enums,
+            cbindgen::ItemType::Structs,
+            cbindgen::ItemType::Unions,
+        ];
 
-    // Always include the component's forward header first.
-    if !SKIP_FORWARD_HEADERS.contains(&file_stem) {
-        generate_forward_header(crate_path, &rel_stem, include_dir);
-        config.sys_includes.push(format!("mongoac/{rel_str}-fwd.h"));
-    }
+        // Always include the component's forward header first.
+        if !SKIP_FORWARD_HEADERS.contains(&file_stem) {
+            generate_forward_header(crate_path, &rel_stem, include_dir);
+            config.sys_includes.push(format!("mongoac/{rel_str}-fwd.h"));
+        }
 
-    // Normal headers typically export at least one symbol.
-    config.sys_includes.push("mongoac/export.h".into());
+        // Normal headers typically export at least one symbol.
+        config.sys_includes.push("mongoac/export.h".into());
 
-    // Apply per-crate configuration options.
-    configure(rel_str, &mut config);
+        // Apply per-crate configuration options.
+        configure(rel_str, &mut config);
+
+        config
+    };
 
     // Generate the crate header.
     cbindgen::Builder::new()
@@ -244,14 +252,17 @@ fn main() {
     find_crates(src_path, &mut files);
 
     // Generate crate headers in parallel.
-    let mut handles = Vec::new();
-    for path in files {
-        let include_dir = include_path.to_path_buf();
-        let src_dir = src_path.to_path_buf();
-        handles.push(std::thread::spawn(move || {
-            generate_crate_header(&path, &src_dir, &include_dir);
-        }));
-    }
+    let handles = files
+        .into_iter()
+        .map(|path| {
+            let include_dir = include_path.to_path_buf();
+            let src_dir = src_path.to_path_buf();
+
+            std::thread::spawn(move || {
+                generate_crate_header(&path, &src_dir, &include_dir);
+            })
+        })
+        .collect::<Vec<_>>();
     for handle in handles {
         handle.join().expect("header generation failed");
     }
