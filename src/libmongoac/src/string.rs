@@ -12,5 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod string;
-pub mod version;
+use std::ffi::c_char;
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct StringViewT {
+    pub ptr: *const c_char,
+    pub len: usize,
+}
+
+impl From<&str> for StringViewT {
+    fn from(s: &str) -> Self {
+        StringViewT {
+            ptr: s.as_ptr().cast::<c_char>(),
+            len: s.len(),
+        }
+    }
+}

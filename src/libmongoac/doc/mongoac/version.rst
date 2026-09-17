@@ -10,11 +10,11 @@ Synopsis
 
    #include <mongoac/version.h>
 
-   #define MONGOAC_VERSION            // e.g. "1.2.3-dev"
    #define MONGOAC_VERSION_MAJOR      // e.g. 1
    #define MONGOAC_VERSION_MINOR      // e.g. 2
    #define MONGOAC_VERSION_PATCH      // e.g. 3
    #define MONGOAC_VERSION_PRERELEASE // e.g. "dev" or ""
+   #define MONGOAC_VERSION            // e.g. "1.2.3-dev"
 
    #define MONGOAC_VERSION_HEX // e.g. 0x01020300
 
@@ -31,9 +31,11 @@ Synopsis
    //    MONGOAC_CHECK_VERSION(2, 0, 0) -> false
    #define MONGOAC_CHECK_VERSION(major, minor, patch)
 
-   int32_t mongoac_version_major(void); // Runtime equivalent to MONGOAC_VERSION_MAJOR.
-   int32_t mongoac_version_minor(void); // Runtime equivalent to MONGOAC_VERSION_MINOR.
-   int32_t mongoac_version_patch(void); // Runtime equivalent to MONGOAC_VERSION_PATCH.
+   int32_t mongoac_version_major(void);                    // Runtime equivalent to MONGOAC_VERSION_MAJOR.
+   int32_t mongoac_version_minor(void);                    // Runtime equivalent to MONGOAC_VERSION_MINOR.
+   int32_t mongoac_version_patch(void);                    // Runtime equivalent to MONGOAC_VERSION_PATCH.
+   mongoac_string_view_t mongoac_version_prerelease(void); // Runtime equivalent to MONGOAC_VERSION_PRERELEASE.
+   mongoac_string_view_t mongoac_version(void);            // Runtime equivalent to MONGOAC_VERSION.
 
    int32_t mongoac_version_hex(void); // Runtime equivalent to MONGOAC_VERSION_HEX.
 
