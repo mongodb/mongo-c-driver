@@ -98,17 +98,20 @@ configure_file (
    "${binary_include_dir}/mongoac/version.h"
 )
 
+# Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
+set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
+
 set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
 set (cargo_library_shared "${cargo_target_build_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set (cargo_library_static "${cargo_target_build_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
 set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_shared_filename}")
-set (library_shared_soversion_full "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_shared_filename}.${PROJECT_VERSION}")
-set (library_shared_soversion "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
+set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}")
+set (library_shared_soversion_full "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}.${PROJECT_VERSION}")
+set (library_shared_soversion "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
 set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-set (library_static "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${library_static_filename}")
+set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_static_filename}")
 
 file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
 file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h" "${binary_include_dir}/*.h")
