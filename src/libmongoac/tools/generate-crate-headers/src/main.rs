@@ -14,12 +14,6 @@
 
 use std::path::{Path, PathBuf};
 
-macro_rules! includes {
-    ($($h:expr),* $(,)?) => {
-        vec![$($h.into()),*]
-    };
-}
-
 // Keep synchronized with `skip_cargo_headers` in src/libmongoac/CMakeLists.txt.
 const SKIP_CARGO_HEADERS: &[&str] = &["lib", "mod", "version"];
 
@@ -36,14 +30,22 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         .collect()
 }
 
-// List include directives needed by each crate header.
+// Crate-specific configuration options.
 fn configure(name: &str, config: &mut cbindgen::Config) {
-    let headers = match name {
-        "string" => includes!["stdint.h"],
-        _ => vec![],
-    };
+    // Include directives required by each crate header.
+    {
+        let headers: &[&str] = match name {
+            "string" => &["stdint.h"],
+            _ => {
+                println!("cargo::warning=missing headers entry for crate `{name}`");
+                &[]
+            }
+        };
 
-    config.sys_includes.extend(headers);
+        config
+            .sys_includes
+            .extend(headers.iter().map(|v| v.to_string()));
+    }
 }
 
 fn default_config() -> cbindgen::Config {
