@@ -56,7 +56,7 @@ MONGOAC_ABI_EXPORT int32_t
 mongoac_version_hex(void);
 
 MONGOAC_ABI_EXPORT bool
-mongoac_check_version(int32_t required_major, int32_t required_minor, int32_t required_patch);
+mongoac_check_version(int32_t major, int32_t minor, int32_t patch);
 
 #ifdef __cplusplus
 } // extern "C"
