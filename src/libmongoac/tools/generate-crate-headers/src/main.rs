@@ -59,7 +59,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         let headers: &[&str] = match name {
             "string" => &["stdint.h"],
             _ => {
-                println!("cargo::warning=missing headers entry for crate `{name}`");
+                eprintln!("warning: missing generate-crate-headers entry for {name}");
                 &[]
             }
         };
