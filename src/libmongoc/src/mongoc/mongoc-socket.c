@@ -23,7 +23,7 @@
 #include <mongoc/mongoc-host-list.h>
 
 #ifdef _WIN32
-#include <Mstcpip.h>
+#include <mstcpip.h>
 #include <process.h>
 #endif
 #include <mlib/cmp.h>
