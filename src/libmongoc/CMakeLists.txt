@@ -900,7 +900,7 @@ if (ENABLE_SHARED)
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
 
-   if (USE_BUNDLED_UTF8PROC)
+   if (MONGOC_ENABLE_CRYPTO AND USE_BUNDLED_UTF8PROC)
       target_compile_definitions (mongoc_shared PRIVATE UTF8PROC_STATIC)
    endif ()
 
@@ -974,7 +974,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          ${KMS_MSG_DEFINITIONS}
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
-   if (USE_BUNDLED_UTF8PROC)
+   if (MONGOC_ENABLE_CRYPTO AND USE_BUNDLED_UTF8PROC)
       target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
    endif ()
    # Several directories in the source and build trees contain headers we would like
