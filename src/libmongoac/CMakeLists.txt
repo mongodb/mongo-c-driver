@@ -346,3 +346,10 @@ if (ENABLE_MAN_PAGES OR ENABLE_HTML_DOCS)
       $<TARGET_NAME_IF_EXISTS:mongoac-html>
    )
 endif ()
+
+include (CTest)
+
+# ENABLE_TESTS consistency with mongo-c-driver. BUILD_TESTING only for standalone configuration.
+if ((NOT DEFINED ENABLE_TESTS OR ENABLE_TESTS) AND BUILD_TESTING)
+  add_subdirectory (test)
+endif ()
