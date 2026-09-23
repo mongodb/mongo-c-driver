@@ -6,5 +6,5 @@ API Reference
    :maxdepth: 1
 
    mongoac/export
-   mongoac/string
+   mongoac/mongoac_string_view_t
    mongoac/version
