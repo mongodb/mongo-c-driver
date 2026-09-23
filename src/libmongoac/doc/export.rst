@@ -1,7 +1,7 @@
 :man_page: mongoac_export
 
-mongoac_export
-==============
+Export Macros
+=============
 
 Synopsis
 --------

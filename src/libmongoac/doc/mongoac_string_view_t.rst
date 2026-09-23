@@ -1,7 +1,7 @@
-:man_page: mongoac_string
+:man_page: mongoac_string_view_t
 
-mongoac_string
-===============
+mongoac_string_view_t
+=====================
 
 Synopsis
 --------
@@ -18,7 +18,7 @@ Synopsis
 Description
 -----------
 
-Defines string representations.
+Represents a non-owning, read-only string.
 
 .. important::
 
