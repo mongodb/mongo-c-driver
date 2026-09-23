@@ -1,7 +1,7 @@
 :man_page: mongoac_version
 
-mongoac_version
-===============
+Versioning
+==========
 
 Synopsis
 --------
