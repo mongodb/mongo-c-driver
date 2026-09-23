@@ -178,6 +178,26 @@ test_bson_writer_null_realloc_2 (void)
    bson_free (buf);
 }
 
+/* bson_writer_begin must not write past the 5 bytes of an empty document when
+ * the buffer has exactly enough room for it. */
+static void
+test_bson_writer_exact_fit (void)
+{
+   uint8_t storage[6] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+   const uint8_t expected[] = {5, 0, 0, 0, 0, 0xAA};
+   uint8_t *buf = storage;
+   size_t buflen = 5; /* Final byte of storage is a sentinel. */
+   bson_writer_t *writer;
+   bson_t *b;
+
+   writer = bson_writer_new (&buf, &buflen, 0, NULL, NULL);
+   BSON_ASSERT (bson_writer_begin (writer, &b));
+   bson_writer_end (writer);
+   bson_writer_destroy (writer);
+
+   BSON_ASSERT (memcmp (storage, expected, sizeof expected) == 0);
+}
+
 void
 test_writer_install (TestSuite *suite)
 {
@@ -186,4 +206,5 @@ test_writer_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/writer/empty_sequence", test_bson_writer_empty_sequence);
    TestSuite_Add (suite, "/bson/writer/null_realloc", test_bson_writer_null_realloc);
    TestSuite_Add (suite, "/bson/writer/null_realloc_2", test_bson_writer_null_realloc_2);
+   TestSuite_Add (suite, "/bson/writer/exact_fit", test_bson_writer_exact_fit);
 }

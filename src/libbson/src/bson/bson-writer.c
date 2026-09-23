@@ -201,7 +201,7 @@ bson_writer_begin (bson_writer_t *writer, /* IN */
       *writer->buf = writer->realloc_func (*writer->buf, *writer->buflen, writer->realloc_func_ctx);
    }
 
-   memset ((*writer->buf) + writer->offset + 1, 0, 5);
+   memset ((*writer->buf) + writer->offset + 1, 0, 4);
    (*writer->buf)[writer->offset] = 5;
 
    *bson = &writer->b;
