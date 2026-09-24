@@ -12,51 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
 #include <mongoac/string.h>
 
-#include <string>
-#include <string_view>
+//
 
-namespace mongoac::test
-{
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 
-inline std::string_view
-from_mongoac(mongoac_string_view_t v)
+#include <cstdint>
+
+TEST_CASE("destroy", "[mongoac][string]")
 {
-   if (v.ptr == nullptr) {
-      return {};
+   SECTION("null")
+   {
+      auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
+
+      CHECK_NOTHROW(mongoac_string_destroy(mongoac_string_t{nullptr, len}));
    }
-
-   return std::string_view{v.ptr, v.len};
 }
-
-inline std::string
-from_mongoac(mongoac_string_t const &v)
-{
-   std::string ret;
-
-   // Copy-only.
-   if (v.ptr) {
-      ret.assign(v.ptr, v.len);
-   }
-
-   return ret;
-}
-
-inline std::string
-from_mongoac(mongoac_string_t &&v)
-{
-   std::string ret;
-
-   // Copy then destroy.
-   if (v.ptr) {
-      ret.assign(v.ptr, v.len);
-      mongoac_string_destroy(v);
-   }
-
-   return ret;
-}
-
-} // namespace mongoac::test
