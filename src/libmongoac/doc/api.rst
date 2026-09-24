@@ -8,4 +8,5 @@ API Reference
    export
    version
 
+   mongoac_error_t
    mongoac_string_view_t

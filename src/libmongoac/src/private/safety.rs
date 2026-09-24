@@ -48,7 +48,7 @@ macro_rules! safe_drop {
 /// Usage:
 ///
 /// ```rust
-/// fn example(ptr: *const T)  -> R {
+/// fn example(ptr: *mut T)  -> R {
 ///     let res: &mut T = safe_as_mut!(ptr);
 ///     assert!(!ptr.is_null());
 /// }
