@@ -148,7 +148,7 @@ impl ErrorT {
 
             ErrorCategoryT::MongoAC => Self::MongoAC { code: code.into() },
 
-            _ => Self::Unknown { code, category },
+            ErrorCategoryT::Unknown(_) => Self::Unknown { code, category },
         }
     }
 }
