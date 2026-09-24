@@ -14,4 +14,5 @@
 
 //! Exports safety macros for convenient single-import-all via `use crate::private::macros::*;`.
 
+pub use crate::safe_as_ref;
 pub use crate::safe_drop;

@@ -40,3 +40,31 @@ macro_rules! safe_drop {
         }
     }};
 }
+
+/// Safely convert the raw pointer into a reference when not null.
+///
+/// When `ptr` is null, early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const T)  -> R {
+///     let res: &T = safe_as_ref!(ptr);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be accessed as mutable concurrently by any other function.
+#[macro_export]
+macro_rules! safe_as_ref {
+    ($ptr:expr) => {{
+        let ptr = $ptr;
+        match unsafe { ptr.as_ref() } {
+            Some(r) => r,
+            None => return Default::default(),
+        }
+    }};
+}
