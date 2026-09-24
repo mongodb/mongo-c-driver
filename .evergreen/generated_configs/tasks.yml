@@ -5522,7 +5522,7 @@ tasks:
       - func: run-tests
   - name: oidc-azure-auth-test-task
     run_on:
-      - debian11-small
+      - ubuntu2204-small
     commands:
       - func: fetch-source
       - command: subprocess.exec
@@ -5550,7 +5550,7 @@ tasks:
             - ./drivers-evergreen-tools/.evergreen/auth_oidc/azure/run-driver-test.sh
   - name: oidc-gcp-auth-test-task
     run_on:
-      - debian11-small
+      - debian12-latest-small
     commands:
       - func: fetch-source
       - command: subprocess.exec
