@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod private;
+//! Exports safety macros for convenient single-import-all via `use crate::private::macros::*;`.
 
-pub mod string;
-pub mod version;
+pub use crate::safe_drop;
