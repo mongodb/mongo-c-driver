@@ -143,8 +143,6 @@ impl ErrorT {
     #[must_use]
     fn message(&self) -> Option<String> {
         match self {
-            Self::None => None,
-
             Self::MongoAC { code, message, .. } => {
                 // All variants must have `#[strum(message = "...")]`.
                 let prefix = code.get_message().unwrap_or_default();
