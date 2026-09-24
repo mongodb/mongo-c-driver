@@ -36,3 +36,10 @@ mongodb = {
     "zstd-compression",
   ],
 }
+num_enum = {
+  version = "*",
+}
+strum = {
+  version = "*",
+  features = ["derive"],
+}
