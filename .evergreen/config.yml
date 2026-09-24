@@ -20,6 +20,7 @@ ignore:
   - "NEWS"
   - "THIRD_PARTY_NOTICES"
   - "!docs/**/*.rst"
+  - "src/libmongoac" # CDRIVER-6382
 
 # Ensure Evergreen tests earlier commits when a task fails.
 stepback: true
