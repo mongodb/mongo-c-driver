@@ -9,6 +9,28 @@ Thanks to everyone who contributed to the development of this release.
 
   * Kevin Albertson
 
+libmongoc 1.30.12
+=================
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 2.5.4
+===============
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
 libmongoc 1.30.11
 =================
 
