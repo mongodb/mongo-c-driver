@@ -153,6 +153,34 @@ fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Pat
         .write_to_file(&header_path);
 }
 
+fn add_fwd_iwyu_pragma(header_path: &Path, directive: &str) {
+    const IWYU_PRAGMA_EXPORT: &str = " // IWYU pragma: export";
+
+    let mut content = std::fs::read_to_string(header_path)
+        .unwrap_or_else(|_| panic!("failed to read header: {}", header_path.display()));
+
+    let expected = format!("{directive}{IWYU_PRAGMA_EXPORT}");
+
+    // Starting position of `#include <mongoac/example-fwd.h>`.
+    let index = content.find(directive).unwrap_or_else(|| {
+        // This function should be guarded by `SKIP_FORWARD_HEADERS`.
+        panic!(
+            "include directive for forward header missing in {}: {directive}",
+            header_path.display()
+        )
+    });
+
+    // IWYU pragma is already present.
+    if content[index..].starts_with(&expected) {
+        return; // Nothing to do.
+    }
+
+    // Substitute patched include directive.
+    content.replace_range(index..index + directive.len(), &expected);
+    std::fs::write(header_path, content)
+        .unwrap_or_else(|_| panic!("failed to write header: {}", header_path.display()));
+}
+
 fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) {
     let file_stem = crate_path
         .file_stem()
@@ -222,6 +250,12 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
         .generate()
         .expect("cbindgen failed")
         .write_to_file(&header_path);
+
+    // Patch the header's include directive of its forward header with `// IWYU pragma: export`.
+    if !SKIP_FORWARD_HEADERS.contains(&file_stem) {
+        let directive = format!("#include <mongoac/{rel_str}-fwd.h>");
+        add_fwd_iwyu_pragma(&header_path, &directive);
+    }
 }
 
 // Recursively find all mongoac crates under the source directory which need a header.
