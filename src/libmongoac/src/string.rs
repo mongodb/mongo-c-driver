@@ -32,22 +32,13 @@ pub struct StringT {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_string_destroy(string: StringT) {
-    if string.ptr.is_null() {
-        return;
-    }
-
-    // SAFETY: bytes `[0, len)` at `data` MUST be accessible when `data` is not null.
-    // SAFETY: `string.ptr` is always allocated as a `Box<[u8]>`.
-    safe_drop!(std::ptr::slice_from_raw_parts_mut(
-        string.ptr as *mut u8,
-        string.len,
-    ));
+    safe_slice_drop!(string.ptr as *mut u8, string.len);
 }
 
 impl From<&str> for StringViewT {
     fn from(s: &str) -> Self {
         StringViewT {
-            ptr: s.as_ptr().cast::<c_char>(),
+            ptr: s.as_ptr().cast(),
             len: s.len(),
         }
     }
@@ -55,12 +46,11 @@ impl From<&str> for StringViewT {
 
 impl From<String> for StringT {
     fn from(s: String) -> Self {
-        let bytes = s.into_bytes();
-        let len = bytes.len();
+        let raw = safe_slice_into_raw!(s.into_bytes());
 
         StringT {
-            ptr: Box::into_raw(bytes.into_boxed_slice()).cast::<c_char>(),
-            len,
+            ptr: raw.cast(),
+            len: raw.len(),
         }
     }
 }

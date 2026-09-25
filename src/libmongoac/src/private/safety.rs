@@ -36,7 +36,37 @@ macro_rules! safe_drop {
     ($ptr:expr) => {{
         let ptr = $ptr;
         if !ptr.is_null() {
-            unsafe { drop(Box::from_raw(ptr)) }
+            unsafe {
+                drop(Box::from_raw(ptr));
+            }
+        }
+    }};
+}
+
+/// Safely drop the raw array pointer when not null.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *mut T, len: usize) {
+///     safe_slice_drop!(ptr, len);
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer obtained by `Box<[T]>::into_raw()` (e.g. via `safe_slice_into_raw!`).
+/// - When `ptr` is not null, `ptr` must be exclusively owned by the current function.
+/// - When `ptr` is not null, `len` must equal the length of the original boxed slice.
+#[macro_export]
+macro_rules! safe_slice_drop {
+    ($ptr:expr, $len:expr) => {{
+        let ptr = $ptr;
+        let len = $len;
+        if !ptr.is_null() {
+            unsafe {
+                drop(Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len)));
+            }
         }
     }};
 }
@@ -60,6 +90,28 @@ macro_rules! safe_into_raw {
     ($v:expr) => {{
         let v = $v;
         Box::into_raw(Box::new(v))
+    }};
+}
+
+/// Safely convert the given slice into a raw owning array pointer.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(v: &[T]) -> *mut [T] {
+///     safe_slice_into_raw!(v)
+/// }
+/// ```
+///
+/// Postconditions:
+///
+/// - The raw owning array pointer is not null.
+/// - The raw owning array pointer is exclusively owned by the current function.
+#[macro_export]
+macro_rules! safe_slice_into_raw {
+    ($v:expr) => {{
+        let v = $v;
+        Box::into_raw(Box::<[_]>::from(v))
     }};
 }
 
