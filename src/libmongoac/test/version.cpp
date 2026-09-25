@@ -20,8 +20,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <string_view>
-
 using mongoac::test::from_mongoac;
 
 TEST_CASE("constants", "[mongoac][version]") {
