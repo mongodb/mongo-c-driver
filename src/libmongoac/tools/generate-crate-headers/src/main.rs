@@ -60,6 +60,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
 fn configure(name: &str, config: &mut cbindgen::Config) {
     // Include directives required by each crate header.
     {
+        #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
             "error" => &["mongoac/string.h", "stdint.h"],
             "string" => &["stdint.h"],

@@ -39,7 +39,7 @@ pub enum ErrorCategoryT {
     MongoAC = MONGOAC_ERROR_CATEGORY_MONGOAC,
 
     #[num_enum(catch_all)]
-    Unknown(i32) = i32::MIN,
+    Unknown(i32),
 }
 
 #[derive(Clone, Copy, Debug, EnumMessage, Eq, FromPrimitive, IntoPrimitive, PartialEq)]
@@ -66,12 +66,12 @@ pub extern "C" fn mongoac_error_destroy(error: *mut ErrorT) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_error_clone(error: *const ErrorT) -> *mut ErrorT {
-    Box::into_raw(Box::new(safe_as_ref!(error).clone()))
+    safe_into_raw!(safe_as_ref!(error).clone())
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_error_new() -> *mut ErrorT {
-    Box::into_raw(Box::new(ErrorT::new()))
+    safe_into_raw!(ErrorT::new())
 }
 
 #[unsafe(no_mangle)]

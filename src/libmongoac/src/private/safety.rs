@@ -29,7 +29,7 @@
 ///
 /// Preconditions:
 ///
-/// - `ptr` must either be null or a valid pointer obtained by `Box<T>::into_raw()`.
+/// - `ptr` must either be null or a valid pointer obtained by `Box<T>::into_raw()` (e.g. via `safe_into_raw!`).
 /// - `ptr` must be exclusively owned by the current function when not null.
 #[macro_export]
 macro_rules! safe_drop {
@@ -38,6 +38,28 @@ macro_rules! safe_drop {
         if !ptr.is_null() {
             unsafe { drop(Box::from_raw(ptr)) }
         }
+    }};
+}
+
+/// Safely convert the given value into a raw owning pointer.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(v: T) -> *mut T {
+///     safe_into_raw!(v)
+/// }
+/// ```
+///
+/// Postconditions:
+///
+/// - The raw owning pointer is not null.
+/// - The raw owning pointer is exclusively owned by the current function.
+#[macro_export]
+macro_rules! safe_into_raw {
+    ($v:expr) => {{
+        let v = $v;
+        Box::into_raw(Box::new(v))
     }};
 }
 
