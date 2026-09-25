@@ -37,7 +37,7 @@ pub enum ErrorCategoryT {
     MongoAC = MONGOAC_ERROR_CATEGORY_MONGOAC,
 
     #[num_enum(catch_all)]
-    Unknown(i32) = i32::MIN,
+    Unknown(i32),
 }
 
 #[derive(Clone, Copy, Debug, EnumMessage, Eq, FromPrimitive, IntoPrimitive, PartialEq)]
