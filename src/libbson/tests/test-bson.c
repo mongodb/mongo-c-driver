@@ -1595,6 +1595,12 @@ test_bson_reserve_buffer_errors (void)
    uint8_t data[5] = {0};
    uint32_t len_le;
 
+   /* too small: less than the minimum BSON document size */
+   for (uint32_t i = 0u; i < 5u; i++) {
+      ASSERT (!bson_reserve_buffer (&bson, i));
+      ASSERT_CMPUINT32(bson.len, ==, 5u);
+   }
+
    /* too big */
    ASSERT (!bson_reserve_buffer (&bson, (uint32_t) (BSON_MAX_SIZE + 1u)));
    /* exactly the maximum size */
