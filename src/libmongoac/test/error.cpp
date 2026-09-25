@@ -16,13 +16,14 @@
 
 //
 
-#include <cstdint>
-#include <memory>
+#include <mongoac/test/memory.hh>
+#include <mongoac/test/string.hh>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
-#include <mongoac/test/memory.hh>
-#include <mongoac/test/string.hh>
+
+#include <cstdint>
+#include <memory>
 
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;

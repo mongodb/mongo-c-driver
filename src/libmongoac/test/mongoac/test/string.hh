@@ -14,10 +14,10 @@
 
 #pragma once
 
+#include <mongoac/string.h>
+
 #include <string>
 #include <string_view>
-
-#include <mongoac/string.h>
 
 namespace mongoac::test {
 
