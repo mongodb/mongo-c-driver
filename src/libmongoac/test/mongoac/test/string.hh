@@ -19,44 +19,37 @@
 #include <string>
 #include <string_view>
 
-namespace mongoac::test
-{
+namespace mongoac::test {
 
-inline std::string_view
-from_mongoac(mongoac_string_view_t v)
-{
-   if (v.ptr == nullptr) {
-      return {};
-   }
+inline std::string_view from_mongoac(mongoac_string_view_t v) {
+    if (v.ptr == nullptr) {
+        return {};
+    }
 
-   return std::string_view{v.ptr, v.len};
+    return std::string_view{v.ptr, v.len};
 }
 
-inline std::string
-from_mongoac(mongoac_string_t const &v)
-{
-   std::string ret;
+inline std::string from_mongoac(mongoac_string_t const& v) {
+    std::string ret;
 
-   // Copy-only.
-   if (v.ptr) {
-      ret.assign(v.ptr, v.len);
-   }
+    // Copy-only.
+    if (v.ptr) {
+        ret.assign(v.ptr, v.len);
+    }
 
-   return ret;
+    return ret;
 }
 
-inline std::string
-from_mongoac(mongoac_string_t &&v)
-{
-   std::string ret;
+inline std::string from_mongoac(mongoac_string_t&& v) {
+    std::string ret;
 
-   // Copy then destroy.
-   if (v.ptr) {
-      ret.assign(v.ptr, v.len);
-      mongoac_string_destroy(v);
-   }
+    // Copy then destroy.
+    if (v.ptr) {
+        ret.assign(v.ptr, v.len);
+        mongoac_string_destroy(v);
+    }
 
-   return ret;
+    return ret;
 }
 
 } // namespace mongoac::test
