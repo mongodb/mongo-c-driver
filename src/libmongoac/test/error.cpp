@@ -19,10 +19,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
 #include <mongoac/test/memory.hh>
+#include <mongoac/test/string.hh>
 
 #include <cstdint>
 #include <memory>
 
+using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
 
 TEST_CASE("default", "[mongoac][error]")
@@ -107,6 +109,74 @@ TEST_CASE("code", "[mongoac][error]")
    SECTION("null")
    {
       CHECK(mongoac_error_code(nullptr) == MONGOAC_ERROR_CODE_OK);
+   }
+}
+
+TEST_CASE("message", "[mongoac][error]")
+{
+   SECTION("null")
+   {
+      CHECK(from_mongoac(mongoac_error_message(nullptr)) == "");
+   }
+
+   SECTION("default")
+   {
+      auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+      auto const error = error_owner.get();
+
+      SECTION("default")
+      {
+         CHECK(from_mongoac(mongoac_error_message(error)) == "");
+      }
+   }
+
+   SECTION("mongoac")
+   {
+      auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+      auto const error = error_owner.get();
+
+      SECTION("ok")
+      {
+         CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_OK));
+         CHECK(from_mongoac(mongoac_error_message(error)) == "ok");
+      }
+
+      SECTION("invalid argument")
+      {
+         CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_INVALID_ARGUMENT));
+         CHECK(from_mongoac(mongoac_error_message(error)) == "invalid argument");
+      }
+
+      SECTION("runtime error")
+      {
+         CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_RUNTIME_ERROR));
+         CHECK(from_mongoac(mongoac_error_message(error)) == "runtime error");
+      }
+
+      SECTION("unknown error code")
+      {
+         CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, -1));
+         CHECK(from_mongoac(mongoac_error_message(error)) == "unknown error code");
+      }
+   }
+
+   SECTION("unknown")
+   {
+      auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+      auto const error = error_owner.get();
+
+      auto const code = GENERATE(values<std::int32_t>({
+         INT32_MIN,
+         INT32_MIN + 1,
+         -1,
+         0,
+         1,
+         INT32_MAX - 1,
+         INT32_MAX,
+      }));
+
+      CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_UNKNOWN, code));
+      CHECK(from_mongoac(mongoac_error_message(error)) == "");
    }
 }
 
