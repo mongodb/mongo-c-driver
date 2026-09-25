@@ -12,9 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Exports safety macros for convenient single-import-all via `use crate::private::macros::*;`.
-
-pub use crate::safe_as_mut;
-pub use crate::safe_as_ref;
-pub use crate::safe_drop;
-pub use crate::safe_into_raw;
+#include <mongoac/test/memory.hh>
