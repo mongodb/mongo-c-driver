@@ -72,7 +72,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
 
         config
             .sys_includes
-            .extend(headers.iter().map(|v| v.to_string()));
+            .extend(headers.iter().map(ToString::to_string));
     }
 
     // Structs which need to be explicitly exported (due to no exported function referencing the struct).
@@ -85,7 +85,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         config
             .export
             .include
-            .extend(exports.iter().map(|v| v.to_string()));
+            .extend(exports.iter().map(ToString::to_string));
     }
 }
 
@@ -229,9 +229,10 @@ fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(dir)
         .unwrap_or_else(|_| panic!("failed to read directory: {}", dir.display()))
     {
-        let path = entry
-            .map(|e| e.path())
-            .unwrap_or_else(|_| panic!("failed to read directory entry in: {}", dir.display()));
+        let path = entry.map_or_else(
+            |_| panic!("failed to read directory entry in: {}", dir.display()),
+            |e| e.path(),
+        );
 
         if path.is_dir() {
             if path.file_name().is_some_and(|name| name == "private") {
