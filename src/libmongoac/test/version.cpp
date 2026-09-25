@@ -16,10 +16,11 @@
 
 //
 
-#include <string_view>
+#include <mongoac/test/string.hh>
 
 #include <catch2/catch_test_macros.hpp>
-#include <mongoac/test/string.hh>
+
+#include <string_view>
 
 using mongoac::test::from_mongoac;
 
