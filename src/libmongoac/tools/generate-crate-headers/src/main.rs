@@ -65,7 +65,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "error" => &["mongoac/string.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
-                eprintln!("warning: missing generate-crate-headers entry for {name}");
+                eprintln!("warning: missing generate-crate-headers entry: {name}");
                 &[]
             }
         };
@@ -264,7 +264,7 @@ fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
         .unwrap_or_else(|_| panic!("failed to read directory: {}", dir.display()))
     {
         let path = entry.map_or_else(
-            |_| panic!("failed to read directory entry in: {}", dir.display()),
+            |_| panic!("failed to read directory entry: {}", dir.display()),
             |e| e.path(),
         );
 
