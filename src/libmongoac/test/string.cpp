@@ -16,17 +16,15 @@
 
 //
 
+#include <cstdint>
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
 
-#include <cstdint>
+TEST_CASE("destroy", "[mongoac][string]") {
+    SECTION("null") {
+        auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
 
-TEST_CASE("destroy", "[mongoac][string]")
-{
-   SECTION("null")
-   {
-      auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
-
-      CHECK_NOTHROW(mongoac_string_destroy(mongoac_string_t{nullptr, len}));
-   }
+        CHECK_NOTHROW(mongoac_string_destroy(mongoac_string_t{nullptr, len}));
+    }
 }
