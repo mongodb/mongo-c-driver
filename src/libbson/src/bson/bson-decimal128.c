@@ -666,7 +666,7 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
       }
 
       if (ndigits_stored < ndigits) {
-         if (string[ndigits - 1 + includes_sign + saw_radix] - '0' != 0 && significant_digits != 0) {
+         if (string[first_nonzero + ndigits - 1 + includes_sign + saw_radix] - '0' != 0 && significant_digits != 0) {
             BSON_DECIMAL128_SET_NAN (*dec);
             return false;
          }
