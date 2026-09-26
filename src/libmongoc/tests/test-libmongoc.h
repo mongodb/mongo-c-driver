@@ -261,6 +261,12 @@ test_framework_skip_if_no_failpoint(void);
 int
 test_framework_skip_if_no_client_side_encryption(void);
 
+// `test_framework_skip_if_no_server_side_javascript` skips if the server cannot
+// evaluate server-side JavaScript (e.g. it was started with `--noscripting`, or
+// built without a JavaScript engine). Detected by probing a `$where` query.
+int
+test_framework_skip_if_no_server_side_javascript(void);
+
 int
 test_framework_skip_if_no_aws(void);
 

@@ -1047,7 +1047,8 @@ test_backpressure_install(TestSuite *suite)
                      NULL,
                      NULL,
                      test_framework_skip_if_max_wire_version_less_than_21, /* Require server 7.0 */
-                     test_framework_skip_if_slow /* Does many slow blocking operations */);
+                     test_framework_skip_if_slow,                          /* Does many slow blocking operations */
+                     test_framework_skip_if_no_server_side_javascript /* Blocks operations with `$where` */);
 
    TestSuite_AddFull(suite,
                      "/backpressure/SDAM/backpressure-network-error-fail",
