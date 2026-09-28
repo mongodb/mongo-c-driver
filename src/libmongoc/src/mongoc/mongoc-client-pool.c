@@ -297,7 +297,6 @@ _initialize_new_client(mongoc_client_pool_t *pool, mongoc_client_t *client)
    BSON_ASSERT_PARAM(pool);
    BSON_ASSERT_PARAM(client);
 
-   /* for tests */
    _mongoc_client_set_stream_initiator_single_or_pooled(
       client, pool->topology->scanner->initiator, pool->topology->scanner->initiator_context);
 
@@ -501,16 +500,31 @@ mongoc_client_pool_push(mongoc_client_pool_t *pool, mongoc_client_t *client)
    EXIT;
 }
 
+bool
+mongoc_client_pool_set_stream_initiator(mongoc_client_pool_t *pool,
+                                        mongoc_stream_initiator_t initiator,
+                                        void *user_data)
+{
+   BSON_ASSERT_PARAM(pool);
+   BSON_ASSERT_PARAM(initiator);
+
+   bson_mutex_lock(&pool->mutex);
+   if (pool->client_initialized) {
+      bson_mutex_unlock(&pool->mutex);
+      MONGOC_ERROR("Cannot set stream initiator after a client has been created");
+      return false;
+   }
+
+   mongoc_topology_scanner_set_stream_initiator(pool->topology->scanner, initiator, user_data);
+   bson_mutex_unlock(&pool->mutex);
+   return true;
+}
+
 /* for tests */
 void
 _mongoc_client_pool_set_stream_initiator(mongoc_client_pool_t *pool, mongoc_stream_initiator_t si, void *context)
 {
-   BSON_ASSERT_PARAM(pool);
-
-   // Do not permit overriding initializer after calls to `mongoc_client_pool_pop`.
-   BSON_ASSERT(!pool->client_initialized);
-
-   mongoc_topology_scanner_set_stream_initiator(pool->topology->scanner, si, context);
+   BSON_ASSERT(mongoc_client_pool_set_stream_initiator(pool, si, context));
 }
 
 /* for tests */

@@ -71,6 +71,10 @@ MONGOC_EXPORT(bool)
 mongoc_client_pool_set_error_api(mongoc_client_pool_t *pool, int32_t version);
 
 MONGOC_EXPORT(bool)
+mongoc_client_pool_set_stream_initiator(mongoc_client_pool_t *pool,
+                                        mongoc_stream_initiator_t initiator,
+                                        void *user_data);
+MONGOC_EXPORT(bool)
 mongoc_client_pool_set_appname(mongoc_client_pool_t *pool, const char *appname);
 
 MONGOC_EXPORT(bool)

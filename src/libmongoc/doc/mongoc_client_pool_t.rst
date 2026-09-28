@@ -44,6 +44,7 @@ Example
     mongoc_client_pool_set_oidc_callback
     mongoc_client_pool_set_server_api
     mongoc_client_pool_set_ssl_opts
+    mongoc_client_pool_set_stream_initiator
     mongoc_client_pool_set_structured_log_opts
     mongoc_client_pool_try_pop
 

@@ -918,8 +918,7 @@ _server_monitor_setup_connection(mongoc_server_monitor_t *server_monitor,
 
    server_monitor->more_to_come = false;
 
-   /* Using an initiator isn't really necessary. Users can't set them on
-    * pools. But it is used for tests. */
+   /* Use the same custom transport as the clients in the pool. */
    if (server_monitor->initiator) {
       server_monitor->stream = server_monitor->initiator(
          server_monitor->uri, &server_monitor->description->host, server_monitor->initiator_context, error);

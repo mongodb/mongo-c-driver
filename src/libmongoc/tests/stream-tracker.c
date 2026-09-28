@@ -17,8 +17,7 @@
 #include <stream-tracker.h>
 
 #include <common-thread-private.h>
-#include <mongoc/mongoc-client-pool-private.h> // _mongoc_client_pool_set_stream_initiator
-#include <mongoc/mongoc-client-private.h>      // mongoc_client_default_stream_initiator
+#include <mongoc/mongoc-client-private.h> // mongoc_client_default_stream_initiator
 #include <mongoc/mongoc-host-list-private.h>
 
 #include <TestSuite.h>         // ASSERT_OR_PRINT
@@ -75,7 +74,7 @@ stream_tracker_track_pool(stream_tracker_t *st, mongoc_client_pool_t *pool)
    BSON_ASSERT(!st->client);
 
    st->pool = pool;
-   _mongoc_client_pool_set_stream_initiator(pool, stream_tracker_initiator, st);
+   ASSERT(mongoc_client_pool_set_stream_initiator(pool, stream_tracker_initiator, st));
 }
 
 int

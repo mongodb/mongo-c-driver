@@ -15,7 +15,7 @@ Synopsis
 
 The :symbol:`mongoc_client_set_stream_initiator()` function shall associate a given :symbol:`mongoc_client_t` with a new stream initiator. This will completely replace the default transport (buffered TCP, possibly with TLS). The ``initiator`` should fulfill the :symbol:`mongoc_stream_t` contract. ``user_data`` is passed through to the ``initiator`` callback and may be used for whatever run time customization is necessary.
 
-It is a programming error to call this function on a :symbol:`mongoc_client_t` from a :symbol:`mongoc_client_pool_t`.
+It is a programming error to call this function on a :symbol:`mongoc_client_t` from a :symbol:`mongoc_client_pool_t`. Use :symbol:`mongoc_client_pool_set_stream_initiator()` to configure a pool before retrieving any clients.
 
 .. versionchanged:: 2.0.0 This function logs an error and immediately returns if ``client`` is from a :symbol:`mongoc_client_pool_t`. Previously this function unsafely applied the initiator to the pooled client.
 

@@ -8,6 +8,10 @@
 #include <mlib/time_point.h>
 
 #include <TestSuite.h>
+#include <mock_server/future-functions.h>
+#include <mock_server/future.h>
+#include <mock_server/mock-server.h>
+#include <test-conveniences.h>
 #include <test-libmongoc.h>
 
 #include <stream-tracker.h>
@@ -601,10 +605,87 @@ test_mongoc_client_set_stream_initiator(void)
    mongoc_client_pool_destroy(pool);
 }
 
+static void
+test_pool_stream_initiator(bool try_pop)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_uri_t *uri = mongoc_uri_copy(mock_server_get_uri(server));
+   /* Polling uses one monitoring stream, making the stream counts deterministic. */
+   ASSERT(mongoc_uri_set_option_as_utf8(uri, MONGOC_URI_SERVERMONITORINGMODE, "poll"));
+   mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
+   ASSERT(pool);
+   stream_tracker_t *original_tracker = stream_tracker_new();
+   stream_tracker_track_pool(original_tracker, pool);
+   stream_tracker_t *tracker = stream_tracker_new();
+   /* Replacing the initiator before creating any clients is permitted. */
+   stream_tracker_track_pool(tracker, pool);
+   const char *host = mongoc_uri_get_hosts(uri)->host_and_port;
+   stream_tracker_assert_total_count(tracker, host, 0);
+
+   mongoc_client_t *clients[2];
+   clients[0] = try_pop ? mongoc_client_pool_try_pop(pool) : mongoc_client_pool_pop(pool);
+   ASSERT(clients[0]);
+   stream_tracker_assert_eventual_active_count(tracker, host, 1);
+
+   capture_logs(true);
+   ASSERT(!mongoc_client_pool_set_stream_initiator(pool, mongoc_client_default_stream_initiator, NULL));
+   ASSERT_CAPTURED_LOG("mongoc_client_pool_set_stream_initiator",
+                       MONGOC_LOG_LEVEL_ERROR,
+                       "Cannot set stream initiator after a client has been created");
+   capture_logs(false);
+
+   clients[1] = mongoc_client_pool_pop(pool);
+   ASSERT(clients[1]);
+   for (int i = 0; i < 2; ++i) {
+      bson_error_t error;
+      future_t *future = future_client_command_simple(clients[i], "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'ping': 1}"));
+      ASSERT(request);
+      reply_to_request_with_ok_and_destroy(request);
+      ASSERT_OR_PRINT(future_get_bool(future), error);
+      future_destroy(future);
+   }
+   /* One monitoring stream and one stream for each checked-out client. */
+   stream_tracker_assert_total_count(tracker, host, 3);
+   for (int i = 0; i < 2; ++i) {
+      mongoc_client_pool_push(pool, clients[i]);
+   }
+
+   capture_logs(true);
+   ASSERT(!mongoc_client_pool_set_stream_initiator(pool, mongoc_client_default_stream_initiator, NULL));
+   ASSERT_CAPTURED_LOG("mongoc_client_pool_set_stream_initiator",
+                       MONGOC_LOG_LEVEL_ERROR,
+                       "Cannot set stream initiator after a client has been created");
+   capture_logs(false);
+
+   mongoc_client_pool_destroy(pool);
+   stream_tracker_assert_active_count(tracker, host, 0);
+   stream_tracker_assert_total_count(original_tracker, host, 0);
+   stream_tracker_destroy(original_tracker);
+   stream_tracker_destroy(tracker);
+   mongoc_uri_destroy(uri);
+   mock_server_destroy(server);
+}
+
+static void
+test_pool_stream_initiator_pop(void)
+{
+   test_pool_stream_initiator(false);
+}
+
+static void
+test_pool_stream_initiator_try_pop(void)
+{
+   test_pool_stream_initiator(true);
+}
+
 void
 test_client_pool_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
+   TestSuite_AddMockServerTest(suite, "/ClientPool/stream_initiator/pop", test_pool_stream_initiator_pop);
+   TestSuite_AddMockServerTest(suite, "/ClientPool/stream_initiator/try_pop", test_pool_stream_initiator_try_pop);
    TestSuite_Add(suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
    TestSuite_Add(suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
    TestSuite_Add(suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);
