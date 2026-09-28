@@ -12,9 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Exports safety macros for convenient single-import-all via `use crate::private::macros::*;`.
+#pragma once
 
-pub use crate::safe_as_mut;
-pub use crate::safe_as_ref;
-pub use crate::safe_drop;
-pub use crate::safe_into_raw;
+#include <memory>
+
+namespace mongoac::test
+{
+
+template <typename T, typename D = void (*)(T *)>
+std::unique_ptr<T, D>
+make_unique(T *ptr, D deleter)
+{
+   return std::unique_ptr<T, D>(ptr, deleter);
+}
+
+} // namespace mongoac::test
