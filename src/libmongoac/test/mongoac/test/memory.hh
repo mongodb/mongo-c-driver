@@ -16,14 +16,11 @@
 
 #include <memory>
 
-namespace mongoac::test
-{
+namespace mongoac::test {
 
-template <typename T, typename D = void (*)(T *)>
-std::unique_ptr<T, D>
-make_unique(T *ptr, D deleter)
-{
-   return std::unique_ptr<T, D>(ptr, deleter);
+template <typename T, typename D = void (*)(T*)>
+std::unique_ptr<T, D> make_unique(T* ptr, D deleter) {
+    return std::unique_ptr<T, D>(ptr, deleter);
 }
 
 } // namespace mongoac::test
