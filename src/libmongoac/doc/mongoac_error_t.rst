@@ -64,6 +64,12 @@ The following error codes are defined for the ``MONGOAC_ERROR_CATEGORY_MONGOAC``
 - ``MONGOAC_ERROR_CODE_RUNTIME_ERROR``: A runtime error occurred.
 - ``MONGOAC_ERROR_CODE_UNKNOWN``: All other (unnamed) error codes. Defaults to ``INT32_MIN`` unless otherwise specified.
 
+Error Messages
+--------------
+
+An optional error message may provide additional information describing the corresponding error.
+When no error message is available (e.g. in the default state), :symbol:`mongoac_error_message()` returns a null string.
+
 .. only:: html
 
   Functions
@@ -79,6 +85,7 @@ The following error codes are defined for the ``MONGOAC_ERROR_CATEGORY_MONGOAC``
 
     mongoac_error_category
     mongoac_error_code
+    mongoac_error_message
 
     mongoac_error_clear
     mongoac_error_set

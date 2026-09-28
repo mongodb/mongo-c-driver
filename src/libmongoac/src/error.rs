@@ -14,6 +14,8 @@
 
 use crate::private::macros::*;
 
+use crate::string::StringT;
+
 use num_enum::{FromPrimitive, IntoPrimitive};
 use strum::EnumMessage;
 
@@ -83,6 +85,14 @@ pub extern "C" fn mongoac_error_code(error: *const ErrorT) -> i32 {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_error_message(error: *const ErrorT) -> StringT {
+    safe_as_ref!(error)
+        .message()
+        .map(Into::into)
+        .unwrap_or_default()
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_error_clear(error: *mut ErrorT) {
     safe_as_mut!(error).clear();
 }
@@ -98,6 +108,7 @@ pub enum ErrorT {
     None,
     MongoAC {
         code: ErrorCodeT,
+        message: Option<String>,
     },
     Unknown {
         code: i32,
@@ -129,6 +140,23 @@ impl ErrorT {
         }
     }
 
+    #[must_use]
+    fn message(&self) -> Option<String> {
+        match self {
+            Self::MongoAC { code, message, .. } => {
+                // All variants must have `#[strum(message = "...")]`.
+                let prefix = code.get_message().unwrap_or_default();
+
+                Some(match message {
+                    Some(msg) => format!("{prefix}: {msg}"),
+                    None => prefix.to_string(),
+                })
+            }
+
+            _ => None,
+        }
+    }
+
     fn clear(&mut self) {
         *self = Self::None;
     }
@@ -146,7 +174,10 @@ impl ErrorT {
                 }
             }
 
-            ErrorCategoryT::MongoAC => Self::MongoAC { code: code.into() },
+            ErrorCategoryT::MongoAC => Self::MongoAC {
+                code: code.into(),
+                message: None,
+            },
 
             ErrorCategoryT::Unknown(_) => Self::Unknown { code, category },
         }
@@ -158,7 +189,10 @@ impl Clone for ErrorT {
         match self {
             Self::None => Self::None,
 
-            Self::MongoAC { code } => Self::MongoAC { code: *code },
+            Self::MongoAC { code, message } => Self::MongoAC {
+                code: *code,
+                message: message.clone(),
+            },
 
             Self::Unknown { category, code } => Self::Unknown {
                 category: *category,
