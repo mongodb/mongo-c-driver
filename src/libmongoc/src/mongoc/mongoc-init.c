@@ -93,6 +93,20 @@ mongoc_cyrus_mutex_free(void *mutex)
 #endif /* MONGOC_ENABLE_SASL_CYRUS */
 
 static bool mongoc_init_called;
+
+bool
+mongoc_set_thread_backend(const bson_thread_backend_t *backend)
+{
+   if (mongoc_init_called) {
+      return false;
+   }
+   if (!mcommon_thread_backend_set(backend)) {
+      return false;
+   }
+   bson_set_thread_backend(backend);
+   return true;
+}
+
 bool
 mongoc_get_init_called(void)
 {

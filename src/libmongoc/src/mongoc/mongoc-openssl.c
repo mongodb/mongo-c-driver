@@ -58,6 +58,9 @@
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifndef _WIN32
+#include <pthread.h> /* Native thread identity for legacy OpenSSL. */
+#endif
 static bson_mutex_t *gMongocOpenSslThreadLocks;
 
 static void

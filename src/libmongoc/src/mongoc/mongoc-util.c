@@ -121,7 +121,7 @@ mongoc_usleep_default_impl(int64_t usec, void *user_data)
 {
    BSON_UNUSED(user_data);
 
-   mlib_sleep_for(usec, us);
+   mcommon_sleep_for(mlib_duration(usec, us));
 }
 
 

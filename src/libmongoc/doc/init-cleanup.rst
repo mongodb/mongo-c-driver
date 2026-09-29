@@ -15,6 +15,7 @@ Synopsis
     :maxdepth: 1
 
     mongoc_init
+    mongoc_set_thread_backend
     mongoc_cleanup
 
 .. versionchanged:: 2.0.0 Versions prior to 2.0.0 supported a non-portable automatic initialization and cleanup with the CMake option ``ENABLE_AUTOMATIC_INIT_AND_CLEANUP``. This was removed in 2.0.0. Ensure your application call :symbol:`mongoc_init` and :symbol:`mongoc_cleanup`.

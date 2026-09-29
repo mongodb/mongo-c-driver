@@ -25,6 +25,9 @@ API Reference
   bson_writer_t
   bson_get_monotonic_time
   bson_memory
+  bson_set_thread_backend
+  bson_thread_backend_t
+  bson_thread_backend_function_t
   binary_vector
   version
   legacy_extended_json

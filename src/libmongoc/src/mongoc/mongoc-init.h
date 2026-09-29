@@ -28,6 +28,10 @@ BSON_BEGIN_DECLS
 
 MONGOC_EXPORT(void)
 mongoc_init(void);
+/* Configure thread operations for libmongoc and libbson before mongoc_init.
+ * Call from one thread before any driver operation. NULL restores defaults. */
+MONGOC_EXPORT(bool)
+mongoc_set_thread_backend(const bson_thread_backend_t *backend);
 MONGOC_EXPORT(void)
 mongoc_cleanup(void);
 

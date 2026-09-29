@@ -15,3 +15,7 @@ Description
 -----------
 
 .. include:: includes/init_cleanup.txt
+
+.. seealso::
+
+   :symbol:`mongoc_set_thread_backend` to configure threading before initialization.

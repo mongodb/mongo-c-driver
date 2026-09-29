@@ -13,12 +13,38 @@
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
 
+#if defined(BSON_OS_UNIX)
+#include "../../common/tests/thread-backend-runtime.h"
+#endif
+
 int
 main(int argc, char *argv[])
 {
    TestSuite suite;
 
+#if defined(BSON_OS_UNIX)
+   if (getenv("MONGOC_TEST_RUNTIME_BACKEND")) {
+      /* Exercise restoring defaults and copying a caller-owned table. */
+      bson_thread_backend_t backend = runtime_thread_backend;
+      BSON_ASSERT(mongoc_set_thread_backend(&backend));
+      BSON_ASSERT(mongoc_set_thread_backend(NULL));
+      BSON_ASSERT(mongoc_set_thread_backend(&backend));
+      memset(&backend, 0, sizeof backend);
+      /* This call dispatches through libbson's separate common library copy. */
+      BSON_ASSERT(bson_context_get_default());
+      BSON_ASSERT(runtime_once_used);
+      runtime_once_used = false;
+   }
+#endif
+
    test_libmongoc_init(&suite, argc, argv);
+
+#if defined(BSON_OS_UNIX)
+   if (getenv("MONGOC_TEST_RUNTIME_BACKEND")) {
+      BSON_ASSERT(runtime_once_used);
+      BSON_ASSERT(runtime_mutex_init_used);
+   }
+#endif
 
    /* libbson */
 
@@ -179,6 +205,11 @@ main(int argc, char *argv[])
    const int ret = TestSuite_Run(&suite);
 
    test_libmongoc_destroy(&suite);
+#if defined(BSON_OS_UNIX)
+   if (getenv("MONGOC_TEST_RUNTIME_BACKEND")) {
+      runtime_cleanup();
+   }
+#endif
 
    return ret;
 }

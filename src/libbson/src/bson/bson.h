@@ -30,6 +30,7 @@
 #include <bson/bson-oid.h>               // IWYU pragma: export
 #include <bson/bson-reader.h>            // IWYU pragma: export
 #include <bson/bson-string.h>            // IWYU pragma: export
+#include <bson/bson-thread-backend.h>    // IWYU pragma: export
 #include <bson/bson-types.h>             // IWYU pragma: export
 #include <bson/bson-utf8.h>              // IWYU pragma: export
 #include <bson/bson-value.h>             // IWYU pragma: export

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <common-thread-private.h>
+
 #include <bson/bson.h>
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
@@ -599,7 +601,7 @@ _state_need_kms(_state_machine_t *state_machine, bson_error_t *error)
       }
 
       sleep_usec = mongocrypt_kms_ctx_usleep(kms_ctx);
-      mlib_sleep_for(sleep_usec, us);
+      mcommon_sleep_for(mlib_duration(sleep_usec, us));
 
       mongoc_stream_destroy(tls_stream);
       tls_stream = _get_stream(endpoint, sockettimeout, ssl_opt, error);
