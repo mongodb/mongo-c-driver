@@ -58,6 +58,8 @@ struct _mongoc_client_pool_t {
    mongoc_uri_t *uri;
    uint32_t max_pool_size;
    uint32_t size;
+   uint64_t clients_created;
+   uint64_t clients_destroyed;
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts;
    bool ssl_opts_set;
@@ -71,6 +73,20 @@ struct _mongoc_client_pool_t {
    // `last_known_serverids` is a sorted array of uint32_t.
    mongoc_array_t last_known_serverids;
 };
+
+
+void
+mongoc_client_pool_get_stats(mongoc_client_pool_t *pool, mongoc_client_pool_stats_t *stats)
+{
+   BSON_ASSERT_PARAM(pool);
+   BSON_ASSERT_PARAM(stats);
+
+   bson_mutex_lock(&pool->mutex);
+   stats->clients_created = pool->clients_created;
+   stats->clients_destroyed = pool->clients_destroyed;
+   stats->clients_in_pool = pool->size;
+   bson_mutex_unlock(&pool->mutex);
+}
 
 
 #ifdef MONGOC_ENABLE_SSL
@@ -251,6 +267,8 @@ mongoc_client_pool_destroy(mongoc_client_pool_t *pool)
 
    while ((client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       mongoc_client_destroy(client);
+      pool->clients_destroyed++;
+      pool->size--;
    }
 
    mongoc_topology_destroy(pool->topology);
@@ -338,6 +356,7 @@ again:
          BSON_ASSERT(client);
          _initialize_new_client(pool, client);
          pool->size++;
+         pool->clients_created++;
       } else {
          if (wait_queue_timeout_ms > 0) {
             if (!mlib_timer_is_expired(expires_at)) {
@@ -381,6 +400,7 @@ mongoc_client_pool_try_pop(mongoc_client_pool_t *pool)
          BSON_ASSERT(client);
          _initialize_new_client(pool, client);
          pool->size++;
+         pool->clients_created++;
       }
    }
 
