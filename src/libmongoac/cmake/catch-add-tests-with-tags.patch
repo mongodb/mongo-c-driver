@@ -1,12 +1,16 @@
 diff --git a/extras/CatchAddTests.cmake b/extras/CatchAddTests.cmake
-index f484019..28c6fcc 100644
+index f484019..2839198 100644
 --- a/extras/CatchAddTests.cmake
 +++ b/extras/CatchAddTests.cmake
-@@ -449,6 +449,30 @@ function(catch_discover_tests_impl)
+@@ -449,19 +449,63 @@ function(catch_discover_tests_impl)
      endif()
      string(JSON plain_name GET "${single_test}" "name")
  
 +    # --- catch2-add-tests-with-tags ---
++    # Define a unique CTest name using both plain name and tags:
++    #  - "name" -> "name" (no tags)
++    #  - "name [c][b][a]" -> "a/b/c/name" (tags are alphabetically sorted)
++    # Tags which equal the prefix are skipped (e.g. avoid `prefix/prefix/name`).
 +    string(REGEX REPLACE "/$" "" _prefix_tag "${prefix}")
 +    set(_tagged_prefix "")
 +    if(add_tags)
@@ -15,8 +19,7 @@ index f484019..28c6fcc 100644
 +      if(_num_tags GREATER_EQUAL "0")
 +        foreach(_tag_idx RANGE ${_num_tags})
 +          string(JSON _a_tag GET "${test_tags}" "${_tag_idx}")
-+          string(SUBSTRING "${_a_tag}" 0 1 _first_char)
-+          if(_first_char MATCHES "^[a-zA-Z0-9]$" AND NOT _a_tag STREQUAL _prefix_tag)
++          if(_a_tag MATCHES "^[a-zA-Z0-9]" AND NOT _a_tag STREQUAL _prefix_tag)
 +            list(APPEND _tagged_prefix "${_a_tag}")
 +          endif()
 +        endforeach()
@@ -33,7 +36,29 @@ index f484019..28c6fcc 100644
      # Escape characters in test case names that would be parsed by Catch2
      # Note that the \ escaping must happen FIRST! Do not change the order.
      set(escaped_name "${plain_name}")
-@@ -461,7 +485,7 @@ function(catch_discover_tests_impl)
+     foreach(char \\ , [ ] ;)
+       string(REPLACE ${char} "\\${char}" escaped_name "${escaped_name}")
+     endforeach(char)
++
++    # Append tags to the escaped test name so CTest only executes this specific test case.
++    if(add_tags)
++      string(JSON _num_tags LENGTH "${test_tags}")
++      math(EXPR _num_tags "${_num_tags} - 1")
++      if(_num_tags GREATER_EQUAL "0")
++        foreach(_tag_idx RANGE ${_num_tags})
++          string(JSON _a_tag GET "${test_tags}" "${_tag_idx}")
++          set(_escaped_tag "${_a_tag}")
++          foreach(char \\ , [ ] ;)
++            string(REPLACE ${char} "\\${char}" _escaped_tag "${_escaped_tag}")
++          endforeach(char)
++          string(APPEND escaped_name " [${_escaped_tag}]")
++        endforeach(_tag_idx)
++      endif()
++    endif()
++
+     # ...add output dir
+     if(output_dir)
+       string(REGEX REPLACE "[^A-Za-z0-9_]" "_" escaped_name_clean "${escaped_name}")
        set(output_dir_arg "--out ${output_dir}/${output_prefix}${escaped_name_clean}${output_suffix}")
      endif()
  
@@ -42,7 +67,7 @@ index f484019..28c6fcc 100644
      prepare_command_fragment(_full_name_fragment "${full_name}")
      prepare_command_fragment(_escaped_name_fragment "${escaped_name}")
      prepare_command_fragment(_outdir_fragment "${output_dir_arg}")
-@@ -504,7 +528,7 @@ function(catch_discover_tests_impl)
+@@ -504,7 +548,7 @@ function(catch_discover_tests_impl)
      # The test name has to be escaped using the same rules as prepare_command
      # uses for the arguments, so that it keeps being single element in list
      # even with weird characters and semicolons.

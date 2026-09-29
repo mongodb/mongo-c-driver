@@ -14,7 +14,7 @@ function (fetch_catch2)
 
         # Support registering Catch2 tests with CTest uniquely by tags.
         # May need to be updated when bumping the Catch2 version.
-        PATCH_COMMAND git apply "${PROJECT_SOURCE_DIR}/cmake/catch-add-tests-with-tags.patch"
+        PATCH_COMMAND git apply "--3way" "${PROJECT_SOURCE_DIR}/cmake/catch-add-tests-with-tags.patch"
 
         SYSTEM
     )
