@@ -46,7 +46,7 @@ TEST_CASE("clone", "[mongoac][error]") {
     }
 
     SECTION("default") {
-        auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+        auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
         auto const error = error_owner.get();
 
         auto const copy_owner = make_unique(mongoac_error_clone(error), &mongoac_error_destroy);
@@ -58,7 +58,7 @@ TEST_CASE("clone", "[mongoac][error]") {
     }
 
     SECTION("custom") {
-        auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+        auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
         auto const error = error_owner.get();
 
         auto const category = GENERATE(
@@ -107,23 +107,20 @@ TEST_CASE("code", "[mongoac][error]") {
 }
 
 TEST_CASE("message", "[mongoac][error]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
     SECTION("null") {
         CHECK(from_mongoac(mongoac_error_message(nullptr)) == "");
     }
 
     SECTION("default") {
-        auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
-        auto const error = error_owner.get();
-
         SECTION("default") {
             CHECK(from_mongoac(mongoac_error_message(error)) == "");
         }
     }
 
     SECTION("mongoac") {
-        auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
-        auto const error = error_owner.get();
-
         SECTION("ok") {
             CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_OK));
             CHECK(from_mongoac(mongoac_error_message(error)) == "ok");
@@ -147,9 +144,6 @@ TEST_CASE("message", "[mongoac][error]") {
     }
 
     SECTION("unknown") {
-        auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
-        auto const error = error_owner.get();
-
         auto const code = GENERATE(
             values<std::int32_t>({
                 INT32_MIN,
@@ -172,7 +166,7 @@ TEST_CASE("clear", "[mongoac][error]") {
     }
 
     SECTION("default") {
-        auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+        auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
         auto const error = error_owner.get();
 
         CHECK_NOTHROW(mongoac_error_clear(error));
@@ -183,7 +177,7 @@ TEST_CASE("clear", "[mongoac][error]") {
 }
 
 TEST_CASE("set", "[mongoac][error]") {
-    auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
     SECTION("null") {
