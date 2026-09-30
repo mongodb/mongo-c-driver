@@ -11,11 +11,8 @@ Synopsis
    #define MONGOC_ENCRYPT_QUERY_TYPE_EQUALITY "equality"
    #define MONGOC_ENCRYPT_QUERY_TYPE_RANGE "range"
    #define MONGOC_ENCRYPT_QUERY_TYPE_RANGEPREVIEW "rangePreview" // Deprecated.
-   #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substringPreview" // Deprecated.
-   #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW "substring"
-   #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW "prefixPreview" // Deprecated.
+   #define MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING "substring"
    #define MONGOC_ENCRYPT_QUERY_TYPE_PREFIX "prefix"
-   #define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW "suffixPreview" // Deprecated.
    #define MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX "suffix"
 
    void mongoc_client_encryption_encrypt_opts_set_query_type (
