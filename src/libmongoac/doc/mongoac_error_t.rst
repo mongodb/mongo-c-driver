@@ -20,6 +20,8 @@ Synopsis
    // Error Categories
    #define MONGOAC_ERROR_CATEGORY_NONE 0
    #define MONGOAC_ERROR_CATEGORY_MONGOAC 1
+   #define MONGOAC_ERROR_CATEGORY_SERVER 2
+   #define MONGOAC_ERROR_CATEGORY_RUST 3
    #define MONGOAC_ERROR_CATEGORY_UNKNOWN /* (see below) */
 
    // Error Codes
@@ -53,12 +55,24 @@ The following error categories are defined for errors returned by the mongoac li
 
 - ``MONGOAC_ERROR_CATEGORY_NONE``: None (default state).
 - ``MONGOAC_ERROR_CATEGORY_MONGOAC``: The mongoac library.
+- ``MONGOAC_ERROR_CATEGORY_SERVER``: The MongoDB Server.
+- ``MONGOAC_ERROR_CATEGORY_RUST``: The MongoDB Rust Driver.
 - ``MONGOAC_ERROR_CATEGORY_UNKNOWN``: All other (unnamed) error categories. Defaults to ``INT32_MIN`` unless otherwise specified.
+
+When the error category is "mongoac", the error corresponds to a :ref:`mongoac library error <error-codes>`.
+
+When the error category is "server", the error corresponds to a `Rust Driver error <https://docs.rs/mongodb/latest/mongodb/error/index.html>`_ with a unique `MongoDB server error code <https://www.mongodb.com/docs/manual/reference/error-codes/>`_.
+
+When the error category is "rust", the error corresponds to a Rust Driver error without a unique server error code (unknown).
+
+When the error category is "unknown", no error code is available (unknown) unless explicitly set via :symbol:``mongoac_error_set()``.
+
+.. _error-codes:
 
 Error Codes
 -----------
 
-The following error codes are defined for the ``MONGOAC_ERROR_CATEGORY_MONGOAC`` category:
+When the error category is ``MONGOAC_ERROR_CATEGORY_MONGOAC``, the error code may be one of the following:
 
 - ``MONGOAC_ERROR_CODE_OK``: None (default state).
 - ``MONGOAC_ERROR_CODE_INVALID_ARGUMENT``: One or more arguments to the associated function were invalid.

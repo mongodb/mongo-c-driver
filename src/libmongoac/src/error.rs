@@ -23,6 +23,8 @@ use strum::EnumMessage;
 pub type mongoac_error_category_t = i32;
 pub const MONGOAC_ERROR_CATEGORY_NONE: mongoac_error_category_t = 0;
 pub const MONGOAC_ERROR_CATEGORY_MONGOAC: mongoac_error_category_t = 1;
+pub const MONGOAC_ERROR_CATEGORY_SERVER: mongoac_error_category_t = 2;
+pub const MONGOAC_ERROR_CATEGORY_RUST: mongoac_error_category_t = 3;
 pub const MONGOAC_ERROR_CATEGORY_UNKNOWN: mongoac_error_category_t = i32::MIN;
 
 #[allow(non_camel_case_types)]
@@ -38,6 +40,8 @@ pub const MONGOAC_ERROR_CODE_UNKNOWN: mongoac_error_code_t = i32::MIN;
 pub enum ErrorCategoryT {
     None = MONGOAC_ERROR_CATEGORY_NONE,
     MongoAC = MONGOAC_ERROR_CATEGORY_MONGOAC,
+    Server = MONGOAC_ERROR_CATEGORY_SERVER,
+    Rust = MONGOAC_ERROR_CATEGORY_RUST,
 
     #[num_enum(catch_all)]
     Unknown(i32),
@@ -114,6 +118,11 @@ pub enum ErrorT {
         code: ErrorCodeT,
         message: Option<String>,
     },
+
+    #[allow(private_interfaces)]
+    Server(Box<ServerErrorT>), // Box<T>: avoid clippy::result_large_err warnings.
+    Rust(mongodb::error::Error),
+
     Unknown {
         code: i32,
         category: i32,
@@ -131,6 +140,8 @@ impl ErrorT {
         match self {
             Self::None => ErrorCategoryT::None,
             Self::MongoAC { .. } => ErrorCategoryT::MongoAC,
+            Self::Server(_) => ErrorCategoryT::Server,
+            Self::Rust(_) => ErrorCategoryT::Rust,
             Self::Unknown { code: _, category } => ErrorCategoryT::Unknown(*category),
         }
     }
@@ -140,6 +151,15 @@ impl ErrorT {
         match self {
             Self::None => ErrorCodeT::Ok,
             Self::MongoAC { code, .. } => *code,
+
+            Self::Server(err) => match &**err {
+                ServerErrorT::Command(err) => ErrorCodeT::from(err.code),
+                ServerErrorT::WriteError(err) => ErrorCodeT::from(err.code),
+                ServerErrorT::WriteConcernError(err) => ErrorCodeT::from(err.code),
+            },
+
+            Self::Rust(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
+
             Self::Unknown { code, .. } => ErrorCodeT::Unknown(*code),
         }
     }
@@ -156,6 +176,14 @@ impl ErrorT {
                     None => prefix.to_string(),
                 })
             }
+
+            Self::Server(err) => Some(match &**err {
+                ServerErrorT::Command(err) => err.message.clone(),
+                ServerErrorT::WriteError(err) => err.message.clone(),
+                ServerErrorT::WriteConcernError(err) => err.message.clone(),
+            }),
+
+            Self::Rust(err) => Some(err.to_string()),
 
             _ => None,
         }
@@ -183,7 +211,8 @@ impl ErrorT {
                 message: None,
             },
 
-            ErrorCategoryT::Unknown(_) => Self::Unknown { code, category },
+            // Custom error code values are only supported for the mongoac category.
+            _ => Self::Unknown { code, category },
         }
     }
 }
@@ -198,6 +227,9 @@ impl Clone for ErrorT {
                 message: message.clone(),
             },
 
+            Self::Server(err) => Self::Server(err.clone()),
+            Self::Rust(err) => Self::Rust(err.clone()),
+
             Self::Unknown { category, code } => Self::Unknown {
                 category: *category,
                 code: *code,
@@ -211,6 +243,38 @@ impl From<tokio::time::error::Elapsed> for ErrorT {
         Self::MongoAC {
             code: ErrorCodeT::Timeout,
             message: Some(error.to_string()),
+        }
+    }
+}
+
+/// The subset of `mongodb::error::Error` variants which contain a single unambiguous server error code.
+#[derive(Clone, Debug)]
+enum ServerErrorT {
+    Command(mongodb::error::CommandError),
+    WriteError(mongodb::error::WriteError),
+    WriteConcernError(mongodb::error::WriteConcernError),
+}
+
+impl From<mongodb::error::Error> for ErrorT {
+    /// Convert the `mongodb::error::Error` to `ErrorT::Server` when applicable, otherwise `ErrorT::Rust`.
+    fn from(err: mongodb::error::Error) -> Self {
+        use mongodb::error::ErrorKind;
+        use mongodb::error::WriteFailure;
+
+        match err.kind.as_ref() {
+            ErrorKind::Command(c) => Self::Server(Box::new(ServerErrorT::Command(c.clone()))),
+            ErrorKind::Write(w) => match w {
+                WriteFailure::WriteError(we) => {
+                    Self::Server(Box::new(ServerErrorT::WriteError(we.clone())))
+                }
+                WriteFailure::WriteConcernError(wce) => {
+                    Self::Server(Box::new(ServerErrorT::WriteConcernError(wce.clone())))
+                }
+
+                _ => Self::Rust(err), // `#[non_exhaustive]`
+            },
+
+            _ => Self::Rust(err), // `#[non_exhaustive]`
         }
     }
 }
