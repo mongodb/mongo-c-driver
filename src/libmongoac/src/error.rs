@@ -191,25 +191,24 @@ impl ErrorT {
     }
 
     fn set(&mut self, category: i32, code: i32) {
-        *self = match category.into() {
-            ErrorCategoryT::None => {
-                if code == MONGOAC_ERROR_CODE_OK {
-                    Self::None // Special case: equal to default state.
-                } else {
-                    Self::Unknown {
-                        category: MONGOAC_ERROR_CATEGORY_NONE,
-                        code,
-                    }
-                }
+        match (category, code) {
+            // Special case: default state.
+            (MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK) => {
+                *self = Self::None;
             }
 
-            ErrorCategoryT::MongoAC => Self::MongoAC {
-                code: code.into(),
-                message: None,
-            },
+            // Special case: support directly mapping mongoac error codes.
+            (MONGOAC_ERROR_CATEGORY_MONGOAC, _) => {
+                *self = Self::MongoAC {
+                    code: ErrorCodeT::from(code),
+                    message: None,
+                };
+            }
 
-            // Custom error code values are only supported for the mongoac category.
-            _ => Self::Unknown { code, category },
+            // Map all other user-provided error codes directly to `Unknown`.
+            _ => {
+                *self = Self::Unknown { category, code };
+            }
         }
     }
 }

@@ -222,5 +222,11 @@ TEST_CASE("set", "[mongoac][error]") {
         CHECK_NOTHROW(mongoac_error_set(error, category, code));
         CHECK(mongoac_error_category(error) == category);
         CHECK(mongoac_error_code(error) == code);
+
+        if (category == MONGOAC_ERROR_CATEGORY_MONGOAC) {
+            CHECK(from_mongoac(mongoac_error_message(error)) != "");
+        } else {
+            CHECK(from_mongoac(mongoac_error_message(error)) == "");
+        }
     }
 }

@@ -71,7 +71,6 @@ When the error category is "unknown", no error code is available (unknown) unles
 
    The error code is only meaningful within its associated error category.
    Use :symbol:`mongoac_error_category()` to determine the error category before calling :symbol:`mongoac_error_code()`.
-   When the error category is unknown or an error code is not available, :symbol:`mongoac_error_code()` will return ``MONGOAC_ERROR_CODE_UNKNOWN``.
 
 .. _error-codes:
 
