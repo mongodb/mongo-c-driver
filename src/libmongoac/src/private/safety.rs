@@ -122,7 +122,7 @@ macro_rules! safe_slice_into_raw {
 /// Usage:
 ///
 /// ```rust
-/// fn example(ptr: *mut T)  -> R {
+/// fn example(ptr: *mut T) -> R {
 ///     let res: &mut T = safe_as_mut!(ptr);
 ///     assert!(!ptr.is_null());
 /// }
@@ -143,6 +143,85 @@ macro_rules! safe_as_mut {
     }};
 }
 
+/// Safely return the result of the given expression only when the associated error is unset.
+///
+/// When `Err(re) = result` and `Some(ee) = error`, assign `re` to `ee` prior to early-return via `return Default::default();`.
+/// When `Err(re) = result` and `error` is `None`, early-return via `return Default::default();`.
+/// When `Ok(v) = result`, return `v`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(res: Result<T, E>, error: Option<&mut ErrorT>) {
+///     let v: T = safe_result!(res, error);
+///     if let Some(error) = error {
+///         assert_eq!(error.category(), MONGOAC_ERROR_CATEGORY_NONE);
+///         assert_eq!(error.code(), MONGOAC_ERROR_CODE_OK);
+///     }
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - When `Some(ee) = error`, `ee` is in its default state (e.g. via `safe_optional_error_as_mut!`).
+/// - When `Err(re) = result`, `re` must be convertible to `ErrorT`.
+#[macro_export]
+macro_rules! safe_result {
+    ($result:expr, $error:expr) => {{
+        let result: Result<_, _> = $result;
+        let error: Option<&mut $crate::error::ErrorT> = $error;
+        match result {
+            Ok(v) => v,
+            Err(e) => {
+                if let Some(error) = error {
+                    *error = Into::into(e);
+                }
+                return Default::default();
+            }
+        }
+    }};
+}
+
+/// Safely convert the optional raw error pointer into a mutable reference.
+///
+/// When `ptr` is null, returns `None`.
+/// When `ptr` is not null, the error is unconditionally set to its default state (cleared).
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *mut ErrorT) {
+///     let res: Option<&mut $crate::error::ErrorT> = safe_optional_error_as_mut!(ptr);
+///     match res {
+///         Some(e) => {
+///             assert_eq!(e.category(), MONGOAC_ERROR_CATEGORY_NONE);
+///             assert_eq!(e.code(), MONGOAC_ERROR_CODE_OK);
+///         }
+///         None => {
+///             assert!(ptr.is_null());
+///         }
+///     }
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `ErrorT`.
+/// - `ptr` must not be accessed concurrently by any other function.
+#[macro_export]
+macro_rules! safe_optional_error_as_mut {
+    ($ptr:expr) => {{
+        let ptr = $ptr;
+        match unsafe { ptr.as_mut() } {
+            Some(e) => {
+                e.clear();
+                Some(e)
+            }
+            None => None,
+        }
+    }};
+}
+
 /// Safely convert the raw pointer into a reference when not null.
 ///
 /// When `ptr` is null, early-return from the function via `return Default::default();`.
@@ -150,7 +229,7 @@ macro_rules! safe_as_mut {
 /// Usage:
 ///
 /// ```rust
-/// fn example(ptr: *const T)  -> R {
+/// fn example(ptr: *const T) -> R {
 ///     let res: &T = safe_as_ref!(ptr);
 ///     assert!(!ptr.is_null());
 /// }
@@ -159,7 +238,7 @@ macro_rules! safe_as_mut {
 /// Preconditions:
 ///
 /// - `ptr` must either be null or a valid pointer to `T`.
-/// - `ptr` must not be accessed as mutable concurrently by any other function.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
 #[macro_export]
 macro_rules! safe_as_ref {
     ($ptr:expr) => {{
@@ -169,4 +248,64 @@ macro_rules! safe_as_ref {
             None => return Default::default(),
         }
     }};
+}
+
+/// Safely convert the `StringViewT` into a `str` when not null.
+///
+/// When `sv.ptr` is null or `sv` contains invalid UTF-8, set `error` and early-return from the function via
+/// `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(sv: StringViewT, error: Option<&mut ErrorT>) -> R {
+///     let res: &str = safe_string_view_with_error!(sv, error);
+///     assert!(!sv.ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `sv.ptr` must either be null or a valid pointer to a valid UTF-8 string.
+/// - `sv.ptr` must not be mutably accessed concurrently by any other function.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_string_view_with_error {
+    ($sv:expr, $error:expr) => {{
+        let sv: $crate::string::StringViewT = $sv;
+
+        if sv.ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($sv)),
+            );
+            return Default::default();
+        }
+
+        match std::str::from_utf8(unsafe {
+            std::slice::from_raw_parts(sv.ptr.cast::<u8>(), sv.len)
+        }) {
+            Ok(sv) => sv,
+            Err(e) => {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}: invalid UTF-8: {}", stringify!($sv), e),
+                );
+                return Default::default();
+            }
+        }
+    }};
+}
+
+/// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
+pub(crate) fn invalid_argument(error: Option<&mut crate::error::ErrorT>, msg: String) {
+    use crate::error::ErrorCodeT;
+    use crate::error::ErrorT;
+
+    if let Some(error) = error {
+        *error = ErrorT::MongoAC {
+            code: ErrorCodeT::InvalidArgument,
+            message: Some(msg),
+        };
+    }
 }
