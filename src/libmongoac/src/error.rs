@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::private::macros::*;
-
 use crate::string::StringT;
 
 use num_enum::{FromPrimitive, IntoPrimitive};
@@ -118,11 +117,8 @@ pub enum ErrorT {
         code: ErrorCodeT,
         message: Option<String>,
     },
-
-    #[allow(private_interfaces)]
-    Server(Box<ServerError>), // Box<T>: avoid clippy::result_large_err warnings.
+    Server(mongodb::error::Error), // Command | Write
     Rust(mongodb::error::Error),
-
     Unknown {
         code: i32,
         category: i32,
@@ -152,11 +148,18 @@ impl ErrorT {
             Self::None => ErrorCodeT::Ok,
             Self::MongoAC { code, .. } => *code,
 
-            Self::Server(err) => match &**err {
-                ServerError::Command(err) => ErrorCodeT::from(err.code),
-                ServerError::WriteError(err) => ErrorCodeT::from(err.code),
-                ServerError::WriteConcernError(err) => ErrorCodeT::from(err.code),
-            },
+            Self::Server(err) => {
+                use mongodb::error::ErrorKind;
+                use mongodb::error::WriteFailure;
+
+                ErrorCodeT::from(match err.kind.as_ref() {
+                    ErrorKind::Command(err) => err.code,
+                    ErrorKind::Write(WriteFailure::WriteError(err)) => err.code,
+                    ErrorKind::Write(WriteFailure::WriteConcernError(err)) => err.code,
+
+                    _ => MONGOAC_ERROR_CODE_UNKNOWN, // #[non_exhaustive]
+                })
+            }
 
             Self::Rust(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
 
@@ -177,13 +180,7 @@ impl ErrorT {
                 })
             }
 
-            Self::Server(err) => Some(match &**err {
-                ServerError::Command(err) => err.message.clone(),
-                ServerError::WriteError(err) => err.message.clone(),
-                ServerError::WriteConcernError(err) => err.message.clone(),
-            }),
-
-            Self::Rust(err) => Some(err.to_string()),
+            Self::Server(err) | Self::Rust(err) => Some(err.to_string()),
 
             _ => None,
         }
@@ -247,32 +244,18 @@ impl From<tokio::time::error::Elapsed> for ErrorT {
     }
 }
 
-/// The subset of `mongodb::error::Error` variants which contain a single unambiguous server error code.
-#[derive(Clone, Debug)]
-enum ServerError {
-    Command(mongodb::error::CommandError),
-    WriteError(mongodb::error::WriteError),
-    WriteConcernError(mongodb::error::WriteConcernError),
-}
-
 impl From<mongodb::error::Error> for ErrorT {
     /// Convert the `mongodb::error::Error` to `ErrorT::Server` when applicable, otherwise `ErrorT::Rust`.
     fn from(err: mongodb::error::Error) -> Self {
         use mongodb::error::ErrorKind;
         use mongodb::error::WriteFailure;
 
+        // The subset of `mongodb::error::Error` variants which contain a single unambiguous server error code.
         match err.kind.as_ref() {
-            ErrorKind::Command(c) => Self::Server(Box::new(ServerError::Command(c.clone()))),
-            ErrorKind::Write(w) => match w {
-                WriteFailure::WriteError(we) => {
-                    Self::Server(Box::new(ServerError::WriteError(we.clone())))
-                }
-                WriteFailure::WriteConcernError(wce) => {
-                    Self::Server(Box::new(ServerError::WriteConcernError(wce.clone())))
-                }
-
-                _ => Self::Rust(err), // `#[non_exhaustive]`
-            },
+            ErrorKind::Command(_)
+            | ErrorKind::Write(WriteFailure::WriteError(_) | WriteFailure::WriteConcernError(_)) => {
+                Self::Server(err)
+            }
 
             _ => Self::Rust(err), // `#[non_exhaustive]`
         }
