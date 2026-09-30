@@ -169,10 +169,10 @@ macro_rules! safe_as_mut {
 macro_rules! safe_result {
     ($result:expr, $error:expr) => {{
         let result: Result<_, _> = $result;
-        let error: Option<&mut $crate::error::ErrorT> = $error;
         match result {
             Ok(v) => v,
             Err(e) => {
+                let error: Option<&mut $crate::error::ErrorT> = $error;
                 if let Some(error) = error {
                     *error = Into::into(e);
                 }
