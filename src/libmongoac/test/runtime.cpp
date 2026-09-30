@@ -41,6 +41,20 @@ TEST_CASE("destroy", "[mongoac][runtime]") {
     SECTION("null") {
         CHECK_NOTHROW(mongoac_runtime_destroy(nullptr));
     }
+
+    SECTION("client") {
+        auto client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+        auto runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
+
+        // Destroy the associated client.
+        CHECK_NOTHROW(client.reset());
+
+        // Runtime may outlive its associated client.
+        CHECK(mongoac_runtime_address(runtime.get()) != 0u);
+
+        // Destroy the runtime after its associated client.
+        CHECK_NOTHROW(runtime.reset());
+    }
 }
 
 TEST_CASE("clone", "[mongoac][runtime]") {
