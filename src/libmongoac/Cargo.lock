@@ -1741,9 +1741,12 @@ dependencies = [
 name = "mongoac"
 version = "0.0.0"
 dependencies = [
+ "futures-util",
  "mongodb",
  "num_enum",
+ "parking_lot",
  "strum",
+ "tokio",
 ]
 
 [[package]]
@@ -2816,6 +2819,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
