@@ -45,7 +45,9 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("ClientT", "mongoac_client_t"),
         ("ErrorT", "mongoac_error_t"),
+        ("RuntimeT", "mongoac_runtime_t"),
         ("StringT", "mongoac_string_t"),
         ("StringViewT", "mongoac_string_view_t"),
     ];
@@ -62,7 +64,13 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "client" => &[
+                "mongoac/error-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "mongoac/string.h",
+            ],
             "error" => &["mongoac/string.h", "stdint.h"],
+            "runtime" => &["stdint.h"],
             "string" => &["stdint.h"],
             _ => {
                 eprintln!("warning: missing generate-crate-headers entry: {name}");
