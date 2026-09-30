@@ -26,6 +26,7 @@ Synopsis
    #define MONGOAC_ERROR_CODE_OK 0
    #define MONGOAC_ERROR_CODE_INVALID_ARGUMENT 1
    #define MONGOAC_ERROR_CODE_RUNTIME_ERROR 2
+   #define MONGOAC_ERROR_CODE_TIMEOUT 3
    #define MONGOAC_ERROR_CODE_UNKNOWN /* (see below) */
 
 Description
@@ -62,6 +63,7 @@ The following error codes are defined for the ``MONGOAC_ERROR_CATEGORY_MONGOAC``
 - ``MONGOAC_ERROR_CODE_OK``: None (default state).
 - ``MONGOAC_ERROR_CODE_INVALID_ARGUMENT``: One or more arguments to the associated function were invalid.
 - ``MONGOAC_ERROR_CODE_RUNTIME_ERROR``: A runtime error occurred.
+- ``MONGOAC_ERROR_CODE_TIMEOUT``: The timeout expired before the requested operation could complete.
 - ``MONGOAC_ERROR_CODE_UNKNOWN``: All other (unnamed) error codes. Defaults to ``INT32_MIN`` unless otherwise specified.
 
 Error Messages

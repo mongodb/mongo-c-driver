@@ -30,6 +30,7 @@ pub type mongoac_error_code_t = i32;
 pub const MONGOAC_ERROR_CODE_OK: mongoac_error_code_t = 0;
 pub const MONGOAC_ERROR_CODE_INVALID_ARGUMENT: mongoac_error_code_t = 1;
 pub const MONGOAC_ERROR_CODE_RUNTIME_ERROR: mongoac_error_code_t = 2;
+pub const MONGOAC_ERROR_CODE_TIMEOUT: mongoac_error_code_t = 3;
 pub const MONGOAC_ERROR_CODE_UNKNOWN: mongoac_error_code_t = i32::MIN;
 
 #[derive(Clone, Copy, Debug, Eq, FromPrimitive, IntoPrimitive, PartialEq)]
@@ -53,6 +54,9 @@ pub enum ErrorCodeT {
 
     #[strum(message = "runtime error")]
     RuntimeError = MONGOAC_ERROR_CODE_RUNTIME_ERROR,
+
+    #[strum(message = "timeout")]
+    Timeout = MONGOAC_ERROR_CODE_TIMEOUT,
 
     #[strum(message = "unknown error code")]
     #[num_enum(catch_all)]
@@ -198,6 +202,15 @@ impl Clone for ErrorT {
                 category: *category,
                 code: *code,
             },
+        }
+    }
+}
+
+impl From<tokio::time::error::Elapsed> for ErrorT {
+    fn from(error: tokio::time::error::Elapsed) -> Self {
+        Self::MongoAC {
+            code: ErrorCodeT::Timeout,
+            message: Some(error.to_string()),
         }
     }
 }
