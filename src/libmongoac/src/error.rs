@@ -120,7 +120,7 @@ pub enum ErrorT {
     },
 
     #[allow(private_interfaces)]
-    Server(Box<ServerErrorT>), // Box<T>: avoid clippy::result_large_err warnings.
+    Server(Box<ServerError>), // Box<T>: avoid clippy::result_large_err warnings.
     Rust(mongodb::error::Error),
 
     Unknown {
@@ -153,9 +153,9 @@ impl ErrorT {
             Self::MongoAC { code, .. } => *code,
 
             Self::Server(err) => match &**err {
-                ServerErrorT::Command(err) => ErrorCodeT::from(err.code),
-                ServerErrorT::WriteError(err) => ErrorCodeT::from(err.code),
-                ServerErrorT::WriteConcernError(err) => ErrorCodeT::from(err.code),
+                ServerError::Command(err) => ErrorCodeT::from(err.code),
+                ServerError::WriteError(err) => ErrorCodeT::from(err.code),
+                ServerError::WriteConcernError(err) => ErrorCodeT::from(err.code),
             },
 
             Self::Rust(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
@@ -178,9 +178,9 @@ impl ErrorT {
             }
 
             Self::Server(err) => Some(match &**err {
-                ServerErrorT::Command(err) => err.message.clone(),
-                ServerErrorT::WriteError(err) => err.message.clone(),
-                ServerErrorT::WriteConcernError(err) => err.message.clone(),
+                ServerError::Command(err) => err.message.clone(),
+                ServerError::WriteError(err) => err.message.clone(),
+                ServerError::WriteConcernError(err) => err.message.clone(),
             }),
 
             Self::Rust(err) => Some(err.to_string()),
@@ -189,7 +189,7 @@ impl ErrorT {
         }
     }
 
-    fn clear(&mut self) {
+    pub(crate) fn clear(&mut self) {
         *self = Self::None;
     }
 
@@ -249,7 +249,7 @@ impl From<tokio::time::error::Elapsed> for ErrorT {
 
 /// The subset of `mongodb::error::Error` variants which contain a single unambiguous server error code.
 #[derive(Clone, Debug)]
-enum ServerErrorT {
+enum ServerError {
     Command(mongodb::error::CommandError),
     WriteError(mongodb::error::WriteError),
     WriteConcernError(mongodb::error::WriteConcernError),
@@ -262,13 +262,13 @@ impl From<mongodb::error::Error> for ErrorT {
         use mongodb::error::WriteFailure;
 
         match err.kind.as_ref() {
-            ErrorKind::Command(c) => Self::Server(Box::new(ServerErrorT::Command(c.clone()))),
+            ErrorKind::Command(c) => Self::Server(Box::new(ServerError::Command(c.clone()))),
             ErrorKind::Write(w) => match w {
                 WriteFailure::WriteError(we) => {
-                    Self::Server(Box::new(ServerErrorT::WriteError(we.clone())))
+                    Self::Server(Box::new(ServerError::WriteError(we.clone())))
                 }
                 WriteFailure::WriteConcernError(wce) => {
-                    Self::Server(Box::new(ServerErrorT::WriteConcernError(wce.clone())))
+                    Self::Server(Box::new(ServerError::WriteConcernError(wce.clone())))
                 }
 
                 _ => Self::Rust(err), // `#[non_exhaustive]`

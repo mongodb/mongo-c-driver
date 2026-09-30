@@ -65,7 +65,13 @@ When the error category is "server", the error corresponds to a `Rust Driver err
 
 When the error category is "rust", the error corresponds to a Rust Driver error without a unique server error code (unknown).
 
-When the error category is "unknown", no error code is available (unknown) unless explicitly set via :symbol:``mongoac_error_set()``.
+When the error category is "unknown", no error code is available (unknown) unless explicitly set via :symbol:`mongoac_error_set()`.
+
+.. important::
+
+   The error code is only meaningful within its associated error category.
+   Use :symbol:`mongoac_error_category()` to determine the error category before calling :symbol:`mongoac_error_code()`.
+   When the error category is unknown or an error code is not available, :symbol:`mongoac_error_code()` will return ``MONGOAC_ERROR_CODE_UNKNOWN``.
 
 .. _error-codes:
 
