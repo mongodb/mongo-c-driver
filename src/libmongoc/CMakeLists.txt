@@ -73,28 +73,28 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
    add_library (zlib_obj OBJECT
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/adler32.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/crc32.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/deflate.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/infback.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inffast.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inflate.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/trees.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/zutil.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/compress.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzread.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/adler32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/crc32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/deflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/infback.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/inffast.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/inflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/inftrees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/trees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/zutil.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/compress.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/uncompr.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzclose.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzlib.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzread.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzwrite.c
    )
    set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.2"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -102,8 +102,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.2"
    )
 endif ()
 
