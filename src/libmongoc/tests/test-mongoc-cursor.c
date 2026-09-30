@@ -2525,13 +2525,36 @@ test_cursor_timeout_killCursors(void *unused)
    bson_error_t error;
    const bson_t *got = NULL;
 
+   // Run setup with a separate client using the default socket timeout. On a
+   // slow host an ordinary setup command may exceed the short socket timeout
+   // (500ms) needed below to time out the delayed "getMore".
+   mongoc_client_t *setup_client = test_framework_new_default_client();
+   mongoc_collection_t *setup_coll = mongoc_client_get_collection(setup_client, "db", "coll");
+   mongoc_collection_drop(setup_coll, NULL);
+
+   // Configure failpoint to delay getMore:
+   {
+      bson_t *cmd = tmp_bson(BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"blockConnection" : true, "blockTimeMS" : 2000, "failCommands" : ["getMore"]}
+      }));
+      bool ok = mongoc_client_command_simple(setup_client, "admin", cmd, NULL, NULL, &error);
+      ASSERT_OR_PRINT(ok, error);
+   }
+
+   // Insert documents to trigger a slow getMore later:
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(setup_coll, tmp_bson("{}"), NULL, NULL, &error), error);
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(setup_coll, tmp_bson("{}"), NULL, NULL, &error), error);
+
+   // The socket timeout is shorter than the failpoint block time above, so the
+   // delayed "getMore" times out.
    mongoc_uri_t *uri = test_framework_get_uri();
    mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 500);
    mongoc_client_t *client = test_framework_client_new_from_uri(uri, NULL /* use API version if configured */);
    test_framework_set_ssl_opts(client);
    mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
    bson_t *pipeline = tmp_bson("{}");
-   mongoc_collection_drop(coll, NULL);
 
    // Capture events:
    test_events_t te = {.commands_len = 0};
@@ -2541,21 +2564,6 @@ test_cursor_timeout_killCursors(void *unused)
       ASSERT(mongoc_client_set_apm_callbacks(client, cbs, &te));
       mongoc_apm_callbacks_destroy(cbs);
    }
-
-   // Configure failpoint to delay getMore:
-   {
-      bson_t *cmd = tmp_bson(BSON_STR({
-         "configureFailPoint" : "failCommand",
-         "mode" : {"times" : 1},
-         "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]}
-      }));
-      bool ok = mongoc_client_command_simple(client, "admin", cmd, NULL, NULL, &error);
-      ASSERT_OR_PRINT(ok, error);
-   }
-
-   // Insert documents to trigger a slow getMore later:
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
 
    // Establish cursor:
    {
@@ -2575,14 +2583,11 @@ test_cursor_timeout_killCursors(void *unused)
       mongoc_cursor_destroy(cursor); // Sends killCursors.
    }
 
-   // Check events:
+   // Check events (only events on `client` are captured):
    {
-      ASSERT_CMPSTR(te.commands[0], "configureFailPoint");
-      ASSERT_CMPSTR(te.commands[1], "insert");
-      ASSERT_CMPSTR(te.commands[2], "insert");
-      ASSERT_CMPSTR(te.commands[3], "aggregate");
-      ASSERT_CMPSTR(te.commands[4], "getMore");
-      ASSERT_CMPSTR(te.commands[5], "killCursors");
+      ASSERT_CMPSTR(te.commands[0], "aggregate");
+      ASSERT_CMPSTR(te.commands[1], "getMore");
+      ASSERT_CMPSTR(te.commands[2], "killCursors");
    }
 
    for (size_t i = 0; i < te.commands_len; i++) {
@@ -2592,6 +2597,8 @@ test_cursor_timeout_killCursors(void *unused)
    mongoc_collection_destroy(coll);
    mongoc_client_destroy(client);
    mongoc_uri_destroy(uri);
+   mongoc_collection_destroy(setup_coll);
+   mongoc_client_destroy(setup_client);
 }
 
 static void
