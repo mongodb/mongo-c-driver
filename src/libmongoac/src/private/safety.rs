@@ -298,14 +298,17 @@ macro_rules! safe_string_view_with_error {
 }
 
 /// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
-pub(crate) fn invalid_argument(error: Option<&mut crate::error::ErrorT>, msg: String) {
+pub(crate) fn invalid_argument<M>(error: Option<&mut crate::error::ErrorT>, msg: M)
+where
+    M: Into<String>,
+{
     use crate::error::ErrorCodeT;
     use crate::error::ErrorT;
 
     if let Some(error) = error {
         *error = ErrorT::MongoAC {
             code: ErrorCodeT::InvalidArgument,
-            message: Some(msg),
+            message: Some(msg.into()),
         };
     }
 }
