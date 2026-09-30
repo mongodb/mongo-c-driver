@@ -78,7 +78,7 @@ When the error category is "unknown", no error code is available (unknown) unles
 Error Codes
 -----------
 
-When the error category is ``MONGOAC_ERROR_CATEGORY_MONGOAC``, the error code may be one of the following:
+The following error codes are defined for the "mongoac" error category:
 
 - ``MONGOAC_ERROR_CODE_OK``: None (default state).
 - ``MONGOAC_ERROR_CODE_INVALID_ARGUMENT``: One or more arguments to the associated function were invalid.
