@@ -153,6 +153,7 @@ endforeach ()
 add_custom_command (
   OUTPUT ${crate_headers}
   COMMENT "Generating mongoac crate headers"
+  USES_TERMINAL
   COMMAND
     "${CMAKE_COMMAND}" -E env
       "MONGOAC_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -216,6 +217,7 @@ if ("$CACHE{ENABLE_SHARED}")
       "${library_shared_soversion}"
       "${library_shared_soversion_full}"
     COMMENT "Building the mongoac shared library"
+    USES_TERMINAL
     COMMAND
       "${CMAKE_COMMAND}" -E env
         "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
@@ -282,6 +284,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
   add_custom_command (
     OUTPUT "${library_static}"
     COMMENT "Building the mongoac static library"
+    USES_TERMINAL
     COMMAND
       "${CMAKE_COMMAND}" -E env
         "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
