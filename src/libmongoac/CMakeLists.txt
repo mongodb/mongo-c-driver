@@ -124,13 +124,13 @@ set (cargo_dependencies
   "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
 )
 
-set (cargo_headers "")
+set (crate_headers "")
 foreach (source IN LISTS cargo_sources)
   cmake_path (GET source FILENAME filename)
 
   # Keep synchronized with `SKIP_CARGO_HEADERS` in tools/generate-crate-headers/src/main.rs.
-  set (skip_cargo_headers "lib.rs" "mod.rs" "version.rs")
-  if (filename IN_LIST skip_cargo_headers)
+  set (skip_crate_headers "lib.rs" "mod.rs" "version.rs")
+  if (filename IN_LIST skip_crate_headers)
     continue ()
   endif ()
 
@@ -139,19 +139,19 @@ foreach (source IN LISTS cargo_sources)
     continue () # Always exclude private crates.
   endif ()
   cmake_path (REPLACE_EXTENSION header LAST_ONLY ".h" OUTPUT_VARIABLE header)
-  list (APPEND cargo_headers "${binary_include_dir}/mongoac/${header}")
+  list (APPEND crate_headers "${binary_include_dir}/mongoac/${header}")
 
   # Keep synchronized with `SKIP_FORWARD_HEADERS` in tools/generate-crate-headers/src/main.rs.
   set (skip_forward_headers "string")
   cmake_path (GET header STEM LAST_ONLY fwd_name)
   if (NOT fwd_name IN_LIST skip_forward_headers)
     cmake_path (REMOVE_EXTENSION header LAST_ONLY OUTPUT_VARIABLE fwd_stem)
-    list (APPEND cargo_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
+    list (APPEND crate_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
   endif ()
 endforeach ()
 
 add_custom_command (
-  OUTPUT ${cargo_headers}
+  OUTPUT ${crate_headers}
   COMMENT "Generating mongoac crate headers"
   COMMAND
     "${CMAKE_COMMAND}" -E env
@@ -169,9 +169,9 @@ add_custom_command (
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/Cargo.toml"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/src/main.rs"
 )
-add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${cargo_headers})
+add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${crate_headers})
 
-set_source_files_properties (${mongoac_headers} ${cargo_headers} PROPERTIES LANGUAGE C)
+set_source_files_properties (${mongoac_headers} ${crate_headers} PROPERTIES LANGUAGE C)
 
 set (mongoac_file_set_headers
   FILE_SET HEADERS
@@ -180,7 +180,7 @@ set (mongoac_file_set_headers
       "${binary_include_dir}"
     FILES
       ${mongoac_headers}
-      ${cargo_headers}
+      ${crate_headers}
 )
 
 if ("$CACHE{ENABLE_SHARED}")
