@@ -36,9 +36,15 @@ mongodb = {
     "zstd-compression",
   ],
 }
+tokio = {
+  version = "1.52.0",
+  features = ["rt", "macros", "parking_lot", "sync", "time"],
+}
+futures-util = "*"
 num_enum = {
   version = "*",
 }
+parking_lot = "*"
 strum = {
   version = "*",
   features = ["derive"],
