@@ -93,11 +93,6 @@ else ()
    set (MONGOAC_VERSION_PRERELEASE "")
 endif ()
 
-configure_file (
-   "${source_include_dir}/mongoac/version.h.in"
-   "${binary_include_dir}/mongoac/version.h"
-)
-
 # Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
 set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
 
@@ -114,7 +109,13 @@ set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STA
 set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_static_filename}")
 
 file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
-file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h" "${binary_include_dir}/*.h")
+file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h")
+
+configure_file (
+   "${source_include_dir}/mongoac/version.h.in"
+   "${binary_include_dir}/mongoac/version.h"
+)
+list (APPEND mongoac_headers "${binary_include_dir}/mongoac/version.h")
 
 set (cargo_dependencies
   ${cargo_sources}
