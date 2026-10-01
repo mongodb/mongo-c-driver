@@ -5,4 +5,5 @@ rust-version = "1.88"
 publish = false
 
 [dependencies]
-cbindgen = "0.29"
+cbindgen = "*"
+rayon = "*"

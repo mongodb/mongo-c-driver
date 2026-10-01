@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use rayon::prelude::*;
+
 use std::path::{Path, PathBuf};
 
 // Keep synchronized with `skip_cargo_headers` in src/libmongoac/CMakeLists.txt.
@@ -295,19 +297,8 @@ fn main() {
     let mut files = Vec::new();
     find_crates(src_path, &mut files);
 
-    // Generate crate headers in parallel.
-    let handles = files
-        .into_iter()
-        .map(|path| {
-            let include_dir = include_path.to_path_buf();
-            let src_dir = src_path.to_path_buf();
-
-            std::thread::spawn(move || {
-                generate_crate_header(&path, &src_dir, &include_dir);
-            })
-        })
-        .collect::<Vec<_>>();
-    for handle in handles {
-        handle.join().expect("header generation failed");
-    }
+    // Generate crate headers in parallel using Rayon.
+    files
+        .par_iter()
+        .for_each(|path| generate_crate_header(path, src_path, include_path));
 }
