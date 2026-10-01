@@ -260,6 +260,7 @@ def corruption_at(off: int) -> ErrorInfo:
 BSON_VALIDATE_CORRUPT = 'BSON_VALIDATE_CORRUPT'
 BSON_VALIDATE_DOLLAR_KEYS = 'BSON_VALIDATE_DOLLAR_KEYS'
 BSON_VALIDATE_DOT_KEYS = 'BSON_VALIDATE_DOT_KEYS'
+BSON_VALIDATE_DUPLICATE_KEYS = 'BSON_VALIDATE_DUPLICATE_KEYS'
 BSON_VALIDATE_EMPTY_KEYS = 'BSON_VALIDATE_EMPTY_KEYS'
 BSON_VALIDATE_UTF8 = 'BSON_VALIDATE_UTF8'
 BSON_VALIDATE_UTF8_ALLOW_NULL = 'BSON_VALIDATE_UTF8_ALLOW_NULL'
@@ -347,6 +348,24 @@ CASES: list[TestCase] = [
         We are checking for empty keys, and accept if they are absent.
         """,
         flags=BSON_VALIDATE_EMPTY_KEYS,
+    ),
+    TestCase(
+        'key/duplicate/accept',
+        doc(utf8elem('foo', 'a'), utf8elem('foo', 'b')),
+        """
+        The document has a duplicate key, and we accept this since we don't
+        ask to validate it.
+        """,
+    ),
+    TestCase(
+        'key/duplicate/reject',
+        doc(utf8elem('foo', 'a'), utf8elem('foo', 'b')),
+        """
+        The document has a duplicate key, and we reject it when we ask to
+        validate it. The error offset is the second occurrence of the key.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "foo"', 15),
     ),
     TestCase(
         'key/dot/accept',
