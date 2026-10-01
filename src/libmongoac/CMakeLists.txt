@@ -327,6 +327,12 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
   endif ()
 endif ()
 
+# Include the Cargo target directory as part of the global `clean` target.
+set_property (
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  PROPERTY ADDITIONAL_CLEAN_FILES "${crate_target_dir}"
+)
+
 if ("$CACHE{ENABLE_SHARED}" OR "$CACHE{ENABLE_STATIC}" STREQUAL "ON")
   install (EXPORT mongoac-targets
     FILE mongoac-targets.cmake
