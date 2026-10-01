@@ -187,10 +187,6 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
         .and_then(|s| s.to_str())
         .expect("invalid UTF-8");
 
-    if SKIP_CARGO_HEADERS.contains(&file_stem) {
-        return;
-    }
-
     // `src/libmongoac/src/path/to/crate.rs` -> `path/to/crate`
     let rel_path = crate_path
         .strip_prefix(src_dir)
@@ -275,7 +271,14 @@ fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
 
             find_crates(&path, files);
         } else if path.extension().is_some_and(|e| e == "rs") {
-            files.push(path);
+            let file_stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .expect("invalid UTF-8");
+
+            if !SKIP_CARGO_HEADERS.contains(&file_stem) {
+                files.push(path);
+            }
         }
     }
 }
