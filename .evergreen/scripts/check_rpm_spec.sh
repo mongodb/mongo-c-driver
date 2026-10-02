@@ -39,13 +39,13 @@ fi
 SPEC_FILE=$(mktemp --tmpdir -u mongo-c-driver.XXXXXXXX.spec)
 curl --retry 5 https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec -sS --max-time 120 --fail --output "${SPEC_FILE}"
 
-diff -q .evergreen/etc/mongo-c-driver.spec "${SPEC_FILE}" || \
+diff -q .evergreen/etc/mongo-c-driver.spec "${SPEC_FILE}" ||
   (
-  echo "Synchronize RPM spec from downstream to fix this failure.";
-  echo "Instructions:";
-  echo "1. Download spec file from https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec";
-  echo "2. Replace spec file at .evergreen/etc/";
-  echo "3. Update .evergreen/etc/spec.patch (diff should increment minor version on master branch and patch version on release branch)";
-  echo "Examples: (master) 9873322a98a2f1c67b6da6da4c9a2ac573799ea5 / (release branch) 7c2c27be7f9f50dd026c90a4491027f0f0dd6753";
-  exit 1
+    echo "Synchronize RPM spec from downstream to fix this failure."
+    echo "Instructions:"
+    echo "1. Download spec file from https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec"
+    echo "2. Replace spec file at .evergreen/etc/"
+    echo "3. Update .evergreen/etc/spec.patch (diff should increment minor version on master branch and patch version on release branch)"
+    echo "Examples: (master) 9873322a98a2f1c67b6da6da4c9a2ac573799ea5 / (release branch) 7c2c27be7f9f50dd026c90a4491027f0f0dd6753"
+    exit 1
   )
