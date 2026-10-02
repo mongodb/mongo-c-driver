@@ -93,11 +93,6 @@ else ()
    set (MONGOAC_VERSION_PRERELEASE "")
 endif ()
 
-configure_file (
-   "${source_include_dir}/mongoac/version.h.in"
-   "${binary_include_dir}/mongoac/version.h"
-)
-
 # Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
 set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
 
@@ -114,7 +109,13 @@ set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STA
 set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_static_filename}")
 
 file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
-file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h" "${binary_include_dir}/*.h")
+file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h")
+
+configure_file (
+   "${source_include_dir}/mongoac/version.h.in"
+   "${binary_include_dir}/mongoac/version.h"
+)
+list (APPEND mongoac_headers "${binary_include_dir}/mongoac/version.h")
 
 set (cargo_dependencies
   ${cargo_sources}
@@ -123,13 +124,13 @@ set (cargo_dependencies
   "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
 )
 
-set (cargo_headers "")
+set (crate_headers "")
 foreach (source IN LISTS cargo_sources)
   cmake_path (GET source FILENAME filename)
 
   # Keep synchronized with `SKIP_CARGO_HEADERS` in tools/generate-crate-headers/src/main.rs.
-  set (skip_cargo_headers "lib.rs" "mod.rs" "version.rs")
-  if (filename IN_LIST skip_cargo_headers)
+  set (skip_crate_headers "lib.rs" "mod.rs" "version.rs")
+  if (filename IN_LIST skip_crate_headers)
     continue ()
   endif ()
 
@@ -138,20 +139,21 @@ foreach (source IN LISTS cargo_sources)
     continue () # Always exclude private crates.
   endif ()
   cmake_path (REPLACE_EXTENSION header LAST_ONLY ".h" OUTPUT_VARIABLE header)
-  list (APPEND cargo_headers "${binary_include_dir}/mongoac/${header}")
+  list (APPEND crate_headers "${binary_include_dir}/mongoac/${header}")
 
   # Keep synchronized with `SKIP_FORWARD_HEADERS` in tools/generate-crate-headers/src/main.rs.
   set (skip_forward_headers "string")
   cmake_path (GET header STEM LAST_ONLY fwd_name)
   if (NOT fwd_name IN_LIST skip_forward_headers)
     cmake_path (REMOVE_EXTENSION header LAST_ONLY OUTPUT_VARIABLE fwd_stem)
-    list (APPEND cargo_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
+    list (APPEND crate_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
   endif ()
 endforeach ()
 
 add_custom_command (
-  OUTPUT ${cargo_headers}
+  OUTPUT ${crate_headers}
   COMMENT "Generating mongoac crate headers"
+  USES_TERMINAL
   COMMAND
     "${CMAKE_COMMAND}" -E env
       "MONGOAC_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -168,9 +170,9 @@ add_custom_command (
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/Cargo.toml"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/src/main.rs"
 )
-add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${cargo_headers})
+add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${crate_headers})
 
-set_source_files_properties (${mongoac_headers} ${cargo_headers} PROPERTIES LANGUAGE C)
+set_source_files_properties (${mongoac_headers} ${crate_headers} PROPERTIES LANGUAGE C)
 
 set (mongoac_file_set_headers
   FILE_SET HEADERS
@@ -179,7 +181,7 @@ set (mongoac_file_set_headers
       "${binary_include_dir}"
     FILES
       ${mongoac_headers}
-      ${cargo_headers}
+      ${crate_headers}
 )
 
 if ("$CACHE{ENABLE_SHARED}")
@@ -215,6 +217,7 @@ if ("$CACHE{ENABLE_SHARED}")
       "${library_shared_soversion}"
       "${library_shared_soversion_full}"
     COMMENT "Building the mongoac shared library"
+    USES_TERMINAL
     COMMAND
       "${CMAKE_COMMAND}" -E env
         "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
@@ -281,6 +284,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
   add_custom_command (
     OUTPUT "${library_static}"
     COMMENT "Building the mongoac static library"
+    USES_TERMINAL
     COMMAND
       "${CMAKE_COMMAND}" -E env
         "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
@@ -326,6 +330,9 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
     )
   endif ()
 endif ()
+
+# Include the Cargo target directory as part of the global `clean` target.
+set_property (DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY ADDITIONAL_CLEAN_FILES "${cargo_target_dir}")
 
 if ("$CACHE{ENABLE_SHARED}" OR "$CACHE{ENABLE_STATIC}" STREQUAL "ON")
   install (EXPORT mongoac-targets
