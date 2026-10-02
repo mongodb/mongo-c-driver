@@ -16,6 +16,7 @@
 
 #include <mongoac/string.h>
 
+#include <cstddef>
 #include <string>
 #include <string_view>
 
@@ -50,6 +51,10 @@ inline std::string from_mongoac(mongoac_string_t&& v) {
     }
 
     return ret;
+}
+
+constexpr mongoac_string_view_t operator""_sv(char const* str, std::size_t len) {
+    return {str, len};
 }
 
 } // namespace mongoac::test

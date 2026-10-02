@@ -18,5 +18,8 @@ pub use crate::safe_as_mut;
 pub use crate::safe_as_ref;
 pub use crate::safe_drop;
 pub use crate::safe_into_raw;
+pub use crate::safe_optional_error_as_mut;
+pub use crate::safe_result;
 pub use crate::safe_slice_drop;
 pub use crate::safe_slice_into_raw;
+pub use crate::safe_string_view_with_error;
