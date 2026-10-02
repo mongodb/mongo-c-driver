@@ -170,6 +170,268 @@ static inline void _test_case_key_empty_accept_if_absent(void) {
 }
 
 // ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/accept
+static inline void _test_case_key_duplicate_accept(void) {
+  /**
+   * The document has a duplicate key, and we accept this since we don't
+   * ask to validate it.
+   */
+  const uint8_t bytes[] = {
+    0x1b, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 2, 'f', 'o', 'o', 0,
+    2, 0, 0, 0, 'b', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, 0, &offset, &error);
+  ASSERT_OR_PRINT(is_valid, error);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject
+static inline void _test_case_key_duplicate_reject(void) {
+  /**
+   * The document has a duplicate key, and we reject it when we ask to
+   * validate it. The error offset is the second occurrence of the key.
+   */
+  const uint8_t bytes[] = {
+    0x1b, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 2, 'f', 'o', 'o', 0,
+    2, 0, 0, 0, 'b', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"foo\"");
+  mlib_check(offset, eq, 15);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/accept-if-absent
+static inline void _test_case_key_duplicate_accept_if_absent(void) {
+  /**
+   * We are checking for duplicate keys, and accept if they are absent.
+   */
+  const uint8_t bytes[] = {
+    0x25, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 2, 'b', 'a', 'r', 0,
+    2, 0, 0, 0, 'b', 0, 2, 'f', 'o', 0, 2, 0, 0, 0, 'c', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  ASSERT_OR_PRINT(is_valid, error);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-earliest
+static inline void _test_case_key_duplicate_reject_earliest(void) {
+  /**
+   * The document has multiple duplicate keys. The error refers to the
+   * earliest element that duplicates a prior key (the second "a"), even
+   * though "b" sorts first.
+   */
+  const uint8_t bytes[] = {
+    '2', 0, 0, 0, 2, 'b', 0, 2, 0, 0, 0, 'v', 0, 2, 'a', 0, 2, 0, 0, 0, 'v', 0,
+    2, 'c', 0, 2, 0, 0, 0, 'v', 0, 2, 'a', 0, 2, 0, 0, 0, 'v', 0, 2, 'b', 0, 2,
+    0, 0, 0, 'v', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"a\"");
+  mlib_check(offset, eq, 31);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-nested
+static inline void _test_case_key_duplicate_reject_nested(void) {
+  /**
+   * A subdocument has a duplicate key. Keys in the subdocument are
+   * independent of keys in the parent.
+   */
+  const uint8_t bytes[] = {
+    '0', 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 3, 's', 'u', 'b', 0,
+    0x1b, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 2, 'f', 'o', 'o', 0,
+    2, 0, 0, 0, 'b', 0, 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"foo\"");
+  mlib_check(offset, eq, 35);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-after-nested
+static inline void _test_case_key_duplicate_reject_after_nested(void) {
+  /**
+   * The parent document has a duplicate key following a valid subdocument.
+   */
+  const uint8_t bytes[] = {
+    0x25, 0, 0, 0, 3, 's', 'u', 'b', 0, 0x10, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2,
+    0, 0, 0, 'a', 0, 0, 2, 's', 'u', 'b', 0, 2, 0, 0, 0, 'b', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"sub\"");
+  mlib_check(offset, eq, 25);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-array
+static inline void _test_case_key_duplicate_reject_array(void) {
+  /**
+   * An array has duplicate keys.
+   */
+  const uint8_t bytes[] = {
+    0x21, 0, 0, 0, 4, 'a', 'r', 'r', 0, 0x17, 0, 0, 0, 2, '0', 0, 2, 0, 0, 0,
+    'a', 0, 2, '0', 0, 2, 0, 0, 0, 'b', 0, 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"0\"");
+  mlib_check(offset, eq, 22);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-in-array-element
+static inline void _test_case_key_duplicate_reject_in_array_element(void) {
+  /**
+   * A document within an array has a duplicate key.
+   */
+  const uint8_t bytes[] = {
+    '-', 0, 0, 0, 4, 'a', 'r', 'r', 0, 0x23, 0, 0, 0, 3, '0', 0, 0x1b, 0, 0, 0,
+    2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0,
+    'b', 0, 0, 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"foo\"");
+  mlib_check(offset, eq, 31);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-dbref
+static inline void _test_case_key_duplicate_reject_dbref(void) {
+  /**
+   * A DBRef document has a duplicate key following $ref and $id.
+   */
+  const uint8_t bytes[] = {
+    '3', 0, 0, 0, 2, '$', 'r', 'e', 'f', 0, 5, 0, 0, 0, 'c', 'o', 'l', 'l', 0,
+    0x10, '$', 'i', 'd', 0, 1, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0,
+    2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'b', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS | BSON_VALIDATE_DOLLAR_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"foo\"");
+  mlib_check(offset, eq, 39);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-in-scope
+static inline void _test_case_key_duplicate_reject_in_scope(void) {
+  /**
+   * A code-with-scope scope document has a duplicate key.
+   */
+  const uint8_t bytes[] = {
+    '1', 0, 0, 0, 0x0f, 'f', 'o', 'o', 0, 0x27, 0, 0, 0, 8, 0, 0, 0, 'v', 'o',
+    'i', 'd', 0x20, '0', 0x3b, 0, 0x17, 0, 0, 0, 2, 'x', 0, 2, 0, 0, 0, 'a', 0,
+    2, 'x', 0, 2, 0, 0, 0, 'b', 0, 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Error in scope document for element \"foo\": Duplicate element key: \"x\"");
+  mlib_check(offset, eq, 17);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-corrupt-after-duplicate
+static inline void _test_case_key_duplicate_reject_corrupt_after_duplicate(void) {
+  /**
+   * The document has a duplicate key followed by corrupt data. The
+   * duplicate key is reported, since it occurs first.
+   */
+  const uint8_t bytes[] = {
+    0x1c, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 2, 'f', 'o', 'o', 0,
+    2, 0, 0, 0, 'b', 0, 'f', 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Duplicate element key: \"foo\"");
+  mlib_check(offset, eq, 15);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-corrupt-before-duplicate
+static inline void _test_case_key_duplicate_reject_corrupt_before_duplicate(void) {
+  /**
+   * The document has corrupt data before a duplicate key. The corruption is
+   * reported, since it occurs first.
+   */
+  const uint8_t bytes[] = {
+    0x1c, 0, 0, 0, 2, 'f', 'o', 'o', 0, 2, 0, 0, 0, 'a', 0, 'f', 2, 'f', 'o',
+    'o', 0, 2, 0, 0, 0, 'b', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_CORRUPT);
+  mlib_check(error.message, str_eq, "corrupt BSON");
+  mlib_check(offset, eq, 21);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
 // Case: key/dot/accept
 static inline void _test_case_key_dot_accept(void) {
   /**
@@ -2476,6 +2738,18 @@ void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "key/empty/accept", _test_case_key_empty_accept);
   TestSuite_Add(suite, "/bson/validate/" "key/empty/reject", _test_case_key_empty_reject);
   TestSuite_Add(suite, "/bson/validate/" "key/empty/accept-if-absent", _test_case_key_empty_accept_if_absent);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/accept", _test_case_key_duplicate_accept);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject", _test_case_key_duplicate_reject);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/accept-if-absent", _test_case_key_duplicate_accept_if_absent);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-earliest", _test_case_key_duplicate_reject_earliest);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-nested", _test_case_key_duplicate_reject_nested);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-after-nested", _test_case_key_duplicate_reject_after_nested);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-array", _test_case_key_duplicate_reject_array);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-in-array-element", _test_case_key_duplicate_reject_in_array_element);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-dbref", _test_case_key_duplicate_reject_dbref);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-in-scope", _test_case_key_duplicate_reject_in_scope);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-corrupt-after-duplicate", _test_case_key_duplicate_reject_corrupt_after_duplicate);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-corrupt-before-duplicate", _test_case_key_duplicate_reject_corrupt_before_duplicate);
   TestSuite_Add(suite, "/bson/validate/" "key/dot/accept", _test_case_key_dot_accept);
   TestSuite_Add(suite, "/bson/validate/" "key/dot/reject", _test_case_key_dot_reject);
   TestSuite_Add(suite, "/bson/validate/" "key/dot/accept-if-absent", _test_case_key_dot_accept_if_absent);
