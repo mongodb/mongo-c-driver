@@ -61,6 +61,7 @@ typedef struct {
 static bson_mutex_t captured_logs_mutex;
 static mongoc_array_t captured_logs;
 static bool capturing_logs;
+static mongoc_log_level_t capture_level = MONGOC_LOG_LEVEL_INFO;
 
 #ifdef MONGOC_ENABLE_SSL
 static mongoc_ssl_opt_t gSSLOptions;
@@ -92,7 +93,15 @@ void
 capture_logs(bool capture)
 {
    capturing_logs = capture;
+   capture_level = MONGOC_LOG_LEVEL_INFO;
    clear_captured_logs();
+}
+
+void
+capture_logs_with_level(mongoc_log_level_t level)
+{
+   capture_logs(true);
+   capture_level = level;
 }
 
 
@@ -184,6 +193,40 @@ print_captured_logs(const char *prefix)
 }
 
 
+static void
+assert_captured_logs_exclude(const char *text, bool ignore_case)
+{
+   char *needle = bson_strdup(text);
+   if (ignore_case) {
+      mongoc_lowercase_inplace(needle);
+   }
+   bson_mutex_lock(&captured_logs_mutex);
+   for (size_t i = 0; i < captured_logs.len; i++) {
+      const log_entry_t *entry = _mongoc_array_index(&captured_logs, log_entry_t *, i);
+      char *message = bson_strdup(entry->msg);
+      if (ignore_case) {
+         mongoc_lowercase_inplace(message);
+      }
+      ASSERT_WITH_MSG(!strstr(message, needle), "Captured log discloses input: %s", entry->msg);
+      bson_free(message);
+   }
+   bson_mutex_unlock(&captured_logs_mutex);
+   bson_free(needle);
+}
+
+void
+assert_no_captured_logs_contain(const char *text)
+{
+   assert_captured_logs_exclude(text, true);
+}
+
+void
+assert_no_captured_logs_contain_exact(const char *text)
+{
+   assert_captured_logs_exclude(text, false);
+}
+
+
 #define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
 
 int64_t
@@ -200,7 +243,9 @@ log_handler(mongoc_log_level_t log_level, const char *log_domain, const char *me
 
    suite = (TestSuite *)user_data;
 
-   if (log_level <= MONGOC_LOG_LEVEL_INFO) {
+   // capture_logs(false) restores the INFO cutoff before destroying the capture
+   // mutex. Cleanup may still emit tracing, which must not touch that mutex.
+   if (log_level <= capture_level) {
       bson_mutex_lock(&captured_logs_mutex);
       if (capturing_logs) {
          log_entry = log_entry_create(log_level, message);
@@ -209,7 +254,9 @@ log_handler(mongoc_log_level_t log_level, const char *log_domain, const char *me
          return;
       }
       bson_mutex_unlock(&captured_logs_mutex);
+   }
 
+   if (log_level <= MONGOC_LOG_LEVEL_INFO) {
       if (!suite->silent) {
          mongoc_log_default_handler(log_level, log_domain, message, NULL);
       }

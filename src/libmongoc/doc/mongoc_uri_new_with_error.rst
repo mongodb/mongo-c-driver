@@ -23,6 +23,14 @@ Description
 
 Parses a string containing a MongoDB style URI connection string.
 
+Parse errors and warnings do not quote connection string components or arbitrary
+option arguments. A diagnostic may identify a known option or authentication
+mechanism by its canonical name, or report a successfully parsed integer for a
+known, non-sensitive option. Unknown or malformed options are identified by a
+zero-based character position within the query, starting immediately after
+``?``. These positions refer to the original query, before percent-decoding, and
+do not include the user information.
+
 Returns
 -------
 
@@ -55,4 +63,3 @@ Examples of some valid MongoDB connection strings can be seen below.
 ``"mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock"``
 
 ``"mongodb://localhost,[::1]/mydb?authSource=mydb"``
-
