@@ -53,6 +53,15 @@ TEST_CASE("new", "[mongoac][client]") {
         CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_INVALID_ARGUMENT);
     }
 
+    SECTION("invalid UTF-8") {
+        auto const client = make_unique(mongoac_client_new("\xff"_sv, error), &mongoac_client_destroy);
+
+        CHECK(client == nullptr);
+        CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_MONGOAC);
+        CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_INVALID_ARGUMENT);
+        CHECK_THAT(from_mongoac(mongoac_error_message(error)), Catch::Matchers::ContainsSubstring("invalid UTF-8"));
+    }
+
     SECTION("invalid connection string") {
         auto const client = make_unique(mongoac_client_new(""_sv, error), &mongoac_client_destroy);
 
