@@ -20,8 +20,8 @@
 
 #ifdef MONGOC_HAVE_DNSAPI
 /* for DnsQuery_UTF8 */
-#include <WinDNS.h>
-#include <Windows.h>
+#include <windns.h>
+#include <windows.h>
 #include <ws2tcpip.h>
 #else
 #if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
@@ -1469,6 +1469,10 @@ mongoc_client_get_gridfs(mongoc_client_t *client, const char *db, const char *pr
 
    if (!prefix) {
       prefix = "fs";
+   }
+
+   if (!_mongoc_validate_db_name(db, -1, error)) {
+      return NULL;
    }
 
    return _mongoc_gridfs_new(client, db, prefix, error);

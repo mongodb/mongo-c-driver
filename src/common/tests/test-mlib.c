@@ -1029,6 +1029,11 @@ _test_str(void)
       mstr_replace(&s, bar, mstr_cstring("foo"));
       mlib_check(s.data, str_eq, "foo foo foo");
 
+      // Use replace() with a substitution string that points into the target
+      mstr_assign(&s, mstr_cstring("foo bar baz"));
+      mlib_check(mstr_replace(&s, mstr_cstring("baz"), mstr_substr(s, 4, 3)));
+      mlib_check(s.data, str_eq, "foo bar bar");
+
       mstr_destroy(&s);
    }
 }

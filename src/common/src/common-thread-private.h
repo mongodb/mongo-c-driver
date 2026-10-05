@@ -48,7 +48,7 @@ BSON_BEGIN_DECLS
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name))(void *)
 #define BSON_THREAD_RETURN return NULL
 
-/* this macro can be defined as a as a build configuration option
+/* this macro can be defined as a build configuration option
  * with -DENABLE_DEBUG_ASSERTIONS=ON.  its purpose is to allow for functions
  * that require a mutex to be locked on entry to assert that the mutex
  * is actually locked.

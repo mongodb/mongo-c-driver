@@ -64,7 +64,6 @@ test_retry_backoff_generator(void)
 {
    const mongoc_retry_backoff_params_t backoff_params = {
       .growth_factor = 2.0,
-      .backoff_initial = mlib_duration(100, ms),
       .backoff_max = mlib_duration(10, s),
    };
 
@@ -74,11 +73,12 @@ test_retry_backoff_generator(void)
       mongoc_retry_backoff_generator_t *const generator =
          _mongoc_retry_backoff_generator_new(backoff_params, jitter_source);
 
+      const mlib_duration base_backoff = mlib_duration(100, ms);
       const mlib_duration duration_zero = mlib_duration();
 
-      ASSERT_CMPDURATION(_mongoc_retry_backoff_generator_next(generator), ==, duration_zero);
-      ASSERT_CMPDURATION(_mongoc_retry_backoff_generator_next(generator), ==, duration_zero);
-      ASSERT_CMPDURATION(_mongoc_retry_backoff_generator_next(generator), ==, duration_zero);
+      ASSERT_CMPDURATION(_mongoc_retry_backoff_generator_next(generator, base_backoff), ==, duration_zero);
+      ASSERT_CMPDURATION(_mongoc_retry_backoff_generator_next(generator, base_backoff), ==, duration_zero);
+      ASSERT_CMPDURATION(_mongoc_retry_backoff_generator_next(generator, base_backoff), ==, duration_zero);
 
       _mongoc_retry_backoff_generator_destroy(generator);
       _mongoc_jitter_source_destroy(jitter_source);
@@ -90,16 +90,23 @@ test_retry_backoff_generator(void)
       mongoc_retry_backoff_generator_t *const generator =
          _mongoc_retry_backoff_generator_new(backoff_params, jitter_source);
 
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(50, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(100, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(200, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(400, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(800, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(1600, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(3200, ms));
-      // After 8 retries, backoff should saturate to 5s (BACKOFF_MAX * 0.5).
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(5, s));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(5, s));
+      const mlib_duration base_backoff = mlib_duration(100, ms);
+
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(100, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(200, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(400, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(800, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(1600, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(3200, ms));
+      // On the 7th attempt, backoff should saturate to 5s (BACKOFF_MAX * 0.5).
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff), mlib_duration(5, s));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff), mlib_duration(5, s));
 
       _mongoc_retry_backoff_generator_destroy(generator);
       _mongoc_jitter_source_destroy(jitter_source);
@@ -111,16 +118,69 @@ test_retry_backoff_generator(void)
       mongoc_retry_backoff_generator_t *const generator =
          _mongoc_retry_backoff_generator_new(backoff_params, jitter_source);
 
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(100, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(200, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(400, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(800, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(1600, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(3200, ms));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(6400, ms));
-      // After 8 retries, backoff should saturate to 10s.
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(10, s));
-      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator), mlib_duration(10, s));
+      const mlib_duration base_backoff = mlib_duration(100, ms);
+
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(200, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(400, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(800, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(1600, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(3200, ms));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff),
+                                   mlib_duration(6400, ms));
+      // On the 7th attempt, backoff should saturate to 10s.
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff), mlib_duration(10, s));
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, base_backoff), mlib_duration(10, s));
+
+      _mongoc_retry_backoff_generator_destroy(generator);
+      _mongoc_jitter_source_destroy(jitter_source);
+   }
+
+   // jitter = 1.0, variable base backoff
+   {
+      mongoc_jitter_source_t *const jitter_source = _mongoc_jitter_source_new(always_1_jitter_source_generate);
+      mongoc_retry_backoff_generator_t *const generator =
+         _mongoc_retry_backoff_generator_new(backoff_params, jitter_source);
+
+      // Attempt 1 with 100ms base backoff: 100ms * 2^1 = 200ms.
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, mlib_duration(100, ms)),
+                                   mlib_duration(200, ms));
+
+      // Attempt 2 with 50ms base backoff: 50ms * 2^2 = 200ms.
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, mlib_duration(50, ms)),
+                                   mlib_duration(200, ms));
+
+      // Attempt 3 with 400ms base backoff: 400ms * 2^3 = 3200ms.
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, mlib_duration(400, ms)),
+                                   mlib_duration(3200, ms));
+
+      // Attempt 4 with 800ms base backoff: 800ms * 2^4 = 12800ms (saturates to 10s).
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, mlib_duration(800, ms)),
+                                   mlib_duration(10, s));
+
+      // Attempt 5 with 300ms base backoff: 300ms * 2^5 = 9600ms (should not saturate).
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, mlib_duration(300, ms)),
+                                   mlib_duration(9600, ms));
+
+      _mongoc_retry_backoff_generator_destroy(generator);
+      _mongoc_jitter_source_destroy(jitter_source);
+   }
+
+   // jitter = 1.0, first attempt skipped
+   {
+      mongoc_jitter_source_t *const jitter_source = _mongoc_jitter_source_new(always_1_jitter_source_generate);
+      mongoc_retry_backoff_generator_t *const generator =
+         _mongoc_retry_backoff_generator_new(backoff_params, jitter_source);
+
+      _mongoc_retry_backoff_generator_skip(generator);
+
+      // Attempt 2: 100ms * 2^2 = 400ms.
+      ASSERT_DURATION_ALMOST_EQUAL(_mongoc_retry_backoff_generator_next(generator, mlib_duration(100, ms)),
+                                   mlib_duration(400, ms));
 
       _mongoc_retry_backoff_generator_destroy(generator);
       _mongoc_jitter_source_destroy(jitter_source);
