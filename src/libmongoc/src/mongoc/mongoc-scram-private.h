@@ -28,6 +28,9 @@
 
 BSON_BEGIN_DECLS
 
+#define MONGOC_SCRAM_MIN_ITERATIONS 4096
+#define MONGOC_DEFAULT_MAXSCRAMITERATIONS 100000
+
 #define MONGOC_SCRAM_SHA_1_HASH_SIZE 20
 #define MONGOC_SCRAM_SHA_256_HASH_SIZE 32
 /* SCRAM-SHA-1 uses a hash size of 20, and SCRAM-SHA-256 uses a hash size
@@ -51,6 +54,7 @@ typedef struct _mongoc_scram_t {
    char hashed_password[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    uint32_t iterations;
+   uint32_t max_iterations;
    uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
    uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
