@@ -33,6 +33,7 @@ Any attempted operation on the given client after it is shutdown will return an 
 .. important::
 
    Calling :symbol:`mongoac_client_shutdown()` before :symbol:`mongoac_client_destroy()` is highly recommended to ensure a `clean shutdown <https://docs.rs/mongodb/latest/mongodb/struct.Client.html#clean-shutdown>`_.
+   :symbol:`mongoac_client_shutdown()` only needs to be called once for a given set of :symbol:`mongoac_client_t` with the same shared state.
 
 .. seealso::
 
