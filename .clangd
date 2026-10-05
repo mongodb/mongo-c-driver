@@ -1,9 +1,0 @@
-CompileFlags:
-  CompilationDatabase: ./_build/
-  Add:
-    - -D__clangd__=1
-Style:
-  AngledHeaders:
-    - "mlib/.*"
-    - "bson/.*"
-    - "mongoc/.*"
