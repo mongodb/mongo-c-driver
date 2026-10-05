@@ -83,6 +83,9 @@ functions:
           - -c
           - .evergreen/scripts/debug-core-evergreen.sh
   bootstrap-mongo-orchestration:
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
     - command: subprocess.exec
       type: setup
       params:
