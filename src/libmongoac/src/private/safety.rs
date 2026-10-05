@@ -268,6 +268,7 @@ macro_rules! safe_as_ref {
 ///
 /// - `sv.ptr` must either be null or a valid pointer to a valid UTF-8 string.
 /// - `sv.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `sv.ptr` is not null, the range `[sv.ptr, sv.ptr + sv.len)` must be valid and accessible.
 /// - `error` must be null or in its default state (cleared).
 #[macro_export]
 macro_rules! safe_string_view_with_error {
