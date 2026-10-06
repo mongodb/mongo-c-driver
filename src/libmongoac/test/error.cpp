@@ -30,13 +30,27 @@
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
 
-TEST_CASE("default", "[mongoac][error]") {
+TEST_CASE("destroy", "[mongoac][error]") {
+    SECTION("null") {
+        mongoac_error_destroy(nullptr);
+        SUCCEED();
+    }
+}
+
+TEST_CASE("new", "[mongoac][error]") {
     auto const error_owner = make_unique(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
     CHECK(error != nullptr);
     CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_NONE);
     CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK);
+
+    {
+        auto const msg = mongoac_error_message(error);
+        CHECK(msg.ptr == nullptr);
+        CHECK(msg.len == 0u);
+        mongoac_string_destroy(msg);
+    }
 }
 
 TEST_CASE("clone", "[mongoac][error]") {
