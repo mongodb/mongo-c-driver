@@ -370,12 +370,14 @@ impl RuntimeT {
 /// Provides an associated [`RuntimeT`] by which an async operation may be spawned as a new [`FutureT`].
 pub(crate) trait RuntimeAware {
     /// Return the runtime associated with this value.
+    #[must_use]
     fn get_runtime(&self) -> RuntimeT;
 
     /// Spawn the given async operation on the associated runtime as a [`FutureT`].
     ///
     /// The async operation must return a `Result<T, ErrorT>`. Explicitly specify the return type `T` when calling this
     /// function to ensure the async operation's return type is correct, e.g.: `self.spawn::<T>(op)`.
+    #[must_use]
     fn spawn<T>(&self, op: impl Future<Output = Result<T, ErrorT>> + Send + 'static) -> FutureT
     where
         T: Send + Sync + 'static,
