@@ -16,6 +16,7 @@ mod private;
 
 pub mod client;
 pub mod error;
+pub mod future;
 pub mod runtime;
 pub mod string;
 pub mod version;

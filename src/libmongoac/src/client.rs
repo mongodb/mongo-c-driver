@@ -13,8 +13,9 @@
 // limitations under the License.
 
 use crate::error::{ErrorCodeT, ErrorT};
+use crate::future::FutureT;
 use crate::private::macros::*;
-use crate::runtime::RuntimeT;
+use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 use crate::version::{MONGOAC_BUILD_PLATFORM, MONGOAC_VERSION_FULL};
 
@@ -55,6 +56,11 @@ pub extern "C" fn mongoac_client_shutdown(client: *mut ClientT) {
     safe_as_mut!(client).shutdown();
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_shutdown_async(client: *mut ClientT) -> *mut FutureT {
+    safe_into_raw!(safe_as_mut!(client).shutdown_async())
+}
+
 impl ClientT {
     fn new(conn_str: &str) -> Result<ClientT, ErrorT> {
         // Runtime Error (mongoac)
@@ -84,12 +90,26 @@ impl ClientT {
     }
 
     fn shutdown(&mut self) {
-        // `.shutdown()` consumes the client.
-        let client = self.inner.clone();
+        let client = self.inner.clone(); // Avoid consuming `self.inner`.
 
         self.runtime.block_on(async {
             client.shutdown().await;
         });
+    }
+
+    fn shutdown_async(&mut self) -> FutureT {
+        let client = self.inner.clone();
+
+        self.spawn::<()>(async move {
+            client.shutdown().await;
+            Ok(())
+        })
+    }
+}
+
+impl RuntimeAware for ClientT {
+    fn get_runtime(&self) -> RuntimeT {
+        self.runtime.clone()
     }
 }
 
