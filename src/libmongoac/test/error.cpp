@@ -19,6 +19,8 @@
 #include <mongoac/test/memory.hh>
 #include <mongoac/test/string.hh>
 
+#include <mongoac/string.h>
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
 
@@ -45,7 +47,7 @@ TEST_CASE("clone", "[mongoac][error]") {
         CHECK(copy == nullptr);
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
         auto const error = error_owner.get();
 
@@ -114,8 +116,8 @@ TEST_CASE("message", "[mongoac][error]") {
         CHECK(from_mongoac(mongoac_error_message(nullptr)) == "");
     }
 
-    SECTION("default") {
-        SECTION("default") {
+    SECTION("basic") {
+        SECTION("basic") {
             CHECK(from_mongoac(mongoac_error_message(error)) == "");
         }
     }
@@ -165,7 +167,7 @@ TEST_CASE("clear", "[mongoac][error]") {
         CHECK_NOTHROW(mongoac_error_clear(nullptr));
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
         auto const error = error_owner.get();
 
@@ -184,7 +186,7 @@ TEST_CASE("set", "[mongoac][error]") {
         CHECK_NOTHROW(mongoac_error_set(nullptr, MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK));
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK));
         CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_NONE);
         CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK);

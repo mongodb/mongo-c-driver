@@ -89,7 +89,7 @@ TEST_CASE("clone", "[mongoac][client]") {
         CHECK(copy == nullptr);
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         auto const copy_owner = make_unique(mongoac_client_clone(client), &mongoac_client_destroy);
         auto const copy = copy_owner.get();
         CHECK(copy != nullptr);
@@ -115,7 +115,7 @@ TEST_CASE("get_runtime", "[mongoac][client]") {
         CHECK(runtime.get() == nullptr);
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         auto const client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
 
         auto const runtime = make_unique(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
@@ -146,7 +146,7 @@ TEST_CASE("shutdown", "[mongoac][client]") {
         CHECK_NOTHROW(mongoac_client_shutdown(nullptr));
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         auto const client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
         CHECK_NOTHROW(mongoac_client_shutdown(client.get()));
     }
