@@ -11428,14 +11428,14 @@ buildvariants:
     - macos-14-arm64
   - name: debug-compile-nosasl-winssl
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   - name: .ocsp-openssl
   - name: .ocsp-darwinssl
     distros:
     - macos-14-arm64
   - name: .ocsp-winssl
     distros:
-    - windows-vsCurrent-large
+    - windows-2022-latest-large
   batchtime: 10080
   display_tasks:
   - execution_tasks:
