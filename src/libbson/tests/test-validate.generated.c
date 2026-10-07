@@ -388,6 +388,30 @@ static inline void _test_case_key_duplicate_reject_in_scope(void) {
 }
 
 // ! This code is GENERATED! Do not edit it directly!
+// Case: key/duplicate/reject-in-scope-unflagged
+static inline void _test_case_key_duplicate_reject_in_scope_unflagged(void) {
+  /**
+   * A code-with-scope scope document has a duplicate key. The scope is a
+   * mapping from identifiers to values, so duplicate keys are always
+   * rejected, even without BSON_VALIDATE_DUPLICATE_KEYS.
+   */
+  const uint8_t bytes[] = {
+    '1', 0, 0, 0, 0x0f, 'f', 'o', 'o', 0, 0x27, 0, 0, 0, 8, 0, 0, 0, 'v', 'o',
+    'i', 'd', 0x20, '0', 0x3b, 0, 0x17, 0, 0, 0, 2, 'x', 0, 2, 0, 0, 0, 'a', 0,
+    2, 'x', 0, 2, 0, 0, 0, 'b', 0, 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_EMPTY_KEYS, &offset, &error);
+  mlib_check(!is_valid);
+  mlib_check(error.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+  mlib_check(error.message, str_eq, "Error in scope document for element \"foo\": Duplicate element key: \"x\"");
+  mlib_check(offset, eq, 17);
+}
+
+// ! This code is GENERATED! Do not edit it directly!
 // Case: key/duplicate/reject-corrupt-after-duplicate
 static inline void _test_case_key_duplicate_reject_corrupt_after_duplicate(void) {
   /**
@@ -2748,6 +2772,7 @@ void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-in-array-element", _test_case_key_duplicate_reject_in_array_element);
   TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-dbref", _test_case_key_duplicate_reject_dbref);
   TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-in-scope", _test_case_key_duplicate_reject_in_scope);
+  TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-in-scope-unflagged", _test_case_key_duplicate_reject_in_scope_unflagged);
   TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-corrupt-after-duplicate", _test_case_key_duplicate_reject_corrupt_after_duplicate);
   TestSuite_Add(suite, "/bson/validate/" "key/duplicate/reject-corrupt-before-duplicate", _test_case_key_duplicate_reject_corrupt_before_duplicate);
   TestSuite_Add(suite, "/bson/validate/" "key/dot/accept", _test_case_key_dot_accept);

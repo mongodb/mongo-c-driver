@@ -463,6 +463,21 @@ CASES: list[TestCase] = [
         ),
     ),
     TestCase(
+        'key/duplicate/reject-in-scope-unflagged',
+        doc(elem('foo', Tag.CodeWithScope, code_with_scope('void 0;', doc(utf8elem('x', 'a'), utf8elem('x', 'b'))))),
+        """
+        A code-with-scope scope document has a duplicate key. The scope is a
+        mapping from identifiers to values, so duplicate keys are always
+        rejected, even without BSON_VALIDATE_DUPLICATE_KEYS.
+        """,
+        flags=BSON_VALIDATE_EMPTY_KEYS,
+        error=ErrorInfo(
+            BSON_VALIDATE_DUPLICATE_KEYS,
+            'Error in scope document for element "foo": Duplicate element key: "x"',
+            17,
+        ),
+    ),
+    TestCase(
         'key/duplicate/reject-corrupt-after-duplicate',
         doc(utf8elem('foo', 'a'), utf8elem('foo', 'b'), b'f'),
         """

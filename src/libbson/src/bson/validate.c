@@ -317,8 +317,10 @@ _validate_codewscope_elem(validator *self, bson_iter_t const *iter, int depth)
       .allow_invalid_utf8 = false,
       // JS allows object keys to have dollars
       .check_special_dollar_keys = false,
-      // Use the parent's duplicate key behavior
-      .allow_duplicate_keys = self->params->allow_duplicate_keys,
+      // A scope is a mapping from identifiers to values (per the BSON spec),
+      // and a mapping cannot contain duplicate keys. As with UTF-8 above, this
+      // is checked regardless of the parent's validation flags.
+      .allow_duplicate_keys = false,
    };
    validator scope_validator = {.params = &scope_params,
                                 .keys = self->keys /* reuse storage (cleared in _find_duplicate_key). */};
