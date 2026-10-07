@@ -612,7 +612,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
 
       ptr++;
 
-      if (*ptr != '=') {
+      if (ptr >= inbuf + inbuflen || *ptr != '=') {
          bson_set_error (error,
                          MONGOC_ERROR_SCRAM,
                          MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
@@ -621,6 +621,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
          goto FAIL;
       }
 
+      /* This may refer to one-past-end, but memchr with length 0 is well-defined. */
       ptr++;
 
       const uint8_t *const next_comma = (const uint8_t *) memchr (ptr, ',', (inbuf + inbuflen) - ptr);
@@ -883,7 +884,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
 
       ptr++;
 
-      if (*ptr != '=') {
+      if (ptr >= inbuf + inbuflen || *ptr != '=') {
          bson_set_error (error,
                          MONGOC_ERROR_SCRAM,
                          MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
@@ -891,6 +892,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
          goto FAIL;
       }
 
+      /* This may refer to one-past-end, but memchr with length 0 is well-defined. */
       ptr++;
 
       const uint8_t *const next_comma = (const uint8_t *) memchr (ptr, ',', (inbuf + inbuflen) - ptr);
