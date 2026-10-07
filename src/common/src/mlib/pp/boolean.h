@@ -69,11 +69,11 @@
     * of function-like macro names that will expand to either `0` or `1`.        \
     *                                                                            \
     * The trailing `()` invokes that name. The normalization forms are           \
-    * deliberately function-like rather than object-like: an object-like macro   \
-    * would be expanded eagerly by `MLIB_PASTE`'s own rescan, before we get a    \
-    * chance to form the full name, and the empty-`Cond` case would need to      \
-    * define the bare name `_mlibBooleanNormalize_`. Requiring the `()` keeps    \
-    * the result inert until it is explicitly invoked here.                      \
+    * deliberately function-like rather than object-like: the empty-`Cond`       \
+    * case requires the bare name `_mlibBooleanNormalize_`. If object-like,      \
+    * that prefix would expand during `MLIB_PASTE`'s argument pre-expansion,     \
+    * before it could be pasted with a non-empty condition. Keeping it           \
+    * function-like leaves the prefix inert until the pasted name is invoked.    \
     */                                                                           \
    MLIB_PASTE(_mlibBooleanNormalize_, __VA_ARGS__)()
 // The following normalization forms are the complete set of spellings accepted

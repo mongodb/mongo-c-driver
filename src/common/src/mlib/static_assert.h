@@ -1,6 +1,5 @@
 /**
  * @file mlib/static_assert.h
- * @author your name (you@domain.com)
  * @brief A static_assertion compatibility macro
  * @date 2025-10-31
  *

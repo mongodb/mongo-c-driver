@@ -50,7 +50,6 @@
  * @brief Expand to some content depending on the compilation language
  *
  *      MLIB_LANG_PICK (<c-language-content>) (<c++-language-content>)
- *
  */
 #define MLIB_LANG_PICK _mlibLangPick
 

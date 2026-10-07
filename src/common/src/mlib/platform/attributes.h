@@ -1,8 +1,5 @@
 /**
  * @file mlib/platform/attributes.h
- * @author your name (you@domain.com)
- * @brief
- * @version 0.1
  * @date 2025-10-31
  *
  * This file defines macros for common compiler/platform extensions and attributes.

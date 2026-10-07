@@ -186,8 +186,7 @@ SUPER_SIMPLE_STATIC_ASSERT(sum, MLIB_MAP_MACRO(SUM, ~, 1, 2, 1) == 4);
 // that the `...` of a variadic macro receive at least one argument; an argument
 // consisting of no preprocessing tokens satisfies that, whereas omitting it
 // entirely does not, and GCC/Clang reject the omitted form under `-pedantic
-// -Werror`. Supporting the omitted form as well is not possible on MSVC's legacy
-// preprocessor — see the note on MLIB_MAP_MACRO before trying.
+// -Werror`. See MLIB_MAP_MACRO for the supported empty-list spelling.
 SUPER_SIMPLE_STATIC_ASSERT(map_empty, 7 == MLIB_MAP_MACRO(SUM, ~, ) 7);
 // A single-element list still applies the action exactly once:
 SUPER_SIMPLE_STATIC_ASSERT(map_single, MLIB_MAP_MACRO(SUM, ~, 5) == 5);

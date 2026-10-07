@@ -1,7 +1,6 @@
 /**
  * @file mlib/platform/endian.h
  * @brief Integer endianness platform detection
- * @version 0.1
  * @date 2025-10-31
  *
  * @copyright Copyright 2009-present MongoDB, Inc.
