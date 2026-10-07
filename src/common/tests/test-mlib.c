@@ -1034,6 +1034,123 @@ _test_str(void)
 }
 
 static void
+_test_str_capacity(void)
+{
+   mlib_check(sizeof(mstr) <= 2 * sizeof(void *));
+
+   mstr s = mstr_null();
+   mlib_check(mstr_capacity(&s), eq, 0);
+   mlib_check(mstr_reserve(&s, 0));
+   mlib_check(s.data != NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(s.data[0], eq, '\0');
+   mlib_check(mstr_reserve(&s, 64));
+   mlib_check(mstr_capacity(&s) >= 64);
+   mlib_check(s.len, eq, 0);
+   mlib_check(s.data[0], eq, '\0');
+
+   char *const data = s.data;
+   const size_t capacity = mstr_capacity(&s);
+   mlib_check(mstr_assign(&s, mstr_cstring("hello")));
+   mlib_check(mstr_reserve(&s, 0));
+   mlib_check(mstr_reserve(&s, capacity));
+   mlib_check(s.data == data);
+   mlib_check(mstr_capacity(&s), eq, capacity);
+   mlib_check(s.data, str_eq, "hello");
+
+   // Shrinking and regrowing must reuse storage, but not expose the old contents.
+   mlib_check(mstr_resize_for_overwrite(&s, 64));
+   memset(s.data, 'x', s.len);
+   mlib_check(mstr_resize(&s, 3));
+   mlib_check(s.data, str_eq, "xxx");
+   mlib_check(mstr_resize(&s, 64));
+   mlib_check(s.data == data);
+   mlib_check(mstr_capacity(&s), eq, capacity);
+   for (size_t i = 3; i <= s.len; ++i) {
+      mlib_check(s.data[i], eq, '\0');
+   }
+
+   // Overflow checks must include both the header and the terminator.
+   const size_t invalid_capacities[] = {SIZE_MAX, (size_t)PTRDIFF_MAX, (size_t)PTRDIFF_MAX - sizeof(size_t)};
+   for (size_t i = 0; i < sizeof(invalid_capacities) / sizeof(invalid_capacities[0]); ++i) {
+      mlib_check(!mstr_reserve(&s, invalid_capacities[i]));
+      mlib_check(!mstr_resize_for_overwrite(&s, invalid_capacities[i]));
+      mlib_check(s.data == data);
+      mlib_check(s.len, eq, 64);
+      mlib_check(mstr_capacity(&s), eq, capacity);
+      mlib_check(s.data[0], eq, 'x');
+      mlib_check(s.data[s.len], eq, '\0');
+   }
+
+   mlib_check(mstr_assign(&s, mstr_cstring("hello")));
+   mlib_check(mstr_append(&s, s));
+   mlib_check(s.data, str_eq, "hellohello");
+   mlib_check(mstr_assign(&s, mstr_substr(s, 5)));
+   mlib_check(s.data, str_eq, "hello");
+   mlib_check(mstr_splice(&s, 1, 3, mstr_cstring("")));
+   mlib_check(s.data, str_eq, "ho");
+   mlib_check(s.data == data);
+   mlib_check(mstr_capacity(&s), eq, capacity);
+   mlib_check(mstr_assign(&s, mstr_view_data("a\0b", 3)));
+   mlib_check(mstr_reserve(&s, 128));
+   mlib_check(mstr_capacity(&s) >= 128);
+   mlib_check(s.len, eq, 3);
+   mlib_check(memcmp(s.data, "a\0b", 4), eq, 0);
+   mstr_destroy(&s);
+   mlib_check(s.data == NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(mstr_capacity(&s), eq, 0);
+   mstr_destroy(&s);
+
+   mlib_check(!mstr_reserve(&s, SIZE_MAX));
+   mlib_check(s.data == NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(mstr_capacity(&s), eq, 0);
+   mlib_check(mstr_resize_for_overwrite(&s, 0));
+   mlib_check(s.data != NULL);
+   mlib_check(s.data[0], eq, '\0');
+   mstr_destroy(&s);
+}
+
+static void
+_test_str_append_growth(void)
+{
+   mstr s = mstr_null();
+   size_t n_growths = 0;
+   size_t total_capacities = 0;
+   for (size_t i = 0; i < 4096; ++i) {
+      const size_t old_capacity = mstr_capacity(&s);
+      char *const old_data = s.data;
+      mlib_check(mstr_append_char(&s, 'a'));
+      mlib_check(s.len, eq, i + 1);
+      mlib_check(s.data[i], eq, 'a');
+      mlib_check(s.data[s.len], eq, '\0');
+      const size_t capacity = mstr_capacity(&s);
+      mlib_check(capacity >= s.len);
+      if (capacity != old_capacity) {
+         ++n_growths;
+         total_capacities += capacity;
+      } else {
+         mlib_check(s.data == old_data);
+      }
+   }
+   // Bound allocation count and total storage growth, not allocator-dependent pointer moves.
+   mlib_check(n_growths <= 32);
+   mlib_check(total_capacities <= 4 * 4096);
+   for (size_t i = 0; i < s.len; ++i) {
+      mlib_check(s.data[i], eq, 'a');
+   }
+   mlib_check(mstr_append(&s, s));
+   mlib_check(s.len, eq, 8192);
+   mlib_check(mstr_capacity(&s) >= s.len);
+   for (size_t i = 0; i < s.len; ++i) {
+      mlib_check(s.data[i], eq, 'a');
+   }
+   mlib_check(s.data[s.len], eq, '\0');
+   mstr_destroy(&s);
+}
+
+static void
 _test_str_format(void)
 {
    mstr s = mstr_sprintf("foo");
@@ -1354,6 +1471,8 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
    TestSuite_Add(suite, "/mlib/str", _test_str);
+   TestSuite_Add(suite, "/mlib/str-capacity", _test_str_capacity);
+   TestSuite_Add(suite, "/mlib/str-append-growth", _test_str_append_growth);
    TestSuite_Add(suite, "/mlib/str-format", _test_str_format);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
