@@ -32,7 +32,7 @@ All tasks corresponding to operations performed by a :symbol:`mongoac_client_t` 
 These tasks may include background tasks spawned during client construction (e.g. CMAP, SDAM, etc.) and cleanup routines during resource destruction (e.g. ``endSessions``, ``killCursors``, etc.).
 Tasks must be *driven* ("make progress") to completion using one or more *progress functions* as provided by the runtime.
 
-.. caution::
+.. warning::
 
   As a single-threaded executor, no scheduled task can make progress unless a progress function is invoked by the user.
   To prevent unexpected latency or staleness during operations, ensure that at least one progress function is invoked periodically.
@@ -48,6 +48,10 @@ A *progress function* is any synchronous function which may drive tasks spawned 
 Progress functions are thread-safe but mutually exclusive: multiple threads may call any progress function in parallel, but only one thread will have progress ownership of the given runtime at any time.
 As long as at least one progress function is invoked periodically, all ready tasks spawned with the runtime will eventually make progress, per `Tokio's fairness guarantee <https://docs.rs/tokio/latest/tokio/runtime/index.html#detailed-runtime-behavior>`_.
 A given progress function may drive progress for tasks unrelated to the specific operation for which it was invoked.
+
+.. warning::
+
+  Invoking a progress function from within another progress function is undefined behavior!
 
 .. only:: html
 

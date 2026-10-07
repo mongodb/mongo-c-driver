@@ -16,6 +16,8 @@
 
 //
 
+#include <mongoac/test/client.hh>
+#include <mongoac/test/error.hh>
 #include <mongoac/test/memory.hh>
 #include <mongoac/test/string.hh>
 
@@ -26,14 +28,9 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 using mongoac::test::operator""_sv;
+using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
-
-namespace {
-
-constexpr auto default_uri = "mongodb://doesnotexist.invalid?serverSelectionTimeoutMS=1000"_sv;
-
-} // namespace
 
 TEST_CASE("destroy", "[mongoac][client]") {
     SECTION("null") {
@@ -49,39 +46,36 @@ TEST_CASE("new", "[mongoac][client]") {
         auto const client = make_unique(mongoac_client_new({}, error), &mongoac_client_destroy);
 
         CHECK(client == nullptr);
-        CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_MONGOAC);
-        CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_INVALID_ARGUMENT);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("invalid UTF-8") {
         auto const client = make_unique(mongoac_client_new("\xff"_sv, error), &mongoac_client_destroy);
 
         CHECK(client == nullptr);
-        CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_MONGOAC);
-        CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_INVALID_ARGUMENT);
-        CHECK_THAT(from_mongoac(mongoac_error_message(error)), Catch::Matchers::ContainsSubstring("invalid UTF-8"));
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "invalid UTF-8");
     }
 
     SECTION("invalid connection string") {
         auto const client = make_unique(mongoac_client_new(""_sv, error), &mongoac_client_destroy);
 
         CHECK(client == nullptr);
-        CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_RUST);
-        CHECK_THAT(
-            from_mongoac(mongoac_error_message(error)), Catch::Matchers::ContainsSubstring("contains no scheme"));
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "contains no scheme");
     }
 
     SECTION("valid") {
-        auto const client = make_unique(mongoac_client_new(default_uri, error), &mongoac_client_destroy);
+        auto const client = make_unique(mongoac_client_new(doesnotexist_uri(), error), &mongoac_client_destroy);
 
         CHECK(client != nullptr);
-        CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_NONE);
-        CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK);
+        CHECK_MONGOAC_ERROR_OK(error);
     }
 }
 
 TEST_CASE("clone", "[mongoac][client]") {
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
 
     SECTION("null") {
@@ -89,7 +83,7 @@ TEST_CASE("clone", "[mongoac][client]") {
         CHECK(copy == nullptr);
     }
 
-    SECTION("default") {
+    SECTION("basic") {
         auto const copy_owner = make_unique(mongoac_client_clone(client), &mongoac_client_destroy);
         auto const copy = copy_owner.get();
         CHECK(copy != nullptr);
@@ -115,24 +109,25 @@ TEST_CASE("get_runtime", "[mongoac][client]") {
         CHECK(runtime.get() == nullptr);
     }
 
-    SECTION("default") {
-        auto const client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+    SECTION("basic") {
+        auto const client =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
 
         auto const runtime = make_unique(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
         CHECK(runtime.get() != nullptr);
     }
 
     SECTION("unique") {
-        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const r1 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c1.get()), &mongoac_runtime_destroy);
-        auto const c2 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+        auto const c2 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const r2 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c2.get()), &mongoac_runtime_destroy);
 
         CHECK(mongoac_runtime_address(r1.get()) != mongoac_runtime_address(r2.get()));
     }
 
     SECTION("shared") {
-        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const r1 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c1.get()), &mongoac_runtime_destroy);
         auto const c2 = REQUIRE_MAKE_UNIQUE(mongoac_client_clone(c1.get()), &mongoac_client_destroy);
         auto const r2 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c2.get()), &mongoac_runtime_destroy);
@@ -146,8 +141,9 @@ TEST_CASE("shutdown", "[mongoac][client]") {
         CHECK_NOTHROW(mongoac_client_shutdown(nullptr));
     }
 
-    SECTION("default") {
-        auto const client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri, nullptr), &mongoac_client_destroy);
+    SECTION("basic") {
+        auto const client =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         CHECK_NOTHROW(mongoac_client_shutdown(client.get()));
     }
 }

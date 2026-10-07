@@ -34,7 +34,7 @@ pub extern "C" fn mongoac_runtime_clone(runtime: *const RuntimeT) -> *mut Runtim
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_runtime_address(runtime: *const RuntimeT) -> usize {
-    Arc::as_ptr(&safe_as_ref!(runtime).runtime) as usize
+    safe_as_ref!(runtime).address()
 }
 
 #[unsafe(no_mangle)]
@@ -49,14 +49,6 @@ pub extern "C" fn mongoac_runtime_make_progress_for(runtime: *const RuntimeT, du
     safe_as_ref!(runtime).make_progress_for(duration);
 }
 
-impl PartialEq for RuntimeT {
-    fn eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.runtime, &other.runtime)
-    }
-}
-
-impl Eq for RuntimeT {}
-
 impl RuntimeT {
     pub(crate) fn new() -> Result<Self, tokio::io::Error> {
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -66,6 +58,11 @@ impl RuntimeT {
         Ok(Self {
             runtime: Arc::new(runtime),
         })
+    }
+
+    #[must_use]
+    pub(crate) fn address(&self) -> usize {
+        Arc::as_ptr(&self.runtime) as usize
     }
 
     fn make_progress(&self) {
