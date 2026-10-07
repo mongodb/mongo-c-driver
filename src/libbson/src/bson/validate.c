@@ -320,7 +320,8 @@ _validate_codewscope_elem(validator *self, bson_iter_t const *iter, int depth)
       // Use the parent's duplicate key behavior
       .allow_duplicate_keys = self->params->allow_duplicate_keys,
    };
-   validator scope_validator = {.params = &scope_params, .keys = self->keys};
+   validator scope_validator = {.params = &scope_params,
+                                .keys = self->keys /* reuse storage (cleared in _find_duplicate_key). */};
    // We could do more validation that the scope keys are valid JS identifiers,
    // but that would require using a full Unicode database.
    if (_validate_doc(&scope_validator, &scope, depth)) {
