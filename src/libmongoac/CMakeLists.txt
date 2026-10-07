@@ -103,8 +103,8 @@ set (cargo_library_static "${cargo_target_build_dir}/${CMAKE_STATIC_LIBRARY_PREF
 set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
 set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}")
-set (library_shared_soversion_full "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}.${PROJECT_VERSION}")
-set (library_shared_soversion "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
+set (library_shared_filename_full "${library_shared_filename}.${PROJECT_VERSION}")
+set (library_shared_filename_major "${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
 set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_static_filename}")
 
@@ -186,22 +186,13 @@ set (mongoac_file_set_headers
 
 if ("$CACHE{ENABLE_SHARED}")
   if (LINUX)
-    # Patch shared library with SONAME.
+    # Patch the installed shared library with an ELF SONAME.
     find_program (PATCHELF_EXECUTABLE patchelf)
 
-    if (PATCHELF_EXECUTABLE)
-      set (patchelf_command
-        COMMAND
-          "${PATCHELF_EXECUTABLE}"
-          --set-soname
-          "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
-          "${library_shared_soversion_full}"
-      )
-    else ()
+    if (NOT PATCHELF_EXECUTABLE)
       message (WARNING "patchelf not found: mongoac shared library will not have an ELF SONAME!")
-      set (patchelf_command "")
     endif ()
-  endif()
+  endif ()
 
   if (WIN32)
     message (WARNING "The mongoac shared library has not yet been tested on Windows!")
@@ -214,8 +205,6 @@ if ("$CACHE{ENABLE_SHARED}")
   add_custom_command (
     OUTPUT
       "${library_shared}"
-      "${library_shared_soversion}"
-      "${library_shared_soversion_full}"
     COMMENT "Building the mongoac shared library"
     USES_TERMINAL
     COMMAND
@@ -233,27 +222,14 @@ if ("$CACHE{ENABLE_SHARED}")
     COMMAND
       "${CMAKE_COMMAND}" -E copy
         "${cargo_library_shared}"
-        "${library_shared_soversion_full}"
-    COMMAND
-      "${CMAKE_COMMAND}" -E create_symlink
-        "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION}"
-        "${library_shared_soversion}"
-    COMMAND
-      "${CMAKE_COMMAND}" -E create_symlink
-        "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
         "${library_shared}"
-    ${patchelf_command}
     DEPENDS
       ${cargo_dependencies}
     BYPRODUCTS
       "${cargo_library_shared}"
   )
 
-  add_custom_target (mongoac_shared_target ALL DEPENDS
-    "${library_shared}"
-    "${library_shared_soversion}"
-    "${library_shared_soversion_full}"
-  )
+  add_custom_target (mongoac_shared_target ALL DEPENDS "${library_shared}")
 
   add_library (mongoac_shared INTERFACE)
   set_target_properties (mongoac_shared PROPERTIES
@@ -271,12 +247,23 @@ if ("$CACHE{ENABLE_SHARED}")
   install (TARGETS mongoac_shared EXPORT mongoac-targets
     FILE_SET HEADERS DESTINATION "${MONGOAC_INSTALL_INCLUDEDIR}"
   )
-  install (
-    FILES
-      "${library_shared_soversion_full}"
-      "${library_shared_soversion}"
-      "${library_shared}"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+
+  # Rename the library to its full filename during installation, e.g. "libmongoac0.so.1.2.3"
+  install (FILES "${library_shared}" DESTINATION "${CMAKE_INSTALL_LIBDIR}" RENAME "${library_shared_filename_full}")
+  # Manually (re-)support `DESTDIR` env var override due to `install (CODE)` being unaware.
+  set (install_full_libdir "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+  # Set the SONAME of the installed shared library via `patchelf`, e.g. "libmongoac0.so.1".
+  if (LINUX AND PATCHELF_EXECUTABLE)
+    install (CODE
+      "execute_process (COMMAND \"${PATCHELF_EXECUTABLE}\" --set-soname \"${library_shared_filename_major}\" \"${install_full_libdir}/${library_shared_filename_full}\" COMMAND_ERROR_IS_FATAL ANY)"
+    )
+  endif ()
+  # Create soname symlinks, e.g.:
+  #  - libmongoac0.so.1 -> libmongoac0.so.1.2.3
+  #  - libmongoac0.so -> libmongoac0.so.1
+  install (CODE
+    "file (CREATE_LINK \"${library_shared_filename_full}\" \"${install_full_libdir}/${library_shared_filename_major}\" SYMBOLIC)
+     file (CREATE_LINK \"${library_shared_filename_major}\" \"${install_full_libdir}/${library_shared_filename}\" SYMBOLIC)"
   )
 endif ()
 
