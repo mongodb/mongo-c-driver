@@ -21,7 +21,7 @@ When ``runtime`` is null, returns ``0``.
 
 .. important::
 
-   The address may only be equality-compared with other addresses returned by :symbol:`mongoac_runtime_address()`.
+   The address may only be equality-compared with other addresses returned by other ``*_runtime_address()`` functions.
 
 .. seealso::
 

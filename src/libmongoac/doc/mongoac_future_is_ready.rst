@@ -28,4 +28,5 @@ Otherwise, return ``false``.
 
    | :symbol:`mongoac_future_poll`
    | :symbol:`mongoac_future_get_bool`
+   | :symbol:`mongoac_future_get_uint64`
    | :symbol:`mongoac_future_get_void`

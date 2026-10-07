@@ -74,7 +74,7 @@ When the requested return value does not match the type of the result produced b
       uint64_t result = mongoac_future_get_uint64(future, error);
 
       // The return value alone may be insufficient to determine success or failure.
-      if (mongoac_error_code(error) == MONGOAC_ERROR_CODE_NONE) {
+      if (mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK) {
          // `result` is the return value produced by the successful async operation.
          use(result);
       } else {
