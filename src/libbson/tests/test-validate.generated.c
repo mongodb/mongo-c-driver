@@ -2397,6 +2397,76 @@ static inline void _test_case_dbref_valid_trailing_content_no_db(void) {
 }
 
 // ! This code is GENERATED! Do not edit it directly!
+// Case: dbref/valid/dotted-collection-name
+static inline void _test_case_dbref_valid_dotted_collection_name(void) {
+  /**
+   * A valid DBRef of the form:
+   * 
+   *     { $ref: "db.collection", $id: <oid> }
+   */
+  const uint8_t bytes[] = {
+    '.', 0, 0, 0, 2, '$', 'r', 'e', 'f', 0, 0x0e, 0, 0, 0, 'd', 'b', '.', 'c',
+    'o', 'l', 'l', 'e', 'c', 't', 'i', 'o', 'n', 0, 7, '$', 'i', 'd', 0, 'X',
+    0x92, 0x1b, 0x3e, 'n', '2', 0xab, 0x15, 'j', 0x22, 0xb5, 0x9e, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS, &offset, &error);
+  ASSERT_OR_PRINT(is_valid, error);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: dbref/valid/dotted-collection-name-and-database
+static inline void _test_case_dbref_valid_dotted_collection_name_and_database(void) {
+  /**
+   * A valid DBRef of the form:
+   * 
+   *     { $ref: "db.collection", $id: <oid>, $db: "otherdb" }
+   */
+  const uint8_t bytes[] = {
+    0x3f, 0, 0, 0, 2, '$', 'r', 'e', 'f', 0, 0x0e, 0, 0, 0, 'd', 'b', '.', 'c',
+    'o', 'l', 'l', 'e', 'c', 't', 'i', 'o', 'n', 0, 7, '$', 'i', 'd', 0, 'X',
+    0x92, 0x1b, 0x3e, 'n', '2', 0xab, 0x15, 'j', 0x22, 0xb5, 0x9e, 2, '$', 'd',
+    'b', 0, 8, 0, 0, 0, 'o', 't', 'h', 'e', 'r', 'd', 'b', 0, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS, &offset, &error);
+  ASSERT_OR_PRINT(is_valid, error);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
+// Case: dbref/valid/multiple-dots-in-collection-name
+static inline void _test_case_dbref_valid_multiple_dots_in_collection_name(void) {
+  /**
+   * A valid DBRef of the form:
+   * 
+   *     { $ref: "a.b.c", $id: <oid> }
+   */
+  const uint8_t bytes[] = {
+    0x26, 0, 0, 0, 2, '$', 'r', 'e', 'f', 0, 6, 0, 0, 0, 'a', '.', 'b', '.',
+    'c', 0, 7, '$', 'i', 'd', 0, 'X', 0x92, 0x1b, 0x3e, 'n', '2', 0xab, 0x15,
+    'j', 0x22, 0xb5, 0x9e, 0
+  };
+  bson_t doc;
+  mlib_check(bson_init_static(&doc, bytes, sizeof bytes));
+  bson_error_t error = {0};
+  size_t offset = 999999;
+  const bool is_valid = bson_validate_with_error_and_offset(&doc, BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS, &offset, &error);
+  ASSERT_OR_PRINT(is_valid, error);
+  mlib_check(error.code, eq, 0);
+  mlib_check(error.message, str_eq, "");
+}
+
+// ! This code is GENERATED! Do not edit it directly!
 void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "empty", _test_case_empty);
   TestSuite_Add(suite, "/bson/validate/" "bad-element", _test_case_bad_element);
@@ -2510,4 +2580,7 @@ void test_install_generated_bson_validation(TestSuite* suite) {
   TestSuite_Add(suite, "/bson/validate/" "dbref/valid/nested-id-doc", _test_case_dbref_valid_nested_id_doc);
   TestSuite_Add(suite, "/bson/validate/" "dbref/valid/trailing-content", _test_case_dbref_valid_trailing_content);
   TestSuite_Add(suite, "/bson/validate/" "dbref/valid/trailing-content-no-db", _test_case_dbref_valid_trailing_content_no_db);
+  TestSuite_Add(suite, "/bson/validate/" "dbref/valid/dotted-collection-name", _test_case_dbref_valid_dotted_collection_name);
+  TestSuite_Add(suite, "/bson/validate/" "dbref/valid/dotted-collection-name-and-database", _test_case_dbref_valid_dotted_collection_name_and_database);
+  TestSuite_Add(suite, "/bson/validate/" "dbref/valid/multiple-dots-in-collection-name", _test_case_dbref_valid_multiple_dots_in_collection_name);
 }

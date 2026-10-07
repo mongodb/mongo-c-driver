@@ -73,28 +73,28 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
    add_library (zlib_obj OBJECT
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/adler32.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/crc32.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/deflate.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/infback.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inffast.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inflate.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/inftrees.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/trees.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/zutil.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/compress.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/uncompr.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzclose.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzlib.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzread.c
-      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/gzwrite.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/adler32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/crc32.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/deflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/infback.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/inffast.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/inflate.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/inftrees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/trees.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/zutil.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/compress.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/uncompr.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzclose.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzlib.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzread.c
+      ${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/gzwrite.c
    )
    set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
    # This tells the bundled zlib where to find its generated headers
    target_include_directories (zlib_obj
       BEFORE PUBLIC
-      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.2"
    )
    # Disable all warnings for compiling Zlib
    target_compile_options (zlib_obj PRIVATE -w)
@@ -102,8 +102,8 @@ if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
-      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1"
-      "${CMAKE_BINARY_DIR}/src/zlib-1.3.1"
+      "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.3.2"
    )
 endif ()
 
@@ -204,7 +204,7 @@ endfunction()
 # Per-backend link libs/options:
 set(SecureTransport/LINK_LIBRARIES "-framework CoreFoundation" "-framework Security")
 set(SecureTransport/pkg_config_LIBS -framework Corefoundation -framework Security)
-set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib ncrypt.lib)
+set(SecureChannel/LINK_LIBRARIES secur32.lib crypt32.lib bcrypt.lib ncrypt.lib)
 set(SecureChannel/pkg_config_LIBS ${SecureChannel/LINK_LIBRARIES})
 set(OpenSSL/LINK_LIBRARIES OpenSSL::SSL OpenSSL::Crypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
 set(OpenSSL/pkg_config_LIBS -lssl -lcrypto $<$<PLATFORM_ID:Windows>:crypt32.lib>)
@@ -338,7 +338,7 @@ function(_use_sasl libname)
    target_link_libraries(_mongoc-dependencies INTERFACE _mongoc-sasl_backend)
    install(TARGETS _mongoc-sasl_backend EXPORT mongoc-targets)
    if(libname STREQUAL "SSPI")
-      target_link_libraries(_mongoc-sasl_backend INTERFACE secur32.lib crypt32.lib Shlwapi.lib)
+      target_link_libraries(_mongoc-sasl_backend INTERFACE secur32.lib crypt32.lib shlwapi.lib)
       set(backend "SSPI")
    elseif(libname STREQUAL "CYRUS")
       find_package(SASL2 2.0 REQUIRED)
@@ -531,7 +531,7 @@ endif ()
 if (WIN32 AND MONGOC_ENABLE_CRYPTO_CNG)
    cmake_push_check_state()
    list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_WIN32_WINNT=0x0601)
-   list(APPEND CMAKE_REQUIRED_LIBRARIES Bcrypt.lib)
+   list(APPEND CMAKE_REQUIRED_LIBRARIES bcrypt.lib)
    check_symbol_exists (BCryptDeriveKeyPBKDF2 "windows.h;bcrypt.h" HAVE_BCRYPT_PBKDF2)
    cmake_pop_check_state()
 endif ()
@@ -784,17 +784,19 @@ set (STATIC_LIBRARIES
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
-# utf8proc configuration
-find_package(Utf8Proc REQUIRED)
-set(UTF8PROC_INCLUDE_DIRS, "")
-if (USE_BUNDLED_UTF8PROC)
-   set (
-      UTF8PROC_INCLUDE_DIRS
-      "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.8.0"
-   )
-   list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
-else()
-   target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
+# utf8proc is only needed for SCRAM authentication.
+set(UTF8PROC_INCLUDE_DIRS "")
+if (MONGOC_ENABLE_CRYPTO)
+   find_package(Utf8Proc REQUIRED)
+   if (USE_BUNDLED_UTF8PROC)
+      set (
+         UTF8PROC_INCLUDE_DIRS
+         "${mongo-c-driver_SOURCE_DIR}/src/utf8proc-2.11.3"
+      )
+      list(APPEND SOURCES $<TARGET_OBJECTS:utf8proc_obj>)
+   else()
+      target_link_libraries(_mongoc-dependencies INTERFACE utf8proc)
+   endif()
 endif()
 
 if(ENABLE_SRV)
@@ -879,7 +881,7 @@ if (ENABLE_SHARED)
    set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
    target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC bson::shared mongo::detail::c_dependencies)
    target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
-   target_include_directories (mongoc_shared PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+   target_include_directories (mongoc_shared SYSTEM PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_shared PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -898,7 +900,7 @@ if (ENABLE_SHARED)
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
 
-   if (USE_BUNDLED_UTF8PROC)
+   if (MONGOC_ENABLE_CRYPTO AND USE_BUNDLED_UTF8PROC)
       target_compile_definitions (mongoc_shared PRIVATE UTF8PROC_STATIC)
    endif ()
 
@@ -958,7 +960,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
 
    set_property(TARGET mongoc_static APPEND PROPERTY pkg_config_LIBS ${${TLS_BACKEND}/pkg_config_LIBS})
    target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
-   target_include_directories (mongoc_static PRIVATE ${UTF8PROC_INCLUDE_DIRS})
+   target_include_directories (mongoc_static SYSTEM PRIVATE ${UTF8PROC_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_include_directories (mongoc_static PRIVATE ${UTHASH_INCLUDE_DIR})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
@@ -972,7 +974,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
          ${KMS_MSG_DEFINITIONS}
          MCOMMON_NAME_PREFIX=_mongoc_mcommon
    )
-   if (USE_BUNDLED_UTF8PROC)
+   if (MONGOC_ENABLE_CRYPTO AND USE_BUNDLED_UTF8PROC)
       target_compile_definitions (mongoc_static PRIVATE UTF8PROC_STATIC)
    endif ()
    # Several directories in the source and build trees contain headers we would like
@@ -1016,6 +1018,7 @@ endif ()
 
 set (test-libmongoc-sources
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-atomic.c
+   ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-bits.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-mlib.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-mlib-macros.c
    ${mongo-c-driver_SOURCE_DIR}/src/common/tests/test-common-oid.c
@@ -1106,6 +1109,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-callback.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-oidc-cache.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ns-validation.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
@@ -1171,6 +1175,7 @@ if (MONGOC_ENABLE_SSL)
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp-cache.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp.c
    )
 endif ()
 
@@ -1214,7 +1219,7 @@ if (ENABLE_TESTS)
 
       target_link_libraries (${test}
          PUBLIC
-            $<$<PLATFORM_ID:Windows>:DbgHelp.lib>
+            $<$<PLATFORM_ID:Windows>:dbghelp>
             mongoc_static
       )
       # We have tests that test our deprecated api.

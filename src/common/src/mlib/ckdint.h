@@ -13,7 +13,7 @@
  * - `mlib_narrow(Dst, V)` (not from stdckdint, but defined as `mlib_add(Dst, V, 0)`)
  *
  * Where `Dst` is a pointer to integral storage, and `L` and `R` are arbitrary
- * integral expressions. The two-argument variants treat `Dst` as the the left-hand
+ * integral expressions. The two-argument variants treat `Dst` as the left-hand
  * operand for in-place arithmetic.
  *
  * Each macro accepts arguments of arbitrary type at any position, and will "do

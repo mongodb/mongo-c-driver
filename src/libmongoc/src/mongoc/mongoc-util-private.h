@@ -98,6 +98,40 @@ _mongoc_validate_replace(const bson_t *insert, bson_validate_flags_t vflags, bso
 bool
 _mongoc_validate_update(const bson_t *update, bson_validate_flags_t vflags, bson_error_t *error);
 
+/**
+ * @brief Validate a database name argument.
+ *
+ * Rejects a "." (the driver joins `db + "." + collection` into a namespace that the server splits at the first ".",
+ * so the server would never see the intended database name) and an embedded NUL byte (the name is truncated by the
+ * C string and wire protocol cstring encodings). Other characters prohibited by the MongoDB manual are forwarded
+ * faithfully and are left for the server to reject.
+ *
+ * @param db The database name to validate.
+ * @param db_len The length of @p db in bytes, or a negative value if @p db is NUL-terminated.
+ * @param error Optional out-parameter for the error.
+ * @return true if @p db is a usable database name.
+ */
+bool
+_mongoc_validate_db_name(const char *db, int64_t db_len, bson_error_t *error);
+
+/**
+ * @brief Validate a collection name argument.
+ *
+ * Rejects an embedded NUL byte. A "." is permitted in a collection name.
+ *
+ * @param collection The collection name to validate.
+ * @param collection_len The length of @p collection in bytes, or a negative value if @p collection is NUL-terminated.
+ * @param error Optional out-parameter for the error.
+ * @return true if @p collection is a usable collection name.
+ */
+bool
+_mongoc_validate_collection_name(const char *collection, int64_t collection_len, bson_error_t *error);
+
+// _mongoc_validate_db_name_or_log validates a NUL-terminated database name, logging the error at the ERROR level if
+// invalid. For use by APIs that have no `bson_error_t` out-parameter.
+bool
+_mongoc_validate_db_name_or_log(const char *db);
+
 bool
 mongoc_ends_with(const char *str, const char *suffix);
 

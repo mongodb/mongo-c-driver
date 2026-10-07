@@ -100,8 +100,10 @@ def _create_variant():
     return Variant(
         name='testazurekms-variant',
         display_name='Azure KMS',
-        # Azure Virtual Machine created is Debian 11.
-        run_on='debian11-small',  # TODO: switch to 'debian11-latest-small' after DEVPROD-23011 fixed.
+        # The Azure VM image (AZUREKMS_IMAGE in DET) is Debian 12, so the host must provide a
+        # compatible OpenSSL 3 to build the test binary. Debian 12 hosts lack a working `az`
+        # (DEVPROD-23011), so use Ubuntu 22.04, which has both.
+        run_on='ubuntu2204-small',
         tasks=['testazurekms_task_group', 'testazurekms-fail-task'],
         batchtime=20160,
     )  # Use a batchtime of 14 days as suggested by the CSFLE test README

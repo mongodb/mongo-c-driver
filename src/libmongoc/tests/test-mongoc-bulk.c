@@ -4736,6 +4736,9 @@ test_bulk_write_set_client_after_operation(void)
    mongoc_bulk_operation_set_database(bulk, "db");
    mongoc_bulk_operation_set_collection(bulk, "coll");
 
+   ASSERT_CMPSTR(mongoc_bulk_operation_get_database(bulk), "db");
+   ASSERT_CMPSTR(mongoc_bulk_operation_get_collection(bulk), "coll");
+
    ok = (bool)mongoc_bulk_operation_execute(bulk, &reply, &error);
    ASSERT_OR_PRINT(ok, error);
    ASSERT_MATCH(&reply, "{'nInserted': 1 }");
