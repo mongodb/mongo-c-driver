@@ -28,7 +28,7 @@ constexpr mongoac_string_view_t to_mongoac(char const* v) {
         return {};
     }
 
-    return {v, std::strlen(v)};
+    return {v, std::char_traits<char>::length(v)};
 }
 
 constexpr mongoac_string_view_t to_mongoac(std::string_view v) {
