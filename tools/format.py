@@ -201,8 +201,8 @@ def _fixup_includes(fpath: Path, *, mode: RunMode) -> bool:
     """
     Apply #include-fixup to the content of the given source file.
     """
-    # Split into lines
-    old_lines = fpath.read_text().split('\n')
+    # Keep file encoding independent of the host locale, especially on Windows.
+    old_lines = fpath.read_text(encoding='utf-8').split('\n')
     # Do a regex substitution on ever line:
     rx = re.compile(INCLUDE_RE, re.VERBOSE)
     new_lines = [rx.sub(_include_subst_fn(fpath), ln) for ln in old_lines]
@@ -216,7 +216,7 @@ def _fixup_includes(fpath: Path, *, mode: RunMode) -> bool:
         case _, 'apply':
             # We are applying changes. Write the lines back into the file and tell
             # the caller that we succeeded
-            fpath.write_text('\n'.join(new_lines), newline='\n')
+            fpath.write_text('\n'.join(new_lines), encoding='utf-8', newline='\n')
             return True
         case _, 'check':
             # File changes, and we are only checking. Print an error message and indicate failure to the caller

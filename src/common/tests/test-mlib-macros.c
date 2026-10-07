@@ -213,6 +213,22 @@ SUPER_SIMPLE_STATIC_ASSERT(map_counter, MLIB_MAP_MACRO(COUNTER, ~, a, b, c, d) =
 #define OUTER_MAP(Elem, _k, _counter) _mlibMapMacro(INNER_ADD, Elem, p, q)
 SUPER_SIMPLE_STATIC_ASSERT(map_nested, MLIB_MAP_MACRO(OUTER_MAP, ~, 3, 4) == 14);
 
+// Singleton maps use the final helper immediately, including at nested levels.
+#define OUTER_MAP_ONE(Elem, _k, _counter) _mlibMapMacro(INNER_ADD, Elem, p)
+SUPER_SIMPLE_STATIC_ASSERT(map_nested_single, MLIB_MAP_MACRO(OUTER_MAP_ONE, ~, 3) == 3);
+
+// Exercise mapping, not just argument counting, at the documented 63-item limit.
+// Summing the indices also checks that the final item is expanded exactly once.
+#define MAP_MAX_ITEMS                                                                                                \
+   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+SUPER_SIMPLE_STATIC_ASSERT(map_max_count, MLIB_MAP_MACRO(SUM, ~, MAP_MAX_ITEMS) == 63);
+SUPER_SIMPLE_STATIC_ASSERT(map_max_counter, MLIB_MAP_MACRO(COUNTER, ~, MAP_MAX_ITEMS) == 1953);
+
+// Each outer element drives a full-length inner map through the same evaluator.
+#define OUTER_MAP_MAX(Elem, _k, _counter) _mlibMapMacro(INNER_ADD, Elem, MAP_MAX_ITEMS)
+SUPER_SIMPLE_STATIC_ASSERT(map_nested_max, MLIB_MAP_MACRO(OUTER_MAP_MAX, ~, 3, 4) == 441);
+
 /*-
  * Test: Try to use an MLIB_ARGC_PICK macro definition that ultimately expands to
  * the same identifier as the original macro expansion. Macro blue-painting rules

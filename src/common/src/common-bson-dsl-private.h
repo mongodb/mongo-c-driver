@@ -19,6 +19,7 @@
 
 #include <mlib/cmp.h>
 #include <mlib/platform/attributes.h>
+#include <mlib/pp/map.h>
 
 enum {
    /// Toggle this value to enable/disable debug output for all bsonDSL
@@ -65,7 +66,7 @@ mlib_gnu_warning_disable("-Wshadow");
    (void)_bvHalt;                                       \
    (void)_bvContinue;                                   \
    (void)_bvBreak;                                      \
-   _bsonDSL_eval(_bsonParse((Document), __VA_ARGS__));  \
+   MLIB_EVAL(_bsonParse((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings();                          \
    _bsonDSL_end
 
@@ -77,7 +78,7 @@ mlib_gnu_warning_disable("-Wshadow");
    _bsonDSL_disableWarnings();                              \
    bool _bvHalt = false;                                    \
    (void)_bvHalt;                                           \
-   _bsonDSL_eval(_bsonVisitEach((Document), __VA_ARGS__));  \
+   MLIB_EVAL(_bsonVisitEach((Document), __VA_ARGS__));      \
    _bsonDSL_restoreWarnings();                              \
    _bsonDSL_end
 
@@ -339,12 +340,18 @@ mlib_gnu_warning_disable("-Wshadow");
       _bsonDocOperationIfThen_##Then;                            \
    }
 
-#define _bsonDocOperation_if(Condition, ...)                                                                           \
-   _bsonDSL_begin("Conditional append on [%s]", MLIB_STR(Condition));                                                  \
-   /* Pick a sub-macro depending on if there are one or two args */                                                    \
-   _bsonDSL_ifElse(_bsonDSL_hasComma(__VA_ARGS__), _bsonDocOperationIfThenElse, _bsonDocOperationIfThen)(Condition,    \
-                                                                                                         __VA_ARGS__); \
+// clang-format off
+#define _bsonDocOperation_if(Condition, ...) \
+   _bsonDSL_begin("Conditional append on [%s]", MLIB_STR(Condition)); \
+   /* Pick a sub-macro depending on if there are one or two args */ \
+   /* Defer its call so nested maps can reuse MLIB_IF_ELSE after this selection finishes. */ \
+   MLIB_IF_ELSE(_mlibHasComma(__VA_ARGS__)) \
+         (_bsonDocOperationIfThenElse) \
+         (_bsonDocOperationIfThen) \
+      MLIB_NOTHING()(Condition, __VA_ARGS__); \
    _bsonDSL_end
+
+// clang-format on
 
 #define _bsonArrayOperationIfThen_then _bsonBuildArrayWithCurrentContext
 #define _bsonArrayOperationIfElse_else _bsonBuildArrayWithCurrentContext
@@ -364,12 +371,16 @@ mlib_gnu_warning_disable("-Wshadow");
       _bsonArrayOperationIfThen_##Then;                          \
    }
 
-#define _bsonArrayOperation_if(Condition, ...)                                                                \
-   _bsonDSL_begin("Conditional value on [%s]", MLIB_STR(Condition));                                          \
-   /* Pick a sub-macro depending on if there are one or two args */                                           \
-   _bsonDSL_ifElse(_bsonDSL_hasComma(__VA_ARGS__), _bsonArrayOperationIfThenElse, _bsonArrayOperationIfThen)( \
-      Condition, __VA_ARGS__);                                                                                \
+// clang-format off
+#define _bsonArrayOperation_if(Condition, ...) \
+   _bsonDSL_begin("Conditional value on [%s]", MLIB_STR(Condition)); \
+   /* Pick a sub-macro depending on if there are one or two args */ \
+   MLIB_IF_ELSE(_mlibHasComma(__VA_ARGS__)) \
+         (_bsonArrayOperationIfThenElse) \
+         (_bsonArrayOperationIfThen) \
+      MLIB_NOTHING()(Condition, __VA_ARGS__); \
    _bsonDSL_end
+// clang-format on
 
 #define _bsonValueOperationIf_then(X) _bsonValueOperation_##X
 #define _bsonValueOperationIf_else(X) _bsonValueOperation_##X
@@ -393,9 +404,9 @@ mlib_gnu_warning_disable("-Wshadow");
       _bsonArrayOperation_##Element;               \
    }
 
-#define _bsonBuildAppendWithCurrentContext(...) _bsonDSL_mapMacro(_bsonDocOperation, ~, __VA_ARGS__)
+#define _bsonBuildAppendWithCurrentContext(...) _mlibMapMacro(_bsonDocOperation, ~, __VA_ARGS__)
 
-#define _bsonBuildArrayWithCurrentContext(...) _bsonDSL_mapMacro(_bsonArrayOperation, ~, __VA_ARGS__)
+#define _bsonBuildArrayWithCurrentContext(...) _mlibMapMacro(_bsonArrayOperation, ~, __VA_ARGS__)
 
 #define _bsonDSL_Type_double BSON_TYPE_DOUBLE
 #define _bsonDSL_Type_utf8 BSON_TYPE_UTF8
@@ -421,10 +432,15 @@ mlib_gnu_warning_disable("-Wshadow");
 
 #define _bsonVisitOperation_halt _bvHalt = true
 
-#define _bsonVisitOperation_if(Predicate, ...)                                                                        \
-   _bsonDSL_begin("if(%s)", MLIB_STR(Predicate));                                                                     \
-   _bsonDSL_ifElse(_bsonDSL_hasComma(__VA_ARGS__), _bsonVisit_ifThenElse, _bsonVisit_ifThen)(Predicate, __VA_ARGS__); \
+// clang-format off
+#define _bsonVisitOperation_if(Predicate, ...) \
+   _bsonDSL_begin("if(%s)", MLIB_STR(Predicate)); \
+   MLIB_IF_ELSE(_mlibHasComma(__VA_ARGS__)) \
+         (_bsonVisit_ifThenElse) \
+         (_bsonVisit_ifThen) \
+      MLIB_NOTHING()(Predicate, __VA_ARGS__); \
    _bsonDSL_end
+// clang-format on
 
 #define _bsonVisit_ifThenElse(Predicate, Then, Else) \
    if (bsonPredicate(Predicate)) {                   \
@@ -524,11 +540,11 @@ mlib_gnu_warning_disable("-Wshadow");
    } else                                  \
       ((void)0);
 
-#define _bsonVisitOperation_case(...)                 \
-   _bsonDSL_begin("case:%s", "");                     \
-   bool _bvCaseMatched = false;                       \
-   (void)_bvCaseMatched;                              \
-   _bsonDSL_mapMacro(_bsonVisitCase, ~, __VA_ARGS__); \
+#define _bsonVisitOperation_case(...)             \
+   _bsonDSL_begin("case:%s", "");                 \
+   bool _bvCaseMatched = false;                   \
+   (void)_bvCaseMatched;                          \
+   _mlibMapMacro(_bsonVisitCase, ~, __VA_ARGS__); \
    _bsonDSL_end
 
 #define _bsonVisitOperation_append _bsonVisitOneApplyDeferred_append MLIB_NOTHING()
@@ -654,7 +670,7 @@ mlib_gnu_warning_disable("-Wshadow");
       }                                                                          \
    } while (0)
 
-#define _bsonParse_applyOps(...) _bsonDSL_mapMacro(_bsonParse_applyOp, ~, __VA_ARGS__)
+#define _bsonParse_applyOps(...) _mlibMapMacro(_bsonParse_applyOp, ~, __VA_ARGS__)
 
 /// Parse one entry referrenced by the context iterator
 #define _bsonParse_applyOp(P, _nil, Counter) \
@@ -722,9 +738,9 @@ mlib_gnu_warning_disable("-Wshadow");
 
 #define _bsonPredicate_Condition_ __NOTE__Missing_name_for_a_predicate_expression
 
-#define _bsonPredicate_Condition_allOf(...) (1 _bsonDSL_mapMacro(_bsonPredicateAnd, ~, __VA_ARGS__))
-#define _bsonPredicate_Condition_anyOf(...) (0 _bsonDSL_mapMacro(_bsonPredicateOr, ~, __VA_ARGS__))
-#define _bsonPredicate_Condition_not(...) (!(0 _bsonDSL_mapMacro(_bsonPredicateOr, ~, __VA_ARGS__)))
+#define _bsonPredicate_Condition_allOf(...) (1 _mlibMapMacro(_bsonPredicateAnd, ~, __VA_ARGS__))
+#define _bsonPredicate_Condition_anyOf(...) (0 _mlibMapMacro(_bsonPredicateOr, ~, __VA_ARGS__))
+#define _bsonPredicate_Condition_not(...) (!(0 _mlibMapMacro(_bsonPredicateOr, ~, __VA_ARGS__)))
 #define _bsonPredicateAnd(Pred, _ignore, _ignore1) &&_bsonPredicate MLIB_NOTHING()(Pred)
 #define _bsonPredicateOr(Pred, _ignore, _ignore2) || _bsonPredicate MLIB_NOTHING()(Pred)
 
@@ -788,12 +804,17 @@ mlib_gnu_warning_disable("-Wshadow");
 #define _bsonParseOperation_error(S) bsonParseError = (S)
 #define _bsonParseOperation_errorf(S, ...) (bsonParseError = _bson_dsl_errorf(&(S), __VA_ARGS__))
 
+// clang-format off
 /// Perform conditional parsing
-#define _bsonParseOperation_if(Condition, ...)                                                                        \
-   _bsonDSL_begin("if(%s)", MLIB_STR(Condition));                                                                     \
-   /* Pick a sub-macro depending on if there are one or two args */                                                   \
-   _bsonDSL_ifElse(_bsonDSL_hasComma(__VA_ARGS__), _bsonParse_ifThenElse, _bsonParse_ifThen)(Condition, __VA_ARGS__); \
+#define _bsonParseOperation_if(Condition, ...) \
+   _bsonDSL_begin("if(%s)", MLIB_STR(Condition)); \
+   /* Pick a sub-macro depending on if there are one or two args */ \
+   MLIB_IF_ELSE(_mlibHasComma(__VA_ARGS__)) \
+         (_bsonParse_ifThenElse) \
+         (_bsonParse_ifThen) \
+      MLIB_NOTHING()(Condition, __VA_ARGS__); \
    _bsonDSL_end
+// clang-format on
 
 #define _bsonParse_ifThen_then _bsonParse_applyOps
 #define _bsonParse_ifElse_else _bsonParse_applyOps
@@ -825,14 +846,14 @@ mlib_gnu_warning_disable("-Wshadow");
    _bsonDSL_end
 
 #define _bsonVisit_applyOps _bsonVisit_applyOpsDeferred MLIB_NOTHING()
-#define _bsonVisit_applyOpsDeferred(...)                     \
-   do {                                                      \
-      _bsonDSL_mapMacro(_bsonVisit_applyOp, ~, __VA_ARGS__); \
+#define _bsonVisit_applyOpsDeferred(...)                 \
+   do {                                                  \
+      _mlibMapMacro(_bsonVisit_applyOp, ~, __VA_ARGS__); \
    } while (0);
 
 #define bsonBuildArray(BSON, ...)                                                                \
    _bsonDSL_begin("bsonBuildArray(%s, %s)", MLIB_STR(BSON), _bsonDSL_strElide(30, __VA_ARGS__)); \
-   _bsonDSL_eval(_bsonBuildArray(BSON, __VA_ARGS__));                                            \
+   MLIB_EVAL(_bsonBuildArray(BSON, __VA_ARGS__));                                                \
    _bsonDSL_end
 
 #define _bsonBuildArray(BSON, ...)                     \
@@ -855,7 +876,7 @@ mlib_gnu_warning_disable("-Wshadow");
  * @param Pointer The document upon which to append
  * @param ... The Document elements to append to the document
  */
-#define bsonBuildAppend(BSON, ...) _bsonDSL_eval(_bsonBuildAppend(BSON, __VA_ARGS__))
+#define bsonBuildAppend(BSON, ...) MLIB_EVAL(_bsonBuildAppend(BSON, __VA_ARGS__))
 #define _bsonBuildAppend(BSON, ...)                              \
    _bsonDSL_begin("Appending to document '%s'", MLIB_STR(BSON)); \
    _bsonDSL_disableWarnings();                                   \
@@ -1096,150 +1117,5 @@ _bsonVisitIterAs_boolean(void)
 #define bsonAs(Type) MLIB_PASTE(_bsonVisitIterAs_, Type)()
 
 #define _bsonDSL_strElide(MaxLen, ...) (strlen(MLIB_STR(__VA_ARGS__)) > (MaxLen) ? "[...]" : MLIB_STR(__VA_ARGS__))
-
-// clang-format off
-
-/// Now we need a MAP() macro. This idiom is common, but fairly opaque. Below is
-/// some crazy preprocessor trickery to implement it. Fortunately, once we have
-/// MAP(), the remainder of this file is straightforward. This implementation
-/// isn't the simplest one possible, but is one that supports the old
-/// non-compliant MSVC preprocessor.
-
-/// Expand to the 64th argument. See below for why this is useful.
-#define _bsonDSL_pick64th(\
-                    _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, \
-                    _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, \
-                    _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, \
-                    _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, \
-                    _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, \
-                    _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, \
-                    _61, _62, _63, ...) \
-    _63
-
-/**
- * @brief Expands to 1 if the given arguments contain any top-level commas, zero otherwise.
- *
- * There is an expansion of __VA_ARGS__, followed by 62 '1' arguments, followed
- * by single '0'. If __VA_ARGS__ contains no commas, pick64th() will return the
- * single zero. If __VA_ARGS__ contains any top-level commas, the series of ones
- * will shift to the right and pick64th will return one of those ones. (This only
- * works __VA_ARGS__ contains fewer than 62 commas, which is a somewhat reasonable
- * limit.) The MLIB_NOTHING() is a workaround for MSVC's bad preprocessor that
- * expands __VA_ARGS__ incorrectly.
- *
- * If we have __VA_OPT__, this can be a lot simpler.
- */
-#define _bsonDSL_hasComma(...) \
-    _bsonDSL_pick64th \
-    MLIB_NOTHING() (__VA_ARGS__, \
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, \
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, ~)
-
-/**
- * Expands to a single comma if "invoked" as a function-like macro.
- * (This will make sense, I promise.)
- */
-#define _bsonDSL_commaIfRHSHasParens(...) ,
-
-/**
- * @brief Expand to the first argument if `Cond` is 1, the second argument if `Cond` is 0
- */
-#define _bsonDSL_ifElse(Cond, IfTrue, IfFalse) \
-    /* Suppress expansion of the two branches by using the '#' operator */ \
-    MLIB_NOTHING(#IfTrue, #IfFalse)  \
-    /* Concat the cond 1/0 with a prefix macro: */ \
-    MLIB_PASTE(_bsonDSL_ifElse_PICK_, Cond)(IfTrue, IfFalse)
-
-#define _bsonDSL_ifElse_PICK_1(IfTrue, IfFalse) \
-   /* Expand the first operand, throw away the second */ \
-   IfTrue MLIB_NOTHING(#IfFalse)
-#define _bsonDSL_ifElse_PICK_0(IfTrue, IfFalse) \
-   /* Expand to the second operand, throw away the first */ \
-   IfFalse MLIB_NOTHING(#IfTrue)
-
-#ifdef _MSC_VER
-// MSVC's "traditional" preprocessor requires many more expansion passes,
-// but GNU and Clang are very slow when evaluating hugely nested expansions
-// and generate massive macro expansion backtraces.
-#define _bsonDSL_eval_1(...) __VA_ARGS__
-#define _bsonDSL_eval_2(...) _bsonDSL_eval_1(_bsonDSL_eval_1(_bsonDSL_eval_1(_bsonDSL_eval_1(_bsonDSL_eval_1(__VA_ARGS__)))))
-#define _bsonDSL_eval_4(...) _bsonDSL_eval_2(_bsonDSL_eval_2(_bsonDSL_eval_2(_bsonDSL_eval_2(_bsonDSL_eval_2(__VA_ARGS__)))))
-#define _bsonDSL_eval_8(...) _bsonDSL_eval_4(_bsonDSL_eval_4(_bsonDSL_eval_4(_bsonDSL_eval_4(_bsonDSL_eval_4(__VA_ARGS__)))))
-#define _bsonDSL_eval_16(...) _bsonDSL_eval_8(_bsonDSL_eval_8(_bsonDSL_eval_8(_bsonDSL_eval_8(_bsonDSL_eval_8(__VA_ARGS__)))))
-#define _bsonDSL_eval(...) _bsonDSL_eval_16(_bsonDSL_eval_16(_bsonDSL_eval_16(_bsonDSL_eval_16(_bsonDSL_eval_16(__VA_ARGS__)))))
-#else
-// Each level of "eval" applies double the expansions of the previous level.
-#define _bsonDSL_eval_1(...) __VA_ARGS__
-#define _bsonDSL_eval_2(...) _bsonDSL_eval_1(_bsonDSL_eval_1(__VA_ARGS__))
-#define _bsonDSL_eval_4(...) _bsonDSL_eval_2(_bsonDSL_eval_2(__VA_ARGS__))
-#define _bsonDSL_eval_8(...) _bsonDSL_eval_4(_bsonDSL_eval_4(__VA_ARGS__))
-#define _bsonDSL_eval_16(...) _bsonDSL_eval_8(_bsonDSL_eval_8(__VA_ARGS__))
-#define _bsonDSL_eval_32(...) _bsonDSL_eval_16(_bsonDSL_eval_16(__VA_ARGS__))
-#define _bsonDSL_eval(...) _bsonDSL_eval_32(__VA_ARGS__)
-#endif
-
-/**
- * Finally, the Map() macro that allows us to do the magic, which we've been
- * building up to all along.
- *
- * The dance with mapMacro_first, mapMacro_final, and MLIB_NOTHING
- * conditional on argument count is to prevent warnings from pre-C99 about
- * passing no arguments to the '...' parameters. Yet again, if we had C99 and
- * __VA_OPT__ this would be simpler.
- */
-#define _bsonDSL_mapMacro(Action, Constant, ...) \
-   /* Pick our first action based on the content of '...': */ \
-    _bsonDSL_ifElse( \
-      /* If given no arguments: */\
-      MLIB_IS_EMPTY(__VA_ARGS__), \
-         /* expand to MLIB_NOTHING */ \
-         MLIB_NOTHING, \
-         /* Otherwise, expand to mapMacro_first: */ \
-         _bsonDSL_mapMacro_first) \
-   /* Now "invoke" the chosen macro: */ \
-   MLIB_NOTHING() (Action, Constant, __VA_ARGS__)
-
-#define _bsonDSL_mapMacro_first(Action, Constant, ...) \
-   /* Select our next step based on whether we have one or more arguments: */ \
-   _bsonDSL_ifElse( \
-      /* If '...' contains more than one argument (has a top-level comma): */ \
-      _bsonDSL_hasComma(__VA_ARGS__), \
-         /* Begin the mapMacro loop with mapMacro_A: */ \
-         _bsonDSL_mapMacro_A, \
-         /* Otherwise skip to the final step of the loop: */ \
-         _bsonDSL_mapMacro_final) \
-   /* Invoke the chosen macro, setting the counter to zero: */ \
-   MLIB_NOTHING() (Action, Constant, 0, __VA_ARGS__)
-
-/// Handle the last expansion in a mapMacro sequence.
-#define _bsonDSL_mapMacro_final(Action, Constant, Counter, FinalElement) \
-    Action(FinalElement, Constant, Counter)
-
-/**
- * mapMacro_A and mapMacro_B are identical and just invoke each other.
- */
-#define _bsonDSL_mapMacro_A(Action, Constant, Counter, Head, ...) \
-   /* First evaluate the action once: */ \
-   Action(Head, Constant, Counter) \
-   /* Pick our next step: */ \
-   _bsonDSL_ifElse( \
-      /* If '...' contains more than one argument (has a top-level comma): */ \
-      _bsonDSL_hasComma(__VA_ARGS__), \
-         /* Jump to the other mapMacro: */ \
-         _bsonDSL_mapMacro_B, \
-         /* Otherwise go to mapMacro_final */ \
-         _bsonDSL_mapMacro_final) \
-   /* Invoke the next step of the map: */ \
-   MLIB_NOTHING() (Action, Constant, Counter + 1, __VA_ARGS__)
-
-#define _bsonDSL_mapMacro_B(Action, Constant, Counter, Head, ...) \
-    Action(Head, Constant, Counter) \
-    _bsonDSL_ifElse(_bsonDSL_hasComma(__VA_ARGS__), _bsonDSL_mapMacro_A, _bsonDSL_mapMacro_final) \
-    MLIB_NOTHING() (Action, Constant, Counter + 1, __VA_ARGS__)
-
-// clang-format on
-
 
 #endif // MONGO_C_DRIVER_COMMON_BSON_DSL_PRIVATE_H

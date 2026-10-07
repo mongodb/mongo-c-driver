@@ -115,24 +115,34 @@
 #define _mlibStr(...) "" #__VA_ARGS__
 
 /**
- * @brief Force macro expansion on the argument list to occur 65536 times
+ * @brief Repeatedly rescan the argument list to complete deferred macro calls
  *
  * This is useful in the case that macro expansion causes additional macro forms
  * to appear, which will need their own macro expansions.
  *
- * The count comes from the four-deep nesting of `_mlibEvalSixteenTimes` below
- * (16⁴ = 65536). That nesting depth is the only knob to turn if some recursive
- * macro ever needs to expand more times than this. Note that the rescan count is
- * also the upper bound on the recursion depth of anything driven by `MLIB_EVAL`
- * (e.g. `MLIB_MAP_MACRO`), and that raising it costs preprocessing time on every
- * use.
+ * Each level has its own macro name so that an enclosing expansion does not
+ * suppress a later level as recursive self-expansion. Traditional MSVC needs
+ * more rescans than conforming preprocessors; keep its larger expansion tree
+ * out of GNU/Clang builds, where it adds preprocessing cost and long backtraces.
+ *
+ * The expansion trees have 4096 and 64 leaves, respectively. These are not
+ * portable recursion-depth guarantees: argument prescanning differs between
+ * preprocessors. Both must complete full-length and nested MLIB_MAP_MACRO calls.
  */
-#define MLIB_EVAL(...) \
-   _mlibEvalSixteenTimes(_mlibEvalSixteenTimes(_mlibEvalSixteenTimes(_mlibEvalSixteenTimes(__VA_ARGS__))))
+#if defined(_MSC_VER) && !defined(__clang__) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
+#define MLIB_EVAL(...) _mlibEval4096(__VA_ARGS__)
+#else
+#define MLIB_EVAL(...) _mlibEval64(__VA_ARGS__)
+#endif
 #define _mlibEvalOnce(...) __VA_ARGS__
 #define _mlibEvalFourTimes(...) _mlibEvalOnce(_mlibEvalOnce(_mlibEvalOnce(_mlibEvalOnce(__VA_ARGS__))))
 #define _mlibEvalSixteenTimes(...) \
    _mlibEvalFourTimes(_mlibEvalFourTimes(_mlibEvalFourTimes(_mlibEvalFourTimes(__VA_ARGS__))))
+#define _mlibEval64(...) \
+   _mlibEvalSixteenTimes(_mlibEvalSixteenTimes(_mlibEvalSixteenTimes(_mlibEvalSixteenTimes(__VA_ARGS__))))
+#define _mlibEval256(...) _mlibEval64(_mlibEval64(_mlibEval64(_mlibEval64(__VA_ARGS__))))
+#define _mlibEval1024(...) _mlibEval256(_mlibEval256(_mlibEval256(_mlibEval256(__VA_ARGS__))))
+#define _mlibEval4096(...) _mlibEval1024(_mlibEval1024(_mlibEval1024(_mlibEval1024(__VA_ARGS__))))
 
 /**
  * @brief Pass a function-like macro name, inhibiting its expansion until the
