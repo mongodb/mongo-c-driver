@@ -2411,7 +2411,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -2446,7 +2446,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -2481,7 +2481,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -2516,7 +2516,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -2551,7 +2551,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -2586,80 +2586,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-rsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-rsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -2691,7 +2621,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -2726,7 +2656,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -2761,7 +2691,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -2796,7 +2726,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -2831,7 +2761,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -2866,80 +2796,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-ecdsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-ecdsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -2971,7 +2831,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -3006,7 +2866,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -3041,7 +2901,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -3076,7 +2936,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -3111,7 +2971,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -3146,80 +3006,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -3251,7 +3041,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -3286,7 +3076,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -3321,7 +3111,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -3356,7 +3146,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -3391,7 +3181,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -3426,80 +3216,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_1-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -3531,7 +3251,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -3566,7 +3286,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -3601,7 +3321,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -3636,7 +3356,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -3671,7 +3391,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -3706,80 +3426,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-rsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-rsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -3811,7 +3461,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -3846,7 +3496,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -3881,7 +3531,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -3916,7 +3566,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -3951,7 +3601,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -3986,80 +3636,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-ecdsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-ecdsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -4091,7 +3671,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -4126,7 +3706,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -4161,7 +3741,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -4196,7 +3776,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -4231,7 +3811,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -4266,80 +3846,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -4371,7 +3881,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -4406,7 +3916,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -4441,7 +3951,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -4476,7 +3986,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -4511,7 +4021,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -4546,80 +4056,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_2-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple.json
       SSL: ssl
@@ -4651,7 +4091,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -4686,7 +4126,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -4721,7 +4161,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -4756,7 +4196,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -4791,7 +4231,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -4826,80 +4266,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-rsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-rsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -4931,7 +4301,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -4966,7 +4336,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -5001,7 +4371,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -5036,7 +4406,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -5071,7 +4441,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -5106,7 +4476,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -5141,7 +4511,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -5176,7 +4546,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -5211,7 +4581,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -5246,7 +4616,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -5281,7 +4651,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -5316,7 +4686,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -5351,7 +4721,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -5386,80 +4756,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-ecdsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-ecdsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -5491,7 +4791,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -5526,7 +4826,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -5561,7 +4861,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -5596,7 +4896,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -5631,7 +4931,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -5666,80 +4966,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -5771,7 +5001,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -5806,7 +5036,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -5841,7 +5071,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -5876,7 +5106,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -5911,7 +5141,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -5946,7 +5176,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -5981,7 +5211,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -6016,7 +5246,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -6051,7 +5281,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -6086,7 +5316,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -6121,7 +5351,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -6156,7 +5386,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -6191,7 +5421,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -6226,80 +5456,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_3-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -6331,7 +5491,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -6366,7 +5526,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -6401,7 +5561,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -6436,7 +5596,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -6471,7 +5631,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -6506,80 +5666,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-rsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-rsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -6611,7 +5701,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -6646,7 +5736,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -6681,7 +5771,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -6716,7 +5806,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -6751,7 +5841,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -6786,7 +5876,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -6821,7 +5911,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -6856,7 +5946,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -6891,7 +5981,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -6926,7 +6016,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -6961,7 +6051,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -6996,7 +6086,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -7031,7 +6121,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -7066,7 +6156,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -7101,7 +6191,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -7136,7 +6226,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -7171,7 +6261,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -7206,7 +6296,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -7241,7 +6331,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -7276,80 +6366,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-ecdsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-ecdsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -7381,7 +6401,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -7416,7 +6436,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -7451,7 +6471,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -7486,7 +6506,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -7521,7 +6541,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -7556,80 +6576,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -7661,7 +6611,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -7696,7 +6646,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -7731,7 +6681,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -7766,7 +6716,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -7801,7 +6751,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -7836,7 +6786,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -7871,7 +6821,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -7906,7 +6856,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -7941,7 +6891,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -7976,7 +6926,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -8011,7 +6961,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -8046,7 +6996,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -8081,7 +7031,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -8116,7 +7066,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -8151,7 +7101,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -8186,7 +7136,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -8221,7 +7171,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -8256,7 +7206,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -8291,7 +7241,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -8326,80 +7276,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-test_4-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -8431,7 +7311,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -8466,7 +7346,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -8501,7 +7381,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -8536,7 +7416,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -8571,7 +7451,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -8606,80 +7486,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-soft_fail_test-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-soft_fail_test-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -8711,7 +7521,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -8746,7 +7556,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -8781,7 +7591,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -8816,7 +7626,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -8851,7 +7661,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -8886,7 +7696,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -8921,7 +7731,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -8956,7 +7766,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -8991,7 +7801,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -9026,7 +7836,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -9061,7 +7871,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -9096,7 +7906,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -9131,7 +7941,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -9166,80 +7976,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -9271,7 +8011,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -9306,7 +8046,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -9341,7 +8081,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -9376,7 +8116,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -9411,7 +8151,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -9446,80 +8186,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-rsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-rsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
@@ -9551,7 +8221,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -9586,7 +8256,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -9621,7 +8291,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -9656,7 +8326,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -9691,7 +8361,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -9726,7 +8396,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -9761,7 +8431,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -9796,7 +8466,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -9831,7 +8501,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -9866,7 +8536,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -9901,7 +8571,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -9936,7 +8606,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -9971,7 +8641,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -10006,7 +8676,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -10041,7 +8711,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -10076,7 +8746,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -10111,7 +8781,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -10146,7 +8816,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -10181,7 +8851,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -10216,80 +8886,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=ON .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
@@ -10321,7 +8921,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -10356,7 +8956,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -10391,7 +8991,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -10426,7 +9026,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -10461,7 +9061,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -10496,80 +9096,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
@@ -10601,7 +9131,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -10636,7 +9166,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -10671,7 +9201,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -10706,7 +9236,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -10741,7 +9271,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -10776,7 +9306,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -10811,7 +9341,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -10846,7 +9376,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -10881,7 +9411,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -10916,7 +9446,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -10951,7 +9481,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -10986,7 +9516,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -11021,7 +9551,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -11056,7 +9586,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -11091,7 +9621,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -11126,7 +9656,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -11161,7 +9691,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -11196,7 +9726,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -11231,7 +9761,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -11266,80 +9796,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
@@ -11371,7 +9831,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -11406,7 +9866,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -11441,7 +9901,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -11476,7 +9936,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -11511,7 +9971,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -11546,80 +10006,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
@@ -11651,7 +10041,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -11686,7 +10076,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -11721,7 +10111,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -11756,7 +10146,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -11791,7 +10181,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -11826,7 +10216,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
@@ -11861,7 +10251,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '5.0'
@@ -11896,7 +10286,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '4.4'
@@ -11931,7 +10321,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -11966,7 +10356,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -12001,7 +10391,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -12036,7 +10426,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -12071,7 +10461,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -12106,80 +10496,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-test.sh
-  patchable: false
-- name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-mustStaple-disableStapling.json
       SSL: ssl
@@ -12211,7 +10531,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -12246,7 +10566,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -12281,7 +10601,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -12316,7 +10636,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -12351,7 +10671,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -12386,80 +10706,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
-  patchable: false
-- name: ocsp-openssl-cache-rsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        CERT_TYPE=rsa .evergreen/scripts/run-ocsp-cache-test.sh
-  patchable: false
-- name: ocsp-openssl-cache-rsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: rsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl
@@ -12491,7 +10741,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: latest
@@ -12526,7 +10776,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: rapid
@@ -12561,7 +10811,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '9.0'
@@ -12596,7 +10846,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '8.0'
@@ -12631,7 +10881,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '7.0'
@@ -12666,80 +10916,10 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
+        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-setup.sh
   - func: bootstrap-mongo-orchestration
     vars:
       MONGODB_VERSION: '6.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
-  patchable: false
-- name: ocsp-openssl-cache-ecdsa-nodelegate-5.0
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '5.0'
-      OCSP: 'on'
-      ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
-      SSL: ssl
-      TOPOLOGY: server
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      redirect_standard_error_to_output: true
-      shell: bash
-      script: |-
-        set -o errexit
-        CERT_TYPE=ecdsa .evergreen/scripts/run-ocsp-cache-test.sh
-  patchable: false
-- name: ocsp-openssl-cache-ecdsa-nodelegate-4.4
-  tags:
-  - ocsp-openssl
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch-build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch-det
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      shell: bash
-      script: |-
-        set -o errexit
-        TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=OFF .evergreen/scripts/run-ocsp-responder.sh
-  - func: bootstrap-mongo-orchestration
-    vars:
-      MONGODB_VERSION: '4.4'
       OCSP: 'on'
       ORCHESTRATION_FILE: ecdsa-basic-tls-ocsp-disableStapling.json
       SSL: ssl

@@ -14,8 +14,8 @@
 # TEST_COLUMN
 #   Required. Corresponds to a column of the test matrix. Set to one of the following:
 #   TEST_1, TEST_2, TEST_3, TEST_4, SOFT_FAIL_TEST, MALICIOUS_SERVER_TEST_1, MALICIOUS_SERVER_TEST_2
-# CERT_TYPE
-#   Required. Set to either rsa or ecdsa.
+# CERT_TYPE (OCSP_ALGORITHM)
+#   Required. Set to either "rsa" or "ecdsa".
 # MONGODB_PORT
 #   Optional. A custom port to connect to. Defaults to 27017.
 #
@@ -41,25 +41,28 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir:?}/../..")"
 
+declare det_dir
+det_dir="$(to_absolute "${mongoc_dir:?}/../drivers-evergreen-tools")"
+
 declare mongoc_build_dir="${mongoc_dir:?}/cmake-build"
-declare mongoc_install_dir="${mongoc_dir:?}/install-dir"
 declare openssl_install_dir="${mongoc_dir:?}/openssl-install-dir"
 
-declare responder_required
+declare server_type
 case "${TEST_COLUMN:?}" in
-TEST_1) responder_required="valid" ;;
-TEST_2) responder_required="invalid" ;;
-TEST_3) responder_required="valid" ;;
-TEST_4) responder_required="invalid" ;;
-MALICIOUS_SERVER_TEST_1) responder_required="invalid" ;;
+TEST_1) server_type="valid" ;;
+TEST_2) server_type="invalid" ;;
+TEST_3) server_type="valid" ;;
+TEST_4) server_type="invalid" ;;
+MALICIOUS_SERVER_TEST_1) server_type="invalid" ;;
+*) server_type="" ;;
 esac
-: "${responder_required:-}"
+: "${server_type:-}"
 
 on_exit() {
   echo "Cleaning up"
-  if [[ -n "${responder_required:-}" ]]; then
+  if [[ -n "${server_type:-}" ]]; then
     echo "Responder logs:"
-    cat "${mongoc_dir:?}/responder.log"
+    cat "${det_dir:?}/.evergreen/ocsp/ocsp_mock_server.log" || true
   fi
 }
 trap on_exit EXIT
