@@ -851,7 +851,7 @@ dns_option_allowed(mstr_view key)
  * @param uri The object to be updated.
  * @param options The URI options data that will also be updated.
  * @param str The percent-encoded query string element to be decoded.
- * @param position Zero-based character position of the element within the original query.
+ * @param position Zero-based character position within the original query or TXT record.
  * @param from_dns Whether this query string comes from a DNS result
  * @retval true Upon success
  * @retval false Otherwise, and sets `*error`
@@ -865,10 +865,11 @@ _handle_pct_uri_query_param(
    char *value = NULL;
    // Whether the operation succeeded
    bool ret = false;
+   const char *const position_source = from_dns ? "TXT record" : "query";
 
    mstr_view key, val_pct;
    if (!mstr_split_around(str, mstr_cstring("="), &key, &val_pct)) {
-      MONGOC_URI_ERROR(error, "URI option at query position %zu contains no \"=\" sign", position);
+      MONGOC_URI_ERROR(error, "URI option at %s position %zu contains no \"=\" sign", position_source, position);
       goto done;
    }
 
@@ -876,14 +877,15 @@ _handle_pct_uri_query_param(
     * authSource, replicaSet, and loadBalanced options through a TXT record, and
     * MUST raise an error if any other option is encountered."*/
    if (from_dns && !dns_option_allowed(key)) {
-      MONGOC_URI_ERROR(error, "URI option at query position %zu prohibited in TXT records", position);
+      MONGOC_URI_ERROR(error, "URI option at %s position %zu prohibited in TXT records", position_source, position);
       goto done;
    }
 
    value = _strdup_pct_decode(val_pct, error);
    if (!value) {
       // A decoding failure does not establish safe boundaries for quoting the key.
-      MONGOC_URI_ERROR(error, "Value for URI option at query position %zu is invalid: %s", position, error->message);
+      MONGOC_URI_ERROR(
+         error, "Value for URI option at %s position %zu is invalid: %s", position_source, position, error->message);
       goto done;
    }
 
@@ -939,7 +941,7 @@ _handle_pct_uri_query_param(
       if (name) {
          MONGOC_WARNING("Overwriting previously provided value for '%s'", name);
       } else {
-         MONGOC_WARNING("Overwriting previously provided URI option at query position %zu", position);
+         MONGOC_WARNING("Overwriting previously provided URI option at %s position %zu", position_source, position);
       }
    }
 
@@ -950,7 +952,7 @@ _handle_pct_uri_query_param(
    }
 
    if (!_known_uri_option(key)) {
-      MONGOC_WARNING("Unsupported URI option at query position %zu", position);
+      MONGOC_WARNING("Unsupported URI option at %s position %zu", position_source, position);
    }
    _bson_upsert_utf8_icase(options, key, value);
    ret = true;

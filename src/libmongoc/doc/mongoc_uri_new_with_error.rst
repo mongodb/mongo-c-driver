@@ -30,6 +30,8 @@ known, non-sensitive option. Unknown or malformed options are identified by a
 zero-based character position within the query, starting immediately after
 ``?``. These positions refer to the original query, before percent-decoding, and
 do not include the user information.
+Diagnostics for options supplied by DNS identify a position within the original
+TXT record instead.
 
 Returns
 -------

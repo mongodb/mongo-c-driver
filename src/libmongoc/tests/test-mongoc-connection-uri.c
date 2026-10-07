@@ -700,9 +700,20 @@ test_diagnostic_positions(void)
    if (!tracing) {
       mongoc_log_trace_disable();
    }
-   ASSERT(!_mongoc_uri_apply_query_string(uri, mstr_cstring("SENTINELpassword1234=value"), true, &error));
-   assert_message_excludes(error.message, "SENTINELpassword1234");
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "query position 0");
+   const struct {
+      const char *options;
+      const char *message;
+   } txt_errors[] = {
+      {"SENTINELpassword1234=value", "TXT record position 0 prohibited"},
+      {"SENTINELpassword1234", "TXT record position 0 contains no \"=\""},
+      {"replicaSet=SENTINELpassword1234%zz", "TXT record position 0 is invalid"},
+      {"authSource=\xc3\xa9&replicaSet=SENTINELpassword1234%zz", "TXT record position 13 is invalid"},
+   };
+   for (size_t i = 0; i < sizeof txt_errors / sizeof txt_errors[0]; i++) {
+      ASSERT(!_mongoc_uri_apply_query_string(uri, mstr_cstring(txt_errors[i].options), true, &error));
+      assert_message_excludes(error.message, "SENTINELpassword1234");
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, txt_errors[i].message);
+   }
    mongoc_uri_destroy(uri);
    capture_logs(false);
 }
