@@ -20,8 +20,6 @@ Returns
 
 A new :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_t` that must be freed with :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_destroy()`.
 
-|encrypt-string-substring-is-experimental|
-
 .. seealso::
    | :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_destroy`
    | :symbol:`mongoc_client_encryption_encrypt_string_opts_set_substring`
