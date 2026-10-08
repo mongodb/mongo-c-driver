@@ -1,3 +1,8 @@
+libmongoc 1.30.13
+=================
+
+No changes since 1.30.12. Version incremented to match the libbson version.
+
 libmongoc 1.30.12
 =================
 
