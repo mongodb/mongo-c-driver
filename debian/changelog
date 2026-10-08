@@ -1,3 +1,9 @@
+mongo-c-driver (2.5.6-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 08 Oct 2026 14:39:11 -0400
+
 mongo-c-driver (2.5.5-1) unstable; urgency=medium
 
   * New upstream release (Closes: #1148331)
