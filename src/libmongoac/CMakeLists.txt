@@ -314,6 +314,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
     install (
       FILES "${library_static}"
       DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      RENAME "${library_static_filename}"
     )
   endif ()
 endif ()
