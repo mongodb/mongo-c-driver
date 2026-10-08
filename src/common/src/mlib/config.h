@@ -264,6 +264,7 @@
 #define MLIB_IF_GCC(...) MLIB_IF_ELSE(mlib_is_gcc())(__VA_ARGS__)(MLIB_NOTHING(#__VA_ARGS__))
 #define MLIB_IF_GNU_LIKE(...) MLIB_IF_GCC(__VA_ARGS__) MLIB_IF_CLANG(__VA_ARGS__) MLIB_NOTHING(#__VA_ARGS__)
 #define MLIB_IF_UNIX_LIKE(...) MLIB_IF_ELSE(mlib_is_unix())(__VA_ARGS__)(MLIB_NOTHING(#__VA_ARGS__))
+#define MLIB_IF_WIN32(...) MLIB_IF_ELSE(mlib_is_win32())(__VA_ARGS__)()
 
 // note: Bug on GCC preprocessor prevents us from using if/else trick to omit MSVC code
 #if mlib_is_msvc()
