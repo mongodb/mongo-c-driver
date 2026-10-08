@@ -1,3 +1,9 @@
+libmongoc 2.5.6
+===============
+
+No changes since 1.30.12. Version incremented to match the libbson version.
+
+
 libmongoc 2.5.5
 ===============
 

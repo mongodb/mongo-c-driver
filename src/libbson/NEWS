@@ -1,3 +1,15 @@
+libbson 2.5.6
+=============
+
+* Fix edge case in Decimal128 parsing.
+* Enforce minimum size in `bson_reserve_buffer`.
+* Fix `bson_writer_new` when writing empty documents.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Adrian Dole
+
 libbson 2.5.5
 =============
 
