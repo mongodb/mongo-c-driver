@@ -284,7 +284,7 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
         auto const t1 = std::chrono::steady_clock::now();
         auto const iter = mongoac_runtime_block_on_any(runtime, futures, 2u, error);
         auto const t2 = std::chrono::steady_clock::now();
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_MONGOAC_ERROR_OK(error);
         auto const d1 = t2 - t1;
 
         // When not null, the iterator must always point to an element in the futures array.
@@ -301,7 +301,7 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
         auto const t3 = std::chrono::steady_clock::now();
         auto const iter2 = mongoac_runtime_block_on_any(runtime, futures, 2u, error);
         auto const t4 = std::chrono::steady_clock::now();
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_MONGOAC_ERROR_OK(error);
         CHECK(iter == iter2);
         auto const d2 = t4 - t3;
 
@@ -387,7 +387,7 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
         auto const t1 = std::chrono::steady_clock::now();
         auto const iter = mongoac_runtime_block_on_any_with_timeout(runtime, futures, 2u, 0u, error);
         auto const t2 = std::chrono::steady_clock::now();
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_MONGOAC_ERROR_OK(error);
         auto const d1 = t2 - t1;
 
         // When not null, the iterator must always point to an element in the futures array.
@@ -404,7 +404,7 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
         auto const t3 = std::chrono::steady_clock::now();
         auto const iter2 = mongoac_runtime_block_on_any_with_timeout(runtime, futures, 2u, 0u, error);
         auto const t4 = std::chrono::steady_clock::now();
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_MONGOAC_ERROR_OK(error);
         CHECK(iter == iter2);
         auto const d2 = t4 - t3;
 
