@@ -806,7 +806,7 @@ class OCSPTask(MatrixTask):
         yield (
             shell_mongoc(
                 f"""
-                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} .evergreen/scripts/run-ocsp-responder.sh
+                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} .evergreen/scripts/run-ocsp-setup.sh
                 """
             )
         )
@@ -843,6 +843,11 @@ class OCSPTask(MatrixTask):
 
     # Testing in OCSP has a lot of exceptions.
     def do_is_valid_combination(self) -> bool:
+        if self.settings.ssl == 'openssl':
+            # No server versions older than 6.0 are available on ubuntu2204.
+            if self.settings.version not in ['rapid', 'latest']:
+                prohibit(Version(self.settings.version) < Version('6.0'))
+
         if self.settings.ssl == 'darwinssl':
             # Secure Transport quietly ignores a must-staple certificate with no stapled response.
             prohibit(self.test == 'malicious_server_test_2')
