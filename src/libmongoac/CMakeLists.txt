@@ -100,7 +100,7 @@ set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
 set (cargo_library_shared "${CMAKE_SHARED_LIBRARY_PREFIX}mongoac${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set (cargo_library_static "${CMAKE_STATIC_LIBRARY_PREFIX}mongoac${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
-# Cargo uses a separate subdirectory per debug vs. release configurations.
+# Cargo uses a separate subdirectory per build type.
 set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
 
 set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
