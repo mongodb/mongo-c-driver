@@ -250,6 +250,68 @@ macro_rules! safe_as_ref {
     }};
 }
 
+/// Safely convert the raw pointer into a reference when not null.
+///
+/// When `ptr` is null, set `error` and early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const T, error: Option<&mut ErrorT>) -> R {
+///     let res: &T = safe_as_ref_with_error!(ptr, error);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_as_ref_with_error {
+    ($ptr:expr, $error:expr) => {{
+        let ptr = $ptr;
+        match unsafe { ptr.as_ref() } {
+            Some(r) => r,
+            None => {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}: must not be null", stringify!($ptr)),
+                );
+                return Default::default();
+            }
+        }
+    }};
+}
+
+/// Safely convert the raw pointer into an optional reference.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const T) -> R {
+///     let res: Option<&T> = safe_optional_as_ref!(ptr);
+///     if res.is_some() {
+///         assert!(!ptr.is_null());
+///     } else {
+///         assert!(ptr.is_null());
+///     }
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
+#[macro_export]
+macro_rules! safe_optional_as_ref {
+    ($ptr:expr) => {{
+        let ptr = $ptr;
+        unsafe { ptr.as_ref() }
+    }};
+}
+
 /// Safely convert the `StringViewT` into a `str` when not null.
 ///
 /// When `sv.ptr` is null or `sv` contains invalid UTF-8, set `error` and early-return from the function via
