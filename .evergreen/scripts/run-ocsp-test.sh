@@ -47,20 +47,14 @@ det_dir="$(to_absolute "${mongoc_dir:?}/../drivers-evergreen-tools")"
 declare mongoc_build_dir="${mongoc_dir:?}/cmake-build"
 declare openssl_install_dir="${mongoc_dir:?}/openssl-install-dir"
 
-declare server_type
+declare responder_required="no"
 case "${TEST_COLUMN:?}" in
-TEST_1) server_type="valid" ;;
-TEST_2) server_type="invalid" ;;
-TEST_3) server_type="valid" ;;
-TEST_4) server_type="invalid" ;;
-MALICIOUS_SERVER_TEST_1) server_type="invalid" ;;
-*) server_type="" ;;
+TEST_1 | TEST_2 | TEST_3 | TEST_4 | MALICIOUS_SERVER_TEST_1) responder_required="yes" ;;
 esac
-: "${server_type:-}"
 
 on_exit() {
   echo "Cleaning up"
-  if [[ -n "${server_type:-}" ]]; then
+  if [[ "${responder_required:?}" == "yes" ]]; then
     echo "Responder logs:"
     cat "${det_dir:?}/.evergreen/ocsp/ocsp_mock_server.log" || true
   fi
