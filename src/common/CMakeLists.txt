@@ -36,7 +36,8 @@ if(BUILD_TESTING)
             tests/test-mlib-alloc-peer.c
             )
         target_link_libraries(${test_target} PRIVATE mongo::mlib ${owner})
-        target_compile_options(${test_target} PRIVATE ${mongoc-warning-options})
+        # These options select flags using the C compiler, which may differ from C++.
+        target_compile_options(${test_target} PRIVATE "$<$<COMPILE_LANGUAGE:C>:${mongoc-warning-options}>")
         set_target_properties(${test_target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
         if(CMAKE_CXX_COMPILER)
             target_sources(${test_target} PRIVATE tests/test-mlib-alloc.cpp)

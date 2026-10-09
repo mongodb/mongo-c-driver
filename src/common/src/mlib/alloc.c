@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
+#include <mlib/config.h>
+
+// MSVC requires the export annotation before the header's undecorated declaration.
+// MinGW relies on automatic exports, which an explicit dllexport would disable.
+#if mlib_is_msvc()
+__declspec(dllexport) struct _mlib_allocator_state *
+_mlib_get_global_singleton_allocator_object_storage(void) mlib_noexcept;
+#endif
+
 #include <mlib/alloc.h>
 
 #include <stdlib.h>
@@ -38,8 +47,6 @@ _mlib_stdlib_reallocate(void *userdata, void *prev_ptr, size_t size, size_t prev
    return ptr;
 }
 
-// Export this symbol on Windows so that it is visible as part of the DLL API
-MLIB_IF_WIN32(__declspec(dllexport))
 struct _mlib_allocator_state *
 _mlib_get_global_singleton_allocator_object_storage(void)
 {
