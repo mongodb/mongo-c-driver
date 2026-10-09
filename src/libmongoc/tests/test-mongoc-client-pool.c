@@ -128,6 +128,7 @@ test_mongoc_client_pool_set_max_size(void)
 
    mongoc_client_pool_max_size(pool, 3);
 
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 5);
    BSON_ASSERT(mongoc_client_pool_try_pop(pool) == NULL);
 
    for (i = 0; i < 5; i++) {
@@ -136,10 +137,120 @@ test_mongoc_client_pool_set_max_size(void)
       mongoc_client_pool_push(pool, client);
    }
 
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 3);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_num_pushed(pool), ==, 3);
+
    _mongoc_array_clear(&conns);
    _mongoc_array_destroy(&conns);
    mongoc_uri_destroy(uri);
    mongoc_client_pool_destroy(pool);
+}
+
+static void
+test_mongoc_client_pool_max_size_shrinks_idle(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxPoolSize=5");
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri(uri, NULL);
+   mongoc_client_t *clients[5];
+
+   for (int i = 0; i < 5; ++i) {
+      clients[i] = mongoc_client_pool_pop(pool);
+      ASSERT(clients[i]);
+   }
+   for (int i = 0; i < 5; ++i) {
+      mongoc_client_pool_push(pool, clients[i]);
+   }
+
+   mongoc_client_pool_max_size(pool, 2);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 2);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_num_pushed(pool), ==, 2);
+
+   mongoc_client_t *first = mongoc_client_pool_pop(pool);
+   mongoc_client_t *second = mongoc_client_pool_try_pop(pool);
+   ASSERT(first == clients[4]);
+   ASSERT(second == clients[3]);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+
+   mongoc_client_pool_max_size(pool, 4);
+   mongoc_client_t *third = mongoc_client_pool_pop(pool);
+   mongoc_client_t *fourth = mongoc_client_pool_try_pop(pool);
+   ASSERT(third);
+   ASSERT(fourth);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 4);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+
+   mongoc_client_pool_push(pool, first);
+   mongoc_client_pool_push(pool, second);
+   mongoc_client_pool_push(pool, third);
+   mongoc_client_pool_push(pool, fourth);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
+
+static void
+test_mongoc_client_pool_max_size_shrinks_mixed(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxPoolSize=4");
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri(uri, NULL);
+   mongoc_client_t *clients[4];
+
+   for (int i = 0; i < 4; ++i) {
+      clients[i] = mongoc_client_pool_pop(pool);
+      ASSERT(clients[i]);
+   }
+   mongoc_client_pool_push(pool, clients[0]);
+   mongoc_client_pool_push(pool, clients[1]);
+
+   mongoc_client_pool_max_size(pool, 1);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 2);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_num_pushed(pool), ==, 0);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+
+   mongoc_client_pool_push(pool, clients[2]);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 1);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_num_pushed(pool), ==, 0);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+
+   mongoc_client_pool_push(pool, clients[3]);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 1);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_num_pushed(pool), ==, 1);
+   mongoc_client_t *client = mongoc_client_pool_try_pop(pool);
+   ASSERT(client == clients[3]);
+   mongoc_client_pool_push(pool, client);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
+
+static void
+test_mongoc_client_pool_max_size_zero(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxPoolSize=2&waitQueueTimeoutMS=10");
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri(uri, NULL);
+   mongoc_client_t *first = mongoc_client_pool_pop(pool);
+   mongoc_client_t *second = mongoc_client_pool_pop(pool);
+   ASSERT(first);
+   ASSERT(second);
+   mongoc_client_pool_push(pool, first);
+
+   mongoc_client_pool_max_size(pool, 0);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 1);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_num_pushed(pool), ==, 0);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+
+   mongoc_client_pool_push(pool, second);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 0);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+   ASSERT(!mongoc_client_pool_pop(pool));
+
+   mongoc_client_pool_max_size(pool, 2);
+   mongoc_client_t *client = mongoc_client_pool_try_pop(pool);
+   ASSERT(client);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 1);
+   mongoc_client_pool_push(pool, client);
+   mongoc_client_pool_max_size(pool, 0);
+   ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 0);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
 }
 
 typedef struct {
@@ -689,6 +800,9 @@ test_client_pool_install(TestSuite *suite)
    TestSuite_Add(suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
    TestSuite_Add(suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);
    TestSuite_Add(suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
+   TestSuite_Add(suite, "/ClientPool/max_size_shrinks_idle", test_mongoc_client_pool_max_size_shrinks_idle);
+   TestSuite_Add(suite, "/ClientPool/max_size_shrinks_mixed", test_mongoc_client_pool_max_size_shrinks_mixed);
+   TestSuite_Add(suite, "/ClientPool/max_size_zero", test_mongoc_client_pool_max_size_zero);
    TestSuite_Add(suite, "/ClientPool/max_size_wakes_waiters", test_mongoc_client_pool_max_size_wakes_waiters);
 
    TestSuite_Add(suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
