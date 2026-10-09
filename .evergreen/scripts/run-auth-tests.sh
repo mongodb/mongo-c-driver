@@ -46,10 +46,10 @@ auth_host="ldaptest.build.10gen.cc"
 declare gssapi_encoded="${PRINCIPAL/@/%40}"
 auth_plain="${SASL_USER:?}:${SASL_PASS:?}"
 if [[ "${OSTYPE:?}" == "cygwin" ]]; then
-  # SSPI authenticates with a username/password pair in the URI:
+  # Windows SSPI requires a password due to lacking keytab support.
   auth_gssapi="${gssapi_encoded:?}:${SASL_PASS:?}"
 else
-  # A TGT from the keytab above is used for GSSAPI on non-Windows platforms:
+  # Other platforms are fine with using the keytab file.
   auth_gssapi="${gssapi_encoded:?}"
 fi
 
