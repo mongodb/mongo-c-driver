@@ -659,14 +659,17 @@ mstr_contains_any_of(mstr_view str, mstr_view needle)
 }
 #define mstr_contains_any_of(Str, Needle) mstr_contains_any_of(mstr_view_from(Str), mstr_view_from(Needle))
 
-
 /**
  * @brief A simple mutable string type, with a guaranteed null terminator.
  *
  * This type is a trivially relocatable aggregate type that contains a pointer `data`
- * and a size `len`. If not null, the pointer `data` points to an array of mutable
- * `char` of length `len + 1`, where the character at `data[len]` is always zero,
- * and must not be modified.
+ * and a size `len`. If not null, `data` points ton array of `len` mutable characters
+ * of string content, followed by a null terminator at `data[len]` that must not be modified.
+ * Any reserved storage beyond the terminator is not part of the string content
+ * and must not be accessed directly. Resize the string before writing new content.
+ *
+ * Only mstr APIs may allocate or free its storage. `data` must not be passed
+ * directly to `free` or `realloc`, or replaced with an externally allocated buffer.
  *
  * @note The string MAY contain nul (zero-value) characters, so using them with
  * C string APIs could truncate unexpectedly.
@@ -680,24 +683,99 @@ typedef struct mstr {
     * @brief Pointer to the first char in the string, or NULL if
     * the string is null.
     *
-    * The pointed-to character array has a length of `len + 1`, where
-    * the character at `data[len]` is always null.
+    * Only the first `len` characters are mutable string content. The character
+    * at `data[len]` is always null; storage beyond it must not be accessed directly.
     *
     * @warning Attempting to overwrite the null character at `data[len]`
     * will result in undefined behavior!
     *
     * @note An empty string is not equivalent to a null string! An empty string
-    * will still point to an array of length 1, where the only char is the null
-    * terminator.
+    * has a non-null `data` pointer whose first character is the null terminator.
     */
    char *data;
    /**
-    * @brief The number of characters in the array pointed-to by `data`
-    * that precede the null terminator.
+    * @brief The number of characters of string content, excluding the null terminator.
     */
    size_t len;
 } mstr;
 
+/**
+ * @brief The maximum capacity of an `mstr` string, in code units.
+ *
+ * Attempting to reserve more than this many code units will unconditonally fail
+ * allocation.
+ */
+static const size_t mstr_max_capacity = (size_t)PTRDIFF_MAX - sizeof(size_t) - 1u;
+
+
+/**
+ * @internal
+ * @brief Recover the allocation base, or NULL for a null string.
+ */
+static inline char *
+_mstr_allocation(const mstr *str)
+{
+   return str->data ? str->data - sizeof(size_t) : NULL;
+}
+
+/**
+ * @brief Obtain the number of characters that fit without reallocating, excluding
+ * the null terminator. A null string has capacity zero.
+ *
+ * @param str Pointer to a valid or null `mstr`.
+ *
+ * Capacity describes available room for growth, not accessible string content.
+ * Resize the string before accessing additional characters.
+ */
+static inline size_t
+mstr_capacity(const mstr *str)
+{
+   size_t capacity = 0;
+   if (str->data) {
+      // The header is stored as bytes: do not access it through a type-punned pointer.
+      memcpy(&capacity, _mstr_allocation(str), sizeof capacity);
+   }
+   return capacity;
+}
+
+/**
+ * @brief Ensure storage for at least `capacity` characters, excluding the null terminator.
+ *
+ * @param str Pointer to a valid or null `mstr`.
+ * @param capacity Minimum capacity to reserve.
+ * @return true If sufficient storage is available.
+ * @return false If the capacity is too large or allocation fails. `*str` is not modified.
+ *
+ * This never shrinks storage or changes the string's length or contents. Reserving
+ * on a null string initializes an allocated empty string, even for capacity zero.
+ * Reserved storage is not string content and must not be accessed directly;
+ * resize the string before writing additional characters.
+ * Successful growth may invalidate existing pointers and views into the string.
+ */
+static inline bool
+mstr_reserve(mstr *str, size_t capacity)
+{
+   if (str->data && capacity <= mstr_capacity(str)) {
+      // Already enough room in the string, no need to do anything
+      return true;
+   }
+   if (mlib_unlikely(capacity > mstr_max_capacity)) {
+      // The allocation would be too large
+      return false;
+   }
+   // The number of bytes that we actually need to allocate
+   const size_t alloc_size = sizeof(size_t) + capacity + 1u;
+   char *const allocation = (char *)realloc(_mstr_allocation(str), alloc_size);
+   if (!allocation) {
+      return false;
+   }
+   // Write the capacity size cookie into the allocated buffer
+   memcpy(allocation, &capacity, sizeof capacity);
+   // Store the beginning of the string immediately following the cookie
+   str->data = allocation + sizeof(size_t);
+   str->data[str->len] = '\0';
+   return true;
+}
 
 /**
  * @brief Resize an existing or null `mstr`, without initializing any of the
@@ -717,28 +795,37 @@ typedef struct mstr {
  * values. The char at `str.data[new_len]` WILL be set to zero, to ensure there
  * is a null terminator. The caller should always initialize the new string
  * content to ensure that the string has a specified value.
+ *
+ * Storage grows geometrically and is retained when shrinking. Resizing within
+ * capacity does not invalidate pointers or views. On failure, `*str` is not modified.
  */
 static inline bool
 mstr_resize_for_overwrite(mstr *const str, const size_t new_len)
 {
-   // We need to allocate one additional char to hold the null terminator
-   size_t alloc_size = new_len;
-   if (mlib_unlikely(mlib_add(&alloc_size, 1) || alloc_size > PTRDIFF_MAX)) {
-      // Allocation size is too large
-      return false;
+   // The current string capacity
+   const size_t capacity = mstr_capacity(str);
+   // The new capacity
+   size_t new_capacity = capacity;
+   if (new_len > capacity) {
+      // Grow by 1.5x for amortized constant-time character appends. Saturate
+      // before adding the header and terminator, so rounding cannot overflow.
+      if (mlib_add(&new_capacity, capacity / 2) || new_capacity > mstr_max_capacity) {
+         new_capacity = mstr_max_capacity;
+      }
+      if (new_capacity < new_len) {
+         // Caller requested more capacity than our regular growth factor. Just use their
+         // request instead.
+         new_capacity = new_len;
+      }
    }
-   // Try to (re)allocate the region
-   char *data = (char *)realloc(str->data, alloc_size);
-   if (!data) {
-      // Failed to (re)allocate
+   // Try to make room now
+   if (!mstr_reserve(str, new_capacity)) {
       return false;
    }
    // Note: We do not initialize any of the data in the newly allocated region.
    // We only set the null terminator. It is up to the caller to do the rest of
    // the init.
-   data[new_len] = '\0';
-   // Update the final object
-   str->data = data;
+   str->data[new_len] = '\0';
    str->len = new_len;
    // Success
    return true;
@@ -762,11 +849,9 @@ mstr_resize(mstr *str, size_t new_len)
       // Failed to allocate new storage for the string
       return false;
    }
-   // Check how many chars we added/removed
-   const ptrdiff_t len_diff = mlib_assert_sub(ptrdiff_t, new_len, str->len);
-   if (len_diff > 0) {
+   if (new_len > old_len) {
       // We added new chars. Zero-init all the new chars
-      memset(str->data + old_len, 0, (size_t)len_diff);
+      memset(str->data + old_len, 0, new_len - old_len);
    }
    // Success
    return true;
@@ -778,11 +863,11 @@ mstr_resize(mstr *str, size_t new_len)
  * @param new_len The length of the new string, in characters, not including the null terminator
  * @return mstr A new string. The string's `data` member is NULL in case of failure
  *
- * The character array allocated for the string will always be `new_len + 1` `char` in length,
- * where the char at the index `new_len` is a null terminator. This means that a string of
- * length zero will allocate a single character to store the null terminator.
+ * On success, the string contains `new_len` characters followed by a null terminator
+ * at `data[new_len]`. A string of length zero is an allocated empty string, not a
+ * null string.
  *
- * All characters in the new string are initialize to zero. If you want uninitialized
+ * All characters in the new string are initialized to zero. If you want uninitialized
  * string content, use `mstr_resize_for_overwrite`.
  */
 static inline mstr
@@ -806,7 +891,7 @@ static inline void
 mstr_destroy(mstr *s)
 {
    if (s) {
-      free(s->data);
+      free(_mstr_allocation(s));
       s->len = 0;
       s->data = NULL;
    }
@@ -1011,7 +1096,10 @@ mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
  * @return true If the operation was successful
  * @return false Otherwise
  *
- * If case of failure, `*str` is not modified.
+ * In case of failure, `*str` is not modified.
+ *
+ * Appending a single character takes amortized constant time. Appending a suffix
+ * takes amortized time proportional to the suffix length.
  */
 static inline bool
 mstr_append(mstr *str, mstr_view suffix)
