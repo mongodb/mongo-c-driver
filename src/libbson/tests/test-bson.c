@@ -934,6 +934,32 @@ test_bson_validate_deep(void)
    bson_destroy(&deep);
 }
 
+// Test duplicate key detection on a large document. A quadratic algorithm would be very slow.
+static void
+test_bson_validate_duplicate_keys_large(void)
+{
+   const int n = 100000;
+   bson_t bson = BSON_INITIALIZER;
+   char key[16];
+   for (int i = 0; i < n; i++) {
+      bson_snprintf(key, sizeof key, "k%d", i);
+      ASSERT(bson_append_int32(&bson, key, -1, i));
+   }
+   bson_error_t err;
+   ASSERT_OR_PRINT(bson_validate_with_error(&bson, BSON_VALIDATE_DUPLICATE_KEYS, &err), err);
+
+   // Append a duplicate of a key in the middle
+   const size_t dup_offset = bson.len - 1u;
+   bson_snprintf(key, sizeof key, "k%d", n / 2);
+   ASSERT(bson_append_int32(&bson, key, -1, 0));
+   size_t offset;
+   ASSERT(!bson_validate_with_error_and_offset(&bson, BSON_VALIDATE_DUPLICATE_KEYS, &offset, &err));
+   mlib_check(err.code, eq, BSON_VALIDATE_DUPLICATE_KEYS);
+   mlib_check(err.message, str_eq, "Duplicate element key: \"k50000\"");
+   mlib_check(offset, eq, dup_offset);
+   bson_destroy(&bson);
+}
+
 static void
 test_bson_validate_with_error_and_offset(void)
 {
@@ -1695,6 +1721,12 @@ test_bson_reserve_buffer_errors(void)
    bson_t bson = BSON_INITIALIZER;
    bson_t child;
    uint8_t data[5] = {0};
+
+   /* too small: less than the minimum BSON document size */
+   for (uint32_t i = 0u; i < 5u; i++) {
+      ASSERT(!bson_reserve_buffer(&bson, i));
+      ASSERT_CMPUINT32(bson.len, ==, 5u);
+   }
 
    /* too big */
    ASSERT(!bson_reserve_buffer(&bson, (uint32_t)(BSON_MAX_SIZE + 1u)));
@@ -3083,6 +3115,7 @@ test_bson_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/utf8_key", test_bson_utf8_key);
    TestSuite_Add(suite, "/bson/validate/deep", test_bson_validate_deep);
    TestSuite_Add(suite, "/bson/validate/with_error_and_offset", test_bson_validate_with_error_and_offset);
+   TestSuite_Add(suite, "/bson/validate/duplicate_keys_large", test_bson_validate_duplicate_keys_large);
    TestSuite_Add(suite, "/bson/new_1mm", test_bson_new_1mm);
    TestSuite_Add(suite, "/bson/init_1mm", test_bson_init_1mm);
    TestSuite_Add(suite, "/bson/build_child", test_bson_build_child);

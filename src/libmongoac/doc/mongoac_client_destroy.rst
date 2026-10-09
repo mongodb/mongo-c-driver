@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-Destroys the given :symbol:`mongoac_client_t` and decrements its shared state's reference counter.
+Destroy the given :symbol:`mongoac_client_t` and decrement its shared state's reference counter.
 
 When ``client`` is null, does nothing.
 

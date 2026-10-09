@@ -266,8 +266,13 @@ _mongoc_convert_validate_flags(mongoc_client_t *client,
                         bson_iter_key(iter));
       }
    } else if (BSON_ITER_HOLDS_INT32(iter)) {
-      if (bson_iter_int32(iter) <= 0x1F) {
-         *flags = (bson_validate_flags_t)bson_iter_int32(iter);
+      const int32_t value = bson_iter_int32(iter);
+      const int32_t known_flags = BSON_VALIDATE_NONE | BSON_VALIDATE_UTF8 | BSON_VALIDATE_DOLLAR_KEYS |
+                                  BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_UTF8_ALLOW_NULL | BSON_VALIDATE_EMPTY_KEYS |
+                                  BSON_VALIDATE_CORRUPT | BSON_VALIDATE_DUPLICATE_KEYS;
+      // Negative values were historically accepted. Accept them for backwards compatibility.
+      if (value < 0 || (value & ~known_flags) == 0) {
+         *flags = (bson_validate_flags_t)value;
          return true;
       } else {
          CONVERSION_ERR("Invalid field \"%s\" in opts, must be a bitwise-OR of"
