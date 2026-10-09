@@ -6,7 +6,7 @@
 # https://github.com/mongodb/specifications/tree/master/source/ocsp-support/tests#integration-tests-permutations-to-be-tested.
 # Based on the test case, this may start a mock responder process.
 # Preconditions:
-# - A mock responder configured for the test case is running (use run-ocsp-responder.sh – before running mongod).
+# - A mock responder configured for the test case is running (use run-ocsp-setup.sh – before running mongod).
 # - mongod is running with the correct configuration. (use integration-tests.sh or spawn one manually).
 #
 # Environment variables:
