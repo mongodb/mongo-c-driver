@@ -308,6 +308,22 @@ functions:
         args:
           - -c
           - find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;
+  fetch-enterprise-auth-secrets:
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: drivers-evergreen-tools/.evergreen/secrets_handling
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ./setup-secrets.sh drivers/enterprise_auth
   fetch-source:
     - command: git.get_project
       type: setup

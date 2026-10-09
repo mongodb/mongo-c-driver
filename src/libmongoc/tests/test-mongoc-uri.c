@@ -2263,7 +2263,7 @@ test_mongoc_uri_tls_ssl(const char *tls,
    bson_snprintf(url_buffer,
                  sizeof(url_buffer),
                  "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,"
-                 "ST=New York,C=US@ldaptest.10gen.cc/?"
+                 "ST=New York,C=US@ldaptest.build.10gen.cc/?"
                  "%s=true&authMechanism=MONGODB-X509&"
                  "%s=tests/x509gen/ldaptest-client-key-and-cert.pem&"
                  "%s=tests/x509gen/ldaptest-ca-cert.crt&"
