@@ -19,7 +19,7 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
+#include <mlib/platform/attributes.h>
 
 
 static BSON_INLINE bool

@@ -29,8 +29,6 @@
 #include <common-json-private.h>
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 
-#include <mlib/config.h>
-
 #include <TestSuite.h>
 
 #include <limits.h>

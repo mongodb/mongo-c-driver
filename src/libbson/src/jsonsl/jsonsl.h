@@ -15,8 +15,6 @@
 #include <bson/config.h>
 #include <bson/compat.h>
 
-#include <mlib/config.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>

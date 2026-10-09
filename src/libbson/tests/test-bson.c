@@ -2513,6 +2513,19 @@ test_bson_dsl_build(void)
       "anotherTop" : null
    });
    bson_destroy(&doc);
+
+   // Alternate document and array contexts so nested maps and conditionals must
+   // all finish within the outermost evaluator.
+   bsonBuild(doc,
+             if (1,
+                 then(kv("top",
+                         doc(kv("items",
+                                array(doc(if (0,
+                                              then(kv("wrong", null)),
+                                              else(kv("inner", doc(kv("values", array(int32(42)))))))))))))));
+   BSON_ASSERT(!bsonBuildError);
+   ASSERT_BSON_EQUAL(doc, {"top" : {"items" : [ {"inner" : {"values" : [42]}} ]}});
+   bson_destroy(&doc);
 }
 
 static void

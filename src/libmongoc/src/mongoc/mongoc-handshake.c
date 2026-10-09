@@ -45,7 +45,6 @@
 #include <bson/compat.h>
 
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init

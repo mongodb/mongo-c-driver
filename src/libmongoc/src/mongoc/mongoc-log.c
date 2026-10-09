@@ -35,8 +35,6 @@
 
 #include <mongoc/mongoc-log.h>
 
-#include <mlib/config.h>
-
 #include <stdarg.h>
 #include <time.h>
 

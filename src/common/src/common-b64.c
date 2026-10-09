@@ -45,7 +45,6 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
 #include <mlib/loop.h>
 
 #define Assert(Cond) \

@@ -18,8 +18,6 @@
 
 #include <mongoc/mongoc.h>
 
-#include <mlib/config.h>
-
 #include <TestSuite.h>
 #include <mock_server/future-functions.h>
 #include <mock_server/mock-server.h>

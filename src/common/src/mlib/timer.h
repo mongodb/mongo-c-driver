@@ -23,7 +23,6 @@
 #ifndef MLIB_TIMER_H_INCLUDED
 #define MLIB_TIMER_H_INCLUDED
 
-#include <mlib/config.h>
 #include <mlib/duration.h>
 #include <mlib/time_point.h>
 

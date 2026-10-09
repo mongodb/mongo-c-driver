@@ -1,7 +1,7 @@
 /**
- * @file str_vec.h
- * @brief This file defines mstr_vec, a common "array of strings" type
- * @date 2025-09-30
+ * @file mlib/platform/os.h
+ * @brief Operating system detection
+ * @date 2025-10-31
  *
  * @copyright Copyright 2009-present MongoDB, Inc.
  *
@@ -17,15 +17,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef MLIB_STR_VEC_H_INCLUDED
-#define MLIB_STR_VEC_H_INCLUDED
 
+#ifndef MLIB_PLATFORM_OS_H_INCLUDED
+#define MLIB_PLATFORM_OS_H_INCLUDED
 
-#include <mlib/str.h>
+#include <mlib/pp/if-else.h>
 
-#define T mstr
-#define VecDestroyElement(Ptr) (mstr_destroy(Ptr))
-#define VecCopyElement(Dst, Src) (*Dst = mstr_copy(*Src), Dst->data != NULL)
-#include <mlib/vec.th>
+#if defined(_WIN32)
+#define mlib_is_win32() 1
+#define mlib_is_unix() 0
+#else
+#define mlib_is_unix() 1
+#define mlib_is_win32() 0
+#endif
 
-#endif // MLIB_STR_VEC_H_INCLUDED
+#define MLIB_IF_UNIX_LIKE(...) MLIB_IF(mlib_is_unix())(__VA_ARGS__)
+#define MLIB_IF_WIN32(...) MLIB_IF(mlib_is_win32())(__VA_ARGS__)
+
+#endif // MLIB_PLATFORM_OS_H_INCLUDED

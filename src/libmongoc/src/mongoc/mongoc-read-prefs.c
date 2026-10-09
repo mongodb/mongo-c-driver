@@ -20,7 +20,6 @@
 #include <mongoc/mongoc-trace-private.h>
 
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 
 
 mongoc_read_prefs_t *
