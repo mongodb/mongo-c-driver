@@ -42,3 +42,4 @@ The associated runtime may be obtained with :symbol:`mongoac_client_get_runtime(
     mongoac_client_get_runtime
 
     mongoac_client_shutdown
+    mongoac_client_shutdown_async
