@@ -28,7 +28,7 @@ COMPILE_MATRIX = [
 
 TEST_MATRIX = [
     ('windows-vsCurrent',   'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], ['4.2', '4.4', '5.0', '6.0', '7.0',                         ]),
-    ('windows-2022-latest', 'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], [                                   '8.0', 'rapid', 'latest']),
+    ('windows-2022-latest', 'vs2022x64', None, 'sspi', ['auth'], ['server', 'replica', 'sharded'], [                                   '8.0', '9.0', 'rapid', 'latest']),
 
     # sharded + min only.
     ('windows-vsCurrent',   'mingw',     None, 'sspi',  ['auth'], ['sharded'], ['4.2']),

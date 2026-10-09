@@ -699,7 +699,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
-            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '9.0', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -712,6 +712,7 @@ class AWSTestTask(MatrixTask):
         yield from super().additional_tags()
         yield f'{self.settings.version}'
         yield 'test-aws'
+        yield f'test-aws-{self.settings.testcase}'
 
     def post_commands(self) -> Iterable[Value]:
         return [
@@ -754,7 +755,7 @@ class OCSPTask(MatrixTask):
             ('delegate', ['delegate', 'nodelegate']),
             ('cert', ['rsa', 'ecdsa']),
             ('ssl', ['openssl', 'darwinssl', 'winssl']),
-            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '9.0', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 

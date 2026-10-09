@@ -1,5 +1,145 @@
-libmongoc 2.4.0 [UNRELEASED]
+libmongoc 2.6.0 [unreleased]
 ============================
+
+## Notes
+
+* Upgraded bundled zlib from 1.3.1 to 1.3.2.
+
+libmongoc 2.5.6
+===============
+
+No changes since 2.5.5. Version incremented to match the libbson version.
+
+libmongoc 1.30.13
+=================
+
+No changes since 1.30.12. Version incremented to match the libbson version.
+
+
+libmongoc 2.5.4
+===============
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.30.12
+=================
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 2.5.4
+===============
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 1.30.11
+=================
+
+## Fixes
+
+* Fix allocation in Windows Secure Channel.
+* Fix error handling in SCRAM authentication.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 2.5.3
+===============
+
+## Fixes
+
+* Use exact match for file ID in GridFS delete methods
+* Validate SASL username
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Kevin Albertson
+  
+libmongoc 1.30.10
+=================
+
+## Fixes
+
+* Use exact match for file ID in GridFS delete methods
+* Validate SASL username
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Connor MacDonald
+  * Kevin Albertson
+
+
+libmongoc 2.5.2
+===============
+
+## Fixes
+
+* Fix OCSP error handling.
+* Fix unsafe casts during JSON parsing.
+* Fix possible unsafe truncation when logging base64.
+* Fix unsafe calls to `bson_next_power_of_two`.
+
+libmongoc 1.30.9
+================
+
+## Fixes
+
+* Fix OCSP error handling.
+* Fix unsafe casts during JSON parsing.
+* Fix possible unsafe truncation when logging base64.
+* Fix unsafe calls to `bson_next_power_of_two`.
+
+libmongoc 2.5.1
+===============
+
+## Fixes
+- Validate database and collection name arguments against "." and NUL bytes.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+libmongoc 2.5.0
+===============
+
+## New Features
+
+* Honor the server-supplied `baseBackoffMS` on responses labeled `SystemOverloadedError`, using it in place of the driver's default base delay when calculating how long to wait before retrying.
+* Add collection bulk write getters.
+
+## Improvements
+
+* Update bundled utf8proc to 2.11.3.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Christian Schmitz
+  * Connor MacDonald
+  * dfengliu
+
+
+libmongoc 2.4.0
+===============
 
 ## Notes
 
@@ -16,6 +156,24 @@ libmongoc 2.4.0 [UNRELEASED]
 
 * The Queryable Encryption "String" algorithm (`MONGOC_ENCRYPT_ALGORITHM_STRING`) is now generally available, supporting `prefix`, `suffix`, and `substring` query types.
   * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types remains experimental.
+* Snapshot sessions expose APIs to get and set snapshot times.
+* Support AWS STS regional endpoints.
+
+## Fixes
+
+* Fix handling of verbose results in `bulkWrite` replies.
+* Fix handling of SCRAM replies.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Connor MacDonald
+  * Adrian Dole
+  * bvalente
+
 
 libmongoc 2.3.3
 ===============

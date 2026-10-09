@@ -34,6 +34,7 @@ BSON_BEGIN_DECLS
 mongoc_cursor_t *
 _mongoc_aggregate(mongoc_client_t *client,
                   const char *ns,
+                  const char *db,
                   mongoc_query_flags_t flags,
                   const bson_t *pipeline,
                   const bson_t *opts,

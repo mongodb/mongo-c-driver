@@ -106,11 +106,6 @@ ubsan_opts=(
   "abort_on_error=1"
 )
 
-# UBSan with Clang 3.8 fails to parse the suppression file.
-if [[ "${distro_id:?}" != ubuntu1604-* ]]; then
-  ubsan_opts+=("suppressions=.ubsan-suppressions")
-fi
-
 # DEVPROD-1167: high variance observed when running MongoDB server on macOS distros:
 if [[ "${distro_id:?}" == macos-* ]]; then
   export MONGOC_TEST_SKIP_TIMEOUT_SENSITIVE="on"

@@ -205,7 +205,7 @@ mlib_time_difference(mlib_time_point stop, mlib_time_point start)
  * @param t The time point to be inspected
  * @return mlib_duration If `t` is in the past, returns the duration of time
  * that has elapsed since that point-in-time. If `t` is in the future, returns
- * a negative time representing the amount of time that be be waited until we
+ * a negative time representing the amount of time that be waited until we
  * reach `t`.
  */
 static inline mlib_duration

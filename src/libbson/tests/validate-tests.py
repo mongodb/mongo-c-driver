@@ -1459,6 +1459,46 @@ CASES: list[TestCase] = [
         """,
         flags=BSON_VALIDATE_DOLLAR_KEYS,
     ),
+    TestCase(
+        'dbref/valid/dotted-collection-name',
+        doc(
+            utf8elem('$ref', 'db.collection'),
+            elem('$id', Tag.OID, b'\x58\x92\x1b\x3e\x6e\x32\xab\x15\x6a\x22\xb5\x9e'),
+        ),
+        """
+        A valid DBRef of the form:
+
+            { $ref: "db.collection", $id: <oid> }
+        """,
+        flags=f'{BSON_VALIDATE_DOLLAR_KEYS} | {BSON_VALIDATE_DOT_KEYS}',
+    ),
+    TestCase(
+        'dbref/valid/dotted-collection-name-and-database',
+        doc(
+            utf8elem('$ref', 'db.collection'),
+            elem('$id', Tag.OID, b'\x58\x92\x1b\x3e\x6e\x32\xab\x15\x6a\x22\xb5\x9e'),
+            utf8elem('$db', 'otherdb'),
+        ),
+        """
+        A valid DBRef of the form:
+
+            { $ref: "db.collection", $id: <oid>, $db: "otherdb" }
+        """,
+        flags=f'{BSON_VALIDATE_DOLLAR_KEYS} | {BSON_VALIDATE_DOT_KEYS}',
+    ),
+    TestCase(
+        'dbref/valid/multiple-dots-in-collection-name',
+        doc(
+            utf8elem('$ref', 'a.b.c'),
+            elem('$id', Tag.OID, b'\x58\x92\x1b\x3e\x6e\x32\xab\x15\x6a\x22\xb5\x9e'),
+        ),
+        """
+        A valid DBRef of the form:
+
+            { $ref: "a.b.c", $id: <oid> }
+        """,
+        flags=f'{BSON_VALIDATE_DOLLAR_KEYS} | {BSON_VALIDATE_DOT_KEYS}',
+    ),
 ]
 
 if __name__ == '__main__':

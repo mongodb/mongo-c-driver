@@ -986,7 +986,6 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
    const mongoc_retry_backoff_params_t retry_backoff_params = {
       .growth_factor = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR,
-      .backoff_initial = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL,
       .backoff_max = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX,
    };
 
@@ -1006,7 +1005,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       if (is_first_attempt) {
          is_first_attempt = false;
       } else {
-         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
+         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(
+            retry_backoff_generator, MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL);
 
          const mlib_timer backoff_timer = mlib_expires_after(backoff_duration);
 

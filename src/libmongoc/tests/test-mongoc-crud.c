@@ -1260,6 +1260,45 @@ prose_test_12(void *ctx)
 }
 
 static void
+prose_test_17(void)
+{
+   /*
+   17. Ensure database and collection is validated
+   */
+   mongoc_client_t *const client = test_framework_new_default_client();
+   bson_t *const doc = bson_new();
+   bson_error_t error;
+
+   // Ensure operations accepting a database string result in a client-side error if containing ".":
+   //    client["foo.bar"]["coll"].insert_one({})
+   {
+      mongoc_collection_t *const coll = mongoc_client_get_collection(client, "foo.bar", "coll");
+
+      ASSERT(!mongoc_collection_insert_one(coll, doc, NULL, NULL, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_NAMESPACE, MONGOC_ERROR_NAMESPACE_INVALID, "invalid: contains \".\"");
+
+      mongoc_collection_destroy(coll);
+   }
+
+   /* The remaining assertions of prose test 17 concern a name containing a NUL byte:
+    *    client["foo\0bar"]["coll"].insert_one({})
+    *    client["db"]["foo\0bar"].insert_one({})
+    *    client.bulk_write([InsertOne(namespace="foo\0bar.coll", document={})])
+    *    client.bulk_write([InsertOne(namespace="db.foo\0bar", document={})])
+    *
+    * These are not expressible in C. `mongoc_client_get_database`, `mongoc_database_get_collection` and
+    * `mongoc_bulkwrite_append_insertone` all accept a NUL-terminated `const char *`, so a caller cannot pass a name
+    * that contains a NUL byte: "foo\0bar" is indistinguishable from "foo" at the API boundary, and the truncation has
+    * already happened in the caller. There is no behavior left for libmongoc to assert here.
+    *
+    * The surfaces where libmongoc does receive a name with an explicit length, and so can observe an embedded NUL,
+    * are covered by `/ns_validation/gridfs_bucket`. */
+
+   bson_destroy(doc);
+   mongoc_client_destroy(client);
+}
+
+static void
 prose_test_15(void *ctx)
 {
    /*
@@ -1475,4 +1514,6 @@ test_crud_install(TestSuite *suite)
                      NULL /* ctx */,
                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
    );
+
+   TestSuite_AddLive(suite, "/crud/prose_test_17 [lock:live-server]", prose_test_17);
 }
