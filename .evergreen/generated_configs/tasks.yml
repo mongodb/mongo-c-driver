@@ -5672,6 +5672,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 1.0.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-1.0.2-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5682,6 +5684,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 1.0.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-1.1.1-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5691,6 +5695,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 1.1.1
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-1.1.1-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5701,6 +5707,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 1.1.1
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.0.9-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5710,6 +5718,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.0.9
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.0.9-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5720,6 +5730,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.0.9
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.1.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5729,6 +5741,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.1.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.1.2-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5739,6 +5753,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.1.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.2.5-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5748,6 +5764,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.2.5
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.2.5-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5758,6 +5776,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.2.5
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.3.4-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5767,6 +5787,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.3.4
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.3.4-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5777,6 +5799,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.3.4
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.4.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5786,6 +5810,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.4.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.4.2-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5796,6 +5822,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.4.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.5.1-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5805,6 +5833,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 3.5.1
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-3.5.1-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5815,6 +5845,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.5.1
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-4.0.0-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5824,6 +5856,8 @@ tasks:
       - func: openssl-compat
         vars:
           OPENSSL_VERSION: 4.0.0
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-4.0.0-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5834,6 +5868,8 @@ tasks:
         vars:
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 4.0.0
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-fips-3.0.9-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5844,6 +5880,8 @@ tasks:
         vars:
           OPENSSL_ENABLE_FIPS: "ON"
           OPENSSL_VERSION: 3.0.9
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-fips-3.0.9-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5855,6 +5893,8 @@ tasks:
           OPENSSL_ENABLE_FIPS: "ON"
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.0.9
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-fips-3.1.2-shared-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5865,6 +5905,8 @@ tasks:
         vars:
           OPENSSL_ENABLE_FIPS: "ON"
           OPENSSL_VERSION: 3.1.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: openssl-compat-fips-3.1.2-static-ubuntu2404-gcc
     run_on: ubuntu2404-large
@@ -5876,6 +5918,8 @@ tasks:
           OPENSSL_ENABLE_FIPS: "ON"
           OPENSSL_USE_STATIC_LIBS: "ON"
           OPENSSL_VERSION: 3.1.2
+      - func: fetch-det
+      - func: fetch-enterprise-auth-secrets
       - func: run auth tests
   - name: sasl-cyrus-darwinssl-macos-14-arm64-clang-compile
     run_on: macos-14-arm64
