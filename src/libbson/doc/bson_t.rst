@@ -152,6 +152,26 @@ duplicate keys. Documents are stored as an ordered list of key-value pairs. A
 generating such documents, because MongoDB server behavior is undefined when a
 BSON document contains duplicate keys.
 
+libbson does not prevent or remove duplicate keys:
+
+* Appending a key that is already present (e.g. with :symbol:`bson_append_int32()`) adds another element.
+* :symbol:`bson_iter_next()` visits every element, including elements with duplicate keys.
+* :symbol:`bson_iter_init_find()` and other key lookups find the first element with a matching key.
+* :symbol:`bson_as_canonical_extended_json()` and :symbol:`bson_as_relaxed_extended_json()` include every element.
+* :symbol:`bson_new_from_json()` preserves duplicate keys in the parsed JSON.
+
+To check whether a document contains duplicate keys, pass ``BSON_VALIDATE_DUPLICATE_KEYS`` (see
+:symbol:`bson_validate_flags_t`) to :symbol:`bson_validate_with_error()`. Embedded documents and arrays are also
+checked:
+
+.. code-block:: c
+
+  bson_error_t error;
+  if (!bson_validate_with_error (doc, BSON_VALIDATE_DUPLICATE_KEYS, &error)) {
+     // error.code is BSON_VALIDATE_DUPLICATE_KEYS if a duplicate key was found.
+     fprintf (stderr, "Invalid document: %s\n", error.message);
+  }
+
 .. only:: html
 
   Functions

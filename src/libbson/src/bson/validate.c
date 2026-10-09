@@ -35,7 +35,21 @@
 #include <mlib/test.h>
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
+
+/**
+ * @brief An element key and its offset, used for duplicate key detection.
+ */
+typedef struct {
+   /// The null-terminated key. Points into the document being validated.
+   const char *key;
+   /// The offset of the element within its parent document.
+   uint32_t offset;
+} key_entry;
+
+#define T key_entry
+#include <mlib/vec.th>
 
 /**
  * @brief User parameters for validation behavior. These correspond to the various
@@ -78,6 +92,8 @@ typedef struct {
     * whose first key is "$ref".
     */
    bool check_special_dollar_keys;
+   /// Should we allow a document or array to contain duplicate element keys?
+   bool allow_duplicate_keys;
 } validation_params;
 
 /**
@@ -90,6 +106,19 @@ typedef struct {
    bson_error_t error;
    /// The zero-based index of the byte where validation stopped in case of an error.
    size_t error_offset;
+   /**
+    * @brief Scratch storage for duplicate key detection. Reused for each document to avoid repeated allocation.
+    *
+    * Only used if duplicate keys are checked.
+    */
+   key_entry_vec *keys;
+   /**
+    * @brief The offset of the earliest element in the current document whose key duplicates a prior key, or zero if
+    * there is none.
+    *
+    * An element can never be at offset zero, since that is the document header.
+    */
+   uint32_t duplicate_key_offset;
 } validator;
 
 // Undef these macros, if they are defined.
@@ -288,8 +317,13 @@ _validate_codewscope_elem(validator *self, bson_iter_t const *iter, int depth)
       .allow_invalid_utf8 = false,
       // JS allows object keys to have dollars
       .check_special_dollar_keys = false,
+      // A scope is a mapping from identifiers to values (per the BSON spec),
+      // and a mapping cannot contain duplicate keys. As with UTF-8 above, this
+      // is checked regardless of the parent's validation flags.
+      .allow_duplicate_keys = false,
    };
-   validator scope_validator = {.params = &scope_params};
+   validator scope_validator = {.params = &scope_params,
+                                .keys = self->keys /* reuse storage (cleared in _find_duplicate_key). */};
    // We could do more validation that the scope keys are valid JS identifiers,
    // but that would require using a full Unicode database.
    if (_validate_doc(&scope_validator, &scope, depth)) {
@@ -337,6 +371,13 @@ _validate_element_key(validator *self, bson_iter_t const *iter)
       require_with_error(
          !strstr(key, "."), iter->off, BSON_VALIDATE_DOT_KEYS, "Disallowed '.' in element key: \"%s\"", key);
    }
+
+   // `duplicate_key_offset` is only set if duplicate keys are checked
+   require_with_error(iter->off != self->duplicate_key_offset,
+                      iter->off,
+                      BSON_VALIDATE_DUPLICATE_KEYS,
+                      "Duplicate element key: \"%s\"",
+                      key);
 
    return true;
 }
@@ -504,8 +545,87 @@ _validate_dollar_doc(validator *self, bson_iter_t *iter, int depth)
    return false;
 }
 
+// Order key entries by key, then by offset
+static int
+_key_entry_cmp(const void *a, const void *b)
+{
+   const key_entry *const ka = a;
+   const key_entry *const kb = b;
+   const int r = strcmp(ka->key, kb->key);
+   if (r != 0) {
+      return r;
+   }
+   return (ka->offset > kb->offset) - (ka->offset < kb->offset);
+}
+
+/**
+ * @brief Find the earliest element whose key duplicates a prior key in the document.
+ *
+ * @param self The validator. `self->keys` is used as scratch storage.
+ * @param bson The document to check.
+ * @return uint32_t The offset of the earliest element with a duplicate key, or zero if there are no duplicates.
+ *
+ * This takes O(n log n) time for a document of n elements. If the document is corrupt, only the elements before the
+ * corruption are checked. The corruption is reported by the validation pass.
+ */
+static uint32_t
+_find_duplicate_key(validator *self, const bson_t *bson)
+{
+   BSON_ASSERT_PARAM(self);
+   BSON_ASSERT_PARAM(bson);
+   key_entry_vec *const keys = self->keys;
+   mlib_check(keys->size == 0);
+
+   // Collect the keys
+   bson_iter_t iter;
+   if (bson_iter_init(&iter, bson)) {
+      while (bson_iter_next(&iter)) {
+         key_entry *const entry = key_entry_vec_push(keys);
+         mlib_check(entry, because, "Failed to allocate storage for duplicate key detection");
+         *entry = (key_entry){.key = bson_iter_key(&iter), .offset = iter.off};
+      }
+   }
+
+   // Sort the keys. Equal keys are adjacent and ordered by offset.
+   key_entry *const first = key_entry_vec_begin(keys);
+   const size_t count = keys->size;
+   uint32_t found = 0;
+   if (count > 1) {
+      qsort(first, count, sizeof *first, _key_entry_cmp);
+      for (size_t i = 1; i < count; i++) {
+         if (strcmp(first[i - 1].key, first[i].key) == 0 && (found == 0 || first[i].offset < found)) {
+            found = first[i].offset;
+         }
+      }
+   }
+
+   // Clear the scratch storage for the next document. This does not free the storage.
+   (void)key_entry_vec_resize(keys, 0);
+   return found;
+}
+
+static bool
+_validate_doc_elements(validator *self, const bson_t *bson, int depth);
+
 static bool
 _validate_doc(validator *self, const bson_t *bson, int depth)
+{
+   BSON_ASSERT_PARAM(self);
+   BSON_ASSERT_PARAM(bson);
+
+   // The duplicate key offset is relative to the current document. Save the parent's offset to restore later.
+   const uint32_t parent_duplicate_key_offset = self->duplicate_key_offset;
+   self->duplicate_key_offset = 0;
+   if (!self->params->allow_duplicate_keys) {
+      self->duplicate_key_offset = _find_duplicate_key(self, bson);
+   }
+   const bool okay = _validate_doc_elements(self, bson, depth);
+   self->duplicate_key_offset = parent_duplicate_key_offset;
+   return okay;
+}
+
+static bool
+_validate_doc_elements(validator *self, const bson_t *bson, int depth)
 {
    BSON_ASSERT_PARAM(self);
    BSON_ASSERT_PARAM(bson);
@@ -555,11 +675,14 @@ _bson_validate_impl_v2(const bson_t *bson, bson_validate_flags_t flags, size_t *
       .check_special_dollar_keys = (flags & BSON_VALIDATE_DOLLAR_KEYS),
       .allow_dot_in_keys = !(flags & BSON_VALIDATE_DOT_KEYS),
       .allow_empty_keys = !(flags & BSON_VALIDATE_EMPTY_KEYS),
+      .allow_duplicate_keys = !(flags & BSON_VALIDATE_DUPLICATE_KEYS),
    };
 
    // Start the validator on the root document
-   validator v = {.params = &params};
+   key_entry_vec keys = key_entry_vec_new();
+   validator v = {.params = &params, .keys = &keys};
    bool okay = _validate_doc(&v, bson, 0);
+   key_entry_vec_destroy(&keys);
    *offset = v.error_offset;
    *error = v.error;
    mlib_check(okay == (v.error.code == 0) &&
