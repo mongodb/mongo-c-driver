@@ -96,9 +96,12 @@ endif ()
 # Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
 set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
 
-set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
+# Cargo.toml defines the library basename as "mongoac". Apply `MONGOAC_OUTPUT_BASENAME` during the install step.
 set (cargo_library_shared "${CMAKE_SHARED_LIBRARY_PREFIX}mongoac${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set (cargo_library_static "${CMAKE_STATIC_LIBRARY_PREFIX}mongoac${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+# Cargo uses a separate subdirectory per debug vs. release configurations.
+set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
 
 set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
 set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
