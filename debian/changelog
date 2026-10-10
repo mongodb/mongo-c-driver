@@ -1,9 +1,9 @@
-mongo-c-driver (1.30.4-1+deb13u4) UNRELEASED; urgency=medium
+mongo-c-driver (1.30.4-1+deb13u4) trixie; urgency=medium
 
   * Follow up to fix CVE-2026-81524: correct parameter ordering in function
     definition. Thanks to Jeevan Chalke for the patch. (Closes: #1150302)
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 09 Oct 2026 21:01:53 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 09 Oct 2026 21:12:28 -0400
 
 mongo-c-driver (1.30.4-1+deb13u3) trixie; urgency=medium
 
