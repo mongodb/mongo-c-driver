@@ -11343,7 +11343,9 @@ buildvariants:
   tasks:
   - debug-compile-aws
   - debug-compile-nosasl-nossl
+  - debug-compile-nosasl-openssl
   - debug-compile-sspi-winssl
+  - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
   - .latest .nossl
   - test-aws-openssl-regular-latest

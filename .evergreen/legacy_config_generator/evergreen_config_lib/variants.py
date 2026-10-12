@@ -190,8 +190,6 @@ all_variants = [
             '.compression !.snappy !.zstd !.latest',
             'debug-compile-aws',
             'test-aws-openssl-regular-4.4',
-            # Authentication tests with OpenSSL on Windows are only run on the vs2017 variant.
-            # Older vs variants fail to verify certificates against Atlas tests.
             '.authentication-tests .openssl !.sasl',
             '.authentication-tests .winssl',
         ],
@@ -204,7 +202,9 @@ all_variants = [
         [
             'debug-compile-aws',
             'debug-compile-nosasl-nossl',
+            'debug-compile-nosasl-openssl',
             'debug-compile-sspi-winssl',
+            '.authentication-tests .openssl !.sasl',
             '.authentication-tests .winssl',
             '.latest .nossl',
             'test-aws-openssl-regular-latest',
