@@ -2992,6 +2992,7 @@ test_example_change_stream (mongoc_database_t *db)
    /* End Changestream Example 3 */
 
    bson_destroy (pipeline);
+   bson_reinit (&opts);
 
    /* Start Changestream Example 4 */
    pipeline = BCON_NEW ("pipeline",
