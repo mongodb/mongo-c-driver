@@ -157,7 +157,7 @@ TEST_CASE("block_on", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // Early-return given a ready future.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
     }
 }
 
@@ -207,7 +207,7 @@ TEST_CASE("block_on_with_timeout", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // Early-return given a ready future.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
     }
 }
 
@@ -306,7 +306,7 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // Early-return given any future is ready.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
     }
 }
 
@@ -409,7 +409,7 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // Early-return given any future is ready.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
     }
 }
 
@@ -502,7 +502,7 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // Early-return given all futures are ready.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
 
         // Elements may be a mix of ready and pending futures.
         CHECK_NOTHROW(mongoac_runtime_block_on_all(runtime, futures, 2u, error));
@@ -520,7 +520,7 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
         auto const d3 = t6 - t5;
 
         // Early-return given all futures are ready.
-        CHECK(d3 <= d1);
+        CHECK_NOFAIL(d3 <= d1);
     }
 }
 
@@ -617,7 +617,7 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // Early-return given all futures are ready.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
 
         // Elements may be a mix of ready and pending futures.
         CHECK_NOTHROW(mongoac_runtime_block_on_all_with_timeout(runtime, futures, 2u, 0u, error));
@@ -633,7 +633,7 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
         auto const d3 = t6 - t5;
 
         // Early-return given all futures are ready.
-        CHECK(d3 <= d1);
+        CHECK_NOFAIL(d3 <= d1);
     }
 }
 
@@ -667,7 +667,7 @@ TEST_CASE("make_progress", "[mongoac][runtime]") {
         auto const d2 = t4 - t3;
 
         // After a task is complete, it is dequeued from the scheduler.
-        CHECK(d2 <= d1);
+        CHECK_NOFAIL(d2 <= d1);
     }
 }
 
