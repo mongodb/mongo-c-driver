@@ -511,6 +511,8 @@ class AuthTask(MatrixTask):
 
     def post_commands(self) -> Iterable[Value]:
         yield func('fetch-build', BUILD_NAME=self.build_task_name)
+        yield func('fetch-det')
+        yield func('fetch-enterprise-auth-secrets')
         yield func('run auth tests')
 
     @property
@@ -553,6 +555,8 @@ all_tasks = chain(
                     'env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh',
                     add_expansions_to_env=True,
                 ),
+                func('fetch-det'),
+                func('fetch-enterprise-auth-secrets'),
                 func('run auth tests', ASAN='on'),
             ],
         ),

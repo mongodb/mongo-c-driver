@@ -945,6 +945,8 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: fetch-det
+  - func: fetch-enterprise-auth-secrets
   - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
@@ -957,6 +959,8 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: fetch-det
+  - func: fetch-enterprise-auth-secrets
   - func: run auth tests
 - name: authentication-tests-winssl
   tags:
@@ -969,6 +973,8 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-sspi-winssl
+  - func: fetch-det
+  - func: fetch-enterprise-auth-secrets
   - func: run auth tests
 - name: authentication-tests-openssl-nosasl
   tags:
@@ -981,6 +987,8 @@ tasks:
   - func: fetch-build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch-det
+  - func: fetch-enterprise-auth-secrets
   - func: run auth tests
 - name: authentication-tests-asan-memcheck
   tags:
@@ -996,6 +1004,8 @@ tasks:
       script: |-
         set -o errexit
         env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh
+  - func: fetch-det
+  - func: fetch-enterprise-auth-secrets
   - func: run auth tests
     vars:
       ASAN: 'on'
