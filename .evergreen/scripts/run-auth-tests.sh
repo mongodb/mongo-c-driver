@@ -171,7 +171,7 @@ elif command -v otool >/dev/null; then
 fi
 
 # libkrb5.so.3 and libgssapi_krb5.so.2 and report memory leaks on Ubuntu.
-if [[ -n "$(grep "Ubuntu" /etc/os-release)" ]]; then
+if grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
   supps="$(pwd)/.lsan-suppressions-ubuntu"
   cat >|"${supps:?}" <<DOC
 leak:libkrb5
