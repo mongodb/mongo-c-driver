@@ -260,6 +260,7 @@ def corruption_at(off: int) -> ErrorInfo:
 BSON_VALIDATE_CORRUPT = 'BSON_VALIDATE_CORRUPT'
 BSON_VALIDATE_DOLLAR_KEYS = 'BSON_VALIDATE_DOLLAR_KEYS'
 BSON_VALIDATE_DOT_KEYS = 'BSON_VALIDATE_DOT_KEYS'
+BSON_VALIDATE_DUPLICATE_KEYS = 'BSON_VALIDATE_DUPLICATE_KEYS'
 BSON_VALIDATE_EMPTY_KEYS = 'BSON_VALIDATE_EMPTY_KEYS'
 BSON_VALIDATE_UTF8 = 'BSON_VALIDATE_UTF8'
 BSON_VALIDATE_UTF8_ALLOW_NULL = 'BSON_VALIDATE_UTF8_ALLOW_NULL'
@@ -347,6 +348,154 @@ CASES: list[TestCase] = [
         We are checking for empty keys, and accept if they are absent.
         """,
         flags=BSON_VALIDATE_EMPTY_KEYS,
+    ),
+    TestCase(
+        'key/duplicate/accept',
+        doc(utf8elem('foo', 'a'), utf8elem('foo', 'b')),
+        """
+        The document has a duplicate key, and we accept this since we don't
+        ask to validate it.
+        """,
+    ),
+    TestCase(
+        'key/duplicate/reject',
+        doc(utf8elem('foo', 'a'), utf8elem('foo', 'b')),
+        """
+        The document has a duplicate key, and we reject it when we ask to
+        validate it. The error offset is the second occurrence of the key.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "foo"', 15),
+    ),
+    TestCase(
+        'key/duplicate/accept-if-absent',
+        doc(utf8elem('foo', 'a'), utf8elem('bar', 'b'), utf8elem('fo', 'c')),
+        """
+        We are checking for duplicate keys, and accept if they are absent.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+    ),
+    TestCase(
+        'key/duplicate/reject-earliest',
+        doc(
+            utf8elem('b', 'v'),
+            utf8elem('a', 'v'),
+            utf8elem('c', 'v'),
+            utf8elem('a', 'v'),
+            utf8elem('b', 'v'),
+        ),
+        """
+        The document has multiple duplicate keys. The error refers to the
+        earliest element that duplicates a prior key (the second "a"), even
+        though "b" sorts first.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "a"', 31),
+    ),
+    TestCase(
+        'key/duplicate/reject-nested',
+        doc(
+            utf8elem('foo', 'a'),
+            elem('sub', Tag.Document, doc(utf8elem('foo', 'a'), utf8elem('foo', 'b'))),
+        ),
+        """
+        A subdocument has a duplicate key. Keys in the subdocument are
+        independent of keys in the parent.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "foo"', 35),
+    ),
+    TestCase(
+        'key/duplicate/reject-after-nested',
+        doc(
+            elem('sub', Tag.Document, doc(utf8elem('foo', 'a'))),
+            utf8elem('sub', 'b'),
+        ),
+        """
+        The parent document has a duplicate key following a valid subdocument.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "sub"', 25),
+    ),
+    TestCase(
+        'key/duplicate/reject-array',
+        doc(elem('arr', Tag.Array, doc(utf8elem('0', 'a'), utf8elem('0', 'b')))),
+        """
+        An array has duplicate keys.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "0"', 22),
+    ),
+    TestCase(
+        'key/duplicate/reject-in-array-element',
+        doc(elem('arr', Tag.Array, doc(elem('0', Tag.Document, doc(utf8elem('foo', 'a'), utf8elem('foo', 'b')))))),
+        """
+        A document within an array has a duplicate key.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "foo"', 31),
+    ),
+    TestCase(
+        'key/duplicate/reject-dbref',
+        doc(
+            utf8elem('$ref', 'coll'),
+            elem('$id', Tag.Int32, i32le(1)),
+            utf8elem('foo', 'a'),
+            utf8elem('foo', 'b'),
+        ),
+        """
+        A DBRef document has a duplicate key following $ref and $id.
+        """,
+        flags=f'{BSON_VALIDATE_DUPLICATE_KEYS} | {BSON_VALIDATE_DOLLAR_KEYS}',
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "foo"', 39),
+    ),
+    TestCase(
+        'key/duplicate/reject-in-scope',
+        doc(elem('foo', Tag.CodeWithScope, code_with_scope('void 0;', doc(utf8elem('x', 'a'), utf8elem('x', 'b'))))),
+        """
+        A code-with-scope scope document has a duplicate key.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(
+            BSON_VALIDATE_DUPLICATE_KEYS,
+            'Error in scope document for element "foo": Duplicate element key: "x"',
+            17,
+        ),
+    ),
+    TestCase(
+        'key/duplicate/reject-in-scope-unflagged',
+        doc(elem('foo', Tag.CodeWithScope, code_with_scope('void 0;', doc(utf8elem('x', 'a'), utf8elem('x', 'b'))))),
+        """
+        A code-with-scope scope document has a duplicate key. The scope is a
+        mapping from identifiers to values, so duplicate keys are always
+        rejected, even without BSON_VALIDATE_DUPLICATE_KEYS.
+        """,
+        flags=BSON_VALIDATE_EMPTY_KEYS,
+        error=ErrorInfo(
+            BSON_VALIDATE_DUPLICATE_KEYS,
+            'Error in scope document for element "foo": Duplicate element key: "x"',
+            17,
+        ),
+    ),
+    TestCase(
+        'key/duplicate/reject-corrupt-after-duplicate',
+        doc(utf8elem('foo', 'a'), utf8elem('foo', 'b'), b'f'),
+        """
+        The document has a duplicate key followed by corrupt data. The
+        duplicate key is reported, since it occurs first.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=ErrorInfo(BSON_VALIDATE_DUPLICATE_KEYS, 'Duplicate element key: "foo"', 15),
+    ),
+    TestCase(
+        'key/duplicate/reject-corrupt-before-duplicate',
+        doc(utf8elem('foo', 'a'), b'f', utf8elem('foo', 'b')),
+        """
+        The document has corrupt data before a duplicate key. The corruption is
+        reported, since it occurs first.
+        """,
+        flags=BSON_VALIDATE_DUPLICATE_KEYS,
+        error=corruption_at(21),
     ),
     TestCase(
         'key/dot/accept',
