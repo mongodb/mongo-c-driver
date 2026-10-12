@@ -22,7 +22,7 @@ _save_resume_state(const bson_t *pipeline, const bson_t *watch_opts, const bson_
 {
    bson_iter_t iter = {0};
    if (!bson_iter_init_find(&iter, doc, "_id")) {
-      fprintf(stderr, "change stream event does not contain a resume token (_id).");
+      fprintf(stderr, "change stream event does not contain a resume token (_id)\n");
       return false;
    }
    const bson_value_t *const resume_token = bson_iter_value(&iter);
