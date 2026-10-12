@@ -171,7 +171,7 @@ elif command -v otool >/dev/null; then
 fi
 
 # libkrb5.so.3 and libgssapi_krb5.so.2 and report memory leaks on Ubuntu.
-if [[ -n "$(grep "Ubuntu" /etc/os-release)" ]]; then
+if grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
   supps="$(pwd)/.lsan-suppressions-ubuntu"
   cat >|"${supps:?}" <<DOC
 leak:libkrb5
@@ -188,6 +188,26 @@ maybe_skip() {
   fi
   # Run the test command:
   "$@"
+}
+
+maybe_skip_gssapi() {
+  # Defer to normal `maybe_skip` conditions on non-Windows.
+  if [[ "${OSTYPE:?}" != "cygwin" ]]; then
+    maybe_skip "$@"
+    return
+  fi
+
+  # "...@LDAPTEST.BUILD.10GEN.CC" -> "LDAPTEST.BUILD.10GEN.CC"
+  declare realm="${PRINCIPAL##*@}"
+
+  # DEVPROD-19149: remove once Windows distros are updated so Kerberos supports ldaptest.build.10gen.cc.
+  # See: https://wiki.corp.mongodb.com/spaces/DBDEVPROD/pages/560142422/LDAPTEST
+  if ! reg query 'HKLM\SYSTEM\CurrentControlSet\Control\Lsa\Kerberos' /s /f "${realm:?}" >/dev/null 2>&1; then
+    echo "Skipping test until DEVPROD-19149 is resolved."
+    return
+  fi
+
+  maybe_skip "$@"
 }
 
 if [[ "${ssl}" != "OFF" ]]; then
@@ -227,10 +247,10 @@ maybe_skip "${mongoc_ping:?}" "mongodb://${auth_plain:?}@${auth_host:?}/?authMec
 
 if [[ "${sasl}" != "OFF" ]]; then
   echo "Authenticating using GSSAPI"
-  maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
+  maybe_skip_gssapi "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
 
   echo "Authenticating with CANONICALIZE_HOST_NAME"
-  maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout:?}"
+  maybe_skip_gssapi "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout:?}"
 
   declare ld_preload="${LD_PRELOAD:-}"
   if [[ "${ASAN:-}" == "on" ]]; then
@@ -238,7 +258,7 @@ if [[ "${sasl}" != "OFF" ]]; then
   fi
 
   echo "Test threaded GSSAPI auth"
-  MONGOC_TEST_GSSAPI_HOST="${auth_host:?}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi:?}" LD_PRELOAD="${ld_preload:-}" maybe_skip "${test_gssapi:?}"
+  MONGOC_TEST_GSSAPI_HOST="${auth_host:?}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi:?}" LD_PRELOAD="${ld_preload:-}" maybe_skip_gssapi "${test_gssapi:?}"
   echo "Threaded GSSAPI auth OK"
 fi
 
