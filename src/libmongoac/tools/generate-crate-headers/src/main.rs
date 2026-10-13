@@ -48,6 +48,10 @@ fn generate_header() -> String {
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
         ("ClientT", "mongoac_client_t"),
+        ("CollectionOptionsT", "mongoac_collection_options_t"),
+        ("CollectionT", "mongoac_collection_t"),
+        ("DatabaseOptionsT", "mongoac_database_options_t"),
+        ("DatabaseT", "mongoac_database_t"),
         ("ErrorT", "mongoac_error_t"),
         ("FutureT", "mongoac_future_t"),
         ("RuntimeT", "mongoac_runtime_t"),
@@ -67,9 +71,20 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "collection_options" => &[],
+            "collection" => &["mongoac/runtime-fwd.h"],
             "client" => &[
+                "mongoac/database_options-fwd.h",
+                "mongoac/database-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/future-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "mongoac/string.h",
+            ],
+            "database_options" => &[],
+            "database" => &[
+                "mongoac/collection_options-fwd.h",
+                "mongoac/collection-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
             ],
