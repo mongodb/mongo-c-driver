@@ -49,6 +49,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
         ("ClientT", "mongoac_client_t"),
         ("ErrorT", "mongoac_error_t"),
+        ("FutureT", "mongoac_future_t"),
         ("RuntimeT", "mongoac_runtime_t"),
         ("StringT", "mongoac_string_t"),
         ("StringViewT", "mongoac_string_view_t"),
@@ -68,11 +69,18 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         let headers: &[&str] = match name {
             "client" => &[
                 "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
             ],
             "error" => &["mongoac/string.h", "stdint.h"],
-            "runtime" => &["stdint.h"],
+            "future" => &[
+                "mongoac/error-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "stdbool.h",
+                "stdint.h",
+            ],
+            "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
                 eprintln!("warning: missing generate-crate-headers entry: {name}");

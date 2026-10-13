@@ -34,6 +34,16 @@
     } else                                                                              \
         ((void)0)
 
+// Capture the error message and category before asserting `error` is OK (regardless of error category).
+#define REQUIRE_MONGOAC_ERROR_OK(error)                                                 \
+    if (1) {                                                                            \
+        auto const msg = ::mongoac::test::from_mongoac(::mongoac_error_message(error)); \
+        CAPTURE(msg);                                                                   \
+        CAPTURE(::mongoac_error_category(error));                                       \
+        REQUIRE(::mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK);                  \
+    } else                                                                              \
+        ((void)0)
+
 // Capture the error message and code before asserting `error` is equal to the given mongoac error code.
 #define CHECK_MONGOAC_ERROR_CODE(error, code)                                           \
     if (1) {                                                                            \
