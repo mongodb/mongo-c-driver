@@ -74,11 +74,11 @@ pub extern "C" fn mongoac_database_drop(
     error: *mut ErrorT,
 ) {
     let error = safe_optional_error_as_mut!(error);
-    let database = safe_as_ref_with_error!(db, error);
+    let db = safe_as_ref_with_error!(db, error);
     let session = safe_optional_as_mut!(session);
     let options = safe_optional_as_ref!(options);
 
-    safe_result!(database.drop(session, options), error);
+    safe_result!(db.drop(session, options), error);
 }
 
 #[unsafe(no_mangle)]
@@ -87,11 +87,11 @@ pub extern "C" fn mongoac_database_drop_async(
     session: *mut ClientSessionT,
     options: *const DropDatabaseOptionsT,
 ) -> *mut FutureT {
-    let database = safe_as_ref!(db);
+    let db = safe_as_ref!(db);
     let session = safe_optional_as_mut!(session);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(database.drop_async(session, options))
+    safe_into_raw!(db.drop_async(session, options))
 }
 
 #[unsafe(no_mangle)]
