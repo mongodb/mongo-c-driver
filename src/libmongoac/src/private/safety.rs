@@ -143,6 +143,33 @@ macro_rules! safe_as_mut {
     }};
 }
 
+/// Safely convert the raw pointer into an optional mutable reference.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *mut T) -> R {
+///     let res: Option<&mut T> = safe_optional_as_mut!(ptr);
+///     if res.is_some() {
+///         assert!(!ptr.is_null());
+///     } else {
+///         assert!(ptr.is_null());
+///     }
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be accessed concurrently by any other function.
+#[macro_export]
+macro_rules! safe_optional_as_mut {
+    ($ptr:expr) => {{
+        let ptr = $ptr;
+        unsafe { ptr.as_mut() }
+    }};
+}
+
 /// Safely return the result of the given expression only when the associated error is unset.
 ///
 /// When `Err(re) = result` and `Some(ee) = error`, assign `re` to `ee` prior to early-return via `return Default::default();`.
