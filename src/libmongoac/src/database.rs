@@ -13,14 +13,19 @@
 // limitations under the License.
 
 use crate::client::ClientT;
+use crate::client_session::ClientSessionT;
 use crate::collection::CollectionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::database_options::DatabaseOptionsT;
+use crate::drop_database_options::DropDatabaseOptionsT;
+use crate::error::ErrorT;
+use crate::future::FutureT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Database;
+use mongodb::options::DropDatabaseOptions;
 
 #[derive(Clone)]
 pub struct DatabaseT {
@@ -59,6 +64,34 @@ pub extern "C" fn mongoac_database_get_collection(
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_database_get_name(db: *const DatabaseT) -> StringViewT {
     safe_as_ref!(db).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_drop(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    options: *const DropDatabaseOptionsT,
+    error: *mut ErrorT,
+) {
+    let error = safe_optional_error_as_mut!(error);
+    let database = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(database.drop(session, options), error);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_drop_async(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    options: *const DropDatabaseOptionsT,
+) -> *mut FutureT {
+    let database = safe_as_ref!(db);
+    let session = safe_optional_as_mut!(session);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(database.drop_async(session, options))
 }
 
 #[unsafe(no_mangle)]
@@ -102,10 +135,34 @@ impl DatabaseT {
         self.inner.name()
     }
 
+    fn drop(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        options: Option<&DropDatabaseOptionsT>,
+    ) -> Result<(), ErrorT> {
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner.drop().with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn drop_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        options: Option<&DropDatabaseOptionsT>,
+    ) -> FutureT {
+        let db = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let options: Option<DropDatabaseOptions> = options.map(Into::into);
+
+        self.spawn::<()>(async move { session_op!(db.drop().with_options(options), session) })
+    }
+
     // TODO: aggregate
     // TODO: collection_with_options
     // TODO: create_collection
-    // TODO: drop
     // TODO: gridfs_bucket
     // TODO: list_collection_names
     // TODO: list_collections
