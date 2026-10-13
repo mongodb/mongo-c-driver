@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::client::ClientT;
 use crate::collection::CollectionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::database_options::DatabaseOptionsT;
@@ -28,31 +29,46 @@ pub struct DatabaseT {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_database_destroy(database: *mut DatabaseT) {
-    safe_drop!(database);
+pub extern "C" fn mongoac_database_destroy(db: *mut DatabaseT) {
+    safe_drop!(db);
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_database_clone(database: *const DatabaseT) -> *mut DatabaseT {
-    safe_into_raw!(safe_as_ref!(database).clone())
+pub extern "C" fn mongoac_database_clone(db: *const DatabaseT) -> *mut DatabaseT {
+    safe_into_raw!(safe_as_ref!(db).clone())
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_database_get_runtime(database: *const DatabaseT) -> *mut RuntimeT {
-    safe_into_raw!(safe_as_ref!(database).get_runtime())
+pub extern "C" fn mongoac_database_get_client(db: *const DatabaseT) -> *mut ClientT {
+    safe_into_raw!(safe_as_ref!(db).get_client())
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_database_get_collection(
-    database: *const DatabaseT,
+    db: *const DatabaseT,
     name: StringViewT,
     options: *const CollectionOptionsT,
 ) -> *mut CollectionT {
-    let database = safe_as_ref!(database);
+    let db = safe_as_ref!(db);
     let name = safe_string_view!(name);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(database.get_collection(name, options))
+    safe_into_raw!(db.get_collection(name, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_get_name(db: *const DatabaseT) -> StringViewT {
+    safe_as_ref!(db).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_get_runtime(db: *const DatabaseT) -> *mut RuntimeT {
+    safe_into_raw!(safe_as_ref!(db).get_runtime())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_get_runtime_address(db: *const DatabaseT) -> usize {
+    safe_as_ref!(db).get_runtime_address()
 }
 
 impl DatabaseT {
@@ -72,9 +88,39 @@ impl DatabaseT {
     }
 
     #[must_use]
+    fn get_client(&self) -> ClientT {
+        ClientT::new_from_client(self.inner.client(), &self.runtime)
+    }
+
+    #[must_use]
     fn get_collection(&self, name: &str, options: Option<&CollectionOptionsT>) -> CollectionT {
         CollectionT::new(&self.inner, self.runtime.clone(), name, options)
     }
+
+    #[must_use]
+    fn get_name(&self) -> &str {
+        self.inner.name()
+    }
+
+    fn get_runtime_address(&self) -> usize {
+        self.runtime.address()
+    }
+
+    // TODO: aggregate
+    // TODO: collection_with_options
+    // TODO: create_collection
+    // TODO: drop
+    // TODO: gridfs_bucket
+    // TODO: list_collection_names
+    // TODO: list_collections
+    // TODO: read_concern
+    // TODO: run_command
+    // TODO: run_cursor_command
+    // TODO: run_raw_command
+    // TODO: run_raw_cursor_command
+    // TODO: selection_criteria
+    // TODO: watch
+    // TODO: write_concern
 }
 
 impl RuntimeAware for DatabaseT {

@@ -34,4 +34,7 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
     mongoac_collection_destroy
     mongoac_collection_clone
 
+    mongoac_collection_get_client
+    mongoac_collection_get_name
     mongoac_collection_get_runtime
+    mongoac_collection_get_runtime_address

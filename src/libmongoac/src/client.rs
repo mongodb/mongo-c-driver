@@ -76,6 +76,11 @@ pub extern "C" fn mongoac_client_get_runtime(client: *const ClientT) -> *mut Run
     safe_into_raw!(safe_as_ref!(client).get_runtime())
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_get_runtime_address(client: *const ClientT) -> usize {
+    safe_as_ref!(client).get_runtime_address()
+}
+
 impl ClientT {
     fn new(conn_str: &str) -> Result<ClientT, ErrorT> {
         // Runtime Error (mongoac)
@@ -108,6 +113,10 @@ impl ClientT {
         self.runtime.clone()
     }
 
+    fn get_runtime_address(&self) -> usize {
+        self.runtime.address()
+    }
+
     fn shutdown(&mut self) {
         let client = self.inner.clone(); // Avoid consuming `self.inner`.
 
@@ -123,6 +132,26 @@ impl ClientT {
             client.shutdown().await;
             Ok(())
         })
+    }
+
+    // TODO: append_metadata
+    // TODO: bulk_write
+    // TODO: database_with_options
+    // TODO: default_database
+    // TODO: list_database_names
+    // TODO: list_databases
+    // TODO: read_concern
+    // TODO: selection_criteria
+    // TODO: start_session
+    // TODO: warm_connection_pool
+    // TODO: watch
+    // TODO: write_concern
+
+    pub(crate) fn new_from_client(client: &Client, runtime: &RuntimeT) -> Self {
+        ClientT {
+            inner: client.clone(),
+            runtime: runtime.clone(),
+        }
     }
 }
 

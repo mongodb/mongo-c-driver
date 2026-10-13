@@ -72,7 +72,11 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
             "collection_options" => &[],
-            "collection" => &["mongoac/runtime-fwd.h"],
+            "collection" => &[
+                "mongoac/client-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "mongoac/string.h",
+            ],
             "client" => &[
                 "mongoac/database_options-fwd.h",
                 "mongoac/database-fwd.h",
@@ -83,6 +87,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             ],
             "database_options" => &[],
             "database" => &[
+                "mongoac/client-fwd.h",
                 "mongoac/collection_options-fwd.h",
                 "mongoac/collection-fwd.h",
                 "mongoac/runtime-fwd.h",
