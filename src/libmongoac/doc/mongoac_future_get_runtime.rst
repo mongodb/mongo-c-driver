@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-Return a :symbol:`mongoac_runtime_t` with the same shared state as the runtime associated with the given :symbol:`mongoac_future_t`.
+Returns a :symbol:`mongoac_runtime_t` with the same shared state as the runtime associated with the given :symbol:`mongoac_future_t`.
 
 Must be destroyed with :symbol:`mongoac_runtime_destroy()`.
 

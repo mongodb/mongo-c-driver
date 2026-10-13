@@ -314,6 +314,44 @@ macro_rules! safe_optional_as_ref {
 
 /// Safely convert the `StringViewT` into a `str` when not null.
 ///
+/// When `sv.ptr` is null or `sv` contains invalid UTF-8, early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(sv: StringViewT) -> R {
+///     let res: &str = safe_string_view!(sv);
+///     assert!(!sv.ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `sv.ptr` must either be null or a valid pointer to a valid UTF-8 string.
+/// - `sv.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `sv.ptr` is not null, the range `[sv.ptr, sv.ptr + sv.len)` must be valid and accessible.
+#[macro_export]
+macro_rules! safe_string_view {
+    ($sv:expr) => {{
+        let sv: $crate::string::StringViewT = $sv;
+
+        if sv.ptr.is_null() {
+            return Default::default();
+        }
+
+        match std::str::from_utf8(unsafe {
+            std::slice::from_raw_parts(sv.ptr.cast::<u8>(), sv.len)
+        }) {
+            Ok(sv) => sv,
+            Err(_) => {
+                return Default::default();
+            }
+        }
+    }};
+}
+
+/// Safely convert the `StringViewT` into a `str` when not null.
+///
 /// When `sv.ptr` is null or `sv` contains invalid UTF-8, set `error` and early-return from the function via
 /// `return Default::default();`.
 ///

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::database::DatabaseT;
+use crate::database_options::DatabaseOptionsT;
 use crate::error::{ErrorCodeT, ErrorT};
 use crate::future::FutureT;
 use crate::private::macros::*;
@@ -47,8 +49,16 @@ pub extern "C" fn mongoac_client_new(conn_str: StringViewT, error: *mut ErrorT) 
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_client_get_runtime(client: *const ClientT) -> *mut RuntimeT {
-    safe_into_raw!(safe_as_ref!(client).get_runtime())
+pub extern "C" fn mongoac_client_get_database(
+    client: *const ClientT,
+    name: StringViewT,
+    options: *const DatabaseOptionsT,
+) -> *mut DatabaseT {
+    let client = safe_as_ref!(client);
+    let name = safe_string_view!(name);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(client.get_database(name, options))
 }
 
 #[unsafe(no_mangle)]
@@ -59,6 +69,11 @@ pub extern "C" fn mongoac_client_shutdown(client: *mut ClientT) {
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_client_shutdown_async(client: *mut ClientT) -> *mut FutureT {
     safe_into_raw!(safe_as_mut!(client).shutdown_async())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_get_runtime(client: *const ClientT) -> *mut RuntimeT {
+    safe_into_raw!(safe_as_ref!(client).get_runtime())
 }
 
 impl ClientT {
@@ -83,6 +98,10 @@ impl ClientT {
             runtime,
             inner: client,
         })
+    }
+
+    fn get_database(&self, name: &str, options: Option<&DatabaseOptionsT>) -> DatabaseT {
+        DatabaseT::new(&self.inner, self.runtime.clone(), name, options)
     }
 
     fn get_runtime(&self) -> RuntimeT {

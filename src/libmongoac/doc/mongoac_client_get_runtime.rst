@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-Return the :symbol:`mongoac_runtime_t` associated with the given :symbol:`mongoac_client_t`.
+Returns the :symbol:`mongoac_runtime_t` associated with the given :symbol:`mongoac_client_t`.
 
 When ``client`` is null, returns a null pointer.
 
