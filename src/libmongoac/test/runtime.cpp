@@ -288,6 +288,7 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
         auto const d1 = t2 - t1;
 
         // When not null, the iterator must always point to an element in the futures array.
+        REQUIRE(iter != nullptr);
         CAPTURE(futures, *iter);
         REQUIRE(std::find(std::begin(futures), std::end(futures), *iter) != std::end(futures));
         auto const ready = (iter == &futures[0] ? f1 : f2);
@@ -391,6 +392,7 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
         auto const d1 = t2 - t1;
 
         // When not null, the iterator must always point to an element in the futures array.
+        REQUIRE(iter != nullptr);
         CAPTURE(futures, *iter);
         REQUIRE(std::find(std::begin(futures), std::end(futures), *iter) != std::end(futures));
         auto const ready = (iter == &futures[0] ? f1 : f2);
