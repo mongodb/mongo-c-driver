@@ -86,18 +86,18 @@ macro_rules! safe_futures_from_runtime_with_error {
     ($futures:expr, $count:expr, $runtime:expr, $error:expr) => {{
         let futures: *const *mut FutureT = $futures;
         if futures.is_null() {
-                $crate::private::safety::invalid_argument(
-                    $error,
-                    "futures array is null",
-                );
+            $crate::private::safety::invalid_argument(
+                $error,
+                "futures array is null",
+            );
             return Default::default();
         }
         let count: usize = $count;
         if count == 0 {
-                $crate::private::safety::invalid_argument(
-                    $error,
-                    "futures array is empty",
-                );
+            $crate::private::safety::invalid_argument(
+                $error,
+                "futures array is empty",
+            );
             return Default::default();
         }
         let futures: &[*mut FutureT] = unsafe { std::slice::from_raw_parts(futures, count) };
