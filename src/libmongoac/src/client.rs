@@ -109,14 +109,6 @@ impl ClientT {
         DatabaseT::new(&self.inner, self.runtime.clone(), name, options)
     }
 
-    fn get_runtime(&self) -> RuntimeT {
-        self.runtime.clone()
-    }
-
-    fn get_runtime_address(&self) -> usize {
-        self.runtime.address()
-    }
-
     fn shutdown(&mut self) {
         let client = self.inner.clone(); // Avoid consuming `self.inner`.
 
@@ -156,8 +148,8 @@ impl ClientT {
 }
 
 impl RuntimeAware for ClientT {
-    fn get_runtime(&self) -> RuntimeT {
-        self.runtime.clone()
+    fn runtime(&self) -> &RuntimeT {
+        &self.runtime
     }
 }
 

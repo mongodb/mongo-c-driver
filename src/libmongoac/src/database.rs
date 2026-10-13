@@ -102,10 +102,6 @@ impl DatabaseT {
         self.inner.name()
     }
 
-    fn get_runtime_address(&self) -> usize {
-        self.runtime.address()
-    }
-
     // TODO: aggregate
     // TODO: collection_with_options
     // TODO: create_collection
@@ -124,7 +120,7 @@ impl DatabaseT {
 }
 
 impl RuntimeAware for DatabaseT {
-    fn get_runtime(&self) -> RuntimeT {
-        self.runtime.clone()
+    fn runtime(&self) -> &RuntimeT {
+        &self.runtime
     }
 }

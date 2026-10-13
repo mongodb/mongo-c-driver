@@ -86,10 +86,6 @@ impl CollectionT {
         self.inner.name()
     }
 
-    fn get_runtime_address(&self) -> usize {
-        self.runtime.address()
-    }
-
     // TODO: aggregate
     // TODO: count_documents
     // TODO: create_index
@@ -128,7 +124,7 @@ impl CollectionT {
 }
 
 impl RuntimeAware for CollectionT {
-    fn get_runtime(&self) -> RuntimeT {
-        self.runtime.clone()
+    fn runtime(&self) -> &RuntimeT {
+        &self.runtime
     }
 }
