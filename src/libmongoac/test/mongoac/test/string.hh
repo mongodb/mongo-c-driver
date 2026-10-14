@@ -16,12 +16,26 @@
 
 #include <mongoac/string.h>
 
+#include <cstddef>
+#include <cstring>
 #include <string>
 #include <string_view>
 
 namespace mongoac::test {
 
-inline std::string_view from_mongoac(mongoac_string_view_t v) {
+constexpr mongoac_string_view_t to_mongoac(char const* v) {
+    if (v == nullptr) {
+        return {};
+    }
+
+    return {v, std::char_traits<char>::length(v)};
+}
+
+constexpr mongoac_string_view_t to_mongoac(std::string_view v) {
+    return {v.data(), v.size()};
+}
+
+constexpr std::string_view from_mongoac(mongoac_string_view_t v) {
     if (v.ptr == nullptr) {
         return {};
     }
@@ -50,6 +64,10 @@ inline std::string from_mongoac(mongoac_string_t&& v) {
     }
 
     return ret;
+}
+
+constexpr mongoac_string_view_t operator""_sv(char const* str, std::size_t len) {
+    return {str, len};
 }
 
 } // namespace mongoac::test

@@ -2198,6 +2198,11 @@ bson_reserve_buffer(bson_t *bson, uint32_t total_size)
       return NULL;
    }
 
+   /* The smallest valid BSON document is 5 bytes. */
+   if (total_size < 5u) {
+      return NULL;
+   }
+
    if (total_size > bson->len) {
       if ((size_t)total_size > BSON_MAX_SIZE) {
          return NULL;

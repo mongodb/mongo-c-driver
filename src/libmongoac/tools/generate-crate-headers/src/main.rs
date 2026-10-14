@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use rayon::prelude::*;
+
 use std::path::{Path, PathBuf};
 
 // Keep synchronized with `skip_cargo_headers` in src/libmongoac/CMakeLists.txt.
@@ -45,7 +47,14 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("ClientT", "mongoac_client_t"),
+        ("CollectionOptionsT", "mongoac_collection_options_t"),
+        ("CollectionT", "mongoac_collection_t"),
+        ("DatabaseOptionsT", "mongoac_database_options_t"),
+        ("DatabaseT", "mongoac_database_t"),
         ("ErrorT", "mongoac_error_t"),
+        ("FutureT", "mongoac_future_t"),
+        ("RuntimeT", "mongoac_runtime_t"),
         ("StringT", "mongoac_string_t"),
         ("StringViewT", "mongoac_string_view_t"),
     ];
@@ -62,7 +71,31 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "collection_options" => &[],
+            "collection" => &["mongoac/runtime-fwd.h"],
+            "client" => &[
+                "mongoac/database_options-fwd.h",
+                "mongoac/database-fwd.h",
+                "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "mongoac/string.h",
+            ],
+            "database_options" => &[],
+            "database" => &[
+                "mongoac/collection_options-fwd.h",
+                "mongoac/collection-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "mongoac/string.h",
+            ],
             "error" => &["mongoac/string.h", "stdint.h"],
+            "future" => &[
+                "mongoac/error-fwd.h",
+                "mongoac/runtime-fwd.h",
+                "stdbool.h",
+                "stdint.h",
+            ],
+            "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
                 eprintln!("warning: missing generate-crate-headers entry: {name}");
@@ -187,10 +220,6 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
         .and_then(|s| s.to_str())
         .expect("invalid UTF-8");
 
-    if SKIP_CARGO_HEADERS.contains(&file_stem) {
-        return;
-    }
-
     // `src/libmongoac/src/path/to/crate.rs` -> `path/to/crate`
     let rel_path = crate_path
         .strip_prefix(src_dir)
@@ -275,7 +304,14 @@ fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
 
             find_crates(&path, files);
         } else if path.extension().is_some_and(|e| e == "rs") {
-            files.push(path);
+            let file_stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .expect("invalid UTF-8");
+
+            if !SKIP_CARGO_HEADERS.contains(&file_stem) {
+                files.push(path);
+            }
         }
     }
 }
@@ -292,19 +328,8 @@ fn main() {
     let mut files = Vec::new();
     find_crates(src_path, &mut files);
 
-    // Generate crate headers in parallel.
-    let handles = files
-        .into_iter()
-        .map(|path| {
-            let include_dir = include_path.to_path_buf();
-            let src_dir = src_path.to_path_buf();
-
-            std::thread::spawn(move || {
-                generate_crate_header(&path, &src_dir, &include_dir);
-            })
-        })
-        .collect::<Vec<_>>();
-    for handle in handles {
-        handle.join().expect("header generation failed");
-    }
+    // Generate crate headers in parallel using Rayon.
+    files
+        .par_iter()
+        .for_each(|path| generate_crate_header(path, src_path, include_path));
 }

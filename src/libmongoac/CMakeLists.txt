@@ -93,28 +93,32 @@ else ()
    set (MONGOAC_VERSION_PRERELEASE "")
 endif ()
 
+# Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
+set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
+
+# Cargo.toml defines the library basename as "mongoac". Apply `MONGOAC_OUTPUT_BASENAME` during the install step.
+set (cargo_library_shared "${CMAKE_SHARED_LIBRARY_PREFIX}mongoac${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set (cargo_library_static "${CMAKE_STATIC_LIBRARY_PREFIX}mongoac${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+# Cargo uses a separate subdirectory per build type.
+set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
+
+set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
+set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${cargo_library_shared}")
+set (library_shared_filename_full "${library_shared_filename}.${PROJECT_VERSION}")
+set (library_shared_filename_major "${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
+set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${cargo_library_static}")
+
+file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
+file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h")
+
 configure_file (
    "${source_include_dir}/mongoac/version.h.in"
    "${binary_include_dir}/mongoac/version.h"
 )
-
-# Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
-set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
-
-set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
-set (cargo_library_shared "${cargo_target_build_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set (cargo_library_static "${cargo_target_build_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-
-set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
-set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}")
-set (library_shared_soversion_full "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}.${PROJECT_VERSION}")
-set (library_shared_soversion "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
-set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_static_filename}")
-
-file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
-file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h" "${binary_include_dir}/*.h")
+list (APPEND mongoac_headers "${binary_include_dir}/mongoac/version.h")
 
 set (cargo_dependencies
   ${cargo_sources}
@@ -123,13 +127,13 @@ set (cargo_dependencies
   "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
 )
 
-set (cargo_headers "")
+set (crate_headers "")
 foreach (source IN LISTS cargo_sources)
   cmake_path (GET source FILENAME filename)
 
   # Keep synchronized with `SKIP_CARGO_HEADERS` in tools/generate-crate-headers/src/main.rs.
-  set (skip_cargo_headers "lib.rs" "mod.rs" "version.rs")
-  if (filename IN_LIST skip_cargo_headers)
+  set (skip_crate_headers "lib.rs" "mod.rs" "version.rs")
+  if (filename IN_LIST skip_crate_headers)
     continue ()
   endif ()
 
@@ -138,20 +142,21 @@ foreach (source IN LISTS cargo_sources)
     continue () # Always exclude private crates.
   endif ()
   cmake_path (REPLACE_EXTENSION header LAST_ONLY ".h" OUTPUT_VARIABLE header)
-  list (APPEND cargo_headers "${binary_include_dir}/mongoac/${header}")
+  list (APPEND crate_headers "${binary_include_dir}/mongoac/${header}")
 
   # Keep synchronized with `SKIP_FORWARD_HEADERS` in tools/generate-crate-headers/src/main.rs.
   set (skip_forward_headers "string")
   cmake_path (GET header STEM LAST_ONLY fwd_name)
   if (NOT fwd_name IN_LIST skip_forward_headers)
     cmake_path (REMOVE_EXTENSION header LAST_ONLY OUTPUT_VARIABLE fwd_stem)
-    list (APPEND cargo_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
+    list (APPEND crate_headers "${binary_include_dir}/mongoac/${fwd_stem}-fwd.h")
   endif ()
 endforeach ()
 
 add_custom_command (
-  OUTPUT ${cargo_headers}
+  OUTPUT ${crate_headers}
   COMMENT "Generating mongoac crate headers"
+  USES_TERMINAL
   COMMAND
     "${CMAKE_COMMAND}" -E env
       "MONGOAC_SRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -168,9 +173,9 @@ add_custom_command (
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/Cargo.toml"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-crate-headers/src/main.rs"
 )
-add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${cargo_headers})
+add_custom_target (mongoac_crate_headers_target ALL DEPENDS ${crate_headers})
 
-set_source_files_properties (${mongoac_headers} ${cargo_headers} PROPERTIES LANGUAGE C)
+set_source_files_properties (${mongoac_headers} ${crate_headers} PROPERTIES LANGUAGE C)
 
 set (mongoac_file_set_headers
   FILE_SET HEADERS
@@ -179,27 +184,18 @@ set (mongoac_file_set_headers
       "${binary_include_dir}"
     FILES
       ${mongoac_headers}
-      ${cargo_headers}
+      ${crate_headers}
 )
 
 if ("$CACHE{ENABLE_SHARED}")
   if (LINUX)
-    # Patch shared library with SONAME.
+    # Patch the installed shared library with an ELF SONAME.
     find_program (PATCHELF_EXECUTABLE patchelf)
 
-    if (PATCHELF_EXECUTABLE)
-      set (patchelf_command
-        COMMAND
-          "${PATCHELF_EXECUTABLE}"
-          --set-soname
-          "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
-          "${library_shared_soversion_full}"
-      )
-    else ()
+    if (NOT PATCHELF_EXECUTABLE)
       message (WARNING "patchelf not found: mongoac shared library will not have an ELF SONAME!")
-      set (patchelf_command "")
     endif ()
-  endif()
+  endif ()
 
   if (WIN32)
     message (WARNING "The mongoac shared library has not yet been tested on Windows!")
@@ -212,9 +208,8 @@ if ("$CACHE{ENABLE_SHARED}")
   add_custom_command (
     OUTPUT
       "${library_shared}"
-      "${library_shared_soversion}"
-      "${library_shared_soversion_full}"
     COMMENT "Building the mongoac shared library"
+    USES_TERMINAL
     COMMAND
       "${CMAKE_COMMAND}" -E env
         "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
@@ -229,28 +224,15 @@ if ("$CACHE{ENABLE_SHARED}")
         "$<$<NOT:$<CONFIG:Debug>>:--release>"
     COMMAND
       "${CMAKE_COMMAND}" -E copy
-        "${cargo_library_shared}"
-        "${library_shared_soversion_full}"
-    COMMAND
-      "${CMAKE_COMMAND}" -E create_symlink
-        "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION}"
-        "${library_shared_soversion}"
-    COMMAND
-      "${CMAKE_COMMAND}" -E create_symlink
-        "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}.${PROJECT_VERSION_MAJOR}"
+        "${cargo_target_build_dir}/${cargo_library_shared}"
         "${library_shared}"
-    ${patchelf_command}
     DEPENDS
       ${cargo_dependencies}
     BYPRODUCTS
-      "${cargo_library_shared}"
+      "${cargo_target_build_dir}/${cargo_library_shared}"
   )
 
-  add_custom_target (mongoac_shared_target ALL DEPENDS
-    "${library_shared}"
-    "${library_shared_soversion}"
-    "${library_shared_soversion_full}"
-  )
+  add_custom_target (mongoac_shared_target ALL DEPENDS "${library_shared}")
 
   add_library (mongoac_shared INTERFACE)
   set_target_properties (mongoac_shared PROPERTIES
@@ -268,12 +250,23 @@ if ("$CACHE{ENABLE_SHARED}")
   install (TARGETS mongoac_shared EXPORT mongoac-targets
     FILE_SET HEADERS DESTINATION "${MONGOAC_INSTALL_INCLUDEDIR}"
   )
-  install (
-    FILES
-      "${library_shared_soversion_full}"
-      "${library_shared_soversion}"
-      "${library_shared}"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+
+  # Rename the library to its full filename during installation, e.g. "libmongoac0.so.1.2.3"
+  install (FILES "${library_shared}" DESTINATION "${CMAKE_INSTALL_LIBDIR}" RENAME "${library_shared_filename_full}")
+  # Manually (re-)support `DESTDIR` env var override due to `install (CODE)` being unaware.
+  set (install_full_libdir "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+  # Set the SONAME of the installed shared library via `patchelf`, e.g. "libmongoac0.so.1".
+  if (LINUX AND PATCHELF_EXECUTABLE)
+    install (CODE
+      "execute_process (COMMAND \"${PATCHELF_EXECUTABLE}\" --set-soname \"${library_shared_filename_major}\" \"${install_full_libdir}/${library_shared_filename_full}\" COMMAND_ERROR_IS_FATAL ANY)"
+    )
+  endif ()
+  # Create soname symlinks, e.g.:
+  #  - libmongoac0.so.1 -> libmongoac0.so.1.2.3
+  #  - libmongoac0.so -> libmongoac0.so.1
+  install (CODE
+    "file (CREATE_LINK \"${library_shared_filename_full}\" \"${install_full_libdir}/${library_shared_filename_major}\" SYMBOLIC)
+     file (CREATE_LINK \"${library_shared_filename_major}\" \"${install_full_libdir}/${library_shared_filename}\" SYMBOLIC)"
   )
 endif ()
 
@@ -281,6 +274,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
   add_custom_command (
     OUTPUT "${library_static}"
     COMMENT "Building the mongoac static library"
+    USES_TERMINAL
     COMMAND
       "${CMAKE_COMMAND}" -E env
         "MONGOAC_VERSION_FULL=${MONGOAC_VERSION_FULL}"
@@ -295,12 +289,12 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
         "$<$<NOT:$<CONFIG:Debug>>:--release>"
     COMMAND
       "${CMAKE_COMMAND}" -E copy
-        "${cargo_library_static}"
+        "${cargo_target_build_dir}/${cargo_library_static}"
         "${library_static}"
     DEPENDS
       ${cargo_dependencies}
     BYPRODUCTS
-      "${cargo_library_static}"
+      "${cargo_target_build_dir}/${cargo_library_static}"
   )
 
   add_custom_target (mongoac_static_target ALL DEPENDS "${library_static}")
@@ -323,9 +317,13 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
     install (
       FILES "${library_static}"
       DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      RENAME "${library_static_filename}"
     )
   endif ()
 endif ()
+
+# Include the Cargo target directory as part of the global `clean` target.
+set_property (DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY ADDITIONAL_CLEAN_FILES "${cargo_target_dir}")
 
 if ("$CACHE{ENABLE_SHARED}" OR "$CACHE{ENABLE_STATIC}" STREQUAL "ON")
   install (EXPORT mongoac-targets

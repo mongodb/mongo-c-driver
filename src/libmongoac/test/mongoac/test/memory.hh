@@ -23,4 +23,12 @@ std::unique_ptr<T, D> make_unique(T* ptr, D deleter) {
     return std::unique_ptr<T, D>(ptr, deleter);
 }
 
+#define REQUIRE_MAKE_UNIQUE(ptr, deleter)                                          \
+    [&] {                                                                          \
+        auto _ptr = (ptr);                                                         \
+        auto _deleter = (deleter);                                                 \
+        REQUIRE(_ptr);                                                             \
+        return ::mongoac::test::make_unique(std::move(_ptr), std::move(_deleter)); \
+    }()
+
 } // namespace mongoac::test

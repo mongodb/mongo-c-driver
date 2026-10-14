@@ -33,16 +33,16 @@
       "version": "v2.11.3"
     },
     {
-      "bom-ref": "pkg:github/madler/zlib@v1.3.1",
+      "bom-ref": "pkg:github/madler/zlib@v1.3.2",
       "copyright": "(C) 1995-2024 Jean-loup Gailly and Mark Adler",
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz"
+          "url": "https://github.com/madler/zlib/archive/v1.3.2.tar.gz"
         },
         {
           "type": "website",
-          "url": "https://github.com/madler/zlib/tree/v1.3.1"
+          "url": "https://github.com/madler/zlib/tree/v1.3.2"
         }
       ],
       "group": "madler",
@@ -54,9 +54,9 @@
         }
       ],
       "name": "zlib",
-      "purl": "pkg:github/madler/zlib@v1.3.1",
+      "purl": "pkg:github/madler/zlib@v1.3.2",
       "type": "library",
-      "version": "v1.3.1"
+      "version": "v1.3.2"
     },
     {
       "bom-ref": "pkg:github/mnunberg/jsonsl",
@@ -111,7 +111,7 @@
       "ref": "pkg:github/juliastrings/utf8proc@v2.11.3"
     },
     {
-      "ref": "pkg:github/madler/zlib@v1.3.1"
+      "ref": "pkg:github/madler/zlib@v1.3.2"
     },
     {
       "ref": "pkg:github/mnunberg/jsonsl"
@@ -121,7 +121,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-08-21T14:33:32.789459+00:00",
+    "timestamp": "2026-09-30T17:54:09.472029+00:00",
     "tools": [
       {
         "externalReferences": [
@@ -164,7 +164,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:fcc43679-10c7-4160-bcbd-7b8afb4bcf0e",
+  "serialNumber": "urn:uuid:19aff205-6fea-446b-91d8-b61e8365cb4e",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",

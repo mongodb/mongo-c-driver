@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::private::macros::*;
-
 use crate::string::StringT;
 
 use num_enum::{FromPrimitive, IntoPrimitive};
@@ -23,6 +22,8 @@ use strum::EnumMessage;
 pub type mongoac_error_category_t = i32;
 pub const MONGOAC_ERROR_CATEGORY_NONE: mongoac_error_category_t = 0;
 pub const MONGOAC_ERROR_CATEGORY_MONGOAC: mongoac_error_category_t = 1;
+pub const MONGOAC_ERROR_CATEGORY_SERVER: mongoac_error_category_t = 2;
+pub const MONGOAC_ERROR_CATEGORY_RUST: mongoac_error_category_t = 3;
 pub const MONGOAC_ERROR_CATEGORY_UNKNOWN: mongoac_error_category_t = i32::MIN;
 
 #[allow(non_camel_case_types)]
@@ -30,6 +31,7 @@ pub type mongoac_error_code_t = i32;
 pub const MONGOAC_ERROR_CODE_OK: mongoac_error_code_t = 0;
 pub const MONGOAC_ERROR_CODE_INVALID_ARGUMENT: mongoac_error_code_t = 1;
 pub const MONGOAC_ERROR_CODE_RUNTIME_ERROR: mongoac_error_code_t = 2;
+pub const MONGOAC_ERROR_CODE_TIMEOUT: mongoac_error_code_t = 3;
 pub const MONGOAC_ERROR_CODE_UNKNOWN: mongoac_error_code_t = i32::MIN;
 
 #[derive(Clone, Copy, Debug, Eq, FromPrimitive, IntoPrimitive, PartialEq)]
@@ -37,6 +39,8 @@ pub const MONGOAC_ERROR_CODE_UNKNOWN: mongoac_error_code_t = i32::MIN;
 pub enum ErrorCategoryT {
     None = MONGOAC_ERROR_CATEGORY_NONE,
     MongoAC = MONGOAC_ERROR_CATEGORY_MONGOAC,
+    Server = MONGOAC_ERROR_CATEGORY_SERVER,
+    Rust = MONGOAC_ERROR_CATEGORY_RUST,
 
     #[num_enum(catch_all)]
     Unknown(i32),
@@ -53,6 +57,9 @@ pub enum ErrorCodeT {
 
     #[strum(message = "runtime error")]
     RuntimeError = MONGOAC_ERROR_CODE_RUNTIME_ERROR,
+
+    #[strum(message = "timeout")]
+    Timeout = MONGOAC_ERROR_CODE_TIMEOUT,
 
     #[strum(message = "unknown error code")]
     #[num_enum(catch_all)]
@@ -110,6 +117,8 @@ pub enum ErrorT {
         code: ErrorCodeT,
         message: Option<String>,
     },
+    Server(mongodb::error::Error), // Command | Write
+    Rust(mongodb::error::Error),
     Unknown {
         code: i32,
         category: i32,
@@ -127,6 +136,8 @@ impl ErrorT {
         match self {
             Self::None => ErrorCategoryT::None,
             Self::MongoAC { .. } => ErrorCategoryT::MongoAC,
+            Self::Server(_) => ErrorCategoryT::Server,
+            Self::Rust(_) => ErrorCategoryT::Rust,
             Self::Unknown { code: _, category } => ErrorCategoryT::Unknown(*category),
         }
     }
@@ -136,6 +147,22 @@ impl ErrorT {
         match self {
             Self::None => ErrorCodeT::Ok,
             Self::MongoAC { code, .. } => *code,
+
+            Self::Server(err) => {
+                use mongodb::error::ErrorKind;
+                use mongodb::error::WriteFailure;
+
+                ErrorCodeT::from(match err.kind.as_ref() {
+                    ErrorKind::Command(err) => err.code,
+                    ErrorKind::Write(WriteFailure::WriteError(err)) => err.code,
+                    ErrorKind::Write(WriteFailure::WriteConcernError(err)) => err.code,
+
+                    _ => MONGOAC_ERROR_CODE_UNKNOWN, // #[non_exhaustive]
+                })
+            }
+
+            Self::Rust(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
+
             Self::Unknown { code, .. } => ErrorCodeT::Unknown(*code),
         }
     }
@@ -153,33 +180,35 @@ impl ErrorT {
                 })
             }
 
+            Self::Server(err) | Self::Rust(err) => Some(err.to_string()),
+
             _ => None,
         }
     }
 
-    fn clear(&mut self) {
+    pub(crate) fn clear(&mut self) {
         *self = Self::None;
     }
 
     fn set(&mut self, category: i32, code: i32) {
-        *self = match category.into() {
-            ErrorCategoryT::None => {
-                if code == MONGOAC_ERROR_CODE_OK {
-                    Self::None // Special case: equal to default state.
-                } else {
-                    Self::Unknown {
-                        category: MONGOAC_ERROR_CATEGORY_NONE,
-                        code,
-                    }
-                }
+        match (category, code) {
+            // Special case: default state.
+            (MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK) => {
+                *self = Self::None;
             }
 
-            ErrorCategoryT::MongoAC => Self::MongoAC {
-                code: code.into(),
-                message: None,
-            },
+            // Special case: support directly mapping mongoac error codes.
+            (MONGOAC_ERROR_CATEGORY_MONGOAC, _) => {
+                *self = Self::MongoAC {
+                    code: ErrorCodeT::from(code),
+                    message: None,
+                };
+            }
 
-            ErrorCategoryT::Unknown(_) => Self::Unknown { code, category },
+            // Map all other user-provided error codes directly to `Unknown`.
+            _ => {
+                *self = Self::Unknown { category, code };
+            }
         }
     }
 }
@@ -194,10 +223,40 @@ impl Clone for ErrorT {
                 message: message.clone(),
             },
 
+            Self::Server(err) => Self::Server(err.clone()),
+            Self::Rust(err) => Self::Rust(err.clone()),
+
             Self::Unknown { category, code } => Self::Unknown {
                 category: *category,
                 code: *code,
             },
+        }
+    }
+}
+
+impl From<tokio::time::error::Elapsed> for ErrorT {
+    fn from(error: tokio::time::error::Elapsed) -> Self {
+        Self::MongoAC {
+            code: ErrorCodeT::Timeout,
+            message: Some(error.to_string()),
+        }
+    }
+}
+
+impl From<mongodb::error::Error> for ErrorT {
+    /// Convert the `mongodb::error::Error` to `ErrorT::Server` when applicable, otherwise `ErrorT::Rust`.
+    fn from(err: mongodb::error::Error) -> Self {
+        use mongodb::error::ErrorKind;
+        use mongodb::error::WriteFailure;
+
+        // The subset of `mongodb::error::Error` variants which contain a single unambiguous server error code.
+        match err.kind.as_ref() {
+            ErrorKind::Command(_)
+            | ErrorKind::Write(WriteFailure::WriteError(_) | WriteFailure::WriteConcernError(_)) => {
+                Self::Server(err)
+            }
+
+            _ => Self::Rust(err), // `#[non_exhaustive]`
         }
     }
 }

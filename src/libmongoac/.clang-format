@@ -142,11 +142,11 @@ IncludeBlocks:   Regroup
 IncludeCategories:
   - Regex: '".*"' # relative headers
     Priority: 10
-  - Regex: 'mongoac/.*-fwd\.h' # mongoac forward headers
-    Priority: 20
-  - Regex: 'mongoac/.*\.h' # mongoac public headers
-    Priority: 21
   - Regex: 'mongoac/.*\.hh' # mongoac test headers
+    Priority: 20
+  - Regex: 'mongoac/.*-fwd\.h' # mongoac forward headers
+    Priority: 21
+  - Regex: 'mongoac/.*\.h' # mongoac public headers
     Priority: 22
   - Regex: 'bson/.*' # bson library headers
     Priority: 30

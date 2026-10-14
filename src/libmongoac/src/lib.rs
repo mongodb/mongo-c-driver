@@ -14,6 +14,13 @@
 
 mod private;
 
+pub mod client;
+pub mod collection;
+pub mod collection_options;
+pub mod database;
+pub mod database_options;
 pub mod error;
+pub mod future;
+pub mod runtime;
 pub mod string;
 pub mod version;
