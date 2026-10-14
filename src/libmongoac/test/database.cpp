@@ -122,14 +122,21 @@ TEST_CASE("get_collection", "[mongoac][database]") {
 }
 
 TEST_CASE("get_name", "[mongoac][database]") {
-    auto const client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+    SECTION("null") {
+        CHECK(from_mongoac(mongoac_database_get_name(nullptr)) == "");
+    }
 
-    auto const name = GENERATE(values<std::string_view>({"", "db", "a.b.c"}));
+    SECTION("basic") {
+        auto const client =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
 
-    auto const db = REQUIRE_MAKE_UNIQUE(
-        mongoac_client_get_database(client.get(), to_mongoac(name), nullptr), &mongoac_database_destroy);
+        auto const name = GENERATE(values<std::string_view>({"", "db", "a.b.c"}));
 
-    CHECK(from_mongoac(mongoac_database_get_name(db.get())) == name);
+        auto const db = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_get_database(client.get(), to_mongoac(name), nullptr), &mongoac_database_destroy);
+
+        CHECK(from_mongoac(mongoac_database_get_name(db.get())) == name);
+    }
 }
 
 TEST_CASE("get_runtime", "[mongoac][database]") {

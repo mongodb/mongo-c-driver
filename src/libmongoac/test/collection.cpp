@@ -99,19 +99,25 @@ TEST_CASE("get_client", "[mongoac][collection]") {
 }
 
 TEST_CASE("get_name", "[mongoac][collection]") {
-    auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
-    auto const client = client_owner.get();
-    auto const db_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, to_mongoac("db"), nullptr), &mongoac_database_destroy);
-    auto const db = db_owner.get();
+    SECTION("null") {
+        CHECK(from_mongoac(mongoac_collection_get_name(nullptr)) == "");
+    }
 
-    auto const name = GENERATE(values<std::string_view>({"", "coll", "a.b.c"}));
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+        auto const db_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_get_database(client, to_mongoac("db"), nullptr), &mongoac_database_destroy);
+        auto const db = db_owner.get();
 
-    auto const coll = REQUIRE_MAKE_UNIQUE(
-        mongoac_database_get_collection(db, to_mongoac(name), nullptr), &mongoac_collection_destroy);
+        auto const name = GENERATE(values<std::string_view>({"", "coll", "a.b.c"}));
 
-    CHECK(from_mongoac(mongoac_collection_get_name(coll.get())) == name);
+        auto const coll = REQUIRE_MAKE_UNIQUE(
+            mongoac_database_get_collection(db, to_mongoac(name), nullptr), &mongoac_collection_destroy);
+
+        CHECK(from_mongoac(mongoac_collection_get_name(coll.get())) == name);
+    }
 }
 
 TEST_CASE("get_runtime", "[mongoac][collection]") {
