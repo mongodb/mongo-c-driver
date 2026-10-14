@@ -149,6 +149,7 @@ TEST_CASE("drop", "[mongoac][database]") {
 
     SECTION("null") {
         CHECK_NOTHROW(mongoac_database_drop(nullptr, nullptr, nullptr, error));
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("basic") {
