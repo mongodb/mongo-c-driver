@@ -124,13 +124,13 @@ TEST_CASE("get_runtime_address", "[mongoac][future]") {
     auto const client = client_owner.get();
 
     SECTION("null") {
-        CHECK(mongoac_future_get_runtime_address(nullptr) == 0u);
+        CHECK(mongoac_future_get_runtime_address(nullptr) == std::uintptr_t{});
     }
 
     SECTION("basic") {
         auto const future = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
 
-        CHECK(mongoac_future_get_runtime_address(future.get()) != 0u);
+        CHECK(mongoac_future_get_runtime_address(future.get()) != std::uintptr_t{});
     }
 
     SECTION("unique") {

@@ -26,6 +26,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
@@ -112,13 +113,13 @@ TEST_CASE("clone", "[mongoac][error]") {
 
 TEST_CASE("category", "[mongoac][error]") {
     SECTION("null") {
-        CHECK(mongoac_error_category(nullptr) == MONGOAC_ERROR_CATEGORY_NONE);
+        CHECK(mongoac_error_category(nullptr) == std::int32_t{}); // MONGOAC_ERROR_CATEGORY_NONE
     }
 }
 
 TEST_CASE("code", "[mongoac][error]") {
     SECTION("null") {
-        CHECK(mongoac_error_code(nullptr) == MONGOAC_ERROR_CODE_OK);
+        CHECK(mongoac_error_code(nullptr) == std::int32_t{}); // MONGOAC_ERROR_CODE_OK
     }
 }
 
@@ -127,12 +128,12 @@ TEST_CASE("message", "[mongoac][error]") {
     auto const error = error_owner.get();
 
     SECTION("null") {
-        CHECK(from_mongoac(mongoac_error_message(nullptr)) == "");
+        CHECK(from_mongoac(mongoac_error_message(nullptr)) == std::string_view{});
     }
 
     SECTION("basic") {
         SECTION("basic") {
-            CHECK(from_mongoac(mongoac_error_message(error)) == "");
+            CHECK(from_mongoac(mongoac_error_message(error)) == std::string_view{});
         }
     }
 
