@@ -425,7 +425,7 @@ macro_rules! safe_string_view_with_error {
     }};
 }
 
-/// Safely convert the `BsonViewT` into a `RawDocument` when not null.
+/// Safely convert the `BsonViewT` into a `&RawDocument` when not null.
 ///
 /// When `bson.ptr` is null or `bson` contains invalid BSON, set `error` and early-return from the function via
 /// `return Default::default();`.
@@ -434,7 +434,7 @@ macro_rules! safe_string_view_with_error {
 ///
 /// ```rust
 /// fn example(bson: BsonViewT, error: Option<&mut ErrorT>) -> R {
-///     let res: RawDocument = safe_bson_view_with_error!(bson, error);
+///     let res: &RawDocument = safe_bson_view_with_error!(bson, error);
 ///     assert!(!bson.ptr.is_null());
 /// }
 /// ```
