@@ -1346,22 +1346,6 @@ _test_cstring_vec(void)
    }
 }
 
-// void
-// _test_format(void)
-// {
-//    mstr s = mlib_format("Hello, world!");
-//    mlib_check(s.data, str_eq, "Hello, world!");
-//    mstr_destroy(&s);
-
-//    // s = mlib_format("Hello, {} world!", integer(42));
-//    // mlib_check(s.data, str_eq, "Hello, 42 world!");
-//    // mstr_destroy(&s);
-
-//    // s = mlib_format("Hello, {1} {} {{{2}}}!", cstring("world"), mstr(mstr_cstring("test")), boolean(31));
-//    mlib_check(s.data, str_eq, "Hello, test world {true}!");
-//    mstr_destroy(&s);
-// }
-
 void
 test_mlib_install(TestSuite *suite)
 {
