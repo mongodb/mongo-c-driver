@@ -9,6 +9,7 @@
 #include <mlib/pp/basic.h>
 #include <mlib/pp/is-empty.h>
 #include <mlib/str.h>
+#include <mlib/str_vec.h>
 #include <mlib/test.h>
 #include <mlib/time_point.h>
 #include <mlib/timer.h>
@@ -34,6 +35,8 @@ typedef struct tracking_allocator {
    size_t previous_size;
    size_t *out_new_size;
    bool fail;
+   size_t fail_on_call;
+   size_t live_allocations;
 } tracking_allocator;
 
 /* Use real allocations, recording the boundary arguments independently of the helpers. */
@@ -49,16 +52,21 @@ tracking_reallocate(void *userdata, void *ptr, size_t size, size_t previous_size
 
    if (size == 0) {
       free(ptr);
+      --state->live_allocations;
       if (out_new_size) {
          *out_new_size = 0;
       }
       return NULL;
    }
-   if (state->fail) {
+   if (state->fail || state->calls == state->fail_on_call) {
       return NULL;
    }
    /* Report more usable space to catch helpers that overwrite the callback's result. */
+   const bool is_new = ptr == NULL;
    void *const ret = realloc(ptr, size + 8);
+   if (ret && is_new) {
+      ++state->live_allocations;
+   }
    if (ret && out_new_size) {
       *out_new_size = size + 8;
    }
@@ -1240,6 +1248,95 @@ _test_str_format(void)
 }
 
 static void
+_test_str_allocator(void)
+{
+   tracking_allocator state = {0};
+   const mlib_allocator allocator = {&state, tracking_reallocate};
+   mlib_set_allocator(&allocator);
+
+   mstr s = mstr_copy_cstring("abc");
+   mlib_check(s.data, str_eq, "abc");
+   mlib_check(state.calls, eq, 1);
+   mlib_check(state.previous_ptr, ptr_eq, NULL);
+   mlib_check(state.previous_size, eq, 0);
+   mlib_check(state.requested_size, eq, 4);
+
+   mlib_check(mstr_append_char(&s, 'd'));
+   mlib_check(s.data, str_eq, "abcd");
+   mlib_check(state.calls, eq, 2);
+   mlib_check(state.previous_size, eq, 4);
+   mlib_check(state.requested_size, eq, 5);
+
+   mlib_check(mstr_resize_for_overwrite(&s, 2));
+   mlib_check(s.data, str_eq, "ab");
+   mlib_check(state.previous_size, eq, 5);
+   mlib_check(state.requested_size, eq, 3);
+
+   mlib_check(mstr_resize_for_overwrite(&s, 0));
+   mlib_check(s.data != NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(s.data[0], eq, 0);
+   mlib_check(state.previous_size, eq, 3);
+   mlib_check(state.requested_size, eq, 1);
+
+   mstr_destroy(&s);
+   mlib_check(state.previous_size, eq, 1);
+   mlib_check(state.requested_size, eq, 0);
+   mlib_check(state.live_allocations, eq, 0);
+   const size_t calls = state.calls;
+   mstr_destroy(&s);
+   mstr_destroy(NULL);
+   mlib_check(state.calls, eq, calls);
+   mlib_restore_allocator();
+}
+
+static void
+_test_str_allocator_failure(void)
+{
+   tracking_allocator state = {0};
+   const mlib_allocator allocator = {&state, tracking_reallocate};
+   mlib_set_allocator(&allocator);
+   mstr s = mstr_copy_cstring("abcdef");
+   char *const data = s.data;
+   mlib_check(data != NULL);
+   state.fail = true;
+
+   const size_t lengths[] = {12, 2};
+   for (size_t i = 0; i != 2; ++i) {
+      mlib_check(!mstr_resize_for_overwrite(&s, lengths[i]));
+      mlib_check(s.data, ptr_eq, data);
+      mlib_check(s.len, eq, 6);
+      mlib_check(s.data, str_eq, "abcdef");
+      mlib_check(state.previous_size, eq, 7);
+      mlib_check(state.requested_size, eq, lengths[i] + 1);
+   }
+   mstr failed = mstr_new(0);
+   mlib_check(failed.data, ptr_eq, NULL);
+   mlib_check(!mstr_append_char(&s, 'g'));
+   mlib_check(!mstr_assign(&s, mstr_substr(s, 2, 3)));
+   mlib_check(s.data, ptr_eq, data);
+   mlib_check(s.data, str_eq, "abcdef");
+   mlib_check(s.len, eq, 6);
+   mlib_check(!mstr_sprintf_append(&s, "%s", "more"));
+   mlib_check(s.data, str_eq, "abcdef");
+
+   mlib_check(!mstr_splice(&s, 1, 3, mstr_cstring("")));
+   mlib_check(s.len, eq, 6);
+   mlib_check(s.data[s.len], eq, 0);
+   mstr_destroy(&s);
+   mlib_check(state.previous_size, eq, 7);
+   mlib_check(state.live_allocations, eq, 0);
+
+   state.fail = false;
+   state.fail_on_call = state.calls + 2;
+   failed = mstr_sprintf("%s", "abc");
+   mlib_check(failed.data, ptr_eq, NULL);
+   mlib_check(failed.len, eq, 0);
+   mlib_check(state.live_allocations, eq, 0);
+   mlib_restore_allocator();
+}
+
+static void
 _test_duration(void)
 {
    mlib_duration d = mlib_duration();
@@ -1444,6 +1541,7 @@ _test_timer(void)
 // Tests for `int_vec` assert the behavior of the vector type when handling trivial
 // elements.
 #define T int
+#define VecCopyElement VecTrivialCopyElement
 #include <mlib/vec.th>
 static void
 _test_int_vec(void)
@@ -1475,6 +1573,141 @@ _test_int_vec(void)
    mlib_check(mlib_vec_at(ints, -1), eq, -7, because, "-7 is still the last element");
 
    int_vec_destroy(&ints);
+}
+
+static void
+_test_vec_allocator(void)
+{
+   tracking_allocator state = {0};
+   const mlib_allocator allocator = {&state, tracking_reallocate};
+   mlib_set_allocator(&allocator);
+   int_vec v = int_vec_new();
+   mlib_check(int_vec_reserve(&v, 0));
+   int_vec_destroy(&v);
+   mlib_check(state.calls, eq, 0);
+
+   mlib_check(int_vec_reserve(&v, 4));
+   mlib_check(state.previous_size, eq, 0);
+   mlib_check(state.requested_size, eq, 4 * sizeof(int));
+   mlib_check(v.capacity, eq, 4);
+   mlib_check(int_vec_resize(&v, 2));
+   mlib_check(v.data[0], eq, 0);
+   mlib_check(v.data[1], eq, 0);
+   v.data[0] = 42;
+   v.data[1] = 1729;
+
+   const size_t capacity = v.capacity;
+   mlib_check(int_vec_reserve(&v, 8));
+   mlib_check(state.previous_size, eq, capacity * sizeof(int));
+   mlib_check(state.requested_size, eq, 8 * sizeof(int));
+   mlib_check(v.data[0], eq, 42);
+   mlib_check(v.data[1], eq, 1729);
+   const size_t calls = state.calls;
+   mlib_check(int_vec_reserve(&v, 8));
+   mlib_check(state.calls, eq, calls);
+
+   mlib_check(int_vec_reserve(&v, 0));
+   mlib_check(v.capacity, eq, 2);
+   mlib_check(state.previous_size, eq, 8 * sizeof(int));
+   mlib_check(state.requested_size, eq, 2 * sizeof(int));
+   mlib_check(v.data[0], eq, 42);
+   mlib_check(v.data[1], eq, 1729);
+
+   mlib_check(int_vec_resize(&v, 0));
+   mlib_check(int_vec_reserve(&v, 0));
+   mlib_check(v.data, ptr_eq, NULL);
+   mlib_check(v.capacity, eq, 0);
+   mlib_check(state.previous_size, eq, 2 * sizeof(int));
+   mlib_check(state.requested_size, eq, 0);
+   mlib_check(state.live_allocations, eq, 0);
+
+   mlib_check(int_vec_resize(&v, 3));
+   const size_t final_capacity = v.capacity;
+   int_vec_destroy(&v);
+   mlib_check(state.previous_size, eq, final_capacity * sizeof(int));
+   mlib_check(state.requested_size, eq, 0);
+   mlib_check(state.live_allocations, eq, 0);
+   mlib_restore_allocator();
+}
+
+static void
+_test_vec_allocator_failure(void)
+{
+   tracking_allocator state = {0};
+   const mlib_allocator allocator = {&state, tracking_reallocate};
+   mlib_set_allocator(&allocator);
+   int_vec v = int_vec_new();
+   mlib_check(int_vec_resize(&v, 2));
+   v.data[0] = 42;
+   v.data[1] = 1729;
+   int *const data = v.data;
+   const size_t capacity = v.capacity;
+   state.fail = true;
+
+   mlib_check(!int_vec_reserve(&v, 8));
+   mlib_check(!int_vec_resize(&v, 8));
+   mlib_check(int_vec_push(&v), ptr_eq, NULL);
+   mlib_check(v.data, ptr_eq, data);
+   mlib_check(v.size, eq, 2);
+   mlib_check(v.capacity, eq, capacity);
+   mlib_check(v.data[0], eq, 42);
+   mlib_check(v.data[1], eq, 1729);
+   mlib_check(state.previous_size, eq, capacity * sizeof(int));
+
+   int_vec copy;
+   mlib_check(!int_vec_init_copy(&copy, &v));
+   mlib_check(copy.data, ptr_eq, NULL);
+   mlib_check(copy.size, eq, 0);
+   mlib_check(copy.capacity, eq, 0);
+   const size_t calls = state.calls;
+   mlib_check(!int_vec_reserve(&v, int_vec_max_size() + 1));
+   mlib_check(state.calls, eq, calls);
+
+   mlib_check(int_vec_resize(&v, 1));
+   mlib_check(!int_vec_reserve(&v, 1));
+   mlib_check(v.data, ptr_eq, data);
+   mlib_check(v.size, eq, 1);
+   mlib_check(v.capacity, eq, capacity);
+   mlib_check(v.data[0], eq, 42);
+   int_vec_destroy(&copy);
+   int_vec_destroy(&v);
+   mlib_check(state.previous_size, eq, capacity * sizeof(int));
+   mlib_check(state.live_allocations, eq, 0);
+   mlib_restore_allocator();
+}
+
+static void
+_test_str_vec_allocator(void)
+{
+   tracking_allocator state = {0};
+   const mlib_allocator allocator = {&state, tracking_reallocate};
+   mlib_set_allocator(&allocator);
+   mstr_vec v = mstr_vec_new();
+   mlib_check(mstr_vec_resize(&v, 2));
+   mlib_check(mstr_assign(&v.data[0], mstr_cstring("abc")));
+   mlib_check(mstr_assign(&v.data[1], mstr_cstring("def")));
+   mlib_check(state.live_allocations, eq, 3);
+
+   mstr_vec copy;
+   mlib_check(mstr_vec_init_copy(&copy, &v));
+   mlib_check(copy.data[0].data, str_eq, "abc");
+   mlib_check(copy.data[1].data, str_eq, "def");
+   mlib_check(state.live_allocations, eq, 6);
+   mstr_vec_destroy(&copy);
+   mlib_check(state.live_allocations, eq, 3);
+
+   state.fail_on_call = state.calls + 3;
+   mlib_check(!mstr_vec_init_copy(&copy, &v));
+   mlib_check(copy.data, ptr_eq, NULL);
+   mlib_check(copy.size, eq, 0);
+   mlib_check(copy.capacity, eq, 0);
+   mlib_check(state.live_allocations, eq, 3);
+   mlib_check(v.data[0].data, str_eq, "abc");
+   mlib_check(v.data[1].data, str_eq, "def");
+   mstr_vec_destroy(&copy);
+   mstr_vec_destroy(&v);
+   mlib_check(state.live_allocations, eq, 0);
+   mlib_restore_allocator();
 }
 
 #define T char *
@@ -1550,12 +1783,17 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
    TestSuite_Add(suite, "/mlib/str", _test_str);
    TestSuite_Add(suite, "/mlib/str-format", _test_str_format);
+   TestSuite_Add(suite, "/mlib/str/allocator", _test_str_allocator);
+   TestSuite_Add(suite, "/mlib/str/allocator-failure", _test_str_allocator_failure);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
    TestSuite_Add(suite, "/mlib/sleep", _test_sleep);
    TestSuite_Add(suite, "/mlib/timer", _test_timer);
    TestSuite_Add(suite, "/mlib/int-vector", _test_int_vec);
    TestSuite_Add(suite, "/mlib/string-vector", _test_cstring_vec);
+   TestSuite_Add(suite, "/mlib/string-vector/allocator", _test_str_vec_allocator);
+   TestSuite_Add(suite, "/mlib/vector/allocator", _test_vec_allocator);
+   TestSuite_Add(suite, "/mlib/vector/allocator-failure", _test_vec_allocator_failure);
    // TestSuite_Add(suite, "/mlib/format", _test_format);
 }
 
