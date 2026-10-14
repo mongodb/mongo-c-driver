@@ -104,6 +104,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             ],
             "database_options" => &[],
             "database" => &[
+                "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/collection_options-fwd.h",
@@ -111,6 +112,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/drop_database_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/future-fwd.h",
+                "mongoac/run_command_options-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
