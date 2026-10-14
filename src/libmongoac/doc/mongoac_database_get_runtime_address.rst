@@ -25,4 +25,4 @@ When ``db`` is null, returns ``0``.
 
 .. seealso::
 
-   | :symbol:`mongoac_runtime_clone`
+   | :symbol:`mongoac_database_get_runtime`

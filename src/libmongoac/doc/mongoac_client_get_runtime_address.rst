@@ -25,4 +25,4 @@ When ``client`` is null, returns ``0``.
 
 .. seealso::
 
-   | :symbol:`mongoac_runtime_clone`
+   | :symbol:`mongoac_client_get_runtime`

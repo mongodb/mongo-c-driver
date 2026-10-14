@@ -23,4 +23,4 @@ Must be destroyed with :symbol:`mongoac_runtime_destroy()`.
 
 .. seealso::
 
-   | :symbol:`mongoac_runtime_clone`
+   | :symbol:`mongoac_client_get_runtime_address`
