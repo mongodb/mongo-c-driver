@@ -2405,6 +2405,43 @@ test_framework_skip_if_no_failpoint(void)
    return 1;
 }
 
+// `test_framework_skip_if_no_server_side_javascript` skips if the server cannot
+// evaluate server-side JavaScript (`$where`, `$function`, `mapReduce`).
+//
+// This is detected by probing with a trivial `$where` query.
+int
+test_framework_skip_if_no_server_side_javascript(void)
+{
+   if (!TestSuite_CheckLive()) {
+      return 0;
+   }
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "test", "test_server_side_javascript");
+
+   bson_t *const filter = tmp_bson("{'$where': 'function() { return true; }'}");
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, filter, NULL, NULL);
+
+   // The collection need not exist: the server parses `$where` regardless, which
+   // is what this probe checks.
+   const bson_t *ignored;
+   (void)mongoc_cursor_next(cursor, &ignored);
+
+   bson_error_t error;
+   const bool failed = mongoc_cursor_error(cursor, &error);
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+
+   if (failed) {
+      MONGOC_DEBUG("Skipping test requiring server-side JavaScript: %s", error.message);
+      return 0;
+   }
+
+   return 1;
+}
+
 int
 test_framework_skip_if_no_client_side_encryption(void)
 {

@@ -14,6 +14,9 @@
         "contention": {
           "$numberLong": "0"
         },
+        "trimFactor": {
+          "$numberInt": "1"
+        },
         "sparsity": {
           "$numberLong": "1"
         }

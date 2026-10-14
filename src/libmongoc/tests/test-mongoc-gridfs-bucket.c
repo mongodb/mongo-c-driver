@@ -820,7 +820,7 @@ test_gridfs_cb(void *scenario_vp)
 static void
 test_all_spec_tests(TestSuite *suite)
 {
-   install_json_test_suite(suite, JSON_DIR, "gridfs", &test_gridfs_cb);
+   install_json_test_suite(suite, JSON_DIR, "gridfs/legacy", &test_gridfs_cb);
 }
 
 static void
@@ -1260,6 +1260,74 @@ test_big_bucket_name(void)
    mongoc_client_destroy(client);
 }
 
+// GridFS prose test 1: "Aborting an upload with an injected file ID does not delete other files' chunks".
+static void
+prose_test_1(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_database_t *db = mongoc_client_get_database(client, "db");
+
+   bson_error_t error;
+   mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+   ASSERT_OR_PRINT(bucket, error);
+
+   // Clear the bucket's contents. Errors (e.g. "ns not found") are ignored.
+   (void)mongoc_collection_drop_with_opts(bucket->files, NULL, NULL);
+   (void)mongoc_collection_drop_with_opts(bucket->chunks, NULL, NULL);
+
+   // Upload "file1".
+   static const char *const file1_bytes = "file1 contents";
+   const size_t file1_len = strlen(file1_bytes);
+   bson_value_t file1_id;
+   _upload_file_from_str(bucket, "file1", file1_bytes, NULL, &file1_id);
+
+   // Open an upload stream for "file2" with a file ID that is a query operator
+   // document, then write to it and abort.
+   {
+      bson_t *const injected = tmp_bson("{'$gt': {'$minKey': 1}}");
+      const bson_value_t file2_id = {.value_type = BSON_TYPE_DOCUMENT,
+                                     .value.v_doc.data = (uint8_t *)bson_get_data(injected),
+                                     .value.v_doc.data_len = injected->len};
+
+      bson_t *const opts = tmp_bson("{'chunkSizeBytes': 2}");
+      mongoc_stream_t *const up =
+         mongoc_gridfs_bucket_open_upload_stream_with_id(bucket, &file2_id, "file2", opts, &error);
+      ASSERT_OR_PRINT(up, error);
+
+      ASSERT_CMPSSIZE_T(mongoc_stream_write(up, (void *)"data", 4u, 0), ==, 4);
+      ASSERT_OR_PRINT(mongoc_gridfs_bucket_abort_upload(up), (mongoc_gridfs_bucket_stream_error(up, &error), error));
+      mongoc_stream_destroy(up);
+   }
+
+   // Expect "file1" is still readable: its chunks were not deleted by the abort.
+   {
+      char buf[100] = {0};
+      const size_t nread = _download_file_into_buf(bucket, &file1_id, buf, sizeof buf);
+      ASSERT_CMPSIZE_T(nread, ==, file1_len);
+      ASSERT_CMPSTR(buf, file1_bytes);
+   }
+
+   // Expect "file2" was not saved.
+   {
+      bson_t *const injected = tmp_bson("{'$gt': {'$minKey': 1}}");
+      const bson_value_t file2_id = {.value_type = BSON_TYPE_DOCUMENT,
+                                     .value.v_doc.data = (uint8_t *)bson_get_data(injected),
+                                     .value.v_doc.data_len = injected->len};
+
+      mongoc_stream_t *const down = mongoc_gridfs_bucket_open_download_stream(bucket, &file2_id, &error);
+      ASSERT(!down);
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_FILE_NOT_FOUND, "No file with given id exists");
+   }
+
+   bson_value_destroy(&file1_id);
+   mongoc_gridfs_bucket_destroy(bucket);
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+}
+
 void
 test_gridfs_bucket_install(TestSuite *suite)
 {
@@ -1285,4 +1353,11 @@ test_gridfs_bucket_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/gridfs/options", test_gridfs_bucket_opts);
    TestSuite_AddLive(suite, "/gridfs/bad_sizes", test_bad_sizes);
    TestSuite_AddLive(suite, "/gridfs/big_bucket_name", test_big_bucket_name);
+   TestSuite_AddFull(suite,
+                     "/gridfs/prose_test_1",
+                     prose_test_1,
+                     NULL,
+                     NULL,
+                     // Server versions older than 5.0 do not support document values with "$"-prefixed keys.
+                     test_framework_skip_if_max_wire_version_less_than_13);
 }

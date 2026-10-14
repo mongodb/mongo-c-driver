@@ -460,6 +460,7 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
    mongoc_stream_t *fstream = NULL;
    mcommon_string_t *token_file_contents = NULL;
    char *path_and_query = NULL;
+   char *sts_endpoint = NULL;
 
    aws_web_identity_token_file = _mongoc_getenv("AWS_WEB_IDENTITY_TOKEN_FILE");
    aws_role_arn = _mongoc_getenv("AWS_ROLE_ARN");
@@ -522,9 +523,10 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
                                        aws_role_arn,
                                        MSTR_FMT(jwt_token));
 
-   // send an HTTP request to sts.amazonaws.com.
+   sts_endpoint = _mongoc_get_aws_sts_endpoint();
+
    if (!_send_http_request(true /* use_tls */,
-                           "sts.amazonaws.com",
+                           sts_endpoint,
                            443,
                            "POST",
                            path_and_query,
@@ -532,13 +534,14 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
                            &http_response_body,
                            &http_response_headers,
                            &http_error)) {
-      AUTH_ERROR_AND_FAIL("failed to contact sts.amazonaws.com: %s", http_error.message);
+      AUTH_ERROR_AND_FAIL("failed to contact %s: %s", sts_endpoint, http_error.message);
    }
 
    response_bson = bson_new_from_json((const uint8_t *)http_response_body, strlen(http_response_body), error);
    if (!response_bson) {
-      AUTH_ERROR_AND_FAIL("invalid JSON in response from sts.amazonaws.com. "
+      AUTH_ERROR_AND_FAIL("invalid JSON in response from %s. "
                           "Response headers: %s",
+                          sts_endpoint,
                           http_response_headers);
    }
 
@@ -572,32 +575,33 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
                                   &iter)) {
       AUTH_ERROR_AND_FAIL("did not find "
                           "AssumeRoleWithWebIdentityResponse.AssumeRoleWithWebIdentityResult."
-                          "Credentials in response from sts.amazonaws.com.");
+                          "Credentials in response from %s.",
+                          sts_endpoint);
    }
 
    if (!bson_iter_recurse(&iter, &Credentials_iter)) {
-      AUTH_ERROR_AND_FAIL("Unable to recurse in Credentials in response from sts.amazonaws.com");
+      AUTH_ERROR_AND_FAIL("Unable to recurse in Credentials in response from %s", sts_endpoint);
    }
 
    iter = Credentials_iter;
    if (bson_iter_find(&iter, "AccessKeyId") && BSON_ITER_HOLDS_UTF8(&iter)) {
       access_key_id = bson_iter_utf8(&iter, NULL);
    } else {
-      AUTH_ERROR_AND_FAIL("did not find AccessKeyId in response from sts.amazonaws.com");
+      AUTH_ERROR_AND_FAIL("did not find AccessKeyId in response from %s", sts_endpoint);
    }
 
    iter = Credentials_iter;
    if (bson_iter_find(&iter, "SecretAccessKey") && BSON_ITER_HOLDS_UTF8(&iter)) {
       secret_access_key = bson_iter_utf8(&iter, NULL);
    } else {
-      AUTH_ERROR_AND_FAIL("did not find SecretAccessKey in response from sts.amazonaws.com");
+      AUTH_ERROR_AND_FAIL("did not find SecretAccessKey in response from %s", sts_endpoint);
    }
 
    iter = Credentials_iter;
    if (bson_iter_find(&iter, "SessionToken") && BSON_ITER_HOLDS_UTF8(&iter)) {
       session_token = bson_iter_utf8(&iter, NULL);
    } else {
-      AUTH_ERROR_AND_FAIL("did not find SessionToken in response from sts.amazonaws.com");
+      AUTH_ERROR_AND_FAIL("did not find SessionToken in response from %s", sts_endpoint);
    }
 
    iter = Credentials_iter;
@@ -611,7 +615,7 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
       }
       creds->expiration.set = true;
    } else {
-      AUTH_ERROR_AND_FAIL("did not find Expiration in response from sts.amazonaws.com");
+      AUTH_ERROR_AND_FAIL("did not find Expiration in response from %s", sts_endpoint);
    }
 
    if (!_validate_and_set_creds(access_key_id, secret_access_key, session_token, creds, error)) {
@@ -620,6 +624,7 @@ _obtain_creds_from_assumerolewithwebidentity(_mongoc_aws_credentials_t *creds, b
 
    ret = true;
 fail:
+   bson_free(sts_endpoint);
    bson_free(path_and_query);
    bson_destroy(response_bson);
    bson_free(http_response_headers);
@@ -748,6 +753,27 @@ fail:
    bson_free(relative_ecs_uri);
    bson_free(path_with_role);
    return ret;
+}
+
+char *
+_mongoc_get_aws_sts_endpoint(void)
+{
+   char *aws_region = _mongoc_getenv("AWS_REGION");
+   char *aws_sts_regional_endpoints = _mongoc_getenv("AWS_STS_REGIONAL_ENDPOINTS");
+   char *sts_endpoint;
+
+   // Use the regional endpoint only when explicitly requested by the AWS SDK
+   // endpoint-selection contract. Otherwise, retain the global endpoint.
+   if (aws_sts_regional_endpoints && 0 == strcmp(aws_sts_regional_endpoints, "regional") && aws_region &&
+       strlen(aws_region) > 0) {
+      sts_endpoint = bson_strdup_printf("sts.%s.amazonaws.com", aws_region);
+   } else {
+      sts_endpoint = bson_strdup("sts.amazonaws.com");
+   }
+
+   bson_free(aws_sts_regional_endpoints);
+   bson_free(aws_region);
+   return sts_endpoint;
 }
 
 /*
@@ -900,7 +926,8 @@ _mongoc_validate_and_derive_region(char *sts_fqdn, size_t sts_fqdn_len, char **r
    if (ptr) {
       second_part = ptr + 1;
    }
-   if (0 == ptr - sts_fqdn) {
+   // Check if `.` is the first character in the string, indicating an empty part to start
+   if (ptr == sts_fqdn) {
       AUTH_ERROR_AND_FAIL("invalid STS host: empty part");
    }
    while (ptr) {
@@ -1263,6 +1290,12 @@ _mongoc_validate_and_derive_region(char *sts_fqdn, size_t sts_fqdn_len, char **r
                        "ENABLE_MONGODB_AWS_AUTH=ON");
 fail:
    return false;
+}
+
+char *
+_mongoc_get_aws_sts_endpoint(void)
+{
+   return bson_strdup("sts.amazonaws.com");
 }
 
 #endif /* MONGOC_ENABLE_MONGODB_AWS_AUTH */

@@ -54,7 +54,7 @@ compile_script=".evergreen/scripts/compile.sh"
 
 # TODO: remove "UV_CONSTRAINT" of CMake after the base release is 2.3.3+ to include fix of CDRIVER-6367.
 constraint_file="$(mktemp)"
-echo "cmake<4.4" > "${constraint_file:?}"
+echo "cmake<4.4" >"${constraint_file:?}"
 
 # build the base release
 env \

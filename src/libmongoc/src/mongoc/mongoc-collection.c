@@ -287,6 +287,7 @@ mongoc_collection_aggregate(mongoc_collection_t *collection,       /* IN */
 {
    return _mongoc_aggregate(collection->client,
                             collection->ns,
+                            collection->db,
                             flags,
                             pipeline,
                             opts,
@@ -334,8 +335,12 @@ mongoc_collection_find_with_opts(mongoc_collection_t *collection,
 
    bson_clear(&collection->gle);
 
-   return _mongoc_cursor_find_new(
+   mongoc_cursor_t *const cursor = _mongoc_cursor_find_new(
       collection->client, collection->ns, filter, opts, read_prefs, collection->read_prefs, collection->read_concern);
+
+   _mongoc_cursor_check_db_name(cursor, collection->db);
+
+   return cursor;
 }
 
 
@@ -1102,6 +1107,7 @@ mongoc_collection_find_indexes_with_opts(mongoc_collection_t *collection, const 
    /* No read preference. Index Enumeration Spec: "run listIndexes on the
     * primary node in replicaSet mode". */
    cursor = _mongoc_cursor_cmd_new(collection->client, collection->ns, &cmd, opts, NULL, NULL, NULL);
+   _mongoc_cursor_check_db_name(cursor, collection->db);
 
    if (!mongoc_cursor_error(cursor, &error)) {
       _mongoc_cursor_prime(cursor);
@@ -2123,6 +2129,11 @@ mongoc_collection_rename_with_opts(mongoc_collection_t *collection,
                         MONGOC_ERROR_NAMESPACE_INVALID,
                         "\"%s\" is an invalid collection name.",
                         new_name);
+      return false;
+   }
+
+   // The "to" field below is a joined namespace, which the server splits at the first ".".
+   if (new_db && !_mongoc_validate_db_name(new_db, -1, error)) {
       return false;
    }
 

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#include <mlib/config.h>
+#include <mlib/platform/compiler.h>
+#include <mlib/platform/language.h>
 
 // MSVC requires the export annotation before the header's undecorated declaration.
 // MinGW relies on automatic exports, which an explicit dllexport would disable.

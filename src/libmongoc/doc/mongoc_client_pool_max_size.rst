@@ -14,6 +14,10 @@ Synopsis
 
 This function sets the maximum number of pooled connections available from a :symbol:`mongoc_client_pool_t`.
 
+Increasing the maximum wakes threads waiting in :symbol:`mongoc_client_pool_pop()`
+so they can create clients up to the new limit without waiting for a client to
+be returned to the pool.
+
 Parameters
 ----------
 

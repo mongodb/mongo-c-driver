@@ -190,6 +190,10 @@ typedef enum {
     * Passing this as a flag has no effect.
     */
    BSON_VALIDATE_CORRUPT = (1 << 5),
+   /**
+    * @brief Check that no document contains duplicate element keys.
+    */
+   BSON_VALIDATE_DUPLICATE_KEYS = (1 << 6),
 } bson_validate_flags_t;
 
 

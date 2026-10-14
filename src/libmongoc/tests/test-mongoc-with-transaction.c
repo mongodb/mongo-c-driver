@@ -186,8 +186,12 @@ test_with_transaction_retry_backoff_is_enforced_prose(void *ctx)
 
    mongoc_client_session_destroy(with_backoff_session);
 
-   // Step 5
-   const mlib_duration diff = mlib_duration(with_backoff_time, minus, (no_backoff_time, plus, (1800, ms)));
+   // Step 5: The sum of 13 backoffs is roughly 2.3 seconds. There is a half-second window to account for potential
+   // variance between the two runs.
+   //
+   // With jitter pinned to 1, the nth backoff is `min(500ms, 5ms * 1.5^n)`, which sums to ~2282ms over 13 retries. The
+   // last two backoffs are clamped to the 500ms maximum.
+   const mlib_duration diff = mlib_duration(with_backoff_time, minus, (no_backoff_time, plus, (2300, ms)));
    ASSERT_CMPINT64(imaxabs(mlib_microseconds_count(diff)), <, mlib_microseconds_count(mlib_duration(500, ms)));
 
    mongoc_collection_destroy(coll);

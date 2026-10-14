@@ -1950,6 +1950,130 @@ test_empty_final_batch(void)
 }
 
 
+// Test server replies with an unusable cursor namespace. Regression test for CDRIVER-6401.
+static void
+test_cursor_bad_ns(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   const bson_t *doc;
+   bson_error_t error;
+
+   // Test "ns" without "."
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next(cursor, &doc);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(
+            BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : "db", "firstBatch" : [ {} ]}})));
+
+      ASSERT(!future_get_bool(future));
+      ASSERT(mongoc_cursor_error(cursor, &error));
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy(future);
+      request_destroy(request);
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(collection);
+   }
+
+   // Test an omitted "ns"
+   {
+      mongoc_database_t *database = mongoc_client_get_database(client, "db");
+      mongoc_cursor_t *cursor = mongoc_database_aggregate(database, tmp_bson("[]"), NULL, NULL);
+
+      future_t *future = future_cursor_next(cursor, &doc);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'aggregate': 1, '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "firstBatch" : [ {} ]}})));
+
+      ASSERT(!future_get_bool(future));
+      ASSERT(mongoc_cursor_error(cursor, &error));
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to aggregate command.");
+
+      future_destroy(future);
+      request_destroy(request);
+      mongoc_cursor_destroy(cursor);
+      mongoc_database_destroy(database);
+   }
+
+   // Test a trailing "."
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next(cursor, &doc);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(
+            BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : "db.", "firstBatch" : [ {} ]}})));
+
+      ASSERT(!future_get_bool(future));
+      ASSERT(mongoc_cursor_error(cursor, &error));
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy(future);
+      request_destroy(request);
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(collection);
+   }
+
+   // Test clone after bad "ns"
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next(cursor, &doc);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db", "firstBatch" : [ {} ]}})));
+
+      ASSERT(future_get_bool(future));
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+      future_destroy(future);
+      request_destroy(request);
+
+      // The cloned cursor uses the original valid namespace.
+      mongoc_cursor_t *clone = mongoc_cursor_clone(cursor);
+      future = future_cursor_next(clone, &doc);
+      request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(
+            BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.coll", "firstBatch" : [ {} ]}})));
+
+      ASSERT(future_get_bool(future));
+      ASSERT_OR_PRINT(!mongoc_cursor_error(clone, &error), error);
+
+      future_destroy(future);
+      request_destroy(request);
+      mongoc_cursor_destroy(clone);
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(collection);
+   }
+
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+
 static void
 test_error_document_query(void)
 {
@@ -2401,13 +2525,36 @@ test_cursor_timeout_killCursors(void *unused)
    bson_error_t error;
    const bson_t *got = NULL;
 
+   // Run setup with a separate client using the default socket timeout. On a
+   // slow host an ordinary setup command may exceed the short socket timeout
+   // (500ms) needed below to time out the delayed "getMore".
+   mongoc_client_t *setup_client = test_framework_new_default_client();
+   mongoc_collection_t *setup_coll = mongoc_client_get_collection(setup_client, "db", "coll");
+   mongoc_collection_drop(setup_coll, NULL);
+
+   // Configure failpoint to delay getMore:
+   {
+      bson_t *cmd = tmp_bson(BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {"blockConnection" : true, "blockTimeMS" : 2000, "failCommands" : ["getMore"]}
+      }));
+      bool ok = mongoc_client_command_simple(setup_client, "admin", cmd, NULL, NULL, &error);
+      ASSERT_OR_PRINT(ok, error);
+   }
+
+   // Insert documents to trigger a slow getMore later:
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(setup_coll, tmp_bson("{}"), NULL, NULL, &error), error);
+   ASSERT_OR_PRINT(mongoc_collection_insert_one(setup_coll, tmp_bson("{}"), NULL, NULL, &error), error);
+
+   // The socket timeout is shorter than the failpoint block time above, so the
+   // delayed "getMore" times out.
    mongoc_uri_t *uri = test_framework_get_uri();
    mongoc_uri_set_option_as_int32(uri, MONGOC_URI_SOCKETTIMEOUTMS, 500);
    mongoc_client_t *client = test_framework_client_new_from_uri(uri, NULL /* use API version if configured */);
    test_framework_set_ssl_opts(client);
    mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
    bson_t *pipeline = tmp_bson("{}");
-   mongoc_collection_drop(coll, NULL);
 
    // Capture events:
    test_events_t te = {.commands_len = 0};
@@ -2417,21 +2564,6 @@ test_cursor_timeout_killCursors(void *unused)
       ASSERT(mongoc_client_set_apm_callbacks(client, cbs, &te));
       mongoc_apm_callbacks_destroy(cbs);
    }
-
-   // Configure failpoint to delay getMore:
-   {
-      bson_t *cmd = tmp_bson(BSON_STR({
-         "configureFailPoint" : "failCommand",
-         "mode" : {"times" : 1},
-         "data" : {"blockConnection" : true, "blockTimeMS" : 1000, "failCommands" : ["getMore"]}
-      }));
-      bool ok = mongoc_client_command_simple(client, "admin", cmd, NULL, NULL, &error);
-      ASSERT_OR_PRINT(ok, error);
-   }
-
-   // Insert documents to trigger a slow getMore later:
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
-   ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson("{}"), NULL, NULL, &error), error);
 
    // Establish cursor:
    {
@@ -2451,14 +2583,11 @@ test_cursor_timeout_killCursors(void *unused)
       mongoc_cursor_destroy(cursor); // Sends killCursors.
    }
 
-   // Check events:
+   // Check events (only events on `client` are captured):
    {
-      ASSERT_CMPSTR(te.commands[0], "configureFailPoint");
-      ASSERT_CMPSTR(te.commands[1], "insert");
-      ASSERT_CMPSTR(te.commands[2], "insert");
-      ASSERT_CMPSTR(te.commands[3], "aggregate");
-      ASSERT_CMPSTR(te.commands[4], "getMore");
-      ASSERT_CMPSTR(te.commands[5], "killCursors");
+      ASSERT_CMPSTR(te.commands[0], "aggregate");
+      ASSERT_CMPSTR(te.commands[1], "getMore");
+      ASSERT_CMPSTR(te.commands[2], "killCursors");
    }
 
    for (size_t i = 0; i < te.commands_len; i++) {
@@ -2468,6 +2597,8 @@ test_cursor_timeout_killCursors(void *unused)
    mongoc_collection_destroy(coll);
    mongoc_client_destroy(client);
    mongoc_uri_destroy(uri);
+   mongoc_collection_destroy(setup_coll);
+   mongoc_client_destroy(setup_client);
 }
 
 static void
@@ -2669,6 +2800,7 @@ test_cursor_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Cursor/n_return/find_cmd/with_opts", test_n_return_find_cmd_with_opts);
    TestSuite_AddLive(suite, "/Cursor/empty_final_batch_live", test_empty_final_batch_live);
    TestSuite_AddMockServerTest(suite, "/Cursor/empty_final_batch", test_empty_final_batch);
+   TestSuite_AddMockServerTest(suite, "/Cursor/bad_ns", test_cursor_bad_ns);
    TestSuite_AddLive(suite, "/Cursor/error_document/query", test_error_document_query);
    TestSuite_AddLive(suite, "/Cursor/error_document/getmore", test_error_document_getmore);
    TestSuite_AddLive(suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);

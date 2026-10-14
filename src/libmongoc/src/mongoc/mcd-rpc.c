@@ -378,7 +378,7 @@ _consume_op_msg_section(
       // (section length). Actual minimum length would also account for the
       // identifier field, but 4 bytes is sufficient to avoid unsigned integer
       // overflow when computing `remaining_section_bytes` and to encourage as
-      // much progress is made parsing input data as able.
+      // much progress is made parsing input data as possible.
       if (mlib_cmp(section.payload.document_sequence.section_len, <, sizeof(int32_t))) {
          *ptr -= sizeof(int32_t); // Revert so *data_end points to start of
                                   // document sequence as invalid input.

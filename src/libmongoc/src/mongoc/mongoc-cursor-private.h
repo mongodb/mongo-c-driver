@@ -164,6 +164,10 @@ int32_t
 _mongoc_n_return(mongoc_cursor_t *cursor);
 void
 _mongoc_set_cursor_ns(mongoc_cursor_t *cursor, const char *ns, uint32_t nslen);
+// Set an error on the cursor if `db` is not a valid database name.
+// Useful since `_mongoc_set_cursor_ns` does not know if a "." is in the db (invalid) or collection (valid).
+bool
+_mongoc_cursor_check_db_name(mongoc_cursor_t *cursor, const char *db);
 bool
 _mongoc_cursor_get_opt_bool(const mongoc_cursor_t *cursor, const char *option);
 void

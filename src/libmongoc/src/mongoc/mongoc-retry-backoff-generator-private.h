@@ -25,7 +25,6 @@
 
 typedef struct {
    double growth_factor;
-   mlib_duration backoff_initial;
    mlib_duration backoff_max;
 } mongoc_retry_backoff_params_t;
 
@@ -37,8 +36,11 @@ _mongoc_retry_backoff_generator_new(mongoc_retry_backoff_params_t params, mongoc
 void
 _mongoc_retry_backoff_generator_destroy(mongoc_retry_backoff_generator_t *generator);
 
+// `_mongoc_retry_backoff_generator_next` advances to the next attempt and returns its backoff. `backoff_base` is
+// supplied per attempt because a server may attach a `baseBackoffMS` to an individual error to replace the driver's
+// default base backoff. See the Client Backpressure specification. `backoff_base` must be positive.
 mlib_duration
-_mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator);
+_mongoc_retry_backoff_generator_next(mongoc_retry_backoff_generator_t *generator, mlib_duration backoff_base);
 
 void
 _mongoc_retry_backoff_generator_skip(mongoc_retry_backoff_generator_t *generator);

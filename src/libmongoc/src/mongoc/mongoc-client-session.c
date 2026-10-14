@@ -18,7 +18,6 @@
 #include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-client-session-private.h>
-#include <mongoc/mongoc-cluster-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-rand-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
@@ -986,7 +985,6 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
 
    const mongoc_retry_backoff_params_t retry_backoff_params = {
       .growth_factor = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_GROWTH_FACTOR,
-      .backoff_initial = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL,
       .backoff_max = MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_MAX,
    };
 
@@ -1006,7 +1004,8 @@ mongoc_client_session_with_transaction(mongoc_client_session_t *session,
       if (is_first_attempt) {
          is_first_attempt = false;
       } else {
-         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
+         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(
+            retry_backoff_generator, MONGOC_WITH_TRANSACTION_RETRY_BACKOFF_INITIAL);
 
          const mlib_timer backoff_timer = mlib_expires_after(backoff_duration);
 
@@ -1130,20 +1129,12 @@ mongoc_client_session_start_transaction(mongoc_client_session_t *session,
                                         const mongoc_transaction_opt_t *opts,
                                         bson_error_t *error)
 {
-   mongoc_server_stream_t *server_stream = NULL;
    bool ret;
 
    ENTRY;
    BSON_ASSERT(session);
 
    ret = true;
-   const mongoc_ss_log_context_t ss_log_context = {.operation = "mongoc_client_session_start_transaction"};
-   server_stream = mongoc_cluster_stream_for_writes(
-      &session->client->cluster, &ss_log_context, session, NULL /* deprioritized servers */, NULL /* reply */, error);
-   if (!server_stream) {
-      ret = false;
-      GOTO(done);
-   }
 
    if (mongoc_session_opts_get_snapshot(&session->opts)) {
       _mongoc_set_error(error,
@@ -1206,7 +1197,6 @@ mongoc_client_session_start_transaction(mongoc_client_session_t *session,
    session->recovery_token = NULL;
 
 done:
-   mongoc_server_stream_cleanup(server_stream);
    return ret;
 }
 

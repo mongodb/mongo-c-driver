@@ -130,7 +130,7 @@ mongoc_stream_tls_handshake_block(mongoc_stream_t *stream, const char *host, int
 // mongoc_stream_tls_new_with_hostname creates a TLS stream.
 //
 // base_stream: underlying data stream. Ownership is transferred to the returned stream on success.
-// host: hostname used to verify the the server certificate.
+// host: hostname used to verify the server certificate.
 // opt: TLS options.
 // client: indicates a client or server stream. Secure Channel implementation does not support server streams.
 //
@@ -174,7 +174,7 @@ mongoc_stream_tls_new_with_hostname(mongoc_stream_t *base_stream, const char *ho
 // This is an internal extension to mongoc_stream_tls_new_with_hostname.
 //
 // base_stream: underlying data stream. Ownership is transferred to the returned stream on success.
-// host: hostname used to verify the the server certificate.
+// host: hostname used to verify the server certificate.
 // opt: TLS options.
 // client: indicates a client or server stream.
 // ssl_ctx: shared context.

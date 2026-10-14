@@ -27,7 +27,6 @@
 
 #include <bson/config.h>
 
-#include <mlib/config.h>
 #include <mlib/intencode.h>
 
 #include <math.h>
@@ -2195,6 +2194,11 @@ uint8_t *
 bson_reserve_buffer(bson_t *bson, uint32_t total_size)
 {
    if (bson->flags & (BSON_FLAG_CHILD | BSON_FLAG_IN_CHILD | BSON_FLAG_RDONLY)) {
+      return NULL;
+   }
+
+   /* The smallest valid BSON document is 5 bytes. */
+   if (total_size < 5u) {
       return NULL;
    }
 

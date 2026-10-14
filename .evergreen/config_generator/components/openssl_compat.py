@@ -4,6 +4,8 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType, FunctionCall
 from shrub.v3.evg_task import EvgTask, EvgTaskRef
 
+from config_generator.components.funcs.fetch_det import FetchDET
+from config_generator.components.funcs.fetch_enterprise_auth_secrets import FetchEnterpriseAuthSecrets
 from config_generator.components.funcs.fetch_source import FetchSource
 from config_generator.etc.distros import find_large_distro, make_distro_str
 from config_generator.etc.function import Function
@@ -73,6 +75,8 @@ def tasks():
             commands = [
                 FetchSource.call(),
                 OpenSSLSetup.call(vars=vars),
+                FetchDET.call(),
+                FetchEnterpriseAuthSecrets.call(),
                 FunctionCall(func='run auth tests'),
             ]
 
@@ -99,6 +103,8 @@ def tasks():
                 commands=[
                     FetchSource.call(),
                     OpenSSLSetup.call(vars=vars),
+                    FetchDET.call(),
+                    FetchEnterpriseAuthSecrets.call(),
                     FunctionCall(func='run auth tests'),
                 ],
             )

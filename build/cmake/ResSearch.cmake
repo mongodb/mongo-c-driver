@@ -9,7 +9,7 @@ set(RESOLVE_LIB_NAME)
 set(resolve_is_libc FALSE)
 
 if(WIN32)
-    set(RESOLVE_LIB_NAME Dnsapi)
+    set(RESOLVE_LIB_NAME dnsapi)
     set(_MONGOC_HAVE_DNSAPI 1)
 else()
     # Try to find the search functions for various configurations.

@@ -511,6 +511,8 @@ class AuthTask(MatrixTask):
 
     def post_commands(self) -> Iterable[Value]:
         yield func('fetch-build', BUILD_NAME=self.build_task_name)
+        yield func('fetch-det')
+        yield func('fetch-enterprise-auth-secrets')
         yield func('run auth tests')
 
     @property
@@ -553,6 +555,8 @@ all_tasks = chain(
                     'env SANITIZE=address SASL=AUTO SSL=OPENSSL .evergreen/scripts/compile.sh',
                     add_expansions_to_env=True,
                 ),
+                func('fetch-det'),
+                func('fetch-enterprise-auth-secrets'),
                 func('run auth tests', ASAN='on'),
             ],
         ),
@@ -699,7 +703,7 @@ class AWSTestTask(MatrixTask):
     axes = OD(
         [
             ('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role', 'assume_role_with_web_identity']),
-            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '9.0', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -712,6 +716,7 @@ class AWSTestTask(MatrixTask):
         yield from super().additional_tags()
         yield f'{self.settings.version}'
         yield 'test-aws'
+        yield f'test-aws-{self.settings.testcase}'
 
     def post_commands(self) -> Iterable[Value]:
         return [
@@ -754,7 +759,7 @@ class OCSPTask(MatrixTask):
             ('delegate', ['delegate', 'nodelegate']),
             ('cert', ['rsa', 'ecdsa']),
             ('ssl', ['openssl', 'darwinssl', 'winssl']),
-            ('version', ['latest', 'rapid', '8.0', '7.0', '6.0', '5.0', '4.4']),
+            ('version', ['latest', 'rapid', '9.0', '8.0', '7.0', '6.0', '5.0', '4.4']),
         ]
     )
 
@@ -805,7 +810,7 @@ class OCSPTask(MatrixTask):
         yield (
             shell_mongoc(
                 f"""
-                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} .evergreen/scripts/run-ocsp-responder.sh
+                TEST_COLUMN={test_column} CERT_TYPE={self.settings.cert} USE_DELEGATE={use_delegate} .evergreen/scripts/run-ocsp-setup.sh
                 """
             )
         )
@@ -842,6 +847,11 @@ class OCSPTask(MatrixTask):
 
     # Testing in OCSP has a lot of exceptions.
     def do_is_valid_combination(self) -> bool:
+        if self.settings.ssl == 'openssl':
+            # No server versions older than 6.0 are available on ubuntu2204.
+            if self.settings.version not in ['rapid', 'latest']:
+                prohibit(Version(self.settings.version) < Version('6.0'))
+
         if self.settings.ssl == 'darwinssl':
             # Secure Transport quietly ignores a must-staple certificate with no stapled response.
             prohibit(self.test == 'malicious_server_test_2')

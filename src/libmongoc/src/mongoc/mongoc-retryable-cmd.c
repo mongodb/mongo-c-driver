@@ -23,8 +23,28 @@
 #include <mlib/time_point.h>
 
 #define MONGOC_RETRYABLE_CMD_BACKOFF_GROWTH_FACTOR 2.0
-#define MONGOC_RETRYABLE_CMD_BACKOFF_INITIAL mlib_duration(100, ms)
+#define MONGOC_RETRYABLE_CMD_BACKOFF_BASE_DEFAULT mlib_duration(100, ms)
 #define MONGOC_RETRYABLE_CMD_BACKOFF_MAX mlib_duration(10, s)
+
+// _get_base_backoff returns the base backoff to apply for an overload error. A server may attach a positive
+// `baseBackoffMS` to the error to replace the driver's default base backoff. The returned duration is always positive.
+static mlib_duration
+_get_base_backoff(const bson_t *reply)
+{
+   BSON_ASSERT_PARAM(reply);
+
+   bson_iter_t iter;
+
+   if (bson_iter_init_find(&iter, reply, "baseBackoffMS") && BSON_ITER_HOLDS_INT(&iter)) {
+      const int64_t base_backoff_ms = bson_iter_as_int64(&iter);
+
+      if (base_backoff_ms > 0) {
+         return mlib_duration(base_backoff_ms, ms);
+      }
+   }
+
+   return MONGOC_RETRYABLE_CMD_BACKOFF_BASE_DEFAULT;
+}
 
 bool
 _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson_error_t *error)
@@ -46,7 +66,6 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
 
    const mongoc_retry_backoff_params_t retry_backoff_params = {
       .growth_factor = MONGOC_RETRYABLE_CMD_BACKOFF_GROWTH_FACTOR,
-      .backoff_initial = MONGOC_RETRYABLE_CMD_BACKOFF_INITIAL,
       .backoff_max = MONGOC_RETRYABLE_CMD_BACKOFF_MAX,
    };
 
@@ -95,7 +114,8 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
       }
 
       if (is_overload) {
-         const mlib_duration backoff_duration = _mongoc_retry_backoff_generator_next(retry_backoff_generator);
+         const mlib_duration backoff_duration =
+            _mongoc_retry_backoff_generator_next(retry_backoff_generator, _get_base_backoff(reply));
          mlib_sleep_for(backoff_duration);
       } else {
          _mongoc_retry_backoff_generator_skip(retry_backoff_generator);

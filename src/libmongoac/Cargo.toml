@@ -1,0 +1,51 @@
+[package]
+name = "mongoac"
+edition = "2024"
+rust-version = "1.88"
+publish = false
+
+exclude = [
+  "cmake/**",
+  "doc/**",
+  "include/**",
+  "test/**",
+]
+
+[workspace]
+members = ["tools/generate-crate-headers"]
+
+[dependencies]
+mongodb = {
+  version = "3.9.0",
+  features = [
+    # BSON.
+    "bson-3",
+
+    # Connection.
+    "dns-resolver", # Default.
+    "rustls-tls", # Default.
+
+    # Authentication.
+    "aws-auth",
+    "azure-oidc",
+    "gcp-oidc",
+
+    # Compression.
+    "snappy-compression",
+    "zlib-compression",
+    "zstd-compression",
+  ],
+}
+tokio = {
+  version = "1.52.0",
+  features = ["rt", "macros", "parking_lot", "sync", "time"],
+}
+futures-util = "*"
+num_enum = {
+  version = "*",
+}
+parking_lot = "*"
+strum = {
+  version = "*",
+  features = ["derive"],
+}

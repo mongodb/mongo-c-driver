@@ -134,4 +134,7 @@ _mongoc_aws_credentials_cleanup(_mongoc_aws_credentials_t *creds);
 bool
 _mongoc_validate_and_derive_region(char *sts_fqdn, size_t sts_fqdn_len, char **region, bson_error_t *error);
 
+char *
+_mongoc_get_aws_sts_endpoint(void);
+
 #endif /* MONGOC_CLUSTER_AWS_PRIVATE_H */

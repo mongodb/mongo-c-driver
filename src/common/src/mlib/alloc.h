@@ -19,7 +19,9 @@
 #ifndef MLIB_ALLOC_H_INCLUDED
 #define MLIB_ALLOC_H_INCLUDED
 
-#include <mlib/config.h>
+#include <mlib/platform/compiler.h>
+#include <mlib/platform/language.h>
+#include <mlib/static_assert.h>
 #include <mlib/test.h>
 
 #include <stddef.h>

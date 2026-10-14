@@ -27,6 +27,8 @@
 #include <bson/config.h>
 #include <bson/macros.h>
 
+#include <mlib/platform/attributes.h>
+
 BSON_BEGIN_DECLS
 
 #define mcommon_thread_create COMMON_NAME(thread_create)
@@ -48,7 +50,7 @@ BSON_BEGIN_DECLS
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name))(void *)
 #define BSON_THREAD_RETURN return NULL
 
-/* this macro can be defined as a as a build configuration option
+/* this macro can be defined as a build configuration option
  * with -DENABLE_DEBUG_ASSERTIONS=ON.  its purpose is to allow for functions
  * that require a mutex to be locked on entry to assert that the mutex
  * is actually locked.
@@ -79,7 +81,7 @@ BSON_BEGIN_DECLS
    } while (0)
 
 #else
-#include <mlib/config.h>
+
 
 typedef struct {
    pthread_t lock_owner;

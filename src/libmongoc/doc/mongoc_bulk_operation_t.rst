@@ -44,6 +44,11 @@ After adding all of the write operations to the :symbol:`mongoc_bulk_operation_t
 
     mongoc_bulk_operation_destroy
     mongoc_bulk_operation_execute
+    mongoc_bulk_operation_get_bypass_document_validation
+    mongoc_bulk_operation_get_collection
+    mongoc_bulk_operation_get_comment
+    mongoc_bulk_operation_get_database
+    mongoc_bulk_operation_get_let
     mongoc_bulk_operation_get_server_id
     mongoc_bulk_operation_get_write_concern
     mongoc_bulk_operation_insert

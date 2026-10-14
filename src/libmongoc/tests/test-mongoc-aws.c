@@ -193,6 +193,32 @@ test_obtain_credentials_from_env(void *unused)
 }
 
 static void
+test_sts_endpoint(void *unused)
+{
+   char *sts_endpoint;
+
+   BSON_UNUSED(unused);
+
+   _mongoc_setenv("AWS_STS_REGIONAL_ENDPOINTS", "");
+   _mongoc_setenv("AWS_REGION", "us-gov-west-1");
+   sts_endpoint = _mongoc_get_aws_sts_endpoint();
+   ASSERT_CMPSTR(sts_endpoint, "sts.amazonaws.com");
+   bson_free(sts_endpoint);
+
+   _mongoc_setenv("AWS_STS_REGIONAL_ENDPOINTS", "regional");
+   sts_endpoint = _mongoc_get_aws_sts_endpoint();
+   ASSERT_CMPSTR(sts_endpoint, "sts.us-gov-west-1.amazonaws.com");
+   bson_free(sts_endpoint);
+
+   _mongoc_setenv("AWS_REGION", "");
+   sts_endpoint = _mongoc_get_aws_sts_endpoint();
+   ASSERT_CMPSTR(sts_endpoint, "sts.amazonaws.com");
+   bson_free(sts_endpoint);
+
+   _mongoc_setenv("AWS_STS_REGIONAL_ENDPOINTS", "");
+}
+
+static void
 test_derive_region(void *unused)
 {
    bson_error_t error;
@@ -210,6 +236,11 @@ test_derive_region(void *unused)
    bson_free(region);
 
    ret = _mongoc_validate_and_derive_region(WITH_LEN("."), &region, &error);
+   ASSERT(!ret);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
+   bson_free(region);
+
+   ret = _mongoc_validate_and_derive_region(WITH_LEN(".abc"), &region, &error);
    ASSERT(!ret);
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "Invalid STS host: empty part");
    bson_free(region);
@@ -354,6 +385,13 @@ test_aws_install(TestSuite *suite)
                      test_framework_skip_if_no_setenv);
    TestSuite_AddFull(
       suite, "/aws/derive_region", test_derive_region, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_no_aws);
+   TestSuite_AddFull(suite,
+                     "/aws/sts_endpoint",
+                     test_sts_endpoint,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_no_aws,
+                     test_framework_skip_if_no_setenv);
    TestSuite_AddFull(
       suite, "/aws/cache", test_aws_cache, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_no_aws);
 }

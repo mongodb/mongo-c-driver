@@ -165,6 +165,12 @@ fi
 # If scan-build emits warnings, continue the task and upload scan results before marking task as a failure.
 declare -r continue_command='{"status":"failed", "type":"test", "should_continue":true, "desc":"scan-build emitted one or more warnings or errors"}'
 
+# Exclude the vendored copy of utf8proc from the reported findings. It is third-party code that we
+# do not patch locally. The value is matched as a regular expression against the directory of each
+# report, so use a relative fragment.
+declare -r scan_build_excludes=("--exclude" 'src/utf8proc-')
+
 # Put clang static analyzer results in scan/ and fail build if warnings found.
-"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs cmake --build . -- -j "$(nproc)" ||
+"${scan_build_binary}" --use-cc="${CC}" --use-c++="${CXX}" -o scan --status-bugs "${scan_build_excludes[@]}" \
+  cmake --build . -- -j "$(nproc)" ||
   curl -sS -d "${continue_command}" -H "Content-Type: application/json" -X POST localhost:2285/task_status

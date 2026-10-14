@@ -1,0 +1,10 @@
+prefix=@prefix@
+includedir=${prefix}/@includedir@
+libdir=${prefix}/@libdir@
+
+Name: @pkgname@
+Description: The MongoDB Async C Driver library
+URL: https://github.com/mongodb/mongo-c-driver
+Version: @version@
+Cflags: @cflags@
+Libs: @libs@

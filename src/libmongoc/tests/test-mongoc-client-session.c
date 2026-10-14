@@ -2102,6 +2102,9 @@ test_bulk_set_client(session_test_t *test)
 
    mongoc_bulk_operation_set_collection(bulk, mongoc_collection_get_name(test->collection));
 
+   ASSERT_CMPSTR(mongoc_bulk_operation_get_database(bulk), mongoc_database_get_name(test->db));
+   ASSERT_CMPSTR(mongoc_bulk_operation_get_collection(bulk), mongoc_collection_get_name(test->collection));
+
    _test_bulk(test, bulk);
 }
 

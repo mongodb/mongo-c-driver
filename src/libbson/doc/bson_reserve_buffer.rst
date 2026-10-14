@@ -15,7 +15,7 @@ Parameters
 ----------
 
 * ``bson``: An initialized :symbol:`bson_t`.
-* ``total_size``: The length in bytes of the new buffer.
+* ``total_size``: The length in bytes of the new buffer. Must be at least 5 (the size of an empty BSON document).
 
 Description
 -----------
@@ -32,7 +32,7 @@ The ``bson_t`` document length and buffer size limit are both set to ``total_siz
 Returns
 -------
 
-A pointer to the internal buffer, which is at least ``total_size`` bytes, or NULL if the space could not be allocated.
+A pointer to the internal buffer, which is at least ``total_size`` bytes, or NULL if ``total_size`` is less than 5 or the space could not be allocated.
 
 Example
 -------
