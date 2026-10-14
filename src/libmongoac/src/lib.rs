@@ -25,6 +25,7 @@ pub mod drop_collection_options;
 pub mod drop_database_options;
 pub mod error;
 pub mod future;
+pub mod run_command_options;
 pub mod runtime;
 pub mod string;
 pub mod version;

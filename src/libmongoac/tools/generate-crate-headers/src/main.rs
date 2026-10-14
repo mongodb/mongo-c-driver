@@ -62,6 +62,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("DropDatabaseOptionsT", "mongoac_drop_database_options_t"),
         ("ErrorT", "mongoac_error_t"),
         ("FutureT", "mongoac_future_t"),
+        ("RunCommandOptionsT", "mongoac_run_command_options_t"),
         ("RuntimeT", "mongoac_runtime_t"),
         ("StringT", "mongoac_string_t"),
         ("StringViewT", "mongoac_string_view_t"),
@@ -124,6 +125,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "stdbool.h",
                 "stdint.h",
             ],
+            "run_command_options" => &[],
             "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
