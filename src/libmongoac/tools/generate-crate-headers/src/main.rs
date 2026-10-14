@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 const SKIP_CARGO_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_FORWARD_HEADERS: &[&str] = &["string"];
+const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "string"];
 
 // Prelude shared by all generated headers.
 fn generate_header() -> String {
@@ -47,6 +47,7 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("BsonT", "mongoac_bson_t"),
         ("BsonViewT", "mongoac_bson_view_t"),
         ("ClientSessionT", "mongoac_client_session_t"),
         ("ClientT", "mongoac_client_t"),
@@ -78,6 +79,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "bson" => &["stdint.h"],
             "client_session" => &[],
             "collection_options" => &[],
             "collection" => &[
@@ -116,6 +118,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "drop_database_options" => &[],
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
+                "mongoac/bson.h",
                 "mongoac/error-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "stdbool.h",
@@ -137,6 +140,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     // Structs which need to be explicitly exported (due to no exported function referencing the struct).
     {
         let exports: &[&str] = match name {
+            "bson" => &["BsonViewT"],
             "string" => &["StringViewT"],
             _ => &[],
         };

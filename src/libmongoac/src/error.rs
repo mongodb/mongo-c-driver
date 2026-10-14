@@ -24,6 +24,7 @@ pub const MONGOAC_ERROR_CATEGORY_NONE: mongoac_error_category_t = 0;
 pub const MONGOAC_ERROR_CATEGORY_MONGOAC: mongoac_error_category_t = 1;
 pub const MONGOAC_ERROR_CATEGORY_SERVER: mongoac_error_category_t = 2;
 pub const MONGOAC_ERROR_CATEGORY_RUST: mongoac_error_category_t = 3;
+pub const MONGOAC_ERROR_CATEGORY_BSON: mongoac_error_category_t = 4;
 pub const MONGOAC_ERROR_CATEGORY_UNKNOWN: mongoac_error_category_t = i32::MIN;
 
 #[allow(non_camel_case_types)]
@@ -41,6 +42,7 @@ pub enum ErrorCategoryT {
     MongoAC = MONGOAC_ERROR_CATEGORY_MONGOAC,
     Server = MONGOAC_ERROR_CATEGORY_SERVER,
     Rust = MONGOAC_ERROR_CATEGORY_RUST,
+    Bson = MONGOAC_ERROR_CATEGORY_BSON,
 
     #[num_enum(catch_all)]
     Unknown(i32),
@@ -119,6 +121,7 @@ pub enum ErrorT {
     },
     Server(mongodb::error::Error), // Command | Write
     Rust(mongodb::error::Error),
+    Bson(mongodb::bson::error::Error),
     Unknown {
         code: i32,
         category: i32,
@@ -138,6 +141,7 @@ impl ErrorT {
             Self::MongoAC { .. } => ErrorCategoryT::MongoAC,
             Self::Server(_) => ErrorCategoryT::Server,
             Self::Rust(_) => ErrorCategoryT::Rust,
+            Self::Bson(_) => ErrorCategoryT::Bson,
             Self::Unknown { code: _, category } => ErrorCategoryT::Unknown(*category),
         }
     }
@@ -161,7 +165,7 @@ impl ErrorT {
                 })
             }
 
-            Self::Rust(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
+            Self::Rust(_) | Self::Bson(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
 
             Self::Unknown { code, .. } => ErrorCodeT::Unknown(*code),
         }
@@ -181,6 +185,8 @@ impl ErrorT {
             }
 
             Self::Server(err) | Self::Rust(err) => Some(err.to_string()),
+
+            Self::Bson(err) => Some(err.to_string()),
 
             _ => None,
         }
@@ -225,6 +231,7 @@ impl Clone for ErrorT {
 
             Self::Server(err) => Self::Server(err.clone()),
             Self::Rust(err) => Self::Rust(err.clone()),
+            Self::Bson(err) => Self::Bson(err.clone()),
 
             Self::Unknown { category, code } => Self::Unknown {
                 category: *category,
@@ -258,5 +265,11 @@ impl From<mongodb::error::Error> for ErrorT {
 
             _ => Self::Rust(err), // `#[non_exhaustive]`
         }
+    }
+}
+
+impl From<mongodb::bson::error::Error> for ErrorT {
+    fn from(err: mongodb::bson::error::Error) -> Self {
+        Self::Bson(err)
     }
 }
