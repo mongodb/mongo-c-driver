@@ -1,10 +1,12 @@
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 #include <mlib/duration.h>
 #include <mlib/intencode.h>
 #include <mlib/intutil.h>
 #include <mlib/loop.h>
+#include <mlib/pp/args.h>
+#include <mlib/pp/basic.h>
+#include <mlib/pp/is-empty.h>
 #include <mlib/str.h>
 #include <mlib/test.h>
 #include <mlib/time_point.h>
@@ -1487,6 +1489,7 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/timer", _test_timer);
    TestSuite_Add(suite, "/mlib/int-vector", _test_int_vec);
    TestSuite_Add(suite, "/mlib/string-vector", _test_cstring_vec);
+   // TestSuite_Add(suite, "/mlib/format", _test_format);
 }
 
 mlib_diagnostic_pop();

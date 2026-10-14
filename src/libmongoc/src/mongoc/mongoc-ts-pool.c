@@ -4,7 +4,6 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
 
 /**
  * Toggle this to enable/disable checks that all items are returned to the pool

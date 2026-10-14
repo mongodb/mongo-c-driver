@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-Return the :symbol:`mongoac_runtime_t` associated with the given :symbol:`mongoac_client_t`.
+Returns the :symbol:`mongoac_runtime_t` associated with the given :symbol:`mongoac_client_t`.
 
 When ``client`` is null, returns a null pointer.
 
@@ -23,4 +23,4 @@ Must be destroyed with :symbol:`mongoac_runtime_destroy()`.
 
 .. seealso::
 
-   | :symbol:`mongoac_runtime_clone`
+   | :symbol:`mongoac_client_get_runtime_address`

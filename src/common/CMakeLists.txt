@@ -26,3 +26,11 @@ if(BUILD_TESTING AND CMAKE_CXX_COMPILER)
     add_test(NAME mongoc/mlib/ckdint COMMAND mlib-ckdint-test)
     set_property(TEST mongoc/mlib/ckdint PROPERTY SKIP_REGULAR_EXPRESSION "@@ctest-skipped@@")
 endif()
+
+if(MONGO_CAN_VERIFY_HEADERS AND BUILD_TESTING)
+    mongo_verify_headers(
+        mlib
+        USE_LIBRARIES mongo::mlib
+        HEADERS src/mlib/*.h
+    )
+endif()

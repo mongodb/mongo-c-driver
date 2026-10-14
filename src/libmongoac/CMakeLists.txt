@@ -96,17 +96,20 @@ endif ()
 # Avoid dangling "/" in config-dependent paths when no build type is specified in a standalone configuration.
 set (config_prefix "$<IF:$<STREQUAL:$<CONFIG>,>,,$<CONFIG>/>")
 
+# Cargo.toml defines the library basename as "mongoac". Apply `MONGOAC_OUTPUT_BASENAME` during the install step.
+set (cargo_library_shared "${CMAKE_SHARED_LIBRARY_PREFIX}mongoac${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set (cargo_library_static "${CMAKE_STATIC_LIBRARY_PREFIX}mongoac${CMAKE_STATIC_LIBRARY_SUFFIX}")
+
+# Cargo uses a separate subdirectory per build type.
 set (cargo_target_build_dir "${cargo_target_dir}/$<IF:$<CONFIG:Debug>,debug,release>")
-set (cargo_library_shared "${cargo_target_build_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set (cargo_library_static "${cargo_target_build_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}$CACHE{MONGOAC_OUTPUT_BASENAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 set (soname "$CACHE{MONGOAC_OUTPUT_BASENAME}${PROJECT_VERSION_MAJOR}")
 set (library_shared_filename "${CMAKE_SHARED_LIBRARY_PREFIX}${soname}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_shared_filename}")
+set (library_shared "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${cargo_library_shared}")
 set (library_shared_filename_full "${library_shared_filename}.${PROJECT_VERSION}")
 set (library_shared_filename_major "${library_shared_filename}.${PROJECT_VERSION_MAJOR}")
 set (library_static_filename "${CMAKE_STATIC_LIBRARY_PREFIX}${soname}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${library_static_filename}")
+set (library_static "${CMAKE_CURRENT_BINARY_DIR}/${config_prefix}${cargo_library_static}")
 
 file (GLOB_RECURSE cargo_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.rs")
 file (GLOB_RECURSE mongoac_headers CONFIGURE_DEPENDS "${source_include_dir}/*.h")
@@ -221,12 +224,12 @@ if ("$CACHE{ENABLE_SHARED}")
         "$<$<NOT:$<CONFIG:Debug>>:--release>"
     COMMAND
       "${CMAKE_COMMAND}" -E copy
-        "${cargo_library_shared}"
+        "${cargo_target_build_dir}/${cargo_library_shared}"
         "${library_shared}"
     DEPENDS
       ${cargo_dependencies}
     BYPRODUCTS
-      "${cargo_library_shared}"
+      "${cargo_target_build_dir}/${cargo_library_shared}"
   )
 
   add_custom_target (mongoac_shared_target ALL DEPENDS "${library_shared}")
@@ -286,12 +289,12 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
         "$<$<NOT:$<CONFIG:Debug>>:--release>"
     COMMAND
       "${CMAKE_COMMAND}" -E copy
-        "${cargo_library_static}"
+        "${cargo_target_build_dir}/${cargo_library_static}"
         "${library_static}"
     DEPENDS
       ${cargo_dependencies}
     BYPRODUCTS
-      "${cargo_library_static}"
+      "${cargo_target_build_dir}/${cargo_library_static}"
   )
 
   add_custom_target (mongoac_static_target ALL DEPENDS "${library_static}")
@@ -314,6 +317,7 @@ if (NOT "$CACHE{ENABLE_STATIC}" STREQUAL "OFF")
     install (
       FILES "${library_static}"
       DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+      RENAME "${library_static_filename}"
     )
   endif ()
 endif ()

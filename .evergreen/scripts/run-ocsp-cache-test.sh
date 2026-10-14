@@ -30,8 +30,8 @@
 #
 # Environment variables:
 #
-# CERT_TYPE
-#   Required. Set to either RSA or ECDSA.
+# CERT_TYPE (OCSP_ALGORITHM)
+#   Required. Set to either "rsa" or "ecdsa".
 
 set -o errexit
 set -o pipefail
@@ -48,7 +48,19 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
+declare det_dir
+det_dir="$(to_absolute "${mongoc_dir:?}/../drivers-evergreen-tools")"
+
 declare openssl_install_dir="${mongoc_dir}/openssl-install-dir"
+
+on_exit() {
+  echo "Cleaning up"
+  if [[ -f "${det_dir:?}/.evergreen/ocsp/ocsp_mock_server.log" ]]; then
+    echo "Responder logs:"
+    cat "${det_dir:?}/.evergreen/ocsp/ocsp_mock_server.log" || true
+  fi
+}
+trap on_exit EXIT
 
 if ! pgrep -nf mongod >/dev/null; then
   echo "Cannot find mongod. See file comments for help." 1>&2

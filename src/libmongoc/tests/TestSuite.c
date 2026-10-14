@@ -43,8 +43,6 @@
 #include <common-json-private.h>
 #include <common-string-private.h>
 
-#include <mlib/config.h>
-
 #include <TestSuite.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>

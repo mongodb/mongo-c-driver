@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::database::DatabaseT;
+use crate::database_options::DatabaseOptionsT;
 use crate::error::{ErrorCodeT, ErrorT};
+use crate::future::FutureT;
 use crate::private::macros::*;
-use crate::runtime::RuntimeT;
+use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 use crate::version::{MONGOAC_BUILD_PLATFORM, MONGOAC_VERSION_FULL};
 
@@ -46,13 +49,36 @@ pub extern "C" fn mongoac_client_new(conn_str: StringViewT, error: *mut ErrorT) 
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_client_get_runtime(client: *const ClientT) -> *mut RuntimeT {
-    safe_into_raw!(safe_as_ref!(client).get_runtime())
+pub extern "C" fn mongoac_client_get_database(
+    client: *const ClientT,
+    name: StringViewT,
+    options: *const DatabaseOptionsT,
+) -> *mut DatabaseT {
+    let client = safe_as_ref!(client);
+    let name = safe_string_view!(name);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(client.get_database(name, options))
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_client_shutdown(client: *mut ClientT) {
     safe_as_mut!(client).shutdown();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_shutdown_async(client: *mut ClientT) -> *mut FutureT {
+    safe_into_raw!(safe_as_mut!(client).shutdown_async())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_get_runtime(client: *const ClientT) -> *mut RuntimeT {
+    safe_into_raw!(safe_as_ref!(client).get_runtime())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_get_runtime_address(client: *const ClientT) -> usize {
+    safe_as_ref!(client).get_runtime_address()
 }
 
 impl ClientT {
@@ -79,17 +105,51 @@ impl ClientT {
         })
     }
 
-    fn get_runtime(&self) -> RuntimeT {
-        self.runtime.clone()
+    fn get_database(&self, name: &str, options: Option<&DatabaseOptionsT>) -> DatabaseT {
+        DatabaseT::new(&self.inner, self.runtime.clone(), name, options)
     }
 
     fn shutdown(&mut self) {
-        // `.shutdown()` consumes the client.
-        let client = self.inner.clone();
+        let client = self.inner.clone(); // Avoid consuming `self.inner`.
 
         self.runtime.block_on(async {
             client.shutdown().await;
         });
+    }
+
+    fn shutdown_async(&mut self) -> FutureT {
+        let client = self.inner.clone();
+
+        self.spawn::<()>(async move {
+            client.shutdown().await;
+            Ok(())
+        })
+    }
+
+    // TODO: append_metadata
+    // TODO: bulk_write
+    // TODO: database_with_options
+    // TODO: default_database
+    // TODO: list_database_names
+    // TODO: list_databases
+    // TODO: read_concern
+    // TODO: selection_criteria
+    // TODO: start_session
+    // TODO: warm_connection_pool
+    // TODO: watch
+    // TODO: write_concern
+
+    pub(crate) fn new_from_client(client: &Client, runtime: &RuntimeT) -> Self {
+        ClientT {
+            inner: client.clone(),
+            runtime: runtime.clone(),
+        }
+    }
+}
+
+impl RuntimeAware for ClientT {
+    fn runtime(&self) -> &RuntimeT {
+        &self.runtime
     }
 }
 

@@ -53,6 +53,30 @@ A given progress function may drive progress for tasks unrelated to the specific
 
   Invoking a progress function from within another progress function is undefined behavior!
 
+.. _block-on-functions:
+
+Block-On Functions
+------------------
+
+A *block-on function* accepts one or more :symbol:`mongoac_future_t` and blocks the current thread until their result(s) are ready.
+All block-on functions are :ref:`progress functions <progress-functions>` which also :ref:`poll <polling>` the given future(s).
+When the runtime does not match the associated runtime of the given future(s), the function early-returns and the optional ``error`` parameter is set to ``MONGOAC_ERROR_CODE_INVALID_ARGUMENT``.
+
+.. _timeouts:
+
+Timeouts
+--------
+
+Progress functions may provide a ``timeout_ms`` parameter to specify the maximum duration (in milliseconds) to block the current thread.
+The timeout deadline is computed relative to the instant when the function is invoked.
+The progress function may return before the timeout deadline is reached.
+When the timeout deadline is reached, the function (best-effort) early-returns and the optional ``error`` parameter is set to ``MONGOAC_ERROR_CODE_TIMEOUT``.
+
+.. important::
+
+  Timeouts for progress functions do not cancel any async operations.
+  The timeout only applies to the blocking of the current thread by the progress function.
+
 .. only:: html
 
   Functions
@@ -67,5 +91,11 @@ A given progress function may drive progress for tasks unrelated to the specific
 
     mongoac_runtime_address
 
+    mongoac_runtime_block_on
+    mongoac_runtime_block_on_all
+    mongoac_runtime_block_on_all_with_timeout
+    mongoac_runtime_block_on_any
+    mongoac_runtime_block_on_any_with_timeout
+    mongoac_runtime_block_on_with_timeout
     mongoac_runtime_make_progress
     mongoac_runtime_make_progress_for

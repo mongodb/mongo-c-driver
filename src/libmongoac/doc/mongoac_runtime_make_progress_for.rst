@@ -10,7 +10,8 @@ Synopsis
 
    #include <mongoac/runtime.h>
 
-   void mongoac_runtime_make_progress_for(const mongoac_runtime_t *runtime, uint64_t duration_ms);
+   void mongoac_runtime_make_progress_for(const mongoac_runtime_t *runtime,
+                                          uint64_t duration_ms);
 
 .. important::
 

@@ -21,16 +21,23 @@
 #include <mongoac/test/memory.hh>
 #include <mongoac/test/string.hh>
 
+#include <mongoac/database.h>
 #include <mongoac/error.h>
+#include <mongoac/future.h>
 #include <mongoac/runtime.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+
+#include <cstdint>
+#include <string_view>
 
 using mongoac::test::operator""_sv;
 using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
+using mongoac::test::to_mongoac;
 
 TEST_CASE("destroy", "[mongoac][client]") {
     SECTION("null") {
@@ -103,6 +110,69 @@ TEST_CASE("clone", "[mongoac][client]") {
     }
 }
 
+TEST_CASE("get_database", "[mongoac][client]") {
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+
+    SECTION("null client") {
+        auto const db = make_unique(mongoac_client_get_database(nullptr, {}, nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("null name") {
+        auto const db = make_unique(mongoac_client_get_database(client, {}, nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const name = GENERATE(values<std::string_view>({"", "db", "a.b.c"}));
+        auto const db =
+            make_unique(mongoac_client_get_database(client, to_mongoac(name), nullptr), &mongoac_database_destroy);
+        CHECK(db.get() != nullptr);
+        CHECK(from_mongoac(mongoac_database_get_name(db.get())) == name);
+    }
+}
+
+TEST_CASE("shutdown", "[mongoac][client]") {
+    SECTION("null") {
+        CHECK_NOTHROW(mongoac_client_shutdown(nullptr));
+    }
+
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        CHECK_NOTHROW(mongoac_client_shutdown(client));
+    }
+}
+
+TEST_CASE("shutdown_async", "[mongoac][client]") {
+    SECTION("null") {
+        CHECK_NOTHROW(mongoac_client_shutdown_async(nullptr));
+    }
+
+    SECTION("basic") {
+        auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+        auto const error = error_owner.get();
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
 TEST_CASE("get_runtime", "[mongoac][client]") {
     SECTION("null") {
         auto const runtime = make_unique(mongoac_client_get_runtime(nullptr), &mongoac_runtime_destroy);
@@ -136,14 +206,16 @@ TEST_CASE("get_runtime", "[mongoac][client]") {
     }
 }
 
-TEST_CASE("shutdown", "[mongoac][client]") {
+TEST_CASE("get_runtime_address", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_shutdown(nullptr));
+        CHECK(mongoac_client_get_runtime_address(nullptr) == std::uintptr_t{});
     }
 
     SECTION("basic") {
         auto const client =
             REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
-        CHECK_NOTHROW(mongoac_client_shutdown(client.get()));
+
+        auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
+        CHECK(mongoac_runtime_address(runtime.get()) == mongoac_client_get_runtime_address(client.get()));
     }
 }
