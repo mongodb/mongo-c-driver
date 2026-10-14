@@ -48,15 +48,6 @@ def make_task(distro_name, compiler, arch):
                     test -f cmake-build/src/libmongoac/Debug/libmongoac.so
                 """,
             ),
-            # Validate the documented platform/compiler matrix: the mongoac docs must build with warnings as errors.
-            # Run before the tests so a docs error is reported even when the tests fail; the script installs its own
-            # Rust toolchain and CMake/Ninja, since $PATH does not persist across commands. The `docs` group provides
-            # the `sphinx-build` executable required by `find_package (Sphinx REQUIRED)`.
-            bash_exec(
-                command_type=EvgCommandType.TEST,
-                working_dir='mongoc',
-                script='uv run --frozen --only-group docs env .evergreen/scripts/build-mongoac-docs.sh',
-            ),
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 add_expansions_to_env=True,
@@ -74,8 +65,18 @@ def make_task(distro_name, compiler, arch):
                 """,
             ),
             UploadMongoacTestResults.call(),
-            # Report the failure recorded above, after the results have been attached.
-            # A missing status file makes `cat` fail, so this fails closed.
+            # Validate the documented platform/compiler matrix: the mongoac docs must build with warnings as errors.
+            # Run after the tests and the results upload so that a docs error never costs the test results. The script
+            # installs its own Rust toolchain and CMake/Ninja, since $PATH does not persist across commands. The
+            # `docs` group provides the `sphinx-build` executable required by `find_package (Sphinx REQUIRED)`.
+            bash_exec(
+                command_type=EvgCommandType.TEST,
+                working_dir='mongoc',
+                script='uv run --frozen --only-group docs env .evergreen/scripts/build-mongoac-docs.sh',
+            ),
+            # Report the failure recorded above, after the results have been attached. This runs last so that a test
+            # failure still turns the task red; a docs failure turns it red earlier, with the results already
+            # attached. A missing status file makes `cat` fail, so this fails closed.
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 working_dir='mongoc',

@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 
-set -o errexit
-set -o pipefail
-
 # Installs the Rust toolchain required to build the mongoac library (src/libmongoac) and exports the corresponding
 # environment variables into the current shell.
 #
 # This script must be *sourced*, not executed, so that the exported environment (notably $PATH and
 # $RUSTUP_TOOLCHAIN) is visible to subsequent commands in the same process, e.g. CMake's
-# `find_program (CARGO_EXECUTABLE cargo REQUIRED)` in src/libmongoac/CMakeLists.txt.
+# `find_program (CARGO_EXECUTABLE cargo REQUIRED)` in src/libmongoac/CMakeLists.txt. It therefore sets no shell
+# options of its own, which would leak into the caller: every failure path returns non-zero explicitly, and the
+# callers are responsible for aborting on that status.
 #
 # Usage:
 #   . .evergreen/scripts/install-rust-toolchain.sh
@@ -36,8 +35,11 @@ install_rustup() {
   for ((attempt = 1; attempt <= max_attempts; attempt++)); do
     rustup_init="$(mktemp)" || return
 
-    # Download the installer script before running it so that a truncated download is never executed.
-    if curl --retry 5 --retry-connrefused -sSfL "https://sh.rustup.rs" -o "${rustup_init}" &&
+    # Download the installer script before running it so that a truncated download is never executed. The protocol
+    # and TLS version are pinned as recommended by rustup, and the timeouts ensure a hung connection cannot defeat
+    # the retry loop below.
+    if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 300 -sSfL \
+      "https://sh.rustup.rs" -o "${rustup_init}" &&
       sh "${rustup_init}" -y --no-modify-path --profile minimal --default-toolchain "${rust_toolchain_version:?}"; then
       rm -f "${rustup_init}"
       return 0

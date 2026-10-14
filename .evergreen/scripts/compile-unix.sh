@@ -48,6 +48,13 @@ fi
 . "${script_dir:?}/install-build-tools.sh"
 install_build_tools
 
+if [[ "${ENABLE_MONGOAC}" == "ON" ]]; then
+  # Required for the mongoac shared library's ELF SONAME (see src/libmongoac/CMakeLists.txt). A failure here is not
+  # fatal: the build warns and produces a library without an SONAME.
+  uv tool install -q patchelf ||
+    echo "WARNING: patchelf unavailable; the mongoac shared library will not have an ELF SONAME" 1>&2
+fi
+
 declare -a configure_flags
 
 configure_flags_append() {
