@@ -47,6 +47,15 @@ def make_task(distro_name, compiler, arch):
                     test -f cmake-build/src/libmongoac/Debug/libmongoac.so
                 """,
             ),
+            # Validate the documented platform/compiler matrix: the mongoac docs must build with warnings as errors.
+            # Run before the tests so a docs error is reported even when the tests fail; the script installs its own
+            # Rust toolchain and CMake/Ninja, since $PATH does not persist across commands. The `docs` group provides
+            # the `sphinx-build` executable required by `find_package (Sphinx REQUIRED)`.
+            bash_exec(
+                command_type=EvgCommandType.TEST,
+                working_dir='mongoc',
+                script='uv run --frozen --only-group docs env .evergreen/scripts/build-mongoac-docs.sh',
+            ),
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 add_expansions_to_env=True,
