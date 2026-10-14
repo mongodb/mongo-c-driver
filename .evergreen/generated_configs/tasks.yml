@@ -5564,6 +5564,35 @@ tasks:
           args:
             - -c
             - .evergreen/scripts/run-mock-server-tests.sh
+  - name: mongoac-rhel8-latest-gcc
+    run_on: rhel8-latest-large
+    tags: [mongoac, rhel8-latest, gcc]
+    exec_timeout_secs: 5400
+    commands:
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          add_expansions_to_env: true
+          env:
+            CC: gcc
+            CXX: g++
+            ENABLE_MONGOAC: "ON"
+          args:
+            - -c
+            - .evergreen/scripts/compile-mongoac.sh
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - -c
+            - |
+              set -o errexit
+              test -x cmake-build/src/libmongoac/test/test-libmongoac
+              test -f cmake-build/src/libmongoac/Debug/libmongoac.so
   - name: oidc-auth-test-task
     run_on:
       - ubuntu2404-small
