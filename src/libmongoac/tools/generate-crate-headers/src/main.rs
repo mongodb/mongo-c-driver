@@ -76,6 +76,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/client-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
+                "stdint.h",
             ],
             "client" => &[
                 "mongoac/database_options-fwd.h",
@@ -84,6 +85,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/future-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
+                "stdint.h",
             ],
             "database_options" => &[],
             "database" => &[
@@ -92,6 +94,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/collection-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
+                "stdint.h",
             ],
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
