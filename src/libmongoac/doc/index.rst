@@ -51,8 +51,8 @@ Supported Platforms
 -------------------
 
 mongoac is built and tested in CI on the following platform only. RHEL 8 x86_64 is the client baseline platform: it
-provides the oldest glibc in the CI distro catalog (2.28), and its GCC 8.5 exercises the documented GCC 8.1 minimum.
-It is also the baseline platform of the MongoDB Rust Driver.
+provides the oldest glibc among the platforms mongoac is tested on (2.28), and its GCC 8.5 exercises the documented
+GCC 8.1 minimum. It is also the baseline platform of the MongoDB Rust Driver.
 
 .. list-table::
    :header-rows: 1
@@ -107,8 +107,8 @@ The following platforms are not supported. mongoac does not attempt to handle th
       symbolic links are not supported by default on Windows.
     - The build emits ``The mongoac shared library has not yet been tested on Windows!`` when ``ENABLE_SHARED=ON``.
 - **Cross-compilation**
-    - Cargo is invoked without ``--target`` and ``CARGO_BUILD_TARGET`` is not honored, so the library is always built
-      for the host platform.
+    - The build does not support cross-compilation: Cargo is invoked without ``--target``, and the built library is
+      copied from a host-target path.
 - **Non-x86_64 architectures** (e.g. ARM, POWER, s390x)
     - Untested in CI. Some Rust dependencies (e.g. ``aws-lc-sys`` and ``zstd-sys``) compile native C code whose
       requirements on other architectures have not been verified.

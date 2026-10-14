@@ -11,8 +11,9 @@ TAG = 'mongoac'
 # Building mongoac compiles the Rust `mongodb` driver and its dependencies (~355 crates, including `aws-lc-sys` and
 # `zstd-sys`), which is too much work for a `-small` distro.
 #
-# RHEL 8 x86_64 is the client's baseline platform: it provides the oldest glibc in the distro catalog (2.28), and
-# its GCC 8.5 exercises mongoac's documented GCC 8.1 minimum. It is also the baseline of the MongoDB Rust Driver.
+# RHEL 8 x86_64 is the client's baseline platform: it provides the oldest glibc among the platforms mongoac is
+# tested on (2.28), and its GCC 8.5 exercises mongoac's documented GCC 8.1 minimum. It is also the baseline of the
+# MongoDB Rust Driver.
 MATRIX = [
     ('rhel8-latest', 'gcc', None),
 ]
