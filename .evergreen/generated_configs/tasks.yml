@@ -5593,6 +5593,17 @@ tasks:
               set -o errexit
               test -x cmake-build/src/libmongoac/test/test-libmongoac
               test -f cmake-build/src/libmongoac/Debug/libmongoac.so
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            ENABLE_MONGOAC: "ON"
+          args:
+            - -c
+            - .evergreen/scripts/run-mongoac-tests.sh
+      - func: upload-mongoac-test-results
   - name: oidc-auth-test-task
     run_on:
       - ubuntu2404-small

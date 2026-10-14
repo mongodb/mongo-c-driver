@@ -1,7 +1,8 @@
 from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType
-from shrub.v3.evg_task import EvgTask, EvgTaskRef
+from shrub.v3.evg_task import EvgTask
 
+from config_generator.components.funcs.upload_mongoac_test_results import UploadMongoacTestResults
 from config_generator.etc.distros import compiler_to_vars, find_large_distro, make_distro_str
 from config_generator.etc.utils import bash_exec
 
@@ -46,11 +47,22 @@ def make_task(distro_name, compiler, arch):
                     test -f cmake-build/src/libmongoac/Debug/libmongoac.so
                 """,
             ),
+            bash_exec(
+                command_type=EvgCommandType.TEST,
+                working_dir='mongoc',
+                env={'ENABLE_MONGOAC': 'ON'},
+                script='.evergreen/scripts/run-mongoac-tests.sh',
+            ),
+            UploadMongoacTestResults.call(),
         ],
     )
 
 
 TASKS = [make_task(*entry) for entry in MATRIX]
+
+
+def functions():
+    return UploadMongoacTestResults.defn()
 
 
 def tasks():
