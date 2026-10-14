@@ -26,6 +26,11 @@ The optional install step:
 cmake --install <build-dir>
 ```
 
+These examples use a single-config generator. With a multi-config generator,
+select a configuration when building, installing, and running CTest; executable
+locations may also include a configuration-specific directory. Do not assume
+that `CMAKE_BUILD_TYPE` or a fixed executable path applies to every generator.
+
 Key CMake configuration options specific to this project (given `option=(default|alternatives...)`):
 
 - `-D CMAKE_PREFIX_PATH:PATH=<libmongocrypt-prefix>`: specify installation prefixes to search with `find_*()` CMake commands (e.g., to link with `libmongocrypt`).
@@ -153,8 +158,6 @@ Uses C99. Contributions shall not use features from newer standards.
 
 See *Coding Style* in `CONTRIBUTING.md` and `.clang-format` for indentation. In addition:
 
-- Format using formatting scripts. Don't try to manipulate things by hand when
-  you can just run the formatters described below.
 - **clangd**: requires configuring with `-D CMAKE_EXPORT_COMPILE_COMMANDS=ON`,
   which is not enabled by default. If clangd reports unknown headers or missing
   symbols, check that `<build-dir>/compile_commands.json` exists before looking

@@ -15,6 +15,11 @@ Build it first — it is not part of the default `ALL` target (`<build-dir>` is 
 cmake --build <build-dir> --target test-libmongoc
 ```
 
+The examples below use a single-config generator. With a multi-config
+generator, select a configuration when building and running CTest (for example,
+with `--config` and `-C`); the executable may be in a configuration-specific
+directory.
+
 There are two ways to run the resulting tests, and they suit different jobs:
 
 | | Use for |
@@ -27,25 +32,29 @@ There are two ways to run the resulting tests, and they suit different jobs:
 Every test case is registered as an individual CTest test named `mongoc/<case-name>`:
 
 ```bash
-# List matching tests without running them:
-ctest --test-dir <build-dir> -N -R "/server_selection/"
+# List tests:
+ctest --test-dir <build-dir> -N
 
-# Run the matching tests:
+# Run tests:
 ctest --test-dir <build-dir> --output-on-failure -R "/server_selection/"
 ```
 
-`-R` is a regex over the full CTest test name, which includes the `mongoc` prefix and the case's leading `/`.
+Use `ctest --help` to discover filtering and other CTest options. The
+`MONGOC_TEST_*` environment variables documented in `CONTRIBUTING.md` apply to
+CTest runs as well.
 
-Each case's `[...]` tags (see [Finding a test's name](#finding-a-tests-name)) are translated into CTest properties by `build/cmake/LoadTests.cmake`:
+Each case's `[...]` tags (see [Finding a test's name](#finding-a-tests-name))
+are translated into CTest properties by `build/cmake/LoadTests.cmake`:
 
 | Tag | Becomes |
 |-----|---------|
-| any tag | a CTest **label**, so `ctest -L "lock:live-server"` selects by tag. All generated cases also get the label `test-libmongoc-generated`. |
-| `lock:<name>` | a `RESOURCE_LOCK`, serializing cases that share a lock name against each other. |
-| `uses:<name>` | a required test fixture, `mongoc/fixtures/<name>`. |
-| `timeout:<seconds>` | that `TIMEOUT`. **Cases without this tag get a 10 second timeout**, so a genuinely slow test must declare one or it will be killed. |
+| any tag | A CTest label, so `ctest -L "lock:live-server"` selects by tag. All generated cases also get the label `test-libmongoc-generated`. |
+| `lock:<name>` | A `RESOURCE_LOCK`, serializing cases that share a lock name against each other. |
+| `uses:<name>` | A required test fixture, `mongoc/fixtures/<name>`. |
+| `timeout:<seconds>` | That `TIMEOUT`. Cases without this tag get a 10-second timeout. |
 
-Cases run with the working directory set to the source root, and a case that reports itself skipped is recorded as skipped rather than passed. The `MONGOC_TEST_*` environment variables documented in `CONTRIBUTING.md` apply to `ctest` runs as well.
+Cases run with the working directory set to the source root, and a case that
+reports itself skipped is recorded as skipped rather than passed.
 
 ## Running the executable directly
 
@@ -54,6 +63,9 @@ Typical invocation:
 ```bash
 <build-dir>/src/libmongoc/test-libmongoc -d -f -l "<test-name-or-pattern>"
 ```
+
+For multi-config generators, the executable may be under a
+configuration-specific subdirectory; use the path produced by the build.
 
 | Flag | Meaning |
 |------|---------|
