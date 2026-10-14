@@ -31,5 +31,4 @@ This function may return the following errors:
 
 .. seealso::
 
-   | :symbol:`mongoac_future_t`
    | :symbol:`mongoac_collection_drop_async()`
