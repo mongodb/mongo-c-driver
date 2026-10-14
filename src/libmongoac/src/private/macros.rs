@@ -17,6 +17,7 @@
 pub use crate::safe_as_mut;
 pub use crate::safe_as_ref;
 pub use crate::safe_as_ref_with_error;
+pub use crate::safe_bson_view_with_error;
 pub use crate::safe_drop;
 pub use crate::safe_into_raw;
 pub use crate::safe_optional_as_mut;

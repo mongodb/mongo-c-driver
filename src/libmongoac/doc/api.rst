@@ -8,6 +8,8 @@ API Reference
    export
    version
 
+   mongoac_bson_t
+   mongoac_bson_view_t
    mongoac_client_t
    mongoac_collection_t
    mongoac_database_t
