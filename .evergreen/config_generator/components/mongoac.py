@@ -49,11 +49,28 @@ def make_task(distro_name, compiler, arch):
             ),
             bash_exec(
                 command_type=EvgCommandType.TEST,
+                add_expansions_to_env=True,
                 working_dir='mongoc',
-                env={'ENABLE_MONGOAC': 'ON'},
-                script='.evergreen/scripts/run-mongoac-tests.sh',
+                env=compiler_to_vars(compiler) | {'ENABLE_MONGOAC': 'ON'},
+                script="""\
+                    # Record the runner's exit status instead of failing the block here:
+                    # Evergreen aborts the remaining commands on the first failure, which
+                    # would skip the results upload on exactly the runs that need it.
+                    if .evergreen/scripts/run-mongoac-tests.sh; then
+                      echo 0 > mongoac-test-status
+                    else
+                      echo $? > mongoac-test-status
+                    fi
+                """,
             ),
             UploadMongoacTestResults.call(),
+            # Report the failure recorded above, after the results have been attached.
+            # A missing status file makes `cat` fail, so this fails closed.
+            bash_exec(
+                command_type=EvgCommandType.TEST,
+                working_dir='mongoc',
+                script='test "$(cat mongoac-test-status)" = "0"',
+            ),
         ],
     )
 

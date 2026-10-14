@@ -5598,12 +5598,31 @@ tasks:
         params:
           binary: bash
           working_dir: mongoc
+          add_expansions_to_env: true
           env:
+            CC: gcc
+            CXX: g++
             ENABLE_MONGOAC: "ON"
           args:
             - -c
-            - .evergreen/scripts/run-mongoac-tests.sh
+            - |
+              # Record the runner's exit status instead of failing the block here:
+              # Evergreen aborts the remaining commands on the first failure, which
+              # would skip the results upload on exactly the runs that need it.
+              if .evergreen/scripts/run-mongoac-tests.sh; then
+                echo 0 > mongoac-test-status
+              else
+                echo $? > mongoac-test-status
+              fi
       - func: upload-mongoac-test-results
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          args:
+            - -c
+            - test "$(cat mongoac-test-status)" = "0"
   - name: oidc-auth-test-task
     run_on:
       - ubuntu2404-small
