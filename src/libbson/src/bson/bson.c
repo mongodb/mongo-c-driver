@@ -27,7 +27,6 @@
 
 #include <bson/config.h>
 
-#include <mlib/config.h>
 #include <mlib/intencode.h>
 
 #include <math.h>

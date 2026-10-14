@@ -28,7 +28,6 @@
 
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 
 #include <jsonsl/jsonsl.h>
 
