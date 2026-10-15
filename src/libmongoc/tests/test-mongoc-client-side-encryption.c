@@ -6758,8 +6758,7 @@ _have_test_aws_creds_env(void *unused)
  *   - MONGOC_TEST_KMS_PROXY_HOST set (or defaults to 127.0.0.1).
  *   - Real AWS credentials in MONGOC_TEST_AWS_ACCESS_KEY_ID /
  *     MONGOC_TEST_AWS_SECRET_ACCESS_KEY.
- *   - Optionally MONGOC_TEST_CSFLE_TLS_CA_FILE for strict proxy cert
- *     verification in the HTTPS case (uses weak_cert_validation otherwise).
+ *   - MONGOC_TEST_CSFLE_TLS_CA_FILE for strict proxy cert verification in the HTTPS case
  *
  * Sequence:
  *   1. POST /reset to the proxy — clear connect_count.
