@@ -30,8 +30,6 @@
 #include <mongoc/mongoc-read-prefs.h>
 #include <mongoc/mongoc-uri.h>
 
-#include <mlib/config.h>
-
 #include <stdio.h>
 
 #define ALPHA 0.2

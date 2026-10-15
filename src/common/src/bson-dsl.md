@@ -876,8 +876,8 @@ bsonParse(
 
 If you misspell the name of any DSL subcommand, or use one in an incorrect
 location, you will receive a string of errors from your compiler. (If you are
-using GCC, this will include a length expansion backtrace for `_bsonDSL_eval`
-and `_bsonDSL_mapMacro`, which you can mostly scroll over and ignore).
+using GCC, this will include a length expansion backtrace for `MLIB_EVAL`
+and `_mlibMapMacro_`, which you can mostly scroll over and ignore).
 
 However, all errors should be ignored *except* for the first one, which will
 often indicate the invocation of an unknown/implicitly-declared function. The
@@ -943,10 +943,8 @@ Suppose we have a macro "MAP", with the following psuedo-code:
 That is, MAP accepts a name `F` and zero or more arguments as `args`. For
 each argument `a` in `args`, expand one `F(x)`.
 
-The actual definition of `MAP` is non-trivial. The definition provded in
-`common-bson-dsl-private.h` can be found near the bottom of the file, and goes by the name
-`_bsonDSL_mapMacro`. It is not necessary to understand how `MAP` works to
-understand the DSL.
+The actual definition of `MAP` is non-trivial. The definition of the macro is
+contained in `mlib/pp/map.h`.
 
 
 ## Token Pasting
@@ -1036,3 +1034,7 @@ by a single `AGAIN(f)`.
 
 There are additional tricks required to make `EVAL`, `MAP`, and token pasting
 play nice, but those details are not necessary here.
+
+The DSL uses `MLIB_EVAL` from `mlib/pp/basic.h` to drive these expansions,
+including nested maps. Its expansion budget depends on the preprocessor:
+traditional MSVC needs more rescans than GCC, Clang, or conforming MSVC.

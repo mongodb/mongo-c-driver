@@ -34,10 +34,9 @@ env -C "$MCD_DIR" quilt pop -a
 
 # Get the package name according to the changelog file
 dch_pkg_name=$(dpkg-parsechangelog --show-field Source --file "$MCD_DIR/debian/changelog")
-# The full version
-dch_pkg_version=$(dpkg-parsechangelog --show-field Version --file "$MCD_DIR/debian/changelog")
 # Get the version number without the version suffix
-dch_base_version=$(sed -r 's/-[^-]+$//' <<< "$dch_pkg_version")
+# Use VERSION_CURRENT to get the next higher base version number
+dch_base_version=$(sed -r 's/-[^-]+$//' < "$MCD_DIR/VERSION_CURRENT")
 printf "Upstream package %s version %s\n" "$dch_pkg_name" "$dch_base_version"
 # Snapshot version includes date and version information
 snapshot_version="$dch_base_version-0+$(date +%Y%m%d)+git$(git -C "$MCD_DIR" rev-parse --short HEAD)"
