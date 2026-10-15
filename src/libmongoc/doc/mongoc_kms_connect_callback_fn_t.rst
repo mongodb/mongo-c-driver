@@ -36,8 +36,10 @@ Parameters
 Returns
 -------
 
-A connected :symbol:`mongoc_stream_t` on success, or ``NULL`` on failure. When
-returning ``NULL``, call :symbol:`mongoc_kms_connect_callback_params_set_error`
+A connected :symbol:`mongoc_stream_t` on success, or ``NULL`` on failure. Must be an
+owning pointer as it will be cleaned up with :symbol:`mongoc_stream_destroy`.
+
+When returning ``NULL``, call :symbol:`mongoc_kms_connect_callback_params_set_error`
 and return the ``NULL`` it returns.
 
 Example
