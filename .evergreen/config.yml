@@ -51,6 +51,7 @@ post:
   - func: upload-test-results
   - func: stop-mongo-orchestration
   - func: stop-load-balancer
+  - func: stop-dsc
   - func: restore-instance-profile
 
 include:

@@ -5152,6 +5152,63 @@ tasks:
           local_file: mongoc/deb-pkg.tgz
           permissions: public-read
           remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-i386.tar.gz
+  - name: dsc-ubuntu2404-gcc-compile
+    run_on: ubuntu2404-large
+    tags: [dsc, ubuntu2404, gcc]
+    commands:
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            CC: gcc
+            CFLAGS: -fno-omit-frame-pointer
+            SSL: OPENSSL
+          include_expansions_in_env:
+            - distro_id
+          args:
+            - -c
+            - .evergreen/scripts/compile.sh
+      - func: upload-build
+  - name: dsc-ubuntu2404-gcc-test-replset-1
+    run_on: ubuntu2404-large
+    tags: [dsc, replset-1, ubuntu2404, gcc]
+    depends_on: [{ name: dsc-ubuntu2404-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: dsc-ubuntu2404-gcc-compile
+      - func: fetch-det
+      - func: start-dsc
+        vars:
+          DSC_MONGODS_PER_SHARD: "1"
+          DSC_NUM_CELLS: "1"
+      - func: run-simple-http-server
+      - func: run-tests
+        vars:
+          CC: gcc
+          DSC: "on"
+          URI: ${MONGODB_URI}
+  - name: dsc-ubuntu2404-gcc-test-replset-3
+    run_on: ubuntu2404-large
+    tags: [dsc, replset-3, ubuntu2404, gcc]
+    depends_on: [{ name: dsc-ubuntu2404-gcc-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: dsc-ubuntu2404-gcc-compile
+      - func: fetch-det
+      - func: start-dsc
+        vars:
+          DSC_MONGODS_PER_SHARD: "3"
+          DSC_NUM_CELLS: "3"
+      - func: run-simple-http-server
+      - func: run-tests
+        vars:
+          CC: gcc
+          DSC: "on"
+          URI: ${MONGODB_URI}
   - name: kms-divergence-check
     commands:
       - func: kms-divergence-check

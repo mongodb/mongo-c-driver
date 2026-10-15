@@ -686,6 +686,28 @@ functions:
       type: setup
       params:
         file: expansions.set-cache-dir.yml
+  start-dsc:
+    - command: ec2.assume_role
+      params:
+        role_arn: ${dsc_ecr_role_arn}
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+          - DSC_NUM_CELLS
+          - DSC_MONGODS_PER_SHARD
+        args:
+          - -c
+          - .evergreen/scripts/dsc-start.sh
+    - command: expansions.update
+      type: setup
+      params:
+        file: mongoc/dsc-expansion.yml
   start-load-balancer:
     - command: subprocess.exec
       type: setup
@@ -712,6 +734,14 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-std.sh
+  stop-dsc:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - .evergreen/scripts/dsc-stop.sh
   stop-load-balancer:
     - command: subprocess.exec
       params:

@@ -231,6 +231,11 @@ buildvariants:
       CLIENT_SIDE_ENCRYPTION: "on"
     tasks:
       - name: .cse-matrix-winssl
+  - name: dsc
+    display_name: Disaggregated storage (DSC)
+    batchtime: 1440
+    tasks:
+      - name: .dsc
   - name: loadbalanced
     display_name: loadbalanced
     tasks:

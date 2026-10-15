@@ -14,6 +14,7 @@ check_var_opt CLIENT_SIDE_ENCRYPTION
 check_var_opt COMPRESSORS "nocompressors"
 check_var_opt COVERAGE # CMake default: OFF.
 check_var_opt DNS "nodns"
+check_var_opt DSC "off"
 check_var_opt LOADBALANCED "noloadbalanced"
 check_var_opt MARCH
 check_var_opt MONGODB_API_VERSION
@@ -234,6 +235,11 @@ if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
   test_args+=("-l" "/change_streams/unified/*")
   test_args+=("-l" "/versioned_api/*")
   test_args+=("-l" "/command_monitoring/unified/*")
+fi
+
+if [[ "${DSC}" == "on" ]]; then
+  # Known disaggregated storage behavioral differences; see etc/skip-tests-dsc.txt for reasons.
+  test_args+=("--skip-tests" ".evergreen/etc/skip-tests-dsc.txt")
 fi
 
 if [[ ! "${test_args[*]}" =~ "-l" ]]; then
