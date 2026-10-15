@@ -542,6 +542,9 @@ _get_stream(const char *endpoint,
                               endpoint);
          }
          goto fail;
+      } else {
+         // Ignore any user-reported errors on success.
+         bson_error_reset(cb_error);
       }
    } else {
       base_stream = mongoc_client_connect_tcp(connecttimeoutms, &host, error);

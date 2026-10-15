@@ -6737,7 +6737,7 @@ _parse_proxy_connect_count(const char *body)
 /* Prose test 28, Cases 1 & 2: create a real AWS data key routed through a
  * local proxy.
  *
- * Setup requirements:
+ * Setup requirements (via DET script: .evergreen/csfle/start-servers.sh):
  *   - Plain HTTP proxy: python kms_http_proxy.py --port 9004
  *   - HTTPS proxy:      python kms_http_proxy.py --ca_file ca.pem
  *                        --cert_file server.pem --port 9005
