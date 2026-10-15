@@ -27,7 +27,7 @@
 
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
-Version:   2.5.5
+Version:   2.5.6
 Release:   1%{?dist}
 # See THIRD_PARTY_NOTICES
 License:   Apache-2.0 AND ISC AND MIT AND Zlib
@@ -272,6 +272,9 @@ exit $ret
 
 
 %changelog
+* Fri Oct  9 2026 Remi Collet <remi@remirepo.net> - 2.5.6-1
+- update to 2.5.6
+
 * Thu Oct  1 2026 Remi Collet <remi@remirepo.net> - 2.5.5-1
 - update to 2.5.5
 
