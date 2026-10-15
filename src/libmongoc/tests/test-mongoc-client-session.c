@@ -1,5 +1,6 @@
 #include <common-macros-private.h> // BEGIN_IGNORE_DEPRECATIONS
 #include <mongoc/mongoc-change-stream-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-collection-private.h>
 #include <mongoc/mongoc-cursor-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -446,7 +447,7 @@ test_session_supported_pooled(void *ctx)
 }
 
 static void
-_test_mock_end_sessions(bool pooled)
+_test_mock_end_sessions(bool pooled, bool zero_max_size)
 {
    mock_server_t *server;
    mongoc_client_pool_t *pool = NULL;
@@ -491,14 +492,20 @@ _test_mock_end_sessions(bool pooled)
 
    if (pooled) {
       mongoc_client_pool_push(pool, client);
+      if (zero_max_size) {
+         mongoc_client_pool_max_size(pool, 0);
+         ASSERT_CMPSIZE_T(mongoc_client_pool_get_size(pool), ==, 0);
+      }
       future = future_client_pool_destroy(pool);
    } else {
       future = future_client_destroy(client);
    }
 
-   /* check that we got the expected endSessions cmd */
-   request = mock_server_receives_msg(server, 0, expected_cmd);
-   reply_to_request_with_ok_and_destroy(request);
+   if (!zero_max_size) {
+      /* check that we got the expected endSessions cmd */
+      request = mock_server_receives_msg(server, 0, expected_cmd);
+      reply_to_request_with_ok_and_destroy(request);
+   }
    future_wait(future);
    future_destroy(future);
 
@@ -511,13 +518,19 @@ _test_mock_end_sessions(bool pooled)
 static void
 test_mock_end_sessions_single(void)
 {
-   _test_mock_end_sessions(false);
+   _test_mock_end_sessions(false, false);
 }
 
 static void
 test_mock_end_sessions_pooled(void)
 {
-   _test_mock_end_sessions(true);
+   _test_mock_end_sessions(true, false);
+}
+
+static void
+test_mock_end_sessions_pooled_zero_max_size(void)
+{
+   _test_mock_end_sessions(true, true);
 }
 
 /* Test for CDRIVER-3587 - Do not reuse server stream that becomes invalid on
@@ -2916,6 +2929,10 @@ test_session_install(TestSuite *suite)
       suite, "/Session/end/mock/single", test_mock_end_sessions_single, test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest(
       suite, "/Session/end/mock/pooled", test_mock_end_sessions_pooled, test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest(suite,
+                               "/Session/end/mock/pooled_zero_max_size",
+                               test_mock_end_sessions_pooled_zero_max_size,
+                               test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest(suite,
                                "/Session/end/mock/disconnected [timeout:20]",
                                test_mock_end_sessions_server_disconnect,
