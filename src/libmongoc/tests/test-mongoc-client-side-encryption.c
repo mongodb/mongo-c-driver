@@ -6734,6 +6734,20 @@ _parse_proxy_connect_count(const char *body)
    return atoi(p + strlen("connect_count "));
 }
 
+/* Skip condition: real AWS credentials are not configured in the environment. */
+static int
+_have_test_aws_creds_env(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   char *access_key_id = test_framework_getenv("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   char *secret_access_key = test_framework_getenv("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   const bool have = access_key_id && secret_access_key;
+   bson_free(access_key_id);
+   bson_free(secret_access_key);
+   return have;
+}
+
 /* Prose test 28, Cases 1 & 2: create a real AWS data key routed through a
  * local proxy.
  *
@@ -9089,6 +9103,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         NULL, // dtor
                         NULL, // ctx
                         test_framework_skip_if_no_client_side_encryption,
+                        _have_test_aws_creds_env,
                         TestSuite_CheckLive);
 
       TestSuite_AddFull(suite,
@@ -9097,6 +9112,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         NULL, // dtor
                         NULL, // ctx
                         test_framework_skip_if_no_client_side_encryption,
+                        _have_test_aws_creds_env,
                         TestSuite_CheckLive);
 
       TestSuite_AddFull(suite,
@@ -9105,6 +9121,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         NULL, // dtor
                         NULL, // ctx
                         test_framework_skip_if_no_client_side_encryption,
+                        _have_test_aws_creds_env,
                         TestSuite_CheckLive);
 
       TestSuite_AddFull(suite,
