@@ -129,8 +129,6 @@ typedef struct _mongoc_handshake_t {
    optional_int32 env_timeout_sec;
    optional_int32 env_memory_mb;
    char *env_region;
-
-   int8_t frozen; // Atomic bool (for compatibility with MSVC, which has no atomic boolean API).
 } mongoc_handshake_t;
 
 void

@@ -54,6 +54,11 @@
 static mongoc_handshake_t gMongocHandshake;
 
 /*
+ * Atomic flag indicating whether the handshake has been frozen.
+ */
+static int8_t gHandshakeFrozen;
+
+/*
  * Used for thread-safety in mongoc_handshake_data_append
  */
 static bson_mutex_t gHandshakeLock;
@@ -574,7 +579,7 @@ _mongoc_handshake_init(void)
    _set_compiler_info();
    _set_flags();
 
-   gMongocHandshake.frozen = false;
+   gHandshakeFrozen = false;
    bson_mutex_init(&gHandshakeLock);
 }
 
@@ -825,7 +830,7 @@ void
 _mongoc_handshake_freeze(void)
 {
    // Ensure all writes to gMongocHandshake are ordered BEFORE this store.
-   mcommon_atomic_int8_exchange(&gMongocHandshake.frozen, true, mcommon_memory_order_release);
+   mcommon_atomic_int8_exchange(&gHandshakeFrozen, true, mcommon_memory_order_release);
 }
 
 /*
@@ -948,7 +953,7 @@ _mongoc_handshake_get_unfrozen(void)
 bool
 _mongoc_handshake_is_frozen(void)
 {
-   return mcommon_atomic_int8_fetch(&gMongocHandshake.frozen, mcommon_memory_order_acquire) != 0;
+   return mcommon_atomic_int8_fetch(&gHandshakeFrozen, mcommon_memory_order_acquire) != 0;
 }
 
 bool
