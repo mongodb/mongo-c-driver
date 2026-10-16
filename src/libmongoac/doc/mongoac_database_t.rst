@@ -42,3 +42,5 @@ The associated runtime may be obtained with :symbol:`mongoac_database_get_runtim
 
     mongoac_database_drop
     mongoac_database_drop_async
+    mongoac_database_run_command
+    mongoac_database_run_command_async
