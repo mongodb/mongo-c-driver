@@ -829,18 +829,18 @@ _mongoc_ocsp_tlsext_status(SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
    store = SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl));
 
    /*
-    * checks that the basic response message is correctly signed and that the
-    * signer certificate can be validated.
-    * 1. The function first verifies the signer cert of the response is in the
-    * given cert chain.
-    * 2. Next, the function verifies the signature of the basic response.
-    * 3. Finally, the function validates the signer cert, constructing the
-    * validation path via the untrusted cert chain.
-    *
-    * cert_chain has already been verified. Use OCSP_TRUSTOTHER so the signer
-    * certificate can be considered verified if it is in cert_chain.
+    * Checks that the basic response message is correctly signed and that the
+    * signer certificate is an authorized responder:
+    * 1. Resolves the signer certificate from the responderID in the response,
+    * searching cert_chain, then the certificates embedded in the response.
+    * 2. Verifies the signature of the basic response.
+    * 3. Chain-verifies the signer certificate (cert_chain is passed as the
+    * untrusted intermediates for path construction) and checks that the
+    * signer is authorized to respond for the certificate: the CA that issued
+    * it, or a delegated responder with the id-kp-OCSPSigning extended key
+    * usage (RFC 6960, section 4.2.2.2).
     */
-   if (OCSP_basic_verify(basic, cert_chain, store, OCSP_TRUSTOTHER) != OCSP_VERIFY_SUCCESS) {
+   if (OCSP_basic_verify(basic, cert_chain, store, 0) != OCSP_VERIFY_SUCCESS) {
       SOFT_FAIL("OCSP response failed verification: %s", ERR_STR);
       ret = OCSP_CB_ERROR;
       GOTO(done);
