@@ -47,6 +47,11 @@ extensions = [
     'sphinx.ext.mathjax',
 ]
 
+suppress_warnings = [
+    # Some pages are intentionally listed in multiple toctrees.
+    'toc.multiple_toc_parents',
+]
+
 if has_sphinx_design:
     extensions.append('sphinx_design')
 
