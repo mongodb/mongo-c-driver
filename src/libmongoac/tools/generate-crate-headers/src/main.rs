@@ -47,11 +47,18 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("BsonViewT", "mongoac_bson_view_t"),
+        ("ClientSessionT", "mongoac_client_session_t"),
         ("ClientT", "mongoac_client_t"),
         ("CollectionOptionsT", "mongoac_collection_options_t"),
         ("CollectionT", "mongoac_collection_t"),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
+        (
+            "DropCollectionOptionsT",
+            "mongoac_drop_collection_options_t",
+        ),
+        ("DropDatabaseOptionsT", "mongoac_drop_database_options_t"),
         ("ErrorT", "mongoac_error_t"),
         ("FutureT", "mongoac_future_t"),
         ("RuntimeT", "mongoac_runtime_t"),
@@ -71,9 +78,14 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "client_session" => &[],
             "collection_options" => &[],
             "collection" => &[
+                "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
+                "mongoac/drop_collection_options-fwd.h",
+                "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
@@ -89,13 +101,19 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             ],
             "database_options" => &[],
             "database" => &[
+                "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/collection_options-fwd.h",
                 "mongoac/collection-fwd.h",
+                "mongoac/drop_database_options-fwd.h",
+                "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "drop_collection_options" => &[],
+            "drop_database_options" => &[],
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
                 "mongoac/error-fwd.h",

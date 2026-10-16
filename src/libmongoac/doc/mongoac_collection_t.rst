@@ -38,3 +38,6 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
     mongoac_collection_get_name
     mongoac_collection_get_runtime
     mongoac_collection_get_runtime_address
+
+    mongoac_collection_drop
+    mongoac_collection_drop_async
