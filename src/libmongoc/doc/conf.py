@@ -175,12 +175,6 @@ rst_prolog = rf"""
 .. |bson_t-opt-storage-ptr| replace::
     maybe-``NULL`` pointer to :doc:`overwritable storage <bson:lifetimes>` for a :symbol:`bson_t`
 
-.. |encrypt-string-substring-is-experimental| replace::
-    The "substringPreview" query type is in preview and should be used for experimental workloads only.
-    This feature is unstable and its security is not guaranteed until released as Generally
-    Available (GA). The GA version of this feature may not be backwards compatible with the
-    preview version.
-
 
 .. _mongodb_docs_cdriver: https://www.mongodb.com/docs/languages/c/c-driver/current/
 
