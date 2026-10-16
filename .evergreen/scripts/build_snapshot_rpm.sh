@@ -40,6 +40,23 @@ package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
 config=${MOCK_TARGET_CONFIG:=fedora-45-aarch64}
 
+# Extra rpmbuild options passed to mock when rebuilding the snapshot RPM.
+#
+# Since mongo-c-driver 2.6.0 (CDRIVER-6376), In-Use Encryption support requires
+# libmongocrypt 1.21.0 or newer. The spec passes
+# -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=ON when built with libmongocrypt, so
+# configuring against a distro libmongocrypt older than 1.21.0 is a fatal
+# error. Distro repositories lag behind: for example, EPEL 10 currently only
+# packages libmongocrypt 1.20.4. Build the snapshot RPM without client side
+# encryption for such chroots (the fedora chroots package a newer
+# libmongocrypt and still get full coverage).
+# TODO: remove these exclusions when the distro repositories package
+# libmongocrypt 1.21.0 or newer.
+rpmbuild_opts=()
+case "$config" in
+   centos-stream+epel-10-*) rpmbuild_opts+=(--without libmongocrypt) ;;
+esac
+
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
   exit 1
@@ -119,7 +136,7 @@ echo "Building source RPM ..."
 rpmbuild -bs ${spec_file}
 echo "Building binary RPMs ..."
 mock_result=$(readlink -f ../mock-result)
-sudo mock --resultdir="${mock_result}" --use-bootstrap-image --isolation=simple -r ${config} --no-clean --no-cleanup-after --rebuild ~/rpmbuild/SRPMS/${package}-${snapshot_version}*.src.rpm || (
+sudo mock --resultdir="${mock_result}" --use-bootstrap-image --isolation=simple -r ${config} --no-clean --no-cleanup-after --rebuild "${rpmbuild_opts[@]}" ~/rpmbuild/SRPMS/${package}-${snapshot_version}*.src.rpm || (
   cd "${mock_result}"
   cat *.log
   exit 1
