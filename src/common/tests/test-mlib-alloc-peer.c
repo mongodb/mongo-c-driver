@@ -1,15 +1,15 @@
 #include <mlib/alloc.h>
 
-const mlib_allocator *
+struct _mlib_allocator_state *
 mlib_test_allocator_from_peer(void)
 {
-   return mlib_get_allocator();
+   return _mlib_get_global_singleton_allocator_object_storage();
 }
 
 void
-mlib_test_set_allocator_from_peer(const mlib_allocator *allocator)
+mlib_test_set_allocator_from_peer(mlib_reallocate_fn reallocate, void *userdata)
 {
-   mlib_set_allocator(allocator);
+   mlib_set_allocator(reallocate, userdata);
 }
 
 void

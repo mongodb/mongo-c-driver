@@ -195,13 +195,9 @@ test_bson_allocator_mlib_failure(void)
 static void
 test_bson_allocator_mlib_configuration(void)
 {
-   const mlib_allocator default_allocator = *mlib_get_allocator();
    bson_mem_vtable_t invalid = _test_bson_allocator_install();
-   const mlib_allocator installed = *mlib_get_allocator();
    invalid.free = NULL;
    bson_mem_set_vtable(&invalid);
-   mlib_check(mlib_get_allocator()->reallocate == installed.reallocate);
-   mlib_check(mlib_get_allocator()->userdata, ptr_eq, installed.userdata);
    void *ptr = mlib_allocate(8);
    mlib_check(ptr != NULL);
    mlib_deallocate(ptr, 8);
@@ -210,8 +206,6 @@ test_bson_allocator_mlib_configuration(void)
    mlib_check(bson_allocator_state.malloc_calls, eq, 2);
    mlib_check(bson_allocator_state.free_calls, eq, 2);
    bson_mem_restore_vtable();
-   mlib_check(mlib_get_allocator()->reallocate == default_allocator.reallocate);
-   mlib_check(mlib_get_allocator()->userdata, ptr_eq, default_allocator.userdata);
    ptr = mlib_allocate(8);
    mlib_check(ptr != NULL);
    mlib_deallocate(ptr, 8);

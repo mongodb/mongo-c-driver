@@ -31,38 +31,36 @@
 mlib_extern_c_begin();
 
 /**
- * @brief Configuration for the global mlib allocator, not an object-associated allocator.
+ * @brief Allocate, resize, or release a region through the global mlib allocator.
  *
  * The callback must support ordinary malloc alignment. Over-aligned allocations
  * are not supported. Allocation failures must return NULL rather than terminate.
  * Concurrent allocation requires a thread-safe callback and context.
+ *
+ * If prev_ptr is NULL, previous_size must be zero. Otherwise, prev_ptr must
+ * have been allocated by this allocator, and previous_size must be its
+ * previous requested size (not the optional reported usable size).
+ *
+ * A positive requested_size requests a region of at least that size.
+ * Successful resizing preserves the first min(previous_size, requested_size)
+ * bytes. The old pointer is invalidated, even if its address is unchanged.
+ * If out_new_size is non-NULL, success writes the usable region size.
+ *
+ * A failed positive-size request returns NULL, leaves the old region intact,
+ * and does not modify out_new_size.
+ *
+ * A zero requested_size releases prev_ptr, returns NULL, and writes zero to
+ * out_new_size if supplied. A NULL prev_ptr with zero requested_size is a
+ * no-op. The callback must not throw when compiled as C++.
  */
-typedef struct mlib_allocator {
-   /** Borrowed context, passed unchanged to the callback. May be NULL. */
-   void *userdata;
+typedef void *(*mlib_reallocate_fn)(
+   void *userdata, void *prev_ptr, size_t requested_size, size_t previous_size, size_t *out_new_size);
 
-   /**
-    * @brief Allocate, resize, or release a region. Must be non-NULL.
-    *
-    * If prev_ptr is NULL, previous_size must be zero. Otherwise, prev_ptr must
-    * have been allocated by this allocator, and previous_size must be its
-    * previous requested size (not the optional reported usable size).
-    *
-    * A positive requested_size requests a region of at least that size.
-    * Successful resizing preserves the first min(previous_size, requested_size)
-    * bytes. The old pointer is invalidated, even if its address is unchanged.
-    * If out_new_size is non-NULL, success writes the usable region size.
-    *
-    * A failed positive-size request returns NULL, leaves the old region intact,
-    * and does not modify out_new_size.
-    *
-    * A zero requested_size releases prev_ptr, returns NULL, and writes zero to
-    * out_new_size if supplied. A NULL prev_ptr with zero requested_size is a
-    * no-op. The callback must not throw when compiled as C++.
-    */
-   void *(*reallocate)(
-      void *userdata, void *prev_ptr, size_t requested_size, size_t previous_size, size_t *out_new_size)mlib_noexcept;
-} mlib_allocator;
+/** @internal Callback and borrowed context for the global allocator. */
+struct _mlib_allocator {
+   void *userdata;
+   mlib_reallocate_fn reallocate;
+};
 
 /**
  * @internal
@@ -71,9 +69,9 @@ typedef struct mlib_allocator {
  */
 struct _mlib_allocator_state {
    // The actual current allocator used by the program
-   mlib_allocator current;
+   struct _mlib_allocator current;
    /// The default `stdlib.h` allocator
-   const mlib_allocator default_allocator;
+   const struct _mlib_allocator default_allocator;
 };
 
 /**
@@ -94,35 +92,23 @@ struct _mlib_allocator_state *
 _mlib_get_global_singleton_allocator_object_storage(void) mlib_noexcept;
 
 /**
- * @brief Obtain a borrowed, read-only view of the current global allocator.
+ * @brief Install a callback and borrowed context as the global allocator.
  *
- * The pointer remains valid, but installing or restoring the allocator changes
- * its contents. It is not a snapshot. Do not call the callback directly; use the
- * allocation helpers below.
- */
-static inline const mlib_allocator *
-mlib_get_allocator(void) mlib_noexcept
-{
-   return &_mlib_get_global_singleton_allocator_object_storage()->current;
-}
-
-/**
- * @brief Copy a configuration into the global allocator.
- *
- * allocator and its callback must be non-NULL; invalid configurations terminate
- * with a diagnostic. The source struct need not remain alive after this call,
- * but its callback and borrowed context must remain valid while installed.
+ * reallocate must be non-NULL; a null callback terminates with a diagnostic.
+ * userdata may be NULL and is passed unchanged to the callback. The callback and
+ * its borrowed context must remain valid while installed.
  *
  * Before installing or restoring, release all outstanding allocations obtained
  * through the current allocator. Configuration changes must not overlap any
- * other allocator operation, including reading the configuration.
+ * other allocator operation.
  */
 static inline void
-mlib_set_allocator(const mlib_allocator *allocator) mlib_noexcept
+mlib_set_allocator(mlib_reallocate_fn reallocate, void *userdata) mlib_noexcept
 {
-   mlib_check(allocator != NULL, because, "Setting a null allocator is not valid");
-   mlib_check(allocator->reallocate != NULL, because, "The reallocation function is required");
-   _mlib_get_global_singleton_allocator_object_storage()->current = *allocator;
+   mlib_check(reallocate != NULL, because, "The reallocation function is required");
+   struct _mlib_allocator *const allocator = &_mlib_get_global_singleton_allocator_object_storage()->current;
+   allocator->reallocate = reallocate;
+   allocator->userdata = userdata;
 }
 
 /** Restore the stdlib allocator, subject to the same restrictions as installation. */
@@ -136,7 +122,7 @@ mlib_restore_allocator(void) mlib_noexcept
 /**
  * @brief Resize through the current allocator, returning NULL on allocation failure.
  *
- * Parameters and results follow mlib_allocator.reallocate. Zero size explicitly
+ * Parameters and results follow mlib_reallocate_fn. Zero size explicitly
  * requests deallocation; this does not depend on the platform's realloc(p, 0)
  * behavior. A NULL pointer and zero size do not invoke the callback.
  */
@@ -149,8 +135,8 @@ mlib_reallocate(void *prev_ptr, size_t new_size, size_t previous_size, size_t *o
       }
       return NULL;
    }
-   const mlib_allocator *const allocator = mlib_get_allocator();
-   return allocator->reallocate(allocator->userdata, prev_ptr, new_size, previous_size, out_new_size);
+   const struct _mlib_allocator allocator = _mlib_get_global_singleton_allocator_object_storage()->current;
+   return allocator.reallocate(allocator.userdata, prev_ptr, new_size, previous_size, out_new_size);
 }
 
 /** Allocate uninitialized memory through the current allocator. Zero size returns NULL. */

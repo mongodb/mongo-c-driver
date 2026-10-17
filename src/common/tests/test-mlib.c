@@ -115,13 +115,7 @@ static void
 _test_allocator_callback_routing(void)
 {
    tracking_allocator state = {0};
-   mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
-   /* A borrowed source configuration would break after these fields are changed. */
-   allocator.userdata = NULL;
-   allocator.reallocate = NULL;
-
-   mlib_check(mlib_get_allocator()->userdata, ptr_eq, &state);
+   mlib_set_allocator(tracking_reallocate, &state);
    char *ptr = (char *)mlib_allocate(8);
    mlib_check(ptr != NULL);
    mlib_check(state.calls, eq, 1);
@@ -151,8 +145,7 @@ static void
 _test_allocator_failure(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
    char *const ptr = (char *)mlib_allocate(8);
    mlib_check(ptr != NULL);
    memcpy(ptr, "abcdefg", 8);
@@ -177,8 +170,7 @@ static void
 _test_allocator_zero_size_and_restore(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
    size_t actual_size = 71;
    mlib_check(mlib_allocate(0), ptr_eq, NULL);
    mlib_check(mlib_reallocate(NULL, 0, 0, &actual_size), ptr_eq, NULL);
@@ -204,11 +196,7 @@ static void
 _test_allocator_invalid_configuration(void)
 {
    mlib_assert_aborts () {
-      mlib_set_allocator(NULL);
-   }
-   mlib_assert_aborts () {
-      const mlib_allocator invalid = {NULL, NULL};
-      mlib_set_allocator(&invalid);
+      mlib_set_allocator(NULL, NULL);
    }
 }
 
@@ -1251,8 +1239,7 @@ static void
 _test_str_allocator(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
 
    mstr s = mstr_copy_cstring("abc");
    mlib_check(s.data, str_eq, "abc");
@@ -1294,8 +1281,7 @@ static void
 _test_str_allocator_failure(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
    mstr s = mstr_copy_cstring("abcdef");
    char *const data = s.data;
    mlib_check(data != NULL);
@@ -1579,8 +1565,7 @@ static void
 _test_vec_allocator(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
    int_vec v = int_vec_new();
    mlib_check(int_vec_reserve(&v, 0));
    int_vec_destroy(&v);
@@ -1634,8 +1619,7 @@ static void
 _test_vec_allocator_failure(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
    int_vec v = int_vec_new();
    mlib_check(int_vec_resize(&v, 2));
    v.data[0] = 42;
@@ -1680,8 +1664,7 @@ static void
 _test_str_vec_allocator(void)
 {
    tracking_allocator state = {0};
-   const mlib_allocator allocator = {&state, tracking_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(tracking_reallocate, &state);
    mstr_vec v = mstr_vec_new();
    mlib_check(mstr_vec_resize(&v, 2));
    mlib_check(mstr_assign(&v.data[0], mstr_cstring("abc")));

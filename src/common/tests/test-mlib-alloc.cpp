@@ -1,14 +1,14 @@
 #include <mlib/alloc.h>
-extern "C" const mlib_allocator *
+extern "C" struct _mlib_allocator_state *
 mlib_test_allocator_from_cxx(void)
 {
-   return mlib_get_allocator();
+   return _mlib_get_global_singleton_allocator_object_storage();
 }
 
 extern "C" void
-mlib_test_set_allocator_from_cxx(const mlib_allocator *allocator)
+mlib_test_set_allocator_from_cxx(mlib_reallocate_fn reallocate, void *userdata)
 {
-   mlib_set_allocator(allocator);
+   mlib_set_allocator(reallocate, userdata);
 }
 
 extern "C" void

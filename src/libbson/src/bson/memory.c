@@ -528,8 +528,7 @@ bson_mem_set_vtable(const bson_mem_vtable_t *vtable)
       gMemVtable.aligned_alloc = _aligned_alloc_as_malloc;
    }
 
-   const mlib_allocator allocator = {&gMemVtable, _bson_mlib_reallocate};
-   mlib_set_allocator(&allocator);
+   mlib_set_allocator(_bson_mlib_reallocate, &gMemVtable);
 }
 
 void
