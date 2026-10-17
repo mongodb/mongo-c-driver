@@ -662,7 +662,7 @@ mstr_contains_any_of(mstr_view str, mstr_view needle)
  * @brief A simple mutable string type, with a guaranteed null terminator.
  *
  * This type is a trivially relocatable aggregate type that contains a pointer `data`
- * and a size `len`. If not null, `data` points ton array of `len` mutable characters
+ * and a size `len`. If not null, `data` points to an array of `len` mutable characters
  * of string content, followed by a null terminator at `data[len]` that must not be modified.
  * Any reserved storage beyond the terminator is not part of the string content
  * and must not be accessed directly. Resize the string before writing new content.
@@ -701,7 +701,7 @@ typedef struct mstr {
 /**
  * @brief The maximum capacity of an `mstr` string, in code units.
  *
- * Attempting to reserve more than this many code units will unconditonally fail
+ * Attempting to reserve more than this many code units will unconditionally fail
  * allocation.
  */
 static const size_t mstr_max_capacity = (size_t)PTRDIFF_MAX - sizeof(size_t) - 1u;
@@ -807,7 +807,7 @@ mstr_resize_for_overwrite(mstr *const str, const size_t new_len)
    size_t new_capacity = capacity;
    if (new_len > capacity) {
       // Grow by 1.5x for amortized constant-time character appends. Saturate
-      // before adding the header and terminator, so rounding cannot overflow.
+      // if growth exceeds the max capacity.
       if (mlib_add(&new_capacity, capacity / 2) || new_capacity > mstr_max_capacity) {
          new_capacity = mstr_max_capacity;
       }
