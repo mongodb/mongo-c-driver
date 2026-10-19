@@ -61,19 +61,11 @@ unique_bson_ptr from_mongoac(mongoac_bson_t&& bson) {
 }
 
 std::optional<bson_t> to_bson(unique_bson_ptr const& bson) {
-    if (bson_t ret = {}; bson != nullptr && bson_init_static(&ret, bson_get_data(bson.get()), bson->len)) {
-        return ret;
-    }
-
-    return std::nullopt;
+    return to_bson(to_mongoac(bson.get()));
 }
 
 std::optional<bson_t> to_bson(mongoac_bson_t const& bson) {
-    if (bson_t ret = {}; bson.ptr != nullptr && bson_init_static(&ret, bson.ptr, bson.len)) {
-        return ret;
-    }
-
-    return std::nullopt;
+    return to_bson(mongoac_bson_view_t{bson.ptr, bson.len});
 }
 
 std::optional<bson_t> to_bson(mongoac_bson_view_t bson) {
