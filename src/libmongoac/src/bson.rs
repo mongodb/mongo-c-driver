@@ -45,3 +45,14 @@ impl From<&RawDocumentBuf> for BsonViewT {
         }
     }
 }
+
+impl From<RawDocumentBuf> for BsonT {
+    fn from(doc: RawDocumentBuf) -> Self {
+        let ret = safe_slice_into_raw!(doc.into_bytes());
+
+        BsonT {
+            ptr: ret.cast(),
+            len: ret.len(),
+        }
+    }
+}
