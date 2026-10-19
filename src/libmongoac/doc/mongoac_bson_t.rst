@@ -18,7 +18,13 @@ Synopsis
 Description
 -----------
 
-Represents an owning, read-only view to a BSON document:
+Represents an owning, read-only BSON document.
+
+.. important::
+
+  All documents returned by the mongoac library are valid BSON.
+
+``mongoac_bson_t`` is an owning, read-only view to a BSON document:
 
 - When ``ptr`` is null, ``len`` is unspecified (but typically set to ``0``).
 - When ``ptr`` is not null, the range ``[ptr, ptr + len)`` is valid and accessible.
