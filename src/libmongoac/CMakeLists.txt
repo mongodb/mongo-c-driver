@@ -131,7 +131,7 @@ set (crate_headers "")
 foreach (source IN LISTS cargo_sources)
   cmake_path (GET source FILENAME filename)
 
-  # Keep synchronized with `SKIP_CARGO_HEADERS` in tools/generate-crate-headers/src/main.rs.
+  # Keep synchronized with `SKIP_CRATE_HEADERS` in tools/generate-crate-headers/src/main.rs.
   set (skip_crate_headers "lib.rs" "mod.rs" "version.rs")
   if (filename IN_LIST skip_crate_headers)
     continue ()
@@ -139,7 +139,7 @@ foreach (source IN LISTS cargo_sources)
 
   cmake_path (RELATIVE_PATH source BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src" OUTPUT_VARIABLE header)
   if (header MATCHES "(^|/)private/")
-    continue () # Always exclude private crates.
+    continue () # Always exclude private modules.
   endif ()
   cmake_path (REPLACE_EXTENSION header LAST_ONLY ".h" OUTPUT_VARIABLE header)
   list (APPEND crate_headers "${binary_include_dir}/mongoac/${header}")

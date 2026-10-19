@@ -57,8 +57,8 @@ The following error categories are defined for errors returned by the mongoac li
 - ``MONGOAC_ERROR_CATEGORY_NONE`` ("none"): None (default state).
 - ``MONGOAC_ERROR_CATEGORY_MONGOAC`` ("mongoac"): The mongoac library.
 - ``MONGOAC_ERROR_CATEGORY_SERVER`` ("server"): The MongoDB Server.
-- ``MONGOAC_ERROR_CATEGORY_RUST`` ("rust"): The MongoDB Rust Driver.
-- ``MONGOAC_ERROR_CATEGORY_BSON`` ("bson"): The BSON crate.
+- ``MONGOAC_ERROR_CATEGORY_RUST`` ("rust"): The mongodb crate (MongoDB Rust Driver).
+- ``MONGOAC_ERROR_CATEGORY_BSON`` ("bson"): The bson crate.
 - ``MONGOAC_ERROR_CATEGORY_UNKNOWN`` ("unknown"): All other (unnamed) error categories. Defaults to ``INT32_MIN`` unless otherwise specified.
 
 When the error category is "mongoac", the error corresponds to a :ref:`mongoac library error <error-codes>`.

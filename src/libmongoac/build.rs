@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generate the config.rs crate declaring constants dependent on CMake configuration options.
-fn generate_config_crate() {
+// Generate the config.rs module declaring constants dependent on CMake configuration options.
+fn generate_config_module() {
     use std::fs;
     use std::path::Path;
 
@@ -77,5 +77,5 @@ fn generate_config_crate() {
 }
 
 fn main() {
-    generate_config_crate();
+    generate_config_module();
 }
