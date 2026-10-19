@@ -34,5 +34,4 @@ This function may return the following errors:
 
 .. seealso::
 
-   | :symbol:`mongoac_future_t`
    | :symbol:`mongoac_database_run_command_async()`
