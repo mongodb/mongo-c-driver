@@ -26,7 +26,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <optional>
 
 using mongoac::test::make_unique;
@@ -41,7 +40,7 @@ mongoac_bson_view_t to_mongoac(bson_t const* bson) {
     return {bson_get_data(bson), bson->len};
 }
 
-std::unique_ptr<bson_t, void (*)(bson_t*)> from_mongoac(mongoac_bson_t const& bson) {
+unique_bson_ptr from_mongoac(mongoac_bson_t const& bson) {
     if (!bson.ptr) {
         return {nullptr, &bson_destroy};
     }
@@ -50,7 +49,7 @@ std::unique_ptr<bson_t, void (*)(bson_t*)> from_mongoac(mongoac_bson_t const& bs
     return make_unique(bson_new_from_data(bson.ptr, bson.len), &bson_destroy);
 }
 
-std::unique_ptr<bson_t, void (*)(bson_t*)> from_mongoac(mongoac_bson_t&& bson) {
+unique_bson_ptr from_mongoac(mongoac_bson_t&& bson) {
     if (!bson.ptr) {
         return {nullptr, &bson_destroy};
     }
