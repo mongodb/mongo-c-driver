@@ -447,12 +447,12 @@ macro_rules! safe_string_view_with_error {
 /// - `error` must be null or in its default state (cleared).
 #[macro_export]
 macro_rules! safe_bson_view_with_error {
-    ($ptr:expr, $error:expr) => {{
-        let bson: $crate::bson::BsonViewT = $ptr;
+    ($bson:expr, $error:expr) => {{
+        let bson: $crate::bson::BsonViewT = $bson;
         if bson.ptr.is_null() {
             $crate::private::safety::invalid_argument(
                 $error,
-                format!("{}: must not be null", stringify!($ptr)),
+                format!("{}: must not be null", stringify!($bson)),
             );
             return Default::default();
         }
@@ -463,7 +463,7 @@ macro_rules! safe_bson_view_with_error {
             Err(e) => {
                 $crate::private::safety::invalid_argument(
                     $error,
-                    format!("{}: invalid BSON: {}", stringify!($ptr), e),
+                    format!("{}: invalid BSON: {}", stringify!($bson), e),
                 );
                 return Default::default();
             }
