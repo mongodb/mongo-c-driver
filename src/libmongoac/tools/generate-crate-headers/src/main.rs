@@ -16,8 +16,8 @@ use rayon::prelude::*;
 
 use std::path::{Path, PathBuf};
 
-// Keep synchronized with `skip_cargo_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_CARGO_HEADERS: &[&str] = &["lib", "mod", "version"];
+// Keep synchronized with `skip_crate_headers` in src/libmongoac/CMakeLists.txt.
+const SKIP_CRATE_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
 const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "string"];
@@ -74,7 +74,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         .collect()
 }
 
-// Crate-specific configuration options.
+// Module-specific configuration options.
 fn configure(name: &str, config: &mut cbindgen::Config) {
     // Include directives required by each crate header.
     {
@@ -180,10 +180,10 @@ fn default_config() -> cbindgen::Config {
     }
 }
 
-fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Path) {
+fn generate_forward_header(mod_path: &Path, rel_stem: &Path, include_dir: &Path) {
     let rel_str = rel_stem.to_str().expect("invalid UTF-8");
 
-    // `path/to/crate` -> `MONGOAC_PATH_TO_CRATE_FWD_H`
+    // `path/to/module` -> `MONGOAC_PATH_TO_MODULE_FWD_H`
     let include_guard = format!(
         "MONGOAC_{}_FWD_H",
         rel_str
@@ -191,7 +191,7 @@ fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Pat
             .to_uppercase()
     );
 
-    // `path/to/crate` -> `<include_dir>/path/to/crate-fwd.h`
+    // `path/to/module` -> `<include_dir>/path/to/module-fwd.h`
     // Parent directories are already created by `generate_crate_header()`.
     let header_path = include_dir.join(rel_stem).with_file_name(format!(
         "{}-fwd.h",
@@ -214,7 +214,7 @@ fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Pat
     cbindgen::Builder::new()
         .with_config(config)
         .with_include_guard(&include_guard)
-        .with_src(crate_path)
+        .with_src(mod_path)
         .generate()
         .expect("cbindgen failed")
         .write_to_file(&header_path);
@@ -248,20 +248,20 @@ fn add_fwd_iwyu_pragma(header_path: &Path, directive: &str) {
         .unwrap_or_else(|_| panic!("failed to write header: {}", header_path.display()));
 }
 
-fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) {
-    let file_stem = crate_path
+fn generate_crate_header(mod_path: &Path, src_dir: &Path, include_dir: &Path) {
+    let file_stem = mod_path
         .file_stem()
         .and_then(|s| s.to_str())
         .expect("invalid UTF-8");
 
-    // `src/libmongoac/src/path/to/crate.rs` -> `path/to/crate`
-    let rel_path = crate_path
+    // `src/libmongoac/src/path/to/module.rs` -> `path/to/module`
+    let rel_path = mod_path
         .strip_prefix(src_dir)
         .expect("file not under src root");
     let rel_stem = rel_path.with_extension("");
     let rel_str = rel_stem.to_str().expect("invalid UTF-8");
 
-    // `path/to/crate` -> `MONGOAC_PATH_TO_CRATE_H`
+    // `path/to/module` -> `MONGOAC_PATH_TO_MODULE_H`
     let include_guard = format!(
         "MONGOAC_{}_H",
         rel_str
@@ -269,14 +269,14 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
             .to_uppercase()
     );
 
-    // `path/to/crate` -> `<include_dir>/path/to/crate.h`
+    // `path/to/module` -> `<include_dir>/path/to/module.h`
     let header_path = include_dir.join(&rel_stem).with_extension("h");
     if let Some(parent) = header_path.parent() {
         std::fs::create_dir_all(parent)
             .unwrap_or_else(|_| panic!("failed to create include directory: {}", parent.display()));
     }
 
-    // Default cbindgen configuration for all crates.
+    // Default cbindgen configuration for all modules.
     let config = {
         let mut config = default_config();
 
@@ -292,14 +292,14 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
 
         // Always include the component's forward header first.
         if !SKIP_FORWARD_HEADERS.contains(&file_stem) {
-            generate_forward_header(crate_path, &rel_stem, include_dir);
+            generate_forward_header(mod_path, &rel_stem, include_dir);
             config.sys_includes.push(format!("mongoac/{rel_str}-fwd.h"));
         }
 
         // Normal headers typically export at least one symbol.
         config.sys_includes.push("mongoac/export.h".into());
 
-        // Apply per-crate configuration options.
+        // Apply per-module configuration options.
         configure(rel_str, &mut config);
 
         config
@@ -309,7 +309,7 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
     cbindgen::Builder::new()
         .with_config(config)
         .with_include_guard(&include_guard)
-        .with_src(crate_path)
+        .with_src(mod_path)
         .generate()
         .expect("cbindgen failed")
         .write_to_file(&header_path);
@@ -321,8 +321,8 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
     }
 }
 
-// Recursively find all mongoac crates under the source directory which need a header.
-fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
+// Recursively find all mongoac modules under the source directory which need a header.
+fn find_modules(dir: &Path, files: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(dir)
         .unwrap_or_else(|_| panic!("failed to read directory: {}", dir.display()))
     {
@@ -333,17 +333,17 @@ fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
 
         if path.is_dir() {
             if path.file_name().is_some_and(|name| name == "private") {
-                continue; // Private crates do not need headers.
+                continue; // Private modules do not need headers.
             }
 
-            find_crates(&path, files);
+            find_modules(&path, files);
         } else if path.extension().is_some_and(|e| e == "rs") {
             let file_stem = path
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .expect("invalid UTF-8");
 
-            if !SKIP_CARGO_HEADERS.contains(&file_stem) {
+            if !SKIP_CRATE_HEADERS.contains(&file_stem) {
                 files.push(path);
             }
         }
@@ -360,7 +360,7 @@ fn main() {
     let include_path = Path::new(&include_dir);
 
     let mut files = Vec::new();
-    find_crates(src_path, &mut files);
+    find_modules(src_path, &mut files);
 
     // Generate crate headers in parallel using Rayon.
     files
