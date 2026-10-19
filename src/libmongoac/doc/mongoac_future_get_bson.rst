@@ -18,6 +18,11 @@ Description
 
 Obtain the :ref:`result <future-result>` of the given :symbol:`mongoac_future_t`.
 
+Lifetime
+--------
+
+Access to the data pointed to by :symbol:`mongoac_bson_view_t` MUST be within the lifetime of the associated future.
+
 Errors
 ------
 
