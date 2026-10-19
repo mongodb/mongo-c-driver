@@ -15,10 +15,13 @@
 mod private;
 
 pub mod client;
+pub mod client_session;
 pub mod collection;
 pub mod collection_options;
 pub mod database;
 pub mod database_options;
+pub mod drop_collection_options;
+pub mod drop_database_options;
 pub mod error;
 pub mod future;
 pub mod runtime;

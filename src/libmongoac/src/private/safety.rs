@@ -15,7 +15,7 @@
 //! Define safety macros for use by C-layer functions.
 //!
 //! All `unsafe` blocks required to validate-and-convert unsafe C types into safe Rust types are encapsulated by
-//! safety macros defined in this crate and exported by `crate::private::macros`.
+//! safety macros defined in this module and exported by `crate::private::macros`.
 
 /// Safely drop the raw pointer when not null.
 ///
@@ -140,6 +140,33 @@ macro_rules! safe_as_mut {
             Some(r) => r,
             None => return Default::default(),
         }
+    }};
+}
+
+/// Safely convert the raw pointer into an optional mutable reference.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *mut T) -> R {
+///     let res: Option<&mut T> = safe_optional_as_mut!(ptr);
+///     if res.is_some() {
+///         assert!(!ptr.is_null());
+///     } else {
+///         assert!(ptr.is_null());
+///     }
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be accessed concurrently by any other function.
+#[macro_export]
+macro_rules! safe_optional_as_mut {
+    ($ptr:expr) => {{
+        let ptr = $ptr;
+        unsafe { ptr.as_mut() }
     }};
 }
 
