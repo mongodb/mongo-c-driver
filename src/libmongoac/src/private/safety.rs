@@ -425,6 +425,52 @@ macro_rules! safe_string_view_with_error {
     }};
 }
 
+/// Safely convert the `BsonViewT` into a `&RawDocument` when not null.
+///
+/// When `bson.ptr` is null or `bson` contains invalid BSON, set `error` and early-return from the function via
+/// `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(bson: BsonViewT, error: Option<&mut ErrorT>) -> R {
+///     let res: &RawDocument = safe_bson_view_with_error!(bson, error);
+///     assert!(!bson.ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `bson.ptr` must either be null or a valid pointer to a valid BSON document.
+/// - `bson.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `bson.ptr` is not null, the range `[bson.ptr, bson.ptr + bson.len)` must be valid and accessible.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_bson_view_with_error {
+    ($bson:expr, $error:expr) => {{
+        let bson: $crate::bson::BsonViewT = $bson;
+        if bson.ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($bson)),
+            );
+            return Default::default();
+        }
+        match mongodb::bson::RawDocument::from_bytes(unsafe {
+            std::slice::from_raw_parts(bson.ptr, bson.len)
+        }) {
+            Ok(doc) => doc,
+            Err(e) => {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}: invalid BSON: {}", stringify!($bson), e),
+                );
+                return Default::default();
+            }
+        }
+    }};
+}
+
 /// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
 pub(crate) fn invalid_argument<M>(error: Option<&mut crate::error::ErrorT>, msg: M)
 where
