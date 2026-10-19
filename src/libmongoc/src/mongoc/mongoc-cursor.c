@@ -1454,7 +1454,9 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
       // Note: a database aggregate cursor returns a namespace like "<db>.$cmd.aggregate".
       const char *const dot = memchr(ns, '.', nslen);
       const bool has_collection = dot && mlib_cmp((dot - ns) + 1, <, nslen);
-      if (has_collection) {
+      // A namespace can never contain an embedded NUL. Reject one rather than adopting it.
+      const bool has_embedded_nul = memchr(ns, '\0', nslen) != NULL;
+      if (has_collection && !has_embedded_nul) {
          _mongoc_set_cursor_ns(cursor, ns, nslen);
       } else if (cursor->cursor_id) {
          // Set 0 cursor ID to prevent sending killCursors.
