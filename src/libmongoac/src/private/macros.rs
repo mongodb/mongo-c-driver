@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Re-exports exported macros in a single crate for convenient import-all via `use crate::private::macros::*;`.
+//! Re-exports exported macros in a single module for convenient import-all via `use crate::private::macros::*;`.
 
 pub use crate::safe_as_mut;
 pub use crate::safe_as_ref;

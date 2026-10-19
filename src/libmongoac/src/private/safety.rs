@@ -15,7 +15,7 @@
 //! Define safety macros for use by C-layer functions.
 //!
 //! All `unsafe` blocks required to validate-and-convert unsafe C types into safe Rust types are encapsulated by
-//! safety macros defined in this crate and exported by `crate::private::macros`.
+//! safety macros defined in this module and exported by `crate::private::macros`.
 
 /// Safely drop the raw pointer when not null.
 ///
