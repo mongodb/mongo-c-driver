@@ -25,7 +25,6 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <mongoc/mongoc-openssl-private.h>

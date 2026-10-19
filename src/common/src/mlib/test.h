@@ -20,7 +20,6 @@
 #pragma once
 
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 #include <mlib/intutil.h>
 
 #include <inttypes.h>
@@ -238,7 +237,7 @@ _mlibCheckIntCmp(enum mlib_cmp_result cres, // The cmp result to check
                  const char *reason,
                  struct mlib_source_location here)
 {
-   if (((mlib_cmp)(left, right, 0) == cres) != cond) {
+   if (((mlib_cmp)(left, right) == cres) != cond) {
       fprintf(stderr,
               "%s:%d: in [%s]: Check [⟨%s⟩ %s ⟨%s⟩] failed:\n",
               here.file,

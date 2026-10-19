@@ -25,7 +25,6 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
 
 typedef struct _cache_entry_list_t {
    struct _cache_entry_list_t *next;

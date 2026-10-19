@@ -4,6 +4,8 @@ libmongoc 2.6.0 [unreleased]
 ## Notes
 
 * Upgraded bundled zlib from 1.3.1 to 1.3.2.
+* Raise required version of libmongocrypt from 1.20.0 to 1.21.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types are no longer supported by In-Use Encryption and now return an error. Use the `prefix`, `suffix`, and `substring` query types instead.
 
 libmongoc 2.5.6
 ===============

@@ -20,7 +20,7 @@
 #ifndef MLIB_STR_VEC_H_INCLUDED
 #define MLIB_STR_VEC_H_INCLUDED
 
-#include <mlib/config.h>
+
 #include <mlib/str.h>
 
 #define T mstr

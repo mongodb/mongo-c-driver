@@ -129,6 +129,16 @@ kms_sign_rsaes_pkcs1_v1_5 (void *unused_ctx,
       goto cleanup;
    }
 
+   size_t needed_len = 0;
+   ret = EVP_DigestSignFinal (ctx, NULL, &needed_len);
+   if (ret != 1) {
+      goto cleanup;
+   }
+   if (needed_len != signature_out_len) {
+      ret = false;
+      goto cleanup;
+   }
+
    ret = EVP_DigestSignFinal (ctx, signature_out, &signature_out_len);
    if (ret != 1) {
       goto cleanup;
