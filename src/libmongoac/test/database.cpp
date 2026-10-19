@@ -289,6 +289,14 @@ TEST_CASE("run_command", "[mongoac][database]") {
         CHECK(reply == nullptr);
     }
 
+    SECTION("invalid BSON command") {
+        std::uint8_t const bytes[] = {0xff};
+        auto const reply =
+            from_mongoac(mongoac_database_run_command(db, nullptr, {bytes, sizeof(bytes)}, nullptr, error));
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(reply == nullptr);
+    }
+
     SECTION("basic") {
         auto const ping = REQUIRE_MAKE_UNIQUE("{\"ping\": 1}"_bson, &bson_destroy);
 
