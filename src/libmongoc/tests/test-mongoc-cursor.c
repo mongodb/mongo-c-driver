@@ -2158,6 +2158,51 @@ test_cursor_bad_ns(void)
       mongoc_collection_destroy(collection);
    }
 
+   // Test a wrong-typed "ns" (present, but not a string) with a live cursor errors.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next(cursor, &doc);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : 5, "firstBatch" : [ {} ]}})));
+
+      ASSERT(!future_get_bool(future));
+      ASSERT(mongoc_cursor_error(cursor, &error));
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy(future);
+      request_destroy(request);
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(collection);
+   }
+
+   // Test a wrong-typed "ns" with an exhausted cursor: no error is raised and the
+   // original namespace is preserved.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next(cursor, &doc);
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request(
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson(BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : 5, "firstBatch" : [ {} ]}})));
+
+      ASSERT(future_get_bool(future));
+      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+
+      future_destroy(future);
+      request_destroy(request);
+      mongoc_cursor_destroy(cursor);
+      mongoc_collection_destroy(collection);
+   }
+
    // Test clone after bad "ns"
    {
       mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
