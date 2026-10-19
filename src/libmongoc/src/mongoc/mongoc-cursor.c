@@ -1423,6 +1423,7 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
    bson_iter_t child;
    const char *ns = NULL;
    uint32_t nslen;
+   bool ns_invalid_type = false;
    bool in_batch = false;
 
    if (bson_iter_init_find(&iter, &response->reply, "cursor") && BSON_ITER_HOLDS_DOCUMENT(&iter) &&
@@ -1431,7 +1432,12 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
          if (BSON_ITER_IS_KEY(&child, "id")) {
             cursor->cursor_id = bson_iter_as_int64(&child);
          } else if (BSON_ITER_IS_KEY(&child, "ns")) {
-            ns = bson_iter_utf8(&child, &nslen);
+            if (BSON_ITER_HOLDS_UTF8(&child)) {
+               ns = bson_iter_utf8(&child, &nslen);
+            } else {
+               // ns not a string. Handle as malformed rather than absent.
+               ns_invalid_type = true;
+            }
          } else if (BSON_ITER_IS_KEY(&child, "firstBatch") || BSON_ITER_IS_KEY(&child, "nextBatch")) {
             if (BSON_ITER_HOLDS_ARRAY(&child) && bson_iter_recurse(&child, &response->batch_iter)) {
                in_batch = true;
@@ -1463,6 +1469,10 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
          cursor->cursor_id = 0;
          return false;
       }
+   } else if (ns_invalid_type && cursor->cursor_id) {
+      // "ns" was present but not a string: set 0 cursor ID to prevent sending killCursors.
+      cursor->cursor_id = 0;
+      return false;
    }
 
    // A non-zero cursor ID requires a collection to send "getMore" and "killCursors".
