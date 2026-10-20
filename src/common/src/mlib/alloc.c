@@ -29,12 +29,12 @@ _mlib_get_global_singleton_allocator_object_storage(void) mlib_noexcept;
 #include <stdlib.h>
 
 static void *
-_mlib_stdlib_reallocate(void *userdata, void *prev_ptr, size_t size, size_t previous_size, size_t *out_new_size)
+_mlib_stdlib_reallocate(void *userdata, void *prev_ptr, size_t size, size_t prev_size, size_t *out_new_size)
 {
-   // The stdlib allocator needs neither a user context nor previous_size:
+   // The stdlib allocator needs neither a user context nor prev_size:
    // realloc and free obtain allocation metadata themselves.
+   (void)prev_size;
    (void)userdata;
-   (void)previous_size;
    // Handle release separately: realloc(p, 0) is not a portable substitute for
    // free. This path must return NULL and report zero through out_new_size when supplied.
    if (size == 0) {
