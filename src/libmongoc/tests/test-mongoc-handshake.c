@@ -742,8 +742,7 @@ test_truncate_container_only(void)
    const uint32_t untruncated_len = doc->len;
    bson_destroy(doc);
 
-   // Grow the platform string so the handshake slightly exceeds the limit. Omitting `env` is then sufficient, but
-   // leaving an empty `env` behind would also fit and stop truncation before `os` is reduced.
+   // Grow the platform string so the handshake slightly exceeds the limit.
    const size_t target_len = HANDSHAKE_MAX_SIZE + 20u;
    ASSERT_CMPSIZE_T((size_t)untruncated_len, <, target_len);
    const size_t pad_len = target_len - untruncated_len;
