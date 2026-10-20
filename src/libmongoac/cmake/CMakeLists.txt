@@ -43,7 +43,6 @@ block ()
         ${CMAKE_COMMAND}
           -D "src_dir=${CMAKE_CURRENT_SOURCE_DIR}"
           -D "bin_dir=${CMAKE_CURRENT_BINARY_DIR}"
-          -D "prefix=${CMAKE_INSTALL_PREFIX}"
           -D "includedir=${MONGOAC_INSTALL_INCLUDEDIR}"
           -D "libdir=${CMAKE_INSTALL_LIBDIR}"
           -D "output_name=${output_name}"
