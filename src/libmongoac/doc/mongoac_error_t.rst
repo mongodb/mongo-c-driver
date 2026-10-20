@@ -22,6 +22,7 @@ Synopsis
    #define MONGOAC_ERROR_CATEGORY_MONGOAC 1
    #define MONGOAC_ERROR_CATEGORY_SERVER 2
    #define MONGOAC_ERROR_CATEGORY_RUST 3
+   #define MONGOAC_ERROR_CATEGORY_BSON 4
    #define MONGOAC_ERROR_CATEGORY_UNKNOWN /* (see below) */
 
    // Error Codes
@@ -56,14 +57,17 @@ The following error categories are defined for errors returned by the mongoac li
 - ``MONGOAC_ERROR_CATEGORY_NONE`` ("none"): None (default state).
 - ``MONGOAC_ERROR_CATEGORY_MONGOAC`` ("mongoac"): The mongoac library.
 - ``MONGOAC_ERROR_CATEGORY_SERVER`` ("server"): The MongoDB Server.
-- ``MONGOAC_ERROR_CATEGORY_RUST`` ("rust"): The MongoDB Rust Driver.
+- ``MONGOAC_ERROR_CATEGORY_RUST`` ("rust"): The mongodb crate (MongoDB Rust Driver).
+- ``MONGOAC_ERROR_CATEGORY_BSON`` ("bson"): The bson crate.
 - ``MONGOAC_ERROR_CATEGORY_UNKNOWN`` ("unknown"): All other (unnamed) error categories. Defaults to ``INT32_MIN`` unless otherwise specified.
 
 When the error category is "mongoac", the error corresponds to a :ref:`mongoac library error <error-codes>`.
 
 When the error category is "server", the error corresponds to a `Rust Driver error <https://docs.rs/mongodb/latest/mongodb/error/index.html>`_ with a unique `MongoDB server error code <https://www.mongodb.com/docs/manual/reference/error-codes/>`_.
 
-When the error category is "rust", the error corresponds to a Rust Driver error without a unique server error code (unknown).
+When the error category is "rust", the error corresponds to a `Rust Driver error <https://docs.rs/mongodb/latest/mongodb/error/index.html>`_ without a unique server error code (unknown).
+
+When the error category is "bson", the error corresponds to a `BSON <https://docs.rs/bson/latest/bson/error/index.html>`_ error.
 
 When the error category is "unknown", no error code is available (unknown) unless explicitly set via :symbol:`mongoac_error_set()`.
 

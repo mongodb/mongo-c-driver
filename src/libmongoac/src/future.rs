@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::bson::BsonViewT;
 use crate::error::{ErrorCodeT, ErrorT};
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
+
+use mongodb::bson::RawDocumentBuf;
 
 use parking_lot::Mutex;
 use tokio::task::{JoinError, JoinHandle};
@@ -66,6 +69,14 @@ pub extern "C" fn mongoac_future_get_bool(future: *const FutureT, error: *mut Er
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_bson(future: *const FutureT, error: *mut ErrorT) -> BsonViewT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_result!(future.get_bson(), error).into()
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_future_get_uint64(future: *const FutureT, error: *mut ErrorT) -> u64 {
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
@@ -106,6 +117,10 @@ impl FutureT {
 
     fn get_bool(&self) -> Result<&bool, ErrorT> {
         self.get::<bool>("bool")
+    }
+
+    fn get_bson(&self) -> Result<&RawDocumentBuf, ErrorT> {
+        self.get::<RawDocumentBuf>("bson")
     }
 
     fn get_uint64(&self) -> Result<&u64, ErrorT> {

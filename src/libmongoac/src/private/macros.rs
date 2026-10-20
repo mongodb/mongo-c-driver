@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Exports safety macros for convenient single-import-all via `use crate::private::macros::*;`.
+//! Re-exports exported macros in a single module for convenient import-all via `use crate::private::macros::*;`.
 
 pub use crate::safe_as_mut;
 pub use crate::safe_as_ref;
 pub use crate::safe_as_ref_with_error;
+pub use crate::safe_bson_view_with_error;
 pub use crate::safe_drop;
 pub use crate::safe_into_raw;
+pub use crate::safe_optional_as_mut;
 pub use crate::safe_optional_as_ref;
 pub use crate::safe_optional_error_as_mut;
 pub use crate::safe_result;
@@ -26,3 +28,4 @@ pub use crate::safe_slice_drop;
 pub use crate::safe_slice_into_raw;
 pub use crate::safe_string_view;
 pub use crate::safe_string_view_with_error;
+pub use crate::session_op;

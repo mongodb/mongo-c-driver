@@ -12,15 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::bson::{BsonT, BsonViewT};
 use crate::client::ClientT;
+use crate::client_session::ClientSessionT;
 use crate::collection::CollectionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::database_options::DatabaseOptionsT;
+use crate::drop_database_options::DropDatabaseOptionsT;
+use crate::error::ErrorT;
+use crate::future::FutureT;
 use crate::private::macros::*;
+use crate::run_command_options::RunCommandOptionsT;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Database;
+use mongodb::bson::{RawDocument, RawDocumentBuf};
+use mongodb::options::{DropDatabaseOptions, RunCommandOptions};
 
 #[derive(Clone)]
 pub struct DatabaseT {
@@ -59,6 +67,68 @@ pub extern "C" fn mongoac_database_get_collection(
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_database_get_name(db: *const DatabaseT) -> StringViewT {
     safe_as_ref!(db).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_drop(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    options: *const DropDatabaseOptionsT,
+    error: *mut ErrorT,
+) {
+    let error = safe_optional_error_as_mut!(error);
+    let db = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(db.drop(session, options), error);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_drop_async(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    options: *const DropDatabaseOptionsT,
+) -> *mut FutureT {
+    let db = safe_as_ref!(db);
+    let session = safe_optional_as_mut!(session);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(db.drop_async(session, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_run_command(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    command: BsonViewT,
+    options: *const RunCommandOptionsT,
+    error: *mut ErrorT,
+) -> BsonT {
+    let error = safe_optional_error_as_mut!(error);
+    let db = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let command = safe_bson_view_with_error!(command, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(db.run_command(session, command, options), error).into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_run_command_async(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    command: BsonViewT,
+    options: *const RunCommandOptionsT,
+    error: *mut ErrorT,
+) -> *mut FutureT {
+    let error = safe_optional_error_as_mut!(error);
+    let db = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let command = safe_bson_view_with_error!(command, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(db.run_command_async(session, command, options))
 }
 
 #[unsafe(no_mangle)]
@@ -102,17 +172,75 @@ impl DatabaseT {
         self.inner.name()
     }
 
+    fn drop(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        options: Option<&DropDatabaseOptionsT>,
+    ) -> Result<(), ErrorT> {
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner.drop().with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn drop_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        options: Option<&DropDatabaseOptionsT>,
+    ) -> FutureT {
+        let db = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let options: Option<DropDatabaseOptions> = options.map(Into::into);
+
+        self.spawn::<()>(async move { session_op!(db.drop().with_options(options), session) })
+    }
+
+    fn run_command(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        command: &RawDocument,
+        options: Option<&RunCommandOptionsT>,
+    ) -> Result<RawDocumentBuf, ErrorT> {
+        self.runtime.block_on(async {
+            let doc = session_op!(
+                self.inner
+                    .run_raw_command(command.to_owned())
+                    .with_options(options.map(Into::into)),
+                session
+            )?;
+
+            RawDocumentBuf::try_from(doc).map_err(Into::into)
+        })
+    }
+
+    fn run_command_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        command: &RawDocument,
+        options: Option<&RunCommandOptionsT>,
+    ) -> FutureT {
+        let db = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let command = command.to_owned();
+        let options: Option<RunCommandOptions> = options.map(Into::into);
+
+        self.spawn::<RawDocumentBuf>(async move {
+            let doc = session_op!(db.run_raw_command(command).with_options(options), session)?;
+
+            RawDocumentBuf::try_from(doc).map_err(Into::into)
+        })
+    }
+
     // TODO: aggregate
     // TODO: collection_with_options
     // TODO: create_collection
-    // TODO: drop
     // TODO: gridfs_bucket
     // TODO: list_collection_names
     // TODO: list_collections
     // TODO: read_concern
-    // TODO: run_command
     // TODO: run_cursor_command
-    // TODO: run_raw_command
     // TODO: run_raw_cursor_command
     // TODO: selection_criteria
     // TODO: watch

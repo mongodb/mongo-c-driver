@@ -13,13 +13,18 @@
 // limitations under the License.
 
 use crate::client::ClientT;
+use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
+use crate::drop_collection_options::DropCollectionOptionsT;
+use crate::error::ErrorT;
+use crate::future::FutureT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
 use mongodb::bson::RawDocumentBuf;
+use mongodb::options::DropCollectionOptions;
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -45,6 +50,34 @@ pub extern "C" fn mongoac_collection_get_client(coll: *const CollectionT) -> *mu
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_collection_get_name(coll: *const CollectionT) -> StringViewT {
     safe_as_ref!(coll).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_drop(
+    coll: *const CollectionT,
+    session: *mut ClientSessionT,
+    options: *const DropCollectionOptionsT,
+    error: *mut ErrorT,
+) {
+    let error = safe_optional_error_as_mut!(error);
+    let coll = safe_as_ref_with_error!(coll, error);
+    let session = safe_optional_as_mut!(session);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(coll.drop(session, options), error);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_drop_async(
+    coll: *const CollectionT,
+    session: *mut ClientSessionT,
+    options: *const DropCollectionOptionsT,
+) -> *mut FutureT {
+    let coll = safe_as_ref!(coll);
+    let session = safe_optional_as_mut!(session);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(coll.drop_async(session, options))
 }
 
 #[unsafe(no_mangle)]
@@ -86,6 +119,31 @@ impl CollectionT {
         self.inner.name()
     }
 
+    fn drop(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        options: Option<&DropCollectionOptionsT>,
+    ) -> Result<(), ErrorT> {
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner.drop().with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn drop_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        options: Option<&DropCollectionOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let options: Option<DropCollectionOptions> = options.map(Into::into);
+
+        self.spawn::<()>(async move { session_op!(coll.drop().with_options(options), session) })
+    }
+
     // TODO: aggregate
     // TODO: count_documents
     // TODO: create_index
@@ -95,7 +153,6 @@ impl CollectionT {
     // TODO: delete_many
     // TODO: delete_one
     // TODO: distinct
-    // TODO: drop
     // TODO: drop_index
     // TODO: drop_indexes
     // TODO: drop_search_index

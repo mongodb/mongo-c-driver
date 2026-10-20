@@ -15,7 +15,7 @@
 //! Define safety macros for use by C-layer functions.
 //!
 //! All `unsafe` blocks required to validate-and-convert unsafe C types into safe Rust types are encapsulated by
-//! safety macros defined in this crate and exported by `crate::private::macros`.
+//! safety macros defined in this module and exported by `crate::private::macros`.
 
 /// Safely drop the raw pointer when not null.
 ///
@@ -140,6 +140,33 @@ macro_rules! safe_as_mut {
             Some(r) => r,
             None => return Default::default(),
         }
+    }};
+}
+
+/// Safely convert the raw pointer into an optional mutable reference.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *mut T) -> R {
+///     let res: Option<&mut T> = safe_optional_as_mut!(ptr);
+///     if res.is_some() {
+///         assert!(!ptr.is_null());
+///     } else {
+///         assert!(ptr.is_null());
+///     }
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be accessed concurrently by any other function.
+#[macro_export]
+macro_rules! safe_optional_as_mut {
+    ($ptr:expr) => {{
+        let ptr = $ptr;
+        unsafe { ptr.as_mut() }
     }};
 }
 
@@ -391,6 +418,52 @@ macro_rules! safe_string_view_with_error {
                 $crate::private::safety::invalid_argument(
                     $error,
                     format!("{}: invalid UTF-8: {}", stringify!($sv), e),
+                );
+                return Default::default();
+            }
+        }
+    }};
+}
+
+/// Safely convert the `BsonViewT` into a `&RawDocument` when not null.
+///
+/// When `bson.ptr` is null or `bson` contains invalid BSON, set `error` and early-return from the function via
+/// `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(bson: BsonViewT, error: Option<&mut ErrorT>) -> R {
+///     let res: &RawDocument = safe_bson_view_with_error!(bson, error);
+///     assert!(!bson.ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `bson.ptr` must either be null or a valid pointer to a valid BSON document.
+/// - `bson.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `bson.ptr` is not null, the range `[bson.ptr, bson.ptr + bson.len)` must be valid and accessible.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_bson_view_with_error {
+    ($bson:expr, $error:expr) => {{
+        let bson: $crate::bson::BsonViewT = $bson;
+        if bson.ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($bson)),
+            );
+            return Default::default();
+        }
+        match mongodb::bson::RawDocument::from_bytes(unsafe {
+            std::slice::from_raw_parts(bson.ptr, bson.len)
+        }) {
+            Ok(doc) => doc,
+            Err(e) => {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}: invalid BSON: {}", stringify!($bson), e),
                 );
                 return Default::default();
             }
