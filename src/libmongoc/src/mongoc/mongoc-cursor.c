@@ -165,6 +165,10 @@ _mongoc_set_cursor_ns(mongoc_cursor_t *cursor, const char *ns, uint32_t nslen)
 {
    const char *dot;
 
+   // Precondition: `ns` must not contain an embedded NUL. Callers reject such namespaces; a NUL here would make
+   // `bson_strndup` copy less than `nslen`, leaving `cursor->nslen` larger than the buffer it describes.
+   BSON_ASSERT(memchr(ns, '\0', nslen) == NULL);
+
    bson_free(cursor->ns);
    cursor->ns = bson_strndup(ns, nslen);
    cursor->nslen = nslen;
