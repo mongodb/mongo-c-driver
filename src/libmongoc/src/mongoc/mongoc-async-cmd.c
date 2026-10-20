@@ -456,6 +456,7 @@ _mongoc_async_cmd_phase_recv_rpc(mongoc_async_cmd_t *acmd)
                            MONGOC_ERROR_PROTOCOL,
                            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                            "Could not decompress server reply");
+         bson_free(decompressed_data);
          return MONGOC_ASYNC_CMD_ERROR;
       }
 

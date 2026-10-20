@@ -3274,6 +3274,7 @@ _mongoc_cluster_run_opmsg_recv(
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "could not decompress message from server");
       _handle_network_error(cluster, cmd, reply, error);
       server_stream->stream = NULL;
+      bson_free(decompressed_data);
       GOTO(done);
    }
 
