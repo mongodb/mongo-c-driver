@@ -31,17 +31,25 @@ _mlib_get_global_singleton_allocator_object_storage(void) mlib_noexcept;
 static void *
 _mlib_stdlib_reallocate(void *userdata, void *prev_ptr, size_t size, size_t previous_size, size_t *out_new_size)
 {
+   // The stdlib allocator needs neither a user context nor previous_size:
+   // realloc and free obtain allocation metadata themselves.
    (void)userdata;
    (void)previous_size;
+   // Handle release separately: realloc(p, 0) is not a portable substitute for
+   // free. This path must return NULL and report zero through out_new_size when supplied.
    if (size == 0) {
-      /* realloc(p, 0) is not a portable substitute for explicit deallocation. */
       free(prev_ptr);
       if (out_new_size) {
          *out_new_size = 0;
       }
       return NULL;
    }
+   // For a positive size, realloc handles both a fresh allocation and a resize.
+   // On failure it leaves the old allocation intact, so return its result without
+   // freeing prev_ptr.
    void *const ptr = realloc(prev_ptr, size);
+   // Report the requested size rather than trying to discover extra usable
+   // capacity. Leave the caller's output untouched on failure.
    if (ptr && out_new_size) {
       *out_new_size = size;
    }
@@ -51,9 +59,14 @@ _mlib_stdlib_reallocate(void *userdata, void *prev_ptr, size_t size, size_t prev
 struct _mlib_allocator_state *
 _mlib_get_global_singleton_allocator_object_storage(void)
 {
+   // This out-of-line definition owns the storage referenced by the inline
+   // helpers. Static initialization supplies a usable stdlib allocator without
+   // a separate initialization call.
    static struct _mlib_allocator_state state = {
-      {NULL, _mlib_stdlib_reallocate},
-      {NULL, _mlib_stdlib_reallocate},
+      // Start both configurations with the stdlib callback. Installations replace
+      // only current, leaving default_allocator available for restoration.
+      .current = {NULL, _mlib_stdlib_reallocate},
+      .default_allocator = {NULL, _mlib_stdlib_reallocate},
    };
    return &state;
 }
