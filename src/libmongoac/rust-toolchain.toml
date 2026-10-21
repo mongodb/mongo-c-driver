@@ -1,8 +1,8 @@
 # Pin the Rust toolchain to the minimum supported Rust version (MSRV) declared
 # by `rust-version` in Cargo.toml. Note: rustup resolves this file relative to
 # the current working directory, so CMake-driven cargo invocations from the
-# build directory do not honor it. CI selects the toolchain explicitly via
-# `.evergreen/scripts/install-rust-toolchain.sh`.
+# build directory do not honor it. CI reads `channel` from this file and selects
+# the toolchain explicitly (see `.evergreen/scripts/install-rust-toolchain.sh`).
 [toolchain]
 channel = "1.88.0"
 profile = "minimal"

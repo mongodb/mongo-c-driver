@@ -1,26 +1,19 @@
 #!/usr/bin/env bash
 
-# Installs the Rust toolchain required to build the mongoac library (src/libmongoac) and exports the corresponding
-# environment variables into the current shell.
-#
-# This script must be *sourced*, not executed, so that the exported environment (notably $PATH and
-# $RUSTUP_TOOLCHAIN) is visible to subsequent commands in the same process, e.g. CMake's
-# `find_program (CARGO_EXECUTABLE cargo REQUIRED)` in src/libmongoac/CMakeLists.txt. It therefore sets no shell
-# options of its own, which would leak into the caller: every failure path returns non-zero explicitly, and the
-# callers are responsible for aborting on that status.
-#
-# Usage:
-#   . .evergreen/scripts/install-rust-toolchain.sh
-
-# Keep synchronized with the MSRV declared by `rust-version` in src/libmongoac/Cargo.toml, the pin in
-# src/libmongoac/rust-toolchain.toml, and the "Rust Toolchain" requirement in src/libmongoac/doc/index.rst.
-declare rust_toolchain_version="1.88.0"
-
 declare script_dir
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 declare mongoc_dir
 mongoc_dir="$(cd "${script_dir:?}/../.." && pwd)"
+
+# The pinned toolchain is defined in exactly one place: `channel` in src/libmongoac/rust-toolchain.toml (whose comment
+# ties it to the MSRV declared by `rust-version` in src/libmongoac/Cargo.toml).
+declare rust_toolchain_version
+rust_toolchain_version="$(sed -n 's/^channel *= *"\([^"]*\)"/\1/p' "${mongoc_dir:?}/src/libmongoac/rust-toolchain.toml")" || return
+if [[ -z "${rust_toolchain_version}" ]]; then
+  echo "Failed to read 'channel' from src/libmongoac/rust-toolchain.toml" 1>&2
+  return 1
+fi
 
 # Install rustup and cargo into the project directory to avoid depending on (or clobbering) a pre-existing system or
 # user installation. RHEL 8, for example, only provides Rust 1.79 via RPM, which is below the mongoac MSRV.
