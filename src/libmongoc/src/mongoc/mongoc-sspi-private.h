@@ -74,7 +74,7 @@ _mongoc_sspi_auth_sspi_client_unwrap (mongoc_sspi_client_state_t *state, SEC_CHA
 
 int
 _mongoc_sspi_auth_sspi_client_wrap (
-   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, ULONG ulen, INT protect);
+   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, SIZE_T ulen, INT protect);
 
 
 BSON_END_DECLS

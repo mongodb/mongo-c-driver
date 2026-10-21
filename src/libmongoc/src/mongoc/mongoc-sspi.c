@@ -352,7 +352,7 @@ done:
 
 int
 _mongoc_sspi_auth_sspi_client_wrap (
-   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, ULONG ulen, int protect)
+   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, SIZE_T ulen, int protect)
 {
    SECURITY_STATUS status;
    SecPkgContext_Sizes sizes;
@@ -362,9 +362,9 @@ _mongoc_sspi_auth_sspi_client_wrap (
    SEC_CHAR *inbuf;
    SIZE_T inbufSize;
    SEC_CHAR *outbuf;
-   DWORD outbufSize;
+   SIZE_T outbufSize;
    SEC_CHAR *plaintextMessage;
-   ULONG plaintextMessageSize;
+   SIZE_T plaintextMessageSize;
 
    if (state->response != NULL) {
       bson_free (state->response);
@@ -382,13 +382,20 @@ _mongoc_sspi_auth_sspi_client_wrap (
    }
 
    if (user) {
+      /* Reject usernames that could overflow a 32-bit unsigned type.
+       * INT32_MAX leaves room so small additions are representable in an unsigned 32-bit type. */
+      if (ulen > (SIZE_T) INT32_MAX) {
+         return MONGOC_SSPI_AUTH_GSS_ERROR;
+      }
       /* Length of user + 4 bytes for security layer (see below). */
       plaintextMessageSize = ulen + 4;
    } else {
-      decodedData = _mongoc_sspi_base64_decode (data, &plaintextMessageSize);
+      DWORD decodedLen;
+      decodedData = _mongoc_sspi_base64_decode (data, &decodedLen);
       if (!decodedData) {
          return MONGOC_SSPI_AUTH_GSS_ERROR;
       }
+      plaintextMessageSize = decodedLen;
    }
 
    inbufSize = sizes.cbSecurityTrailer + plaintextMessageSize + sizes.cbBlockSize;
@@ -407,10 +414,17 @@ _mongoc_sspi_auth_sspi_client_wrap (
       plaintextMessage[1] = 0;
       plaintextMessage[2] = 0;
       plaintextMessage[3] = 0;
-      memcpy_s (plaintextMessage + 4, inbufSize - sizes.cbSecurityTrailer - 4, user, strlen (user));
+      if (memcpy_s (plaintextMessage + 4, inbufSize - sizes.cbSecurityTrailer - 4, user, ulen) != 0) {
+         bson_free (inbuf);
+         return MONGOC_SSPI_AUTH_GSS_ERROR;
+      }
    } else {
       /* No user provided. Just rewrap data. */
-      memcpy_s (plaintextMessage, inbufSize - sizes.cbSecurityTrailer, decodedData, plaintextMessageSize);
+      if (memcpy_s (plaintextMessage, inbufSize - sizes.cbSecurityTrailer, decodedData, plaintextMessageSize) != 0) {
+         bson_free (inbuf);
+         bson_free (decodedData);
+         return MONGOC_SSPI_AUTH_GSS_ERROR;
+      }
       bson_free (decodedData);
    }
 
@@ -437,16 +451,22 @@ _mongoc_sspi_auth_sspi_client_wrap (
       return MONGOC_SSPI_AUTH_GSS_ERROR;
    }
 
-   outbufSize = wrapBufs[0].cbBuffer + wrapBufs[1].cbBuffer + wrapBufs[2].cbBuffer;
+   outbufSize = (SIZE_T) wrapBufs[0].cbBuffer + wrapBufs[1].cbBuffer + wrapBufs[2].cbBuffer;
    outbuf = (SEC_CHAR *) bson_malloc (sizeof (SEC_CHAR) * outbufSize);
-   memcpy_s (outbuf, outbufSize, wrapBufs[0].pvBuffer, wrapBufs[0].cbBuffer);
-   memcpy_s (
-      outbuf + wrapBufs[0].cbBuffer, outbufSize - wrapBufs[0].cbBuffer, wrapBufs[1].pvBuffer, wrapBufs[1].cbBuffer);
-   memcpy_s (outbuf + wrapBufs[0].cbBuffer + wrapBufs[1].cbBuffer,
-             outbufSize - wrapBufs[0].cbBuffer - wrapBufs[1].cbBuffer,
-             wrapBufs[2].pvBuffer,
-             wrapBufs[2].cbBuffer);
-   state->response = _mongoc_sspi_base64_encode (outbuf, outbufSize);
+   if (memcpy_s (outbuf, outbufSize, wrapBufs[0].pvBuffer, wrapBufs[0].cbBuffer) != 0 ||
+       memcpy_s (outbuf + wrapBufs[0].cbBuffer,
+                 outbufSize - wrapBufs[0].cbBuffer,
+                 wrapBufs[1].pvBuffer,
+                 wrapBufs[1].cbBuffer) != 0 ||
+       memcpy_s (outbuf + wrapBufs[0].cbBuffer + wrapBufs[1].cbBuffer,
+                 outbufSize - wrapBufs[0].cbBuffer - wrapBufs[1].cbBuffer,
+                 wrapBufs[2].pvBuffer,
+                 wrapBufs[2].cbBuffer) != 0) {
+      bson_free (inbuf);
+      bson_free (outbuf);
+      return MONGOC_SSPI_AUTH_GSS_ERROR;
+   }
+   state->response = _mongoc_sspi_base64_encode (outbuf, (DWORD) outbufSize);
    if (!state->response) {
       status = MONGOC_SSPI_AUTH_GSS_ERROR;
    } else {
