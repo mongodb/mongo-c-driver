@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-# Run the MongoDB Async C Driver (mongoac) test suite, emitting a JUnit XML report for Evergreen to upload.
-#
-# Usage:
-#   ENABLE_MONGOAC=ON .evergreen/scripts/run-mongoac-tests.sh
-#
-# Expects the build performed by `.evergreen/scripts/compile-mongoac.sh` to be present in `cmake-build`.
-
 set -o errexit
 set -o pipefail
 

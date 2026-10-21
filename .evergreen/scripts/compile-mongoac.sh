@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-# Configure, build, and install the MongoDB Async C Driver (mongoac) alongside the rest of the C driver.
-#
-# Usage:
-#   .evergreen/scripts/compile-mongoac.sh
-
 # The Rust toolchain is installed into (and sourced from) the current shell so that CMake and its cargo
 # invocations inherit the expected environment.
 # shellcheck source=.evergreen/scripts/install-rust-toolchain.sh

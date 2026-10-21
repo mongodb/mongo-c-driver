@@ -8,12 +8,6 @@ from config_generator.etc.utils import bash_exec
 
 TAG = 'mongoac'
 
-# Building mongoac compiles the Rust `mongodb` driver and its dependencies (~355 crates, including `aws-lc-sys` and
-# `zstd-sys`), which is too much work for a `-small` distro.
-#
-# RHEL 8 x86_64 is the client's baseline platform: it provides the oldest glibc among the platforms mongoac is
-# tested on (2.28), and its GCC 8.5 exercises mongoac's documented GCC 8.1 minimum. It is also the baseline of the
-# MongoDB Rust Driver.
 MATRIX = [
     ('rhel8-latest', 'gcc', None),
 ]
@@ -64,10 +58,6 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                 """,
             ),
             UploadMongoacTestResults.call(),
-            # Validate the documented platform/compiler matrix: the mongoac docs must build with warnings as errors.
-            # Run after the tests and the results upload so that a docs error never costs the test results. The script
-            # installs its own Rust toolchain and CMake/Ninja, since $PATH does not persist across commands. The
-            # `docs` group provides the `sphinx-build` executable required by `find_package (Sphinx REQUIRED)`.
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 working_dir='mongoc',
