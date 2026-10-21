@@ -19,7 +19,7 @@ MATRIX = [
 ]
 
 
-def make_task(distro_name, compiler, arch):
+def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
     distro_str = make_distro_str(distro_name, compiler, arch)
 
     tags = [TAG, distro_name, compiler]
