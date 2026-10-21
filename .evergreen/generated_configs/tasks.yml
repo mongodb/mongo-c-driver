@@ -5567,7 +5567,6 @@ tasks:
   - name: mongoac-rhel8-latest-gcc
     run_on: rhel8-latest-large
     tags: [mongoac, rhel8-latest, gcc]
-    exec_timeout_secs: 5400
     commands:
       - command: subprocess.exec
         type: test

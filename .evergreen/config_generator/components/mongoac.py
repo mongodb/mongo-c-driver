@@ -30,7 +30,6 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
         name=f'{TAG}-{distro_str}',
         run_on=find_large_distro(distro_name).name,  # DEVPROD-18763
         tags=tags,
-        exec_timeout_secs=5400,  # The 1-hour project default is not enough for a cargo build of ~355 crates.
         commands=[
             bash_exec(
                 command_type=EvgCommandType.TEST,
