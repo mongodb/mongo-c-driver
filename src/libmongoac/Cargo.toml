@@ -14,38 +14,40 @@ exclude = [
 [workspace]
 members = ["tools/generate-crate-headers"]
 
-[dependencies]
-mongodb = {
-  version = "3.9.0",
-  features = [
-    # BSON.
-    "bson-3",
+[dependencies.mongodb]
+version = "3.9.0"
+features = [
+  # BSON.
+  "bson-3",
 
-    # Connection.
-    "dns-resolver", # Default.
-    "rustls-tls", # Default.
+  # Connection.
+  "dns-resolver", # Default.
+  "rustls-tls", # Default.
 
-    # Authentication.
-    "aws-auth",
-    "azure-oidc",
-    "gcp-oidc",
+  # Authentication.
+  "aws-auth",
+  "azure-oidc",
+  "gcp-oidc",
 
-    # Compression.
-    "snappy-compression",
-    "zlib-compression",
-    "zstd-compression",
-  ],
-}
-tokio = {
-  version = "1.52.0",
-  features = ["rt", "macros", "parking_lot", "sync", "time"],
-}
-futures-util = "*"
-num_enum = {
-  version = "*",
-}
-parking_lot = "*"
-strum = {
-  version = "*",
-  features = ["derive"],
-}
+  # Compression.
+  "snappy-compression",
+  "zlib-compression",
+  "zstd-compression",
+]
+
+[dependencies.futures-util]
+version = "*"
+
+[dependencies.parking_lot]
+version = "*"
+
+[dependencies.num_enum]
+version = "*"
+
+[dependencies.strum]
+version = "*"
+features = ["derive"]
+
+[dependencies.tokio]
+version = "1.52.0"
+features = ["rt", "macros", "parking_lot", "sync", "time"]
