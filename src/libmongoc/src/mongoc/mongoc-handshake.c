@@ -718,7 +718,10 @@ _truncate_handshake(bson_t **doc, const mongoc_handshake_t *md)
          bson_t *new_doc = bson_new();
          bson_copy_to_excluding_noinit(*doc, new_doc, "env", NULL);
 
-         bson_append_document(new_doc, "env", -1, new_env);
+         // `env` may contain only `container` (no FaaS `name`). Omit `env` rather than leave it empty.
+         if (!bson_empty(new_env)) {
+            bson_append_document(new_doc, "env", -1, new_env);
+         }
          bson_destroy(new_env);
          bson_destroy(*doc);
          *doc = new_doc;
@@ -788,6 +791,7 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
       break;
    }
 
+   const bool has_container = md->kubernetes || md->docker;
    bson_t *doc = bson_new();
    // Optimistically include all handshake data
    bsonBuildAppend(
@@ -799,16 +803,16 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
              if (md->os_name, then(kv("name", cstr(md->os_name)))),
              if (md->os_version, then(kv("version", cstr(md->os_version)))),
              if (md->os_architecture, then(kv("architecture", cstr(md->os_architecture)))))),
-      if (env_name,
+      if (env_name || has_container,
           then(kv("env",
-                  doc(kv("name", cstr(env_name)),
+                  doc(if (env_name, then(kv("name", cstr(env_name)))),
                       if (md->env_timeout_sec.set, then(kv("timeout_sec", int32(md->env_timeout_sec.value)))),
                       if (md->env_memory_mb.set, then(kv("memory_mb", int32(md->env_memory_mb.value)))),
-                      if (md->env_region, then(kv("region", cstr(md->env_region)))))))),
-      if (md->kubernetes || md->docker,
-          then(kv("container",
-                  doc(if (md->docker, then(kv("runtime", cstr("docker")))),
-                      if (md->kubernetes, then(kv("orchestrator", cstr("kubernetes")))))))));
+                      if (md->env_region, then(kv("region", cstr(md->env_region)))),
+                      if (has_container,
+                          then(kv("container",
+                                  doc(if (md->docker, then(kv("runtime", cstr("docker")))),
+                                      if (md->kubernetes, then(kv("orchestrator", cstr("kubernetes")))))))))))));
 
    if (md->platform) {
       _append_platform_field(doc, md, false);
