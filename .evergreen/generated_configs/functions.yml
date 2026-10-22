@@ -689,7 +689,7 @@ functions:
   start-dsc:
     - command: ec2.assume_role
       params:
-        role_arn: arn:aws:iam::901841024863:role/ecr-role-evergreen-ro
+        role_arn: arn:aws:iam::664315256653:role/disagg-storage-tf-project-ro
     - command: subprocess.exec
       type: setup
       params:
