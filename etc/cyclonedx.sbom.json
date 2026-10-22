@@ -35,21 +35,27 @@
     {
       "bom-ref": "pkg:github/madler/zlib@v1.3.1",
       "copyright": "(C) 1995-2024 Jean-loup Gailly and Mark Adler",
+      "evidence": {
+        "licenses": [
+          {
+            "license": {
+              "id": "BSL-1.0"
+            }
+          }
+        ]
+      },
       "externalReferences": [
         {
-          "type": "distribution",
-          "url": "https://github.com/madler/zlib/archive/refs/tags/v1.3.1.tar.gz"
-        },
-        {
-          "type": "website",
-          "url": "https://github.com/madler/zlib/tree/v1.3.1"
+          "comment": "License metadata retrieved via socket.dev lookup.",
+          "type": "evidence",
+          "url": "https://socket.dev/api/ecosystems/artifact/license-details?type=github&namespace=madler&name=zlib&version=v1.3.1"
         }
       ],
       "group": "madler",
       "licenses": [
         {
           "license": {
-            "id": "Zlib"
+            "id": "BSL-1.0"
           }
         }
       ],
@@ -121,7 +127,7 @@
     }
   ],
   "metadata": {
-    "timestamp": "2026-09-24T12:37:56.762790+00:00",
+    "timestamp": "2026-10-22T12:23:08.795421+00:00",
     "tools": [
       {
         "externalReferences": [
@@ -164,7 +170,7 @@
       }
     ]
   },
-  "serialNumber": "urn:uuid:3f6a1347-8fcb-4830-9026-e2c46bb893cb",
+  "serialNumber": "urn:uuid:cf75e017-906d-4481-bc79-b1aa17c49e21",
   "version": 1,
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
