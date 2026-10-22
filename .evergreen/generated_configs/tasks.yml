@@ -5592,6 +5592,15 @@ tasks:
               set -o errexit
               test -x cmake-build/src/libmongoac/test/test-libmongoac
               test -f cmake-build/src/libmongoac/Debug/libmongoac.so
+      - command: expansions.update
+        params:
+          updates:
+            - { key: AUTH, value: noauth }
+            - { key: MONGODB_VERSION, value: latest }
+            - { key: TOPOLOGY, value: server }
+            - { key: SSL, value: nossl }
+      - func: fetch-det
+      - func: bootstrap-mongo-orchestration
       - command: subprocess.exec
         type: test
         params:

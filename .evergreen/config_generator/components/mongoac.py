@@ -1,7 +1,9 @@
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_command import EvgCommandType
+from shrub.v3.evg_command import EvgCommandType, KeyValueParam, expansions_update
 from shrub.v3.evg_task import EvgTask
 
+from config_generator.components.funcs.bootstrap_mongo_orchestration import BootstrapMongoOrchestration
+from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.upload_mongoac_test_results import UploadMongoacTestResults
 from config_generator.etc.distros import compiler_to_vars, find_large_distro, make_distro_str
 from config_generator.etc.utils import bash_exec
@@ -41,6 +43,21 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                     test -f cmake-build/src/libmongoac/Debug/libmongoac.so
                 """,
             ),
+            # Start a MongoDB server for the tests that need one: `expansions.update` configures the
+            # orchestration (standalone, latest server, no auth, no TLS), `fetch-det` clones
+            # drivers-evergreen-tools which the bootstrap function uses, and
+            # `bootstrap-mongo-orchestration` starts the server and publishes its connection string as the
+            # `MONGODB_URI` expansion. run-mongoac-tests.sh passes that on as `MONGOAC_TEST_URI`.
+            expansions_update(
+                updates=[
+                    KeyValueParam(key='AUTH', value='noauth'),
+                    KeyValueParam(key='MONGODB_VERSION', value='latest'),
+                    KeyValueParam(key='TOPOLOGY', value='server'),
+                    KeyValueParam(key='SSL', value='nossl'),
+                ],
+            ),
+            FetchDET.call(),
+            BootstrapMongoOrchestration.call(),
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 add_expansions_to_env=True,

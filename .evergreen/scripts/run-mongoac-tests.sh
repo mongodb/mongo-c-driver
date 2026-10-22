@@ -42,6 +42,13 @@ export EXTRA_LIB_PATH="${mongoc_dir:?}/cmake-build/src/libmongoac/Debug${EXTRA_L
 
 ulimit -c unlimited || true
 
+# The tests read `MONGOAC_TEST_URI` (default: mongodb://localhost:27017). Point them at the server that
+# `bootstrap-mongo-orchestration` started for this task, whose connection string is published as the
+# `MONGODB_URI` expansion.
+if [[ -n "${MONGODB_URI:-}" ]]; then
+  export MONGOAC_TEST_URI="${MONGODB_URI}"
+fi
+
 # Run the suite through CTest, which owns the test registration (catch_discover_tests), so the JUnit report carries
 # the same `mongoac/<suite>/<name>` identifiers the Evergreen Tests tab shows. ctest exits non-zero on any failure,
 # which `errexit` turns into a red task. `-R '^mongoac/'` restricts the run to this library's tests: the build
