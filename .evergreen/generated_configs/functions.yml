@@ -689,7 +689,7 @@ functions:
   start-dsc:
     - command: ec2.assume_role
       params:
-        role_arn: ${dsc_ecr_role_arn}
+        role_arn: arn:aws:iam::901841024863:role/ecr-role-evergreen-ro
     - command: subprocess.exec
       type: setup
       params:

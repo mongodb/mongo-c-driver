@@ -25,7 +25,7 @@ def functions():
     return {
         'start-dsc': [
             # Requires read access to the SLS ECR repositories. See dsc-evergreen-proposal.md.
-            ec2_assume_role(role_arn='${dsc_ecr_role_arn}'),
+            ec2_assume_role(role_arn='arn:aws:iam::901841024863:role/ecr-role-evergreen-ro'),
             bash_exec(
                 command_type=EvgCommandType.SETUP,
                 include_expansions_in_env=[
