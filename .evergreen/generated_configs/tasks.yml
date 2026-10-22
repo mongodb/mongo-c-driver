@@ -5188,7 +5188,6 @@ tasks:
       - func: run-tests
         vars:
           CC: gcc
-          DSC: "on"
           URI: ${MONGODB_URI}
   - name: dsc-ubuntu2404-gcc-test-replset-3
     run_on: ubuntu2404-large
@@ -5207,7 +5206,6 @@ tasks:
       - func: run-tests
         vars:
           CC: gcc
-          DSC: "on"
           URI: ${MONGODB_URI}
   - name: kms-divergence-check
     commands:
