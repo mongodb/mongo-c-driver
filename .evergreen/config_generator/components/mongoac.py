@@ -95,10 +95,6 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
 TASKS = [make_task(*entry) for entry in MATRIX]
 
 
-def functions():
-    return UploadMongoacTestResults.defn()
-
-
 def tasks():
     return TASKS
 

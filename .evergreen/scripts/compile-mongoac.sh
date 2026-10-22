@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -o errexit
+
 # The Rust toolchain is installed into (and sourced from) the current shell so that CMake and its cargo
 # invocations inherit the expected environment.
 # shellcheck source=.evergreen/scripts/install-rust-toolchain.sh

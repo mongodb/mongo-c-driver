@@ -59,5 +59,5 @@ fi
 # the same `mongoac/<suite>/<name>` identifiers the Evergreen Tests tab shows. ctest exits non-zero on any failure,
 # which `errexit` turns into a red task. `-R '^mongoac/'` restricts the run to this library's tests: the build
 # directory also contains libbson/libmongoc tests, which require a live MongoDB server.
-ctest --test-dir cmake-build -R '^mongoac/' --output-on-failure \
+ctest --test-dir cmake-build -R '^mongoac/' --no-tests=error --output-on-failure \
   --output-junit "${mongoc_dir:?}/mongoac-test-results.xml"
