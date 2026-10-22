@@ -26,8 +26,9 @@ if [[ ! -x "${test_binary}" ]]; then
   exit 1
 fi
 
-# Run from the project directory: the JUnit report is written to `mongoac-test-results.xml` relative to it, which is
-# where `.evergreen/config_generator/components/funcs/upload_mongoac_test_results.py` expects to find it.
+# Run from the project directory so the relative `cmake-build` path below resolves. The JUnit report is written to
+# the project directory, which is where
+# `.evergreen/config_generator/components/funcs/upload_mongoac_test_results.py` expects to find it.
 cd "${mongoc_dir:?}"
 
 # The mongoac shared library is produced by cargo, which emits neither a SONAME nor an RPATH on Linux, and the test
@@ -41,5 +42,9 @@ export EXTRA_LIB_PATH="${mongoc_dir:?}/cmake-build/src/libmongoac/Debug${EXTRA_L
 
 ulimit -c unlimited || true
 
-# Catch2 exits non-zero on test failure (and on a malformed invocation), which `errexit` turns into a red task.
-"${test_binary:?}" --reporter console --reporter junit::out=mongoac-test-results.xml
+# Run the suite through CTest, which owns the test registration (catch_discover_tests), so the JUnit report carries
+# the same `mongoac/<suite>/<name>` identifiers the Evergreen Tests tab shows. ctest exits non-zero on any failure,
+# which `errexit` turns into a red task. `-R '^mongoac/'` restricts the run to this library's tests: the build
+# directory also contains libbson/libmongoc tests, which require a live MongoDB server.
+ctest --test-dir cmake-build -R '^mongoac/' --output-on-failure \
+  --output-junit "${mongoc_dir:?}/mongoac-test-results.xml"
