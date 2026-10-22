@@ -5,28 +5,14 @@
 
 set -o pipefail
 
-declare work
-work="$(pwd)/dsc-work"
+# shellcheck source=.evergreen/scripts/dsc-common.sh
+. "$(dirname "${BASH_SOURCE[0]}")/dsc-common.sh"
 
-if [[ ! -f "${work}/started" ]]; then
+if [[ ! -f "${TAG_FILE}" ]]; then
   echo "OK - no DSC deployment running"
   exit 0
 fi
 
-declare ecr="664315256653.dkr.ecr.us-east-1.amazonaws.com"
-declare arch
-case "$(uname -m)" in
-aarch64 | arm64) arch="arm64" ;;
-*) arch="x86-64" ;;
-esac
-
-slslocal() {
-  docker run --rm --privileged --network=host \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "${work}:/root" -v "${work}:${work}" -w "${work}" \
-    "${ecr}/disagg-storage/slslocal:latest-linux-${arch}" --compose "$@"
-}
-
-slslocal logs --follow=false >"${work}/sls-logs.txt" 2>&1 || true
-slslocal destroy || true
-rm -f "${work}/started"
+run_slslocal --compose logs --follow=false >"$(pwd)/sls-logs.txt" 2>&1 || true
+run_slslocal --compose destroy || true
+rm -f "${TAG_FILE}"

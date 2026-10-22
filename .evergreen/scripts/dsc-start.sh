@@ -4,8 +4,8 @@
 # Inputs (environment):
 #   DSC_NUM_CELLS          Number of cells (default: 1).
 #   DSC_MONGODS_PER_SHARD  Number of mongods per shard; must be <= DSC_NUM_CELLS (default: 1).
-#   DSC_SLS_TAG            SLS ECR image tag (default: latest).
-#   DSC_MONGOD_TAG         mock-data-plane image tag, i.e. server commit (default: latest).
+#   DSC_SLS_TAG            SLS ECR image tag (default: newest mainline tag; see resolve_sls_tag).
+#   DSC_MONGOD_TAG         mock-data-plane image tag, i.e. server commit (default: slslocal's pinned default).
 #   AWS_*                  Credentials with ECR pull access (from ec2.assume_role).
 #
 # Output: dsc-expansion.yml (in the working directory) containing MONGODB_URI.
@@ -14,47 +14,46 @@
 
 set -o errexit
 set -o pipefail
+set -o nounset
 
-declare ecr="664315256653.dkr.ecr.us-east-1.amazonaws.com"
-declare arch
-case "$(uname -m)" in
-aarch64 | arm64) arch="arm64" ;;
-*) arch="x86-64" ;;
-esac
+# shellcheck source=.evergreen/scripts/dsc-common.sh
+. "$(dirname "${BASH_SOURCE[0]}")/dsc-common.sh"
 
-declare work
-work="$(pwd)/dsc-work"
-mkdir -p "${work}"
+[[ "$(uname -m)" == "x86_64" ]] || fail "expected an x86_64 host"
+command -v docker >/dev/null 2>&1 || fail "'docker' is not installed on this host"
+command -v aws >/dev/null 2>&1 || fail "the 'aws' CLI is not installed on this host"
+command -v python3 >/dev/null 2>&1 || fail "'python3' is not installed on this host"
+[[ -n "${AWS_ACCESS_KEY_ID:-}" ]] || fail "AWS_ACCESS_KEY_ID is not set (expected ec2.assume_role credentials)"
 
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "${ecr}"
+mkdir -p "${STATE_DIR}"
 
-slslocal() {
-  docker run --rm --privileged --network=host \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "${work}:/root" -v "${work}:${work}" -w "${work}" \
-    -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-    "${ecr}/disagg-storage/slslocal:latest-linux-${arch}" --compose "$@"
-}
+declare tag="${DSC_SLS_TAG:-}"
+[[ -n "${tag}" ]] || tag="$(resolve_sls_tag)"
+# Written before launching so dsc-stop.sh knows a deployment may be running.
+echo "${tag}" >"${TAG_FILE}"
+echo "Using SLS image tag: ${tag}"
 
-# Marker so the post-task teardown knows a deployment may be running.
-touch "${work}/started"
+docker_login
+write_aws_profile
+
+declare image="${ECR_ROOT}/disagg-storage/slslocal:${tag}"
+docker pull "${image}" || fail "docker pull of '${image}' failed"
+
+declare -a launch_args=(
+  --sls-ecr-tag "${tag}"
+  --localstack
+  --aws-profile-name default
+  --num-cells "${DSC_NUM_CELLS:-1}"
+  --mongods-per-shard "${DSC_MONGODS_PER_SHARD:-1}"
+)
+if [[ -n "${DSC_MONGOD_TAG:-}" ]]; then
+  launch_args+=(--mongod-tag "${DSC_MONGOD_TAG}")
+fi
 
 # TODO: confirm enableTestCommands=1 is set on mongods by slslocal (required by fail point tests); add a flag if not.
-slslocal launch \
-  --sls-ecr-tag "${DSC_SLS_TAG:-latest}" \
-  --mongod-tag "${DSC_MONGOD_TAG:-latest}" \
-  --localstack \
-  --num-cells "${DSC_NUM_CELLS:-1}" \
-  --mongods-per-shard "${DSC_MONGODS_PER_SHARD:-1}" \
-  --output-root "${work}"
-slslocal wait
-slslocal ports >"${work}/ports.json"
+run_slslocal --compose launch "${launch_args[@]}" || fail "slslocal launch failed"
+run_slslocal --compose wait --timeout 10m || fail "cluster did not become healthy within 10 minutes"
 
-declare hosts
-hosts="$(jq -r '[.shards_by_log_id[] | .[]] | join(",")' "${work}/ports.json")"
-
-declare setname
-setname="$(mongosh --quiet "mongodb://${hosts%%,*}/?directConnection=true" --eval 'db.hello().setName')"
-
-echo "MONGODB_URI: \"mongodb://${hosts}/?replicaSet=${setname}\"" >dsc-expansion.yml
+# Build the connection string from ports.json, asking one node for the replica set name over the wire protocol.
+python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" >dsc-expansion.yml || fail "unable to determine MONGODB_URI"
 cat dsc-expansion.yml
