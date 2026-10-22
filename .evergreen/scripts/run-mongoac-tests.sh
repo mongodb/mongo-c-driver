@@ -42,6 +42,12 @@ export EXTRA_LIB_PATH="${mongoc_dir:?}/cmake-build/src/libmongoac/Debug${EXTRA_L
 
 ulimit -c unlimited || true
 
+# `ctest` is provided by CMake. $PATH does not persist across Evergreen commands, so the CMake installed by the
+# compile step is not visible here: install it for this command. (Same pattern as build-mongoac-docs.sh.)
+# shellcheck source=.evergreen/scripts/install-build-tools.sh
+. "${script_dir:?}/install-build-tools.sh"
+install_build_tools
+
 # The tests read `MONGOAC_TEST_URI` (default: mongodb://localhost:27017). Point them at the server that
 # `bootstrap-mongo-orchestration` started for this task, whose connection string is published as the
 # `MONGODB_URI` expansion.
