@@ -5568,6 +5568,7 @@ tasks:
     run_on: rhel8-latest-large
     tags: [mongoac, rhel8-latest, gcc]
     commands:
+      - func: set-cache-dir
       - command: subprocess.exec
         type: test
         params:
@@ -5578,6 +5579,8 @@ tasks:
             CC: gcc
             CXX: g++
             ENABLE_MONGOAC: "ON"
+          include_expansions_in_env:
+            - MONGO_C_DRIVER_CACHE_DIR
           args:
             - -c
             - .evergreen/scripts/compile-mongoac.sh
@@ -5592,6 +5595,13 @@ tasks:
               set -o errexit
               test -x cmake-build/src/libmongoac/test/test-libmongoac
               test -f cmake-build/src/libmongoac/Debug/libmongoac.so
+              # The installed shared library must carry an ELF SONAME: the platform matrix in
+              # src/libmongoac/doc/index.rst presents patchelf (which sets it) as part of the tested
+              # baseline, so a build that silently skipped it must not pass.
+              soname_lib="$(find install-dir/lib install-dir/lib64 -maxdepth 1 -name 'libmongoac0.so.*' -type f 2>/dev/null | head -n 1)"
+              test -n "${soname_lib}"
+              readelf -d "${soname_lib}" | grep -q '(SONAME)' ||
+                { echo "ERROR: ${soname_lib} has no SONAME (patchelf unavailable?)" 1>&2; exit 1; }
       - command: expansions.update
         params:
           updates:
@@ -5628,6 +5638,8 @@ tasks:
         params:
           binary: bash
           working_dir: mongoc
+          include_expansions_in_env:
+            - MONGO_C_DRIVER_CACHE_DIR
           args:
             - -c
             - uv run --frozen --only-group docs env .evergreen/scripts/build-mongoac-docs.sh

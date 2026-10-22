@@ -15,10 +15,15 @@ if [[ -z "${rust_toolchain_version}" ]]; then
   return 1
 fi
 
-# Install rustup and cargo into the project directory to avoid depending on (or clobbering) a pre-existing system or
-# user installation. RHEL 8, for example, only provides Rust 1.79 via RPM, which is below the mongoac MSRV.
-export RUSTUP_HOME="${RUSTUP_HOME:-"${mongoc_dir:?}/.rustup"}"
-export CARGO_HOME="${CARGO_HOME:-"${mongoc_dir:?}/.cargo"}"
+# Install rustup and cargo into the host-persistent cache directory when available (published as
+# MONGO_C_DRIVER_CACHE_DIR by the `set-cache-dir` function) to avoid depending on (or clobbering) a pre-existing
+# system or user installation. The checkout is wiped between Evergreen tasks, so installing there would
+# re-download the toolchain on every run; local runs without the expansion fall back to the checkout. RHEL 8, for
+# example, only provides Rust 1.79 via RPM, which is below the mongoac MSRV. Both are overridable via the
+# environment.
+declare cache_dir="${MONGO_C_DRIVER_CACHE_DIR:-"${mongoc_dir:?}"}"
+export RUSTUP_HOME="${RUSTUP_HOME:-"${cache_dir}/.rustup"}"
+export CARGO_HOME="${CARGO_HOME:-"${cache_dir}/.cargo"}"
 
 install_rustup() {
   declare -i attempt
