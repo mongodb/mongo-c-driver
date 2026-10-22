@@ -369,9 +369,20 @@ impl RuntimeT {
 
 /// Provides an associated [`RuntimeT`] by which an async operation may be spawned as a new [`FutureT`].
 pub(crate) trait RuntimeAware {
+    /// Return the runtime associated with this value as a reference.
+    fn runtime(&self) -> &RuntimeT;
+
     /// Return the runtime associated with this value.
     #[must_use]
-    fn get_runtime(&self) -> RuntimeT;
+    fn get_runtime(&self) -> RuntimeT {
+        self.runtime().clone()
+    }
+
+    /// Return the address of the runtime associated with this value.
+    #[must_use]
+    fn get_runtime_address(&self) -> usize {
+        self.runtime().address()
+    }
 
     /// Spawn the given async operation on the associated runtime as a [`FutureT`].
     ///

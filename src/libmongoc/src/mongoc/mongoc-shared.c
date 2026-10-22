@@ -20,7 +20,6 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
 
 typedef struct _mongoc_shared_ptr_aux {
    int refcount;

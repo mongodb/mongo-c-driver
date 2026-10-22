@@ -85,7 +85,7 @@ TEST_CASE("clone", "[mongoac][runtime]") {
 
 TEST_CASE("address", "[mongoac][runtime]") {
     SECTION("null") {
-        CHECK(mongoac_runtime_address(nullptr) == 0u);
+        CHECK(mongoac_runtime_address(nullptr) == std::uintptr_t{});
     }
 
     SECTION("basic") {
@@ -93,7 +93,7 @@ TEST_CASE("address", "[mongoac][runtime]") {
             REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
 
-        CHECK(mongoac_runtime_address(runtime.get()) != 0u);
+        CHECK(mongoac_runtime_address(runtime.get()) != std::uintptr_t{});
     }
 
     SECTION("unique") {

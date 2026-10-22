@@ -41,8 +41,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <mlib/ckdint.h>
-#include <mlib/config.h>
 #include <mlib/intutil.h>
 
 #include <assert.h>  // assert

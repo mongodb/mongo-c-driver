@@ -27,6 +27,8 @@
 #include <bson/config.h>
 #include <bson/macros.h>
 
+#include <mlib/platform/attributes.h>
+
 BSON_BEGIN_DECLS
 
 #define mcommon_thread_create COMMON_NAME(thread_create)
@@ -79,7 +81,7 @@ BSON_BEGIN_DECLS
    } while (0)
 
 #else
-#include <mlib/config.h>
+
 
 typedef struct {
    pthread_t lock_owner;

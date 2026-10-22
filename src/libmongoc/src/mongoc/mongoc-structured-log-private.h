@@ -96,7 +96,7 @@ mongoc_structured_log_instance_destroy(mongoc_structured_log_instance_t *instanc
  * once the table is built.
  */
 #define mongoc_structured_log(_structured_log_instance, _level, _component, ...) \
-   _bsonDSL_eval(_mongoc_structured_log_with_end_of_list(                        \
+   MLIB_EVAL(_mongoc_structured_log_with_end_of_list(                            \
       _structured_log_instance, _level, _component, __VA_ARGS__, end_of_list()))
 
 #define _mongoc_structured_log_with_end_of_list(_structured_log_instance, _level, _component, _message, ...) \
@@ -113,8 +113,7 @@ mongoc_structured_log_instance_destroy(mongoc_structured_log_instance_t *instanc
       }                                                                                                      \
    } while (0)
 
-#define _mongoc_structured_log_items_to_stages(...) \
-   _bsonDSL_mapMacro(_mongoc_structured_log_item_to_stages, ~, __VA_ARGS__)
+#define _mongoc_structured_log_items_to_stages(...) _mlibMapMacro(_mongoc_structured_log_item_to_stages, ~, __VA_ARGS__)
 
 #define _mongoc_structured_log_flag_expr(_action, _constant, _counter) | (_constant##_##_action)
 
@@ -295,7 +294,7 @@ typedef enum {
    {.func = _mongoc_structured_log_append_cmd,     \
     .arg1.cmd = (_cmd),                            \
     .arg2.cmd_flags =                              \
-       (0 _bsonDSL_mapMacro(_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG, __VA_ARGS__))},
+       (0 _mlibMapMacro(_mongoc_structured_log_flag_expr, MONGOC_STRUCTURED_LOG_CMD_CONTENT_FLAG, __VA_ARGS__))},
 
 /**
  * @def cmd_reply(cmd, reply)
@@ -367,7 +366,7 @@ typedef enum {
    {.func = _mongoc_structured_log_append_server_description,                    \
     .arg1.server_description = (_server_description),                            \
     .arg2.server_description_flags =                                             \
-       (0 _bsonDSL_mapMacro(_mongoc_structured_log_flag_expr, MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG, __VA_ARGS__))},
+       (0 _mlibMapMacro(_mongoc_structured_log_flag_expr, MONGOC_SERVER_DESCRIPTION_CONTENT_FLAG, __VA_ARGS__))},
 
 /**
  * @def monotonic_time_duration(duration)

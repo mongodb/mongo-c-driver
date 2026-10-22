@@ -34,5 +34,8 @@ The associated runtime may be obtained with :symbol:`mongoac_database_get_runtim
     mongoac_database_destroy
     mongoac_database_clone
 
+    mongoac_database_get_client
     mongoac_database_get_collection
+    mongoac_database_get_name
     mongoac_database_get_runtime
+    mongoac_database_get_runtime_address

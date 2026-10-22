@@ -100,11 +100,6 @@ impl FutureT {
     }
 
     #[must_use]
-    pub(crate) fn get_runtime_address(&self) -> usize {
-        self.runtime.address()
-    }
-
-    #[must_use]
     pub(crate) fn is_ready(&self) -> bool {
         self.value.is_ready()
     }
@@ -157,8 +152,8 @@ impl FutureT {
 }
 
 impl RuntimeAware for FutureT {
-    fn get_runtime(&self) -> RuntimeT {
-        self.runtime.clone()
+    fn runtime(&self) -> &RuntimeT {
+        &self.runtime
     }
 }
 

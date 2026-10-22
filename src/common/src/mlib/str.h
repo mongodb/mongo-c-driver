@@ -26,7 +26,6 @@
 
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 #include <mlib/intutil.h>
 #include <mlib/loop.h>
 #include <mlib/test.h>
@@ -277,7 +276,7 @@ mstr_latin_casecmp(mstr_view a, mstr_view b)
 static inline size_t
 _mstr_adjust_index(mstr_view s, mlib_upsized_integer pos, bool clamp_to_length)
 {
-   if (clamp_to_length && (mlib_cmp)(pos, mlib_upsize_integer(s.len), 0) == mlib_greater) {
+   if (clamp_to_length && (mlib_cmp)(pos, mlib_upsize_integer(s.len)) == mlib_greater) {
       // We want to clamp to the length, and the given value is greater than the string length.
       return s.len;
    }

@@ -20,9 +20,11 @@
 #ifndef MLIB_LOOP_H_INCLUDED
 #define MLIB_LOOP_H_INCLUDED
 
-#include <mlib/config.h>
+#include <mlib/pp/args.h>
+#include <mlib/pp/if-else.h>
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h> // u/intmax_t
 
 /**
