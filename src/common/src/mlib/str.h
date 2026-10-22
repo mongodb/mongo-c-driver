@@ -24,6 +24,7 @@
 #ifndef MLIB_STR_H_INCLUDED
 #define MLIB_STR_H_INCLUDED
 
+#include <mlib/alloc.h>
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
 #include <mlib/intutil.h>
@@ -35,7 +36,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>  // vsnprintf
-#include <stdlib.h> // malloc/free
 #include <string.h> // memcpy
 
 /**
@@ -676,6 +676,9 @@ mstr_contains_any_of(mstr_view str, mstr_view needle)
  * a null pointer. A zero-initialized `mstr` is null. The null string is distinct
  * from the empty string, which has a non-null `.data` that points to an empty
  * C string.
+ *
+ * Storage uses the global mlib allocator. Destroy owning strings before changing
+ * the allocator; strings do not retain their own allocator configuration.
  */
 typedef struct mstr {
    /**
@@ -764,7 +767,8 @@ mstr_reserve(mstr *str, size_t capacity)
    }
    // The number of bytes that we actually need to allocate
    const size_t alloc_size = sizeof(size_t) + capacity + 1u;
-   char *const allocation = (char *)realloc(_mstr_allocation(str), alloc_size);
+   const size_t previous_size = str->data ? sizeof(size_t) + mstr_capacity(str) + 1u : 0;
+   char *const allocation = (char *)mlib_reallocate(_mstr_allocation(str), alloc_size, previous_size, NULL);
    if (!allocation) {
       return false;
    }
@@ -890,7 +894,7 @@ static inline void
 mstr_destroy(mstr *s)
 {
    if (s) {
-      free(_mstr_allocation(s));
+      mlib_deallocate(_mstr_allocation(s), s->data ? sizeof(size_t) + mstr_capacity(s) + 1u : 0);
       s->len = 0;
       s->data = NULL;
    }
@@ -938,14 +942,9 @@ mstr_assign(mstr *inout, mstr_view s)
 {
    // Check for self-assignment
    if (_mstr_overlaps(inout, s)) {
-      // We are overwriting a string with a (sub)string of its own content.
-      // Move the substring to the front of the string (may be a no-op if `s`
-      // points to the beginning of the string)
+      // The source fits in the existing storage, and truncation retains capacity.
       memmove(inout->data, s.data, s.len);
-      // Resize to truncate. This will always shrink the string, because a valid
-      // string-view into `inout` cannot be longer than `inout` itself. Thus, it
-      // also cannot fail.
-      mstr_resize_for_overwrite(inout, s.len);
+      mlib_check(mstr_resize_for_overwrite(inout, s.len));
       return true;
    }
    if (!mstr_resize_for_overwrite(inout, s.len)) {
@@ -1020,6 +1019,8 @@ mstr_concat(mstr_view a, mstr_view b)
  *
  * If `n_delete` is zero, then no characters are deleted. If `insert` is empty
  * or null, then no characters are inserted.
+ *
+ * Shrinking retains storage and does not allocate.
  */
 static inline bool
 mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
@@ -1075,9 +1076,10 @@ mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
    char *copy_to = mut + insert.len;
    memmove(copy_to, copy_from, tail_len);
    if (new_len < str->len) {
-      // We didn't resize first, so resize now. We are shrinking the string, so this
-      // will never fail, and does not create any uninitialized memory:
-      mlib_check(mstr_resize_for_overwrite(str, new_len));
+      // We didn't resize first, so resize now. Shrinking can also fail.
+      if (!mstr_resize_for_overwrite(str, new_len)) {
+         return false;
+      }
       mut = str->data + splice_pos;
    }
    // Insert the new data if the insertion string is non-null
@@ -1139,8 +1141,7 @@ mstr_append_char(mstr *str, char c)
  *
  *    replace("foo", "", "|") -> "|f|o|o|"
  *
- * @note The operation is guaranteed to never fail if the `sub` string is not
- * longer than the `needle` string AND the needle and sub strings do not overlap
+ * @note Replacements that only shrink the string retain its storage.
  *
  * @note If the operation fails, the content of `str` is an unspecified but valid
  * string.
@@ -1256,7 +1257,9 @@ mlib_printf_attribute(1, 0) static inline mstr mstr_vsprintf(const char *format,
 
       if ((size_t)n_chars <= ret.len) {
          // Success. Truncate to the number of chars actually written:
-         mstr_resize(&ret, (size_t)n_chars);
+         if (!mstr_resize(&ret, (size_t)n_chars)) {
+            break;
+         }
          // Return the successfully formatted string:
          return ret;
       }
@@ -1294,6 +1297,9 @@ mlib_printf_attribute(2, 0) static inline bool mstr_vsprintf_append(mstr *string
 {
    mlib_check(string != NULL, because, "Output string parameter is required");
    mstr suffix = mstr_vsprintf(format, args);
+   if (!suffix.data) {
+      return false;
+   }
    bool ok = mstr_append(string, suffix);
    mstr_destroy(&suffix);
    return ok;
