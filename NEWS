@@ -1,3 +1,16 @@
+libmongoc 2.5.7
+===============
+
+## Fixes
+
+* Fix handling of large usernames for GSSAPI on Windows.
+* Fix container client metadata.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Sabrina Chang
+
 libmongoc 2.5.6
 ===============
 
