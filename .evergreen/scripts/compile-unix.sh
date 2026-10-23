@@ -16,6 +16,7 @@ check_var_opt CHECK_LOG "OFF"
 check_var_opt COMPILE_LIBMONGOCRYPT "OFF"
 check_var_opt COVERAGE # CMake default: OFF.
 check_var_opt CXXFLAGS
+check_var_opt ENABLE_MONGOAC      # CMake default: OFF.
 check_var_opt ENABLE_SHM_COUNTERS # CMake default: AUTO.
 check_var_opt EXTRA_CMAKE_PREFIX_PATH
 check_var_opt EXTRA_CONFIGURE_FLAGS
@@ -47,6 +48,13 @@ fi
 . "${script_dir:?}/install-build-tools.sh"
 install_build_tools
 
+if [[ "${ENABLE_MONGOAC}" == "ON" ]]; then
+  # Required for the mongoac shared library's ELF SONAME (see src/libmongoac/CMakeLists.txt). A failure here is not
+  # fatal: the build warns and produces a library without an SONAME.
+  uv tool install -q patchelf ||
+    echo "WARNING: patchelf unavailable; the mongoac shared library will not have an ELF SONAME" 1>&2
+fi
+
 declare -a configure_flags
 
 configure_flags_append() {
@@ -75,6 +83,7 @@ configure_flags_append "-DENABLE_MAN_PAGES=OFF"
 
 configure_flags_append_if_not_null C_STD_VERSION "-DCMAKE_C_STANDARD=${C_STD_VERSION}"
 configure_flags_append_if_not_null ENABLE_RDTSCP "-DENABLE_RDTSCP=${ENABLE_RDTSCP}"
+configure_flags_append_if_not_null ENABLE_MONGOAC "-DENABLE_MONGOAC=${ENABLE_MONGOAC}"
 configure_flags_append_if_not_null ENABLE_SHM_COUNTERS "-DENABLE_SHM_COUNTERS=${ENABLE_SHM_COUNTERS}"
 configure_flags_append_if_not_null SANITIZE "-DMONGO_SANITIZE=${SANITIZE}"
 configure_flags_append_if_not_null SASL "-DENABLE_SASL=${SASL}"
