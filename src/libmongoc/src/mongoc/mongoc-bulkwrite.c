@@ -1328,10 +1328,15 @@ _bulkwritereturn_apply_reply(mongoc_bulkwritereturn_t *self, const bson_t *cmd_r
          return false;
       }
 
-      // Parse `errmsg`.
-      const char *errmsg;
-      if (!lookup_string(&wce_bson, "errmsg", &errmsg, "writeConcernError", self->exc)) {
-         return false;
+      // Parse optional `errmsg`. An error may omit "errmsg" (e.g. a
+      // configureFailPoint "writeConcernError" only has "code" and "codeName").
+      // DRIVERS-3684: such an error must not be treated as success.
+      const char *errmsg = NULL;
+      {
+         bson_iter_t errmsg_iter;
+         if (bson_iter_init_find(&errmsg_iter, &wce_bson, "errmsg")) {
+            errmsg = bson_iter_utf8(&errmsg_iter, NULL);
+         }
       }
 
       // Parse optional `errInfo`.
@@ -1344,7 +1349,7 @@ _bulkwritereturn_apply_reply(mongoc_bulkwritereturn_t *self, const bson_t *cmd_r
          }
       }
 
-      _bulkwriteexception_append_writeconcernerror(self->exc, code, errmsg, &errInfo);
+      _bulkwriteexception_append_writeconcernerror(self->exc, code, errmsg ? errmsg : "", &errInfo);
    }
 
    self->res->parsed_some_results = true;

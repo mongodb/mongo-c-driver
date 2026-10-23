@@ -904,7 +904,13 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
 
    if (cursor->write_concern && !mongoc_write_concern_is_default(cursor->write_concern)) {
       parts.assembled.is_acknowledged = mongoc_write_concern_is_acknowledged(cursor->write_concern);
-      mongoc_write_concern_append(cursor->write_concern, &parts.extra);
+      /* Use mongoc_cmd_parts_set_write_concern, which replaces any write
+       * concern already parsed from opts, rather than appending to "extra",
+       * which could produce a duplicate "writeConcern" field. */
+      if (!mongoc_cmd_parts_set_write_concern(&parts, cursor->write_concern, &cursor->error)) {
+         _mongoc_bson_init_if_set(reply);
+         GOTO(done);
+      }
    }
 
    if (!mongoc_cmd_parts_assemble(&parts, server_stream, &cursor->error)) {

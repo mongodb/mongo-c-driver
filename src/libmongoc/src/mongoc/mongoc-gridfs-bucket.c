@@ -278,10 +278,21 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
          error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_STREAM, "Error occurred on the provided stream.");
       mongoc_stream_destroy(upload_stream);
       return false;
-   } else {
-      mongoc_stream_destroy(upload_stream);
-      return true;
    }
+
+   /* Closing the upload stream writes the final partial chunk and the files
+    * document. DRIVERS-3684: the result of the save must not be ignored, or
+    * the upload reports success for a write whose durability was never
+    * confirmed. */
+   if (mongoc_stream_close(upload_stream) != 0) {
+      BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error));
+      mongoc_gridfs_bucket_abort_upload(upload_stream);
+      mongoc_stream_destroy(upload_stream);
+      return false;
+   }
+
+   mongoc_stream_destroy(upload_stream);
+   return true;
 }
 
 bool

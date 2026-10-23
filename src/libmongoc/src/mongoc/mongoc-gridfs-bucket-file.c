@@ -352,8 +352,13 @@ _mongoc_gridfs_bucket_file_writev(mongoc_gridfs_bucket_file_t *file, const mongo
          total += to_write;
 
          if (file->in_buffer == chunk_size) {
-            /* Buffer is filled, write the chunk */
-            _mongoc_gridfs_bucket_write_chunk(file);
+            /* Buffer is filled, write the chunk. DRIVERS-3684: the error must
+             * not be ignored, or the same chunk is re-inserted forever. */
+            if (!_mongoc_gridfs_bucket_write_chunk(file)) {
+               /* Error is set on file. */
+               BSON_ASSERT(mlib_in_range(ssize_t, total));
+               return -1;
+            }
          }
       }
    }
@@ -448,7 +453,12 @@ _mongoc_gridfs_bucket_file_save(mongoc_gridfs_bucket_file_t *file)
 
    if (file->in_buffer != 0) {
       length += file->in_buffer;
-      _mongoc_gridfs_bucket_write_chunk(file);
+      /* DRIVERS-3684: the error must not be ignored, and must not be
+       * overwritten by a successful files-document insert below. */
+      if (!_mongoc_gridfs_bucket_write_chunk(file)) {
+         /* Error is set on file. */
+         return false;
+      }
    }
 
    file->length = length;
