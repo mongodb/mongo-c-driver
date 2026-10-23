@@ -34,7 +34,7 @@ When enabled, building the mongoac library requires the following toolchain depe
 
 - **CMake: 3.25 or newer**
     - Required to support file sets, path manipulation, and other features used for Rust Toolchain integration.
-- **Rust Toolchain: 1.88 or newer**
+- **Rust Toolchain: 1.92 or newer**
     - Required to build the mongoac library implementation (written in Rust).
     - The ``cargo`` executable is discovered using ``find_program()`` in CMake.
     - See ``src/libmongoac/Cargo.toml`` for further details.
@@ -63,7 +63,7 @@ GCC 8.1 minimum. It is also the baseline platform of the MongoDB Rust Driver.
      - Status
    * - RHEL 8, x86_64
      - GCC 8.5
-     - 1.88
+     - 1.92
      - Tested in CI
 
 Building and testing mongoac on this platform additionally requires:

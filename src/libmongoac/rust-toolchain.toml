@@ -4,7 +4,7 @@
 # build directory do not honor it. CI reads `channel` from this file and selects
 # the toolchain explicitly (see `.evergreen/scripts/install-rust-toolchain.sh`).
 [toolchain]
-channel = "1.88.0"
+channel = "1.92.0"
 profile = "minimal"
 # rustfmt and clippy are not part of the minimal profile, but are required by tools/cargo-format-all.sh and by local
 # development. CI is unaffected: it exports RUSTUP_TOOLCHAIN, which takes precedence over this file.
