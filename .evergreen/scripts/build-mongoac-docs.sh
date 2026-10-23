@@ -2,6 +2,8 @@
 
 set -o errexit # Exit the script with error if any of the commands fail
 
+# shellcheck source=.evergreen/scripts/env-var-utils.sh
+. "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/use-tools.sh" paths
 
 # Install and select a sufficiently recent CMake and Ninja, shadowing any older system-provided copies.
@@ -12,8 +14,10 @@ install_build_tools
 # shellcheck source=.evergreen/scripts/install-rust-toolchain.sh
 . "$MONGOC_DIR/.evergreen/scripts/install-rust-toolchain.sh"
 
+check_var_opt CMAKE_GENERATOR "Ninja"
+
 build_dir=$MONGOC_DIR/_build/for-mongoac-docs
-uvx cmake --fresh -G "Ninja" -S "$MONGOC_DIR" -B "$build_dir" \
+uvx cmake --fresh -S "$MONGOC_DIR" -B "$build_dir" \
   -D ENABLE_MONGOAC=ON \
   -D ENABLE_HTML_DOCS=ON \
   -D ENABLE_MAN_PAGES=OFF \
