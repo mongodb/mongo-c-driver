@@ -2,13 +2,13 @@
 
 set -o errexit
 
+declare script_dir
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # The Rust toolchain is installed into (and sourced from) the current shell so that CMake and its cargo
 # invocations inherit the expected environment.
 # shellcheck source=.evergreen/scripts/install-rust-toolchain.sh
-. "$(dirname "${BASH_SOURCE[0]}")/install-rust-toolchain.sh"
-
-declare script_dir
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "${script_dir:?}/install-rust-toolchain.sh"
 
 declare mongoc_dir
 mongoc_dir="$(cd "${script_dir:?}/../.." && pwd)"
