@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::bson::BsonViewT;
+use crate::bson::{BsonT, BsonViewT};
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
@@ -20,14 +20,14 @@ use crate::count_options::CountOptionsT;
 use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::future::FutureT;
+use crate::insert_one_options::InsertOneOptionsT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
-use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
-use mongodb::options::CountOptions;
-use mongodb::options::DropCollectionOptions;
+use mongodb::bson::{Document, RawDocument, RawDocumentBuf, serialize_to_raw_document_buf};
+use mongodb::options::{CountOptions, DropCollectionOptions, InsertOneOptions};
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -113,6 +113,40 @@ pub extern "C" fn mongoac_collection_drop_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.drop_async(session, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_one(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    document: BsonViewT,
+    options: *const InsertOneOptionsT,
+    error: *mut ErrorT,
+) -> BsonT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let document = safe_bson_view_with_error!(document, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(collection.insert_one(session, document, options), error).into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_one_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    document: BsonViewT,
+    options: *const InsertOneOptionsT,
+    error: *mut ErrorT,
+) -> *mut FutureT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let document = safe_bson_view_with_error!(document, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.insert_one_async(session, document, options))
 }
 
 #[unsafe(no_mangle)]
@@ -215,6 +249,42 @@ impl CollectionT {
         self.spawn::<()>(async move { session_op!(coll.drop().with_options(options), session) })
     }
 
+    fn insert_one(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        document: &RawDocument,
+        options: Option<&InsertOneOptionsT>,
+    ) -> Result<RawDocumentBuf, ErrorT> {
+        self.runtime.block_on(async {
+            let res = session_op!(
+                self.inner
+                    .insert_one(document.to_owned())
+                    .with_options(options.map(Into::into)),
+                session
+            )?;
+
+            serialize_to_raw_document_buf(&res).map_err(Into::into)
+        })
+    }
+
+    fn insert_one_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        document: &RawDocument,
+        options: Option<&InsertOneOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let document = document.to_owned();
+        let options: Option<InsertOneOptions> = options.map(Into::into);
+
+        self.spawn::<RawDocumentBuf>(async move {
+            let res = session_op!(coll.insert_one(document).with_options(options), session)?;
+
+            serialize_to_raw_document_buf(&res).map_err(Into::into)
+        })
+    }
+
     // TODO: aggregate
     // TODO: create_index
     // TODO: create_indexes
@@ -233,7 +303,6 @@ impl CollectionT {
     // TODO: find_one_and_replace
     // TODO: find_one_and_update
     // TODO: insert_many
-    // TODO: insert_one
     // TODO: insert_one_model
     // TODO: list_index_names
     // TODO: list_indexes
