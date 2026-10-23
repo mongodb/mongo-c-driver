@@ -650,8 +650,10 @@ retryable_writes_prose_test_3(void *ctx)
    // attempt an insertOne operation
    ASSERT(!mongoc_collection_insert_one(coll, tmp_bson("{'x': 1}"), NULL /* opts */, &reply, &error));
 
-   // writeConcernErrors are returned in the reply and not as an error
-   ASSERT_ERROR_CONTAINS(error, 0, 0, "");
+   // assert error contains the original writeConcernError code.
+   // DRIVERS-3684: the writeConcernError must also be reported as an error
+   // (the retryable-writes spec prose test 3 requires error code 91).
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_WRITE_CONCERN, 91, "");
 
    // the reply holds the original error information
    ASSERT_MATCH(&reply,

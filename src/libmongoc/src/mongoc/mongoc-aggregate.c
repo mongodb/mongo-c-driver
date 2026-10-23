@@ -308,10 +308,18 @@ _mongoc_aggregate(mongoc_client_t *client,
       GOTO(done);
    }
 
-   /* Only inherit WriteConcern when aggregate has $out or $merge */
-   if (!aggregate_opts.write_concern_owned && has_write_key) {
+   /* Only inherit WriteConcern when aggregate has $out or $merge. DRIVERS-3684:
+    * a writeConcernError must be reported whether the write concern is
+    * inherited or passed explicitly in opts, so arm the cursor with whichever
+    * write concern applies. The cursor checks the reply for a
+    * writeConcernError only if cursor->write_concern is set. */
+   if (has_write_key) {
       mongoc_write_concern_destroy(cursor->write_concern);
-      cursor->write_concern = mongoc_write_concern_copy(default_wc);
+      if (aggregate_opts.write_concern_owned) {
+         cursor->write_concern = mongoc_write_concern_copy(aggregate_opts.writeConcern);
+      } else {
+         cursor->write_concern = mongoc_write_concern_copy(default_wc);
+      }
    }
 
 done:
