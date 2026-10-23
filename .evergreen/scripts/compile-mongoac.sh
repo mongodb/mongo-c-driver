@@ -24,4 +24,4 @@ export EXTRA_LIB_PATH="${mongoc_dir:?}/cmake-build/src/libmongoac/Debug${EXTRA_L
 export ENABLE_MONGOAC=ON
 
 # shellcheck source=.evergreen/scripts/compile.sh
-. "$(dirname "${BASH_SOURCE[0]}")/compile.sh"
+"${script_dir:?}/compile.sh"
