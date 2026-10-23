@@ -33,7 +33,6 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
             SetCacheDir.call(),
             bash_exec(
                 command_type=EvgCommandType.TEST,
-                add_expansions_to_env=True,
                 working_dir='mongoc',
                 include_expansions_in_env=['MONGO_C_DRIVER_CACHE_DIR'],
                 env=compiler_to_vars(compiler) | {'ENABLE_MONGOAC': 'ON'},
@@ -74,8 +73,8 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
             BootstrapMongoOrchestration.call(),
             bash_exec(
                 command_type=EvgCommandType.TEST,
-                add_expansions_to_env=True,
                 working_dir='mongoc',
+                include_expansions_in_env=['MONGODB_URI'],
                 env=compiler_to_vars(compiler) | {'ENABLE_MONGOAC': 'ON'},
                 script="""\
                     # Record the runner's exit status instead of failing the block here:

@@ -5574,7 +5574,6 @@ tasks:
         params:
           binary: bash
           working_dir: mongoc
-          add_expansions_to_env: true
           env:
             CC: gcc
             CXX: g++
@@ -5618,11 +5617,12 @@ tasks:
         params:
           binary: bash
           working_dir: mongoc
-          add_expansions_to_env: true
           env:
             CC: gcc
             CXX: g++
             ENABLE_MONGOAC: "ON"
+          include_expansions_in_env:
+            - MONGODB_URI
           args:
             - -c
             - |
@@ -5644,7 +5644,7 @@ tasks:
             - MONGO_C_DRIVER_CACHE_DIR
           args:
             - -c
-            - uv run --frozen --only-group docs env .evergreen/scripts/build-mongoac-docs.sh
+            - uv run --frozen --only-group docs .evergreen/scripts/build-mongoac-docs.sh
       - command: subprocess.exec
         type: test
         params:
