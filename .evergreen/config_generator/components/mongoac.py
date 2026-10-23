@@ -93,7 +93,7 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                 command_type=EvgCommandType.TEST,
                 working_dir='mongoc',
                 include_expansions_in_env=['MONGO_C_DRIVER_CACHE_DIR'],
-                script='uv run --frozen --only-group docs env .evergreen/scripts/build-mongoac-docs.sh',
+                script='uv run --frozen --only-group docs .evergreen/scripts/build-mongoac-docs.sh',
             ),
             # Report the failure recorded above, after the results have been attached. This runs last so that a test
             # failure still turns the task red; a docs failure turns it red earlier, with the results already
