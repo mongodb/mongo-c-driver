@@ -19,5 +19,4 @@ uvx cmake --fresh -G "Ninja" -S "$MONGOC_DIR" -B "$build_dir" \
   -D ENABLE_MAN_PAGES=OFF \
   -D ENABLE_ZLIB=BUNDLED
 uvx cmake --build "$build_dir" \
-  --parallel 8 \
   --target mongoac-doc
