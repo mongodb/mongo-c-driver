@@ -61,3 +61,9 @@ fi
 # directory also contains libbson/libmongoc tests, which require a live MongoDB server.
 ctest --test-dir cmake-build -R '^mongoac/' --no-tests=error --output-on-failure \
   --output-junit "${mongoc_dir:?}/mongoac-test-results.xml"
+
+# CTest's JUnit writer duplicates each test's name in the `classname` attribute, and Evergreen names a test
+# `classname.name` when that attribute is non-empty, which showed up as `test_name.test_name` in the Tests tab. Drop the
+# attribute so the plain name is used.
+sed 's/ classname="[^"]*"//g' "${mongoc_dir:?}/mongoac-test-results.xml" >|"${mongoc_dir:?}/mongoac-test-results.tmp"
+mv "${mongoc_dir:?}/mongoac-test-results.tmp" "${mongoc_dir:?}/mongoac-test-results.xml"
