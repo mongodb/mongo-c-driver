@@ -25,7 +25,7 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
 
     return EvgTask(
         name=f'{TAG}-{distro_str}',
-        run_on=find_large_distro(distro_name).name,  # DEVPROD-18763
+        run_on=find_large_distro(distro_name).name,
         tags=tags,
         commands=[
             # Publish the host-persistent cache directory (MONGO_C_DRIVER_CACHE_DIR) so the Rust toolchain is
