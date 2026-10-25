@@ -60,6 +60,9 @@ mongoc_uncompress(int32_t compressor_id,
                   uint8_t *uncompressed,
                   size_t *uncompressed_size);
 
+void
+_mongoc_compression_cleanup(void);
+
 bool
 mongoc_compress(int32_t compressor_id,
                 int32_t compression_level,

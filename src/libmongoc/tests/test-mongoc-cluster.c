@@ -1,11 +1,14 @@
 #include <common-oid-private.h>
+#include <common-thread-private.h>
 #include <mongoc/mongoc-client-pool-private.h>
 #include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 #include <mongoc/mcd-rpc.h>
+#include <mongoc/mongoc-config.h>
 #include <mongoc/mongoc.h>
 
 #include <bson/macros.h>
@@ -20,6 +23,13 @@
 #include <mock_server/mock-server.h>
 #include <test-conveniences.h>
 #include <test-libmongoc.h>
+
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+#include <zlib.h>
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+#include <zstd.h>
+#endif
 
 #include <inttypes.h>
 #include <stddef.h>
@@ -1911,6 +1921,146 @@ test_single_connection_open_after_backpressure_error(void)
 
    test_handshake_errors_teardown(f);
 }
+static uint8_t *
+_compressible_message(size_t len, uint32_t seed)
+{
+   static const char *const words[] = {"_id", "userId", "status", "SETTLED", "OPEN", "stake", "odds", "1.95"};
+   uint8_t *const data = bson_malloc(len);
+   for (size_t i = 0u; i < len;) {
+      seed = seed * 1103515245u + 12345u;
+      const char *const word = words[(seed >> 16) % (sizeof words / sizeof words[0])];
+      for (size_t j = 0u; word[j] && i < len; j++) {
+         data[i++] = (uint8_t)word[j];
+      }
+      if (i < len) {
+         data[i++] = (uint8_t)(seed & 0xff);
+      }
+   }
+   return data;
+}
+
+static bool
+_compress_round_trip(int32_t compressor_id, int32_t level, size_t len, uint32_t seed)
+{
+   uint8_t *const message = _compressible_message(len, seed);
+   size_t compressed_len = mongoc_compressor_max_compressed_length(compressor_id, len);
+   char *const compressed = bson_malloc(compressed_len);
+   uint8_t *const uncompressed = bson_malloc(len + 1u);
+   bool ok = mongoc_compress(compressor_id, level, (char *)message, len, compressed, &compressed_len);
+
+   size_t uncompressed_len = len;
+   ok = ok &&
+        mongoc_uncompress(compressor_id, (const uint8_t *)compressed, compressed_len, uncompressed, &uncompressed_len);
+   ok = ok && uncompressed_len == len && memcmp(message, uncompressed, len) == 0;
+
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+   if (ok && compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+      uLongf zlib_len = (uLongf)len;
+      ok = uncompress(uncompressed, &zlib_len, (const Bytef *)compressed, (uLong)compressed_len) == Z_OK &&
+           zlib_len == len && memcmp(message, uncompressed, len) == 0;
+   }
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+   if (ok && compressor_id == MONGOC_COMPRESSOR_ZSTD_ID) {
+      const size_t zstd_len = ZSTD_decompress(uncompressed, len, compressed, compressed_len);
+      ok = !ZSTD_isError(zstd_len) && zstd_len == len && memcmp(message, uncompressed, len) == 0;
+   }
+#endif
+
+   bson_free(uncompressed);
+   bson_free(compressed);
+   bson_free(message);
+   return ok;
+}
+
+static void
+test_compression_contexts_round_trip(void)
+{
+   const size_t lengths[] = {1u, 50u, 200u, 4096u, 65536u, 1500000u};
+   const int32_t zlib_levels[] = {-1, 1, 9, -1};
+
+   for (size_t i = 0u; i < sizeof lengths / sizeof lengths[0]; i++) {
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      for (size_t j = 0u; j < sizeof zlib_levels / sizeof zlib_levels[0]; j++) {
+         ASSERT(_compress_round_trip(MONGOC_COMPRESSOR_ZLIB_ID, zlib_levels[j], lengths[i], (uint32_t)(i * 7u + j)));
+      }
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+      ASSERT(_compress_round_trip(MONGOC_COMPRESSOR_ZSTD_ID, -1, lengths[i], (uint32_t)i));
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+      ASSERT(_compress_round_trip(MONGOC_COMPRESSOR_SNAPPY_ID, -1, lengths[i], (uint32_t)i));
+#endif
+   }
+   BSON_UNUSED(zlib_levels);
+}
+
+static void
+test_compression_contexts_reject_corruption(void)
+{
+#if defined(MONGOC_ENABLE_COMPRESSION_ZLIB) || defined(MONGOC_ENABLE_COMPRESSION_ZSTD)
+   const int32_t ids[] = {
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      MONGOC_COMPRESSOR_ZLIB_ID,
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+      MONGOC_COMPRESSOR_ZSTD_ID,
+#endif
+   };
+   for (size_t i = 0u; i < sizeof ids / sizeof ids[0]; i++) {
+      const size_t len = 4096u;
+      uint8_t *const message = _compressible_message(len, 42u);
+      size_t compressed_len = mongoc_compressor_max_compressed_length(ids[i], len);
+      char *const compressed = bson_malloc(compressed_len);
+      uint8_t *const uncompressed = bson_malloc(len);
+      ASSERT(mongoc_compress(ids[i], -1, (char *)message, len, compressed, &compressed_len));
+
+      compressed[compressed_len / 2u] ^= 0x5a;
+      compressed[compressed_len - 1u] ^= 0x5a;
+      size_t uncompressed_len = len;
+      ASSERT(!mongoc_uncompress(ids[i], (const uint8_t *)compressed, compressed_len, uncompressed, &uncompressed_len));
+
+      bson_free(uncompressed);
+      bson_free(compressed);
+      bson_free(message);
+      ASSERT(_compress_round_trip(ids[i], -1, len, 43u));
+   }
+#endif
+}
+
+static BSON_THREAD_FUN(_compression_worker, arg)
+{
+   bool *const ok = arg;
+   const uint32_t seed = (uint32_t)(uintptr_t)ok;
+   for (uint32_t i = 0u; i < 200u && *ok; i++) {
+      const size_t len = 1u + (seed + i * 2654435761u) % 30000u;
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      *ok = *ok && _compress_round_trip(MONGOC_COMPRESSOR_ZLIB_ID, (i % 3u == 0u) ? 1 : -1, len, seed + i);
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+      *ok = *ok && _compress_round_trip(MONGOC_COMPRESSOR_ZSTD_ID, -1, len, seed + i);
+#endif
+   }
+   BSON_THREAD_RETURN;
+}
+
+static void
+test_compression_contexts_concurrent(void)
+{
+   enum { n_threads = 8 };
+   bson_thread_t threads[n_threads];
+   bool ok[n_threads];
+
+   for (size_t i = 0u; i < n_threads; i++) {
+      ok[i] = true;
+      ASSERT_CMPINT(mcommon_thread_create(&threads[i], _compression_worker, &ok[i]), ==, 0);
+   }
+   for (size_t i = 0u; i < n_threads; i++) {
+      ASSERT_CMPINT(mcommon_thread_join(threads[i]), ==, 0);
+      ASSERT(ok[i]);
+   }
+}
+
 void
 test_cluster_install(TestSuite *suite)
 {
@@ -1919,6 +2069,9 @@ test_cluster_install(TestSuite *suite)
    TestSuite_Add(suite, "/Cluster/decompress/max_msg_size_valid", test_decompress_max_msg_size_valid);
    TestSuite_Add(suite, "/Cluster/decompress/max_msg_size_invalid", test_decompress_max_msg_size_invalid);
    TestSuite_Add(suite, "/Cluster/decompress/max_msg_size_invariant", test_decompress_max_msg_size_invariant);
+   TestSuite_Add(suite, "/Cluster/compression_contexts/round_trip", test_compression_contexts_round_trip);
+   TestSuite_Add(suite, "/Cluster/compression_contexts/reject_corruption", test_compression_contexts_reject_corruption);
+   TestSuite_Add(suite, "/Cluster/compression_contexts/concurrent", test_compression_contexts_concurrent);
    TestSuite_AddFull(suite,
                      "/Cluster/disconnect/single [timeout:30]",
                      test_cluster_node_disconnect_single,

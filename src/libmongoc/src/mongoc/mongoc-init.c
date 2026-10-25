@@ -18,6 +18,7 @@
 #include <mongoc/mongoc-init.h>
 
 #include <mongoc/mongoc-cluster-aws-private.h>
+#include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-counters-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 
@@ -187,6 +188,8 @@ static BSON_ONCE_FUN(_mongoc_do_cleanup)
    _mongoc_counters_cleanup();
 
    _mongoc_handshake_cleanup();
+
+   _mongoc_compression_cleanup();
 
 #if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
    kms_message_cleanup();

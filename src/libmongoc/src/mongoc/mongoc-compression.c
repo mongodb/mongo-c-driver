@@ -15,6 +15,7 @@
  */
 
 
+#include <common-thread-private.h>
 #include <mongoc/mongoc-compression-private.h>
 #include <mongoc/mongoc-trace-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -34,6 +35,162 @@
 #include <zstd.h>
 #endif
 #endif
+
+#if defined(MONGOC_ENABLE_COMPRESSION_ZLIB) || defined(MONGOC_ENABLE_COMPRESSION_ZSTD)
+/* Compression contexts are kept for reuse because creating one allocates and
+ * initializes hundreds of KiB of state, which dominates the cost of a small
+ * message. Each pool hands a context to one caller at a time. */
+#define COMPRESSION_POOL_CAPACITY 16
+
+typedef struct {
+   bson_mutex_t lock;
+   void *contexts[COMPRESSION_POOL_CAPACITY];
+   size_t count;
+} compression_pool_t;
+
+static compression_pool_t *
+_compression_pool_init(compression_pool_t *pool)
+{
+   bson_mutex_init(&pool->lock);
+   pool->count = 0u;
+   return pool;
+}
+
+static void *
+_compression_pool_take(compression_pool_t *pool)
+{
+   void *context = NULL;
+
+   bson_mutex_lock(&pool->lock);
+   if (pool->count > 0u) {
+      context = pool->contexts[--pool->count];
+   }
+   bson_mutex_unlock(&pool->lock);
+
+   return context;
+}
+
+/* Returns false when the pool is full, in which case the caller frees the context. */
+static bool
+_compression_pool_give(compression_pool_t *pool, void *context)
+{
+   bool kept = false;
+
+   bson_mutex_lock(&pool->lock);
+   if (pool->count < COMPRESSION_POOL_CAPACITY) {
+      pool->contexts[pool->count++] = context;
+      kept = true;
+   }
+   bson_mutex_unlock(&pool->lock);
+
+   return kept;
+}
+#endif
+
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+typedef struct {
+   z_stream stream;
+   int32_t level;
+} deflater_t;
+
+static compression_pool_t _deflaters;
+
+static void
+_deflater_destroy(deflater_t *deflater)
+{
+   deflateEnd(&deflater->stream);
+   bson_free(deflater);
+}
+
+static bool
+_zlib_compress(
+   int32_t level, const char *uncompressed, size_t uncompressed_len, char *compressed, size_t *compressed_len)
+{
+   if (BSON_UNLIKELY(!mlib_in_range(unsigned int, uncompressed_len) || !mlib_in_range(unsigned int, *compressed_len))) {
+      return false;
+   }
+
+   deflater_t *deflater = _compression_pool_take(&_deflaters);
+   if (deflater && deflater->level != level) {
+      _deflater_destroy(deflater);
+      deflater = NULL;
+   }
+   if (!deflater) {
+      deflater = bson_malloc0(sizeof *deflater);
+      if (deflateInit(&deflater->stream, level) != Z_OK) {
+         bson_free(deflater);
+         return false;
+      }
+      deflater->level = level;
+   } else if (deflateReset(&deflater->stream) != Z_OK) {
+      _deflater_destroy(deflater);
+      return false;
+   }
+
+   deflater->stream.next_in = (Bytef *)uncompressed;
+   deflater->stream.avail_in = (uInt)uncompressed_len;
+   deflater->stream.next_out = (Bytef *)compressed;
+   deflater->stream.avail_out = (uInt)*compressed_len;
+
+   if (deflate(&deflater->stream, Z_FINISH) != Z_STREAM_END) {
+      _deflater_destroy(deflater);
+      return false;
+   }
+   *compressed_len = (size_t)deflater->stream.total_out;
+
+   if (!_compression_pool_give(&_deflaters, deflater)) {
+      _deflater_destroy(deflater);
+   }
+   return true;
+}
+#endif
+
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+static compression_pool_t _zstd_compressors;
+static compression_pool_t _zstd_decompressors;
+#endif
+
+static BSON_ONCE_FUN(_mongoc_compression_pools_init)
+{
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+   _compression_pool_init(&_deflaters);
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+   _compression_pool_init(&_zstd_compressors);
+   _compression_pool_init(&_zstd_decompressors);
+#endif
+   BSON_ONCE_RETURN;
+}
+
+static bson_once_t _mongoc_compression_pools_once = BSON_ONCE_INIT;
+
+static void
+_mongoc_compression_pools_ensure(void)
+{
+   bson_once(&_mongoc_compression_pools_once, _mongoc_compression_pools_init);
+}
+
+void
+_mongoc_compression_cleanup(void)
+{
+   _mongoc_compression_pools_ensure();
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+   for (void *deflater; (deflater = _compression_pool_take(&_deflaters));) {
+      _deflater_destroy(deflater);
+   }
+   bson_mutex_destroy(&_deflaters.lock);
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+   for (void *cctx; (cctx = _compression_pool_take(&_zstd_compressors));) {
+      ZSTD_freeCCtx(cctx);
+   }
+   for (void *dctx; (dctx = _compression_pool_take(&_zstd_decompressors));) {
+      ZSTD_freeDCtx(dctx);
+   }
+   bson_mutex_destroy(&_zstd_compressors.lock);
+   bson_mutex_destroy(&_zstd_decompressors.lock);
+#endif
+}
 
 size_t
 mongoc_compressor_max_compressed_length(int32_t compressor_id, size_t len)
@@ -205,7 +362,17 @@ mongoc_uncompress(int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZSTD_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
-      const size_t res = ZSTD_decompress(uncompressed, *uncompressed_len, compressed, compressed_len);
+      _mongoc_compression_pools_ensure();
+      ZSTD_DCtx *dctx = _compression_pool_take(&_zstd_decompressors);
+      if (!dctx && !(dctx = ZSTD_createDCtx())) {
+         return false;
+      }
+
+      const size_t res = ZSTD_decompressDCtx(dctx, uncompressed, *uncompressed_len, compressed, compressed_len);
+
+      if (!_compression_pool_give(&_zstd_decompressors, dctx)) {
+         ZSTD_freeDCtx(dctx);
+      }
 
       if (BSON_UNLIKELY(ZSTD_isError(res))) {
          return false;
@@ -258,12 +425,8 @@ mongoc_compress(int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZLIB_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      BSON_ASSERT(mlib_in_range(unsigned long, uncompressed_len));
-      return compress2((unsigned char *)compressed,
-                       (unsigned long *)compressed_len,
-                       (unsigned char *)uncompressed,
-                       (unsigned long)uncompressed_len,
-                       compression_level) == Z_OK;
+      _mongoc_compression_pools_ensure();
+      return _zlib_compress(compression_level, uncompressed, uncompressed_len, compressed, compressed_len);
 #else
       MONGOC_ERROR("Client attempting to use compress with zlib, but zlib "
                    "compression is not compiled in");
@@ -272,14 +435,24 @@ mongoc_compress(int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZSTD_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
-      int ok;
-
-      ok = ZSTD_compress((void *)compressed, *compressed_len, (const void *)uncompressed, uncompressed_len, 0);
-
-      if (!ZSTD_isError(ok)) {
-         *compressed_len = ok;
+      _mongoc_compression_pools_ensure();
+      ZSTD_CCtx *cctx = _compression_pool_take(&_zstd_compressors);
+      if (!cctx && !(cctx = ZSTD_createCCtx())) {
+         return false;
       }
-      return !ZSTD_isError(ok);
+
+      const size_t res =
+         ZSTD_compressCCtx(cctx, (void *)compressed, *compressed_len, (const void *)uncompressed, uncompressed_len, 0);
+
+      if (!_compression_pool_give(&_zstd_compressors, cctx)) {
+         ZSTD_freeCCtx(cctx);
+      }
+
+      if (ZSTD_isError(res)) {
+         return false;
+      }
+      *compressed_len = res;
+      return true;
 #else
       MONGOC_ERROR("Client attempting to use compress with zstd, but zstd "
                    "compression is not compiled in");
