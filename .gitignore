@@ -1,4 +1,5 @@
 *.gz
+*.xz
 *.pc
 .githooks
 .scratch/
