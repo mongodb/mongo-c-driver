@@ -21,6 +21,7 @@ mongoc_dir="$(cd "${script_dir:?}/../.." && pwd)"
 # Consumed by `.evergreen/scripts/add-build-dirs-to-paths.sh`.
 export EXTRA_LIB_PATH="${mongoc_dir:?}/cmake-build/src/libmongoac/Debug${EXTRA_LIB_PATH:+:${EXTRA_LIB_PATH}}"
 
+export ENABLE_MONGOC=OFF
 export ENABLE_MONGOAC=ON
 
 # shellcheck source=.evergreen/scripts/compile.sh
