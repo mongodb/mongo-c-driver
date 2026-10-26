@@ -5577,7 +5577,6 @@ tasks:
           env:
             CC: gcc
             CXX: g++
-            ENABLE_MONGOAC: "ON"
           include_expansions_in_env:
             - MONGO_C_DRIVER_CACHE_DIR
           args:
@@ -5611,7 +5610,6 @@ tasks:
           env:
             CC: gcc
             CXX: g++
-            ENABLE_MONGOAC: "ON"
           include_expansions_in_env:
             - MONGODB_URI
           args:

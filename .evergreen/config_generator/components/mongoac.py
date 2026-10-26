@@ -35,7 +35,7 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                 command_type=EvgCommandType.TEST,
                 working_dir='mongoc',
                 include_expansions_in_env=['MONGO_C_DRIVER_CACHE_DIR'],
-                env=compiler_to_vars(compiler) | {'ENABLE_MONGOAC': 'ON'},
+                env=compiler_to_vars(compiler),
                 script='.evergreen/scripts/compile-mongoac.sh',
             ),
             bash_exec(
@@ -66,7 +66,7 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                 command_type=EvgCommandType.TEST,
                 working_dir='mongoc',
                 include_expansions_in_env=['MONGODB_URI'],
-                env=compiler_to_vars(compiler) | {'ENABLE_MONGOAC': 'ON'},
+                env=compiler_to_vars(compiler),
                 script="""\
                     # Record the runner's exit status instead of failing the block here:
                     # Evergreen aborts the remaining commands on the first failure, which

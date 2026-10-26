@@ -12,14 +12,6 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare mongoc_dir
 mongoc_dir="$(cd "${script_dir:?}/../.." && pwd)"
 
-# The mongoac test executable is only built when mongoac is enabled: fail loudly rather than reporting a green task
-# for a build that did not include it.
-check_var_opt ENABLE_MONGOAC
-if [[ "${ENABLE_MONGOAC}" != "ON" ]]; then
-  echo "ENABLE_MONGOAC must be ON, but is: '${ENABLE_MONGOAC}'" 1>&2
-  exit 1
-fi
-
 declare test_binary="${mongoc_dir:?}/cmake-build/src/libmongoac/test/test-libmongoac"
 if [[ ! -x "${test_binary}" ]]; then
   echo "Test executable not found: ${test_binary}" 1>&2
