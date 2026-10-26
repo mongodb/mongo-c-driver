@@ -2047,7 +2047,7 @@ static BSON_THREAD_FUN(_compression_worker, arg)
 static void
 test_compression_contexts_concurrent(void)
 {
-   enum { n_threads = 8 };
+   enum { n_threads = 32 };
    bson_thread_t threads[n_threads];
    bool ok[n_threads];
 
