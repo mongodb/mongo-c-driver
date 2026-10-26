@@ -28,7 +28,6 @@ secrets-export.sh
 # A file that can be used to store secrets for Earthly
 .secret
 
-# Rust toolchain directories installed at the repository root by
-# `.evergreen/scripts/install-rust-toolchain.sh` during local development.
+# Cargo's registry cache, used when `.evergreen/scripts/install-rust-toolchain.sh` falls back to installing
+# under the repository root during local development.
 .cargo/
-.rustup/

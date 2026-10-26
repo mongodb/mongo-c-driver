@@ -6,73 +6,89 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare mongoc_dir
 mongoc_dir="$(cd "${script_dir:?}/../.." && pwd)"
 
-# The pinned toolchain is defined in exactly one place: `channel` in src/libmongoac/rust-toolchain.toml (whose comment
-# ties it to the MSRV declared by `rust-version` in src/libmongoac/Cargo.toml).
+# Read the MSRV from the crate manifest, which is the authority (the "Rust Toolchain" requirement in
+# src/libmongoac/doc/index.rst documents it). The prebuilt toolchain tarball is named with the full version, so a
+# major.minor `rust-version` (e.g. "1.92") is normalized to the corresponding patch-zero release (e.g. "1.92.0").
 declare rust_toolchain_version
-rust_toolchain_version="$(sed -n 's/^channel *= *"\([^"]*\)"/\1/p' "${mongoc_dir:?}/src/libmongoac/rust-toolchain.toml")" || return
+rust_toolchain_version="$(sed -n 's/^rust-version *= *"\([^"]*\)"/\1/p' "${mongoc_dir:?}/src/libmongoac/Cargo.toml")" || return
 if [[ -z "${rust_toolchain_version}" ]]; then
-  echo "Failed to read 'channel' from src/libmongoac/rust-toolchain.toml" 1>&2
+  echo "Failed to read 'rust-version' from src/libmongoac/Cargo.toml" 1>&2
   return 1
 fi
+[[ "${rust_toolchain_version}" == *.*.* ]] || rust_toolchain_version+=".0"
 
-# Install rustup and cargo into the host-persistent cache directory when available (published as
-# MONGO_C_DRIVER_CACHE_DIR by the `set-cache-dir` function) to avoid depending on (or clobbering) a pre-existing
-# system or user installation. The checkout is wiped between Evergreen tasks, so installing there would
-# re-download the toolchain on every run; local runs without the expansion fall back to the checkout. RHEL 8, for
-# example, only provides Rust 1.79 via RPM, which is below the mongoac MSRV. Both are overridable via the
-# environment.
+# The Rust target triple for the prebuilt toolchain. The mongoac Evergreen task runs on rhel8-latest (x86_64);
+# parameterize this according to Rust's target triplet convention when other distros are added.
+declare rust_target="x86_64-unknown-linux-gnu"
+
+# Install into the host-persistent cache directory when available (published as MONGO_C_DRIVER_CACHE_DIR by the
+# `set-cache-dir` function) to avoid depending on (or clobbering) a pre-existing system or user installation. The
+# checkout is wiped between Evergreen tasks, so installing there would re-download the toolchain on every run; local
+# runs without the expansion fall back to the checkout. The install prefix is versioned so bumps do not conflict.
 declare cache_dir="${MONGO_C_DRIVER_CACHE_DIR:-"${mongoc_dir:?}"}"
-export RUSTUP_HOME="${RUSTUP_HOME:-"${cache_dir}/.rustup"}"
-export CARGO_HOME="${CARGO_HOME:-"${cache_dir}/.cargo"}"
+declare install_prefix="${cache_dir:?}/rust-${rust_toolchain_version:?}"
+declare tarball_name="rust-${rust_toolchain_version:?}-${rust_target:?}.tar.xz"
+declare tarball_path="${cache_dir:?}/${tarball_name:?}"
 
-install_rustup() {
+# Keep the cargo registry cache between tasks on the same host.
+export CARGO_HOME="${CARGO_HOME:-"${cache_dir:?}/.cargo"}"
+
+# The published checksum of the tarball, which pins its contents. See:
+# https://static.rust-lang.org/dist/${tarball_name:?}.sha256
+declare rust_checksum="d2ccef59dd9f7439f2c694948069f789a044dc1addcc0803613232af8f88ee0c"
+
+# Download the pinned toolchain tarball, with retries, and validate it against the checksum before it is extracted.
+download_rust_toolchain() {
   declare -i attempt
   declare -ri max_attempts=5
-  declare rustup_init
+  declare tarball_tmp
 
   for ((attempt = 1; attempt <= max_attempts; attempt++)); do
-    rustup_init="$(mktemp)" || return
+    tarball_tmp="$(mktemp)" || return
 
-    # Download the installer script before running it so that a truncated download is never executed. The protocol
-    # and TLS version are pinned as recommended by rustup, and the timeouts ensure a hung connection cannot defeat
-    # the retry loop below.
-    if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 300 -sSfL \
-      "https://sh.rustup.rs" -o "${rustup_init}" &&
-      sh "${rustup_init}" -y --no-modify-path --profile minimal --default-toolchain "${rust_toolchain_version:?}"; then
-      rm -f "${rustup_init}"
+    # Download to a temporary file so that a truncated download is never extracted. The protocol and TLS version are
+    # pinned, and the timeouts ensure a hung connection cannot defeat the retry loop below.
+    if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 600 -sSfL \
+      "https://static.rust-lang.org/dist/${tarball_name:?}" -o "${tarball_tmp}" &&
+      echo "${rust_checksum:?}  ${tarball_tmp}" | sha256sum -c - >/dev/null; then
+      mv "${tarball_tmp}" "${tarball_path}" || return
       return 0
     fi
 
-    rm -f "${rustup_init}"
-    echo "rustup installation attempt ${attempt}/${max_attempts} failed." 1>&2
+    rm -f "${tarball_tmp}"
+    echo "Rust toolchain download attempt ${attempt}/${max_attempts} failed." 1>&2
     sleep 5
   done
 
-  echo "Failed to install rustup after ${max_attempts} attempts." 1>&2
+  echo "Failed to download the Rust toolchain after ${max_attempts} attempts." 1>&2
   return 1
 }
 
-if [[ -x "${CARGO_HOME:?}/bin/rustup" ]]; then
-  echo "Reusing existing rustup installation at ${CARGO_HOME:?}."
+if [[ -x "${install_prefix:?}/bin/cargo" ]]; then
+  echo "Reusing existing Rust toolchain at ${install_prefix:?}."
 else
-  echo "Installing rustup into ${CARGO_HOME:?}..."
-  install_rustup || return
-  echo "Installing rustup into ${CARGO_HOME:?}... done."
+  echo "Installing Rust toolchain ${rust_toolchain_version:?} into ${install_prefix:?}..."
+
+  [[ -f "${tarball_path:?}" ]] || download_rust_toolchain || return
+
+  # Extract only what the build needs: cargo, rustc, and the standard library. `--strip-components=2` drops the
+  # "rust-<version>-<target>/<component>/" prefix, yielding bin/, lib/, and share/ under the install prefix.
+  # Extract into a temporary prefix and move it into place so an interrupted extraction cannot be reused.
+  declare install_tmp="${install_prefix:?}.tmp"
+  rm -rf "${install_tmp:?}" "${install_prefix:?}" || return
+  mkdir -p "${install_tmp:?}" || return
+  tar -xJf "${tarball_path:?}" --strip-components=2 -C "${install_tmp:?}" \
+    "rust-${rust_toolchain_version:?}-${rust_target:?}/cargo" \
+    "rust-${rust_toolchain_version:?}-${rust_target:?}/rustc" \
+    "rust-${rust_toolchain_version:?}-${rust_target:?}/rust-std-${rust_target:?}" || return
+  mv "${install_tmp:?}" "${install_prefix:?}" || return
+
+  echo "Installing Rust toolchain ${rust_toolchain_version:?} into ${install_prefix:?}... done."
 fi
 
-# Ensure $CARGO_HOME/bin is searched before any system-provided cargo or rustup.
-export PATH="${CARGO_HOME:?}/bin:${PATH:-}"
+# Ensure the toolchain is searched before any system-provided cargo or rustc. This is what makes CMake's
+# `find_program (CARGO_EXECUTABLE cargo REQUIRED)` — executed later in the SAME process — find it.
+export PATH="${install_prefix:?}/bin:${PATH:-}"
 
-# rustup resolves `rust-toolchain.toml` relative to the *current working directory*, which is the CMake binary
-# directory for the cargo invocations issued by src/libmongoac/CMakeLists.txt. Select the toolchain explicitly so
-# the MSRV is honored regardless of cwd. Overridable for convenience.
-export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-"${rust_toolchain_version:?}"}"
-
-# The default toolchain is already installed by rustup-init; this is a no-op unless it is missing, e.g. when reusing
-# a pre-existing $CARGO_HOME.
-rustup toolchain install "${rust_toolchain_version:?}" --profile minimal --no-self-update || return
-
-echo "rustup version: $(rustup --version 2>&1 | head -n 1)"
 echo "cargo version: $(cargo --version)"
 echo "rustc version: $(rustc --version)"
-echo "RUSTUP_TOOLCHAIN: ${RUSTUP_TOOLCHAIN:?}"
