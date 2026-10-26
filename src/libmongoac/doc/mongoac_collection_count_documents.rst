@@ -23,13 +23,11 @@ Gets the number of documents matching the given ``filter`` via `Collection::coun
 
 The returned count is accurate, reflecting the documents actually matched (in contrast with an estimated count derived from collection metadata).
 
-Returns the number of documents counted, or ``0`` on failure with ``error`` set, if provided. A count of zero documents is also a valid result (e.g. an empty collection), so callers must check ``error`` to distinguish the two.
+Returns the number of documents counted, or ``0`` on failure with ``error`` set, if provided. A count of zero documents is also a valid result (for an empty or non-existing collection) so callers must check ``error`` to distinguish the two.
 
 ``filter`` must not be null. An empty filter (``{}``) matches all documents.
 
 The ``filter`` is applied via a ``$match`` stage, so operators that are unsupported by ``$match`` cannot be used, including ``$where`` and ``$near``. See the `server documentation <https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#match-restrictions>`_ for the full list of restrictions.
-
-Counts zero documents for an empty or non-existing collection.
 
 Errors
 ------
