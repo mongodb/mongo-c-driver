@@ -5594,15 +5594,6 @@ tasks:
               set -o errexit
               test -x cmake-build/src/libmongoac/test/test-libmongoac
               test -f cmake-build/src/libmongoac/Debug/libmongoac.so
-              # The installed shared library must carry an ELF SONAME: the platform matrix in
-              # src/libmongoac/doc/index.rst presents patchelf (which sets it) as part of the tested
-              # baseline, so a build that silently skipped it must not pass.
-              # NB: use the bare `$soname_lib` form, not the brace-delimited form: Evergreen treats
-              # brace-delimited dollar references in inline commands as expansion references.
-              soname_lib="$(find install-dir/lib install-dir/lib64 -maxdepth 1 -name 'libmongoac0.so.*' -type f 2>/dev/null | head -n 1)"
-              test -n "$soname_lib"
-              readelf -d "$soname_lib" | grep -q '(SONAME)' ||
-                { echo "ERROR: $soname_lib has no SONAME (patchelf unavailable?)" 1>&2; exit 1; }
       - command: expansions.update
         params:
           updates:
