@@ -37,7 +37,7 @@ export CARGO_HOME="${CARGO_HOME:-"${cache_dir:?}/.cargo"}"
 # https://static.rust-lang.org/dist/${tarball_name:?}.sha256
 declare rust_checksum="d2ccef59dd9f7439f2c694948069f789a044dc1addcc0803613232af8f88ee0c"
 
-# Download the pinned toolchain tarball, with retries, and validate it against the checksum before it is extracted.
+# Download the pinned toolchain tarball, with retries. The caller validates the checksum before extraction.
 download_rust_toolchain() {
   declare -i attempt
   declare -ri max_attempts=5
@@ -46,11 +46,11 @@ download_rust_toolchain() {
   for ((attempt = 1; attempt <= max_attempts; attempt++)); do
     tarball_tmp="$(mktemp)" || return
 
-    # Download to a temporary file so that a truncated download is never extracted. The protocol and TLS version are
-    # pinned, and the timeouts ensure a hung connection cannot defeat the retry loop below.
+    # Download to a temporary file and rename it into place once the transfer completes, so a partial download is
+    # never reused. The protocol and TLS version are pinned, and the timeouts ensure a hung connection cannot
+    # defeat the retry loop below.
     if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 600 -sSfL \
-      "https://static.rust-lang.org/dist/${tarball_name:?}" -o "${tarball_tmp}" &&
-      echo "${rust_checksum:?}  ${tarball_tmp}" | sha256sum -c - >/dev/null; then
+      "https://static.rust-lang.org/dist/${tarball_name:?}" -o "${tarball_tmp}"; then
       mv "${tarball_tmp}" "${tarball_path}" || return
       return 0
     fi
@@ -70,6 +70,13 @@ else
   echo "Installing Rust toolchain ${rust_toolchain_version:?} into ${install_prefix:?}..."
 
   [[ -f "${tarball_path:?}" ]] || download_rust_toolchain || return
+
+  # Validate the tarball — freshly downloaded or reused from the cache — before it is extracted. An invalid tarball
+  # is removed so that a subsequent run does not reuse it.
+  if ! echo "${rust_checksum:?}  ${tarball_path:?}" | sha256sum -c - >/dev/null; then
+    rm -f "${tarball_path:?}"
+    return 1
+  fi
 
   # Extract only what the build needs: cargo, rustc, and the standard library. `--strip-components=2` drops the
   # "rust-<version>-<target>/<component>/" prefix, yielding bin/, lib/, and share/ under the install prefix.
