@@ -15,6 +15,7 @@ install_build_tools
 . "$MONGOC_DIR/.evergreen/scripts/install-rust-toolchain.sh"
 
 check_var_opt CMAKE_GENERATOR "Ninja"
+export CMAKE_GENERATOR
 
 build_dir=$MONGOC_DIR/_build/for-mongoac-docs
 uvx cmake --fresh -S "$MONGOC_DIR" -B "$build_dir" \
