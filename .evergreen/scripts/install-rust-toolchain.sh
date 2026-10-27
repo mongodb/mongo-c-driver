@@ -24,11 +24,13 @@ declare rust_target="x86_64-unknown-linux-gnu"
 # Install into the host-persistent cache directory when available (published as MONGO_C_DRIVER_CACHE_DIR by the
 # `set-cache-dir` function) to avoid depending on (or clobbering) a pre-existing system or user installation. The
 # checkout is wiped between Evergreen tasks, so installing there would re-download the toolchain on every run; local
-# runs without the expansion fall back to the checkout. The install prefix is versioned so bumps do not conflict.
+# runs without the expansion fall back to the checkout, where the `.rust-toolchain` directory is gitignored. The
+# install prefix is versioned so bumps do not conflict.
 declare cache_dir="${MONGO_C_DRIVER_CACHE_DIR:-"${mongoc_dir:?}"}"
-declare install_prefix="${cache_dir:?}/rust-${rust_toolchain_version:?}"
+declare rust_toolchain_dir="${cache_dir:?}/.rust-toolchain"
+declare install_prefix="${rust_toolchain_dir:?}/rust-${rust_toolchain_version:?}"
 declare tarball_name="rust-${rust_toolchain_version:?}-${rust_target:?}.tar.xz"
-declare tarball_path="${cache_dir:?}/${tarball_name:?}"
+declare tarball_path="${rust_toolchain_dir:?}/${tarball_name:?}"
 
 # Keep the cargo registry cache between tasks on the same host.
 export CARGO_HOME="${CARGO_HOME:-"${cache_dir:?}/.cargo"}"
@@ -42,6 +44,9 @@ download_rust_toolchain() {
   declare -i attempt
   declare -ri max_attempts=5
   declare tarball_tmp
+
+  # The toolchain directory may not exist yet (only the cache directory itself is created by `set-cache-dir`).
+  mkdir -p "${rust_toolchain_dir:?}" || return
 
   for ((attempt = 1; attempt <= max_attempts; attempt++)); do
     tarball_tmp="$(mktemp)" || return
