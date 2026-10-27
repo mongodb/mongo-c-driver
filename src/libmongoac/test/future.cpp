@@ -23,6 +23,7 @@
 
 #include <mongoac/client.h>
 #include <mongoac/error.h>
+#include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
 
 #include <catch2/catch_test_macros.hpp>
@@ -252,6 +253,17 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK(mongoac_future_get_bson(future, error).ptr == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a bson");
+    }
+
+    SECTION("type mismatch: insertOne result") {
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const result =
+            make_unique(mongoac_future_get_insert_one_result(future, error), &mongoac_insert_one_result_destroy);
+        CHECK(result == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return an insertOne result");
     }
 
     SECTION("type mismatch: uint64") {
