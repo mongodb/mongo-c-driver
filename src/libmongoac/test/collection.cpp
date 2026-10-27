@@ -182,8 +182,8 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
         auto const coll = coll_owner.get();
 
         // Start from a known state. A non-existing collection counts as zero documents.
-        CHECK_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
 
         auto const filter_all = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
         CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_all.get()), nullptr, error) == 0u);
@@ -193,7 +193,7 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
             R"({"insert": "count_documents", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
 
         (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_all.get()), nullptr, error) == 3u);
         CHECK_MONGOAC_ERROR_OK(error);
@@ -315,14 +315,14 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
         auto const coll = coll_owner.get();
 
         // Start from a known state.
-        CHECK_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
 
         auto const insert = REQUIRE_MAKE_UNIQUE(
             R"({"insert": "count_documents", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
 
         (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
-        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE_MONGOAC_ERROR_OK(error);
 
         auto const filter_x2 = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
 
