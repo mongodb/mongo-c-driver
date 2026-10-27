@@ -50,5 +50,8 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
     mongoac_collection_find_one
     mongoac_collection_find_one_async
 
+    mongoac_collection_insert_many
+    mongoac_collection_insert_many_async
+
     mongoac_collection_insert_one
     mongoac_collection_insert_one_async
