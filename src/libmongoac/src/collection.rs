@@ -182,11 +182,11 @@ impl CollectionT {
     ) -> FutureT {
         let coll = self.inner.clone();
         let session = session.map(|s| s.clone());
-        let filter = filter.to_owned();
+        let filter = Document::try_from(filter);
         let options: Option<CountOptions> = options.map(Into::into);
 
         self.spawn::<u64>(async move {
-            let filter = Document::try_from(filter)?;
+            let filter = filter?;
 
             session_op!(coll.count_documents(filter).with_options(options), session)
         })
