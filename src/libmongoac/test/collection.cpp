@@ -133,37 +133,31 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_count_documents"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state. A non-existing collection counts as zero documents.
+    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
     SECTION("null coll") {
         CHECK(mongoac_collection_count_documents(nullptr, nullptr, {}, nullptr, error) == 0u);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("null filter") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
         CHECK(mongoac_collection_count_documents(coll, nullptr, {}, nullptr, error) == 0u);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("invalid BSON filter") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
         std::uint8_t const bytes[] = {0xff};
 
         CHECK(mongoac_collection_count_documents(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error) == 0u);
@@ -171,26 +165,12 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
     }
 
     SECTION("basic") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
-        // Start from a known state. A non-existing collection counts as zero documents.
-        REQUIRE_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
-        REQUIRE_MONGOAC_ERROR_OK(error);
-
         auto const filter_all = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
         CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_all.get()), nullptr, error) == 0u);
         CHECK_MONGOAC_ERROR_OK(error);
 
         auto const insert = REQUIRE_MAKE_UNIQUE(
-            R"({"insert": "count_documents", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
 
         (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
         REQUIRE_MONGOAC_ERROR_OK(error);
@@ -204,16 +184,6 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
     }
 
     SECTION("rejected filter operator") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
         // Per the CRUD spec, countDocuments uses a $match stage, so $where is not supported.
         // The command is forwarded to the server, which rejects it.
         auto const filter_where = REQUIRE_MAKE_UNIQUE(R"({"$where": "true"})"_bson, &bson_destroy);
@@ -228,6 +198,20 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_count_documents_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state. A non-existing collection counts as zero documents.
+    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
     SECTION("null coll") {
         auto const future = make_unique(
             mongoac_collection_count_documents_async(nullptr, nullptr, {}, nullptr, error), &mongoac_future_destroy);
@@ -236,16 +220,6 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("null filter") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
         auto const future = make_unique(
             mongoac_collection_count_documents_async(coll, nullptr, {}, nullptr, error), &mongoac_future_destroy);
         CHECK(future.get() == nullptr);
@@ -253,16 +227,6 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
         std::uint8_t const bytes[] = {0xff};
 
         auto const future = make_unique(
@@ -273,16 +237,6 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("rejected filter operator") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
         // Per the CRUD spec, countDocuments uses a $match stage, so $where is not supported.
         // The command is forwarded to the server, which rejects it; the error surfaces via the future.
         auto const filter_where = REQUIRE_MAKE_UNIQUE(R"({"$where": "true"})"_bson, &bson_destroy);
@@ -304,22 +258,8 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("basic") {
-        auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
-        auto const client = client_owner.get();
-        auto const db_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
-        auto const db = db_owner.get();
-        auto const coll_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_get_collection(db, "count_documents"_sv, nullptr), &mongoac_collection_destroy);
-        auto const coll = coll_owner.get();
-
-        // Start from a known state.
-        REQUIRE_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
-        REQUIRE_MONGOAC_ERROR_OK(error);
-
         auto const insert = REQUIRE_MAKE_UNIQUE(
-            R"({"insert": "count_documents", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
 
         (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
         REQUIRE_MONGOAC_ERROR_OK(error);
