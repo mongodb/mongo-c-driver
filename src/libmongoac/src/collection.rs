@@ -163,7 +163,7 @@ impl CollectionT {
         options: Option<&CountOptionsT>,
     ) -> Result<u64, ErrorT> {
         self.runtime.block_on(async {
-            let filter = Document::try_from(filter.to_owned()).map_err(ErrorT::from)?;
+            let filter = Document::try_from(filter)?;
 
             session_op!(
                 self.inner
@@ -186,7 +186,7 @@ impl CollectionT {
         let options: Option<CountOptions> = options.map(Into::into);
 
         self.spawn::<u64>(async move {
-            let filter = Document::try_from(filter).map_err(ErrorT::from)?;
+            let filter = Document::try_from(filter)?;
 
             session_op!(coll.count_documents(filter).with_options(options), session)
         })
