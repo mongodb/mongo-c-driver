@@ -11182,7 +11182,7 @@ buildvariants:
   - verify-headers
   - name: link-with-cmake-mac
     distros:
-    - macos-14-arm64
+    - macos-15-arm64
   - name: link-with-cmake-windows
     distros:
     - windows-2022-latest-large
@@ -11200,7 +11200,7 @@ buildvariants:
     - ubuntu2204-large
   - name: link-with-pkg-config-mac
     distros:
-    - macos-14-arm64
+    - macos-15-arm64
   - link-with-pkg-config-ssl
   - link-with-bson
   - name: link-with-bson-windows
@@ -11208,7 +11208,7 @@ buildvariants:
     - windows-2022-latest-large
   - name: link-with-bson-mac
     distros:
-    - macos-14-arm64
+    - macos-15-arm64
   - name: link-with-bson-mingw
     distros:
     - windows-2022-latest-large
@@ -11285,7 +11285,7 @@ buildvariants:
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions:
     CC: clang
-  run_on: macos-14-arm64
+  run_on: macos-15-arm64
   tasks:
   - .compression !.snappy
   - release-compile
@@ -11305,7 +11305,7 @@ buildvariants:
   display_name: '*Darwin, Intel macOS (Apple LLVM)'
   expansions:
     CC: clang
-  run_on: macos-14
+  run_on: macos-15-amd64
   tasks:
   - debug-compile-aws
   - debug-compile-rdtscp
@@ -11437,14 +11437,14 @@ buildvariants:
   - name: debug-compile-nosasl-openssl
   - name: debug-compile-nosasl-darwinssl
     distros:
-    - macos-14-arm64
+    - macos-15-arm64
   - name: debug-compile-nosasl-winssl
     distros:
     - windows-2022-latest-large
   - name: .ocsp-openssl
   - name: .ocsp-darwinssl
     distros:
-    - macos-14-arm64
+    - macos-15-arm64
   - name: .ocsp-winssl
     distros:
     - windows-2022-latest-large
