@@ -39,33 +39,26 @@ export CARGO_HOME="${CARGO_HOME:-"${cache_dir:?}/.cargo"}"
 # https://static.rust-lang.org/dist/${tarball_name:?}.sha256
 declare rust_checksum="d2ccef59dd9f7439f2c694948069f789a044dc1addcc0803613232af8f88ee0c"
 
-# Download the pinned toolchain tarball, with retries. The caller validates the checksum before extraction.
+# Download the pinned toolchain tarball. The caller validates the checksum before extraction.
 download_rust_toolchain() {
-  declare -i attempt
-  declare -ri max_attempts=5
   declare tarball_tmp
 
   # The toolchain directory may not exist yet (only the cache directory itself is created by `set-cache-dir`).
   mkdir -p "${rust_toolchain_dir:?}" || return
 
-  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
-    tarball_tmp="$(mktemp)" || return
+  tarball_tmp="$(mktemp)" || return
 
-    # Download to a temporary file and rename it into place once the transfer completes, so a partial download is
-    # never reused. The protocol and TLS version are pinned, and the timeouts ensure a hung connection cannot
-    # defeat the retry loop below.
-    if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 600 -sSfL \
-      "https://static.rust-lang.org/dist/${tarball_name:?}" -o "${tarball_tmp}"; then
-      mv "${tarball_tmp}" "${tarball_path}" || return
-      return 0
-    fi
+  # Download to a temporary file and rename it into place once the transfer completes, so a partial download is
+  # never reused. `curl --retry` handles transient failures; the protocol and TLS version are pinned, and the
+  # timeouts bound each attempt.
+  if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 600 -sSfL \
+    "https://static.rust-lang.org/dist/${tarball_name:?}" -o "${tarball_tmp}" &&
+    mv "${tarball_tmp}" "${tarball_path}"; then
+    return 0
+  fi
 
-    rm -f "${tarball_tmp}"
-    echo "Rust toolchain download attempt ${attempt}/${max_attempts} failed." 1>&2
-    sleep 5
-  done
-
-  echo "Failed to download the Rust toolchain after ${max_attempts} attempts." 1>&2
+  rm -f "${tarball_tmp}"
+  echo "Failed to download the Rust toolchain from https://static.rust-lang.org/dist/${tarball_name:?}." 1>&2
   return 1
 }
 
