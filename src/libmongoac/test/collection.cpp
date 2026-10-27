@@ -26,6 +26,7 @@
 #include <mongoac/database.h>
 #include <mongoac/error.h>
 #include <mongoac/future.h>
+#include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
 
 #include <bson/bson.h>
@@ -447,34 +448,41 @@ TEST_CASE("insert_one", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     SECTION("null collection") {
-        auto const reply = from_mongoac(mongoac_collection_insert_one(nullptr, nullptr, {}, nullptr, error));
+        auto const result = make_unique(
+            mongoac_collection_insert_one(nullptr, nullptr, {}, nullptr, error), &mongoac_insert_one_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK(reply == nullptr);
+        CHECK(result == nullptr);
     }
 
     SECTION("null document") {
-        auto const reply = from_mongoac(mongoac_collection_insert_one(coll, nullptr, {}, nullptr, error));
+        auto const result = make_unique(
+            mongoac_collection_insert_one(coll, nullptr, {}, nullptr, error), &mongoac_insert_one_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK(reply == nullptr);
+        CHECK(result == nullptr);
     }
 
     SECTION("invalid BSON document") {
         std::uint8_t const bytes[] = {0xff};
-        auto const reply =
-            from_mongoac(mongoac_collection_insert_one(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error));
+        auto const result = make_unique(
+            mongoac_collection_insert_one(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error),
+            &mongoac_insert_one_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK(reply == nullptr);
+        CHECK(result == nullptr);
     }
 
     SECTION("basic") {
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
 
-        auto const reply_owner =
-            from_mongoac(mongoac_collection_insert_one(coll, nullptr, to_mongoac(doc.get()), nullptr, error));
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_insert_one(coll, nullptr, to_mongoac(doc.get()), nullptr, error),
+            &mongoac_insert_one_result_destroy);
         CHECK_MONGOAC_ERROR_OK(error);
-        auto const reply = REQUIRE_BSON_STATIC(reply_owner);
 
-        auto const iter = REQUIRE_BSON_ITER_FIND(reply, "insertedId");
+        auto const id_owner = from_mongoac(mongoac_insert_one_result_get_inserted_id(result_owner.get(), error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const id = REQUIRE_BSON_STATIC(id_owner);
+
+        auto const iter = REQUIRE_BSON_ITER_FIND(id, "v");
         CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
     }
 }
@@ -529,11 +537,15 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
         CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
         CHECK_MONGOAC_ERROR_OK(error);
 
-        auto const reply_view = mongoac_future_get_bson(future, error);
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_future_get_insert_one_result(future, error), &mongoac_insert_one_result_destroy);
         CHECK_MONGOAC_ERROR_OK(error);
-        auto const reply = REQUIRE_BSON_STATIC(reply_view);
 
-        auto const iter = REQUIRE_BSON_ITER_FIND(reply, "insertedId");
+        auto const id_owner = from_mongoac(mongoac_insert_one_result_get_inserted_id(result_owner.get(), error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const id = REQUIRE_BSON_STATIC(id_owner);
+
+        auto const iter = REQUIRE_BSON_ITER_FIND(id, "v");
         CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
     }
 }

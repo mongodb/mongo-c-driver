@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::bson::{BsonT, BsonViewT};
+use crate::bson::BsonViewT;
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
@@ -21,13 +21,15 @@ use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::future::FutureT;
 use crate::insert_one_options::InsertOneOptionsT;
+use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
-use mongodb::bson::{Document, RawDocument, RawDocumentBuf, serialize_to_raw_document_buf};
+use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{CountOptions, DropCollectionOptions, InsertOneOptions};
+use mongodb::results::InsertOneResult;
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -122,14 +124,17 @@ pub extern "C" fn mongoac_collection_insert_one(
     document: BsonViewT,
     options: *const InsertOneOptionsT,
     error: *mut ErrorT,
-) -> BsonT {
+) -> *mut InsertOneResultT {
     let error = safe_optional_error_as_mut!(error);
     let collection = safe_as_ref_with_error!(collection, error);
     let session = safe_optional_as_mut!(session);
     let document = safe_bson_view_with_error!(document, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_result!(collection.insert_one(session, document, options), error).into()
+    safe_into_raw!(InsertOneResultT::from(safe_result!(
+        collection.insert_one(session, document, options),
+        error
+    )))
 }
 
 #[unsafe(no_mangle)]
@@ -254,16 +259,14 @@ impl CollectionT {
         session: Option<&mut ClientSessionT>,
         document: &RawDocument,
         options: Option<&InsertOneOptionsT>,
-    ) -> Result<RawDocumentBuf, ErrorT> {
+    ) -> Result<InsertOneResult, ErrorT> {
         self.runtime.block_on(async {
-            let res = session_op!(
+            session_op!(
                 self.inner
                     .insert_one(document.to_owned())
                     .with_options(options.map(Into::into)),
                 session
-            )?;
-
-            serialize_to_raw_document_buf(&res).map_err(Into::into)
+            )
         })
     }
 
@@ -278,10 +281,8 @@ impl CollectionT {
         let document = document.to_owned();
         let options: Option<InsertOneOptions> = options.map(Into::into);
 
-        self.spawn::<RawDocumentBuf>(async move {
-            let res = session_op!(coll.insert_one(document).with_options(options), session)?;
-
-            serialize_to_raw_document_buf(&res).map_err(Into::into)
+        self.spawn::<InsertOneResult>(async move {
+            session_op!(coll.insert_one(document).with_options(options), session)
         })
     }
 

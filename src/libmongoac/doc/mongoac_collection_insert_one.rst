@@ -10,18 +10,18 @@ Synopsis
 
    #include <mongoac/collection.h>
 
-   mongoac_bson_t mongoac_collection_insert_one(const mongoac_collection_t *collection,
-                                                mongoac_client_session_t *session,
-                                                mongoac_bson_view_t document,
-                                                const mongoac_insert_one_options_t *options,
-                                                mongoac_error_t *error);
+   mongoac_insert_one_result_t *mongoac_collection_insert_one(const mongoac_collection_t *collection,
+                                                              mongoac_client_session_t *session,
+                                                              mongoac_bson_view_t document,
+                                                              const mongoac_insert_one_options_t *options,
+                                                              mongoac_error_t *error);
 
 Description
 -----------
 
 Inserts the given ``document`` via `Collection::insert_one() <https://docs.rs/mongodb/latest/mongodb/struct.Collection.html#method.insert_one>`_.
 
-The result is a BSON document containing the ``insertedId`` field, e.g. ``{"insertedId": ...}``.
+The returned :symbol:`mongoac_insert_one_result_t` must be destroyed with :symbol:`mongoac_insert_one_result_destroy()`.
 
 Errors
 ------
