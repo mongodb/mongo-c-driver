@@ -35,7 +35,10 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 using mongoac::test::doesnotexist_uri;
@@ -645,5 +648,201 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
 
         auto const iter = REQUIRE_BSON_ITER_FIND(id, "v");
         CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
+    }
+}
+
+TEST_CASE("insert_many", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_insert_many"_sv, nullptr), &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Check the given document is a BSON array of the expected number of ObjectIds in index order.
+    auto const check_inserted_ids = [](bson_t const& ids, std::size_t expected) {
+        bson_iter_t iter = {};
+        REQUIRE(bson_iter_init(&iter, &ids));
+
+        std::size_t index = 0;
+        while (bson_iter_next(&iter)) {
+            CHECK(std::string_view{bson_iter_key(&iter)} == std::to_string(index));
+            CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
+            ++index;
+        }
+        CHECK(index == expected);
+    };
+
+    SECTION("null collection") {
+        auto const result = make_unique(
+            mongoac_collection_insert_many(nullptr, nullptr, nullptr, 1u, nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null documents") {
+        auto const result = make_unique(
+            mongoac_collection_insert_many(coll, nullptr, nullptr, 1u, nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("empty documents") {
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        std::array<mongoac_bson_view_t, 1> const docs{{to_mongoac(doc.get())}};
+
+        auto const result = make_unique(
+            mongoac_collection_insert_many(coll, nullptr, docs.data(), 0u, nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null document element") {
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
+
+        auto const result = make_unique(
+            mongoac_collection_insert_many(coll, nullptr, docs.data(), docs.size(), nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("invalid BSON document element") {
+        std::uint8_t const bytes[] = {0xff};
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {bytes, sizeof(bytes)}}};
+
+        auto const result = make_unique(
+            mongoac_collection_insert_many(coll, nullptr, docs.data(), docs.size(), nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const x = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const y = REQUIRE_MAKE_UNIQUE(R"({"y": 2})"_bson, &bson_destroy);
+        auto const z = REQUIRE_MAKE_UNIQUE(R"({"z": 3})"_bson, &bson_destroy);
+
+        std::array<mongoac_bson_view_t, 3> const docs{{to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())}};
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_insert_many(coll, nullptr, docs.data(), docs.size(), nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const ids_owner = from_mongoac(mongoac_insert_many_result_get_inserted_ids(result_owner.get(), error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const ids = REQUIRE_BSON_STATIC(ids_owner);
+
+        check_inserted_ids(ids, docs.size());
+    }
+}
+
+TEST_CASE("insert_many_async", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_insert_many_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Check the given document is a BSON array of the expected number of ObjectIds in index order.
+    auto const check_inserted_ids = [](bson_t const& ids, std::size_t expected) {
+        bson_iter_t iter = {};
+        REQUIRE(bson_iter_init(&iter, &ids));
+
+        std::size_t index = 0;
+        while (bson_iter_next(&iter)) {
+            CHECK(std::string_view{bson_iter_key(&iter)} == std::to_string(index));
+            CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
+            ++index;
+        }
+        CHECK(index == expected);
+    };
+
+    SECTION("null collection") {
+        auto const future = make_unique(
+            mongoac_collection_insert_many_async(nullptr, nullptr, nullptr, 1u, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null documents") {
+        auto const future = make_unique(
+            mongoac_collection_insert_many_async(coll, nullptr, nullptr, 1u, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("empty documents") {
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        std::array<mongoac_bson_view_t, 1> const docs{{to_mongoac(doc.get())}};
+
+        auto const future = make_unique(
+            mongoac_collection_insert_many_async(coll, nullptr, docs.data(), 0u, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null document element") {
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
+
+        auto const future = make_unique(
+            mongoac_collection_insert_many_async(coll, nullptr, docs.data(), docs.size(), nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON document element") {
+        std::uint8_t const bytes[] = {0xff};
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {bytes, sizeof(bytes)}}};
+
+        auto const future = make_unique(
+            mongoac_collection_insert_many_async(coll, nullptr, docs.data(), docs.size(), nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const x = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const y = REQUIRE_MAKE_UNIQUE(R"({"y": 2})"_bson, &bson_destroy);
+        auto const z = REQUIRE_MAKE_UNIQUE(R"({"z": 3})"_bson, &bson_destroy);
+
+        std::array<mongoac_bson_view_t, 3> const docs{{to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())}};
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_insert_many_async(coll, nullptr, docs.data(), docs.size(), nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const result = mongoac_future_get_insert_many_result(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(result != nullptr);
+
+        auto const ids_owner = from_mongoac(mongoac_insert_many_result_get_inserted_ids(result, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const ids = REQUIRE_BSON_STATIC(ids_owner);
+
+        check_inserted_ids(ids, docs.size());
     }
 }

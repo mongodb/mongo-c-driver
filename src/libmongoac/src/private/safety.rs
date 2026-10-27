@@ -507,6 +507,76 @@ macro_rules! safe_bson_view_with_error {
     }};
 }
 
+/// Safely convert the `BsonViewT` array into a `Vec<&RawDocument>` when not null or empty.
+///
+/// When `ptr` is null or empty, an element of the array is null, or an element contains invalid BSON, set `error` and
+/// early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const BsonViewT, count: usize, error: Option<&mut ErrorT>) -> R {
+///     let documents: Vec<&RawDocument> = safe_bson_view_array_as_vec_with_error!(ptr, count, error);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to an array of at least `count` elements.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
+/// - When an element is not null, the range `[element.ptr, element.ptr + element.len)` must be valid and accessible.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_bson_view_array_as_vec_with_error {
+    ($ptr:expr, $count:expr, $error:expr) => {{
+        let ptr: *const $crate::bson::BsonViewT = $ptr;
+        let count: usize = $count;
+
+        if ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($ptr)),
+            );
+            return Default::default();
+        }
+        if count == 0 {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be empty", stringify!($ptr)),
+            );
+            return Default::default();
+        }
+
+        // SAFETY: `ptr` and `count` validity is an uncheckable precondition.
+        let views = unsafe { std::slice::from_raw_parts(ptr, count) };
+
+        let mut documents: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
+        for (i, view) in views.iter().enumerate() {
+            if view.ptr.is_null() {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}[{i}]: must not be null", stringify!($ptr)),
+                );
+                return Default::default();
+            }
+            match mongodb::bson::RawDocument::from_bytes(unsafe {
+                std::slice::from_raw_parts(view.ptr, view.len)
+            }) {
+                Ok(document) => documents.push(document),
+                Err(e) => {
+                    $crate::private::safety::invalid_argument(
+                        $error,
+                        format!("{}[{i}]: invalid BSON: {}", stringify!($ptr), e),
+                    );
+                    return Default::default();
+                }
+            }
+        }
+        documents
+    }};
+}
+
 /// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
 pub(crate) fn invalid_argument<M>(error: Option<&mut crate::error::ErrorT>, msg: M)
 where
