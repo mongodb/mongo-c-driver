@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -o errexit # Exit the script with error if any of the commands fail
+set -o errexit
 
 # shellcheck source=.evergreen/scripts/env-var-utils.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env-var-utils.sh"
@@ -9,12 +9,9 @@ set -o errexit # Exit the script with error if any of the commands fail
 check_var_opt CMAKE_GENERATOR "Ninja"
 export CMAKE_GENERATOR
 
-# Install and select a sufficiently recent CMake and Ninja, shadowing any older system-provided copies.
 . "${MONGOC_DIR:?}/.evergreen/scripts/install-build-tools.sh"
 install_build_tools
 
-# Install the Rust toolchain required by the mongoac library and put `cargo` on $PATH.
-# shellcheck source=.evergreen/scripts/install-rust-toolchain.sh
 . "${MONGOC_DIR:?}/.evergreen/scripts/install-rust-toolchain.sh"
 
 build_dir=${MONGOC_DIR:?}/_build/for-mongoac-docs

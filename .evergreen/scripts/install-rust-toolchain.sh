@@ -6,9 +6,6 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare mongoc_dir
 mongoc_dir="$(cd "${script_dir:?}/../.." && pwd)"
 
-# Read the MSRV from the crate manifest, which is the authority (the "Rust Toolchain" requirement in
-# src/libmongoac/doc/index.rst documents it). The prebuilt toolchain tarball is named with the full version, so a
-# major.minor `rust-version` (e.g. "1.92") is normalized to the corresponding patch-zero release (e.g. "1.92.0").
 declare rust_toolchain_version
 rust_toolchain_version="$(sed -n 's/^rust-version *= *"\([^"]*\)"/\1/p' "${mongoc_dir:?}/src/libmongoac/Cargo.toml")" || return
 if [[ -z "${rust_toolchain_version}" ]]; then
@@ -17,8 +14,6 @@ if [[ -z "${rust_toolchain_version}" ]]; then
 fi
 [[ "${rust_toolchain_version}" == *.*.* ]] || rust_toolchain_version+=".0"
 
-# The Rust target triple for the prebuilt toolchain. The mongoac Evergreen task runs on rhel8-latest (x86_64);
-# parameterize this according to Rust's target triplet convention when other distros are added.
 declare rust_target="x86_64-unknown-linux-gnu"
 
 # Install into the host-persistent cache directory when available (published as MONGO_C_DRIVER_CACHE_DIR by the
@@ -32,25 +27,18 @@ declare install_prefix="${rust_toolchain_dir:?}/rust-${rust_toolchain_version:?}
 declare tarball_name="rust-${rust_toolchain_version:?}-${rust_target:?}.tar.xz"
 declare tarball_path="${rust_toolchain_dir:?}/${tarball_name:?}"
 
-# Keep the cargo registry cache between tasks on the same host.
 export CARGO_HOME="${CARGO_HOME:-"${cache_dir:?}/.cargo"}"
 
-# The published checksum of the tarball, which pins its contents. See:
-# https://static.rust-lang.org/dist/${tarball_name:?}.sha256
+# See: https://static.rust-lang.org/dist/${tarball_name:?}.sha256
 declare rust_checksum="d2ccef59dd9f7439f2c694948069f789a044dc1addcc0803613232af8f88ee0c"
 
-# Download the pinned toolchain tarball. The caller validates the checksum before extraction.
 download_rust_toolchain() {
   declare tarball_tmp
 
-  # The toolchain directory may not exist yet (only the cache directory itself is created by `set-cache-dir`).
   mkdir -p "${rust_toolchain_dir:?}" || return
 
   tarball_tmp="$(mktemp)" || return
 
-  # Download to a temporary file and rename it into place once the transfer completes, so a partial download is
-  # never reused. `curl --retry` handles transient failures; the protocol and TLS version are pinned, and the
-  # timeouts bound each attempt.
   if curl --retry 5 --retry-connrefused --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 600 -sSfL \
     "https://static.rust-lang.org/dist/${tarball_name:?}" -o "${tarball_tmp}" &&
     mv "${tarball_tmp}" "${tarball_path}"; then
@@ -69,16 +57,12 @@ else
 
   [[ -f "${tarball_path:?}" ]] || download_rust_toolchain || return
 
-  # Validate the tarball — freshly downloaded or reused from the cache — before it is extracted. An invalid tarball
-  # is removed so that a subsequent run does not reuse it.
+  # Validate the checksum
   if ! echo "${rust_checksum:?}  ${tarball_path:?}" | sha256sum -c - >/dev/null; then
     rm -f "${tarball_path:?}"
     return 1
   fi
 
-  # Extract only what the build needs: cargo, rustc, and the standard library. `--strip-components=2` drops the
-  # "rust-<version>-<target>/<component>/" prefix, yielding bin/, lib/, and share/ under the install prefix.
-  # Extract into a temporary prefix and move it into place so an interrupted extraction cannot be reused.
   declare install_tmp="${install_prefix:?}.tmp"
   rm -rf "${install_tmp:?}" "${install_prefix:?}" || return
   mkdir -p "${install_tmp:?}" || return
@@ -91,8 +75,6 @@ else
   echo "Installing Rust toolchain ${rust_toolchain_version:?} into ${install_prefix:?}... done."
 fi
 
-# Ensure the toolchain is searched before any system-provided cargo or rustc. This is what makes CMake's
-# `find_program (CARGO_EXECUTABLE cargo REQUIRED)` — executed later in the SAME process — find it.
 export PATH="${install_prefix:?}/bin:${PATH:-}"
 
 echo "cargo version: $(cargo --version)"

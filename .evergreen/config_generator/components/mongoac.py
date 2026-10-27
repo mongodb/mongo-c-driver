@@ -47,11 +47,6 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                     test -f cmake-build/src/libmongoac/Debug/libmongoac.so
                 """,
             ),
-            # Start a MongoDB server for the tests that need one: `expansions.update` configures the
-            # orchestration (standalone, latest server, no auth, no TLS), `fetch-det` clones
-            # drivers-evergreen-tools which the bootstrap function uses, and
-            # `bootstrap-mongo-orchestration` starts the server and publishes its connection string as the
-            # `MONGODB_URI` expansion. run-mongoac-tests.sh passes that on as `MONGOAC_TEST_URI`.
             expansions_update(
                 updates=[
                     KeyValueParam(key='AUTH', value='noauth'),
@@ -85,9 +80,7 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                 include_expansions_in_env=['MONGO_C_DRIVER_CACHE_DIR'],
                 script='uv run --frozen --only-group docs .evergreen/scripts/build-mongoac-docs.sh',
             ),
-            # Report the failure recorded above, after the results have been attached. This runs last so that a test
-            # failure still turns the task red; a docs failure turns it red earlier, with the results already
-            # attached. A missing status file makes `cat` fail, so this fails closed.
+            # Report the failure recorded above, after the results have been attached.
             bash_exec(
                 command_type=EvgCommandType.TEST,
                 working_dir='mongoc',
