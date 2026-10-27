@@ -69,7 +69,7 @@ pub extern "C" fn mongoac_collection_count_documents(
     let filter = safe_bson_view_with_error!(filter, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_result!(coll.count_documents(session, Some(filter), options), error)
+    safe_result!(coll.count_documents(session, filter, options), error)
 }
 
 #[unsafe(no_mangle)]
@@ -86,7 +86,7 @@ pub extern "C" fn mongoac_collection_count_documents_async(
     let filter = safe_bson_view_with_error!(filter, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(coll.count_documents_async(session, Some(filter), options))
+    safe_into_raw!(coll.count_documents_async(session, filter, options))
 }
 
 #[unsafe(no_mangle)]
@@ -159,14 +159,11 @@ impl CollectionT {
     fn count_documents(
         &self,
         session: Option<&mut ClientSessionT>,
-        filter: Option<&RawDocument>,
+        filter: &RawDocument,
         options: Option<&CountOptionsT>,
     ) -> Result<u64, ErrorT> {
         self.runtime.block_on(async {
-            let filter = match filter {
-                Some(filter) => Document::try_from(filter.to_owned()).map_err(ErrorT::from)?,
-                None => Document::new(),
-            };
+            let filter = Document::try_from(filter.to_owned()).map_err(ErrorT::from)?;
 
             session_op!(
                 self.inner
@@ -180,19 +177,16 @@ impl CollectionT {
     fn count_documents_async(
         &self,
         session: Option<&mut ClientSessionT>,
-        filter: Option<&RawDocument>,
+        filter: &RawDocument,
         options: Option<&CountOptionsT>,
     ) -> FutureT {
         let coll = self.inner.clone();
         let session = session.map(|s| s.clone());
-        let filter = filter.map(|f| f.to_owned());
+        let filter = filter.to_owned();
         let options: Option<CountOptions> = options.map(Into::into);
 
         self.spawn::<u64>(async move {
-            let filter = match filter {
-                Some(filter) => Document::try_from(filter).map_err(ErrorT::from)?,
-                None => Document::new(),
-            };
+            let filter = Document::try_from(filter).map_err(ErrorT::from)?;
 
             session_op!(coll.count_documents(filter).with_options(options), session)
         })
