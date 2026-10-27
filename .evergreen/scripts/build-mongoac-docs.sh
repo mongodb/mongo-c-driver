@@ -21,6 +21,6 @@ build_dir=${MONGOC_DIR:?}/_build/for-mongoac-docs
 cmake --fresh -S "${MONGOC_DIR:?}" -B "${build_dir:?}" \
   -D ENABLE_MONGOAC=ON \
   -D ENABLE_HTML_DOCS=ON \
-  -D ENABLE_MAN_PAGES=OFF \
+  -D ENABLE_MAN_PAGES=ON \
   -D ENABLE_ZLIB=BUNDLED
 cmake --build "${build_dir:?}" --target mongoac-doc
