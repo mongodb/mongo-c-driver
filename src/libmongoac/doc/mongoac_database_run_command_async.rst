@@ -13,8 +13,7 @@ Synopsis
    mongoac_future_t *mongoac_database_run_command_async(const mongoac_database_t *db,
                                                         mongoac_client_session_t *session,
                                                         mongoac_bson_view_t command,
-                                                        const mongoac_run_command_options_t *options,
-                                                        mongoac_error_t *error);
+                                                        const mongoac_run_command_options_t *options);
 
 Description
 -----------
