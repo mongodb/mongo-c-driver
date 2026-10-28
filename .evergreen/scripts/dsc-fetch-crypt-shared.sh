@@ -17,7 +17,9 @@ det_dir="$(cd ../drivers-evergreen-tools && pwd)"
 declare out_dir="${det_dir}/mongodb"
 mkdir -p "${out_dir}"
 
-python3 "${det_dir}/.evergreen/mongodl.py" \
+# mongodl.py needs certifi and boto3 (the "latest" download path reads a private S3 bucket); the host's system Python
+# does not have them, so run it through uv.
+uv run --no-project --with certifi --with boto3 python "${det_dir}/.evergreen/mongodl.py" \
   --component crypt_shared \
   --version "${CRYPT_SHARED_VERSION:-latest}" \
   --out "${out_dir}" \
