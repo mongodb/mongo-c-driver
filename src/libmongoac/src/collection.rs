@@ -121,32 +121,32 @@ pub extern "C" fn mongoac_collection_drop_async(
 pub extern "C" fn mongoac_collection_insert_one(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
-    document: BsonViewT,
+    doc: BsonViewT,
     options: *const InsertOneOptionsT,
     error: *mut ErrorT,
 ) -> *mut InsertOneResultT {
     let error = safe_optional_error_as_mut!(error);
     let collection = safe_as_ref_with_error!(collection, error);
     let session = safe_optional_as_mut!(session);
-    let document = safe_bson_view_with_error!(document, error);
+    let doc = safe_bson_view_with_error!(doc, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(safe_result!(collection.insert_one(session, document, options), error).into())
+    safe_into_raw!(safe_result!(collection.insert_one(session, doc, options), error).into())
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_collection_insert_one_async(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
-    document: BsonViewT,
+    doc: BsonViewT,
     options: *const InsertOneOptionsT,
 ) -> *mut FutureT {
     let collection = safe_as_ref!(collection);
     let session = safe_optional_as_mut!(session);
-    let document = safe_bson_view!(document);
+    let doc = safe_bson_view!(doc);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(collection.insert_one_async(session, document, options))
+    safe_into_raw!(collection.insert_one_async(session, doc, options))
 }
 
 #[unsafe(no_mangle)]
@@ -252,13 +252,13 @@ impl CollectionT {
     fn insert_one(
         &self,
         session: Option<&mut ClientSessionT>,
-        document: &RawDocument,
+        doc: &RawDocument,
         options: Option<&InsertOneOptionsT>,
     ) -> Result<InsertOneResult, ErrorT> {
         self.runtime.block_on(async {
             session_op!(
                 self.inner
-                    .insert_one(document.to_owned())
+                    .insert_one(doc.to_owned())
                     .with_options(options.map(Into::into)),
                 session
             )
@@ -268,16 +268,16 @@ impl CollectionT {
     fn insert_one_async(
         &self,
         session: Option<&mut ClientSessionT>,
-        document: &RawDocument,
+        doc: &RawDocument,
         options: Option<&InsertOneOptionsT>,
     ) -> FutureT {
         let coll = self.inner.clone();
         let session = session.map(|s| s.clone());
-        let document = document.to_owned();
+        let doc = doc.to_owned();
         let options: Option<InsertOneOptions> = options.map(Into::into);
 
         self.spawn::<InsertOneResult>(async move {
-            session_op!(coll.insert_one(document).with_options(options), session)
+            session_op!(coll.insert_one(doc).with_options(options), session)
         })
     }
 
