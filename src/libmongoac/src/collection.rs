@@ -172,12 +172,10 @@ pub extern "C" fn mongoac_collection_insert_many_async(
     documents: *const BsonViewT,
     count: usize,
     options: *const InsertManyOptionsT,
-    error: *mut ErrorT,
 ) -> *mut FutureT {
-    let error = safe_optional_error_as_mut!(error);
-    let collection = safe_as_ref_with_error!(collection, error);
+    let collection = safe_as_ref!(collection);
     let session = safe_optional_as_mut!(session);
-    let documents = safe_bson_view_array_as_vec_with_error!(documents, count, error);
+    let documents = safe_bson_view_array_as_vec!(documents, count);
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(collection.insert_many_async(session, documents, options))

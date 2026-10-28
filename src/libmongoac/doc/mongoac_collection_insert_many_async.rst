@@ -14,8 +14,7 @@ Synopsis
                                                           mongoac_client_session_t *session,
                                                           const mongoac_bson_view_t *documents,
                                                           uintptr_t count,
-                                                          const mongoac_insert_many_options_t *options,
-                                                          mongoac_error_t *error);
+                                                          const mongoac_insert_many_options_t *options);
 
 Description
 -----------

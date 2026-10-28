@@ -509,6 +509,59 @@ macro_rules! safe_bson_view_with_error {
 
 /// Safely convert the `BsonViewT` array into a `Vec<&RawDocument>` when not null or empty.
 ///
+/// When `ptr` is null or empty, an element of the array is null, or an element contains invalid BSON, early-return
+/// from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const BsonViewT, count: usize) -> R {
+///     let documents: Vec<&RawDocument> = safe_bson_view_array_as_vec!(ptr, count);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to an array of at least `count` elements.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
+/// - When an element is not null, the range `[element.ptr, element.ptr + element.len)` must be valid and accessible.
+#[macro_export]
+macro_rules! safe_bson_view_array_as_vec {
+    ($ptr:expr, $count:expr) => {{
+        let ptr: *const $crate::bson::BsonViewT = $ptr;
+        let count: usize = $count;
+
+        if ptr.is_null() {
+            return Default::default();
+        }
+        if count == 0 {
+            return Default::default();
+        }
+
+        // SAFETY: `ptr` and `count` validity is an uncheckable precondition.
+        let views = unsafe { std::slice::from_raw_parts(ptr, count) };
+
+        let mut documents: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
+        for view in views {
+            if view.ptr.is_null() {
+                return Default::default();
+            }
+            match mongodb::bson::RawDocument::from_bytes(unsafe {
+                std::slice::from_raw_parts(view.ptr, view.len)
+            }) {
+                Ok(document) => documents.push(document),
+                Err(_) => {
+                    return Default::default();
+                }
+            }
+        }
+        documents
+    }};
+}
+
+/// Safely convert the `BsonViewT` array into a `Vec<&RawDocument>` when not null or empty.
+///
 /// When `ptr` is null or empty, an element of the array is null, or an element contains invalid BSON, set `error` and
 /// early-return from the function via `return Default::default();`.
 ///
