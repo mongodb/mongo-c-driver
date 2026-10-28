@@ -25,7 +25,7 @@ When ``coll`` is null, returns ``NULL``.
 
 When ``filter`` is null or invalid BSON, returns ``NULL``.
 
-The returned :symbol:`mongoac_future_t` must be destroyed with :symbol:`mongoac_future_destroy()`. Use :symbol:`mongoac_future_get_uint64()` to obtain the resulting count.
+The returned :symbol:`mongoac_future_t` must be destroyed with :symbol:`mongoac_future_destroy()`.
 
 .. seealso::
 

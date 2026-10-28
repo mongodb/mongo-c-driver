@@ -21,14 +21,6 @@ Description
 
 Gets the number of documents matching the given ``filter`` via `Collection::count_documents() <https://docs.rs/mongodb/latest/mongodb/struct.Collection.html#method.count_documents>`_.
 
-The returned count is accurate, reflecting the documents actually matched (in contrast with an estimated count derived from collection metadata).
-
-Returns the number of documents counted, or ``0`` on failure with ``error`` set, if provided. A count of zero documents is also a valid result (for an empty or non-existing collection) so callers must check ``error`` to distinguish the two.
-
-``filter`` must not be null. An empty filter (``{}``) matches all documents.
-
-The ``filter`` is applied via a ``$match`` stage, so operators that are unsupported by ``$match`` cannot be used, including ``$where`` and ``$near``. See the `server documentation <https://www.mongodb.com/docs/manual/reference/operator/aggregation/match/#match-restrictions>`_ for the full list of restrictions.
-
 Errors
 ------
 
@@ -36,7 +28,7 @@ This function may return the following errors:
 
 - Invalid Argument (mongoac): ``coll`` is null.
 - Invalid Argument (mongoac): ``filter`` is null or invalid BSON.
-- Server-Side Error (server, rust): the server returned an error (e.g. an unsupported filter operator like ``$where``).
+- Server-Side Error (server, rust): the server returned an error.
 - Client-Side Error (rust): the requested operation failed.
 
 .. seealso::
