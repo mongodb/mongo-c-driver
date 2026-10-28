@@ -440,8 +440,8 @@ TEST_CASE("insert_one", "[mongoac][collection]") {
     auto const error = error_owner.get();
     auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
-    auto const db_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_insert_one"_sv, nullptr), &mongoac_database_destroy);
     auto const db = db_owner.get();
     auto const coll_owner =
         REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
@@ -492,8 +492,9 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
     auto const error = error_owner.get();
     auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
-    auto const db_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_insert_one_async"_sv, nullptr),
+        &mongoac_database_destroy);
     auto const db = db_owner.get();
     auto const coll_owner =
         REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
