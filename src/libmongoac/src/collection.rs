@@ -17,6 +17,7 @@ use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
+use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
 use crate::future::FutureT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
@@ -25,6 +26,7 @@ use crate::string::StringViewT;
 use mongodb::Collection;
 use mongodb::bson::RawDocumentBuf;
 use mongodb::options::DropCollectionOptions;
+use mongodb::options::EstimatedDocumentCountOptions;
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -78,6 +80,30 @@ pub extern "C" fn mongoac_collection_drop_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.drop_async(session, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_estimated_document_count(
+    coll: *const CollectionT,
+    options: *const EstimatedDocumentCountOptionsT,
+    error: *mut ErrorT,
+) -> u64 {
+    let error = safe_optional_error_as_mut!(error);
+    let coll = safe_as_ref_with_error!(coll, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(coll.estimated_document_count(options), error)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_estimated_document_count_async(
+    coll: *const CollectionT,
+    options: *const EstimatedDocumentCountOptionsT,
+) -> *mut FutureT {
+    let coll = safe_as_ref!(coll);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(coll.estimated_document_count_async(options))
 }
 
 #[unsafe(no_mangle)]
@@ -144,6 +170,34 @@ impl CollectionT {
         self.spawn::<()>(async move { session_op!(coll.drop().with_options(options), session) })
     }
 
+    fn estimated_document_count(
+        &self,
+        options: Option<&EstimatedDocumentCountOptionsT>,
+    ) -> Result<u64, ErrorT> {
+        self.runtime.block_on(async {
+            self.inner
+                .estimated_document_count()
+                .with_options(options.map(Into::into))
+                .await
+                .map_err(ErrorT::from)
+        })
+    }
+
+    fn estimated_document_count_async(
+        &self,
+        options: Option<&EstimatedDocumentCountOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let options: Option<EstimatedDocumentCountOptions> = options.map(Into::into);
+
+        self.spawn::<u64>(async move {
+            coll.estimated_document_count()
+                .with_options(options)
+                .await
+                .map_err(ErrorT::from)
+        })
+    }
+
     // TODO: aggregate
     // TODO: count_documents
     // TODO: create_index
@@ -156,7 +210,6 @@ impl CollectionT {
     // TODO: drop_index
     // TODO: drop_indexes
     // TODO: drop_search_index
-    // TODO: estimated_document_count
     // TODO: find
     // TODO: find_one
     // TODO: find_one_and_delete
