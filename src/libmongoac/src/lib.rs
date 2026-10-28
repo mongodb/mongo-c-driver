@@ -28,6 +28,7 @@ pub mod error;
 pub mod estimated_document_count_options;
 pub mod future;
 pub mod insert_many_options;
+pub mod insert_many_result;
 pub mod insert_one_options;
 pub mod insert_one_result;
 pub mod run_command_options;
