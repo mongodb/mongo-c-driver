@@ -5192,7 +5192,6 @@ tasks:
         vars:
           CC: gcc
           CLIENT_SIDE_ENCRYPTION: "on"
-          DSC: "on"
           URI: ${MONGODB_URI}
       - func: csfle-teardown
   - name: kms-divergence-check

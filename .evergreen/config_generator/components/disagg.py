@@ -131,7 +131,6 @@ def tasks():
             RunTests().call(
                 vars={
                     'URI': '${MONGODB_URI}',
-                    'DSC': 'on',
                     'CLIENT_SIDE_ENCRYPTION': 'on',
                     'CC': _COMPILER,
                 }

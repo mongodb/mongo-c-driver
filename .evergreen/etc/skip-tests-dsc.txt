@@ -1,7 +1,0 @@
-# Known failing tests specific to disaggregated storage (DSC) deployments.
-# Used in addition to skip-tests.txt when DSC=on (see scripts/run-tests.sh).
-# Same format as skip-tests.txt.
-
-# Unsatisfiable write concern is accepted without a writeConcernError on DSC.
-/find_and_modify/find_and_modify/write_concern_failure # DSC accepts unsatisfiable write concern
-/transactions/unified/commit/"Write concern error on commit" # DSC accepts unsatisfiable write concern
