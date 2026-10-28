@@ -54,6 +54,7 @@
 #define MONGOC_URI_REPLICASET "replicaset"
 #define MONGOC_URI_RETRYREADS "retryreads"
 #define MONGOC_URI_RETRYWRITES "retrywrites"
+#define MONGOC_URI_MAXSCRAMITERATIONS "maxscramiterations"
 #define MONGOC_URI_MAXADAPTIVERETRIES "maxadaptiveretries"
 #define MONGOC_URI_ENABLEOVERLOADRETARGETING "enableoverloadretargeting"
 #define MONGOC_URI_SAFE "safe"
