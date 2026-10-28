@@ -14,11 +14,13 @@
 
 use crate::bson::BsonViewT;
 use crate::error::{ErrorCodeT, ErrorT};
+use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 
 use mongodb::bson::RawDocumentBuf;
+use mongodb::results::InsertManyResult;
 use mongodb::results::InsertOneResult;
 
 use parking_lot::Mutex;
@@ -79,6 +81,20 @@ pub extern "C" fn mongoac_future_get_bson(future: *const FutureT, error: *mut Er
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_insert_many_result(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *mut InsertManyResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_into_raw!(InsertManyResultT::from(safe_result!(
+        future.get_insert_many_result(),
+        error
+    )))
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_future_get_insert_one_result(
     future: *const FutureT,
     error: *mut ErrorT,
@@ -134,6 +150,10 @@ impl FutureT {
 
     fn get_bson(&self) -> Result<&RawDocumentBuf, ErrorT> {
         self.get::<RawDocumentBuf>("bson")
+    }
+
+    fn get_insert_many_result(&self) -> Result<&InsertManyResult, ErrorT> {
+        self.get::<InsertManyResult>("an insertMany result")
     }
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
