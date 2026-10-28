@@ -41,3 +41,6 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
 
     mongoac_collection_drop
     mongoac_collection_drop_async
+
+    mongoac_collection_estimated_document_count
+    mongoac_collection_estimated_document_count_async
