@@ -24,7 +24,9 @@ pub struct InsertManyResultT(InsertManyResult);
 // `InsertManyResult` does not implement `Clone`: copy its fields into a default result.
 impl Clone for InsertManyResultT {
     fn clone(&self) -> Self {
-        Self::from(&self.0)
+        let mut result = InsertManyResult::default();
+        result.inserted_ids = self.0.inserted_ids.clone();
+        Self(result)
     }
 }
 
@@ -63,13 +65,5 @@ pub extern "C" fn mongoac_insert_many_result_get_inserted_ids(
 impl From<InsertManyResult> for InsertManyResultT {
     fn from(value: InsertManyResult) -> Self {
         Self(value)
-    }
-}
-
-impl From<&InsertManyResult> for InsertManyResultT {
-    fn from(value: &InsertManyResult) -> Self {
-        let mut result = InsertManyResult::default(); // `InsertManyResult` does not implement `Clone`.
-        result.inserted_ids = value.inserted_ids.clone();
-        Self(result)
     }
 }
