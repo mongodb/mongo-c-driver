@@ -243,7 +243,7 @@ TEST_CASE("getters", "[mongoac][future]") {
 
         CHECK(mongoac_future_get_bool(future, error) == bool{}); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a bool");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return bool");
     }
 
     SECTION("type mismatch: bson") {
@@ -252,7 +252,7 @@ TEST_CASE("getters", "[mongoac][future]") {
 
         CHECK(mongoac_future_get_bson(future, error).ptr == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a bson");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return bson");
     }
 
     SECTION("type mismatch: insertOne result") {
@@ -263,7 +263,7 @@ TEST_CASE("getters", "[mongoac][future]") {
             make_unique(mongoac_future_get_insert_one_result(future, error), &mongoac_insert_one_result_destroy);
         CHECK(result == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return an insertOne result");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return insert_one_result");
     }
 
     SECTION("type mismatch: uint64") {
@@ -272,7 +272,7 @@ TEST_CASE("getters", "[mongoac][future]") {
 
         CHECK(mongoac_future_get_uint64(future, error) == uint64_t{}); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a uint64");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return uint64");
     }
 
     SECTION("basic") {

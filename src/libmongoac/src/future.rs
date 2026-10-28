@@ -132,23 +132,23 @@ impl FutureT {
     }
 
     fn get_bool(&self) -> Result<&bool, ErrorT> {
-        self.get::<bool>("a bool")
+        self.get::<bool>("bool")
     }
 
     fn get_bson(&self) -> Result<&RawDocumentBuf, ErrorT> {
-        self.get::<RawDocumentBuf>("a bson")
+        self.get::<RawDocumentBuf>("bson")
     }
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
-        self.get::<InsertOneResult>("an insertOne result")
+        self.get::<InsertOneResult>("insert_one_result")
     }
 
     fn get_uint64(&self) -> Result<&u64, ErrorT> {
-        self.get::<u64>("a uint64")
+        self.get::<u64>("uint64")
     }
 
     fn get_void(&self) -> Result<&(), ErrorT> {
-        self.get::<()>("a void")
+        self.get::<()>("void")
     }
 
     /// Equivalent to [`FutureValue<T>::poll_with_context()`] with a noop waker.
