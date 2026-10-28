@@ -23,6 +23,7 @@ use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
 use crate::find_one_options::FindOneOptionsT;
 use crate::future::FutureT;
 use crate::insert_many_options::InsertManyOptionsT;
+use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_options::InsertOneOptionsT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
@@ -30,7 +31,7 @@ use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
-use mongodb::bson::{Document, RawDocument, RawDocumentBuf, serialize_to_raw_document_buf};
+use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
     CountOptions, DropCollectionOptions, EstimatedDocumentCountOptions, FindOneOptions,
     InsertManyOptions, InsertOneOptions,
@@ -189,14 +190,17 @@ pub extern "C" fn mongoac_collection_insert_many(
     count: usize,
     options: *const InsertManyOptionsT,
     error: *mut ErrorT,
-) -> BsonT {
+) -> *mut InsertManyResultT {
     let error = safe_optional_error_as_mut!(error);
     let collection = safe_as_ref_with_error!(collection, error);
     let session = safe_optional_as_mut!(session);
     let documents = safe_bson_view_array_as_vec_with_error!(documents, count, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_result!(collection.insert_many(session, documents, options), error).into()
+    safe_into_raw!(InsertManyResultT::from(safe_result!(
+        collection.insert_many(session, documents, options),
+        error
+    )))
 }
 
 #[unsafe(no_mangle)]
@@ -418,18 +422,16 @@ impl CollectionT {
         session: Option<&mut ClientSessionT>,
         documents: Vec<&RawDocument>,
         options: Option<&InsertManyOptionsT>,
-    ) -> Result<RawDocumentBuf, ErrorT> {
+    ) -> Result<InsertManyResult, ErrorT> {
         let documents: Vec<RawDocumentBuf> = documents.into_iter().map(ToOwned::to_owned).collect();
 
         self.runtime.block_on(async {
-            let res = session_op!(
+            session_op!(
                 self.inner
                     .insert_many(documents)
                     .with_options(options.map(Into::into)),
                 session
-            )?;
-
-            insert_many_result_to_raw(&res)
+            )
         })
     }
 
@@ -444,10 +446,8 @@ impl CollectionT {
         let documents: Vec<RawDocumentBuf> = documents.into_iter().map(ToOwned::to_owned).collect();
         let options: Option<InsertManyOptions> = options.map(Into::into);
 
-        self.spawn::<RawDocumentBuf>(async move {
-            let res = session_op!(coll.insert_many(documents).with_options(options), session)?;
-
-            insert_many_result_to_raw(&res)
+        self.spawn::<InsertManyResult>(async move {
+            session_op!(coll.insert_many(documents).with_options(options), session)
         })
     }
 
@@ -518,18 +518,4 @@ impl RuntimeAware for CollectionT {
     fn runtime(&self) -> &RuntimeT {
         &self.runtime
     }
-}
-
-/// Serialize the given `InsertManyResult` into a raw BSON document, e.g. `{"insertedIds": {"0": ...}}`.
-fn insert_many_result_to_raw(res: &InsertManyResult) -> Result<RawDocumentBuf, ErrorT> {
-    let mut inserted_ids = Document::new();
-    for (index, id) in &res.inserted_ids {
-        // Cannot serialize keys as integers: `{0: ...}` (invalid) vs. `{"0": ...}` (valid).
-        inserted_ids.insert(index.to_string(), id.clone());
-    }
-
-    let mut doc = Document::new();
-    doc.insert("insertedIds", inserted_ids);
-
-    serialize_to_raw_document_buf(&doc).map_err(Into::into)
 }

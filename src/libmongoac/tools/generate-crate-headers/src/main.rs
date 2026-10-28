@@ -113,6 +113,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/find_one_options-fwd.h",
                 "mongoac/future-fwd.h",
                 "mongoac/insert_many_options-fwd.h",
+                "mongoac/insert_many_result-fwd.h",
                 "mongoac/insert_one_options-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
