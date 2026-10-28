@@ -143,12 +143,10 @@ pub extern "C" fn mongoac_collection_insert_one_async(
     session: *mut ClientSessionT,
     document: BsonViewT,
     options: *const InsertOneOptionsT,
-    error: *mut ErrorT,
 ) -> *mut FutureT {
-    let error = safe_optional_error_as_mut!(error);
-    let collection = safe_as_ref_with_error!(collection, error);
+    let collection = safe_as_ref!(collection);
     let session = safe_optional_as_mut!(session);
-    let document = safe_bson_view_with_error!(document, error);
+    let document = safe_bson_view!(document);
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(collection.insert_one_async(session, document, options))

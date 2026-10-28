@@ -13,8 +13,7 @@ Synopsis
    mongoac_future_t *mongoac_collection_insert_one_async(const mongoac_collection_t *collection,
                                                          mongoac_client_session_t *session,
                                                          mongoac_bson_view_t document,
-                                                         const mongoac_insert_one_options_t *options,
-                                                         mongoac_error_t *error);
+                                                         const mongoac_insert_one_options_t *options);
 
 Description
 -----------

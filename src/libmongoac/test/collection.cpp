@@ -501,25 +501,22 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     SECTION("null collection") {
-        auto const future = make_unique(
-            mongoac_collection_insert_one_async(nullptr, nullptr, {}, nullptr, error), &mongoac_future_destroy);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        auto const future =
+            make_unique(mongoac_collection_insert_one_async(nullptr, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
     SECTION("null document") {
-        auto const future = make_unique(
-            mongoac_collection_insert_one_async(coll, nullptr, {}, nullptr, error), &mongoac_future_destroy);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        auto const future =
+            make_unique(mongoac_collection_insert_one_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
     SECTION("invalid BSON document") {
         std::uint8_t const bytes[] = {0xff};
         auto const future = make_unique(
-            mongoac_collection_insert_one_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error),
+            mongoac_collection_insert_one_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr),
             &mongoac_future_destroy);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(future == nullptr);
     }
 
@@ -530,7 +527,7 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
 
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_collection_insert_one_async(coll, nullptr, to_mongoac(doc.get()), nullptr, error),
+            mongoac_collection_insert_one_async(coll, nullptr, to_mongoac(doc.get()), nullptr),
             &mongoac_future_destroy);
         auto const future = future_owner.get();
         REQUIRE(future != nullptr);
