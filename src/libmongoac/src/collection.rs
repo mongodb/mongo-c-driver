@@ -131,10 +131,7 @@ pub extern "C" fn mongoac_collection_insert_one(
     let document = safe_bson_view_with_error!(document, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(InsertOneResultT::from(safe_result!(
-        collection.insert_one(session, document, options),
-        error
-    )))
+    safe_into_raw!(safe_result!(collection.insert_one(session, document, options), error).into())
 }
 
 #[unsafe(no_mangle)]
