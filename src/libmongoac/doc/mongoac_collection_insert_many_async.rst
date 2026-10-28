@@ -30,7 +30,7 @@ When a document in ``documents`` is null or invalid BSON, returns ``NULL``.
 
 The returned :symbol:`mongoac_future_t` must be destroyed with :symbol:`mongoac_future_destroy()`.
 
-The result of the future may be obtained with :symbol:`mongoac_future_get_bson()`.
+The result of the future may be obtained with :symbol:`mongoac_future_get_insert_many_result()`.
 
 .. seealso::
 

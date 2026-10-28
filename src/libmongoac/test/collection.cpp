@@ -26,6 +26,7 @@
 #include <mongoac/database.h>
 #include <mongoac/error.h>
 #include <mongoac/future.h>
+#include <mongoac/insert_many_result.h>
 #include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
 
