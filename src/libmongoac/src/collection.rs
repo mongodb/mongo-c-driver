@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::bson::BsonViewT;
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
+use crate::count_options::CountOptionsT;
 use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
@@ -24,7 +26,8 @@ use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
-use mongodb::bson::RawDocumentBuf;
+use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
+use mongodb::options::CountOptions;
 use mongodb::options::DropCollectionOptions;
 use mongodb::options::EstimatedDocumentCountOptions;
 
@@ -52,6 +55,38 @@ pub extern "C" fn mongoac_collection_get_client(coll: *const CollectionT) -> *mu
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_collection_get_name(coll: *const CollectionT) -> StringViewT {
     safe_as_ref!(coll).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_count_documents(
+    coll: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const CountOptionsT,
+    error: *mut ErrorT,
+) -> u64 {
+    let error = safe_optional_error_as_mut!(error);
+    let coll = safe_as_ref_with_error!(coll, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(coll.count_documents(session, filter, options), error)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_count_documents_async(
+    coll: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const CountOptionsT,
+) -> *mut FutureT {
+    let coll = safe_as_ref!(coll);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(coll.count_documents_async(session, filter, options))
 }
 
 #[unsafe(no_mangle)]
@@ -145,6 +180,42 @@ impl CollectionT {
         self.inner.name()
     }
 
+    fn count_documents(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&CountOptionsT>,
+    ) -> Result<u64, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .count_documents(filter)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn count_documents_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&CountOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let options: Option<CountOptions> = options.map(Into::into);
+
+        self.spawn::<u64>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(coll.count_documents(filter).with_options(options), session)
+        })
+    }
+
     fn drop(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -199,7 +270,6 @@ impl CollectionT {
     }
 
     // TODO: aggregate
-    // TODO: count_documents
     // TODO: create_index
     // TODO: create_indexes
     // TODO: create_search_index

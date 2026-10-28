@@ -19,6 +19,7 @@ pub mod client;
 pub mod client_session;
 pub mod collection;
 pub mod collection_options;
+pub mod count_options;
 pub mod database;
 pub mod database_options;
 pub mod drop_collection_options;

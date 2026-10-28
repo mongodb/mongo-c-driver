@@ -120,12 +120,10 @@ pub extern "C" fn mongoac_database_run_command_async(
     session: *mut ClientSessionT,
     command: BsonViewT,
     options: *const RunCommandOptionsT,
-    error: *mut ErrorT,
 ) -> *mut FutureT {
-    let error = safe_optional_error_as_mut!(error);
-    let db = safe_as_ref_with_error!(db, error);
+    let db = safe_as_ref!(db);
     let session = safe_optional_as_mut!(session);
-    let command = safe_bson_view_with_error!(command, error);
+    let command = safe_bson_view!(command);
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(db.run_command_async(session, command, options))
