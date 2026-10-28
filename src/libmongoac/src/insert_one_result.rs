@@ -16,7 +16,7 @@ use crate::bson::BsonT;
 use crate::error::ErrorT;
 use crate::private::macros::*;
 
-use mongodb::bson::{Document, RawDocumentBuf};
+use mongodb::bson::RawDocumentBuf;
 use mongodb::results::InsertOneResult;
 
 #[derive(Clone)]
@@ -42,10 +42,8 @@ pub extern "C" fn mongoac_insert_one_result_get_inserted_id(
     let error = safe_optional_error_as_mut!(error);
     let result = safe_as_ref_with_error!(result, error);
 
-    let mut doc = Document::new();
-    doc.insert("v", result.0.inserted_id.clone());
-
-    safe_result!(RawDocumentBuf::try_from(doc).map_err(ErrorT::from), error).into()
+    let doc = mongodb::bson::doc! { "v": result.0.inserted_id.clone() };
+    safe_result!(RawDocumentBuf::try_from(doc), error).into()
 }
 
 impl From<InsertOneResult> for InsertOneResultT {
