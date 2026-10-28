@@ -2,6 +2,8 @@ from shrub.v3.evg_build_variant import BuildVariant
 from shrub.v3.evg_command import EvgCommandType, FunctionCall, ec2_assume_role, expansions_update
 from shrub.v3.evg_task import EvgTask, EvgTaskDependency, EvgTaskRef
 
+from config_generator.components.funcs.csfle_setup import CSFLESetup
+from config_generator.components.funcs.csfle_teardown import CSFLETeardown
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
 from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
@@ -41,6 +43,21 @@ def functions():
             expansions_update(
                 command_type=EvgCommandType.SETUP,
                 file='mongoc/dsc-expansion.yml',
+            ),
+        ],
+        # Client-side encryption tests need crypt_shared. mongo-orchestration is not bootstrapped, so fetch it directly.
+        'fetch-dsc-crypt-shared': [
+            # Downloads of the "latest" server binary require an AWS identity (DRIVERS-3628).
+            ec2_assume_role(role_arn='${aws_test_secrets_role}'),
+            bash_exec(
+                command_type=EvgCommandType.SETUP,
+                include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
+                working_dir='mongoc',
+                script='.evergreen/scripts/dsc-fetch-crypt-shared.sh',
+            ),
+            expansions_update(
+                command_type=EvgCommandType.SETUP,
+                file='mongoc/crypt-shared-expansion.yml',
             ),
         ],
         # Also called from the top-level `post` so logs are collected when tasks fail.
@@ -95,6 +112,56 @@ def tasks():
                 ),
             ],
         )
+
+    # Client-side encryption: libmongocrypt is required at compile time, and `CLIENT_SIDE_ENCRYPTION=on` limits
+    # run-tests.sh to the CSE and unified tests.
+    cse_compile_name = f'dsc-{distro_str}-cse-compile'
+    yield EvgTask(
+        name=cse_compile_name,
+        run_on=find_large_distro(_DISTRO_NAME).name,
+        tags=['dsc', 'cse', _DISTRO_NAME, _COMPILER],
+        commands=[
+            bash_exec(
+                command_type=EvgCommandType.TEST,
+                env={
+                    'CC': _COMPILER,
+                    'CFLAGS': '-fno-omit-frame-pointer',
+                    'SSL': 'OPENSSL',
+                    'COMPILE_LIBMONGOCRYPT': 'ON',
+                },
+                include_expansions_in_env=['distro_id'],
+                working_dir='mongoc',
+                script='EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh',
+            ),
+            UploadBuild.call(),
+        ],
+    )
+
+    cells, mongods = _TOPOLOGIES['replset-1']
+    yield EvgTask(
+        name=f'dsc-{distro_str}-cse-test-replset-1',
+        depends_on=[EvgTaskDependency(name=cse_compile_name)],
+        run_on=find_large_distro(_DISTRO_NAME).name,
+        tags=['dsc', 'cse', 'replset-1', _DISTRO_NAME, _COMPILER],
+        commands=[
+            FetchBuild.call(build_name=cse_compile_name),
+            FetchDET.call(),
+            FunctionCall(
+                func='start-dsc',
+                vars={'DSC_NUM_CELLS': str(cells), 'DSC_MONGODS_PER_SHARD': str(mongods)},
+            ),
+            FunctionCall(func='fetch-dsc-crypt-shared'),
+            CSFLESetup.call(),
+            RunTests().call(
+                vars={
+                    'URI': '${MONGODB_URI}',
+                    'CLIENT_SIDE_ENCRYPTION': 'on',
+                    'CC': _COMPILER,
+                }
+            ),
+            CSFLETeardown.call(),
+        ],
+    )
 
 
 def variants():

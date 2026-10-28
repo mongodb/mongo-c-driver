@@ -308,6 +308,26 @@ functions:
         args:
           - -c
           - find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;
+  fetch-dsc-crypt-shared:
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - .evergreen/scripts/dsc-fetch-crypt-shared.sh
+    - command: expansions.update
+      type: setup
+      params:
+        file: mongoc/crypt-shared-expansion.yml
   fetch-enterprise-auth-secrets:
     - command: ec2.assume_role
       params:

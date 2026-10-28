@@ -5171,6 +5171,47 @@ tasks:
             - -c
             - .evergreen/scripts/compile.sh
       - func: upload-build
+  - name: dsc-ubuntu2404-gcc-cse-compile
+    run_on: ubuntu2404-large
+    tags: [dsc, cse, ubuntu2404, gcc]
+    commands:
+      - command: subprocess.exec
+        type: test
+        params:
+          binary: bash
+          working_dir: mongoc
+          env:
+            CC: gcc
+            CFLAGS: -fno-omit-frame-pointer
+            COMPILE_LIBMONGOCRYPT: "ON"
+            SSL: OPENSSL
+          include_expansions_in_env:
+            - distro_id
+          args:
+            - -c
+            - EXTRA_CONFIGURE_FLAGS="-DENABLE_PIC=ON ${EXTRA_CONFIGURE_FLAGS}" .evergreen/scripts/compile.sh
+      - func: upload-build
+  - name: dsc-ubuntu2404-gcc-cse-test-replset-1
+    run_on: ubuntu2404-large
+    tags: [dsc, cse, replset-1, ubuntu2404, gcc]
+    depends_on: [{ name: dsc-ubuntu2404-gcc-cse-compile }]
+    commands:
+      - func: fetch-build
+        vars:
+          BUILD_NAME: dsc-ubuntu2404-gcc-cse-compile
+      - func: fetch-det
+      - func: start-dsc
+        vars:
+          DSC_MONGODS_PER_SHARD: "1"
+          DSC_NUM_CELLS: "1"
+      - func: fetch-dsc-crypt-shared
+      - func: csfle-setup
+      - func: run-tests
+        vars:
+          CC: gcc
+          CLIENT_SIDE_ENCRYPTION: "on"
+          URI: ${MONGODB_URI}
+      - func: csfle-teardown
   - name: dsc-ubuntu2404-gcc-test-replset-1
     run_on: ubuntu2404-large
     tags: [dsc, replset-1, ubuntu2404, gcc]
