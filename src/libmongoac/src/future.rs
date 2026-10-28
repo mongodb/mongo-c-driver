@@ -82,14 +82,11 @@ pub extern "C" fn mongoac_future_get_bson(future: *const FutureT, error: *mut Er
 pub extern "C" fn mongoac_future_get_insert_one_result(
     future: *const FutureT,
     error: *mut ErrorT,
-) -> *mut InsertOneResultT {
+) -> *const InsertOneResultT {
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
 
-    safe_into_raw!(InsertOneResultT::from(safe_result!(
-        future.get_insert_one_result(),
-        error
-    )))
+    std::ptr::from_ref(safe_result!(future.get_insert_one_result(), error)).cast()
 }
 
 #[unsafe(no_mangle)]

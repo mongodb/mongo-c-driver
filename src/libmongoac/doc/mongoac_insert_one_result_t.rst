@@ -19,8 +19,6 @@ Description
 
 Represents the result of an ``insertOne`` operation (`InsertOneResult <https://docs.rs/mongodb/latest/mongodb/results/struct.InsertOneResult.html>`_).
 
-All ``mongoac_insert_one_result_t`` objects must be destroyed with :symbol:`mongoac_insert_one_result_destroy()`.
-
 .. only:: html
 
   Functions

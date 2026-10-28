@@ -10,15 +10,18 @@ Synopsis
 
    #include <mongoac/future.h>
 
-   mongoac_insert_one_result_t *mongoac_future_get_insert_one_result(const mongoac_future_t *future,
-                                                                     mongoac_error_t *error);
+   const mongoac_insert_one_result_t *mongoac_future_get_insert_one_result(const mongoac_future_t *future,
+                                                                           mongoac_error_t *error);
 
 Description
 -----------
 
 Obtain the :ref:`result <future-result>` of the given :symbol:`mongoac_future_t`.
 
-The returned :symbol:`mongoac_insert_one_result_t` must be destroyed with :symbol:`mongoac_insert_one_result_destroy()`.
+Lifetime
+--------
+
+The returned pointer is non-owning: it is valid only for the lifetime of ``future`` and must not be destroyed.
 
 Errors
 ------

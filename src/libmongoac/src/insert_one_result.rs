@@ -53,9 +53,3 @@ impl From<InsertOneResult> for InsertOneResultT {
         Self(value)
     }
 }
-
-impl From<&InsertOneResult> for InsertOneResultT {
-    fn from(value: &InsertOneResult) -> Self {
-        Self(value.clone())
-    }
-}

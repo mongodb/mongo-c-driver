@@ -535,11 +535,11 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
         CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
         CHECK_MONGOAC_ERROR_OK(error);
 
-        auto const result_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_future_get_insert_one_result(future, error), &mongoac_insert_one_result_destroy);
+        auto const result = mongoac_future_get_insert_one_result(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(result != nullptr);
 
-        auto const id_owner = from_mongoac(mongoac_insert_one_result_get_inserted_id(result_owner.get(), error));
+        auto const id_owner = from_mongoac(mongoac_insert_one_result_get_inserted_id(result, error));
         CHECK_MONGOAC_ERROR_OK(error);
         auto const id = REQUIRE_BSON_STATIC(id_owner);
 
