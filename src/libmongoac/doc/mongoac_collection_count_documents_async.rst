@@ -13,8 +13,7 @@ Synopsis
    mongoac_future_t *mongoac_collection_count_documents_async(const mongoac_collection_t *coll,
                                                               mongoac_client_session_t *session,
                                                               mongoac_bson_view_t filter,
-                                                              const mongoac_count_options_t *options,
-                                                              mongoac_error_t *error);
+                                                              const mongoac_count_options_t *options);
 
 Description
 -----------

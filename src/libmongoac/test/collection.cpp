@@ -214,26 +214,23 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
 
     SECTION("null coll") {
         auto const future = make_unique(
-            mongoac_collection_count_documents_async(nullptr, nullptr, {}, nullptr, error), &mongoac_future_destroy);
+            mongoac_collection_count_documents_async(nullptr, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future.get() == nullptr);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("null filter") {
         auto const future = make_unique(
-            mongoac_collection_count_documents_async(coll, nullptr, {}, nullptr, error), &mongoac_future_destroy);
+            mongoac_collection_count_documents_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future.get() == nullptr);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("invalid BSON filter") {
         std::uint8_t const bytes[] = {0xff};
 
         auto const future = make_unique(
-            mongoac_collection_count_documents_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error),
+            mongoac_collection_count_documents_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr),
             &mongoac_future_destroy);
         CHECK(future.get() == nullptr);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("rejected filter operator") {
@@ -242,7 +239,7 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
         auto const filter_where = REQUIRE_MAKE_UNIQUE(R"({"$where": "true"})"_bson, &bson_destroy);
 
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_collection_count_documents_async(coll, nullptr, to_mongoac(filter_where.get()), nullptr, error),
+            mongoac_collection_count_documents_async(coll, nullptr, to_mongoac(filter_where.get()), nullptr),
             &mongoac_future_destroy);
         auto const future = future_owner.get();
 
@@ -267,7 +264,7 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
         auto const filter_x2 = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
 
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_collection_count_documents_async(coll, nullptr, to_mongoac(filter_x2.get()), nullptr, error),
+            mongoac_collection_count_documents_async(coll, nullptr, to_mongoac(filter_x2.get()), nullptr),
             &mongoac_future_destroy);
         auto const future = future_owner.get();
 

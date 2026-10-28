@@ -78,12 +78,10 @@ pub extern "C" fn mongoac_collection_count_documents_async(
     session: *mut ClientSessionT,
     filter: BsonViewT,
     options: *const CountOptionsT,
-    error: *mut ErrorT,
 ) -> *mut FutureT {
-    let error = safe_optional_error_as_mut!(error);
-    let coll = safe_as_ref_with_error!(coll, error);
+    let coll = safe_as_ref!(coll);
     let session = safe_optional_as_mut!(session);
-    let filter = safe_bson_view_with_error!(filter, error);
+    let filter = safe_bson_view!(filter);
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.count_documents_async(session, filter, options))
