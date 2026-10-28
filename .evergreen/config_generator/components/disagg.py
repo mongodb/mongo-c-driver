@@ -6,7 +6,6 @@ from config_generator.components.funcs.csfle_setup import CSFLESetup
 from config_generator.components.funcs.csfle_teardown import CSFLETeardown
 from config_generator.components.funcs.fetch_build import FetchBuild
 from config_generator.components.funcs.fetch_det import FetchDET
-from config_generator.components.funcs.run_simple_http_server import RunSimpleHTTPServer
 from config_generator.components.funcs.run_tests import RunTests
 from config_generator.components.funcs.upload_build import UploadBuild
 from config_generator.etc.distros import find_large_distro, make_distro_str
@@ -16,11 +15,9 @@ from config_generator.etc.utils import bash_exec
 _DISTRO_NAME = 'ubuntu2404'
 _COMPILER = 'gcc'
 
-# name: (cells, mongods per shard). `slslocal` requires mongods per shard <= cells.
-_TOPOLOGIES = {
-    'replset-1': (1, 1),
-    'replset-3': (3, 3),
-}
+# `slslocal` requires mongods per shard <= cells.
+_NUM_CELLS = 3
+_MONGODS_PER_SHARD = 3
 
 
 def functions():
@@ -72,46 +69,6 @@ def functions():
 
 def tasks():
     distro_str = make_distro_str(_DISTRO_NAME, _COMPILER, None)
-    compile_name = f'dsc-{distro_str}-compile'
-
-    yield EvgTask(
-        name=compile_name,
-        run_on=find_large_distro(_DISTRO_NAME).name,
-        tags=['dsc', _DISTRO_NAME, _COMPILER],
-        commands=[
-            bash_exec(
-                command_type=EvgCommandType.TEST,
-                env={'CC': _COMPILER, 'CFLAGS': '-fno-omit-frame-pointer', 'SSL': 'OPENSSL'},
-                include_expansions_in_env=['distro_id'],
-                working_dir='mongoc',
-                script='.evergreen/scripts/compile.sh',
-            ),
-            UploadBuild.call(),
-        ],
-    )
-
-    for topology, (cells, mongods) in _TOPOLOGIES.items():
-        yield EvgTask(
-            name=f'dsc-{distro_str}-test-{topology}',
-            depends_on=[EvgTaskDependency(name=compile_name)],
-            run_on=find_large_distro(_DISTRO_NAME).name,
-            tags=['dsc', topology, _DISTRO_NAME, _COMPILER],
-            commands=[
-                FetchBuild.call(build_name=compile_name),
-                FetchDET.call(),
-                FunctionCall(
-                    func='start-dsc',
-                    vars={'DSC_NUM_CELLS': str(cells), 'DSC_MONGODS_PER_SHARD': str(mongods)},
-                ),
-                RunSimpleHTTPServer.call(),
-                RunTests().call(
-                    vars={
-                        'URI': '${MONGODB_URI}',
-                        'CC': _COMPILER,
-                    }
-                ),
-            ],
-        )
 
     # Client-side encryption: libmongocrypt is required at compile time, and `CLIENT_SIDE_ENCRYPTION=on` limits
     # run-tests.sh to the CSE and unified tests.
@@ -137,18 +94,17 @@ def tasks():
         ],
     )
 
-    cells, mongods = _TOPOLOGIES['replset-1']
     yield EvgTask(
-        name=f'dsc-{distro_str}-cse-test-replset-1',
+        name=f'dsc-{distro_str}-cse-test-replset-3',
         depends_on=[EvgTaskDependency(name=cse_compile_name)],
         run_on=find_large_distro(_DISTRO_NAME).name,
-        tags=['dsc', 'cse', 'replset-1', _DISTRO_NAME, _COMPILER],
+        tags=['dsc', 'cse', 'replset-3', _DISTRO_NAME, _COMPILER],
         commands=[
             FetchBuild.call(build_name=cse_compile_name),
             FetchDET.call(),
             FunctionCall(
                 func='start-dsc',
-                vars={'DSC_NUM_CELLS': str(cells), 'DSC_MONGODS_PER_SHARD': str(mongods)},
+                vars={'DSC_NUM_CELLS': str(_NUM_CELLS), 'DSC_MONGODS_PER_SHARD': str(_MONGODS_PER_SHARD)},
             ),
             FunctionCall(func='fetch-dsc-crypt-shared'),
             CSFLESetup.call(),
