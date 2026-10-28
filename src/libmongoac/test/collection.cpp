@@ -208,12 +208,12 @@ TEST_CASE("estimated_document_count", "[mongoac][collection]") {
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null") {
-        CHECK(mongoac_collection_estimated_document_count(nullptr, nullptr, error) == 0);
+        CHECK(mongoac_collection_estimated_document_count(nullptr, nullptr, error) == 0u);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("basic") {
-        CHECK(mongoac_collection_estimated_document_count(coll, nullptr, error) == 0);
+        CHECK(mongoac_collection_estimated_document_count(coll, nullptr, error) == 0u);
         CHECK_MONGOAC_ERROR_OK(error);
 
         auto const insert = REQUIRE_MAKE_UNIQUE(
@@ -222,7 +222,7 @@ TEST_CASE("estimated_document_count", "[mongoac][collection]") {
         (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
         REQUIRE_MONGOAC_ERROR_OK(error);
 
-        CHECK(mongoac_collection_estimated_document_count(coll, nullptr, error) == 3);
+        CHECK(mongoac_collection_estimated_document_count(coll, nullptr, error) == 3u);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -252,6 +252,21 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
     }
 
     SECTION("basic") {
+        {
+            auto const future_owner = REQUIRE_MAKE_UNIQUE(
+                mongoac_collection_estimated_document_count_async(coll, nullptr), &mongoac_future_destroy);
+            auto const future = future_owner.get();
+
+            {
+                auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+                CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+                CHECK_MONGOAC_ERROR_OK(error);
+            }
+
+            CHECK(mongoac_future_get_uint64(future, error) == 0u);
+            CHECK_MONGOAC_ERROR_OK(error);
+        }
+
         auto const insert = REQUIRE_MAKE_UNIQUE(
             R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
 
@@ -268,7 +283,7 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
-        CHECK(mongoac_future_get_uint64(future, error) == 3);
+        CHECK(mongoac_future_get_uint64(future, error) == 3u);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }

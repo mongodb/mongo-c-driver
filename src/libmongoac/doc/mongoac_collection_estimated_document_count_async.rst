@@ -11,8 +11,7 @@ Synopsis
    #include <mongoac/collection.h>
 
    mongoac_future_t *mongoac_collection_estimated_document_count_async(const mongoac_collection_t *coll,
-                                                                       const mongoac_estimated_document_count_options_t *options,
-                                                                       mongoac_error_t *error);
+                                                                       const mongoac_estimated_document_count_options_t *options);
 
 Description
 -----------

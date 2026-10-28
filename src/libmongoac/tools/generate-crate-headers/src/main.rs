@@ -61,7 +61,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ),
         ("DropDatabaseOptionsT", "mongoac_drop_database_options_t"),
         ("ErrorT", "mongoac_error_t"),
-git        (
+        (
             "EstimatedDocumentCountOptionsT",
             "mongoac_estimated_document_count_options_t",
         ),
