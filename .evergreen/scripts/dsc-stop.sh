@@ -14,5 +14,6 @@ if [[ ! -f "${TAG_FILE}" ]]; then
 fi
 
 run_slslocal --compose logs --follow=false >"$(pwd)/sls-logs.txt" 2>&1 || true
+gzip -f "$(pwd)/sls-logs.txt" || true # Uploaded by the stop-dsc function.
 run_slslocal --compose destroy || true
 rm -f "${TAG_FILE}"

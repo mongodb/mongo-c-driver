@@ -1,5 +1,5 @@
 from shrub.v3.evg_build_variant import BuildVariant
-from shrub.v3.evg_command import EvgCommandType, FunctionCall, ec2_assume_role, expansions_update
+from shrub.v3.evg_command import EvgCommandType, FunctionCall, ec2_assume_role, expansions_update, s3_put
 from shrub.v3.evg_task import EvgTask, EvgTaskDependency, EvgTaskRef
 
 from config_generator.components.funcs.csfle_setup import CSFLESetup
@@ -14,6 +14,10 @@ from config_generator.etc.utils import bash_exec
 # Every server-side process runs in a container, so only Docker is required on the host.
 _DISTRO_NAME = 'ubuntu2404'
 _COMPILER = 'gcc'
+
+# Pinned SLS image tag. Resolving the newest mainline tag at run time picked up a build whose services crash-loop
+# (all SLS containers stuck in `restarting`); bump deliberately after checking a newer tag comes up healthy.
+_SLS_TAG = 'linux-x86-64-f987ae59a6f61e0b4e3edc73663992e15c4e9261'
 
 # `slslocal` requires mongods per shard <= cells.
 _NUM_CELLS = 3
@@ -33,6 +37,7 @@ def functions():
                     'AWS_SESSION_TOKEN',
                     'DSC_NUM_CELLS',
                     'DSC_MONGODS_PER_SHARD',
+                    'DSC_SLS_TAG',
                 ],
                 working_dir='mongoc',
                 script='.evergreen/scripts/dsc-start.sh',
@@ -62,6 +67,17 @@ def functions():
             bash_exec(
                 working_dir='mongoc',
                 script='.evergreen/scripts/dsc-stop.sh',
+            ),
+            s3_put(
+                aws_key='${aws_key}',
+                aws_secret='${aws_secret}',
+                bucket='mciuploads',
+                content_type='${content_type|application/x-gzip}',
+                display_name='sls-logs.txt.gz',
+                local_file='mongoc/sls-logs.txt.gz',
+                optional=True,
+                permissions='public-read',
+                remote_file='${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-sls-logs.txt.gz',
             ),
         ],
     }
@@ -104,7 +120,11 @@ def tasks():
             FetchDET.call(),
             FunctionCall(
                 func='start-dsc',
-                vars={'DSC_NUM_CELLS': str(_NUM_CELLS), 'DSC_MONGODS_PER_SHARD': str(_MONGODS_PER_SHARD)},
+                vars={
+                    'DSC_NUM_CELLS': str(_NUM_CELLS),
+                    'DSC_MONGODS_PER_SHARD': str(_MONGODS_PER_SHARD),
+                    'DSC_SLS_TAG': _SLS_TAG,
+                },
             ),
             FunctionCall(func='fetch-dsc-crypt-shared'),
             CSFLESetup.call(),

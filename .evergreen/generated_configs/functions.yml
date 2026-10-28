@@ -721,6 +721,7 @@ functions:
           - AWS_SESSION_TOKEN
           - DSC_NUM_CELLS
           - DSC_MONGODS_PER_SHARD
+          - DSC_SLS_TAG
         args:
           - -c
           - .evergreen/scripts/dsc-start.sh
@@ -762,6 +763,17 @@ functions:
         args:
           - -c
           - .evergreen/scripts/dsc-stop.sh
+    - command: s3.put
+      params:
+        display_name: sls-logs.txt.gz
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: ${content_type|application/x-gzip}
+        local_file: mongoc/sls-logs.txt.gz
+        optional: true
+        permissions: public-read
+        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-sls-logs.txt.gz
   stop-load-balancer:
     - command: subprocess.exec
       params:
