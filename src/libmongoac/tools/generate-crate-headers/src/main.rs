@@ -53,6 +53,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("ClientT", "mongoac_client_t"),
         ("CollectionOptionsT", "mongoac_collection_options_t"),
         ("CollectionT", "mongoac_collection_t"),
+        ("CountOptionsT", "mongoac_count_options_t"),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
         (
@@ -84,8 +85,10 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "client_session" => &[],
             "collection_options" => &[],
             "collection" => &[
+                "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
+                "mongoac/count_options-fwd.h",
                 "mongoac/drop_collection_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/future-fwd.h",
@@ -93,6 +96,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "count_options" => &[],
             "client" => &[
                 "mongoac/database_options-fwd.h",
                 "mongoac/database-fwd.h",
