@@ -427,6 +427,42 @@ macro_rules! safe_string_view_with_error {
 
 /// Safely convert the `BsonViewT` into a `&RawDocument` when not null.
 ///
+/// When `bson.ptr` is null or `bson` contains invalid BSON, early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(bson: BsonViewT) -> R {
+///     let res: &RawDocument = safe_bson_view!(bson);
+///     assert!(!bson.ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `bson.ptr` must either be null or a valid pointer to a valid BSON document.
+/// - `bson.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `bson.ptr` is not null, the range `[bson.ptr, bson.ptr + bson.len)` must be valid and accessible.
+#[macro_export]
+macro_rules! safe_bson_view {
+    ($bson:expr) => {{
+        let bson: $crate::bson::BsonViewT = $bson;
+        if bson.ptr.is_null() {
+            return Default::default();
+        }
+        match mongodb::bson::RawDocument::from_bytes(unsafe {
+            std::slice::from_raw_parts(bson.ptr, bson.len)
+        }) {
+            Ok(doc) => doc,
+            Err(_) => {
+                return Default::default();
+            }
+        }
+    }};
+}
+
+/// Safely convert the `BsonViewT` into a `&RawDocument` when not null.
+///
 /// When `bson.ptr` is null or `bson` contains invalid BSON, set `error` and early-return from the function via
 /// `return Default::default();`.
 ///
