@@ -219,8 +219,8 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("null filter") {
-        auto const future = make_unique(
-            mongoac_collection_count_documents_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
+        auto const future =
+            make_unique(mongoac_collection_count_documents_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future.get() == nullptr);
     }
 
@@ -255,6 +255,24 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("basic") {
+        auto const filter_all = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
+
+        {
+            auto const future_owner = REQUIRE_MAKE_UNIQUE(
+                mongoac_collection_count_documents_async(coll, nullptr, to_mongoac(filter_all.get()), nullptr),
+                &mongoac_future_destroy);
+            auto const future = future_owner.get();
+
+            {
+                auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+                CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+                CHECK_MONGOAC_ERROR_OK(error);
+            }
+
+            CHECK(mongoac_future_get_uint64(future, error) == 0u);
+            CHECK_MONGOAC_ERROR_OK(error);
+        }
+
         auto const insert = REQUIRE_MAKE_UNIQUE(
             R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
 
