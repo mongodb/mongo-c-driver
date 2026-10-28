@@ -278,11 +278,9 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
         CHECK_MONGOAC_ERROR_OK(error);
 
-        auto const result =
-            make_unique(mongoac_future_get_insert_many_result(future, error), &mongoac_insert_many_result_destroy);
-        CHECK(result == nullptr); // Default::default()
+        CHECK(mongoac_future_get_insert_many_result(future, error) == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return an insertMany result");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return insert_many_result");
     }
 
     SECTION("basic") {

@@ -84,14 +84,11 @@ pub extern "C" fn mongoac_future_get_bson(future: *const FutureT, error: *mut Er
 pub extern "C" fn mongoac_future_get_insert_many_result(
     future: *const FutureT,
     error: *mut ErrorT,
-) -> *mut InsertManyResultT {
+) -> *const InsertManyResultT {
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
 
-    safe_into_raw!(InsertManyResultT::from(safe_result!(
-        future.get_insert_many_result(),
-        error
-    )))
+    std::ptr::from_ref(safe_result!(future.get_insert_many_result(), error)).cast()
 }
 
 #[unsafe(no_mangle)]
@@ -153,7 +150,7 @@ impl FutureT {
     }
 
     fn get_insert_many_result(&self) -> Result<&InsertManyResult, ErrorT> {
-        self.get::<InsertManyResult>("an insertMany result")
+        self.get::<InsertManyResult>("insert_many_result")
     }
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
