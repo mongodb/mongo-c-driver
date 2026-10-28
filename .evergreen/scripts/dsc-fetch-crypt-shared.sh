@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Download the crypt_shared library (used by client-side encryption tests) without bootstrapping
-# mongo-orchestration, and write its path to crypt-shared-expansion.yml (in the working directory).
+# Download the crypt_shared library and the mongocryptd binary (used by client-side encryption tests) without
+# bootstrapping mongo-orchestration, and write the crypt_shared path to crypt-shared-expansion.yml (in the working
+# directory). Most tests do not load crypt_shared and instead spawn mongocryptd from PATH; run-tests.sh adds
+# drivers-evergreen-tools/mongodb/bin to PATH.
 #
 # Inputs (environment):
 #   CRYPT_SHARED_VERSION  Server version to download crypt_shared for (default: latest).
@@ -24,6 +26,20 @@ uv run --no-project --with certifi --with boto3 python "${det_dir}/.evergreen/mo
   --version "${CRYPT_SHARED_VERSION:-latest}" \
   --out "${out_dir}" \
   --empty-is-error
+
+# Extract only mongocryptd from the server archive, as mongodb/bin/mongocryptd.
+uv run --no-project --with certifi --with boto3 python "${det_dir}/.evergreen/mongodl.py" \
+  --component archive \
+  --version "${CRYPT_SHARED_VERSION:-latest}" \
+  --out "${out_dir}" \
+  --only "*/bin/mongocryptd" \
+  --strip-path-components 1 \
+  --empty-is-error
+
+if [[ ! -x "${out_dir}/bin/mongocryptd" ]]; then
+  echo "Unable to find an executable mongocryptd at ${out_dir}/bin/mongocryptd" 1>&2
+  exit 1
+fi
 
 declare lib
 lib="$(find "${out_dir}" -type f -name 'mongo_crypt_v1.so' | head -n 1)"
