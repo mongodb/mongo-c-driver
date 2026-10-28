@@ -2,8 +2,11 @@
 
 Usage: dsc-uri.py <slslocal-state-dir>
 
-Reads the newest ports.json under the state directory, then asks the first mongod for its replica set name
-with a minimal OP_MSG `hello` (the host may not have mongosh).
+Reads the newest ports.json under the state directory, then finds the primary with a minimal OP_MSG `hello`
+(the host may not have mongosh) and connects to it directly.
+
+Replica set discovery does not work from the host: the members advertise names like `shard1-node0-mongod`
+that only resolve inside the containers (see the slslocal README), so the URI uses directConnection=true.
 """
 
 import glob
@@ -54,7 +57,8 @@ def skip_value(etype, bson, pos):
     raise RuntimeError(f'unhandled BSON element type {etype}')
 
 
-def top_level_strings(bson):
+def top_level_fields(bson):
+    """Decode the top-level string and boolean fields of a BSON document."""
     out = {}
     size = struct.unpack('<i', bson[:4])[0]
     pos = 4
@@ -67,8 +71,20 @@ def top_level_strings(bson):
         if etype == 0x02:
             n = struct.unpack('<i', bson[pos : pos + 4])[0]
             out[key] = bson[pos + 4 : pos + 4 + n - 1].decode()
+        elif etype == 0x08:
+            out[key] = bson[pos] != 0
         pos = skip_value(etype, bson, pos)
     return out
+
+
+def hello(address):
+    host, port = address.rsplit(':', 1)
+    with socket.create_connection((host, int(port)), timeout=30) as sock:
+        sock.settimeout(30)
+        sock.sendall(hello_command())
+        total = struct.unpack('<i', recv_exact(sock, 16)[:4])[0]
+        body = recv_exact(sock, total - 16)
+    return top_level_fields(body[5:])
 
 
 def main():
@@ -83,17 +99,11 @@ def main():
     if not hosts:
         sys.exit('ports.json has no mongod shards: ' + json.dumps(ports)[:500])
 
-    host, port = hosts[0].rsplit(':', 1)
-    with socket.create_connection((host, int(port)), timeout=30) as sock:
-        sock.settimeout(30)
-        sock.sendall(hello_command())
-        total = struct.unpack('<i', recv_exact(sock, 16)[:4])[0]
-        body = recv_exact(sock, total - 16)
-    set_name = top_level_strings(body[5:]).get('setName')
-    if not set_name:
-        sys.exit('hello reply has no setName; is the deployment a replica set?')
-
-    print(f'MONGODB_URI: "mongodb://{",".join(hosts)}/?replicaSet={set_name}"')
+    for address in hosts:
+        if hello(address).get('isWritablePrimary'):
+            print(f'MONGODB_URI: "mongodb://{address}/?directConnection=true"')
+            return
+    sys.exit(f'no primary found among {hosts}')
 
 
 main()
