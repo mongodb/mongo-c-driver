@@ -2834,6 +2834,12 @@ operation_upload(test_t *test, operation_t *op, result_t *result, bson_error_t *
          total_written += (size_t)bytes_written;
       }
       mongoc_gridfs_bucket_stream_error(stream, &op_error);
+      // Close the upload stream writes the final partial chunk and the files document.
+      // Close is called in mongoc_stream_destroy. Close explicitly here to capture errors.
+      if (mongoc_stream_close(stream) != 0) {
+         mongoc_gridfs_bucket_stream_error(stream, &op_error);
+         mongoc_gridfs_bucket_abort_upload(stream);
+      }
       bson_free(source_bytes);
    }
 
