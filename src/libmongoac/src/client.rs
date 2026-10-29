@@ -128,7 +128,6 @@ impl ClientT {
 
     // TODO: append_metadata
     // TODO: bulk_write
-    // TODO: database_with_options
     // TODO: default_database
     // TODO: list_database_names
     // TODO: list_databases
