@@ -516,7 +516,7 @@ macro_rules! safe_bson_view_with_error {
 ///
 /// ```rust
 /// fn example(ptr: *const BsonViewT, count: usize) -> R {
-///     let documents: Vec<&RawDocument> = safe_bson_view_array_as_vec!(ptr, count);
+///     let docs: Vec<&RawDocument> = safe_bson_view_array_as_vec!(ptr, count);
 ///     assert!(!ptr.is_null());
 /// }
 /// ```
@@ -542,7 +542,7 @@ macro_rules! safe_bson_view_array_as_vec {
         // SAFETY: `ptr` and `count` validity is an uncheckable precondition.
         let views = unsafe { std::slice::from_raw_parts(ptr, count) };
 
-        let mut documents: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
+        let mut docs: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
         for view in views {
             if view.ptr.is_null() {
                 return Default::default();
@@ -550,13 +550,13 @@ macro_rules! safe_bson_view_array_as_vec {
             match mongodb::bson::RawDocument::from_bytes(unsafe {
                 std::slice::from_raw_parts(view.ptr, view.len)
             }) {
-                Ok(document) => documents.push(document),
+                Ok(doc) => docs.push(doc),
                 Err(_) => {
                     return Default::default();
                 }
             }
         }
-        documents
+        docs
     }};
 }
 
@@ -569,7 +569,7 @@ macro_rules! safe_bson_view_array_as_vec {
 ///
 /// ```rust
 /// fn example(ptr: *const BsonViewT, count: usize, error: Option<&mut ErrorT>) -> R {
-///     let documents: Vec<&RawDocument> = safe_bson_view_array_as_vec_with_error!(ptr, count, error);
+///     let docs: Vec<&RawDocument> = safe_bson_view_array_as_vec_with_error!(ptr, count, error);
 ///     assert!(!ptr.is_null());
 /// }
 /// ```
@@ -604,7 +604,7 @@ macro_rules! safe_bson_view_array_as_vec_with_error {
         // SAFETY: `ptr` and `count` validity is an uncheckable precondition.
         let views = unsafe { std::slice::from_raw_parts(ptr, count) };
 
-        let mut documents: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
+        let mut docs: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
         for (i, view) in views.iter().enumerate() {
             if view.ptr.is_null() {
                 $crate::private::safety::invalid_argument(
@@ -616,7 +616,7 @@ macro_rules! safe_bson_view_array_as_vec_with_error {
             match mongodb::bson::RawDocument::from_bytes(unsafe {
                 std::slice::from_raw_parts(view.ptr, view.len)
             }) {
-                Ok(document) => documents.push(document),
+                Ok(doc) => docs.push(doc),
                 Err(e) => {
                     $crate::private::safety::invalid_argument(
                         $error,
@@ -626,7 +626,7 @@ macro_rules! safe_bson_view_array_as_vec_with_error {
                 }
             }
         }
-        documents
+        docs
     }};
 }
 
