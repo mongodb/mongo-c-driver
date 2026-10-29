@@ -11,3 +11,10 @@
 /find_and_modify/find_and_modify/write_concern_failure # DSC accepts unsatisfiable write concern
 # Same behavior seen in a manual run; not yet confirmed in Evergreen.
 /transactions/unified/commit/"Write concern error on commit" # DSC accepts unsatisfiable write concern
+
+# These run replSetStepDown against the primary and need an electable secondary. SLS configures only node0 with
+# priority 1 and the other members with priority 0, so the step down fails with "No replica set member is eligible
+# for primary handoff" (NodeNotFound).
+/server_discovery_and_monitoring/integration/rediscover-quickly-after-step-down # SLS secondaries have priority 0
+# Same step down as the integration test above; not yet reached in Evergreen.
+/server_discovery_and_monitoring/unified/rediscover-quickly-after-step-down # SLS secondaries have priority 0
