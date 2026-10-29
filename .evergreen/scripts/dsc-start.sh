@@ -62,14 +62,18 @@ mapfile -t member_names < <(python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" 
 echo "127.0.0.1 ${member_names[*]} ${HOSTS_MARKER}" | sudo tee -a /etc/hosts >/dev/null ||
   fail "unable to add replica set member names to /etc/hosts"
 
-# Some tests hardcode localhost:27017 (the default port) instead of using the test URI. SLS mongods listen on other
-# published ports, so redirect local traffic on 27017 to the first mongod. Best effort: tests that need it will fail
-# if the redirect cannot be installed.
-declare first_port
-first_port="$(python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" --first-port)"
-sudo iptables -t nat -A OUTPUT -d 127.0.0.1 -p tcp --dport 27017 -j REDIRECT --to-ports "${first_port}" ||
-  echo "WARNING: unable to redirect 127.0.0.1:27017 to port ${first_port}" 1>&2
-echo "${first_port}" >"${STATE_DIR}/dsc-redirect-port"
+# Some tests hardcode localhost:27017, :27018 and :27019 (the ports of a default local replica set) instead of using
+# the test URI. SLS mongods listen on other published ports, so redirect those local ports to the mongods, in order.
+# Best effort: tests that need it will fail if a redirect cannot be installed.
+declare -a published_ports
+mapfile -t published_ports < <(python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" --published-ports)
+: >"${REDIRECTS_FILE}"
+for i in "${!published_ports[@]}"; do
+  declare default_port=$((27017 + i))
+  sudo iptables -t nat -A OUTPUT -d 127.0.0.1 -p tcp --dport "${default_port}" -j REDIRECT --to-ports "${published_ports[i]}" ||
+    echo "WARNING: unable to redirect 127.0.0.1:${default_port} to port ${published_ports[i]}" 1>&2
+  echo "${default_port} ${published_ports[i]}" >>"${REDIRECTS_FILE}"
+done
 
 # Build the connection string from ports.json, asking one node for the replica set name over the wire protocol.
 python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" >dsc-expansion.yml || fail "unable to determine MONGODB_URI"

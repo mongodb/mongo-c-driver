@@ -3,7 +3,7 @@
 Usage:
   dsc-uri.py <slslocal-state-dir>                  Print an Evergreen expansion line with MONGODB_URI.
   dsc-uri.py <slslocal-state-dir> --member-names   Print the replica set member host names, one per line.
-  dsc-uri.py <slslocal-state-dir> --first-port     Print the published port of the first mongod.
+  dsc-uri.py <slslocal-state-dir> --published-ports  Print the published port of each mongod, one per line.
 
 The members advertise names like `shard1-node0-mongod:<published port>` that only resolve inside the containers.
 dsc-start.sh maps them to 127.0.0.1 in /etc/hosts (the ports are published on the host), so the URI can use normal
@@ -100,8 +100,9 @@ def main():
     if not nodes:
         sys.exit('ports.json has no mongod shards: ' + json.dumps(ports)[:500])
 
-    if '--first-port' in sys.argv[2:]:
-        print(next(iter(nodes.values())).rsplit(':', 1)[1])
+    if '--published-ports' in sys.argv[2:]:
+        for addr in nodes.values():
+            print(addr.rsplit(':', 1)[1])
         return
 
     if '--member-names' in sys.argv[2:]:
