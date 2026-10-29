@@ -21,7 +21,8 @@ use mongodb::results::InsertManyResult;
 
 pub struct InsertManyResultT(InsertManyResult);
 
-// `InsertManyResult` does not implement `Clone`: copy its fields into a default result.
+// `InsertManyResult` does not implement `Clone`: copy its fields into a default result. This will
+// be fixed in version 3.10.0 of the Rust Driver (RUST-2535).
 impl Clone for InsertManyResultT {
     fn clone(&self) -> Self {
         let mut result = InsertManyResult::default();
