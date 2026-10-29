@@ -45,7 +45,6 @@
 using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
-using mongoac::test::operator""_bson;
 using mongoac::test::operator""_sv;
 using mongoac::test::operator""_bson;
 using mongoac::test::default_uri;
