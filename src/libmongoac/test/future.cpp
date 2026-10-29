@@ -23,6 +23,7 @@
 
 #include <mongoac/client.h>
 #include <mongoac/error.h>
+#include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
 
 #include <catch2/catch_test_macros.hpp>
@@ -242,7 +243,7 @@ TEST_CASE("getters", "[mongoac][future]") {
 
         CHECK(mongoac_future_get_bool(future, error) == bool{}); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a bool");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return bool");
     }
 
     SECTION("type mismatch: bson") {
@@ -251,7 +252,16 @@ TEST_CASE("getters", "[mongoac][future]") {
 
         CHECK(mongoac_future_get_bson(future, error).ptr == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a bson");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return bson");
+    }
+
+    SECTION("type mismatch: insert_one_result") {
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_insert_one_result(future, error) == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return insert_one_result");
     }
 
     SECTION("type mismatch: uint64") {
@@ -260,7 +270,7 @@ TEST_CASE("getters", "[mongoac][future]") {
 
         CHECK(mongoac_future_get_uint64(future, error) == uint64_t{}); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return a uint64");
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return uint64");
     }
 
     SECTION("basic") {

@@ -21,15 +21,18 @@ use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
 use crate::future::FutureT;
+use crate::insert_one_options::InsertOneOptionsT;
+use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
-use mongodb::options::CountOptions;
-use mongodb::options::DropCollectionOptions;
-use mongodb::options::EstimatedDocumentCountOptions;
+use mongodb::options::{
+    CountOptions, DropCollectionOptions, EstimatedDocumentCountOptions, InsertOneOptions,
+};
+use mongodb::results::InsertOneResult;
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -139,6 +142,38 @@ pub extern "C" fn mongoac_collection_estimated_document_count_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.estimated_document_count_async(options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_one(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    doc: BsonViewT,
+    options: *const InsertOneOptionsT,
+    error: *mut ErrorT,
+) -> *mut InsertOneResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let doc = safe_bson_view_with_error!(doc, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.insert_one(session, doc, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_one_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    doc: BsonViewT,
+    options: *const InsertOneOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let doc = safe_bson_view!(doc);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.insert_one_async(session, doc, options))
 }
 
 #[unsafe(no_mangle)]
@@ -269,6 +304,38 @@ impl CollectionT {
         })
     }
 
+    fn insert_one(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        doc: &RawDocument,
+        options: Option<&InsertOneOptionsT>,
+    ) -> Result<InsertOneResult, ErrorT> {
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner
+                    .insert_one(doc.to_owned())
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn insert_one_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        doc: &RawDocument,
+        options: Option<&InsertOneOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let doc = doc.to_owned();
+        let options: Option<InsertOneOptions> = options.map(Into::into);
+
+        self.spawn::<InsertOneResult>(async move {
+            session_op!(coll.insert_one(doc).with_options(options), session)
+        })
+    }
+
     // TODO: aggregate
     // TODO: create_index
     // TODO: create_indexes
@@ -286,7 +353,6 @@ impl CollectionT {
     // TODO: find_one_and_replace
     // TODO: find_one_and_update
     // TODO: insert_many
-    // TODO: insert_one
     // TODO: insert_one_model
     // TODO: list_index_names
     // TODO: list_indexes
