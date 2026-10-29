@@ -40,6 +40,8 @@ The associated runtime may be obtained with :symbol:`mongoac_database_get_runtim
     mongoac_database_get_runtime
     mongoac_database_get_runtime_address
 
+    mongoac_database_create_collection
+    mongoac_database_create_collection_async
     mongoac_database_drop
     mongoac_database_drop_async
     mongoac_database_run_command
