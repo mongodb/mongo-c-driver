@@ -51,6 +51,24 @@ using mongoac::test::default_uri;
 using mongoac::test::to_bson;
 using mongoac::test::to_mongoac;
 
+namespace {
+
+// Check the given document is a BSON array of the expected number of ObjectIds in index order.
+void check_inserted_ids(bson_t const& ids, std::size_t expected) {
+    bson_iter_t iter = {};
+    REQUIRE(bson_iter_init(&iter, &ids));
+
+    std::size_t index = 0;
+    while (bson_iter_next(&iter)) {
+        CHECK(std::string_view{bson_iter_key(&iter)} == std::to_string(index));
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
+        ++index;
+    }
+    CHECK(index == expected);
+}
+
+} // namespace
+
 TEST_CASE("destroy", "[mongoac][collection]") {
     SECTION("null") {
         CHECK_NOTHROW(mongoac_collection_destroy(nullptr));
@@ -663,20 +681,6 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
     auto const coll = coll_owner.get();
 
-    // Check the given document is a BSON array of the expected number of ObjectIds in index order.
-    auto const check_inserted_ids = [](bson_t const& ids, std::size_t expected) {
-        bson_iter_t iter = {};
-        REQUIRE(bson_iter_init(&iter, &ids));
-
-        std::size_t index = 0;
-        while (bson_iter_next(&iter)) {
-            CHECK(std::string_view{bson_iter_key(&iter)} == std::to_string(index));
-            CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
-            ++index;
-        }
-        CHECK(index == expected);
-    };
-
     SECTION("null collection") {
         auto const result = make_unique(
             mongoac_collection_insert_many(nullptr, nullptr, nullptr, 1u, nullptr, error),
@@ -759,20 +763,6 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
     auto const coll_owner =
         REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
     auto const coll = coll_owner.get();
-
-    // Check the given document is a BSON array of the expected number of ObjectIds in index order.
-    auto const check_inserted_ids = [](bson_t const& ids, std::size_t expected) {
-        bson_iter_t iter = {};
-        REQUIRE(bson_iter_init(&iter, &ids));
-
-        std::size_t index = 0;
-        while (bson_iter_next(&iter)) {
-            CHECK(std::string_view{bson_iter_key(&iter)} == std::to_string(index));
-            CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
-            ++index;
-        }
-        CHECK(index == expected);
-    };
 
     SECTION("null collection") {
         auto const future = make_unique(
