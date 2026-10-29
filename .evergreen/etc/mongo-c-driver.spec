@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.30.13
+%global up_version   1.30.14
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -275,6 +275,9 @@ exit $ret
 
 
 %changelog
+* Tue Oct 27 2026 Remi Collet <remi@remirepo.net> - 1.30.14-1
+- update to 1.30.14
+
 * Fri Oct  9 2026 Remi Collet <remi@remirepo.net> - 1.30.13-1
 - update to 1.30.13
 
