@@ -62,6 +62,14 @@ pub extern "C" fn mongoac_client_get_database(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_get_default_database(client: *const ClientT) -> *mut DatabaseT {
+    match safe_as_ref!(client).get_default_database() {
+        Some(db) => safe_into_raw!(db),
+        None => std::ptr::null_mut(),
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_client_shutdown(client: *mut ClientT) {
     safe_as_mut!(client).shutdown();
 }
@@ -109,6 +117,13 @@ impl ClientT {
         DatabaseT::new(&self.inner, self.runtime.clone(), name, options)
     }
 
+    #[must_use]
+    fn get_default_database(&self) -> Option<DatabaseT> {
+        self.inner
+            .default_database()
+            .map(|db| DatabaseT::new(&self.inner, self.runtime.clone(), db.name(), None))
+    }
+
     fn shutdown(&mut self) {
         let client = self.inner.clone(); // Avoid consuming `self.inner`.
 
@@ -128,7 +143,6 @@ impl ClientT {
 
     // TODO: append_metadata
     // TODO: bulk_write
-    // TODO: default_database
     // TODO: list_database_names
     // TODO: list_databases
     // TODO: read_concern

@@ -134,6 +134,34 @@ TEST_CASE("get_database", "[mongoac][client]") {
     }
 }
 
+TEST_CASE("get_default_database", "[mongoac][client]") {
+    SECTION("null client") {
+        auto const db = make_unique(mongoac_client_get_default_database(nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        // A connection string with a database path specifies the default database.
+        auto const client_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new("mongodb://doesnotexist.invalid:27017/mydb?serverSelectionTimeoutMS=1"_sv, nullptr),
+            &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const db = REQUIRE_MAKE_UNIQUE(mongoac_client_get_default_database(client), &mongoac_database_destroy);
+        CHECK(from_mongoac(mongoac_database_get_name(db.get())) == "mydb");
+    }
+
+    SECTION("no default") {
+        // A connection string without a database path specifies no default database.
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const db = make_unique(mongoac_client_get_default_database(client), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+}
+
 TEST_CASE("get_runtime", "[mongoac][client]") {
     SECTION("null") {
         auto const runtime = make_unique(mongoac_client_get_runtime(nullptr), &mongoac_runtime_destroy);
