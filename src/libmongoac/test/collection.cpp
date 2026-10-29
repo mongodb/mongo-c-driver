@@ -41,6 +41,7 @@
 using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
+using mongoac::test::operator""_bson;
 using mongoac::test::operator""_sv;
 using mongoac::test::operator""_bson;
 using mongoac::test::default_uri;
@@ -356,6 +357,105 @@ TEST_CASE("drop_async", "[mongoac][collection]") {
         }
 
         CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("estimated_document_count", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_estimated_document_count"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state. A non-existing collection counts as zero documents.
+    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null") {
+        CHECK(mongoac_collection_estimated_document_count(nullptr, nullptr, error) == 0u);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("basic") {
+        CHECK(mongoac_collection_estimated_document_count(coll, nullptr, error) == 0u);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_collection_estimated_document_count(coll, nullptr, error) == 3u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_estimated_document_count_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state. A non-existing collection counts as zero documents.
+    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null") {
+        auto const future =
+            make_unique(mongoac_collection_estimated_document_count_async(nullptr, nullptr), &mongoac_future_destroy);
+        CHECK(future.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        {
+            auto const future_owner = REQUIRE_MAKE_UNIQUE(
+                mongoac_collection_estimated_document_count_async(coll, nullptr), &mongoac_future_destroy);
+            auto const future = future_owner.get();
+
+            {
+                auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+                CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+                CHECK_MONGOAC_ERROR_OK(error);
+            }
+
+            CHECK(mongoac_future_get_uint64(future, error) == 0u);
+            CHECK_MONGOAC_ERROR_OK(error);
+        }
+
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_estimated_document_count_async(coll, nullptr), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        {
+            auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            CHECK_MONGOAC_ERROR_OK(error);
+        }
+
+        CHECK(mongoac_future_get_uint64(future, error) == 3u);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
