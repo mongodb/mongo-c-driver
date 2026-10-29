@@ -954,15 +954,20 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       bson_copy_to(reply, &cursor->error_doc);
    }
 
-   /* Read and Write Concern Spec: "Drivers SHOULD parse server replies for a
-    * "writeConcernError" field and report the error only in command-specific
-    * helper methods that take a separate write concern parameter or an options
-    * parameter that may contain a write concern option.
+   /* Read and Write Concern Spec: "Drivers MUST parse server replies for a
+    * "writeConcernError" field and report the error in all driver methods that
+    * send a server command that may include a `WriteConcern`, excluding
+    * `abortTransaction` and generic command methods."
     *
-    * Only command helpers with names like "_with_write_concern" can create
-    * cursors with a non-NULL write_concern field.
+    * Of the commands sent by cursors, only "aggregate" may include a write
+    * concern, whether passed in opts or inherited (an inherited write concern
+    * is applied to the command via cursor->write_concern above). Such an
+    * aggregate has $out or $merge, which _mongoc_aggregate marks with
+    * is_aggr_with_write_stage, so check the reply if it is set. Generic
+    * command methods (e.g. mongoc_cursor_new_from_command_reply_with_opts)
+    * create cursors without the flag set and are excluded per the spec.
     */
-   if (ret && cursor->write_concern) {
+   if (ret && cursor->is_aggr_with_write_stage) {
       ret = !_mongoc_parse_wc_err(reply, &cursor->error);
    }
 
@@ -1210,6 +1215,7 @@ mongoc_cursor_clone(const mongoc_cursor_t *cursor)
    _clone->nslen = cursor->nslen;
    _clone->dblen = cursor->dblen;
    _clone->explicit_session = cursor->explicit_session;
+   _clone->is_aggr_with_write_stage = cursor->is_aggr_with_write_stage;
 
    if (cursor->read_prefs) {
       _clone->read_prefs = mongoc_read_prefs_copy(cursor->read_prefs);
