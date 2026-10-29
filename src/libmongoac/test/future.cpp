@@ -255,7 +255,7 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return bson");
     }
 
-    SECTION("type mismatch: insertOne result") {
+    SECTION("type mismatch: insert_one_result") {
         CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
         CHECK_MONGOAC_ERROR_OK(error);
 
