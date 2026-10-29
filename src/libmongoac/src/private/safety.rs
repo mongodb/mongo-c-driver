@@ -450,9 +450,8 @@ macro_rules! safe_bson_view {
         if bson.ptr.is_null() {
             return Default::default();
         }
-        match mongodb::bson::RawDocument::from_bytes(unsafe {
-            std::slice::from_raw_parts(bson.ptr, bson.len)
-        }) {
+        // SAFETY: validity of `bson` is an uncheckable precondition.
+        match unsafe { $crate::private::safety::to_raw_document(bson) } {
             Ok(doc) => doc,
             Err(_) => {
                 return Default::default();
@@ -492,9 +491,8 @@ macro_rules! safe_bson_view_with_error {
             );
             return Default::default();
         }
-        match mongodb::bson::RawDocument::from_bytes(unsafe {
-            std::slice::from_raw_parts(bson.ptr, bson.len)
-        }) {
+        // SAFETY: validity of `bson` is an uncheckable precondition.
+        match unsafe { $crate::private::safety::to_raw_document(bson) } {
             Ok(doc) => doc,
             Err(e) => {
                 $crate::private::safety::invalid_argument(
@@ -547,9 +545,8 @@ macro_rules! safe_bson_view_array_as_vec {
             if view.ptr.is_null() {
                 return Default::default();
             }
-            match mongodb::bson::RawDocument::from_bytes(unsafe {
-                std::slice::from_raw_parts(view.ptr, view.len)
-            }) {
+            // SAFETY: validity of `view` is an uncheckable precondition.
+            match unsafe { $crate::private::safety::to_raw_document(*view) } {
                 Ok(doc) => docs.push(doc),
                 Err(_) => {
                     return Default::default();
@@ -613,9 +610,8 @@ macro_rules! safe_bson_view_array_as_vec_with_error {
                 );
                 return Default::default();
             }
-            match mongodb::bson::RawDocument::from_bytes(unsafe {
-                std::slice::from_raw_parts(view.ptr, view.len)
-            }) {
+            // SAFETY: validity of `view` is an uncheckable precondition.
+            match unsafe { $crate::private::safety::to_raw_document(*view) } {
                 Ok(doc) => docs.push(doc),
                 Err(e) => {
                     $crate::private::safety::invalid_argument(
@@ -628,6 +624,20 @@ macro_rules! safe_bson_view_array_as_vec_with_error {
         }
         docs
     }};
+}
+
+/// Convert the given `BsonViewT` into a `&RawDocument`.
+///
+/// Preconditions:
+///
+/// - When `bson.ptr` is not null, the range `[bson.ptr, bson.ptr + bson.len)` must be valid and accessible.
+pub(crate) unsafe fn to_raw_document<'a>(
+    bson: crate::bson::BsonViewT,
+) -> Result<&'a mongodb::bson::RawDocument, mongodb::bson::error::Error> {
+    // SAFETY: validity of `bson` is this function's precondition.
+    unsafe {
+        mongodb::bson::RawDocument::from_bytes(std::slice::from_raw_parts(bson.ptr, bson.len))
+    }
 }
 
 /// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
