@@ -40,7 +40,7 @@ pub struct StringT {
 #[repr(C)]
 #[derive(Default)]
 pub struct StringArrayT {
-    pub ptr: *mut StringT,
+    pub ptr: *const StringT,
     pub len: usize,
 }
 
@@ -51,17 +51,7 @@ pub extern "C" fn mongoac_string_destroy(string: StringT) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_string_array_destroy(array: StringArrayT) {
-    if !array.ptr.is_null() {
-        // SAFETY: `array.ptr` is a valid pointer to `array.len` elements, exclusively owned by the
-        // current function (precondition).
-        let strings = unsafe { std::slice::from_raw_parts_mut(array.ptr, array.len) };
-
-        for string in strings {
-            mongoac_string_destroy(std::mem::take(string));
-        }
-    }
-
-    safe_slice_drop!(array.ptr, array.len);
+    safe_array_drop!(array, mongoac_string_destroy);
 }
 
 impl From<&str> for StringViewT {
@@ -78,6 +68,18 @@ impl From<String> for StringT {
         let raw = safe_slice_into_raw!(s.into_bytes());
 
         StringT {
+            ptr: raw.cast(),
+            len: raw.len(),
+        }
+    }
+}
+
+impl From<Vec<String>> for StringArrayT {
+    fn from(strings: Vec<String>) -> Self {
+        let elements: Vec<StringT> = strings.into_iter().map(Into::into).collect();
+        let raw = safe_slice_into_raw!(elements);
+
+        StringArrayT {
             ptr: raw.cast(),
             len: raw.len(),
         }

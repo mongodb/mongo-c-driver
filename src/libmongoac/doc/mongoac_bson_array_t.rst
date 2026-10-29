@@ -11,7 +11,7 @@ Synopsis
    #include <mongoac/bson.h>
 
    typedef struct mongoac_bson_array_t {
-       mongoac_bson_t *ptr;
+       const mongoac_bson_t *ptr;
        uintptr_t len;
    } mongoac_bson_array_t;
 

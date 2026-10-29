@@ -11,7 +11,7 @@ Synopsis
    #include <mongoac/string.h>
 
    typedef struct mongoac_string_array_t {
-       mongoac_string_t *ptr;
+       const mongoac_string_t *ptr;
        uintptr_t len;
    } mongoac_string_array_t;
 

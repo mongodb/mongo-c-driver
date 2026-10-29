@@ -14,6 +14,7 @@
 
 //! Re-exports exported macros in a single module for convenient import-all via `use crate::private::macros::*;`.
 
+pub use crate::safe_array_drop;
 pub use crate::safe_as_mut;
 pub use crate::safe_as_ref;
 pub use crate::safe_as_ref_with_error;

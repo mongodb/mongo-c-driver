@@ -71,6 +71,42 @@ macro_rules! safe_slice_drop {
     }};
 }
 
+/// Safely drop the owning array and its elements.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(array: ExampleArrayT) {
+///     safe_array_drop!(array, |element| destroy_example(element));
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `array.ptr` must either be null or a valid pointer to `array.len` elements (e.g. obtained via `safe_slice_into_raw!`).
+/// - When `array.ptr` is not null, `array` must be exclusively owned by the current function.
+/// - When `array.ptr` is not null, `array.len` must equal the length of the original boxed slice.
+/// - `destroy` must take ownership of an element and drop it.
+#[macro_export]
+macro_rules! safe_array_drop {
+    ($array:expr, $destroy:expr) => {{
+        let array = $array;
+
+        if !array.ptr.is_null() {
+            let elements = unsafe {
+                Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+                    array.ptr.cast_mut(),
+                    array.len,
+                ))
+            };
+
+            for element in elements {
+                $destroy(element);
+            }
+        }
+    }};
+}
+
 /// Safely convert the given value into a raw owning pointer.
 ///
 /// Usage:
@@ -762,7 +798,7 @@ macro_rules! safe_string_view_array_with_error {
     }};
 }
 
-/// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
+// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
 pub(crate) fn invalid_argument<M>(error: Option<&mut crate::error::ErrorT>, msg: M)
 where
     M: Into<String>,
