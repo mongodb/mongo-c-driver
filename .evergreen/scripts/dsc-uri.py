@@ -6,7 +6,7 @@ Usage:
 
 The members advertise names like `shard1-node0-mongod:<published port>` that only resolve inside the containers.
 dsc-start.sh maps them to 127.0.0.1 in /etc/hosts (the ports are published on the host), so the URI can use normal
-replica set discovery. The replica set name is read from a minimal OP_MSG `hello` (the host may not have mongosh).
+replica set discovery, seeded with those same names. The replica set name is read from a minimal OP_MSG `hello` (the host may not have mongosh).
 """
 
 import glob
@@ -104,11 +104,16 @@ def main():
             print(f'{name}-mongod')
         return
 
-    hosts = list(nodes.values())
-    set_name = hello(hosts[0]).get('setName')
+    published = list(nodes.values())
+    set_name = hello(published[0]).get('setName')
     if not set_name:
         sys.exit('hello reply has no setName; is the deployment a replica set?')
-    print(f'MONGODB_URI: "mongodb://{",".join(hosts)}/?replicaSet={set_name}"')
+
+    # Seed with the names the members advertise (resolved by /etc/hosts), not the published addresses: otherwise
+    # discovery replaces the seeds with differently named servers and tests that rely on server ids from the seed
+    # list (e.g. serverId: 1) no longer find them.
+    seeds = [f'{name}-mongod:{addr.rsplit(":", 1)[1]}' for name, addr in nodes.items()]
+    print(f'MONGODB_URI: "mongodb://{",".join(seeds)}/?replicaSet={set_name}"')
 
 
 main()
