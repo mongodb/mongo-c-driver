@@ -54,6 +54,14 @@ fi
 run_slslocal --compose launch "${launch_args[@]}" || fail "slslocal launch failed"
 run_slslocal --compose wait --timeout 10m || fail "cluster did not become healthy within 10 minutes"
 
+# The replica set members advertise names (shardN-nodeM-mongod) that only resolve inside the containers, but their
+# ports are published on the host. Map the names to loopback so that replica set discovery works from the host.
+declare -a member_names
+mapfile -t member_names < <(python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" --member-names)
+[[ "${#member_names[@]}" -gt 0 ]] || fail "unable to determine replica set member names"
+echo "127.0.0.1 ${member_names[*]} ${HOSTS_MARKER}" | sudo tee -a /etc/hosts >/dev/null ||
+  fail "unable to add replica set member names to /etc/hosts"
+
 # Build the connection string from ports.json, asking one node for the replica set name over the wire protocol.
 python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" >dsc-expansion.yml || fail "unable to determine MONGODB_URI"
 cat dsc-expansion.yml

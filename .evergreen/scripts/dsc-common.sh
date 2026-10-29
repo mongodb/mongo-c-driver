@@ -8,6 +8,7 @@ ECR_ROOT="664315256653.dkr.ecr.us-east-1.amazonaws.com"
 STATE_DIR="${HOME}/.slslocal"
 AWS_DIR="${STATE_DIR}/aws"
 TAG_FILE="${STATE_DIR}/dsc-image-tag"
+HOSTS_MARKER="# dsc-evergreen"
 
 fail() {
   echo "ERROR: $*" 1>&2

@@ -8,6 +8,9 @@ set -o pipefail
 # shellcheck source=.evergreen/scripts/dsc-common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/dsc-common.sh"
 
+# Remove the replica set member names added to /etc/hosts by dsc-start.sh.
+sudo sed -i "/${HOSTS_MARKER}\$/d" /etc/hosts || true
+
 if [[ ! -f "${TAG_FILE}" ]]; then
   echo "OK - no DSC deployment running"
   exit 0

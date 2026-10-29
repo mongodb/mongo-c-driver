@@ -1,12 +1,12 @@
-"""Print an Evergreen expansion file line with MONGODB_URI for the deployment started by dsc-start.sh.
+"""Describe the deployment started by dsc-start.sh, from the newest ports.json under the slslocal state directory.
 
-Usage: dsc-uri.py <slslocal-state-dir>
+Usage:
+  dsc-uri.py <slslocal-state-dir>                  Print an Evergreen expansion line with MONGODB_URI.
+  dsc-uri.py <slslocal-state-dir> --member-names   Print the replica set member host names, one per line.
 
-Reads the newest ports.json under the state directory, then finds the primary with a minimal OP_MSG `hello`
-(the host may not have mongosh) and connects to it directly.
-
-Replica set discovery does not work from the host: the members advertise names like `shard1-node0-mongod`
-that only resolve inside the containers (see the slslocal README), so the URI uses directConnection=true.
+The members advertise names like `shard1-node0-mongod:<published port>` that only resolve inside the containers.
+dsc-start.sh maps them to 127.0.0.1 in /etc/hosts (the ports are published on the host), so the URI can use normal
+replica set discovery. The replica set name is read from a minimal OP_MSG `hello` (the host may not have mongosh).
 """
 
 import glob
@@ -95,15 +95,20 @@ def main():
     with open(max(paths, key=os.path.getmtime)) as f:
         ports = json.load(f)
     shards = ports.get('shards_by_log_id') or {}
-    hosts = [addr for nodes in shards.values() for addr in nodes.values()]
-    if not hosts:
+    nodes = {name: addr for members in shards.values() for name, addr in members.items()}
+    if not nodes:
         sys.exit('ports.json has no mongod shards: ' + json.dumps(ports)[:500])
 
-    for address in hosts:
-        if hello(address).get('isWritablePrimary'):
-            print(f'MONGODB_URI: "mongodb://{address}/?directConnection=true"')
-            return
-    sys.exit(f'no primary found among {hosts}')
+    if '--member-names' in sys.argv[2:]:
+        for name in nodes:
+            print(f'{name}-mongod')
+        return
+
+    hosts = list(nodes.values())
+    set_name = hello(hosts[0]).get('setName')
+    if not set_name:
+        sys.exit('hello reply has no setName; is the deployment a replica set?')
+    print(f'MONGODB_URI: "mongodb://{",".join(hosts)}/?replicaSet={set_name}"')
 
 
 main()
