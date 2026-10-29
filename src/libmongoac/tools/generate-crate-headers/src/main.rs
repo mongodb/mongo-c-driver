@@ -62,6 +62,10 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ),
         ("DropDatabaseOptionsT", "mongoac_drop_database_options_t"),
         ("ErrorT", "mongoac_error_t"),
+        (
+            "EstimatedDocumentCountOptionsT",
+            "mongoac_estimated_document_count_options_t",
+        ),
         ("FutureT", "mongoac_future_t"),
         ("RunCommandOptionsT", "mongoac_run_command_options_t"),
         ("RuntimeT", "mongoac_runtime_t"),
@@ -91,6 +95,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/count_options-fwd.h",
                 "mongoac/drop_collection_options-fwd.h",
                 "mongoac/error-fwd.h",
+                "mongoac/estimated_document_count_options-fwd.h",
                 "mongoac/future-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
@@ -123,6 +128,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             ],
             "drop_collection_options" => &[],
             "drop_database_options" => &[],
+            "estimated_document_count_options" => &[],
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
                 "mongoac/bson.h",
