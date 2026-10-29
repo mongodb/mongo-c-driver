@@ -507,6 +507,261 @@ macro_rules! safe_bson_view_with_error {
     }};
 }
 
+/// Safely convert the `BsonViewArrayT` into a `Vec<&RawDocument>` when not null or empty.
+///
+/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid BSON, early-return
+/// from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(arr: BsonViewArrayT) -> R {
+///     let res: Vec<&RawDocument> = safe_bson_view_array!(arr);
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `arr.ptr` must either be null or a valid pointer to an array of `arr.len` elements.
+/// - `arr.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `arr.ptr` is not null, the range `[arr.ptr, arr.ptr + arr.len)` must be valid and accessible.
+#[macro_export]
+macro_rules! safe_bson_view_array {
+    ($arr:expr) => {{
+        let arr: $crate::bson::BsonViewArrayT = $arr;
+
+        if arr.ptr.is_null() || arr.len == 0 {
+            return Default::default();
+        }
+
+        let views: &[$crate::bson::BsonViewT] =
+            unsafe { std::slice::from_raw_parts(arr.ptr, arr.len) };
+
+        let mut documents = Vec::with_capacity(views.len());
+
+        for view in views {
+            if view.ptr.is_null() {
+                return Default::default();
+            }
+
+            match mongodb::bson::RawDocument::from_bytes(unsafe {
+                std::slice::from_raw_parts(view.ptr, view.len)
+            }) {
+                Ok(doc) => documents.push(doc),
+                Err(_) => return Default::default(),
+            }
+        }
+
+        documents
+    }};
+}
+
+/// Safely convert the `BsonViewArrayT` into a `Vec<&RawDocument>` when not null or empty.
+///
+/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid BSON, set
+/// `error` and early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(arr: BsonViewArrayT, error: Option<&mut ErrorT>) -> R {
+///     let res: Vec<&RawDocument> = safe_bson_view_array_with_error!(arr, error);
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `arr.ptr` must either be null or a valid pointer to an array of `arr.len` elements.
+/// - `arr.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `arr.ptr` is not null, the range `[arr.ptr, arr.ptr + arr.len)` must be valid and accessible.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_bson_view_array_with_error {
+    ($arr:expr, $error:expr) => {{
+        let arr: $crate::bson::BsonViewArrayT = $arr;
+
+        if arr.ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($arr)),
+            );
+            return Default::default();
+        }
+
+        if arr.len == 0 {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be empty", stringify!($arr)),
+            );
+            return Default::default();
+        }
+
+        let views: &[$crate::bson::BsonViewT] =
+            unsafe { std::slice::from_raw_parts(arr.ptr, arr.len) };
+
+        let mut documents = Vec::with_capacity(views.len());
+
+        for (i, view) in views.iter().enumerate() {
+            if view.ptr.is_null() {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!(
+                        "{} element at index {i}: must not be null",
+                        stringify!($arr)
+                    ),
+                );
+                return Default::default();
+            }
+
+            match mongodb::bson::RawDocument::from_bytes(unsafe {
+                std::slice::from_raw_parts(view.ptr, view.len)
+            }) {
+                Ok(doc) => documents.push(doc),
+                Err(e) => {
+                    $crate::private::safety::invalid_argument(
+                        $error,
+                        format!(
+                            "{} element at index {i}: invalid BSON: {}",
+                            stringify!($arr),
+                            e
+                        ),
+                    );
+                    return Default::default();
+                }
+            }
+        }
+
+        documents
+    }};
+}
+
+/// Safely convert the `StringViewArrayT` into a `Vec<&str>` when not null or empty.
+///
+/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid UTF-8, early-return
+/// from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(arr: StringViewArrayT) -> R {
+///     let res: Vec<&str> = safe_string_view_array!(arr);
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `arr.ptr` must either be null or a valid pointer to an array of `arr.len` elements.
+/// - `arr.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `arr.ptr` is not null, the range `[arr.ptr, arr.ptr + arr.len)` must be valid and accessible.
+#[macro_export]
+macro_rules! safe_string_view_array {
+    ($arr:expr) => {{
+        let arr: $crate::string::StringViewArrayT = $arr;
+
+        if arr.ptr.is_null() || arr.len == 0 {
+            return Default::default();
+        }
+
+        let views: &[$crate::string::StringViewT] =
+            unsafe { std::slice::from_raw_parts(arr.ptr, arr.len) };
+
+        let mut strings = Vec::with_capacity(views.len());
+
+        for view in views {
+            if view.ptr.is_null() {
+                return Default::default();
+            }
+
+            match std::str::from_utf8(unsafe {
+                std::slice::from_raw_parts(view.ptr.cast::<u8>(), view.len)
+            }) {
+                Ok(s) => strings.push(s),
+                Err(_) => return Default::default(),
+            }
+        }
+
+        strings
+    }};
+}
+
+/// Safely convert the `StringViewArrayT` into a `Vec<&str>` when not null or empty.
+///
+/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid UTF-8, set
+/// `error` and early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(arr: StringViewArrayT, error: Option<&mut ErrorT>) -> R {
+///     let res: Vec<&str> = safe_string_view_array_with_error!(arr, error);
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `arr.ptr` must either be null or a valid pointer to an array of `arr.len` elements.
+/// - `arr.ptr` must not be mutably accessed concurrently by any other function.
+/// - When `arr.ptr` is not null, the range `[arr.ptr, arr.ptr + arr.len)` must be valid and accessible.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_string_view_array_with_error {
+    ($arr:expr, $error:expr) => {{
+        let arr: $crate::string::StringViewArrayT = $arr;
+
+        if arr.ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($arr)),
+            );
+            return Default::default();
+        }
+
+        if arr.len == 0 {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be empty", stringify!($arr)),
+            );
+            return Default::default();
+        }
+
+        let views: &[$crate::string::StringViewT] =
+            unsafe { std::slice::from_raw_parts(arr.ptr, arr.len) };
+
+        let mut strings = Vec::with_capacity(views.len());
+
+        for (i, view) in views.iter().enumerate() {
+            if view.ptr.is_null() {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!(
+                        "{} element at index {i}: must not be null",
+                        stringify!($arr)
+                    ),
+                );
+                return Default::default();
+            }
+
+            match std::str::from_utf8(unsafe {
+                std::slice::from_raw_parts(view.ptr.cast::<u8>(), view.len)
+            }) {
+                Ok(s) => strings.push(s),
+                Err(e) => {
+                    $crate::private::safety::invalid_argument(
+                        $error,
+                        format!(
+                            "{} element at index {i}: invalid UTF-8: {e}",
+                            stringify!($arr)
+                        ),
+                    );
+                    return Default::default();
+                }
+            }
+        }
+
+        strings
+    }};
+}
+
 /// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.
 pub(crate) fn invalid_argument<M>(error: Option<&mut crate::error::ErrorT>, msg: M)
 where

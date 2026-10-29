@@ -24,15 +24,44 @@ pub struct StringViewT {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct StringViewArrayT {
+    pub ptr: *const StringViewT,
+    pub len: usize,
+}
+
+#[repr(C)]
 #[derive(Default)]
 pub struct StringT {
     pub ptr: *const c_char,
     pub len: usize,
 }
 
+#[repr(C)]
+#[derive(Default)]
+pub struct StringArrayT {
+    pub ptr: *mut StringT,
+    pub len: usize,
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_string_destroy(string: StringT) {
     safe_slice_drop!(string.ptr as *mut u8, string.len);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_string_array_destroy(array: StringArrayT) {
+    if !array.ptr.is_null() {
+        // SAFETY: `array.ptr` is a valid pointer to `array.len` elements, exclusively owned by the
+        // current function (precondition).
+        let strings = unsafe { std::slice::from_raw_parts_mut(array.ptr, array.len) };
+
+        for string in strings {
+            mongoac_string_destroy(std::mem::take(string));
+        }
+    }
+
+    safe_slice_drop!(array.ptr, array.len);
 }
 
 impl From<&str> for StringViewT {

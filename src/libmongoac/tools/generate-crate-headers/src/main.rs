@@ -47,7 +47,9 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("BsonArrayT", "mongoac_bson_array_t"),
         ("BsonT", "mongoac_bson_t"),
+        ("BsonViewArrayT", "mongoac_bson_view_array_t"),
         ("BsonViewT", "mongoac_bson_view_t"),
         ("ClientSessionT", "mongoac_client_session_t"),
         ("ClientT", "mongoac_client_t"),
@@ -71,7 +73,9 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("InsertOneResultT", "mongoac_insert_one_result_t"),
         ("RunCommandOptionsT", "mongoac_run_command_options_t"),
         ("RuntimeT", "mongoac_runtime_t"),
+        ("StringArrayT", "mongoac_string_array_t"),
         ("StringT", "mongoac_string_t"),
+        ("StringViewArrayT", "mongoac_string_view_array_t"),
         ("StringViewT", "mongoac_string_view_t"),
     ];
 
@@ -162,7 +166,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     {
         let exports: &[&str] = match name {
             "bson" => &["BsonViewT"],
-            "string" => &["StringViewT"],
+            "string" => &["StringViewArrayT", "StringViewT"],
             _ => &[],
         };
 

@@ -24,10 +24,39 @@ pub struct BsonViewT {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct BsonViewArrayT {
+    pub ptr: *const BsonViewT,
+    pub len: usize,
+}
+
+#[repr(C)]
 #[derive(Default)]
 pub struct BsonT {
     pub ptr: *const u8,
     pub len: usize,
+}
+
+#[repr(C)]
+#[derive(Default)]
+pub struct BsonArrayT {
+    pub ptr: *mut BsonT,
+    pub len: usize,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_bson_array_destroy(array: BsonArrayT) {
+    if !array.ptr.is_null() {
+        // SAFETY: `array.ptr` is a valid pointer to `array.len` elements, exclusively owned by the
+        // current function (precondition).
+        let documents = unsafe { std::slice::from_raw_parts_mut(array.ptr, array.len) };
+
+        for document in documents {
+            mongoac_bson_destroy(std::mem::take(document));
+        }
+    }
+
+    safe_slice_drop!(array.ptr, array.len);
 }
 
 #[unsafe(no_mangle)]
@@ -53,6 +82,18 @@ impl From<RawDocumentBuf> for BsonT {
         BsonT {
             ptr: ret.cast(),
             len: ret.len(),
+        }
+    }
+}
+
+impl From<Vec<RawDocumentBuf>> for BsonArrayT {
+    fn from(documents: Vec<RawDocumentBuf>) -> Self {
+        let elements: Vec<BsonT> = documents.into_iter().map(BsonT::from).collect();
+        let raw = safe_slice_into_raw!(elements);
+
+        BsonArrayT {
+            ptr: raw.cast(),
+            len: raw.len(),
         }
     }
 }
