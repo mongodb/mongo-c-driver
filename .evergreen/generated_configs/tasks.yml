@@ -5231,6 +5231,7 @@ tasks:
       - func: run-tests
         vars:
           CC: gcc
+          DSC: "on"
           URI: ${MONGODB_URI}
   - name: kms-divergence-check
     commands:

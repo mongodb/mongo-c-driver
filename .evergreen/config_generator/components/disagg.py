@@ -125,6 +125,7 @@ def tasks():
             RunTests().call(
                 vars={
                     'URI': '${MONGODB_URI}',
+                    'DSC': 'on',
                     'CC': _COMPILER,
                 }
             ),

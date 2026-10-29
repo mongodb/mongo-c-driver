@@ -1,0 +1,7 @@
+# Known failing tests specific to disaggregated storage (DSC) deployments.
+# Used in addition to skip-tests.txt when DSC=on (see scripts/run-tests.sh).
+# Same format as skip-tests.txt.
+
+# These tests connect to [::1]:27017 (the default port). SLS mongods listen on other published ports.
+/Client/ipv6/single # connects to [::1]:27017; SLS mongods use other ports
+/Client/ipv6/pooled # connects to [::1]:27017; SLS mongods use other ports
