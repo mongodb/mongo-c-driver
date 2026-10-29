@@ -396,7 +396,8 @@ _mongoc_parse_wc_err(const bson_t *doc, bson_error_t *error)
             errmsg = bson_iter_utf8(&inner, NULL);
          }
       }
-      _mongoc_set_error(error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+      // An error may omit "errmsg" (e.g. set via a configureFailPoint.
+      _mongoc_set_error(error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg ? errmsg : "");
       return true;
    }
    return false;

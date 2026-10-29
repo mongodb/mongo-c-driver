@@ -1328,10 +1328,12 @@ _bulkwritereturn_apply_reply(mongoc_bulkwritereturn_t *self, const bson_t *cmd_r
          return false;
       }
 
-      // Parse `errmsg`.
-      const char *errmsg;
-      if (!lookup_string(&wce_bson, "errmsg", &errmsg, "writeConcernError", self->exc)) {
-         return false;
+      // Parse optional `errmsg`. An error may omit "errmsg" (e.g. via configureFailPoint.
+      const char *errmsg = "";
+      if (bson_has_field(&wce_bson, "errmsg")) {
+         if (!lookup_string(&wce_bson, "errmsg", &errmsg, "writeConcernError", self->exc)) {
+            return false;
+         }
       }
 
       // Parse optional `errInfo`.
