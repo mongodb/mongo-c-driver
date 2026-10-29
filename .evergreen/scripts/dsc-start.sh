@@ -62,6 +62,15 @@ mapfile -t member_names < <(python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" 
 echo "127.0.0.1 ${member_names[*]} ${HOSTS_MARKER}" | sudo tee -a /etc/hosts >/dev/null ||
   fail "unable to add replica set member names to /etc/hosts"
 
+# Some tests hardcode localhost:27017 (the default port) instead of using the test URI. SLS mongods listen on other
+# published ports, so redirect local traffic on 27017 to the first mongod. Best effort: tests that need it will fail
+# if the redirect cannot be installed.
+declare first_port
+first_port="$(python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" --first-port)"
+sudo iptables -t nat -A OUTPUT -d 127.0.0.1 -p tcp --dport 27017 -j REDIRECT --to-ports "${first_port}" ||
+  echo "WARNING: unable to redirect 127.0.0.1:27017 to port ${first_port}" 1>&2
+echo "${first_port}" >"${STATE_DIR}/dsc-redirect-port"
+
 # Build the connection string from ports.json, asking one node for the replica set name over the wire protocol.
 python3 "$(dirname "${BASH_SOURCE[0]}")/dsc-uri.py" "${STATE_DIR}" >dsc-expansion.yml || fail "unable to determine MONGODB_URI"
 cat dsc-expansion.yml
