@@ -9,8 +9,8 @@
 # An unsatisfiable write concern is accepted without a writeConcernError on DSC.
 # TODO: file a SERVER-/CDRIVER- ticket (see dsc-evergreen-proposal.md, open question 1).
 /find_and_modify/find_and_modify/write_concern_failure # DSC accepts unsatisfiable write concern
-# Same behavior seen in a manual run; not yet confirmed in Evergreen.
-/transactions/unified/commit/"Write concern error on commit" # DSC accepts unsatisfiable write concern
+# The commit uses w: 10, which is unsatisfiable on a three-node set. Sub-test descriptions are case sensitive.
+/transactions/unified/commit/"write concern error on commit" # DSC accepts unsatisfiable write concern
 
 # These run replSetStepDown against the primary and need an electable secondary. SLS configures only node0 with
 # priority 1 and the other members with priority 0, so the step down fails with "No replica set member is eligible
