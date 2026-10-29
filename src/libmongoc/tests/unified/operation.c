@@ -3513,12 +3513,12 @@ operation_rename(test_t *test, operation_t *op, result_t *result, bson_error_t *
       goto done;
    }
 
-   // Rename the collection in the server,
+   // Rename the collection in the server. Record the error (if any) in the
+   // result instead of failing the operation, so "expectError" applies.
    mongoc_collection_t *coll = ent->value;
-   if (!mongoc_collection_rename(coll, NULL, new_name, drop_target ? *drop_target : false, error)) {
-      goto done;
-   }
-   result_from_ok(result);
+   bson_error_t op_error = {0};
+   mongoc_collection_rename(coll, NULL, new_name, drop_target ? *drop_target : false, &op_error);
+   result_from_val_and_reply(result, NULL, NULL, &op_error);
    ret = true;
 done:
    bson_free(new_name);
