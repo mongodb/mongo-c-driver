@@ -54,12 +54,12 @@ pub extern "C" fn mongoac_insert_many_result_get_inserted_ids(
     let mut inserted_ids: Vec<(&usize, &Bson)> = result.0.inserted_ids.iter().collect();
     inserted_ids.sort_by_key(|(index, _)| **index);
 
-    let mut doc = Document::new();
-    for (index, id) in inserted_ids {
-        doc.insert(index.to_string(), id.clone());
-    }
+    let doc: Document = inserted_ids
+        .into_iter()
+        .map(|(index, id)| (index.to_string(), id.clone()))
+        .collect();
 
-    safe_result!(RawDocumentBuf::try_from(doc).map_err(ErrorT::from), error).into()
+    safe_result!(RawDocumentBuf::try_from(doc), error).into()
 }
 
 impl From<InsertManyResult> for InsertManyResultT {

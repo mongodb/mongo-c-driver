@@ -21,7 +21,7 @@ Obtain the :ref:`result <future-result>` of the given :symbol:`mongoac_future_t`
 Lifetime
 --------
 
-The returned pointer is non-owning: it is valid only for the lifetime of ``future`` and must not be destroyed.
+Access to the pointed-to result MUST be within the lifetime of the associated future.
 
 Errors
 ------

@@ -148,7 +148,7 @@ pub extern "C" fn mongoac_collection_estimated_document_count_async(
 pub extern "C" fn mongoac_collection_insert_many(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
-    documents: *const BsonViewT,
+    docs: *const BsonViewT,
     count: usize,
     options: *const InsertManyOptionsT,
     error: *mut ErrorT,
@@ -156,29 +156,26 @@ pub extern "C" fn mongoac_collection_insert_many(
     let error = safe_optional_error_as_mut!(error);
     let collection = safe_as_ref_with_error!(collection, error);
     let session = safe_optional_as_mut!(session);
-    let documents = safe_bson_view_array_as_vec_with_error!(documents, count, error);
+    let docs = safe_bson_view_array_as_vec_with_error!(docs, count, error);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(InsertManyResultT::from(safe_result!(
-        collection.insert_many(session, documents, options),
-        error
-    )))
+    safe_into_raw!(safe_result!(collection.insert_many(session, docs, options), error).into())
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_collection_insert_many_async(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
-    documents: *const BsonViewT,
+    docs: *const BsonViewT,
     count: usize,
     options: *const InsertManyOptionsT,
 ) -> *mut FutureT {
     let collection = safe_as_ref!(collection);
     let session = safe_optional_as_mut!(session);
-    let documents = safe_bson_view_array_as_vec!(documents, count);
+    let docs = safe_bson_view_array_as_vec!(docs, count);
     let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(collection.insert_many_async(session, documents, options))
+    safe_into_raw!(collection.insert_many_async(session, docs, options))
 }
 
 #[unsafe(no_mangle)]
@@ -344,15 +341,15 @@ impl CollectionT {
     fn insert_many(
         &self,
         session: Option<&mut ClientSessionT>,
-        documents: Vec<&RawDocument>,
+        docs: Vec<&RawDocument>,
         options: Option<&InsertManyOptionsT>,
     ) -> Result<InsertManyResult, ErrorT> {
-        let documents: Vec<RawDocumentBuf> = documents.into_iter().map(ToOwned::to_owned).collect();
+        let docs: Vec<RawDocumentBuf> = docs.into_iter().map(ToOwned::to_owned).collect();
 
         self.runtime.block_on(async {
             session_op!(
                 self.inner
-                    .insert_many(documents)
+                    .insert_many(docs)
                     .with_options(options.map(Into::into)),
                 session
             )
@@ -362,16 +359,16 @@ impl CollectionT {
     fn insert_many_async(
         &self,
         session: Option<&mut ClientSessionT>,
-        documents: Vec<&RawDocument>,
+        docs: Vec<&RawDocument>,
         options: Option<&InsertManyOptionsT>,
     ) -> FutureT {
         let coll = self.inner.clone();
         let session = session.map(|s| s.clone());
-        let documents: Vec<RawDocumentBuf> = documents.into_iter().map(ToOwned::to_owned).collect();
+        let docs: Vec<RawDocumentBuf> = docs.into_iter().map(ToOwned::to_owned).collect();
         let options: Option<InsertManyOptions> = options.map(Into::into);
 
         self.spawn::<InsertManyResult>(async move {
-            session_op!(coll.insert_many(documents).with_options(options), session)
+            session_op!(coll.insert_many(docs).with_options(options), session)
         })
     }
 
