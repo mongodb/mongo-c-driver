@@ -15,7 +15,11 @@ Synopsis
 Description
 -----------
 
-Returns a new :symbol:`mongoac_database_t` for the default database specified in the client's connection string, via `Client::default_database() <https://docs.rs/mongodb/latest/mongodb/struct.Client.html#method.default_database>`_.
+Returns a :symbol:`mongoac_database_t` for the default database specified in the ``ClientOptions`` or MongoDB connection string used to construct this ``Client``, via `Client::default_database() <https://docs.rs/mongodb/latest/mongodb/struct.Client.html#method.default_database>`_.
+
+When ``client`` is null, returns a null pointer.
+
+When no default database is specified, returns a null pointer.
 
 Must be destroyed with :symbol:`mongoac_database_destroy()`.
 
