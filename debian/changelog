@@ -15,6 +15,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
   * Fix CVE-2026-93394: SCRAM nonce validation bypass
   * Fix CVE-2026-96746: heap buffer overflow via mid-scan command list growth
     in client topology monitoring
+  * Fix CVE-2026-106428: out-of-bounds read in SCRAM authentication response
+    parsing
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
