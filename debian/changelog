@@ -6,6 +6,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     JSON string values in JSON-to-BSON parser
   * Fix CVE-2026-84964: heap corruption via OCSP request double free from
     crafted multi-URL certificate in TLS client
+  * Fix CVE-2026-84969: heap overflow via truncated base64 encoding of binary
+    fields in length-limited JSON output
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
