@@ -13,6 +13,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
   * Fix CVE-2026-88036: GridFS data disclosure and deletion via query-operator
     injection in file IDs
   * Fix CVE-2026-93394: SCRAM nonce validation bypass
+  * Fix CVE-2026-96746: heap buffer overflow via mid-scan command list growth
+    in client topology monitoring
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
