@@ -37,7 +37,8 @@ using mongoac::test::make_unique;
 
 TEST_CASE("destroy", "[mongoac][future]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_future_destroy(nullptr));
+        mongoac_future_destroy(nullptr);
+        SUCCEED();
     }
 }
 
@@ -183,7 +184,7 @@ TEST_CASE("is_ready", "[mongoac][future]") {
 
         // Readiness is a block-on postcondition on success.
         CHECK(mongoac_future_is_ready(future));
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 
@@ -209,7 +210,7 @@ TEST_CASE("is_ready", "[mongoac][future]") {
             CHECK(mongoac_future_is_ready(future));
         }
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -226,19 +227,19 @@ TEST_CASE("getters", "[mongoac][future]") {
     auto const future = future_owner.get();
 
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_future_get_void(nullptr, error));
+        mongoac_future_get_void(nullptr, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future: must not be null");
     }
 
     SECTION("not ready") {
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future is not ready");
     }
 
     SECTION("type mismatch: bool") {
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_future_get_bool(future, error) == bool{}); // Default::default()
@@ -247,7 +248,7 @@ TEST_CASE("getters", "[mongoac][future]") {
     }
 
     SECTION("type mismatch: bson") {
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_future_get_bson(future, error).ptr == nullptr); // Default::default()
@@ -256,7 +257,7 @@ TEST_CASE("getters", "[mongoac][future]") {
     }
 
     SECTION("type mismatch: insert_one_result") {
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_future_get_insert_one_result(future, error) == nullptr); // Default::default()
@@ -265,7 +266,7 @@ TEST_CASE("getters", "[mongoac][future]") {
     }
 
     SECTION("type mismatch: uint64") {
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_future_get_uint64(future, error) == uint64_t{}); // Default::default()
@@ -274,10 +275,10 @@ TEST_CASE("getters", "[mongoac][future]") {
     }
 
     SECTION("basic") {
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -306,7 +307,7 @@ TEST_CASE("poll", "[mongoac][future]") {
 
         // Polling a ready future is not an error.
         CHECK(mongoac_future_poll(future));
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 
@@ -325,7 +326,7 @@ TEST_CASE("poll", "[mongoac][future]") {
         }
 
         CHECK(mongoac_future_is_ready(future));
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }

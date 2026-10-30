@@ -20,6 +20,7 @@
 
 TEST_CASE("destroy", "[mongoac][drop_collection_options]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_drop_collection_options_destroy(nullptr));
+        mongoac_drop_collection_options_destroy(nullptr);
+        SUCCEED();
     }
 }
