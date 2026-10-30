@@ -18,8 +18,6 @@ Description
 
 Obtain the :ref:`result <future-result>` of the given :symbol:`mongoac_future_t`.
 
-When an async operation does not produce a document, the returned :symbol:`mongoac_bson_view_t` is default-initialized (null).
-
 Lifetime
 --------
 
