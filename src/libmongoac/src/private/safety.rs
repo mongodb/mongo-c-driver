@@ -91,6 +91,7 @@ macro_rules! safe_slice_drop {
 macro_rules! safe_array_drop {
     ($array:expr, $destroy:expr) => {{
         let array = $array;
+        let destroy = $destroy;
 
         if !array.ptr.is_null() {
             let elements = unsafe {
@@ -101,7 +102,7 @@ macro_rules! safe_array_drop {
             };
 
             for element in elements {
-                $destroy(element);
+                destroy(element);
             }
         }
     }};
@@ -398,7 +399,7 @@ macro_rules! safe_string_view {
     ($sv:expr) => {{
         use $crate::private::safety::AsSafeRef as _;
 
-        let sv = $sv;
+        let sv: $crate::string::StringViewT = $sv;
 
         match unsafe { sv.as_safe_ref() } {
             Ok(v) => v,
@@ -432,7 +433,7 @@ macro_rules! safe_string_view_with_error {
     ($sv:expr, $error:expr) => {{
         use $crate::private::safety::AsSafeRef as _;
 
-        let sv = $sv;
+        let sv: $crate::string::StringViewT = $sv;
 
         match unsafe { sv.as_safe_ref() } {
             Ok(v) => v,
@@ -467,7 +468,7 @@ macro_rules! safe_bson_view {
     ($bson:expr) => {{
         use $crate::private::safety::AsSafeRef as _;
 
-        let bson = $bson;
+        let bson: $crate::bson::BsonViewT = $bson;
 
         match unsafe { bson.as_safe_ref() } {
             Ok(v) => v,
@@ -501,7 +502,7 @@ macro_rules! safe_bson_view_with_error {
     ($bson:expr, $error:expr) => {{
         use $crate::private::safety::AsSafeRef as _;
 
-        let bson = $bson;
+        let bson: $crate::bson::BsonViewT = $bson;
 
         match unsafe { bson.as_safe_ref() } {
             Ok(v) => v,
@@ -536,7 +537,9 @@ macro_rules! safe_bson_view_array {
     ($arr:expr) => {{
         use $crate::private::safety::AsSafeRefs as _;
 
-        match unsafe { $arr.as_safe_refs() } {
+        let arr: $crate::bson::BsonViewArrayT = $arr;
+
+        match unsafe { arr.as_safe_refs() } {
             Ok(v) => v,
             Err(_) => return Default::default(),
         }
@@ -567,7 +570,9 @@ macro_rules! safe_bson_view_array_with_error {
     ($arr:expr, $error:expr) => {{
         use $crate::private::safety::AsSafeRefs as _;
 
-        match unsafe { $arr.as_safe_refs() } {
+        let arr: $crate::bson::BsonViewArrayT = $arr;
+
+        match unsafe { arr.as_safe_refs() } {
             Ok(v) => v,
             Err(e) => {
                 $crate::private::safety::invalid_argument($error, e.message(stringify!($arr)));
@@ -600,7 +605,9 @@ macro_rules! safe_string_view_array {
     ($arr:expr) => {{
         use $crate::private::safety::AsSafeRefs as _;
 
-        match unsafe { $arr.as_safe_refs() } {
+        let arr: $crate::string::StringViewArrayT = $arr;
+
+        match unsafe { arr.as_safe_refs() } {
             Ok(v) => v,
             Err(_) => return Default::default(),
         }
@@ -631,7 +638,9 @@ macro_rules! safe_string_view_array_with_error {
     ($arr:expr, $error:expr) => {{
         use $crate::private::safety::AsSafeRefs as _;
 
-        match unsafe { $arr.as_safe_refs() } {
+        let arr: $crate::string::StringViewArrayT = $arr;
+
+        match unsafe { arr.as_safe_refs() } {
             Ok(v) => v,
             Err(e) => {
                 $crate::private::safety::invalid_argument($error, e.message(stringify!($arr)));
