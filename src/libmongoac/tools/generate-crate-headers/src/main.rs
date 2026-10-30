@@ -99,6 +99,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/drop_collection_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/estimated_document_count_options-fwd.h",
+                "mongoac/find_one_options-fwd.h",
                 "mongoac/future-fwd.h",
                 "mongoac/insert_one_options-fwd.h",
                 "mongoac/insert_one_result-fwd.h",

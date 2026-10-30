@@ -460,6 +460,159 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
     }
 }
 
+TEST_CASE("find_one", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_find_one"_sv, nullptr), &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state. A non-existing collection has no matching documents.
+    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        CHECK(from_mongoac(mongoac_collection_find_one(nullptr, nullptr, {}, nullptr, error)) == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("null filter") {
+        CHECK(from_mongoac(mongoac_collection_find_one(coll, nullptr, {}, nullptr, error)) == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("invalid BSON filter") {
+        std::uint8_t const bytes[] = {0xff};
+
+        CHECK(
+            from_mongoac(mongoac_collection_find_one(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error)) ==
+            nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("not found") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+
+        CHECK(
+            from_mongoac(mongoac_collection_find_one(coll, nullptr, to_mongoac(filter.get()), nullptr, error)) ==
+            nullptr);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("basic") {
+        auto const insert =
+            REQUIRE_MAKE_UNIQUE(R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+
+        auto const result_owner =
+            from_mongoac(mongoac_collection_find_one(coll, nullptr, to_mongoac(filter.get()), nullptr, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const result = REQUIRE_BSON_STATIC(result_owner);
+
+        auto const iter = REQUIRE_BSON_ITER_FIND(result, "x");
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_INT32);
+        CHECK(bson_iter_int32(&iter) == 2);
+    }
+}
+
+TEST_CASE("find_one_async", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_find_one_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state. A non-existing collection has no matching documents.
+    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const future =
+            make_unique(mongoac_collection_find_one_async(nullptr, nullptr, {}, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null filter") {
+        auto const future =
+            make_unique(mongoac_collection_find_one_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON filter") {
+        std::uint8_t const bytes[] = {0xff};
+
+        auto const future = make_unique(
+            mongoac_collection_find_one_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("not found") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_find_one_async(coll, nullptr, to_mongoac(filter.get()), nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_optional_bson(future, error).ptr == nullptr);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("basic") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const insert =
+            REQUIRE_MAKE_UNIQUE(R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_find_one_async(coll, nullptr, to_mongoac(filter.get()), nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const view = mongoac_future_get_optional_bson(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const result = REQUIRE_BSON_STATIC(view);
+
+        auto const iter = REQUIRE_BSON_ITER_FIND(result, "x");
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_INT32);
+        CHECK(bson_iter_int32(&iter) == 2);
+    }
+}
+
 TEST_CASE("get_runtime", "[mongoac][collection]") {
     SECTION("null") {
         auto const runtime = make_unique(mongoac_collection_get_runtime(nullptr), &mongoac_runtime_destroy);
