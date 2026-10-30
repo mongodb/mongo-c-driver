@@ -23,7 +23,7 @@ Finds a single document matching the given ``filter`` via `Collection::find_one(
 
 The ``options`` parameter must be ``NULL``.
 
-When no document matches the filter, the returned :symbol:`mongoac_bson_t` is default-initialized (null).
+When no document matches the filter, returns a null :symbol:`mongoac_bson_t`.
 
 Errors
 ------
