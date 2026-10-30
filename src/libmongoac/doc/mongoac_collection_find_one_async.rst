@@ -26,9 +26,11 @@ When ``filter`` is null or invalid BSON, returns ``NULL``.
 
 The ``options`` parameter must be ``NULL``.
 
-The result of the async operation is obtained with :symbol:`mongoac_future_get_optional_bson()`, not :symbol:`mongoac_future_get_bson()`.
-
 The returned :symbol:`mongoac_future_t` must be destroyed with :symbol:`mongoac_future_destroy()`.
+
+.. note::
+
+   The result of the async operation is obtained with :symbol:`mongoac_future_get_optional_bson()`, not :symbol:`mongoac_future_get_bson()`.
 
 .. seealso::
 
