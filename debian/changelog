@@ -17,6 +17,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     in client topology monitoring
   * Fix CVE-2026-106428: out-of-bounds read in SCRAM authentication response
     parsing
+  * Fix CVE-2026-106431: one-byte heap buffer overflow in BSON bulk document
+    writer
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
