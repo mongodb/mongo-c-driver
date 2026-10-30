@@ -19,6 +19,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     parsing
   * Fix CVE-2026-106431: one-byte heap buffer overflow in BSON bulk document
     writer
+  * Fix CVE-2026-106438: silent Decimal128 value corruption via incorrect
+    exactness check
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
