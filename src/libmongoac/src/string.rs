@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::private::macros::*;
+use crate::private::safety::{AsSafeRef, AsSafeRefs};
 
 use std::ffi::c_char;
 
@@ -60,6 +61,30 @@ impl From<&str> for StringViewT {
             ptr: s.as_ptr().cast(),
             len: s.len(),
         }
+    }
+}
+
+impl AsSafeRef for StringViewT {
+    type Element = u8;
+    type T = str;
+    type Error = std::str::Utf8Error;
+
+    const TYPE_NAME: &'static str = "UTF-8";
+
+    fn fields(&self) -> (*const u8, usize) {
+        (self.ptr.cast(), self.len)
+    }
+
+    fn validate(bytes: &[Self::Element]) -> Result<&Self::T, Self::Error> {
+        std::str::from_utf8(bytes)
+    }
+}
+
+impl AsSafeRefs for StringViewArrayT {
+    type T = StringViewT;
+
+    fn fields(&self) -> (*const Self::T, usize) {
+        (self.ptr, self.len)
     }
 }
 

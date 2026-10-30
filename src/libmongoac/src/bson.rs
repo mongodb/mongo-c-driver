@@ -13,8 +13,9 @@
 // limitations under the License.
 
 use crate::private::macros::*;
+use crate::private::safety::{AsSafeRef, AsSafeRefs};
 
-use mongodb::bson::RawDocumentBuf;
+use mongodb::bson::{RawDocument, RawDocumentBuf};
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -62,6 +63,30 @@ impl From<&RawDocumentBuf> for BsonViewT {
             ptr: bytes.as_ptr(),
             len: bytes.len(),
         }
+    }
+}
+
+impl AsSafeRef for BsonViewT {
+    type Element = u8;
+    type T = RawDocument;
+    type Error = mongodb::bson::error::Error;
+
+    const TYPE_NAME: &'static str = "BSON";
+
+    fn fields(&self) -> (*const u8, usize) {
+        (self.ptr, self.len)
+    }
+
+    fn validate(bytes: &[Self::Element]) -> Result<&Self::T, mongodb::bson::error::Error> {
+        RawDocument::from_bytes(bytes)
+    }
+}
+
+impl AsSafeRefs for BsonViewArrayT {
+    type T = BsonViewT;
+
+    fn fields(&self) -> (*const Self::T, usize) {
+        (self.ptr, self.len)
     }
 }
 
