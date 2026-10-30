@@ -4,6 +4,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     parsing on 32-bit builds
   * Fix CVE-2026-84963: silent field truncation via unchecked int cast of huge
     JSON string values in JSON-to-BSON parser
+  * Fix CVE-2026-84964: heap corruption via OCSP request double free from
+    crafted multi-URL certificate in TLS client
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
