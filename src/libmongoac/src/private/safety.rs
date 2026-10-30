@@ -664,8 +664,9 @@ pub(crate) trait AsSafeRef: Copy {
     /// The name of the type being validated.
     const TYPE_NAME: &'static str;
 
-    /// Return `self.ptr` and `self.len` for raw elements, or `(std::ptr::from_ref(self), 1)` for single-value view
-    /// types.
+    /// Return `(self.ptr, self.len)` for raw elements, or `(&self, 1)` for a single value.
+    ///
+    /// When the raw pointer to a single value is null, return (null, 0).
     fn fields(&self) -> (*const Self::Element, usize);
 
     /// Safely convert the raw element(s) into a reference.
@@ -673,7 +674,7 @@ pub(crate) trait AsSafeRef: Copy {
 
     /// Safely convert the raw type into `&T`.
     ///
-    /// When `ptr` is null or the view is invalid, returns [`AsSafeRefError`].
+    /// When `ptr` is null or an element is invalid, returns [`AsSafeRefError`].
     ///
     /// Preconditions:
     ///
@@ -701,7 +702,7 @@ pub(crate) trait AsSafeRefs: Copy {
     /// The safe type to be referenced.
     type T;
 
-    /// Return `self.ptr` and `self.len` for raw elements.
+    /// Return (`self.ptr`, `self.len`) for raw elements.
     fn fields(&self) -> (*const Self::T, usize);
 
     /// Safely convert the raw array type into `Vec<&T>`.
@@ -710,7 +711,6 @@ pub(crate) trait AsSafeRefs: Copy {
     ///
     /// Preconditions:
     ///
-    /// - `ptr` must either be null or a valid pointer to a range of valid [`Self::T`].
     /// - When `ptr` is not null, the range `[ptr, ptr + len)` must be valid and accessible.
     unsafe fn as_safe_refs<'a>(
         &self,
