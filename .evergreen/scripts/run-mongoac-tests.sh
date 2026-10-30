@@ -29,6 +29,8 @@ ulimit -c unlimited || true
 . "${script_dir:?}/install-build-tools.sh"
 install_build_tools
 
+export RUST_BACKTRACE='1'
+
 if [[ -n "${MONGODB_URI:-}" ]]; then
   export MONGOAC_TEST_URI="${MONGODB_URI}"
 fi
