@@ -264,6 +264,15 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return insert_one_result");
     }
 
+    SECTION("type mismatch: optional_bson") {
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_optional_bson(future, error).ptr == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return optional_bson");
+    }
+
     SECTION("type mismatch: uint64") {
         CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
         CHECK_MONGOAC_ERROR_OK(error);
