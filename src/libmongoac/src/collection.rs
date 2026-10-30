@@ -21,6 +21,8 @@ use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
 use crate::future::FutureT;
+use crate::insert_many_options::InsertManyOptionsT;
+use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_options::InsertOneOptionsT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
@@ -29,10 +31,8 @@ use crate::string::StringViewT;
 
 use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
-use mongodb::options::{
-    CountOptions, DropCollectionOptions, EstimatedDocumentCountOptions, InsertOneOptions,
-};
-use mongodb::results::InsertOneResult;
+use mongodb::options::{CountOptions, DropCollectionOptions, EstimatedDocumentCountOptions, InsertManyOptions, InsertOneOptions};
+use mongodb::results::{InsertManyResult, InsertOneResult};
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -142,6 +142,40 @@ pub extern "C" fn mongoac_collection_estimated_document_count_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.estimated_document_count_async(options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_many(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    docs: *const BsonViewT,
+    count: usize,
+    options: *const InsertManyOptionsT,
+    error: *mut ErrorT,
+) -> *mut InsertManyResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let docs = safe_bson_view_array_as_vec_with_error!(docs, count, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.insert_many(session, docs, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_many_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    docs: *const BsonViewT,
+    count: usize,
+    options: *const InsertManyOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let docs = safe_bson_view_array_as_vec!(docs, count);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.insert_many_async(session, docs, options))
 }
 
 #[unsafe(no_mangle)]
@@ -304,6 +338,40 @@ impl CollectionT {
         })
     }
 
+    fn insert_many(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        docs: Vec<&RawDocument>,
+        options: Option<&InsertManyOptionsT>,
+    ) -> Result<InsertManyResult, ErrorT> {
+        let docs: Vec<RawDocumentBuf> = docs.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner
+                    .insert_many(docs)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn insert_many_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        docs: Vec<&RawDocument>,
+        options: Option<&InsertManyOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let docs: Vec<RawDocumentBuf> = docs.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<InsertManyOptions> = options.map(Into::into);
+
+        self.spawn::<InsertManyResult>(async move {
+            session_op!(coll.insert_many(docs).with_options(options), session)
+        })
+    }
+
     fn insert_one(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -352,7 +420,6 @@ impl CollectionT {
     // TODO: find_one_and_delete
     // TODO: find_one_and_replace
     // TODO: find_one_and_update
-    // TODO: insert_many
     // TODO: insert_one_model
     // TODO: list_index_names
     // TODO: list_indexes

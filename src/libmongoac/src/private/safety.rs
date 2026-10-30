@@ -450,9 +450,8 @@ macro_rules! safe_bson_view {
         if bson.ptr.is_null() {
             return Default::default();
         }
-        match mongodb::bson::RawDocument::from_bytes(unsafe {
-            std::slice::from_raw_parts(bson.ptr, bson.len)
-        }) {
+        // SAFETY: validity of `bson` is an uncheckable precondition.
+        match unsafe { $crate::private::safety::to_raw_document(bson) } {
             Ok(doc) => doc,
             Err(_) => {
                 return Default::default();
@@ -492,9 +491,8 @@ macro_rules! safe_bson_view_with_error {
             );
             return Default::default();
         }
-        match mongodb::bson::RawDocument::from_bytes(unsafe {
-            std::slice::from_raw_parts(bson.ptr, bson.len)
-        }) {
+        // SAFETY: validity of `bson` is an uncheckable precondition.
+        match unsafe { $crate::private::safety::to_raw_document(bson) } {
             Ok(doc) => doc,
             Err(e) => {
                 $crate::private::safety::invalid_argument(
@@ -505,6 +503,141 @@ macro_rules! safe_bson_view_with_error {
             }
         }
     }};
+}
+
+/// Safely convert the `BsonViewT` array into a `Vec<&RawDocument>` when not null or empty.
+///
+/// When `ptr` is null or empty, an element of the array is null, or an element contains invalid BSON, early-return
+/// from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const BsonViewT, count: usize) -> R {
+///     let docs: Vec<&RawDocument> = safe_bson_view_array_as_vec!(ptr, count);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to an array of at least `count` elements.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
+/// - When an element is not null, the range `[element.ptr, element.ptr + element.len)` must be valid and accessible.
+#[macro_export]
+macro_rules! safe_bson_view_array_as_vec {
+    ($ptr:expr, $count:expr) => {{
+        let ptr: *const $crate::bson::BsonViewT = $ptr;
+        let count: usize = $count;
+
+        if ptr.is_null() {
+            return Default::default();
+        }
+        if count == 0 {
+            return Default::default();
+        }
+
+        // SAFETY: `ptr` and `count` validity is an uncheckable precondition.
+        let views = unsafe { std::slice::from_raw_parts(ptr, count) };
+
+        let mut docs: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
+        for view in views {
+            if view.ptr.is_null() {
+                return Default::default();
+            }
+            // SAFETY: validity of `view` is an uncheckable precondition.
+            match unsafe { $crate::private::safety::to_raw_document(*view) } {
+                Ok(doc) => docs.push(doc),
+                Err(_) => {
+                    return Default::default();
+                }
+            }
+        }
+        docs
+    }};
+}
+
+/// Safely convert the `BsonViewT` array into a `Vec<&RawDocument>` when not null or empty.
+///
+/// When `ptr` is null or empty, an element of the array is null, or an element contains invalid BSON, set `error` and
+/// early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *const BsonViewT, count: usize, error: Option<&mut ErrorT>) -> R {
+///     let docs: Vec<&RawDocument> = safe_bson_view_array_as_vec_with_error!(ptr, count, error);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to an array of at least `count` elements.
+/// - `ptr` must not be mutably accessed concurrently by any other function.
+/// - When an element is not null, the range `[element.ptr, element.ptr + element.len)` must be valid and accessible.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_bson_view_array_as_vec_with_error {
+    ($ptr:expr, $count:expr, $error:expr) => {{
+        let ptr: *const $crate::bson::BsonViewT = $ptr;
+        let count: usize = $count;
+
+        if ptr.is_null() {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be null", stringify!($ptr)),
+            );
+            return Default::default();
+        }
+        if count == 0 {
+            $crate::private::safety::invalid_argument(
+                $error,
+                format!("{}: must not be empty", stringify!($ptr)),
+            );
+            return Default::default();
+        }
+
+        // SAFETY: `ptr` and `count` validity is an uncheckable precondition.
+        let views = unsafe { std::slice::from_raw_parts(ptr, count) };
+
+        let mut docs: Vec<&mongodb::bson::RawDocument> = Vec::with_capacity(count);
+        for (i, view) in views.iter().enumerate() {
+            if view.ptr.is_null() {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}[{i}]: must not be null", stringify!($ptr)),
+                );
+                return Default::default();
+            }
+            // SAFETY: validity of `view` is an uncheckable precondition.
+            match unsafe { $crate::private::safety::to_raw_document(*view) } {
+                Ok(doc) => docs.push(doc),
+                Err(e) => {
+                    $crate::private::safety::invalid_argument(
+                        $error,
+                        format!("{}[{i}]: invalid BSON: {}", stringify!($ptr), e),
+                    );
+                    return Default::default();
+                }
+            }
+        }
+        docs
+    }};
+}
+
+/// Convert the given `BsonViewT` into a `&RawDocument`.
+///
+/// Preconditions:
+///
+/// - When `bson.ptr` is not null, the range `[bson.ptr, bson.ptr + bson.len)` must be valid and accessible.
+pub(crate) unsafe fn to_raw_document<'a>(
+    bson: crate::bson::BsonViewT,
+) -> Result<&'a mongodb::bson::RawDocument, mongodb::bson::error::Error> {
+    // SAFETY: validity of `bson` is this function's precondition.
+    unsafe {
+        mongodb::bson::RawDocument::from_bytes(std::slice::from_raw_parts(bson.ptr, bson.len))
+    }
 }
 
 /// Convenience helper to assign `InvalidArgument` to the given `ErrorT`.

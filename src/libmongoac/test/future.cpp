@@ -23,6 +23,7 @@
 
 #include <mongoac/client.h>
 #include <mongoac/error.h>
+#include <mongoac/insert_many_result.h>
 #include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
 
@@ -262,6 +263,15 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK(mongoac_future_get_insert_one_result(future, error) == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return insert_one_result");
+    }
+
+    SECTION("type mismatch: insertMany result") {
+        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_insert_many_result(future, error) == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return insert_many_result");
     }
 
     SECTION("type mismatch: uint64") {
