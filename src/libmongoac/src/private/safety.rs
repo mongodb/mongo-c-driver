@@ -711,7 +711,7 @@ pub(crate) trait AsSafeRefs: Copy {
     ///
     /// Preconditions:
     ///
-    /// - `ptr` must either be null or a valid pointer to a range of valid [`Self::T`].
+    /// - `ptr` must either be null or a valid pointer to a range of valid elements convertible to [`Self::T`].
     /// - When `ptr` is not null, the range `[ptr, ptr + len)` must be valid and accessible.
     unsafe fn as_safe_refs<'a>(
         &self,
