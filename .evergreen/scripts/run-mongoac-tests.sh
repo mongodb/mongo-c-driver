@@ -26,6 +26,7 @@ export EXTRA_LIB_PATH="${mongoc_dir:?}/cmake-build/src/libmongoac/Debug${EXTRA_L
 
 ulimit -c unlimited || true
 
+# shellcheck source=.evergreen/scripts/install-build-tools.sh
 . "${script_dir:?}/install-build-tools.sh"
 install_build_tools
 
@@ -35,8 +36,20 @@ if [[ -n "${MONGODB_URI:-}" ]]; then
   export MONGOAC_TEST_URI="${MONGODB_URI}"
 fi
 
-ctest --test-dir cmake-build -R '^mongoac/' --parallel --no-tests=error --output-on-failure \
+ctest_flags=(
+  --test-dir cmake-build
+  -R '^mongoac/'
+  --parallel
+  --no-tests=error
+  --output-on-failure
   --output-junit "${mongoc_dir:?}/mongoac-test-results.xml"
+)
+catch2_flags=(
+  -w InfiniteGenerators
+  -w NoAssertions
+  -w UnmatchedTestSpec
+)
+ctest "${ctest_flags[@]:?}" -- "${catch2_flags[@]:?}"
 
 # CTest's JUnit writer duplicates each test's name in the `classname` attribute, and Evergreen names a test
 # `classname.name` when that attribute is non-empty (dots survive; `/` becomes `_`). Set the class to `mongoac` and
