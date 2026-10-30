@@ -155,7 +155,7 @@ impl FutureT {
     }
 
     fn get_optional_bson(&self) -> Result<&Option<RawDocumentBuf>, ErrorT> {
-        self.get::<Option<RawDocumentBuf>>("optional bson")
+        self.get::<Option<RawDocumentBuf>>("optional_bson")
     }
 
     fn get_uint64(&self) -> Result<&u64, ErrorT> {
