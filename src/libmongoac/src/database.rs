@@ -17,6 +17,7 @@ use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection::CollectionT;
 use crate::collection_options::CollectionOptionsT;
+use crate::create_collection_options::CreateCollectionOptionsT;
 use crate::database_options::DatabaseOptionsT;
 use crate::drop_database_options::DropDatabaseOptionsT;
 use crate::error::ErrorT;
@@ -28,7 +29,7 @@ use crate::string::StringViewT;
 
 use mongodb::Database;
 use mongodb::bson::{RawDocument, RawDocumentBuf};
-use mongodb::options::{DropDatabaseOptions, RunCommandOptions};
+use mongodb::options::{CreateCollectionOptions, DropDatabaseOptions, RunCommandOptions};
 
 #[derive(Clone)]
 pub struct DatabaseT {
@@ -67,6 +68,38 @@ pub extern "C" fn mongoac_database_get_collection(
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_database_get_name(db: *const DatabaseT) -> StringViewT {
     safe_as_ref!(db).get_name().into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_create_collection(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    name: StringViewT,
+    options: *const CreateCollectionOptionsT,
+    error: *mut ErrorT,
+) {
+    let error = safe_optional_error_as_mut!(error);
+    let db = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let name = safe_string_view_with_error!(name, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_result!(db.create_collection(session, name, options), error);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_create_collection_async(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    name: StringViewT,
+    options: *const CreateCollectionOptionsT,
+) -> *mut FutureT {
+    let db = safe_as_ref!(db);
+    let session = safe_optional_as_mut!(session);
+    let name = safe_string_view!(name);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(db.create_collection_async(session, name, options))
 }
 
 #[unsafe(no_mangle)]
@@ -170,6 +203,38 @@ impl DatabaseT {
         self.inner.name()
     }
 
+    fn create_collection(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        name: &str,
+        options: Option<&CreateCollectionOptionsT>,
+    ) -> Result<(), ErrorT> {
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner
+                    .create_collection(name)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn create_collection_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        name: &str,
+        options: Option<&CreateCollectionOptionsT>,
+    ) -> FutureT {
+        let db = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let name = name.to_owned();
+        let options: Option<CreateCollectionOptions> = options.map(Into::into);
+
+        self.spawn::<()>(async move {
+            session_op!(db.create_collection(name).with_options(options), session)
+        })
+    }
+
     fn drop(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -232,8 +297,6 @@ impl DatabaseT {
     }
 
     // TODO: aggregate
-    // TODO: collection_with_options
-    // TODO: create_collection
     // TODO: gridfs_bucket
     // TODO: list_collection_names
     // TODO: list_collections

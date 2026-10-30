@@ -40,6 +40,7 @@ The associated runtime may be obtained with :symbol:`mongoac_client_get_runtime(
     mongoac_client_new
 
     mongoac_client_get_database
+    mongoac_client_get_default_database
     mongoac_client_get_runtime
     mongoac_client_get_runtime_address
 
