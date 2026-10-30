@@ -165,7 +165,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     // Structs which need to be explicitly exported (due to no exported function referencing the struct).
     {
         let exports: &[&str] = match name {
-            "bson" => &["BsonViewT"],
+            "bson" => &["BsonViewArrayT", "BsonViewT"],
             "string" => &["StringViewArrayT", "StringViewT"],
             _ => &[],
         };

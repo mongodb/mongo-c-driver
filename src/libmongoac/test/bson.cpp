@@ -36,3 +36,17 @@ TEST_CASE("destroy", "[mongoac][bson_array]") {
         CHECK_NOTHROW(mongoac_bson_array_destroy(mongoac_bson_array_t{nullptr, len}));
     }
 }
+
+TEST_CASE("default", "[mongoac][bson_view]") {
+    auto const v = mongoac_bson_view_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}
+
+TEST_CASE("default", "[mongoac][bson_view_array]") {
+    auto const v = mongoac_bson_view_array_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}

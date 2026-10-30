@@ -36,3 +36,17 @@ TEST_CASE("destroy", "[mongoac][string_array]") {
         CHECK_NOTHROW(mongoac_string_array_destroy(mongoac_string_array_t{nullptr, len}));
     }
 }
+
+TEST_CASE("default", "[mongoac][string_view]") {
+    auto const v = mongoac_string_view_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}
+
+TEST_CASE("default", "[mongoac][string_view_array]") {
+    auto const v = mongoac_string_view_array_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}
