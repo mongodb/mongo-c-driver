@@ -21,6 +21,8 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     writer
   * Fix CVE-2026-106438: silent Decimal128 value corruption via incorrect
     exactness check
+  * Fix CVE-2026-106437: out-of-bounds read and write via undersized BSON
+    buffer reservation
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
