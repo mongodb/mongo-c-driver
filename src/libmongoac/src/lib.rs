@@ -26,6 +26,7 @@ pub mod drop_collection_options;
 pub mod drop_database_options;
 pub mod error;
 pub mod estimated_document_count_options;
+pub mod find_one_options;
 pub mod future;
 pub mod insert_one_options;
 pub mod insert_one_result;
