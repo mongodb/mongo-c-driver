@@ -25,6 +25,7 @@ TEST_CASE("destroy", "[mongoac][bson]") {
     SECTION("null") {
         auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
 
-        CHECK_NOTHROW(mongoac_bson_destroy(mongoac_bson_t{nullptr, len}));
+        mongoac_bson_destroy(mongoac_bson_t{nullptr, len});
+        SUCCEED();
     }
 }

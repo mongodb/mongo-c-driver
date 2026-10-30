@@ -20,6 +20,7 @@
 
 TEST_CASE("destroy", "[mongoac][client_session]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_session_destroy(nullptr));
+        mongoac_client_session_destroy(nullptr);
+        SUCCEED();
     }
 }
