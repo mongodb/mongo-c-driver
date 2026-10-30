@@ -994,7 +994,6 @@ _set_error_from_response(bson_t *bson_array,
 {
    bson_iter_t array_iter;
    bson_iter_t doc_iter;
-   const char *errmsg = NULL;
    int32_t code = 0;
    uint32_t n_keys, i;
 
@@ -1013,23 +1012,30 @@ _set_error_from_response(bson_t *bson_array,
       while (bson_iter_next(&array_iter)) {
          if (BSON_ITER_HOLDS_DOCUMENT(&array_iter) && bson_iter_recurse(&array_iter, &doc_iter)) {
             /* parse doc, which is like {"code": 64, "errmsg": "duplicate"} */
+            const char *errmsg = NULL;
+
             while (bson_iter_next(&doc_iter)) {
                /* use the first error code we find */
                if (BSON_ITER_IS_KEY(&doc_iter, "code") && code == 0) {
                   code = (uint32_t)bson_iter_as_int64(&doc_iter);
                } else if (BSON_ITER_IS_KEY(&doc_iter, "errmsg")) {
                   errmsg = bson_iter_utf8(&doc_iter, NULL);
+               }
+            }
 
-                  /* build message like 'Multiple write errors: "foo", "bar"' */
-                  if (n_keys > 1) {
-                     mcommon_string_append_printf(&compound_err, "\"%s\"", errmsg);
-                     if (i < n_keys - 1) {
-                        mcommon_string_append(&compound_err, ", ");
-                     }
-                  } else {
-                     /* single error message */
-                     mcommon_string_append(&compound_err, errmsg);
+            {
+               // "errmsg" may be missing (e.g. if an error came from a failpoint).
+               const char *const msg = errmsg ? errmsg : "";
+
+               /* build message like 'Multiple write errors: "foo", "bar"' */
+               if (n_keys > 1) {
+                  mcommon_string_append_printf(&compound_err, "\"%s\"", msg);
+                  if (i < n_keys - 1) {
+                     mcommon_string_append(&compound_err, ", ");
                   }
+               } else {
+                  /* single error message */
+                  mcommon_string_append(&compound_err, msg);
                }
             }
 
@@ -1037,7 +1043,7 @@ _set_error_from_response(bson_t *bson_array,
          }
       }
 
-      if (code && !mcommon_string_from_append_is_empty(&compound_err)) {
+      if (code || !mcommon_string_from_append_is_empty(&compound_err)) {
          _mongoc_set_error_with_category(
             error, MONGOC_ERROR_CATEGORY_SERVER, domain, (uint32_t)code, "%s", mcommon_str_from_append(&compound_err));
       }

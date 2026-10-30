@@ -353,7 +353,10 @@ _mongoc_gridfs_bucket_file_writev(mongoc_gridfs_bucket_file_t *file, const mongo
 
          if (file->in_buffer == chunk_size) {
             /* Buffer is filled, write the chunk */
-            _mongoc_gridfs_bucket_write_chunk(file);
+            if (!_mongoc_gridfs_bucket_write_chunk(file)) {
+               // Error is set on file.
+               return -1;
+            }
          }
       }
    }
@@ -448,7 +451,10 @@ _mongoc_gridfs_bucket_file_save(mongoc_gridfs_bucket_file_t *file)
 
    if (file->in_buffer != 0) {
       length += file->in_buffer;
-      _mongoc_gridfs_bucket_write_chunk(file);
+      if (!_mongoc_gridfs_bucket_write_chunk(file)) {
+         // Error is set on file.
+         return false;
+      }
    }
 
    file->length = length;

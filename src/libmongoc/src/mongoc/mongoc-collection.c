@@ -2426,8 +2426,13 @@ mongoc_collection_find_and_modify_with_opts(mongoc_collection_t *collection,
             errmsg = bson_iter_utf8(&inner, NULL);
          }
       }
-      _mongoc_set_error_with_category(
-         error, MONGOC_ERROR_CATEGORY_SERVER, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+      // An error may omit "errmsg" (e.g. set via a configureFailPoint).
+      _mongoc_set_error_with_category(error,
+                                      MONGOC_ERROR_CATEGORY_SERVER,
+                                      MONGOC_ERROR_WRITE_CONCERN,
+                                      code,
+                                      "Write Concern error: %s",
+                                      errmsg ? errmsg : "");
       ret = false;
    }
 

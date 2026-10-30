@@ -278,10 +278,18 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
          error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_STREAM, "Error occurred on the provided stream.");
       mongoc_stream_destroy(upload_stream);
       return false;
-   } else {
-      mongoc_stream_destroy(upload_stream);
-      return true;
    }
+
+   // Explicitly call `mongoc_stream_close` to surface an error on final writes.
+   if (mongoc_stream_close(upload_stream) != 0) {
+      BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error));
+      mongoc_gridfs_bucket_abort_upload(upload_stream);
+      mongoc_stream_destroy(upload_stream);
+      return false;
+   }
+
+   mongoc_stream_destroy(upload_stream);
+   return true;
 }
 
 bool
