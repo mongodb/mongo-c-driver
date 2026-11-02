@@ -14,7 +14,10 @@
 
 use crate::private::macros::*;
 
+use crate::read_preference::ReadPreferenceT;
+
 use mongodb::options::RunCommandOptions;
+use mongodb::options::SelectionCriteria;
 
 #[derive(Clone)]
 pub struct RunCommandOptionsT(RunCommandOptions);
@@ -31,7 +34,33 @@ pub extern "C" fn mongoac_run_command_options_clone(
     safe_into_raw!(safe_as_ref!(options).clone())
 }
 
-// TODO
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_run_command_options_new() -> *mut RunCommandOptionsT {
+    safe_into_raw!(RunCommandOptionsT(RunCommandOptions::default()))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_run_command_options_get_read_preference(
+    options: *const RunCommandOptionsT,
+) -> *const ReadPreferenceT {
+    match &safe_as_ref!(options).0.selection_criteria {
+        Some(SelectionCriteria::ReadPreference(v)) => {
+            safe_ptr_from_ref!(v, mongodb::options::ReadPreference)
+        }
+        _ => std::ptr::null(),
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_run_command_options_set_read_preference(
+    options: *mut RunCommandOptionsT,
+    v: *const ReadPreferenceT,
+) {
+    safe_as_mut!(options).0.selection_criteria =
+        safe_optional_as_ref!(v).map(|v| SelectionCriteria::ReadPreference(v.into()));
+}
+
+// TODO: CDRIVER-6396: server_selector (`SelectionCriteria::Predicate`)
 
 impl From<&RunCommandOptionsT> for RunCommandOptions {
     fn from(value: &RunCommandOptionsT) -> Self {
