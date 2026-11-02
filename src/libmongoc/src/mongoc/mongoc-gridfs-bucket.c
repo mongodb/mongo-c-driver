@@ -285,7 +285,8 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
    // Explicitly call `mongoc_stream_close` to surface an error on final writes.
    if (mongoc_stream_close(upload_stream) != 0) {
       BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error ? error : &local_error));
-      mongoc_gridfs_bucket_abort_upload(upload_stream);
+      // Per the GridFS spec, do not attempt to clean up orphaned chunks on error.
+      // `mongoc_stream_destroy` will not save the file since an error is set on it.
       mongoc_stream_destroy(upload_stream);
       return false;
    }
