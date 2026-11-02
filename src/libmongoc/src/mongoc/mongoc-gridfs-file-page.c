@@ -115,6 +115,12 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page, const void *src
    if (!page->buf) {
       page->buf = (uint8_t *) bson_malloc (page->chunk_size);
       memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
+
+      /* If writing at a position past the page's stored data, zero data
+       * between. */
+      if (page->offset > page->len) {
+         memset (page->buf + page->len, '\0', page->offset - page->len);
+      }
    }
 
    /* Copy bytes and adjust the page position */
