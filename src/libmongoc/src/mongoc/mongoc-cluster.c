@@ -2839,8 +2839,7 @@ mongoc_cluster_stream_for_reads(mongoc_cluster_t *cluster,
    // Retryable Reads Spec: This boolean option determines whether retryable
    // behavior will be applied to all read operations executed within the
    // MongoClient.
-   const bool is_retryable =
-      mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
+   const bool is_retryable = cluster->client->retry_reads;
 
    return _mongoc_cluster_stream_for_optype(
       cluster, MONGOC_SS_READ, log_context, prefs_override, cs, is_retryable, ds, reply, error);
@@ -2856,8 +2855,7 @@ mongoc_cluster_stream_for_writes(mongoc_cluster_t *cluster,
 {
    BSON_OPTIONAL_PARAM(reply);
 
-   const bool is_retryable =
-      mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
+   const bool is_retryable = cluster->client->retry_writes;
 
    return _mongoc_cluster_stream_for_optype(
       cluster, MONGOC_SS_WRITE, log_context, NULL, cs, is_retryable, ds, reply, error);
@@ -2876,8 +2874,7 @@ mongoc_cluster_stream_for_aggr_with_write(mongoc_cluster_t *cluster,
    const mongoc_read_prefs_t *const prefs_override =
       _mongoc_client_session_in_txn(cs) ? cs->txn.opts.read_prefs : read_prefs;
 
-   const bool is_retryable =
-      mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
+   const bool is_retryable = cluster->client->retry_writes;
 
    return _mongoc_cluster_stream_for_optype(
       cluster, MONGOC_SS_AGGREGATE_WITH_WRITE, log_context, prefs_override, cs, is_retryable, NULL, reply, error);
@@ -3678,7 +3675,7 @@ mongoc_cluster_run_retryable_write(mongoc_cluster_t *cluster,
    if (is_retryable_write) {
       // Meets requirements of Retryable Write.
       retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_WRITE;
-   } else if (mongoc_uri_get_option_as_bool(cluster->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+   } else if (cluster->client->retry_writes) {
       // Eligible for overload retries only.
       retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
    } else {
