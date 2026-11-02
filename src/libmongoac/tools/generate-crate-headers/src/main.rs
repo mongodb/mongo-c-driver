@@ -154,6 +154,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
                 "mongoac/bson.h",
+                "mongoac/delete_result-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
