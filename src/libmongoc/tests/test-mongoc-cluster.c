@@ -1,3 +1,4 @@
+#include <mongoc/mcd-rpc.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc.h>
 
@@ -109,6 +110,49 @@ test_get_max_msg_size (void)
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
+}
+
+// clang-format off
+#define TEST_DATA_OP_COMPRESSED                                              \
+   /*    */ /* header (16 bytes) */                                          \
+   /*  0 */ 0x2d, 0x00, 0x00, 0x00, /* messageLength (45)           */       \
+   /*  4 */ 0x04, 0x03, 0x02, 0x01, /* requestID (16909060)         */       \
+   /*  8 */ 0x08, 0x07, 0x06, 0x05, /* responseTo (84281096)        */       \
+   /* 12 */ 0xdc, 0x07, 0x00, 0x00, /* opCode (2012: OP_COMPRESSED) */       \
+   /*    */                                                                  \
+   /*    */ /* OP_COMPRESSED fields (9 bytes) */                             \
+   /* 16 */ 0xdd, 0x07, 0x00, 0x00, /* originalOpcode (2013: OP_MSG) */      \
+   /* 20 */ 0x14, 0x00, 0x00, 0x00, /* uncompressedSize (20)         */      \
+   /* 24 */ 0x00,                   /* compressorId (0: noop)        */      \
+   /*    */                                                                  \
+   /*    */ /* compressedMessage (20 bytes) */                               \
+   /* 25 */ 0x00, 0x00, 0x00, 0x00, /* flagBits (MONGOC_OP_MSG_FLAG_NONE) */ \
+   /* 29 */ 0x00,                   /* Kind 0: Body */                       \
+   /* 30 */ 0x0f, 0x00, 0x00, 0x00,           /* (15 bytes) { */             \
+   /* 34 */   0x10,                           /*   (int32)    */             \
+   /* 35 */     0x6b, 0x69, 0x6e, 0x64, 0x00, /*     'kind':  */             \
+   /* 40 */     0x00, 0x00, 0x00, 0x00,       /*      0       */             \
+   /* 44 */ 0x00                              /* }            */             \
+   /* 45 */
+// clang-format on
+
+static void
+test_decompress_invalid_message (void)
+{
+   uint8_t data[] = {TEST_DATA_OP_COMPRESSED};
+
+   data[25] = 0xffu; // OP_MSG flagBits: invalid.
+
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data (data, sizeof (data), NULL);
+   ASSERT (rpc);
+
+   void *decompressed = data; // Set to a non-NULL address to verify reset-to-NULL on failure.
+   size_t decompressed_len = sizeof (data);
+   ASSERT (!mcd_rpc_message_decompress (rpc, &decompressed, &decompressed_len));
+   ASSERT (decompressed == NULL);
+   ASSERT (decompressed_len == 0u);
+
+   mcd_rpc_message_destroy (rpc);
 }
 
 
@@ -1785,6 +1829,7 @@ test_cluster_install (TestSuite *suite)
 
    TestSuite_AddLive (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
    TestSuite_AddLive (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
+   TestSuite_Add (suite, "/Cluster/decompress/invalid_message", test_decompress_invalid_message);
    TestSuite_AddFull (suite,
                       "/Cluster/disconnect/single",
                       test_cluster_node_disconnect_single,

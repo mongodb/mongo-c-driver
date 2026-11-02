@@ -437,8 +437,8 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
       }
       mcd_rpc_message_ingress (acmd->rpc);
 
-      void *decompressed_data;
-      size_t decompressed_data_len;
+      void *decompressed_data = NULL;
+      size_t decompressed_data_len = 0u;
 
       if (!mcd_rpc_message_decompress_if_necessary (acmd->rpc, &decompressed_data, &decompressed_data_len)) {
          bson_set_error (&acmd->error,
