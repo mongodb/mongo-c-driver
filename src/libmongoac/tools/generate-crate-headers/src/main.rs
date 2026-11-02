@@ -62,6 +62,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
+        ("DeleteOptionsT", "mongoac_delete_options_t"),
         (
             "DropCollectionOptionsT",
             "mongoac_drop_collection_options_t",
@@ -143,6 +144,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "delete_options" => &[],
             "drop_collection_options" => &[],
             "drop_database_options" => &[],
             "estimated_document_count_options" => &[],
