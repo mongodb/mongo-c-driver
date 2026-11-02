@@ -2109,127 +2109,310 @@ test_empty_final_batch (void)
 }
 
 
+// Build a reply of the form {"ok":1,"cursor":{"id":<id>,"ns":<ns>,"firstBatch":[{}]}}. `ns` is appended with an
+// explicit length so that it can contain an embedded NUL for CDRIVER-6501
+static bson_t *
+cursor_reply_with_ns (int64_t cursor_id, const char *ns, int nslen)
+{
+   bson_t *const reply = bson_new ();
+   bson_t cursor;
+   bson_t batch;
+   bson_t first;
+
+   bson_append_document_begin (reply, "cursor", -1, &cursor);
+   bson_append_int64 (&cursor, "id", -1, cursor_id);
+   bson_append_utf8 (&cursor, "ns", -1, ns, nslen);
+   bson_append_array_begin (&cursor, "firstBatch", -1, &batch);
+   bson_append_document_begin (&batch, "0", -1, &first);
+   bson_append_document_end (&batch, &first);
+   bson_append_array_end (&cursor, &batch);
+   bson_append_document_end (reply, &cursor);
+   bson_append_int32 (reply, "ok", -1, 1);
+
+   return reply;
+}
+
+
 // Test server replies with an unusable cursor namespace. Regression test for CDRIVER-6401.
 static void
-test_cursor_bad_ns(void)
+test_cursor_bad_ns (void)
 {
-   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
-   mock_server_run(server);
+   mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
+   mock_server_run (server);
 
-   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_client_t *client = test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    const bson_t *doc;
    bson_error_t error;
 
    // Test "ns" without "."
    {
-      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
-      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
-      future_t *future = future_cursor_next(cursor, &doc);
-      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
-      reply_to_op_msg_request(
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
          request,
          MONGOC_MSG_NONE,
-         tmp_bson(
-            BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : "db", "firstBatch" : [ {} ]}})));
+         tmp_bson (
+            BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : "db", "firstBatch" : [ {} ]}})));
 
-      ASSERT(!future_get_bool(future));
-      ASSERT(mongoc_cursor_error(cursor, &error));
-      ASSERT_ERROR_CONTAINS(
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
 
-      future_destroy(future);
-      request_destroy(request);
-      mongoc_cursor_destroy(cursor);
-      mongoc_collection_destroy(collection);
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
    }
 
    // Test an omitted "ns"
    {
-      mongoc_database_t *database = mongoc_client_get_database(client, "db");
-      mongoc_cursor_t *cursor = mongoc_database_aggregate(database, tmp_bson("[]"), NULL, NULL);
+      mongoc_database_t *database = mongoc_client_get_database (client, "db");
+      mongoc_cursor_t *cursor = mongoc_database_aggregate (database, tmp_bson ("[]"), NULL, NULL);
 
-      future_t *future = future_cursor_next(cursor, &doc);
-      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'aggregate': 1, '$db': 'db'}"));
-      reply_to_op_msg_request(
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'aggregate': 1, '$db': 'db'}"));
+      reply_to_op_msg_request (
          request,
          MONGOC_MSG_NONE,
-         tmp_bson(BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "firstBatch" : [ {} ]}})));
+         tmp_bson (BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "firstBatch" : [ {} ]}})));
 
-      ASSERT(!future_get_bool(future));
-      ASSERT(mongoc_cursor_error(cursor, &error));
-      ASSERT_ERROR_CONTAINS(
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to aggregate command.");
 
-      future_destroy(future);
-      request_destroy(request);
-      mongoc_cursor_destroy(cursor);
-      mongoc_database_destroy(database);
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_database_destroy (database);
    }
 
    // Test a trailing "."
    {
-      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
-      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
-      future_t *future = future_cursor_next(cursor, &doc);
-      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
-      reply_to_op_msg_request(
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
          request,
          MONGOC_MSG_NONE,
-         tmp_bson(
-            BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : "db.", "firstBatch" : [ {} ]}})));
+         tmp_bson (
+            BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : "db.", "firstBatch" : [ {} ]}})));
 
-      ASSERT(!future_get_bool(future));
-      ASSERT(mongoc_cursor_error(cursor, &error));
-      ASSERT_ERROR_CONTAINS(
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
          error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
 
-      future_destroy(future);
-      request_destroy(request);
-      mongoc_cursor_destroy(cursor);
-      mongoc_collection_destroy(collection);
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+   }
+
+   // Test an embedded NUL in the collection.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      bson_t *reply = cursor_reply_with_ns (1234, "db.coll\0x", 9);
+      reply_to_op_msg_request (request, MONGOC_MSG_NONE, reply);
+      bson_destroy (reply);
+
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+   }
+
+   // Test an embedded NUL in the database portion.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      bson_t *reply = cursor_reply_with_ns (1234, "db\0x.coll", 9);
+      reply_to_op_msg_request (request, MONGOC_MSG_NONE, reply);
+      bson_destroy (reply);
+
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+   }
+
+   // Test an embedded NUL with no "." separator.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      bson_t *reply = cursor_reply_with_ns (1234, "db\0x", 4);
+      reply_to_op_msg_request (request, MONGOC_MSG_NONE, reply);
+      bson_destroy (reply);
+
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+   }
+
+   // Test an embedded NUL with an exhausted cursor.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      bson_t *reply = cursor_reply_with_ns (0, "db.coll\0x", 9);
+      reply_to_op_msg_request (request, MONGOC_MSG_NONE, reply);
+      bson_destroy (reply);
+
+      ASSERT (future_get_bool (future));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      future_destroy (future);
+      request_destroy (request);
+
+      // The cloned cursor uses the original valid namespace.
+      mongoc_cursor_t *clone = mongoc_cursor_clone (cursor);
+      future = future_cursor_next (clone, &doc);
+      request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson (
+            BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.coll", "firstBatch" : [ {} ]}})));
+
+      ASSERT (future_get_bool (future));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (clone, &error), error);
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (clone);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+   }
+
+   // Test a wrong-typed "ns" (present, but not a string) with a live cursor errors.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson (
+            BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "1234"}, "ns" : 5, "firstBatch" : [ {} ]}})));
+
+      ASSERT (!future_get_bool (future));
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply to find command.");
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+   }
+
+   // Test a wrong-typed "ns" with an exhausted cursor: no error is raised and the
+   // original namespace is preserved.
+   {
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
+         request,
+         MONGOC_MSG_NONE,
+         tmp_bson (BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : 5, "firstBatch" : [ {} ]}})));
+
+      ASSERT (future_get_bool (future));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
    }
 
    // Test clone after bad "ns"
    {
-      mongoc_collection_t *collection = mongoc_client_get_collection(client, "db", "coll");
-      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, tmp_bson("{}"), NULL, NULL);
+      mongoc_collection_t *collection = mongoc_client_get_collection (client, "db", "coll");
+      mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
 
-      future_t *future = future_cursor_next(cursor, &doc);
-      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
-      reply_to_op_msg_request(
+      future_t *future = future_cursor_next (cursor, &doc);
+      request_t *request =
+         mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
          request,
          MONGOC_MSG_NONE,
-         tmp_bson(BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db", "firstBatch" : [ {} ]}})));
+         tmp_bson (
+            BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db", "firstBatch" : [ {} ]}})));
 
-      ASSERT(future_get_bool(future));
-      ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
-      future_destroy(future);
-      request_destroy(request);
+      ASSERT (future_get_bool (future));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      future_destroy (future);
+      request_destroy (request);
 
       // The cloned cursor uses the original valid namespace.
-      mongoc_cursor_t *clone = mongoc_cursor_clone(cursor);
-      future = future_cursor_next(clone, &doc);
-      request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll', '$db': 'db'}"));
-      reply_to_op_msg_request(
+      mongoc_cursor_t *clone = mongoc_cursor_clone (cursor);
+      future = future_cursor_next (clone, &doc);
+      request = mock_server_receives_msg (server, MONGOC_MSG_NONE, tmp_bson ("{'find': 'coll', '$db': 'db'}"));
+      reply_to_op_msg_request (
          request,
          MONGOC_MSG_NONE,
-         tmp_bson(
-            BSON_STR({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.coll", "firstBatch" : [ {} ]}})));
+         tmp_bson (
+            BSON_STR ({"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.coll", "firstBatch" : [ {} ]}})));
 
-      ASSERT(future_get_bool(future));
-      ASSERT_OR_PRINT(!mongoc_cursor_error(clone, &error), error);
+      ASSERT (future_get_bool (future));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (clone, &error), error);
 
-      future_destroy(future);
-      request_destroy(request);
-      mongoc_cursor_destroy(clone);
-      mongoc_cursor_destroy(cursor);
-      mongoc_collection_destroy(collection);
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (clone);
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
    }
 
-   mongoc_client_destroy(client);
-   mock_server_destroy(server);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
