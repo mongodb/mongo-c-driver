@@ -24,6 +24,7 @@ pub use crate::safe_into_raw;
 pub use crate::safe_optional_as_mut;
 pub use crate::safe_optional_as_ref;
 pub use crate::safe_optional_error_as_mut;
+pub use crate::safe_ptr_from_ref;
 pub use crate::safe_result;
 pub use crate::safe_slice_drop;
 pub use crate::safe_slice_into_raw;

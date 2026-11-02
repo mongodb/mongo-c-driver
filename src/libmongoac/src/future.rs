@@ -86,7 +86,10 @@ pub extern "C" fn mongoac_future_get_insert_one_result(
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
 
-    std::ptr::from_ref(safe_result!(future.get_insert_one_result(), error)).cast()
+    safe_ptr_from_ref!(
+        safe_result!(future.get_insert_one_result(), error),
+        InsertOneResult
+    )
 }
 
 #[unsafe(no_mangle)]
