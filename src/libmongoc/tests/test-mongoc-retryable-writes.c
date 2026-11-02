@@ -601,7 +601,8 @@ set_up_original_error_test(mongoc_apm_callbacks_t *callbacks,
                                            "admin",
                                            tmp_bson("{'configureFailPoint': 'failCommand', 'mode': {'times': 1}, "
                                                     "'data': {'failCommands': ['%s'], 'errorLabels': "
-                                                    "['RetryableWriteError'], 'writeConcernError': {'code': 91 }}}",
+                                                    "['RetryableWriteError'], 'writeConcernError': {'code': 91, "
+                                                    "'errmsg': 'Triggered by failpoint' }}}",
                                                     failCommand),
                                            NULL,
                                            NULL,
