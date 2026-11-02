@@ -10,7 +10,7 @@ Synopsis
 
    #include <mongoac/database.h>
 
-   mongoac_future_t *mongoac_database_create_collection_async(mongoac_database_t *db,
+   mongoac_future_t *mongoac_database_create_collection_async(const mongoac_database_t *db,
                                                               mongoac_client_session_t *session,
                                                               mongoac_string_view_t name,
                                                               const mongoac_create_collection_options_t *options);
