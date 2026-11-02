@@ -514,9 +514,9 @@ macro_rules! safe_bson_view_with_error {
     }};
 }
 
-/// Safely convert the `BsonViewArrayT` into a `Vec<&RawDocument>` when not null or empty.
+/// Safely convert the `BsonViewArrayT` into a `Vec<&RawDocument>` when not null.
 ///
-/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid BSON, early-return
+/// When `arr.ptr` is null, an element is null, or an element contains invalid BSON, early-return
 /// from the function via `return Default::default();`.
 ///
 /// Usage:
@@ -546,9 +546,9 @@ macro_rules! safe_bson_view_array {
     }};
 }
 
-/// Safely convert the `BsonViewArrayT` into a `Vec<&RawDocument>` when not null or empty.
+/// Safely convert the `BsonViewArrayT` into a `Vec<&RawDocument>` when not null.
 ///
-/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid BSON, set
+/// When `arr.ptr` is null, an element is null, or an element contains invalid BSON, set
 /// `error` and early-return from the function via `return Default::default();`.
 ///
 /// Usage:
@@ -582,9 +582,9 @@ macro_rules! safe_bson_view_array_with_error {
     }};
 }
 
-/// Safely convert the `StringViewArrayT` into a `Vec<&str>` when not null or empty.
+/// Safely convert the `StringViewArrayT` into a `Vec<&str>` when not null.
 ///
-/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid UTF-8, early-return
+/// When `arr.ptr` is null, an element is null, or an element contains invalid UTF-8, early-return
 /// from the function via `return Default::default();`.
 ///
 /// Usage:
@@ -614,9 +614,9 @@ macro_rules! safe_string_view_array {
     }};
 }
 
-/// Safely convert the `StringViewArrayT` into a `Vec<&str>` when not null or empty.
+/// Safely convert the `StringViewArrayT` into a `Vec<&str>` when not null.
 ///
-/// When `arr.ptr` is null, `arr.len` is zero, an element is null, or an element contains invalid UTF-8, set
+/// When `arr.ptr` is null, an element is null, or an element contains invalid UTF-8, set
 /// `error` and early-return from the function via `return Default::default();`.
 ///
 /// Usage:
@@ -707,7 +707,7 @@ pub(crate) trait AsSafeRefs: Copy {
 
     /// Safely convert the raw array type into `Vec<&T>`.
     ///
-    /// When `ptr` is null, `len` is zero, an element is null, or an element is invalid, returns [`AsSafeRefsError`].
+    /// When `ptr` is null, an element is null, or an element is invalid, returns [`AsSafeRefsError`].
     ///
     /// Preconditions:
     ///
@@ -724,10 +724,6 @@ pub(crate) trait AsSafeRefs: Copy {
 
         if ptr.is_null() {
             return Err(AsSafeRefsError::Null);
-        }
-
-        if len == 0 {
-            return Err(AsSafeRefsError::Empty);
         }
 
         let views = unsafe { std::slice::from_raw_parts(ptr, len) };
@@ -766,7 +762,6 @@ impl<T: AsSafeRef> AsSafeRefError<T> {
 /// Validation errors which occur when safely converting a raw array type into `Vec<&T>`.
 pub(crate) enum AsSafeRefsError<T: AsSafeRef> {
     Null,
-    Empty,
     NullElement { index: usize },
     InvalidElement { index: usize, error: T::Error },
 }
@@ -775,7 +770,6 @@ impl<T: AsSafeRef> AsSafeRefsError<T> {
     pub(crate) fn message(&self, param: &str) -> String {
         match self {
             Self::Null => format!("{param}: must not be null"),
-            Self::Empty => format!("{param}: must not be empty"),
             Self::NullElement { index } => {
                 format!("{param} element at index {index}: must not be null")
             }
