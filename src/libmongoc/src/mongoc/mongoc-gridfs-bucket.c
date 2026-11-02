@@ -250,6 +250,8 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
    ssize_t bytes_read;
    ssize_t bytes_written;
    char buf[512];
+   // `mongoc_gridfs_bucket_stream_error` asserts on a non-NULL error.
+   bson_error_t local_error;
 
    BSON_ASSERT(bucket);
    BSON_ASSERT(file_id);
@@ -265,7 +267,7 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
    while ((bytes_read = mongoc_stream_read(source, buf, 512, 1, 0)) > 0) {
       bytes_written = mongoc_stream_write(upload_stream, buf, bytes_read, 0);
       if (bytes_written < 0) {
-         BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error));
+         BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error ? error : &local_error));
          mongoc_gridfs_bucket_abort_upload(upload_stream);
          mongoc_stream_destroy(upload_stream);
          return false;
@@ -282,7 +284,7 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
 
    // Explicitly call `mongoc_stream_close` to surface an error on final writes.
    if (mongoc_stream_close(upload_stream) != 0) {
-      BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error));
+      BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error ? error : &local_error));
       mongoc_gridfs_bucket_abort_upload(upload_stream);
       mongoc_stream_destroy(upload_stream);
       return false;
