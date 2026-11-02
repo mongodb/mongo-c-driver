@@ -20,7 +20,8 @@
 
 TEST_CASE("destroy", "[mongoac][insert_one_options]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_insert_one_options_destroy(nullptr));
+        mongoac_insert_one_options_destroy(nullptr);
+        SUCCEED();
     }
 }
 

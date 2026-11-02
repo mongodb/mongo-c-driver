@@ -41,7 +41,8 @@ using mongoac::test::to_mongoac;
 
 TEST_CASE("destroy", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_destroy(nullptr));
+        mongoac_client_destroy(nullptr);
+        SUCCEED();
     }
 }
 
@@ -134,6 +135,34 @@ TEST_CASE("get_database", "[mongoac][client]") {
     }
 }
 
+TEST_CASE("get_default_database", "[mongoac][client]") {
+    SECTION("null client") {
+        auto const db = make_unique(mongoac_client_get_default_database(nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        // A connection string with a database path specifies the default database.
+        auto const client_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new("mongodb://doesnotexist.invalid:27017/mydb?serverSelectionTimeoutMS=1"_sv, nullptr),
+            &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const db = REQUIRE_MAKE_UNIQUE(mongoac_client_get_default_database(client), &mongoac_database_destroy);
+        CHECK(from_mongoac(mongoac_database_get_name(db.get())) == "mydb");
+    }
+
+    SECTION("no default") {
+        // A connection string without a database path specifies no default database.
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const db = make_unique(mongoac_client_get_default_database(client), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+}
+
 TEST_CASE("get_runtime", "[mongoac][client]") {
     SECTION("null") {
         auto const runtime = make_unique(mongoac_client_get_runtime(nullptr), &mongoac_runtime_destroy);
@@ -183,7 +212,8 @@ TEST_CASE("get_runtime_address", "[mongoac][client]") {
 
 TEST_CASE("shutdown", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_shutdown(nullptr));
+        mongoac_client_shutdown(nullptr);
+        SUCCEED();
     }
 
     SECTION("basic") {
@@ -191,13 +221,14 @@ TEST_CASE("shutdown", "[mongoac][client]") {
             REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const client = client_owner.get();
 
-        CHECK_NOTHROW(mongoac_client_shutdown(client));
+        mongoac_client_shutdown(client);
     }
 }
 
 TEST_CASE("shutdown_async", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_shutdown_async(nullptr));
+        mongoac_client_shutdown_async(nullptr);
+        SUCCEED();
     }
 
     SECTION("basic") {
@@ -212,10 +243,10 @@ TEST_CASE("shutdown_async", "[mongoac][client]") {
         auto const future_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
         auto const future = future_owner.get();
 
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }

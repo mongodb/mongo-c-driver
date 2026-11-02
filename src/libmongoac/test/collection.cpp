@@ -50,7 +50,8 @@ using mongoac::test::to_mongoac;
 
 TEST_CASE("destroy", "[mongoac][collection]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_collection_destroy(nullptr));
+        mongoac_collection_destroy(nullptr);
+        SUCCEED();
     }
 }
 
@@ -147,7 +148,7 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     // Start from a known state. A non-existing collection counts as zero documents.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null coll") {
@@ -212,7 +213,7 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     // Start from a known state. A non-existing collection counts as zero documents.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null coll") {
@@ -248,7 +249,7 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
 
         {
             auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            mongoac_runtime_block_on(runtime.get(), future, error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
@@ -268,7 +269,7 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
 
             {
                 auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-                CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+                mongoac_runtime_block_on(runtime.get(), future, error);
                 CHECK_MONGOAC_ERROR_OK(error);
             }
 
@@ -291,7 +292,7 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
 
         {
             auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            mongoac_runtime_block_on(runtime.get(), future, error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
@@ -305,7 +306,7 @@ TEST_CASE("drop", "[mongoac][collection]") {
     auto const error = error_owner.get();
 
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_collection_drop(nullptr, nullptr, nullptr, error));
+        mongoac_collection_drop(nullptr, nullptr, nullptr, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
@@ -320,7 +321,7 @@ TEST_CASE("drop", "[mongoac][collection]") {
             REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
         auto const coll = coll_owner.get();
 
-        CHECK_NOTHROW(mongoac_collection_drop(coll, nullptr, nullptr, error));
+        mongoac_collection_drop(coll, nullptr, nullptr, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -352,11 +353,11 @@ TEST_CASE("drop_async", "[mongoac][collection]") {
 
         {
             auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            mongoac_runtime_block_on(runtime.get(), future, error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -376,7 +377,7 @@ TEST_CASE("estimated_document_count", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     // Start from a known state. A non-existing collection counts as zero documents.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null") {
@@ -414,7 +415,7 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     // Start from a known state. A non-existing collection counts as zero documents.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null") {
@@ -431,7 +432,7 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
 
             {
                 auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-                CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+                mongoac_runtime_block_on(runtime.get(), future, error);
                 CHECK_MONGOAC_ERROR_OK(error);
             }
 
@@ -451,7 +452,7 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
 
         {
             auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            mongoac_runtime_block_on(runtime.get(), future, error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
@@ -632,7 +633,7 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
         auto const future = future_owner.get();
         REQUIRE(future != nullptr);
 
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         auto const result = mongoac_future_get_insert_one_result(future, error);

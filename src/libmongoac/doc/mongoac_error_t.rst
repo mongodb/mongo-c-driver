@@ -93,7 +93,7 @@ Error Messages
 --------------
 
 An optional error message may provide additional information describing the corresponding error.
-When no error message is available (e.g. in the default state), :symbol:`mongoac_error_message()` returns a null string.
+When no error message is available (e.g. in the default state), :symbol:`mongoac_error_message()` returns a null :symbol:`mongoac_string_view_t`.
 
 .. only:: html
 
