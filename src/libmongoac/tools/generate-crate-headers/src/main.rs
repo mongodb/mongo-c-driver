@@ -107,6 +107,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/count_options-fwd.h",
+                "mongoac/delete_options-fwd.h",
+                "mongoac/delete_result-fwd.h",
                 "mongoac/drop_collection_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/estimated_document_count_options-fwd.h",
