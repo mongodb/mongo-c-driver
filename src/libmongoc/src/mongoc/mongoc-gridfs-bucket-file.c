@@ -130,6 +130,9 @@ _mongoc_gridfs_bucket_create_indexes(mongoc_gridfs_bucket_t *bucket, bson_error_
  *--------------------------------------------------------------------------
  */
 static bool
+_mongoc_gridfs_bucket_write_chunk(mongoc_gridfs_bucket_file_t *file) BSON_GNUC_WARN_UNUSED_RESULT;
+
+static bool
 _mongoc_gridfs_bucket_write_chunk(mongoc_gridfs_bucket_file_t *file)
 {
    bson_t chunk;
