@@ -41,7 +41,8 @@ using mongoac::test::to_mongoac;
 
 TEST_CASE("destroy", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_destroy(nullptr));
+        mongoac_client_destroy(nullptr);
+        SUCCEED();
     }
 }
 
@@ -211,7 +212,8 @@ TEST_CASE("get_runtime_address", "[mongoac][client]") {
 
 TEST_CASE("shutdown", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_shutdown(nullptr));
+        mongoac_client_shutdown(nullptr);
+        SUCCEED();
     }
 
     SECTION("basic") {
@@ -219,13 +221,14 @@ TEST_CASE("shutdown", "[mongoac][client]") {
             REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const client = client_owner.get();
 
-        CHECK_NOTHROW(mongoac_client_shutdown(client));
+        mongoac_client_shutdown(client);
     }
 }
 
 TEST_CASE("shutdown_async", "[mongoac][client]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_client_shutdown_async(nullptr));
+        mongoac_client_shutdown_async(nullptr);
+        SUCCEED();
     }
 
     SECTION("basic") {
@@ -240,10 +243,10 @@ TEST_CASE("shutdown_async", "[mongoac][client]") {
         auto const future_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
         auto const future = future_owner.get();
 
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
