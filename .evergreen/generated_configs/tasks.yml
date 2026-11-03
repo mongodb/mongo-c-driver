@@ -5211,6 +5211,7 @@ tasks:
         vars:
           CC: gcc
           CLIENT_SIDE_ENCRYPTION: "on"
+          DSC: "on"
           URI: ${MONGODB_URI}
       - func: csfle-teardown
   - name: dsc-ubuntu2404-gcc-test-replset-3

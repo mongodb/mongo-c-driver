@@ -28,7 +28,7 @@ _MONGODS_PER_SHARD = 3
 def functions():
     return {
         'start-dsc': [
-            # Requires read access to the SLS ECR repositories. See dsc-evergreen-proposal.md.
+            # Requires read access to the SLS ECR repositories. See drivers-evergreen-tools/.evergreen/disagg/README.md.
             ec2_assume_role(role_arn='arn:aws:iam::664315256653:role/disagg-storage-tf-project-ro'),
             bash_exec(
                 command_type=EvgCommandType.SETUP,
@@ -41,14 +41,15 @@ def functions():
                     'DSC_SLS_TAG',
                 ],
                 working_dir='mongoc',
-                script='.evergreen/scripts/dsc-start.sh',
+                script='../drivers-evergreen-tools/.evergreen/disagg/setup.sh',
             ),
             expansions_update(
                 command_type=EvgCommandType.SETUP,
                 file='mongoc/dsc-expansion.yml',
             ),
         ],
-        # Client-side encryption tests need crypt_shared. mongo-orchestration is not bootstrapped, so fetch it directly.
+        # Client-side encryption tests need crypt_shared and mongocryptd. mongo-orchestration is not bootstrapped, so fetch
+        # them directly.
         'fetch-dsc-crypt-shared': [
             # Downloads of the "latest" server binary require an AWS identity (DRIVERS-3628).
             ec2_assume_role(role_arn='${aws_test_secrets_role}'),
@@ -56,18 +57,23 @@ def functions():
                 command_type=EvgCommandType.SETUP,
                 include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
                 working_dir='mongoc',
-                script='.evergreen/scripts/dsc-fetch-crypt-shared.sh',
+                script='../drivers-evergreen-tools/.evergreen/disagg/download-crypt-shared.sh',
             ),
             expansions_update(
                 command_type=EvgCommandType.SETUP,
                 file='mongoc/crypt-shared-expansion.yml',
             ),
         ],
-        # Also called from the top-level `post` so logs are collected when tasks fail.
+        # Also called from the top-level `post` so logs are collected when tasks fail. Tasks that did not fetch
+        # drivers-evergreen-tools did not start a deployment. teardown.sh does nothing if no deployment was started.
         'stop-dsc': [
             bash_exec(
                 working_dir='mongoc',
-                script='.evergreen/scripts/dsc-stop.sh',
+                script="""\
+                    if [[ -f ../drivers-evergreen-tools/.evergreen/disagg/teardown.sh ]]; then
+                        ../drivers-evergreen-tools/.evergreen/disagg/teardown.sh
+                    fi
+                """,
             ),
             s3_put(
                 aws_key='${aws_key}',
@@ -178,6 +184,7 @@ def tasks():
                 vars={
                     'URI': '${MONGODB_URI}',
                     'CLIENT_SIDE_ENCRYPTION': 'on',
+                    'DSC': 'on',
                     'CC': _COMPILER,
                 }
             ),

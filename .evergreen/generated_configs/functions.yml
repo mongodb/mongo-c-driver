@@ -323,7 +323,7 @@ functions:
           - AWS_SESSION_TOKEN
         args:
           - -c
-          - .evergreen/scripts/dsc-fetch-crypt-shared.sh
+          - ../drivers-evergreen-tools/.evergreen/disagg/download-crypt-shared.sh
     - command: expansions.update
       type: setup
       params:
@@ -724,7 +724,7 @@ functions:
           - DSC_SLS_TAG
         args:
           - -c
-          - .evergreen/scripts/dsc-start.sh
+          - ../drivers-evergreen-tools/.evergreen/disagg/setup.sh
     - command: expansions.update
       type: setup
       params:
@@ -762,7 +762,10 @@ functions:
         working_dir: mongoc
         args:
           - -c
-          - .evergreen/scripts/dsc-stop.sh
+          - |
+            if [[ -f ../drivers-evergreen-tools/.evergreen/disagg/teardown.sh ]]; then
+                ../drivers-evergreen-tools/.evergreen/disagg/teardown.sh
+            fi
     - command: s3.put
       params:
         display_name: sls-logs.txt.gz

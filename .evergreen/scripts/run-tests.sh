@@ -57,6 +57,11 @@ export MONGOC_TEST_SERVER_LOG="json"
 export MONGOC_TEST_SKIP_MOCK="on"
 export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
 
+if [[ "${DSC}" == "on" ]]; then
+  # Skips tests that forbid disaggregated storage (e.g. the "dsc: forbid" runOnRequirement).
+  export MONGOC_TEST_DSC="on"
+fi
+
 # Only set creds if testing with Client Side Encryption.
 # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)
 # and will try to run those tests (which fail on ASAN unless spawning is bypassed).
@@ -235,11 +240,6 @@ if [[ "${LOADBALANCED}" != "noloadbalanced" ]]; then
   test_args+=("-l" "/change_streams/unified/*")
   test_args+=("-l" "/versioned_api/*")
   test_args+=("-l" "/command_monitoring/unified/*")
-fi
-
-if [[ "${DSC}" == "on" ]]; then
-  # Known disaggregated storage differences; see etc/skip-tests-dsc.txt for reasons.
-  test_args+=("--skip-tests" ".evergreen/etc/skip-tests-dsc.txt")
 fi
 
 if [[ ! "${test_args[*]}" =~ "-l" ]]; then

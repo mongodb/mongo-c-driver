@@ -805,6 +805,19 @@ check_version_info(const bson_t *scenario, bool print_reason)
       }
    }
 
+   if (bson_has_field(scenario, "dsc")) {
+      s = bson_lookup_utf8(scenario, "dsc");
+      const bool is_dsc = test_framework_is_dsc();
+      if ((0 == strcmp(s, "forbid") && is_dsc) || (0 == strcmp(s, "require") && !is_dsc)) {
+         if (print_reason && test_suite_debug_output()) {
+            printf("      SKIP, dsc=\"%s\"\n", s);
+            fflush(stdout);
+         }
+
+         return false;
+      }
+   }
+
    if (bson_has_field(scenario, "topology")) {
       bson_iter_t iter;
       bson_t topology;
