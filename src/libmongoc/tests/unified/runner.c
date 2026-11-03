@@ -144,6 +144,17 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    // libmongoc does not include insertId in InsertOneResult
    {"cancel-server-check", SKIP_ALL_TESTS},
 
+   // libmongoc does not have a mapReduce helper.
+   {"write-concern-errors-mapReduce", SKIP_ALL_TESTS},
+
+   // libmongoc does not support the optional dropIndexes helper.
+   {"write-concern-errors-index-management", "dropIndexes reports a writeConcernError"},
+
+   // libmongoc does not have GridFS bucket deleteByName/rename/renameByName helpers.
+   {"write-concern-errors-gridfs", "deleteByName reports a writeConcernError"},
+   {"write-concern-errors-gridfs", "file rename reports a writeConcernError"},
+   {"write-concern-errors-gridfs", "renameByName reports a writeConcernError"},
+
    {0},
 };
 // clang-format on
@@ -2248,6 +2259,8 @@ run_unified_tests(TestSuite *suite, const char *base, const char *subdir)
 void
 test_install_unified(TestSuite *suite)
 {
+   run_unified_tests(suite, JSON_DIR, "read_write_concern/write-concern-errors");
+
    run_unified_tests(suite, JSON_DIR, "unified");
 
    run_unified_tests(suite, JSON_DIR, "crud/unified");
