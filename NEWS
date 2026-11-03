@@ -1,3 +1,22 @@
+libmongoc 2.5.8
+===============
+
+## Fixes
+
+* Fix abort when parsing a cursor namespace without a dot separator.
+* Fix possible abort in `mongoc_gridfs_bucket_download_to_stream` on invalid file metadata.
+* Fix handling of embedded NUL bytes in namespaces.
+* Fix a missing bounds check when reading GridFS files.
+* Fix a memory leak when an OP_COMPRESSED reply fails to parse.
+* Report `writeConcernError` consistently, as mandated by the CRUD spec.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Sabrina Chang
+
+
 libmongoc 2.5.7
 ===============
 
