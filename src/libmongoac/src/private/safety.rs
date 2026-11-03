@@ -207,6 +207,32 @@ macro_rules! safe_optional_as_mut {
     }};
 }
 
+/// Safely convert the reference into a raw, non-owning, read-only pointer of type `*const $T`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(r: &Example) -> *const ExampleT {
+///     safe_ptr_from_ref!(r, Example)
+/// }
+/// ```
+///
+/// Requirements:
+///
+/// - `r` must be a valid reference to a value of type `T`.
+/// - `r` must not be a reference to a reference `&&T`.
+///
+/// Precondition:
+///
+/// - The referenced value must outlive any access of the pointed-to value.
+#[macro_export]
+macro_rules! safe_ptr_from_ref {
+    ($r:expr, $T:ty) => {{
+        let r: &$T = $r;
+        std::ptr::from_ref(r).cast()
+    }};
+}
+
 /// Safely return the result of the given expression only when the associated error is unset.
 ///
 /// When `Err(re) = result` and `Some(ee) = error`, assign `re` to `ee` prior to early-return via `return Default::default();`.
