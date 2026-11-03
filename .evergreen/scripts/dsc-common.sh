@@ -9,7 +9,6 @@ STATE_DIR="${HOME}/.slslocal"
 AWS_DIR="${STATE_DIR}/aws"
 TAG_FILE="${STATE_DIR}/dsc-image-tag"
 HOSTS_MARKER="# dsc-evergreen"
-REDIRECTS_FILE="${STATE_DIR}/dsc-redirects"
 
 fail() {
   echo "ERROR: $*" 1>&2

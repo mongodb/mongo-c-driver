@@ -1513,8 +1513,8 @@ run_json_general_test(const json_test_config_t *config)
             mongoc_uri_destroy(uri);
             uri = test_framework_get_uri_multi_mongos_loadbalanced();
          } else {
-            ASSERT_OR_PRINT(mongoc_uri_upsert_host_and_port(uri, "localhost:27017", &error), error);
-            ASSERT_OR_PRINT(mongoc_uri_upsert_host_and_port(uri, "localhost:27018", &error), error);
+            // Only a sharded cluster has multiple mongoses to add. On other topologies the URI is left as is.
+            ASSERT_OR_PRINT(test_framework_uri_apply_multi_mongos(uri, true, &error), error);
          }
       }
 

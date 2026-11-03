@@ -11,14 +11,6 @@ set -o pipefail
 # Remove the replica set member names added to /etc/hosts by dsc-start.sh.
 sudo sed -i "/${HOSTS_MARKER}\$/d" /etc/hosts || true
 
-# Remove the local port redirects added by dsc-start.sh.
-if [[ -f "${REDIRECTS_FILE}" ]]; then
-  while read -r default_port published_port; do
-    sudo iptables -t nat -D OUTPUT -d 127.0.0.1 -p tcp --dport "${default_port}" -j REDIRECT --to-ports "${published_port}" || true
-  done <"${REDIRECTS_FILE}"
-  rm -f "${REDIRECTS_FILE}"
-fi
-
 if [[ ! -f "${TAG_FILE}" ]]; then
   echo "OK - no DSC deployment running"
   exit 0

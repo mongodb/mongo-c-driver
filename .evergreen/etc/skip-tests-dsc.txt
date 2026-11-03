@@ -2,10 +2,6 @@
 # Used in addition to skip-tests.txt when DSC=on (see scripts/run-tests.sh).
 # Same format as skip-tests.txt.
 
-# These tests connect to [::1]:27017 (the default port). SLS mongods listen on other published ports.
-/Client/ipv6/single # connects to [::1]:27017; SLS mongods use other ports
-/Client/ipv6/pooled # connects to [::1]:27017; SLS mongods use other ports
-
 # An unsatisfiable write concern is accepted without a writeConcernError on DSC.
 # TODO: file a SERVER-/CDRIVER- ticket (see dsc-evergreen-proposal.md, open question 1).
 /find_and_modify/find_and_modify/write_concern_failure # DSC accepts unsatisfiable write concern
