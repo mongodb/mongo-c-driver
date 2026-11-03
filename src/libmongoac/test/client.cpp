@@ -227,8 +227,8 @@ TEST_CASE("shutdown", "[mongoac][client]") {
 
 TEST_CASE("shutdown_async", "[mongoac][client]") {
     SECTION("null") {
-        mongoac_client_shutdown_async(nullptr);
-        SUCCEED();
+        auto const future = make_unique(mongoac_client_shutdown_async(nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
     }
 
     SECTION("basic") {
