@@ -16,7 +16,7 @@ Synopsis
 Description
 -----------
 
-Returns the number of documents deleted by the ``deleteOne`` operation.
+Returns the number of documents deleted by the ``deleteOne`` or ``deleteMany`` operation.
 
 Errors
 ------

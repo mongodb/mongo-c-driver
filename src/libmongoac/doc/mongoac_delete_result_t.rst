@@ -17,7 +17,7 @@ Synopsis
 Description
 -----------
 
-Represents the result of a ``deleteOne`` operation (`DeleteResult <https://docs.rs/mongodb/latest/mongodb/results/struct.DeleteResult.html>`_).
+Represents the result of a ``deleteOne`` or ``deleteMany`` operation (`DeleteResult <https://docs.rs/mongodb/latest/mongodb/results/struct.DeleteResult.html>`_).
 
 .. only:: html
 

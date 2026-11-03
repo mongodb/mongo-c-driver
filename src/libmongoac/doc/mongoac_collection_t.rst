@@ -42,6 +42,8 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
     mongoac_collection_count_documents
     mongoac_collection_count_documents_async
 
+    mongoac_collection_delete_many
+    mongoac_collection_delete_many_async
     mongoac_collection_delete_one
     mongoac_collection_delete_one_async
 
