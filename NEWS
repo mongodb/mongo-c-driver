@@ -7,6 +7,26 @@ libmongoc 2.6.0 [unreleased]
 * Raise required version of libmongocrypt from 1.20.0 to 1.21.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
   * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types are no longer supported by In-Use Encryption and now return an error. Use the `prefix`, `suffix`, and `substring` query types instead.
 
+libmongoc 2.5.7
+===============
+
+## Fixes
+
+* Fix handling of large usernames for GSSAPI on Windows.
+* Fix container client metadata.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Sabrina Chang
+
+libmongoc 1.30.14
+=================
+
+## Fixes
+
+* Fix handling of large usernames for GSSAPI on Windows.
+
 libmongoc 2.5.6
 ===============
 
