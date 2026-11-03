@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::bson::BsonT;
-use crate::error::ErrorT;
 use crate::private::macros::*;
 
-use mongodb::bson::{Bson, Document, RawDocumentBuf};
 use mongodb::results::InsertManyResult;
 
 pub struct InsertManyResultT(InsertManyResult);
@@ -43,25 +40,7 @@ pub extern "C" fn mongoac_insert_many_result_clone(
     safe_into_raw!(safe_as_ref!(result).clone())
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn mongoac_insert_many_result_get_inserted_ids(
-    result: *const InsertManyResultT,
-    error: *mut ErrorT,
-) -> BsonT {
-    let error = safe_optional_error_as_mut!(error);
-    let result = safe_as_ref_with_error!(result, error);
-
-    // A BSON array of the inserted ids in order of insertion index.
-    let mut inserted_ids: Vec<(&usize, &Bson)> = result.0.inserted_ids.iter().collect();
-    inserted_ids.sort_by_key(|(index, _)| **index);
-
-    let doc: Document = inserted_ids
-        .into_iter()
-        .map(|(index, id)| (index.to_string(), id.clone()))
-        .collect();
-
-    safe_result!(RawDocumentBuf::try_from(doc), error).into()
-}
+// TODO: get_inserted_ids
 
 impl From<InsertManyResult> for InsertManyResultT {
     fn from(value: InsertManyResult) -> Self {

@@ -30,5 +30,3 @@ Represents the result of an ``insertMany`` operation (`InsertManyResult <https:/
 
     mongoac_insert_many_result_destroy
     mongoac_insert_many_result_clone
-
-    mongoac_insert_many_result_get_inserted_ids
