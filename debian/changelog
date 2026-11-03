@@ -23,6 +23,18 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     exactness check
   * Fix CVE-2026-106437: out-of-bounds read and write via undersized BSON
     buffer reservation
+  * Fix CVE-2026-120955: application abort on malformed GridFS metadata
+  * Fix CVE-2026-120678: leaks the decompressed reply buffer when an
+    OP_COMPRESSED reply fails to parse (denial of service)
+  * Fix CVE-2026-120684: GridFS gap lets a shared writer recover a protected
+    client's password
+  * Fix CDRIVER-6401: abort in cursor namespace parsing when no dot separator
+    (required by CVE-2026-120956 fix)
+  * Fix CVE-2026-120956: remote abort and memory disclosure from a malformed
+    cursor.ns
+  * Fix CDRIVER-6523: mandate raising writeConcernError (change SHOULD to MUST)
+    + this fixes a potential loss of data by ensuring that a WCE reported by
+      the server is propagated rather than discarded
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
 
