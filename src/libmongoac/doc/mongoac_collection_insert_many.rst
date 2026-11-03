@@ -12,15 +12,14 @@ Synopsis
 
    mongoac_insert_many_result_t *mongoac_collection_insert_many(const mongoac_collection_t *collection,
                                                                 mongoac_client_session_t *session,
-                                                                const mongoac_bson_view_t *docs,
-                                                                uintptr_t count,
+                                                                mongoac_bson_view_array_t docs,
                                                                 const mongoac_insert_many_options_t *options,
                                                                 mongoac_error_t *error);
 
 Description
 -----------
 
-Inserts the given ``docs``, an array of ``count`` BSON documents, via `Collection::insert_many() <https://docs.rs/mongodb/latest/mongodb/struct.Collection.html#method.insert_many>`_.
+Inserts the given ``docs``, an array of BSON documents, via `Collection::insert_many() <https://docs.rs/mongodb/latest/mongodb/struct.Collection.html#method.insert_many>`_.
 
 The returned :symbol:`mongoac_insert_many_result_t` must be destroyed with :symbol:`mongoac_insert_many_result_destroy()`.
 

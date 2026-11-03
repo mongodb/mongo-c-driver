@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::bson::{BsonT, BsonViewT};
+use crate::bson::{BsonT, BsonViewArrayT, BsonViewT};
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
@@ -186,16 +186,23 @@ pub extern "C" fn mongoac_collection_find_one_async(
 pub extern "C" fn mongoac_collection_insert_many(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
-    docs: *const BsonViewT,
-    count: usize,
+    docs: BsonViewArrayT,
     options: *const InsertManyOptionsT,
     error: *mut ErrorT,
 ) -> *mut InsertManyResultT {
     let error = safe_optional_error_as_mut!(error);
     let collection = safe_as_ref_with_error!(collection, error);
     let session = safe_optional_as_mut!(session);
-    let docs = safe_bson_view_array_as_vec_with_error!(docs, count, error);
+    let docs = safe_bson_view_array_with_error!(docs, error);
     let options = safe_optional_as_ref!(options);
+
+    if docs.is_empty() {
+        crate::private::safety::invalid_argument(
+            error,
+            format!("{}: must not be empty", stringify!(docs)),
+        );
+        return Default::default();
+    }
 
     safe_into_raw!(safe_result!(collection.insert_many(session, docs, options), error).into())
 }
@@ -204,14 +211,17 @@ pub extern "C" fn mongoac_collection_insert_many(
 pub extern "C" fn mongoac_collection_insert_many_async(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
-    docs: *const BsonViewT,
-    count: usize,
+    docs: BsonViewArrayT,
     options: *const InsertManyOptionsT,
 ) -> *mut FutureT {
     let collection = safe_as_ref!(collection);
     let session = safe_optional_as_mut!(session);
-    let docs = safe_bson_view_array_as_vec!(docs, count);
+    let docs = safe_bson_view_array!(docs);
     let options = safe_optional_as_ref!(options);
+
+    if docs.is_empty() {
+        return Default::default();
+    }
 
     safe_into_raw!(collection.insert_many_async(session, docs, options))
 }

@@ -12,8 +12,7 @@ Synopsis
 
    mongoac_future_t *mongoac_collection_insert_many_async(const mongoac_collection_t *collection,
                                                           mongoac_client_session_t *session,
-                                                          const mongoac_bson_view_t *docs,
-                                                          uintptr_t count,
+                                                          mongoac_bson_view_array_t docs,
                                                           const mongoac_insert_many_options_t *options);
 
 Description
