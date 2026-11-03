@@ -1,4 +1,4 @@
-mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
+mongo-c-driver (1.30.4-1+deb13u5) trixie; urgency=medium
 
   * Fix CVE-2026-84965: heap write primitive via size round-up wrap during JSON
     parsing on 32-bit builds
@@ -36,7 +36,7 @@ mongo-c-driver (1.30.4-1+deb13u5) UNRELEASED; urgency=medium
     + this fixes a potential loss of data by ensuring that a WCE reported by
       the server is propagated rather than discarded
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 30 Oct 2026 13:29:27 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Tue, 03 Nov 2026 16:12:33 -0500
 
 mongo-c-driver (1.30.4-1+deb13u4) trixie; urgency=medium
 
