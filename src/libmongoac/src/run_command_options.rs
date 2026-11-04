@@ -16,8 +16,7 @@ use crate::private::macros::*;
 
 use crate::read_preference::ReadPreferenceT;
 
-use mongodb::options::RunCommandOptions;
-use mongodb::options::SelectionCriteria;
+use mongodb::options::{RunCommandOptions, SelectionCriteria};
 
 #[derive(Clone)]
 pub struct RunCommandOptionsT(RunCommandOptions);
