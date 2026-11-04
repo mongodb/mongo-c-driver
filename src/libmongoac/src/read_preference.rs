@@ -105,19 +105,20 @@ pub extern "C" fn mongoac_read_preference_set_mode(
     let read_preference = safe_as_mut!(read_preference);
 
     read_preference.0 = match v {
-        MONGOAC_READ_PREFERENCE_MODE_PRIMARY => ReadPreference::Primary,
-        MONGOAC_READ_PREFERENCE_MODE_SECONDARY => ReadPreference::Secondary {
-            options: read_preference.take_options(),
-        },
-        MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED => ReadPreference::PrimaryPreferred {
-            options: read_preference.take_options(),
-        },
-        MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED => ReadPreference::SecondaryPreferred {
-            options: read_preference.take_options(),
-        },
-        MONGOAC_READ_PREFERENCE_MODE_NEAREST => ReadPreference::Nearest {
-            options: read_preference.take_options(),
-        },
+        MONGOAC_READ_PREFERENCE_MODE_PRIMARY => ReadPreference::primary(),
+        MONGOAC_READ_PREFERENCE_MODE_SECONDARY => {
+            ReadPreference::secondary(read_preference.take_options())
+        }
+        MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED => {
+            ReadPreference::primary_preferred(read_preference.take_options())
+        }
+        MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED => {
+            ReadPreference::secondary_preferred(read_preference.take_options())
+        }
+        MONGOAC_READ_PREFERENCE_MODE_NEAREST => {
+            ReadPreference::nearest(read_preference.take_options())
+        }
+
         _ => return, // unknown mode: does nothing
     };
 }
