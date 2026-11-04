@@ -324,7 +324,7 @@ functions:
           - AWS_SESSION_TOKEN
         args:
           - -c
-          - ../drivers-evergreen-tools/.evergreen/disagg/download-crypt-shared.sh
+          - ../drivers-evergreen-tools/.evergreen/disagg/download-crypt.sh
     - command: expansions.update
       type: setup
       params:
@@ -720,8 +720,6 @@ functions:
           - AWS_ACCESS_KEY_ID
           - AWS_SECRET_ACCESS_KEY
           - AWS_SESSION_TOKEN
-          - DSC_NUM_CELLS
-          - DSC_MONGODS_PER_SHARD
           - DSC_SLS_TAG
         args:
           - -c

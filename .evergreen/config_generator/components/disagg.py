@@ -20,10 +20,6 @@ _COMPILER = 'gcc'
 # (all SLS containers stuck in `restarting`); bump deliberately after checking a newer tag comes up healthy.
 _SLS_TAG = 'linux-x86-64-f987ae59a6f61e0b4e3edc73663992e15c4e9261'
 
-# `slslocal` requires mongods per shard <= cells.
-_NUM_CELLS = 3
-_MONGODS_PER_SHARD = 3
-
 
 def functions():
     return {
@@ -36,8 +32,6 @@ def functions():
                     'AWS_ACCESS_KEY_ID',
                     'AWS_SECRET_ACCESS_KEY',
                     'AWS_SESSION_TOKEN',
-                    'DSC_NUM_CELLS',
-                    'DSC_MONGODS_PER_SHARD',
                     'DSC_SLS_TAG',
                 ],
                 working_dir='mongoc',
@@ -48,8 +42,7 @@ def functions():
                 file='mongoc/dsc-expansion.yml',
             ),
         ],
-        # Client-side encryption tests need crypt_shared and mongocryptd. mongo-orchestration is not bootstrapped, so fetch
-        # them directly.
+        # Client-side encryption tests need crypt_shared. mongo-orchestration is not bootstrapped, so fetch it directly.
         'fetch-dsc-crypt-shared': [
             # Downloads of the "latest" server binary require an AWS identity (DRIVERS-3628).
             ec2_assume_role(role_arn='${aws_test_secrets_role}'),
@@ -57,7 +50,7 @@ def functions():
                 command_type=EvgCommandType.SETUP,
                 include_expansions_in_env=['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN'],
                 working_dir='mongoc',
-                script='../drivers-evergreen-tools/.evergreen/disagg/download-crypt-shared.sh',
+                script='../drivers-evergreen-tools/.evergreen/disagg/download-crypt.sh',
             ),
             expansions_update(
                 command_type=EvgCommandType.SETUP,
@@ -121,11 +114,7 @@ def tasks():
             FetchDET.call(),
             FunctionCall(
                 func='start-dsc',
-                vars={
-                    'DSC_NUM_CELLS': str(_NUM_CELLS),
-                    'DSC_MONGODS_PER_SHARD': str(_MONGODS_PER_SHARD),
-                    'DSC_SLS_TAG': _SLS_TAG,
-                },
+                vars={'DSC_SLS_TAG': _SLS_TAG},
             ),
             RunSimpleHTTPServer.call(),
             RunTests().call(
@@ -172,11 +161,7 @@ def tasks():
             FetchDET.call(),
             FunctionCall(
                 func='start-dsc',
-                vars={
-                    'DSC_NUM_CELLS': str(_NUM_CELLS),
-                    'DSC_MONGODS_PER_SHARD': str(_MONGODS_PER_SHARD),
-                    'DSC_SLS_TAG': _SLS_TAG,
-                },
+                vars={'DSC_SLS_TAG': _SLS_TAG},
             ),
             FunctionCall(func='fetch-dsc-crypt-shared'),
             CSFLESetup.call(),
