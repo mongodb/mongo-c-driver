@@ -33,10 +33,10 @@ TEST_CASE("destroy", "[mongoac][run_command_options]") {
 
 TEST_CASE("clone", "[mongoac][run_command_options]") {
     SECTION("null") {
-        auto const read_preference =
-            make_unique(mongoac_read_preference_clone(nullptr), &mongoac_read_preference_destroy);
+        auto const options =
+            make_unique(mongoac_run_command_options_clone(nullptr), &mongoac_run_command_options_destroy);
 
-        CHECK(read_preference == nullptr);
+        CHECK(options == nullptr);
     }
 
     SECTION("basic") {
