@@ -505,6 +505,97 @@ test_find_one_with_opts_limit(void)
 }
 
 
+// Regression test for CDRIVER-6508: test writing to the end of a page when the file metadata has an incorrect length.
+static void
+test_append_to_short_final_chunk(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_client_set_error_api(client, 2);
+
+   mongoc_gridfs_t *gridfs = _get_gridfs(server, client, MONGOC_QUERY_SECONDARY_OK);
+
+   // File metadata incorrectly claims a length of 127 bytes. But the file only contains 1 byte.
+   bson_error_t error;
+   future_t *future = future_gridfs_find_one_with_opts(gridfs, tmp_bson(BSON_STR({"filename" : "gap"})), NULL, &error);
+   request_t *request = mock_server_receives_msg(
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson(BSON_STR({"$db" : "db", "find" : "fs.files", "filter" : {"filename" : "gap"}, "limit" : 1})));
+   reply_to_op_msg_request(request, MONGOC_MSG_NONE, tmp_bson(BSON_STR({
+                              "ok" : 1,
+                              "cursor" : {
+                                 "id" : {"$numberLong" : "0"},
+                                 "ns" : "db.fs.files",
+                                 "firstBatch" : [ {
+                                    "_id" : {"$oid" : "6902a22f0000000000000001"},
+                                    "length" : {"$numberLong" : "127"},
+                                    "chunkSize" : 128,
+                                    "filename" : "gap",
+                                    "uploadDate" : {"$date" : 0}
+                                 } ]
+                              }
+                           })));
+   mongoc_gridfs_file_t *file = future_get_mongoc_gridfs_file_ptr(future);
+   ASSERT(file);
+   future_destroy(future);
+   request_destroy(request);
+
+   // Seek to end of file and append. Append two so the writev fills the first page with the first byte and flushes
+   // before writing the second byte in a new page.
+   ASSERT_CMPINT(mongoc_gridfs_file_seek(file, 0, SEEK_END), ==, 0);
+   char append[2] = {'X', 'V'};
+   mongoc_iovec_t iov = {.iov_base = (void *)append, .iov_len = sizeof append};
+   future = future_gridfs_file_writev(file, &iov, 1, 0);
+
+   // writev loads the bad page:
+   request =
+      mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson(BSON_STR({"$db" : "db", "find" : "fs.chunks"})));
+   reply_to_op_msg_request(
+      request, MONGOC_MSG_NONE, tmp_bson(BSON_STR({
+         "ok" : 1,
+         "cursor" : {
+            "id" : {"$numberLong" : "0"},
+            "ns" : "db.fs.chunks",
+            "firstBatch" : [ {"n" : 0, "data" : {"$binary" : {"subType" : "0", "base64" : "QQ=="}}} ]
+         }
+      })));
+   request_destroy(request);
+
+   // The first page fills, so writev flushes to fs.chunks:
+   request = mock_server_receives_request(server);
+   ASSERT(request);
+   ASSERT_MATCH(request_get_doc(request, 0), BSON_STR({"update" : "fs.chunks"})); // Command body.
+   const bson_t *update_op = request_get_doc(request, 1);                         // Update operation.
+
+   bson_value_t data;
+   bson_lookup_value(update_op, "u.data", &data);
+   ASSERT_CMPINT(data.value_type, ==, BSON_TYPE_BINARY);
+   const uint8_t *chunk = data.value.v_binary.data;
+   const uint32_t chunk_len = data.value.v_binary.data_len;
+
+   ASSERT_CMPUINT32(chunk_len, ==, 128u);
+   // The one stored byte is copied in, and the appended byte lands at the declared end of file.
+   ASSERT_CMPUINT32((uint32_t)chunk[0], ==, (uint32_t)'A');
+   ASSERT_CMPUINT32((uint32_t)chunk[127], ==, (uint32_t)'X');
+   // The gap in between must be zeros.
+   for (uint32_t i = 1; i < 127; i++) {
+      ASSERT_CMPUINT32((uint32_t)chunk[i], ==, 0u);
+   }
+   bson_value_destroy(&data);
+
+   reply_to_request_with_ok_and_destroy(request);
+   ASSERT_CMPSSIZE_T(future_get_ssize_t(future), ==, (ssize_t)sizeof append);
+   future_destroy(future);
+
+   mongoc_gridfs_file_destroy(file);
+   mongoc_gridfs_destroy(gridfs);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+
 static void
 test_properties(void)
 {
@@ -1809,6 +1900,7 @@ test_gridfs_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/gridfs_old/find_one_empty", test_find_one_empty);
    TestSuite_AddLive(suite, "/gridfs_old/find_with_opts", test_find_with_opts);
    TestSuite_AddMockServerTest(suite, "/gridfs_old/find_one_with_opts/limit", test_find_one_with_opts_limit);
+   TestSuite_AddMockServerTest(suite, "/gridfs_old/append_to_short_final_chunk", test_append_to_short_final_chunk);
    TestSuite_AddLive(suite, "/gridfs_old/properties", test_properties);
    TestSuite_AddLive(suite, "/gridfs_old/empty", test_empty);
    TestSuite_AddLive(suite, "/gridfs_old/read", test_read);

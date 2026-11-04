@@ -61,6 +61,10 @@ bson_vector_packed_bit_validate(bson_vector_binary_header_impl_t header,
          return false;
       }
       uint32_t vector_data_len = binary_data_len - BSON_VECTOR_HEADER_LEN;
+      // Reject vectors whose element count cannot be represented in size_t (possible on 32-bit platforms).
+      if ((uint64_t)vector_data_len * 8u - padding > (uint64_t)SIZE_MAX) {
+         return false;
+      }
       if (vector_data_len == 0) {
          return padding == 0;
       } else {
