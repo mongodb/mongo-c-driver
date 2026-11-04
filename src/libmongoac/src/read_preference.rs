@@ -16,6 +16,7 @@ use crate::private::macros::*;
 
 use mongodb::options::{ReadPreference, ReadPreferenceOptions};
 
+use num_enum::{FromPrimitive, IntoPrimitive};
 use std::time::Duration;
 
 #[allow(non_camel_case_types)]
@@ -26,6 +27,19 @@ pub const MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED: mongoac_read_preferenc
 pub const MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED: mongoac_read_preference_mode_t = 3;
 pub const MONGOAC_READ_PREFERENCE_MODE_NEAREST: mongoac_read_preference_mode_t = 4;
 pub const MONGOAC_READ_PREFERENCE_MODE_UNKNOWN: mongoac_read_preference_mode_t = i32::MIN;
+
+#[derive(Clone, Copy, Debug, Eq, FromPrimitive, IntoPrimitive, PartialEq)]
+#[repr(i32)]
+pub enum ReadPreferenceModeT {
+    Primary = MONGOAC_READ_PREFERENCE_MODE_PRIMARY,
+    Secondary = MONGOAC_READ_PREFERENCE_MODE_SECONDARY,
+    PrimaryPreferred = MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED,
+    SecondaryPreferred = MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED,
+    Nearest = MONGOAC_READ_PREFERENCE_MODE_NEAREST,
+
+    #[num_enum(catch_all)]
+    Unknown(i32),
+}
 
 #[derive(Clone)]
 pub struct ReadPreferenceT(ReadPreference);
@@ -68,18 +82,15 @@ pub extern "C" fn mongoac_read_preference_get_mode(
     read_preference: *const ReadPreferenceT,
 ) -> mongoac_read_preference_mode_t {
     match safe_optional_as_ref!(read_preference).map(|v| &v.0) {
-        Some(ReadPreference::Primary) => MONGOAC_READ_PREFERENCE_MODE_PRIMARY,
-        Some(ReadPreference::Secondary { .. }) => MONGOAC_READ_PREFERENCE_MODE_SECONDARY,
-        Some(ReadPreference::PrimaryPreferred { .. }) => {
-            MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED
-        }
-        Some(ReadPreference::SecondaryPreferred { .. }) => {
-            MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED
-        }
-        Some(ReadPreference::Nearest { .. }) => MONGOAC_READ_PREFERENCE_MODE_NEAREST,
+        Some(ReadPreference::Primary) => ReadPreferenceModeT::Primary,
+        Some(ReadPreference::Secondary { .. }) => ReadPreferenceModeT::Secondary,
+        Some(ReadPreference::PrimaryPreferred { .. }) => ReadPreferenceModeT::PrimaryPreferred,
+        Some(ReadPreference::SecondaryPreferred { .. }) => ReadPreferenceModeT::SecondaryPreferred,
+        Some(ReadPreference::Nearest { .. }) => ReadPreferenceModeT::Nearest,
 
-        _ => MONGOAC_READ_PREFERENCE_MODE_UNKNOWN, // #[non_exhaustive]
+        _ => ReadPreferenceModeT::Unknown(MONGOAC_READ_PREFERENCE_MODE_UNKNOWN), // #[non_exhaustive]
     }
+    .into()
 }
 
 #[unsafe(no_mangle)]
@@ -104,22 +115,18 @@ pub extern "C" fn mongoac_read_preference_set_mode(
 ) {
     let read_preference = safe_as_mut!(read_preference);
 
-    read_preference.0 = match v {
-        MONGOAC_READ_PREFERENCE_MODE_PRIMARY => ReadPreference::primary(),
-        MONGOAC_READ_PREFERENCE_MODE_SECONDARY => {
-            ReadPreference::secondary(read_preference.take_options())
-        }
-        MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED => {
+    read_preference.0 = match v.into() {
+        ReadPreferenceModeT::Primary => ReadPreference::primary(),
+        ReadPreferenceModeT::Secondary => ReadPreference::secondary(read_preference.take_options()),
+        ReadPreferenceModeT::PrimaryPreferred => {
             ReadPreference::primary_preferred(read_preference.take_options())
         }
-        MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED => {
+        ReadPreferenceModeT::SecondaryPreferred => {
             ReadPreference::secondary_preferred(read_preference.take_options())
         }
-        MONGOAC_READ_PREFERENCE_MODE_NEAREST => {
-            ReadPreference::nearest(read_preference.take_options())
-        }
+        ReadPreferenceModeT::Nearest => ReadPreference::nearest(read_preference.take_options()),
 
-        _ => return, // unknown mode: does nothing
+        _ => return, // Do nothing.
     };
 }
 
