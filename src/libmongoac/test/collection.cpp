@@ -817,16 +817,14 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
 
     SECTION("null collection") {
         auto const result = make_unique(
-            mongoac_collection_insert_many(nullptr, nullptr, mongoac_bson_view_array_t{}, nullptr, error),
-            &mongoac_insert_many_result_destroy);
+            mongoac_collection_insert_many(nullptr, nullptr, {}, nullptr, error), &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
     }
 
     SECTION("null documents") {
         auto const result = make_unique(
-            mongoac_collection_insert_many(coll, nullptr, mongoac_bson_view_array_t{}, nullptr, error),
-            &mongoac_insert_many_result_destroy);
+            mongoac_collection_insert_many(coll, nullptr, {}, nullptr, error), &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
     }
@@ -836,7 +834,7 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 1> const docs{{to_mongoac(doc.get())}};
 
         auto const result = make_unique(
-            mongoac_collection_insert_many(coll, nullptr, mongoac_bson_view_array_t{docs.data(), 0u}, nullptr, error),
+            mongoac_collection_insert_many(coll, nullptr, {docs.data(), 0u}, nullptr, error),
             &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
@@ -847,8 +845,7 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
 
         auto const result = make_unique(
-            mongoac_collection_insert_many(
-                coll, nullptr, mongoac_bson_view_array_t{docs.data(), docs.size()}, nullptr, error),
+            mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
             &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
@@ -860,8 +857,7 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {bytes, sizeof(bytes)}}};
 
         auto const result = make_unique(
-            mongoac_collection_insert_many(
-                coll, nullptr, mongoac_bson_view_array_t{docs.data(), docs.size()}, nullptr, error),
+            mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
             &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
@@ -875,8 +871,7 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 3> const docs{{to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())}};
 
         auto const result_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_collection_insert_many(
-                coll, nullptr, mongoac_bson_view_array_t{docs.data(), docs.size()}, nullptr, error),
+            mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
             &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_OK(error);
 
@@ -898,16 +893,14 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
     auto const coll = coll_owner.get();
 
     SECTION("null collection") {
-        auto const future = make_unique(
-            mongoac_collection_insert_many_async(nullptr, nullptr, mongoac_bson_view_array_t{}, nullptr),
-            &mongoac_future_destroy);
+        auto const future =
+            make_unique(mongoac_collection_insert_many_async(nullptr, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
     SECTION("null documents") {
-        auto const future = make_unique(
-            mongoac_collection_insert_many_async(coll, nullptr, mongoac_bson_view_array_t{}, nullptr),
-            &mongoac_future_destroy);
+        auto const future =
+            make_unique(mongoac_collection_insert_many_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
@@ -916,8 +909,7 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 1> const docs{{to_mongoac(doc.get())}};
 
         auto const future = make_unique(
-            mongoac_collection_insert_many_async(coll, nullptr, mongoac_bson_view_array_t{docs.data(), 0u}, nullptr),
-            &mongoac_future_destroy);
+            mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), 0u}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
@@ -926,8 +918,7 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
 
         auto const future = make_unique(
-            mongoac_collection_insert_many_async(
-                coll, nullptr, mongoac_bson_view_array_t{docs.data(), docs.size()}, nullptr),
+            mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
             &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
@@ -938,8 +929,7 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {bytes, sizeof(bytes)}}};
 
         auto const future = make_unique(
-            mongoac_collection_insert_many_async(
-                coll, nullptr, mongoac_bson_view_array_t{docs.data(), docs.size()}, nullptr),
+            mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
             &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
@@ -955,8 +945,7 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         std::array<mongoac_bson_view_t, 3> const docs{{to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())}};
 
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_collection_insert_many_async(
-                coll, nullptr, mongoac_bson_view_array_t{docs.data(), docs.size()}, nullptr),
+            mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
             &mongoac_future_destroy);
         auto const future = future_owner.get();
         REQUIRE(future != nullptr);
