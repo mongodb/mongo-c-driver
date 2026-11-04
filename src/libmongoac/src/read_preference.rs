@@ -160,14 +160,7 @@ impl ReadPreferenceT {
     }
 
     fn take_options(&mut self) -> Option<ReadPreferenceOptions> {
-        match std::mem::replace(&mut self.0, ReadPreference::Primary) {
-            ReadPreference::Secondary { options }
-            | ReadPreference::PrimaryPreferred { options }
-            | ReadPreference::SecondaryPreferred { options }
-            | ReadPreference::Nearest { options } => options,
-
-            ReadPreference::Primary | _ => None, // #[non_exhaustive]
-        }
+        self.get_options_as_mut().and_then(Option::take)
     }
 }
 
