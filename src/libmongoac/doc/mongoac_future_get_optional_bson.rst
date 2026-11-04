@@ -18,6 +18,8 @@ Description
 
 Obtain the :ref:`result <future-result>` of the given :symbol:`mongoac_future_t`.
 
+The returned :symbol:`mongoac_bson_t` may be null even when no error occurs.
+
 Lifetime
 --------
 
