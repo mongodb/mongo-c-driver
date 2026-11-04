@@ -14,8 +14,7 @@
 
 use crate::private::macros::*;
 
-use mongodb::options::ReadPreference;
-use mongodb::options::ReadPreferenceOptions;
+use mongodb::options::{ReadPreference, ReadPreferenceOptions};
 
 use std::time::Duration;
 
