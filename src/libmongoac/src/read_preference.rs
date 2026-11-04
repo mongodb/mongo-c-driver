@@ -155,9 +155,7 @@ impl ReadPreferenceT {
 
     fn set_max_staleness(&mut self, max_staleness: Option<Duration>) {
         if let Some(options) = self.get_options_as_mut() {
-            options
-                .get_or_insert_with(ReadPreferenceOptions::default)
-                .max_staleness = max_staleness;
+            options.get_or_insert_default().max_staleness = max_staleness;
         }
     }
 
