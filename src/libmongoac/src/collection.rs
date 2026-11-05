@@ -196,14 +196,6 @@ pub extern "C" fn mongoac_collection_insert_many(
     let docs = safe_bson_view_array_with_error!(docs, error);
     let options = safe_optional_as_ref!(options);
 
-    if docs.is_empty() {
-        crate::private::safety::invalid_argument(
-            error,
-            format!("{}: must not be empty", stringify!(docs)),
-        );
-        return Default::default();
-    }
-
     safe_into_raw!(safe_result!(collection.insert_many(session, docs, options), error).into())
 }
 
@@ -218,10 +210,6 @@ pub extern "C" fn mongoac_collection_insert_many_async(
     let session = safe_optional_as_mut!(session);
     let docs = safe_bson_view_array!(docs);
     let options = safe_optional_as_ref!(options);
-
-    if docs.is_empty() {
-        return Default::default();
-    }
 
     safe_into_raw!(collection.insert_many_async(session, docs, options))
 }

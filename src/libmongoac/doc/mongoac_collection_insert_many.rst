@@ -29,7 +29,7 @@ Errors
 This function may return the following errors:
 
 - Invalid Argument (mongoac): ``collection`` is null.
-- Invalid Argument (mongoac): ``docs`` is null or empty.
+- Invalid Argument (mongoac): ``docs`` is null.
 - Invalid Argument (mongoac): a document in ``docs`` is null or invalid BSON.
 - Server-Side Error (server, rust): the server returned an error.
 - Client-Side Error (rust): the requested operation failed.

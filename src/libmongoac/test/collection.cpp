@@ -716,17 +716,6 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         CHECK(result == nullptr);
     }
 
-    SECTION("empty documents") {
-        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-        std::array<mongoac_bson_view_t, 1> const docs{{to_mongoac(doc.get())}};
-
-        auto const result = make_unique(
-            mongoac_collection_insert_many(coll, nullptr, {docs.data(), 0u}, nullptr, error),
-            &mongoac_insert_many_result_destroy);
-        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
-        CHECK(result == nullptr);
-    }
-
     SECTION("null document element") {
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
         std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
@@ -747,6 +736,18 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
             mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
             &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("empty documents") {
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({})"_bson, &bson_destroy);
+        auto const view = to_mongoac(doc.get());
+
+        auto const result = make_unique(
+            mongoac_collection_insert_many(coll, nullptr, {&view, 0u}, nullptr, error),
+            &mongoac_insert_many_result_destroy);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "No documents provided to insert_many");
         CHECK(result == nullptr);
     }
 
@@ -791,15 +792,6 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         CHECK(future == nullptr);
     }
 
-    SECTION("empty documents") {
-        auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-        std::array<mongoac_bson_view_t, 1> const docs{{to_mongoac(doc.get())}};
-
-        auto const future = make_unique(
-            mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), 0u}, nullptr), &mongoac_future_destroy);
-        CHECK(future == nullptr);
-    }
-
     SECTION("null document element") {
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
         std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
@@ -819,6 +811,27 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
             mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
             &mongoac_future_destroy);
         CHECK(future == nullptr);
+    }
+
+    SECTION("empty documents") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const doc = REQUIRE_MAKE_UNIQUE(R"({})"_bson, &bson_destroy);
+        auto const view = to_mongoac(doc.get());
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_insert_many_async(coll, nullptr, {&view, 0u}, nullptr), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const result = mongoac_future_get_insert_many_result(future, error);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "No documents provided to insert_many");
+        CHECK(result == nullptr);
     }
 
     SECTION("basic") {

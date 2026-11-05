@@ -22,7 +22,7 @@ Async equivalent to :symbol:`mongoac_collection_insert_many()`.
 
 When ``collection`` is null, returns ``NULL``.
 
-When ``docs`` is null or empty, returns ``NULL``.
+When ``docs`` is null, returns ``NULL``.
 
 When a document in ``docs`` is null or invalid BSON, returns ``NULL``.
 
