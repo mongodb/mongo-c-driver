@@ -185,6 +185,12 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
       return false;
    }
 
+   // The canonicalizer guarantees a non-empty result on success; assert the
+   // invariants so the analyzer (and debug builds) can prune the impossible
+   // paths in the mstr operations below.
+   BSON_ASSERT(canonical.data != NULL);
+   mlib_check(canonical.len > 0);
+
    // 4. At least two labels, unless a special-use single label.
    size_t nlabels = 1;
    for (const char *c = canonical.data; *c; c++) {
