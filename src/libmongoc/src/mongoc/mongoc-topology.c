@@ -21,6 +21,8 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-psl-private.h>
+#include <mongoc/mongoc-punycode-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-structured-log-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
@@ -764,10 +766,38 @@ mongoc_topology_apply_scanned_srv_hosts(mongoc_uri_t *uri,
     */
    LL_FOREACH(hosts, host)
    {
+      // Normalize the polled hostname (strip trailing dot, Punycode, ASCII
+      // lowercase) before validating it and before it populates the topology
+      mstr host_canonical = mstr_new(0);
+      if (!mongoc_punycode_canonicalize_domain(host->host, strlen(host->host), &host_canonical)) {
+         // The hostname cannot be canonicalized, so it cannot be validated;
+         // skip it. Spec (SRV polling): a failed host MUST NOT be added to the
+         // topology, MUST NOT raise an error, and SHOULD be logged.
+         mstr_destroy(&host_canonical);
+         MONGOC_ERROR("Invalid host returned by SRV: %s", host->host_and_port);
+         continue;
+      }
+      const size_t nlen = host_canonical.len;
+      if (nlen < sizeof(host->host)) {
+         memcpy(host->host, host_canonical.data, nlen);
+         host->host[nlen] = '\0';
+
+         // Rebuild host_and_port from the normalized host (port preserved),
+         // mirroring _mongoc_host_list_from_hostport_with_err's construction.
+         if (strchr(host->host, ':')) {
+            bson_snprintf(host->host_and_port, sizeof host->host_and_port, "[%s]:%" PRIu16, host->host, host->port);
+         } else {
+            bson_snprintf(host->host_and_port, sizeof host->host_and_port, "%s:%" PRIu16, host->host, host->port);
+         }
+      }
+      mstr_destroy(&host_canonical);
+
       if (mongoc_uri_validate_srv_result(uri, host->host, error)) {
          _mongoc_host_list_upsert(&valid_hosts, host);
       } else {
-         MONGOC_ERROR("Invalid host returned by SRV: %s", host->host_and_port);
+         /* Initial DNS Seedlist Discovery Spec: log the non-compliance,
+          * including the host name and the validation error. */
+         MONGOC_ERROR("Invalid host returned by SRV: %s (%s)", host->host_and_port, error->message);
          /* Continue on, there may still be valid hosts returned. */
       }
    }
