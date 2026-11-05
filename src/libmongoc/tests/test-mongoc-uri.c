@@ -2720,10 +2720,18 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    /* single labels are rejected unless special-use */
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=net"));
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=com"));
-   ASSERT(mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=test"));
-   ASSERT(mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=localhost"));
-   ASSERT(mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=internal"));
-   ASSERT(mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=corp"));
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=test");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=localhost");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=internal");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=corp");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
 
    /* public suffixes are rejected per the Public Suffix List */
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=co.uk"));
@@ -2731,7 +2739,9 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=com.ac"));
 
    /* underscores are legal in domain labels (CSHARP-6246 precedent) */
-   ASSERT(mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=my_domain.net"));
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=my_domain.net");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
 
    /* valid suffixes are accepted, case-insensitively, with leading/trailing dots */
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
