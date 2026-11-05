@@ -2071,6 +2071,8 @@ _cluster_add_node(mongoc_cluster_t *cluster,
    mongoc_scram_t scram = {0};
    bson_t speculative_auth_response = BSON_INITIALIZER;
    bool reply_initialized = false;
+   bool connecting_slot_acquired = false;
+   mongoc_topology_t *topology = cluster->client->topology;
 
    ENTRY;
 
@@ -2081,6 +2083,19 @@ _cluster_add_node(mongoc_cluster_t *cluster,
    if (!host) {
       GOTO(error);
    }
+
+   /* maxConnecting is shared by all clients created from a client pool, per server. */
+   int64_t slot_timeout_ms = mongoc_uri_get_option_as_int32(cluster->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, 0);
+   if (slot_timeout_ms <= 0) {
+      slot_timeout_ms = topology->connect_timeout_msec;
+   }
+   if (slot_timeout_ms <= 0) {
+      slot_timeout_ms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
+   }
+   if (!_mongoc_topology_connecting_acquire(topology, server_id, slot_timeout_ms, error)) {
+      GOTO(error);
+   }
+   connecting_slot_acquired = true;
 
    TRACE("Adding new server to cluster: %s", host->host_and_port);
 
@@ -2141,6 +2156,8 @@ _cluster_add_node(mongoc_cluster_t *cluster,
    _mongoc_scram_destroy(&scram);
 #endif
 
+   _mongoc_topology_connecting_release(topology, server_id);
+   connecting_slot_acquired = false;
    RETURN(cluster_node);
 
 error:
@@ -2157,6 +2174,10 @@ error:
 
    if (!reply_initialized && reply) {
       bson_init(reply);
+   }
+
+   if (connecting_slot_acquired) {
+      _mongoc_topology_connecting_release(topology, server_id);
    }
 
    RETURN(NULL);

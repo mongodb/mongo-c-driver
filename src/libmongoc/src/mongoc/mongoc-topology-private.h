@@ -111,6 +111,12 @@ typedef union mc_shared_tpld {
 /** A null-pointer initializer for an `mc_shared_tpld` */
 #define MC_SHARED_TPLD_NULL ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
 
+typedef struct _mongoc_connecting_count {
+   uint32_t server_id;
+   uint32_t count;
+   struct _mongoc_connecting_count *next;
+} mongoc_connecting_count_t;
+
 typedef struct _mongoc_topology_t {
    /**
     * @brief The topology description. Do not access directly. Instead, use
@@ -172,6 +178,12 @@ typedef struct _mongoc_topology_t {
     * tpld_modification_mtx as well.
     */
    mongoc_cond_t cond_client;
+
+   /* Limits concurrent application connection establishment per server. */
+   bson_mutex_t max_connecting_mutex;
+   mongoc_cond_t max_connecting_cond;
+   uint32_t max_connecting;
+   mongoc_connecting_count_t *connecting_counts;
 
    bool single_threaded;
    bool stale;
@@ -238,6 +250,16 @@ typedef struct _mongoc_topology_t {
    // `oidc_cache` implements the OIDC spec "Client Cache". It is shared among all pooled clients.
    mongoc_oidc_cache_t *oidc_cache;
 } mongoc_topology_t;
+
+/* timeout_ms limits slot waiting, independently of connection establishment. */
+bool
+_mongoc_topology_connecting_acquire(mongoc_topology_t *topology,
+                                    uint32_t server_id,
+                                    int64_t timeout_ms,
+                                    bson_error_t *error);
+
+void
+_mongoc_topology_connecting_release(mongoc_topology_t *topology, uint32_t server_id);
 
 mongoc_topology_t *
 mongoc_topology_new(const mongoc_uri_t *uri, bool single_threaded);

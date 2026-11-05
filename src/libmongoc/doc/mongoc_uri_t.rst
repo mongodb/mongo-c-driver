@@ -250,8 +250,15 @@ These options govern the behavior of a :symbol:`mongoc_client_pool_t`. They are 
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_MAXPOOLSIZE                     maxpoolsize                       The maximum number of clients created by a :symbol:`mongoc_client_pool_t` total (both in the pool and checked out). The default value is 100. Once it is reached, :symbol:`mongoc_client_pool_pop` blocks until another thread pushes a client.
+MONGOC_URI_MAXCONNECTING                   maxconnecting                     The maximum number of connections a pool can establish concurrently. Defaults to 2. Raising this value can establish connections faster but may cause connection storms; a value that is too low may throttle the pool and increase tail latency.
 MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                The maximum time to wait for a client to become available from the pool.
 ========================================== ================================= =========================================================================================================================================================================================================================
+
+Waiting for a ``maxConnecting`` slot is limited by a positive ``waitQueueTimeoutMS``.
+If it is not set to a positive value, ``connectTimeoutMS`` limits this wait instead.
+This timeout applies to waiting for a slot; connection establishment has its own timeout.
+If no slot becomes available before the deadline, the operation fails with
+``MONGOC_ERROR_CLIENT_NOT_READY`` without attempting a connection.
 
 .. _mongoc_uri_t_write_concern_options:
 
