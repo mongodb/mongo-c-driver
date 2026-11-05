@@ -11,7 +11,7 @@ Synopsis
    #include <mongoac/read_preference.h>
 
    void mongoac_read_preference_set_mode(mongoac_read_preference_t *read_preference,
-                                              mongoac_read_preference_mode_t v);
+                                         mongoac_read_preference_mode_t v);
 
 Description
 -----------
