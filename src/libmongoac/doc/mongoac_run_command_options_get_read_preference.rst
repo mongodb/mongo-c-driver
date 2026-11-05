@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-Gets the "read preference" field for the given :symbol:`mongoac_run_command_options_t`.
+Gets the :symbol:`"read preference" <mongoac_read_preference_t>` field for the given :symbol:`mongoac_run_command_options_t`.
 
 When ``options`` is null, returns a null pointer.
 

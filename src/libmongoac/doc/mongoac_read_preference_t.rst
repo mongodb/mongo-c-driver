@@ -29,6 +29,8 @@ Description
 
 Represents a `mongodb::options::ReadPreference <https://docs.rs/mongodb/latest/mongodb/options/enum.ReadPreference.html>`_.
 
+.. _mongoac_read_preference_mode_t:
+
 Modes
 -----
 

@@ -26,7 +26,7 @@ Fields
 
 The following fields are supported:
 
-- :symbol:`mongoac_read_preference_t` (via `SelectionCriteria <https://docs.rs/mongodb/latest/mongodb/options/struct.RunCommandOptions.html#structfield.selection_criteria>`_).
+- :symbol:`read preference <mongoac_read_preference_t>` (via `SelectionCriteria <https://docs.rs/mongodb/latest/mongodb/options/struct.RunCommandOptions.html#structfield.selection_criteria>`_).
 
 .. only:: html
 

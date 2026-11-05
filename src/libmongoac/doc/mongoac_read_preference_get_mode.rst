@@ -15,11 +15,11 @@ Synopsis
 Description
 -----------
 
-Returns the read mode of the given :symbol:`mongoac_read_preference_t`.
+Returns the `"mode" <mongoac_read_preference_mode_t>`_ field of the given :symbol:`mongoac_read_preference_t`.
 
 When ``read_preference`` is null, returns ``MONGOAC_READ_PREFERENCE_MODE_UNKNOWN``.
 
-When the read mode is unknown, returns ``MONGOAC_READ_PREFERENCE_MODE_UNKNOWN``.
+When the mode is an unrecognized value, returns ``MONGOAC_READ_PREFERENCE_MODE_UNKNOWN``.
 
 .. seealso::
 

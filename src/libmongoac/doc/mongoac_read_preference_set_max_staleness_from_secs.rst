@@ -20,4 +20,4 @@ Sets the "max staleness" field of the given :symbol:`mongoac_read_preference_t` 
 
 When ``read_preference`` is null, does nothing.
 
-When the read mode is "primary", does nothing.
+When the mode is "primary", does nothing.
