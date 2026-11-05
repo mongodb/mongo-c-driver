@@ -31,6 +31,7 @@ pub mod find_one_options;
 pub mod future;
 pub mod insert_one_options;
 pub mod insert_one_result;
+pub mod read_preference;
 pub mod run_command_options;
 pub mod runtime;
 pub mod string;
