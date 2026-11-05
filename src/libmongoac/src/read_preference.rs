@@ -81,16 +81,12 @@ pub extern "C" fn mongoac_read_preference_get_max_staleness_is_none(
 pub extern "C" fn mongoac_read_preference_get_mode(
     read_preference: *const ReadPreferenceT,
 ) -> mongoac_read_preference_mode_t {
-    match safe_optional_as_ref!(read_preference).map(|v| &v.0) {
-        Some(ReadPreference::Primary) => ReadPreferenceModeT::Primary,
-        Some(ReadPreference::Secondary { .. }) => ReadPreferenceModeT::Secondary,
-        Some(ReadPreference::PrimaryPreferred { .. }) => ReadPreferenceModeT::PrimaryPreferred,
-        Some(ReadPreference::SecondaryPreferred { .. }) => ReadPreferenceModeT::SecondaryPreferred,
-        Some(ReadPreference::Nearest { .. }) => ReadPreferenceModeT::Nearest,
-
-        _ => ReadPreferenceModeT::Unknown(MONGOAC_READ_PREFERENCE_MODE_UNKNOWN), // #[non_exhaustive]
-    }
-    .into()
+    safe_optional_as_ref!(read_preference)
+        .map_or(
+            ReadPreferenceModeT::Unknown(MONGOAC_READ_PREFERENCE_MODE_UNKNOWN),
+            Into::into,
+        )
+        .into()
 }
 
 #[unsafe(no_mangle)]
@@ -126,7 +122,7 @@ pub extern "C" fn mongoac_read_preference_set_mode(
         }
         ReadPreferenceModeT::Nearest => ReadPreference::nearest(read_preference.take_options()),
 
-        _ => return, // Do nothing.
+        ReadPreferenceModeT::Unknown(_) => return, // Do nothing.
     };
 }
 
@@ -168,6 +164,20 @@ impl ReadPreferenceT {
 
     fn take_options(&mut self) -> Option<ReadPreferenceOptions> {
         self.get_options_as_mut().and_then(Option::take)
+    }
+}
+
+impl From<&ReadPreferenceT> for ReadPreferenceModeT {
+    fn from(value: &ReadPreferenceT) -> Self {
+        match &value.0 {
+            ReadPreference::Primary => ReadPreferenceModeT::Primary,
+            ReadPreference::Secondary { .. } => ReadPreferenceModeT::Secondary,
+            ReadPreference::PrimaryPreferred { .. } => ReadPreferenceModeT::PrimaryPreferred,
+            ReadPreference::SecondaryPreferred { .. } => ReadPreferenceModeT::SecondaryPreferred,
+            ReadPreference::Nearest { .. } => ReadPreferenceModeT::Nearest,
+
+            _ => ReadPreferenceModeT::Unknown(MONGOAC_READ_PREFERENCE_MODE_UNKNOWN),
+        }
     }
 }
 
