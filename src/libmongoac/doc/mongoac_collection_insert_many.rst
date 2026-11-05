@@ -19,7 +19,7 @@ Synopsis
 Description
 -----------
 
-Inserts the given ``docs``, an array of BSON documents, via `Collection::insert_many() <https://docs.rs/mongodb/latest/mongodb/struct.Collection.html#method.insert_many>`_.
+Inserts the given ``docs`` via `Collection::insert_many() <https://docs.rs/mongodb/latest/mongodb/struct.Collection.html#method.insert_many>`_.
 
 The returned :symbol:`mongoac_insert_many_result_t` must be destroyed with :symbol:`mongoac_insert_many_result_destroy()`.
 
