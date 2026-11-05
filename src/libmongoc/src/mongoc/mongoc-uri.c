@@ -288,8 +288,7 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       const char *srv_host = strchr(srv_hostname_canonical.data, '.');
       BSON_ASSERT(srv_host);
 
-      bool valid =
-         strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
+      bool valid = strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
 
       // When the SRV hostname has fewer than three labels, the returned
       // hostname must have at least one more domain level than the SRV
