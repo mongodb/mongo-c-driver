@@ -97,10 +97,9 @@ pub extern "C" fn mongoac_future_get_optional_bson(
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
 
-    match safe_result!(future.get_optional_bson(), error) {
-        Some(doc) => doc.into(),
-        None => BsonViewT::default(),
-    }
+    safe_result!(future.get_optional_bson(), error)
+        .as_ref()
+        .map_or(Default::default(), Into::into)
 }
 
 #[unsafe(no_mangle)]
