@@ -18,6 +18,8 @@ Description
 
 Obtain the :ref:`result <future-result>` of the given :symbol:`mongoac_future_t`.
 
+When the operation is a success, the return value is never null.
+
 Lifetime
 --------
 
