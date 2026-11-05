@@ -64,6 +64,7 @@
 #define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
 #define MONGOC_URI_SRVSERVICENAME "srvservicename"
 #define MONGOC_URI_SRVMAXHOSTS "srvmaxhosts"
+#define MONGOC_URI_SRVALLOWEDHOSTSSUFFIX "srvallowedhostssuffix"
 #define MONGOC_URI_TLS "tls"
 #define MONGOC_URI_TLSCERTIFICATEKEYFILE "tlscertificatekeyfile"
 #define MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD "tlscertificatekeyfilepassword"

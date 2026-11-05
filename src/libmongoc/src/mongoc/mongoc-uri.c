@@ -30,6 +30,8 @@
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-oidc-env-private.h>
+#include <mongoc/mongoc-psl-private.h>
+#include <mongoc/mongoc-punycode-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-trace-private.h>
@@ -50,6 +52,7 @@ struct _mongoc_uri_t {
    char *str;
    bool is_srv;
    char srv[BSON_HOST_NAME_MAX + 1];
+   char *srv_allowed_hosts_suffix; // Canonical (dot-prefixed, Punycode, lowercase); NULL when unset.
    mongoc_host_list_t *hosts;
    char *username; // MongoCredential.username
    char *password; // MongoCredential.password
@@ -131,33 +134,189 @@ valid_hostname(const char *s)
 }
 
 
+// Special-use single-label names for which `srvAllowedHostsSuffix` is valid
+// despite naming fewer than two labels (Initial DNS Seedlist Discovery Spec)
+static const char *const srv_allowed_hosts_suffix_valid_single_labels[] = {
+   "test", // RFC 6761 special use names
+   "localhost",
+   "invalid",
+   "example",
+   "local",    // RFC 6762 multicast DNS
+   "internal", // Reserved by ICANN for private use
+   "corp",     // Commonly used privately (not officially reserved)
+   "home",
+   "mail",
+};
+
+// Normalize and validate the value of the `srvAllowedHostsSuffix` URI option
+// per the Initial DNS Seedlist Discovery Spec, in this mandated order:
+// 1. Strip leading and trailing '.' (empty result: error).
+// 2. Convert to A-label (Punycode) form.
+// 3. Normalize to lowercase using ASCII case folding.
+// 4. Error unless at least two labels, or the single label is special-use.
+// 5. Error if the value is a public suffix per the Public Suffix List.
+// 6. Prepend '.' to make the value a label-aligned suffix.
+//
+// On success, stores the canonical dot-prefixed form in uri->srv_allowed_hosts_suffix.
+static bool
+mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, bson_error_t *error)
+{
+   const size_t value_len = strlen(value);
+
+   // 1. Strip leading and trailing dots.
+   size_t start = 0;
+   size_t end = value_len;
+   while (start < end && value[start] == '.') {
+      start++;
+   }
+   while (end > start && value[end - 1] == '.') {
+      end--;
+   }
+   if (start == end) {
+      MONGOC_URI_ERROR(error, "%s must not be empty", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX);
+      return false;
+   }
+
+   // 2-3. Punycode-encode non-ASCII labels and ASCII-lowercase everything.
+   mstr canonical = mstr_new(0);
+   if (!mongoc_punycode_canonicalize_domain(value + start, end - start, &canonical)) {
+      MONGOC_URI_ERROR(error, "%s is not a valid domain name: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, value);
+      mstr_destroy(&canonical);
+      return false;
+   }
+
+   // 4. At least two labels, unless a special-use single label.
+   size_t nlabels = 1;
+   for (const char *c = canonical.data; *c; c++) {
+      if (*c == '.') {
+         nlabels++;
+      }
+   }
+   if (nlabels < 2) {
+      bool special_use = false;
+      for (size_t i = 0; i < sizeof(srv_allowed_hosts_suffix_valid_single_labels) /
+                                sizeof(*srv_allowed_hosts_suffix_valid_single_labels);
+           i++) {
+         if (0 == strcmp(canonical.data, srv_allowed_hosts_suffix_valid_single_labels[i])) {
+            special_use = true;
+            break;
+         }
+      }
+      if (!special_use) {
+         MONGOC_URI_ERROR(error,
+                          "%s must contain at least two '.' separated labels, or a special-use "
+                          "single label (e.g. \"test\", \"localhost\", \"internal\")",
+                          MONGOC_URI_SRVALLOWEDHOSTSSUFFIX);
+         mstr_destroy(&canonical);
+         return false;
+      }
+   }
+
+   // 5. Reject public suffixes per the Public Suffix List (special-use names exempt).
+   {
+      mongoc_psl_t *const psl = mongoc_psl_get_singleton();
+      if (!psl) {
+         MONGOC_URI_ERROR(error, "%s", "failed to load the public suffix list");
+         mstr_destroy(&canonical);
+         return false;
+      }
+      if (mongoc_psl_is_public_suffix(psl, canonical.data) && nlabels >= 2) {
+         MONGOC_URI_ERROR(
+            error, "%s must not be a public suffix: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, canonical.data);
+         mstr_destroy(&canonical);
+         return false;
+      }
+   }
+
+   // 6. Prepend '.' for label-aligned suffix matching.
+   mstr dot_prefixed = mstr_new(0);
+   if (!mstr_append_char(&dot_prefixed, '.') ||
+       !mstr_append(&dot_prefixed, mstr_view_data(canonical.data, canonical.len))) {
+      MONGOC_URI_ERROR(error, "%s", "out of memory");
+      mstr_destroy(&canonical);
+      mstr_destroy(&dot_prefixed);
+      return false;
+   }
+   mstr_destroy(&canonical);
+
+   bson_free(uri->srv_allowed_hosts_suffix);
+   uri->srv_allowed_hosts_suffix = bson_malloc0(dot_prefixed.len + 1);
+   memcpy(uri->srv_allowed_hosts_suffix, dot_prefixed.data, dot_prefixed.len);
+   mstr_destroy(&dot_prefixed);
+   return true;
+}
+
 bool
 mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_error_t *error)
 {
    const char *srv_hostname;
-   const char *srv_host;
 
    srv_hostname = mongoc_uri_get_srv_hostname(uri);
    BSON_ASSERT(srv_hostname);
 
-   if (!valid_hostname(host)) {
+   // The {domainname} that returned hostnames are validated against and returned hosts MUST
+   // have the same normalization applied (trailing dot stripped, Punycode, ASCII lowercase)
+   mstr srv_hostname_canonical = mstr_new(0);
+   if (!mongoc_punycode_canonicalize_domain(srv_hostname, strlen(srv_hostname), &srv_hostname_canonical)) {
+      mstr_destroy(&srv_hostname_canonical);
+      VALIDATE_SRV_ERR();
+   }
+   srv_hostname = srv_hostname_canonical.data;
+
+   mstr host_canonical = mstr_new(0);
+   if (!mongoc_punycode_canonicalize_domain(host, strlen(host), &host_canonical)) {
+      mstr_destroy(&srv_hostname_canonical);
+      mstr_destroy(&host_canonical);
       VALIDATE_SRV_ERR();
    }
 
-   srv_host = strchr(srv_hostname, '.');
-   BSON_ASSERT(srv_host);
+   if (uri->srv_allowed_hosts_suffix) {
+      // srvAllowedHostsSuffix configured: the hostname must end in the
+      // (label-aligned, canonical) suffix; the domainname check does not apply.
+      if (!mongoc_ends_with(host_canonical.data, uri->srv_allowed_hosts_suffix)) {
+         mstr_destroy(&srv_hostname_canonical);
+         mstr_destroy(&host_canonical);
+         VALIDATE_SRV_ERR();
+      }
+   } else {
+      // TODO (CDRIVER-6456): when srvHostValidator is configured, pass the
+      // host_canonical hostname to the validator callback; its verdict is the
+      // complete validation result (no domainname check applies).
 
-   /* host must be descendent of service root: if service is
-    * "a.foo.co" host can be like "a.foo.co", "b.foo.co", "a.b.foo.co", etc.
-    */
-   if (strlen(host) < strlen(srv_host)) {
-      VALIDATE_SRV_ERR();
+      // No options configured: host must be a descendant of the service
+      // root: if service is "a.foo.co" host can be like "a.foo.co",
+      // "b.foo.co", "a.b.foo.co", etc.
+      const char *srv_host = strchr(srv_hostname, '.');
+      BSON_ASSERT(srv_host);
+
+      bool valid = strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
+
+      // When the SRV hostname has fewer than three labels, the returned
+      // hostname must have at least one more domain level than the SRV
+      // hostname.
+      {
+         size_t srv_labels = 1u;
+         for (const char *c = srv_hostname; *c; c++) {
+            srv_labels += (*c == '.');
+         }
+         size_t host_labels = 1u;
+         for (const char *c = host_canonical.data; *c; c++) {
+            host_labels += (*c == '.');
+         }
+         if (srv_labels < 3u && host_labels < srv_labels + 1u) {
+            valid = false;
+         }
+      }
+
+      if (!valid) {
+         mstr_destroy(&srv_hostname_canonical);
+         mstr_destroy(&host_canonical);
+         VALIDATE_SRV_ERR();
+      }
    }
 
-   if (!mongoc_ends_with(host, srv_host)) {
-      VALIDATE_SRV_ERR();
-   }
-
+   mstr_destroy(&srv_hostname_canonical);
+   mstr_destroy(&host_canonical);
    return true;
 }
 
@@ -165,8 +324,36 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
 static bool
 _upsert_into_host_list(mongoc_uri_t *uri, mongoc_host_list_t *host, bson_error_t *error)
 {
-   if (uri->is_srv && !mongoc_uri_validate_srv_result(uri, host->host, error)) {
-      return false;
+   if (uri->is_srv) {
+      // Normalize the hostname before validating it and populating the
+      // seedlist (Initial DNS Seedlist Discovery Spec).
+      mstr host_canonical = mstr_new(0);
+      if (!mongoc_punycode_canonicalize_domain(host->host, strlen(host->host), &host_canonical)) {
+         // The hostname cannot be canonicalized, so it cannot be validated;
+         // report the standard SRV validation failure.
+         mstr_destroy(&host_canonical);
+         BSON_ASSERT(uri->is_srv);
+         mongoc_uri_validate_srv_result(uri, host->host, error);
+         return false;
+      }
+      const size_t nlen = host_canonical.len;
+      if (nlen < sizeof(host->host)) {
+         memcpy(host->host, host_canonical.data, nlen);
+         host->host[nlen] = '\0';
+      }
+      mstr_destroy(&host_canonical);
+
+      // Rebuild host_and_port from the normalized host (port preserved),
+      // mirroring _mongoc_host_list_from_hostport_with_err's construction.
+      if (strchr(host->host, ':')) {
+         bson_snprintf(host->host_and_port, sizeof host->host_and_port, "[%s]:%" PRIu16, host->host, host->port);
+      } else {
+         bson_snprintf(host->host_and_port, sizeof host->host_and_port, "%s:%" PRIu16, host->host, host->port);
+      }
+
+      if (!mongoc_uri_validate_srv_result(uri, host->host, error)) {
+         return false;
+      }
    }
 
    _mongoc_host_list_upsert(&uri->hosts, host);
@@ -1111,6 +1298,12 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
 
       } else if (!strcmp(key, MONGOC_URI_SRVSERVICENAME)) {
          if (!mongoc_uri_check_srv_service_name(uri, value)) {
+            goto UNSUPPORTED_VALUE;
+         }
+         _bson_upsert_utf8_icase(&uri->options, mstr_cstring(canon), value);
+
+      } else if (!strcmp(key, MONGOC_URI_SRVALLOWEDHOSTSSUFFIX)) {
+         if (!mongoc_uri_check_srv_allowed_hosts_suffix(uri, value, error)) {
             goto UNSUPPORTED_VALUE;
          }
          _bson_upsert_utf8_icase(&uri->options, mstr_cstring(canon), value);
@@ -3541,6 +3734,8 @@ mongoc_uri_finalize_srv(const mongoc_uri_t *uri, bson_error_t *error)
          option = MONGOC_URI_SRVSERVICENAME;
       } else if (mongoc_uri_has_option(uri, MONGOC_URI_SRVMAXHOSTS)) {
          option = MONGOC_URI_SRVMAXHOSTS;
+      } else if (mongoc_uri_has_option(uri, MONGOC_URI_SRVALLOWEDHOSTSSUFFIX)) {
+         option = MONGOC_URI_SRVALLOWEDHOSTSSUFFIX;
       }
 
       if (option) {
