@@ -33,6 +33,7 @@ Example
     mongoc_client_pool_append_metadata
     mongoc_client_pool_destroy
     mongoc_client_pool_enable_auto_encryption
+    mongoc_client_pool_get_stats
     mongoc_client_pool_max_size
     mongoc_client_pool_new
     mongoc_client_pool_new_with_error
@@ -46,4 +47,4 @@ Example
     mongoc_client_pool_set_ssl_opts
     mongoc_client_pool_set_structured_log_opts
     mongoc_client_pool_try_pop
-
+    mongoc_client_pool_stats_t
