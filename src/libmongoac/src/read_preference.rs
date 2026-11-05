@@ -127,7 +127,6 @@ pub extern "C" fn mongoac_read_preference_set_mode(
 }
 
 // TODO: tag sets (CDRIVER-6442)
-// TODO: hedge (deprecated)
 
 impl ReadPreferenceT {
     fn get_max_staleness(&self) -> Option<Duration> {
