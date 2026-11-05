@@ -230,6 +230,7 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
 
    // 6. Prepend '.' for label-aligned suffix matching.
    mstr dot_prefixed = mstr_new(0);
+   mstr_reserve(&dot_prefixed, canonical.len + 2);
    if (!mstr_append_char(&dot_prefixed, '.') ||
        !mstr_append(&dot_prefixed, mstr_view_data(canonical.data, canonical.len))) {
       MONGOC_URI_ERROR(error, "%s", "out of memory");
@@ -2888,6 +2889,7 @@ mongoc_uri_destroy(mongoc_uri_t *uri)
       bson_free(uri->str);
       bson_free(uri->database);
       bson_free(uri->username);
+      bson_free(uri->srv_allowed_hosts_suffix);
       bson_destroy(&uri->raw);
       bson_destroy(&uri->options);
       bson_destroy(&uri->credentials);
