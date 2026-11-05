@@ -261,7 +261,6 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       mstr_destroy(&srv_hostname_canonical);
       VALIDATE_SRV_ERR();
    }
-   srv_hostname = srv_hostname_canonical.data;
 
    mstr host_canonical = mstr_new(0);
    if (!mongoc_punycode_canonicalize_domain(host, strlen(host), &host_canonical)) {
@@ -286,17 +285,18 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       // No options configured: host must be a descendant of the service
       // root: if service is "a.foo.co" host can be like "a.foo.co",
       // "b.foo.co", "a.b.foo.co", etc.
-      const char *srv_host = strchr(srv_hostname, '.');
+      const char *srv_host = strchr(srv_hostname_canonical.data, '.');
       BSON_ASSERT(srv_host);
 
-      bool valid = strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
+      bool valid =
+         strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
 
       // When the SRV hostname has fewer than three labels, the returned
       // hostname must have at least one more domain level than the SRV
       // hostname.
       {
          size_t srv_labels = 1u;
-         for (const char *c = srv_hostname; *c; c++) {
+         for (const char *c = srv_hostname_canonical.data; *c; c++) {
             srv_labels += (*c == '.');
          }
          size_t host_labels = 1u;
