@@ -18,18 +18,22 @@ use crate::client_session::ClientSessionT;
 use crate::collection::CollectionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::create_collection_options::CreateCollectionOptionsT;
+use crate::cursor::CursorT;
 use crate::database_options::DatabaseOptionsT;
 use crate::drop_database_options::DropDatabaseOptionsT;
 use crate::error::ErrorT;
 use crate::future::FutureT;
 use crate::private::macros::*;
 use crate::run_command_options::RunCommandOptionsT;
+use crate::run_cursor_command_options::RunCursorCommandOptionsT;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 
 use mongodb::Database;
 use mongodb::bson::{RawDocument, RawDocumentBuf};
-use mongodb::options::{CreateCollectionOptions, DropDatabaseOptions, RunCommandOptions};
+use mongodb::options::{
+    CreateCollectionOptions, DropDatabaseOptions, RunCommandOptions, RunCursorCommandOptions,
+};
 
 #[derive(Clone)]
 pub struct DatabaseT {
@@ -160,6 +164,41 @@ pub extern "C" fn mongoac_database_run_command_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(db.run_command_async(session, command, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_run_cursor_command(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    command: BsonViewT,
+    options: *const RunCursorCommandOptionsT,
+    error: *mut ErrorT,
+) -> *mut CursorT {
+    let error = safe_optional_error_as_mut!(error);
+    let db = safe_as_ref_with_error!(db, error);
+    let session = safe_optional_as_mut!(session);
+    let command = safe_bson_view_with_error!(command, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(
+        db.run_cursor_command(session, command, options),
+        error
+    ))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_database_run_cursor_command_async(
+    db: *const DatabaseT,
+    session: *mut ClientSessionT,
+    command: BsonViewT,
+    options: *const RunCursorCommandOptionsT,
+) -> *mut FutureT {
+    let db = safe_as_ref!(db);
+    let session = safe_optional_as_mut!(session);
+    let command = safe_bson_view!(command);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(db.run_cursor_command_async(session, command, options))
 }
 
 #[unsafe(no_mangle)]
@@ -296,13 +335,49 @@ impl DatabaseT {
         })
     }
 
+    fn run_cursor_command(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        command: &RawDocument,
+        options: Option<&RunCursorCommandOptionsT>,
+    ) -> Result<CursorT, ErrorT> {
+        self.runtime.block_on(async {
+            cursor_session_op!(
+                self.inner
+                    .run_raw_cursor_command(command.to_owned())
+                    .with_options(options.map(Into::into)),
+                session,
+                self.runtime.clone()
+            )
+        })
+    }
+
+    fn run_cursor_command_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        command: &RawDocument,
+        options: Option<&RunCursorCommandOptionsT>,
+    ) -> FutureT {
+        let db = self.inner.clone();
+        let runtime = self.runtime.clone();
+        let session = session.map(|s| s.clone());
+        let command = command.to_owned();
+        let options: Option<RunCursorCommandOptions> = options.map(Into::into);
+
+        self.spawn::<CursorT>(async move {
+            cursor_session_op!(
+                db.run_raw_cursor_command(command).with_options(options),
+                session,
+                runtime
+            )
+        })
+    }
+
     // TODO: aggregate
     // TODO: gridfs_bucket
     // TODO: list_collection_names
     // TODO: list_collections
     // TODO: read_concern
-    // TODO: run_cursor_command
-    // TODO: run_raw_cursor_command
     // TODO: selection_criteria
     // TODO: watch
     // TODO: write_concern
