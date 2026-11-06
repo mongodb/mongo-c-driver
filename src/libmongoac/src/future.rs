@@ -14,6 +14,7 @@
 
 use crate::bson::BsonViewT;
 use crate::client_session::ClientSessionT;
+use crate::cursor::CursorT;
 use crate::error::{ErrorCodeT, ErrorT};
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
@@ -87,7 +88,21 @@ pub extern "C" fn mongoac_future_get_client_session(
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
 
-    safe_ptr_from_ref!(safe_result!(future.get_client_session(), error), ClientSessionT)
+    safe_ptr_from_ref!(
+        safe_result!(future.get_client_session(), error),
+        ClientSessionT
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_cursor(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *const CursorT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_ptr_from_ref!(safe_result!(future.get_cursor(), error), CursorT)
 }
 
 #[unsafe(no_mangle)]
@@ -166,6 +181,10 @@ impl FutureT {
 
     fn get_client_session(&self) -> Result<&ClientSessionT, ErrorT> {
         self.get::<ClientSessionT>("client_session")
+    }
+
+    fn get_cursor(&self) -> Result<&CursorT, ErrorT> {
+        self.get::<CursorT>("cursor")
     }
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {

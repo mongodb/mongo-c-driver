@@ -15,6 +15,7 @@ API Reference
    mongoac_client_session_t
    mongoac_client_t
    mongoac_collection_t
+   mongoac_cursor_t
    mongoac_database_t
    mongoac_error_t
    mongoac_future_t
