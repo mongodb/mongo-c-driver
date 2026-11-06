@@ -279,6 +279,8 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
    ctx.hosts = NULL;
    expect_ssl = strstr(uri_str, "ssl=false") == NULL;
    expect_error = _mongoc_lookup_bool(test, "error", false /* default */);
+   // Spec: if `ping` is false, drivers MUST NOT run a "ping" operation.
+   const bool do_ping = _mongoc_lookup_bool(test, "ping", true /* default */);
 
    uri = mongoc_uri_new_with_error(uri_str, &error);
    if (!expect_error) {
@@ -355,7 +357,7 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
    if (pooled) {
       if (n_hosts > 0 && !expect_error) {
          WAIT_UNTIL(_host_list_matches(test, &ctx));
-      } else {
+      } else if (do_ping) {
          r = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT(!r);
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
@@ -369,7 +371,7 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
          r = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
          ASSERT_OR_PRINT(r, error);
          WAIT_UNTIL(_host_list_matches(test, &ctx));
-      } else {
+      } else if (do_ping) {
          r = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT(!r);
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
