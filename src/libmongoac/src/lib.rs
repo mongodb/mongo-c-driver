@@ -34,6 +34,7 @@ pub mod insert_one_options;
 pub mod insert_one_result;
 pub mod read_preference;
 pub mod run_command_options;
+pub mod run_cursor_command_options;
 pub mod runtime;
 pub mod string;
 pub mod version;

@@ -78,6 +78,10 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("InsertOneResultT", "mongoac_insert_one_result_t"),
         ("ReadPreferenceT", "mongoac_read_preference_t"),
         ("RunCommandOptionsT", "mongoac_run_command_options_t"),
+        (
+            "RunCursorCommandOptionsT",
+            "mongoac_run_cursor_command_options_t",
+        ),
         ("RuntimeT", "mongoac_runtime_t"),
         ("StringArrayT", "mongoac_string_array_t"),
         ("StringT", "mongoac_string_t"),
@@ -162,6 +166,15 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "read_preference" => &["stdbool.h", "stdint.h"],
             "run_command_options" => &["mongoac/read_preference-fwd.h"],
+            "run_cursor_command_options" => &[
+                "mongoac/bson.h",
+                "mongoac/cursor_type.h",
+                "mongoac/error-fwd.h",
+                "mongoac/read_preference-fwd.h",
+                "mongoac/string.h",
+                "stdbool.h",
+                "stdint.h",
+            ],
             "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
