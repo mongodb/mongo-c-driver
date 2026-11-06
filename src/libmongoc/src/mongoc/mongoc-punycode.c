@@ -149,6 +149,11 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
    BSON_ASSERT_PARAM(label);
    BSON_ASSERT_PARAM(dst);
 
+   // Pre-reserve so dst's buffer is provably non-null before any append: dst
+   // is caller-provided, and its state cannot be proven across the translation
+   // unit boundary.
+   mstr_reserve(dst, 64);
+
    // DNS labels are at most 63 octets, so a bounded code point buffer suffices.
    uint32_t codepoints[64];
    size_t ncodepoints = 0;
@@ -192,7 +197,7 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
    size_t handled = basic;
 
    while (handled < ncodepoints) {
-      // Find the smallest unhandled code point >= n.
+      // Find the smallest code point >= n.
       uint32_t m = UINT32_MAX;
       for (size_t i = 0; i < ncodepoints; i++) {
          if (codepoints[i] >= n && codepoints[i] < m) {
@@ -243,127 +248,9 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
          handled++;
       }
 
+      // RFC 3492 section 6.3: "increment delta and n".
       delta++;
-   }
-
-   return true;
-}
-
-bool
-mongoc_punycode_decode_label(const char *input, size_t input_len, mstr *dst)
-{
-   BSON_ASSERT_PARAM(input);
-   BSON_ASSERT_PARAM(dst);
-
-   // Split at the last delimiter; everything before it is basic code points.
-   const char *const begin = input;
-   const char *const end = input + input_len;
-   const char *delim = NULL;
-   for (const char *c = begin; c < end; c++) {
-      if (*c == '-') {
-         delim = c;
-      }
-   }
-
-   uint32_t n = punycode_initial_n;
-   uint32_t bias = punycode_initial_bias;
-   size_t handled = 0;
-
-   if (delim) {
-      // Copy basic code points; they must be ASCII to be valid UTF-8 as-is.
-      for (const char *c = begin; c < delim; c++) {
-         if ((unsigned char)*c >= 0x80u) {
-            return false;
-         }
-         if (!mstr_append_char(dst, *c)) {
-            return false;
-         }
-         handled++;
-      }
-   }
-
-   // DNS labels are at most 63 octets, so the extended output is bounded.
-   uint32_t out[64];
-   size_t nout = 0;
-
-   const char *cursor = delim ? delim + 1 : begin;
-
-   while (cursor < end) {
-      uint32_t delta = 0;
-      uint32_t k = punycode_base;
-
-      for (;;) {
-         if (cursor >= end) {
-            return false; // Truncated digit sequence.
-         }
-         uint32_t digit = 0;
-         if (!_punycode_digit_value(*(cursor++), &digit)) {
-            return false;
-         }
-
-         {
-            uint32_t step = 0;
-            if (mlib_mul(&step, digit, k) || mlib_add(&delta, delta, step)) {
-               return false; // Overflow.
-            }
-         }
-
-         if (digit < _punycode_threshold(k, bias)) {
-            break;
-         }
-         k += punycode_base;
-      }
-
-      // RFC 3492 §6.3: n += delta / out; delta = delta % out.
-      {
-         const uint32_t add = delta / (uint32_t)(handled + 1u);
-         const uint32_t rem = delta % (uint32_t)(handled + 1u);
-         if (mlib_add(&n, n, add)) {
-            return false;
-         }
-         delta = rem;
-      }
-
-      if (n < 0x80u) {
-         return false; // The extended portion must not produce basic code points.
-      }
-      if (nout == 64) {
-         return false; // Exceeds a DNS label.
-      }
-      out[nout++] = n;
-
-      bias = _punycode_adapt(delta, (uint32_t)(handled + 1u), handled == 0);
-      delta = 0;
-      handled++;
-   }
-
-   // Re-encode the decoded code points as UTF-8.
-   for (size_t i = 0; i < nout; i++) {
-      char utf8[4] = {0};
-      size_t len = 0;
-      uint32_t cp = out[i];
-      if (cp < 0x80u) {
-         utf8[0] = (char)cp;
-         len = 1;
-      } else if (cp < 0x800u) {
-         utf8[0] = (char)(0xC0u | (cp >> 6));
-         utf8[1] = (char)(0x80u | (cp & 0x3Fu));
-         len = 2;
-      } else if (cp < 0x10000u) {
-         utf8[0] = (char)(0xE0u | (cp >> 12));
-         utf8[1] = (char)(0x80u | ((cp >> 6) & 0x3Fu));
-         utf8[2] = (char)(0x80u | (cp & 0x3Fu));
-         len = 3;
-      } else {
-         utf8[0] = (char)(0xF0u | (cp >> 18));
-         utf8[1] = (char)(0x80u | ((cp >> 12) & 0x3Fu));
-         utf8[2] = (char)(0x80u | ((cp >> 6) & 0x3Fu));
-         utf8[3] = (char)(0x80u | (cp & 0x3Fu));
-         len = 4;
-      }
-      if (!mstr_append(dst, mstr_view_data(utf8, len))) {
-         return false;
-      }
+      n++;
    }
 
    return true;
@@ -378,6 +265,12 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
    if (domain_len == 0) {
       return false;
    }
+
+   // Pre-reserve so dst's buffer is provably non-null before any append: dst
+   // is caller-provided, and its state cannot be proven across the translation
+   // unit boundary. The bound covers the dot separators plus the "xn--"
+   // prefixes and digit expansion the labels can produce.
+   mstr_reserve(dst, domain_len + 32);
 
    const char *start = domain;
    const char *const end = domain + domain_len;

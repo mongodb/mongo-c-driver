@@ -2794,6 +2794,11 @@ test_mongoc_punycode(void)
       {"b\xc3\xbc"
        "cher",
        "bcher-kva"}, // bcher-kva
+      // RFC 3492 section 7.1 sample (J): multiple extended code points.
+      {"Porqu\xc3\xa9"
+       "nopuedensimplementehablarenEspa\xc3\xb1"
+       "ol",
+       "PorqunopuedensimplementehablarenEspaol-fmd56a"},
    };
 
    for (size_t i = 0; i < sizeof(vectors) / sizeof(vectors[0]); i++) {

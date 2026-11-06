@@ -33,11 +33,6 @@
 bool
 mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst);
 
-// Decode one Punycode-encoded label (the part after "xn--") back to UTF-8.
-// Returns true and appends the UTF-8 form to `dst` on success.
-bool
-mongoc_punycode_decode_label(const char *input, size_t input_len, mstr *dst);
-
 // Canonicalize a dot-separated domain per the Initial DNS Seedlist Discovery
 // Spec: ASCII-lowercase each label, and convert non-ASCII labels to their
 // Punycode A-label form ("xn--..." prefix). Empty labels (leading, trailing,
