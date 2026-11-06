@@ -43,25 +43,6 @@ _punycode_digit(uint32_t d)
    return (char)('0' + d - 26);
 }
 
-static bool
-_punycode_digit_value(char c, uint32_t *out)
-{
-   // RFC 3492 §5: letter digits are case-insensitive.
-   if (c >= 'a' && c <= 'z') {
-      *out = (uint32_t)(c - 'a');
-      return true;
-   }
-   if (c >= 'A' && c <= 'Z') {
-      *out = (uint32_t)(c - 'A');
-      return true;
-   }
-   if (c >= '0' && c <= '9') {
-      *out = (uint32_t)(c - '0' + 26);
-      return true;
-   }
-   return false;
-}
-
 static uint32_t
 _punycode_adapt(uint32_t delta, uint32_t numpoints, bool firsttime)
 {
