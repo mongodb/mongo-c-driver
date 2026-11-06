@@ -928,12 +928,10 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
    if (is_always_retryable) {
       // Meets requirements of Retryable Read.
       retry_eligibility = MONGOC_RETRY_ELIGIBILITY_RETRYABLE_READ;
-   } else if (is_read &&
-              mongoc_uri_get_option_as_bool(parts.client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
+   } else if (is_read && parts.client->retry_reads) {
       // Eligible for overload retries only.
       retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
-   } else if (!is_read &&
-              mongoc_uri_get_option_as_bool(parts.client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+   } else if (!is_read && parts.client->retry_writes) {
       // Eligible for overload retries only.
       retry_eligibility = MONGOC_RETRY_ELIGIBILITY_OVERLOAD_ONLY;
    } else {
