@@ -24,9 +24,3 @@ TEST_CASE("destroy", "[mongoac][insert_many_result]") {
         SUCCEED();
     }
 }
-
-TEST_CASE("clone", "[mongoac][insert_many_result]") {
-    SECTION("null") {
-        CHECK(mongoac_insert_many_result_clone(nullptr) == nullptr);
-    }
-}

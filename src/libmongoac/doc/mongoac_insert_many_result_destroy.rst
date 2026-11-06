@@ -18,7 +18,3 @@ Description
 Destroys the given :symbol:`mongoac_insert_many_result_t`.
 
 When ``result`` is null, does nothing.
-
-.. seealso::
-
-   | :symbol:`mongoac_insert_many_result_clone`

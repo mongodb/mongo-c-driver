@@ -16,28 +16,14 @@ use crate::private::macros::*;
 
 use mongodb::results::InsertManyResult;
 
-pub struct InsertManyResultT(InsertManyResult);
+// TODO: Clone (requires mongodb crate 3.10.0, which requires MSRV 1.94.1)
 
-// `InsertManyResult` does not implement `Clone`: copy its fields into a default result. This will
-// be fixed in version 3.10.0 of the Rust Driver (RUST-2535).
-impl Clone for InsertManyResultT {
-    fn clone(&self) -> Self {
-        let mut result = InsertManyResult::default();
-        result.inserted_ids = self.0.inserted_ids.clone();
-        Self(result)
-    }
-}
+#[allow(dead_code)] // The inner result is only read by `get_inserted_ids` (TODO).
+pub struct InsertManyResultT(InsertManyResult);
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_insert_many_result_destroy(result: *mut InsertManyResultT) {
     safe_drop!(result);
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn mongoac_insert_many_result_clone(
-    result: *const InsertManyResultT,
-) -> *mut InsertManyResultT {
-    safe_into_raw!(safe_as_ref!(result).clone())
 }
 
 // TODO: get_inserted_ids
