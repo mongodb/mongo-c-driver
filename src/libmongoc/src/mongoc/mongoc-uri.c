@@ -2924,6 +2924,7 @@ mongoc_uri_copy(const mongoc_uri_t *uri)
    copy->str = bson_strdup(uri->str);
    copy->is_srv = uri->is_srv;
    bson_strncpy(copy->srv, uri->srv, sizeof uri->srv);
+   copy->srv_allowed_hosts_suffix = bson_strdup(uri->srv_allowed_hosts_suffix);
    copy->username = bson_strdup(uri->username);
    copy->password = bson_strdup(uri->password);
    copy->database = bson_strdup(uri->database);

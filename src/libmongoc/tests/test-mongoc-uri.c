@@ -2798,6 +2798,30 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
 }
 
 
+// The topology validates polled SRV hosts against a *copy* of the URI, so a
+// copy must enforce srvAllowedHostsSuffix exactly like the original.
+static void
+test_mongoc_uri_copy_srv_allowed_hosts_suffix(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
+   ASSERT(uri);
+   mongoc_uri_t *copy = mongoc_uri_copy(uri);
+   ASSERT(copy);
+
+   const mongoc_uri_t *const uris[] = {uri, copy};
+   for (size_t i = 0; i < sizeof(uris) / sizeof(*uris); i++) {
+      bson_error_t error;
+      // Allowed only because of the suffix: it would fail the domainname check against "c.d.com".
+      ASSERT_OR_PRINT(mongoc_uri_validate_srv_result(uris[i], "a.mydomain.net", &error), error);
+      ASSERT(!mongoc_uri_validate_srv_result(uris[i], "a.other.net", &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "must be subdomain");
+   }
+
+   mongoc_uri_destroy(copy);
+   mongoc_uri_destroy(uri);
+}
+
+
 static void
 test_mongoc_punycode(void)
 {
@@ -3505,6 +3529,7 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
    TestSuite_Add(suite, "/Uri/srv", test_mongoc_uri_srv);
    TestSuite_Add(suite, "/Uri/srv_allowed_hosts_suffix", test_mongoc_uri_srv_allowed_hosts_suffix);
+   TestSuite_Add(suite, "/Uri/copy_srv_allowed_hosts_suffix", test_mongoc_uri_copy_srv_allowed_hosts_suffix);
    TestSuite_Add(suite, "/Uri/punycode", test_mongoc_punycode);
    TestSuite_Add(suite, "/Uri/psl", test_mongoc_psl);
    TestSuite_Add(suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
