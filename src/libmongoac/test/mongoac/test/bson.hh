@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <string>
 
 namespace mongoac::test {
 
@@ -36,6 +37,13 @@ std::optional<bson_t> to_bson(unique_bson_ptr&& bson) = delete;
 std::optional<bson_t> to_bson(mongoac_bson_t const& bson);
 std::optional<bson_t> to_bson(mongoac_bson_t&& bson) = delete;
 std::optional<bson_t> to_bson(mongoac_bson_view_t bson);
+
+std::string as_json(unique_bson_ptr const& bson);
+std::string as_json(unique_bson_ptr&& bson) = delete;
+std::string as_json(mongoac_bson_t const& bson);
+std::string as_json(mongoac_bson_t&& bson) = delete;
+std::string as_json(mongoac_bson_view_t bson);
+std::string as_json(bson_t const& bson);
 
 bson_t* operator""_bson(char const* ptr, std::size_t len);
 
