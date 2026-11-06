@@ -16,11 +16,39 @@
 
 //
 
+#include <mongoac/test/bson.hh>
+#include <mongoac/test/error.hh>
+#include <mongoac/test/memory.hh>
+#include <mongoac/test/string.hh>
+
+#include <mongoac/client_session.h>
+#include <mongoac/error.h>
+
 #include <catch2/catch_test_macros.hpp>
+
+using mongoac::test::from_mongoac;
+using mongoac::test::make_unique;
 
 TEST_CASE("destroy", "[mongoac][client_session]") {
     SECTION("null") {
         mongoac_client_session_destroy(nullptr);
         SUCCEED();
+    }
+}
+
+TEST_CASE("clone", "[mongoac][client_session]") {
+    SECTION("null") {
+        CHECK(mongoac_client_session_clone(nullptr) == nullptr);
+    }
+}
+
+TEST_CASE("get_id", "[mongoac][client_session]") {
+    SECTION("null") {
+        auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+        auto const error = error_owner.get();
+
+        auto const bson = from_mongoac(mongoac_client_session_get_id(nullptr, error));
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(bson == nullptr);
     }
 }
