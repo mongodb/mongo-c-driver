@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 const SKIP_CRATE_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "string"];
+const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "cursor_type", "string"];
 
 // Prelude shared by all generated headers.
 fn generate_header() -> String {
@@ -128,6 +128,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "cursor_type" => &["stdint.h"],
             "database_options" => &[],
             "database" => &[
                 "mongoac/bson.h",
