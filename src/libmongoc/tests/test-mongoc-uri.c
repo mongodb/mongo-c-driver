@@ -2743,6 +2743,23 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    ASSERT(uri);
    mongoc_uri_destroy(uri);
 
+   /* a returned host is validated against an underscore suffix end-to-end
+    * (prose test 15) */
+   uri = mongoc_uri_new("mongodb+srv://blogs.my_domain.net/?srvallowedhostssuffix=.my_domain.net");
+   ASSERT(uri);
+   VALID(uri, "cluster.my_domain.net");
+   INVALID(uri, "cluster.other.net");
+   mongoc_uri_destroy(uri);
+
+   /* a non-ASCII option value is converted to its A-label form before
+    * comparison (spec normalization step 2), so it matches the Punycode
+    * hostnames returned by DNS */
+   uri = mongoc_uri_new("mongodb+srv://blogs.example.net/?srvallowedhostssuffix=.m\xc3\xbcnchen.example.net");
+   ASSERT(uri);
+   VALID(uri, "cluster.xn--mnchen-3ya.example.net");
+   INVALID(uri, "cluster.other.example.net");
+   mongoc_uri_destroy(uri);
+
    /* valid suffixes are accepted, case-insensitively, with leading/trailing dots */
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
    ASSERT(uri);
@@ -2768,8 +2785,10 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    INVALID(uri, "mydomain.net");
    /* a suffix-matching host that would fail the domainname check is allowed */
    VALID(uri, "other.platform.mydomain.net");
-   /* trailing dots on returned hosts are stripped by normalization */
+   /* trailing dots and mixed case on returned hosts are stripped by normalization
+    * (prose test 10: hosts are compared after normalization, not raw) */
    VALID(uri, "a.mydomain.net.");
+   VALID(uri, "A.MYDOMAIN.NET.");
 
    INVALID(uri, "a.other.net");
    INVALID(uri, "mydomain.net.evil.com");
@@ -2799,6 +2818,9 @@ test_mongoc_punycode(void)
        "nopuedensimplementehablarenEspa\xc3\xb1"
        "ol",
        "PorqunopuedensimplementehablarenEspaol-fmd56a"},
+      // RFC 3492 section 7.1 sample (B): all code points are 3-byte UTF-8.
+      {"\xe4\xbb\x96\xe4\xbb\xac\xe4\xb8\xba\xe4\xbb\x80\xe4\xb9\x88\xe4\xb8\x8d\xe8\xaf\xb4\xe4\xb8\xad\xe6\x96\x87",
+       "ihqwcrb4cv8a8dqg056pqjye"},
    };
 
    for (size_t i = 0; i < sizeof(vectors) / sizeof(vectors[0]); i++) {
