@@ -249,11 +249,14 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
       return false;
    }
 
-   // Pre-reserve so dst's buffer is provably non-null before any append: dst
-   // is caller-provided, and its state cannot be proven across the translation
-   // unit boundary. The bound covers the dot separators plus the "xn--"
-   // prefixes and digit expansion the labels can produce.
-   if (!mstr_reserve(dst, domain_len + 32)) {
+   // Build into a local string, handing the result to `dst` only on success.
+   mstr canonical_domain = mstr_new(0);
+
+   // Pre-reserve for efficiency: one allocation up front. The bound covers
+   // the dot separators plus the "xn--" prefixes and digit expansion the
+   // labels can produce.
+   if (!mstr_reserve(&canonical_domain, domain_len + 32)) {
+      mstr_destroy(&canonical_domain);
       return false;
    }
 
@@ -264,15 +267,15 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
       if (*c == '.' || c == end) {
          const size_t label_len = (size_t)(c - start);
          if (label_len == 0) {
-            if (c == end && dst->len > 0) {
+            if (c == end && canonical_domain.len > 0) {
                // A trailing dot merely terminates the domain; drop the
                // separator that was just appended for it.
-               if (!mstr_resize(dst, dst->len - 1)) {
-                  return false;
+               if (!mstr_resize(&canonical_domain, canonical_domain.len - 1)) {
+                  goto fail;
                }
-               return true;
+               break; // Success.
             }
-            return false; // Leading or doubled dots.
+            goto fail; // Leading or doubled dots.
          }
 
          // ASCII labels are lowercased in place; non-ASCII labels are
@@ -287,26 +290,34 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
          if (ascii) {
             for (size_t i = 0; i < label_len; i++) {
                const char ch = (start[i] >= 'A' && start[i] <= 'Z') ? (char)(start[i] - 'A' + 'a') : start[i];
-               if (!mstr_append_char(dst, ch)) {
-                  return false;
+               if (!mstr_append_char(&canonical_domain, ch)) {
+                  goto fail;
                }
             }
          } else {
-            if (!mstr_append(dst, mstr_view_data("xn--", 4))) {
-               return false;
+            if (!mstr_append(&canonical_domain, mstr_view_data("xn--", 4))) {
+               goto fail;
             }
-            if (!mongoc_punycode_encode_label(start, label_len, dst)) {
-               return false;
+            if (!mongoc_punycode_encode_label(start, label_len, &canonical_domain)) {
+               goto fail;
             }
          }
 
          if (c == end) {
-            return true;
+            break; // Success.
          }
-         if (!mstr_append_char(dst, '.')) {
-            return false;
+         if (!mstr_append_char(&canonical_domain, '.')) {
+            goto fail;
          }
          start = c + 1;
       }
    }
+
+   mstr_destroy(dst);
+   *dst = canonical_domain;
+   return true;
+
+fail:
+   mstr_destroy(&canonical_domain);
+   return false;
 }
