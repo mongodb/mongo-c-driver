@@ -16,15 +16,19 @@
 
 //
 
+#include <mongoac/test/bson.hh>
 #include <mongoac/test/client.hh>
 #include <mongoac/test/error.hh>
 #include <mongoac/test/memory.hh>
 #include <mongoac/test/string.hh>
 
+#include <mongoac/client_session.h>
 #include <mongoac/database.h>
 #include <mongoac/error.h>
 #include <mongoac/future.h>
 #include <mongoac/runtime.h>
+
+#include <bson/bson.h>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
@@ -34,9 +38,11 @@
 #include <string_view>
 
 using mongoac::test::operator""_sv;
+using mongoac::test::default_uri;
 using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
+using mongoac::test::to_bson;
 using mongoac::test::to_mongoac;
 
 TEST_CASE("destroy", "[mongoac][client]") {
@@ -248,5 +254,92 @@ TEST_CASE("shutdown_async", "[mongoac][client]") {
 
         mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("start_session", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null") {
+        CHECK(mongoac_client_start_session(nullptr, nullptr, error) == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const session_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_start_session(client, nullptr, error), &mongoac_client_session_destroy);
+        auto const session = session_owner.get();
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const id_doc_owner = from_mongoac(mongoac_client_session_get_id(session, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(id_doc_owner != nullptr);
+        auto const id_doc = REQUIRE_BSON_STATIC(id_doc_owner);
+        auto const iter = REQUIRE_BSON_ITER_FIND(id_doc, "id");
+
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_BINARY);
+        {
+            std::uint8_t const* ptr = {};
+            std::uint32_t len = {};
+            bson_subtype_t subtype = {};
+
+            bson_iter_binary(&iter, &subtype, &len, &ptr);
+
+            CHECK(ptr != nullptr);
+            CHECK(subtype == BSON_SUBTYPE_UUID);
+            CHECK(len == 16u);
+        }
+    }
+}
+
+TEST_CASE("start_session_async", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null") {
+        auto const future = make_unique(mongoac_client_start_session_async(nullptr, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const future_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_start_session_async(client, nullptr), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const session = mongoac_future_get_client_session(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const id_doc_owner = from_mongoac(mongoac_client_session_get_id(session, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(id_doc_owner != nullptr);
+        auto const id_doc = REQUIRE_BSON_STATIC(id_doc_owner);
+        auto const iter = REQUIRE_BSON_ITER_FIND(id_doc, "id");
+
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_BINARY);
+        {
+            std::uint8_t const* ptr = {};
+            std::uint32_t len = {};
+            bson_subtype_t subtype = {};
+
+            bson_iter_binary(&iter, &subtype, &len, &ptr);
+
+            CHECK(ptr != nullptr);
+            CHECK(subtype == BSON_SUBTYPE_UUID);
+            CHECK(len == 16u);
+        }
     }
 }

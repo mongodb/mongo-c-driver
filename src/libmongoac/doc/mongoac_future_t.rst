@@ -112,6 +112,7 @@ The async operation will continue to make progress until it is completed and its
 
     mongoac_future_get_bool
     mongoac_future_get_bson
+    mongoac_future_get_client_session
     mongoac_future_get_insert_one_result
     mongoac_future_get_optional_bson
     mongoac_future_get_runtime

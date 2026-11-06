@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::client_session::ClientSessionT;
 use crate::database::DatabaseT;
 use crate::database_options::DatabaseOptionsT;
 use crate::error::{ErrorCodeT, ErrorT};
 use crate::future::FutureT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
+use crate::session_options::SessionOptionsT;
 use crate::string::StringViewT;
 use crate::version::{MONGOAC_BUILD_PLATFORM, MONGOAC_VERSION_FULL};
 
 use mongodb::Client;
-use mongodb::options::{ClientOptions, DriverInfo};
+use mongodb::options::{ClientOptions, DriverInfo, SessionOptions};
 
 #[derive(Clone)]
 pub struct ClientT {
@@ -77,6 +79,30 @@ pub extern "C" fn mongoac_client_shutdown(client: *mut ClientT) {
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_client_shutdown_async(client: *mut ClientT) -> *mut FutureT {
     safe_into_raw!(safe_as_mut!(client).shutdown_async())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_start_session(
+    client: *const ClientT,
+    options: *const SessionOptionsT,
+    error: *mut ErrorT,
+) -> *mut ClientSessionT {
+    let error = safe_optional_error_as_mut!(error);
+    let client = safe_as_ref_with_error!(client, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(client.start_session(options), error))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_start_session_async(
+    client: *const ClientT,
+    options: *const SessionOptionsT,
+) -> *mut FutureT {
+    let client = safe_as_ref!(client);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(client.start_session_async(options))
 }
 
 #[unsafe(no_mangle)]
@@ -141,13 +167,37 @@ impl ClientT {
         })
     }
 
+    fn start_session(&self, options: Option<&SessionOptionsT>) -> Result<ClientSessionT, ErrorT> {
+        self.runtime.block_on(async {
+            self.inner
+                .start_session()
+                .with_options(options.map(Into::into))
+                .await
+                .map_err(ErrorT::from)
+                .map(ClientSessionT::new)
+        })
+    }
+
+    fn start_session_async(&self, options: Option<&SessionOptionsT>) -> FutureT {
+        let client = self.inner.clone();
+        let options: Option<SessionOptions> = options.map(Into::into);
+
+        self.spawn::<ClientSessionT>(async move {
+            client
+                .start_session()
+                .with_options(options)
+                .await
+                .map_err(ErrorT::from)
+                .map(ClientSessionT::new)
+        })
+    }
+
     // TODO: append_metadata
     // TODO: bulk_write
     // TODO: list_database_names
     // TODO: list_databases
     // TODO: read_concern
     // TODO: selection_criteria
-    // TODO: start_session
     // TODO: warm_connection_pool
     // TODO: watch
     // TODO: write_concern
