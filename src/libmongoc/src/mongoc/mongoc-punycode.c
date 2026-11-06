@@ -133,7 +133,9 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
    // Pre-reserve so dst's buffer is provably non-null before any append: dst
    // is caller-provided, and its state cannot be proven across the translation
    // unit boundary.
-   mstr_reserve(dst, 64);
+   if (!mstr_reserve(dst, 64)) {
+      return false;
+   }
 
    // DNS labels are at most 63 octets, so a bounded code point buffer suffices.
    uint32_t codepoints[64];
@@ -251,7 +253,9 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
    // is caller-provided, and its state cannot be proven across the translation
    // unit boundary. The bound covers the dot separators plus the "xn--"
    // prefixes and digit expansion the labels can produce.
-   mstr_reserve(dst, domain_len + 32);
+   if (!mstr_reserve(dst, domain_len + 32)) {
+      return false;
+   }
 
    const char *start = domain;
    const char *const end = domain + domain_len;
