@@ -16,6 +16,7 @@
 
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-punycode-private.h>
 
 #include <inttypes.h> // PRIu16
 /* strcasecmp on windows */
@@ -363,4 +364,41 @@ _mongoc_host_list_remove_host(mongoc_host_list_t **hosts, const char *host, uint
          break;
       }
    }
+}
+
+bool
+_mongoc_host_list_canonicalize(mongoc_host_list_t *host, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM(host);
+
+   mstr canonical = mstr_new(0);
+   if (!mongoc_punycode_canonicalize_domain(host->host, strlen(host->host), &canonical)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                        "Invalid host \"%s\" returned by SRV: host must be subdomain of service name",
+                        host->host);
+      mstr_destroy(&canonical);
+      return false;
+   }
+   if (canonical.len >= sizeof(host->host)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                        "Invalid host \"%s\": normalized hostname is too long",
+                        host->host);
+      mstr_destroy(&canonical);
+      return false;
+   }
+
+   memcpy(host->host, canonical.data, canonical.len);
+   host->host[canonical.len] = '\0';
+   mstr_destroy(&canonical);
+
+   if (strchr(host->host, ':')) {
+      bson_snprintf(host->host_and_port, sizeof host->host_and_port, "[%s]:%" PRIu16, host->host, host->port);
+   } else {
+      bson_snprintf(host->host_and_port, sizeof host->host_and_port, "%s:%" PRIu16, host->host, host->port);
+   }
+   return true;
 }

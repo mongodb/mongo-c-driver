@@ -330,28 +330,8 @@ _upsert_into_host_list(mongoc_uri_t *uri, mongoc_host_list_t *host, bson_error_t
    if (uri->is_srv) {
       // Normalize the hostname before validating it and populating the
       // seedlist (Initial DNS Seedlist Discovery Spec).
-      mstr host_canonical = mstr_new(0);
-      if (!mongoc_punycode_canonicalize_domain(host->host, strlen(host->host), &host_canonical)) {
-         // The hostname cannot be canonicalized, so it cannot be validated;
-         // report the standard SRV validation failure.
-         mstr_destroy(&host_canonical);
-         BSON_ASSERT(uri->is_srv);
-         mongoc_uri_validate_srv_result(uri, host->host, error);
+      if (!_mongoc_host_list_canonicalize(host, error)) {
          return false;
-      }
-      const size_t nlen = host_canonical.len;
-      if (nlen < sizeof(host->host)) {
-         memcpy(host->host, host_canonical.data, nlen);
-         host->host[nlen] = '\0';
-      }
-      mstr_destroy(&host_canonical);
-
-      // Rebuild host_and_port from the normalized host (port preserved),
-      // mirroring _mongoc_host_list_from_hostport_with_err's construction.
-      if (strchr(host->host, ':')) {
-         bson_snprintf(host->host_and_port, sizeof host->host_and_port, "[%s]:%" PRIu16, host->host, host->port);
-      } else {
-         bson_snprintf(host->host_and_port, sizeof host->host_and_port, "%s:%" PRIu16, host->host, host->port);
       }
 
       if (!mongoc_uri_validate_srv_result(uri, host->host, error)) {

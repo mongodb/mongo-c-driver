@@ -768,29 +768,14 @@ mongoc_topology_apply_scanned_srv_hosts(mongoc_uri_t *uri,
    {
       // Normalize the polled hostname (strip trailing dot, Punycode, ASCII
       // lowercase) before validating it and before it populates the topology
-      mstr host_canonical = mstr_new(0);
-      if (!mongoc_punycode_canonicalize_domain(host->host, strlen(host->host), &host_canonical)) {
+      bson_error_t canonicalize_error;
+      if (!_mongoc_host_list_canonicalize(host, &canonicalize_error)) {
          // The hostname cannot be canonicalized, so it cannot be validated;
          // skip it. Spec (SRV polling): a failed host MUST NOT be added to the
          // topology, MUST NOT raise an error, and SHOULD be logged.
-         mstr_destroy(&host_canonical);
-         MONGOC_ERROR("Invalid host returned by SRV: %s", host->host_and_port);
+         MONGOC_ERROR("Invalid host returned by SRV: %s (%s)", host->host_and_port, canonicalize_error.message);
          continue;
       }
-      const size_t nlen = host_canonical.len;
-      if (nlen < sizeof(host->host)) {
-         memcpy(host->host, host_canonical.data, nlen);
-         host->host[nlen] = '\0';
-
-         // Rebuild host_and_port from the normalized host (port preserved),
-         // mirroring _mongoc_host_list_from_hostport_with_err's construction.
-         if (strchr(host->host, ':')) {
-            bson_snprintf(host->host_and_port, sizeof host->host_and_port, "[%s]:%" PRIu16, host->host, host->port);
-         } else {
-            bson_snprintf(host->host_and_port, sizeof host->host_and_port, "%s:%" PRIu16, host->host, host->port);
-         }
-      }
-      mstr_destroy(&host_canonical);
 
       if (mongoc_uri_validate_srv_result(uri, host->host, error)) {
          _mongoc_host_list_upsert(&valid_hosts, host);

@@ -46,6 +46,9 @@ _mongoc_host_list_from_hostport_with_err(mongoc_host_list_t *host_list,
                                          uint16_t port,
                                          bson_error_t *error);
 
+bool
+_mongoc_host_list_canonicalize(mongoc_host_list_t *host, bson_error_t *error);
+
 size_t
 _mongoc_host_list_length(const mongoc_host_list_t *list);
 
