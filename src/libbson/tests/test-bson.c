@@ -886,7 +886,7 @@ _make_deep_bson(bson_t *const dst, const size_t depth)
    // key, minus 2 because the outer document has no tag and key
    const size_t buffer_size = (n_docs * (5 + 2)) - 2;
    uint8_t *const buffer = calloc(buffer_size, 1);
-   mlib_check(buffer);
+   mlib_check(buffer != NULL);
    uint8_t *out = buffer;
    mlib_foreach_urange (i, n_docs) {
       // Bytes we have already written:

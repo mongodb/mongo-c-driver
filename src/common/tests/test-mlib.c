@@ -36,8 +36,25 @@ _test_checks(void)
    mlib_assert_aborts () {
       mlib_check("foo", str_eq, "bar");
    }
-   // ptr_eq
+   // Pointer checks use explicit comparisons, with or without a reason.
    const char *s = "foo";
+   mlib_check(s != NULL);
+   mlib_check(s != NULL, because, "non-null pointers are true");
+   const char *null_ptr = NULL;
+   mlib_assert_aborts () {
+      mlib_check(null_ptr != NULL);
+   }
+   mlib_assert_aborts () {
+      mlib_check(null_ptr != NULL, because, "null pointers are false");
+   }
+   // Conditions must not be evaluated more than once.
+   int evaluations = 0;
+   mlib_check((++evaluations, s != NULL));
+   mlib_check(evaluations, eq, 1);
+   mlib_check((++evaluations, s != NULL), because, "evaluate a pointer condition once");
+   mlib_check(evaluations, eq, 2);
+
+   // ptr_eq
    mlib_check(s, ptr_eq, s);
    mlib_assert_aborts () {
       mlib_check(s, ptr_eq, NULL);
@@ -1389,7 +1406,7 @@ _test_int_vec(void)
 
    // Append an element
    int *el;
-   mlib_check((el = int_vec_push(&ints)));
+   mlib_check((el = int_vec_push(&ints)) != NULL);
    *el = 42;
    mlib_check(int_vec_begin(&ints)[0], eq, 42);
    mlib_check(ints.size, eq, 1);
