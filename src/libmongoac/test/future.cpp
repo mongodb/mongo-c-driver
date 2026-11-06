@@ -265,6 +265,15 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return client_session");
     }
 
+    SECTION("type mismatch: cursor") {
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_cursor(future, error) == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return cursor");
+    }
+
     SECTION("type mismatch: insert_one_result") {
         mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
