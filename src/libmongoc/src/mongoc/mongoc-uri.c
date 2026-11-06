@@ -235,21 +235,18 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
    }
 
    // 6. Prepend '.' for label-aligned suffix matching.
-   mstr dot_prefixed = mstr_new(0);
-   mstr_reserve(&dot_prefixed, canonical.len + 2);
-   if (!mstr_append_char(&dot_prefixed, '.') ||
-       !mstr_append(&dot_prefixed, mstr_view_data(canonical.data, canonical.len))) {
+   char *dot_prefixed = bson_malloc0(canonical.len + 2);
+   if (!dot_prefixed) {
       MONGOC_URI_ERROR(error, "%s", "out of memory");
       mstr_destroy(&canonical);
-      mstr_destroy(&dot_prefixed);
       return false;
    }
+   dot_prefixed[0] = '.';
+   memcpy(dot_prefixed + 1, canonical.data, canonical.len);
    mstr_destroy(&canonical);
 
    bson_free(uri->srv_allowed_hosts_suffix);
-   uri->srv_allowed_hosts_suffix = bson_malloc0(dot_prefixed.len + 1);
-   memcpy(uri->srv_allowed_hosts_suffix, dot_prefixed.data, dot_prefixed.len);
-   mstr_destroy(&dot_prefixed);
+   uri->srv_allowed_hosts_suffix = dot_prefixed;
    return true;
 }
 
