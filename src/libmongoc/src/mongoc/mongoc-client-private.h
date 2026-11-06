@@ -248,4 +248,7 @@ _mongoc_client_set_jitter_source(mongoc_client_t *client, mongoc_jitter_source_t
 
 BSON_END_DECLS
 
+mongoc_client_session_t *
+_mongoc_client_start_implicit_session(mongoc_client_t *client, const mongoc_session_opt_t *opts);
+
 #endif /* MONGOC_CLIENT_PRIVATE_H */

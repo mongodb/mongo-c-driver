@@ -849,7 +849,7 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       session_opts = mongoc_session_opts_new();
       mongoc_session_opts_set_causal_consistency(session_opts, false);
       /* returns NULL if sessions aren't supported. ignore errors. */
-      cursor->client_session = mongoc_client_start_session(cursor->client, session_opts, NULL);
+      cursor->client_session = _mongoc_client_start_implicit_session(cursor->client, session_opts);
       mongoc_cmd_parts_set_session(&parts, cursor->client_session);
       mongoc_session_opts_destroy(session_opts);
    }
