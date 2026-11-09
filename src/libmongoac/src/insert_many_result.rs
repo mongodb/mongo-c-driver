@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::bson::BsonT;
+use crate::error::ErrorT;
 use crate::private::macros::*;
 
+use mongodb::bson::RawDocumentBuf;
 use mongodb::results::InsertManyResult;
 
 // TODO: Clone (requires mongodb crate 3.10.0, which requires MSRV 1.94.1)
 
-#[allow(dead_code)] // The inner result is only read by `get_inserted_ids` (TODO).
 pub struct InsertManyResultT(InsertManyResult);
 
 #[unsafe(no_mangle)]
@@ -26,7 +28,29 @@ pub extern "C" fn mongoac_insert_many_result_destroy(result: *mut InsertManyResu
     safe_drop!(result);
 }
 
-// TODO: get_inserted_ids
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_insert_many_result_get_inserted_ids_get(
+    result: *const InsertManyResultT,
+    key: usize,
+    error: *mut ErrorT,
+) -> BsonT {
+    let error = safe_optional_error_as_mut!(error);
+    let result = safe_as_ref_with_error!(result, error);
+
+    let Some(id) = result.0.inserted_ids.get(&key) else {
+        return Default::default();
+    };
+
+    let doc = mongodb::bson::doc! { "v": id.clone() };
+    safe_result!(RawDocumentBuf::try_from(doc), error).into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_insert_many_result_get_inserted_ids_len(
+    result: *const InsertManyResultT,
+) -> usize {
+    safe_as_ref!(result).0.inserted_ids.len()
+}
 
 impl From<InsertManyResult> for InsertManyResultT {
     fn from(value: InsertManyResult) -> Self {

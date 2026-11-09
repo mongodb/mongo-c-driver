@@ -162,7 +162,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "stdint.h",
             ],
             "insert_many_options" => &[],
-            "insert_many_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
+            "insert_many_result" => &["mongoac/bson.h", "mongoac/error-fwd.h", "stdint.h"],
             "insert_one_options" => &[],
             "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "read_preference" => &["stdbool.h", "stdint.h"],

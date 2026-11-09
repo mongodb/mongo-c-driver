@@ -16,11 +16,37 @@
 
 //
 
+#include <mongoac/test/bson.hh>
+#include <mongoac/test/error.hh>
+#include <mongoac/test/memory.hh>
+#include <mongoac/test/string.hh>
+
+#include <mongoac/error.h>
+
 #include <catch2/catch_test_macros.hpp>
+
+using mongoac::test::from_mongoac;
 
 TEST_CASE("destroy", "[mongoac][insert_many_result]") {
     SECTION("null") {
         mongoac_insert_many_result_destroy(nullptr);
         SUCCEED();
+    }
+}
+
+TEST_CASE("get_inserted_ids_get", "[mongoac][insert_many_result]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null") {
+        auto const bson = from_mongoac(mongoac_insert_many_result_get_inserted_ids_get(nullptr, 0u, error));
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(bson == nullptr);
+    }
+}
+
+TEST_CASE("get_inserted_ids_len", "[mongoac][insert_many_result]") {
+    SECTION("null") {
+        CHECK(mongoac_insert_many_result_get_inserted_ids_len(nullptr) == 0u);
     }
 }

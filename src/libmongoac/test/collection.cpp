@@ -37,6 +37,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -48,6 +49,23 @@ using mongoac::test::operator""_sv;
 using mongoac::test::default_uri;
 using mongoac::test::to_bson;
 using mongoac::test::to_mongoac;
+
+namespace {
+
+void check_inserted_ids(mongoac_insert_many_result_t const* result, std::size_t expected, mongoac_error_t* error) {
+    CHECK(mongoac_insert_many_result_get_inserted_ids_len(result) == expected);
+
+    for (std::uintptr_t i = 0u; i < expected; ++i) {
+        auto const id_owner = from_mongoac(mongoac_insert_many_result_get_inserted_ids_get(result, i, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+        auto const id = REQUIRE_BSON_STATIC(id_owner);
+
+        auto const iter = REQUIRE_BSON_ITER_FIND(id, "v");
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_OID);
+    }
+}
+
+} // namespace
 
 TEST_CASE("destroy", "[mongoac][collection]") {
     SECTION("null") {
@@ -763,7 +781,13 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
             &mongoac_insert_many_result_destroy);
         CHECK_MONGOAC_ERROR_OK(error);
 
-        SUCCEED("TODO: validate inserted ids when mongoac_insert_many_result_get_inserted_ids() is implemented");
+        auto const result = result_owner.get();
+
+        check_inserted_ids(result, docs.size(), error);
+
+        auto const missing = from_mongoac(mongoac_insert_many_result_get_inserted_ids_get(result, docs.size(), error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        CHECK(missing == nullptr);
     }
 }
 
@@ -857,7 +881,7 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         CHECK_MONGOAC_ERROR_OK(error);
         REQUIRE(result != nullptr);
 
-        SUCCEED("TODO: validate inserted ids when mongoac_insert_many_result_get_inserted_ids() is implemented");
+        check_inserted_ids(result, docs.size(), error);
     }
 }
 
