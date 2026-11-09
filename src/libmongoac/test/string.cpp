@@ -25,6 +25,30 @@ TEST_CASE("destroy", "[mongoac][string]") {
     SECTION("null") {
         auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
 
-        CHECK_NOTHROW(mongoac_string_destroy(mongoac_string_t{nullptr, len}));
+        mongoac_string_destroy(mongoac_string_t{nullptr, len});
+        SUCCEED();
     }
+}
+
+TEST_CASE("destroy", "[mongoac][string_array]") {
+    SECTION("null") {
+        auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
+
+        mongoac_string_array_destroy(mongoac_string_array_t{nullptr, len});
+        SUCCEED();
+    }
+}
+
+TEST_CASE("default", "[mongoac][string_view]") {
+    auto const v = mongoac_string_view_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}
+
+TEST_CASE("default", "[mongoac][string_view_array]") {
+    auto const v = mongoac_string_view_array_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
 }

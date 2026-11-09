@@ -10,7 +10,7 @@ Synopsis
 
    #include <mongoac/database.h>
 
-   void mongoac_database_create_collection(mongoac_database_t *db,
+   void mongoac_database_create_collection(const mongoac_database_t *db,
                                            mongoac_client_session_t *session,
                                            mongoac_string_view_t name,
                                            const mongoac_create_collection_options_t *options,

@@ -86,7 +86,23 @@ pub extern "C" fn mongoac_future_get_insert_one_result(
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
 
-    std::ptr::from_ref(safe_result!(future.get_insert_one_result(), error)).cast()
+    safe_ptr_from_ref!(
+        safe_result!(future.get_insert_one_result(), error),
+        InsertOneResult
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_optional_bson(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> BsonViewT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_result!(future.get_optional_bson(), error)
+        .as_ref()
+        .map_or(Default::default(), Into::into)
 }
 
 #[unsafe(no_mangle)]
@@ -138,6 +154,10 @@ impl FutureT {
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
         self.get::<InsertOneResult>("insert_one_result")
+    }
+
+    fn get_optional_bson(&self) -> Result<&Option<RawDocumentBuf>, ErrorT> {
+        self.get::<Option<RawDocumentBuf>>("optional_bson")
     }
 
     fn get_uint64(&self) -> Result<&u64, ErrorT> {

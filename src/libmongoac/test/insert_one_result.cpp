@@ -29,7 +29,8 @@ using mongoac::test::from_mongoac;
 
 TEST_CASE("destroy", "[mongoac][insert_one_result]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_insert_one_result_destroy(nullptr));
+        mongoac_insert_one_result_destroy(nullptr);
+        SUCCEED();
     }
 }
 

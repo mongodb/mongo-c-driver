@@ -47,7 +47,9 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("BsonArrayT", "mongoac_bson_array_t"),
         ("BsonT", "mongoac_bson_t"),
+        ("BsonViewArrayT", "mongoac_bson_view_array_t"),
         ("BsonViewT", "mongoac_bson_view_t"),
         ("ClientSessionT", "mongoac_client_session_t"),
         ("ClientT", "mongoac_client_t"),
@@ -70,12 +72,16 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
             "EstimatedDocumentCountOptionsT",
             "mongoac_estimated_document_count_options_t",
         ),
+        ("FindOneOptionsT", "mongoac_find_one_options_t"),
         ("FutureT", "mongoac_future_t"),
         ("InsertOneOptionsT", "mongoac_insert_one_options_t"),
         ("InsertOneResultT", "mongoac_insert_one_result_t"),
+        ("ReadPreferenceT", "mongoac_read_preference_t"),
         ("RunCommandOptionsT", "mongoac_run_command_options_t"),
         ("RuntimeT", "mongoac_runtime_t"),
+        ("StringArrayT", "mongoac_string_array_t"),
         ("StringT", "mongoac_string_t"),
+        ("StringViewArrayT", "mongoac_string_view_array_t"),
         ("StringViewT", "mongoac_string_view_t"),
     ];
 
@@ -102,6 +108,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/drop_collection_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/estimated_document_count_options-fwd.h",
+                "mongoac/find_one_options-fwd.h",
                 "mongoac/future-fwd.h",
                 "mongoac/insert_one_options-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
@@ -139,6 +146,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "drop_collection_options" => &[],
             "drop_database_options" => &[],
             "estimated_document_count_options" => &[],
+            "find_one_options" => &[],
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
                 "mongoac/bson.h",
@@ -150,7 +158,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             ],
             "insert_one_options" => &[],
             "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
-            "run_command_options" => &[],
+            "read_preference" => &["stdbool.h", "stdint.h"],
+            "run_command_options" => &["mongoac/read_preference-fwd.h"],
             "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
@@ -167,8 +176,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     // Structs which need to be explicitly exported (due to no exported function referencing the struct).
     {
         let exports: &[&str] = match name {
-            "bson" => &["BsonViewT"],
-            "string" => &["StringViewT"],
+            "bson" => &["BsonViewArrayT", "BsonViewT"],
+            "string" => &["StringViewArrayT", "StringViewT"],
             _ => &[],
         };
 

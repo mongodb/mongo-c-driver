@@ -20,7 +20,9 @@ use mongodb::options::CreateCollectionOptions;
 pub struct CreateCollectionOptionsT(CreateCollectionOptions);
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_create_collection_options_destroy(options: *mut CreateCollectionOptionsT) {
+pub extern "C" fn mongoac_create_collection_options_destroy(
+    options: *mut CreateCollectionOptionsT,
+) {
     safe_drop!(options);
 }
 

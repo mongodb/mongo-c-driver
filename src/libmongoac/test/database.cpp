@@ -49,7 +49,8 @@ using mongoac::test::to_mongoac;
 
 TEST_CASE("destroy", "[mongoac][database]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_database_destroy(nullptr));
+        mongoac_database_destroy(nullptr);
+        SUCCEED();
     }
 }
 
@@ -161,21 +162,21 @@ TEST_CASE("create_collection", "[mongoac][database]") {
     auto const db = db_owner.get();
 
     // Start from a known state.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null db") {
-        CHECK_NOTHROW(mongoac_database_create_collection(nullptr, nullptr, "coll"_sv, nullptr, error));
+        mongoac_database_create_collection(nullptr, nullptr, "coll"_sv, nullptr, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("null name") {
-        CHECK_NOTHROW(mongoac_database_create_collection(db, nullptr, {}, nullptr, error));
+        mongoac_database_create_collection(db, nullptr, {}, nullptr, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
     SECTION("basic") {
-        CHECK_NOTHROW(mongoac_database_create_collection(db, nullptr, "coll"_sv, nullptr, error));
+        mongoac_database_create_collection(db, nullptr, "coll"_sv, nullptr, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         // Verify the collection exists via listCollections.
@@ -210,7 +211,7 @@ TEST_CASE("create_collection_async", "[mongoac][database]") {
     auto const db = db_owner.get();
 
     // Start from a known state.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null db") {
@@ -232,11 +233,11 @@ TEST_CASE("create_collection_async", "[mongoac][database]") {
 
         {
             auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_database_get_runtime(db), &mongoac_runtime_destroy);
-            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            mongoac_runtime_block_on(runtime.get(), future, error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         // Verify the collection exists via listCollections.
@@ -265,7 +266,7 @@ TEST_CASE("drop", "[mongoac][database]") {
     auto const error = error_owner.get();
 
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_database_drop(nullptr, nullptr, nullptr, error));
+        mongoac_database_drop(nullptr, nullptr, nullptr, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
@@ -277,7 +278,7 @@ TEST_CASE("drop", "[mongoac][database]") {
             REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
         auto const db = db_owner.get();
 
-        CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+        mongoac_database_drop(db, nullptr, nullptr, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -306,11 +307,11 @@ TEST_CASE("drop_async", "[mongoac][database]") {
 
         {
             auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
-            CHECK_NOTHROW(mongoac_runtime_block_on(runtime.get(), future, error));
+            mongoac_runtime_block_on(runtime.get(), future, error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
 
-        CHECK_NOTHROW(mongoac_future_get_void(future, error));
+        mongoac_future_get_void(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
     }
 }
@@ -459,7 +460,7 @@ TEST_CASE("run_command_async", "[mongoac][database]") {
             mongoac_database_run_command_async(db, nullptr, to_mongoac(ping.get()), nullptr), &mongoac_future_destroy);
         auto const future = future_owner.get();
 
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         auto const reply_view = mongoac_future_get_bson(future, error);
