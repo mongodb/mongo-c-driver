@@ -509,8 +509,8 @@ test_framework_get_port (void)
    return (uint16_t) port;
 }
 
-char *
-test_framework_get_host_and_port (void)
+static char *
+_get_host_and_port_from_env (void)
 {
    char *host = test_framework_get_host ();
    uint16_t port = test_framework_get_port ();
@@ -909,7 +909,7 @@ call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
 static void
 call_hello (bson_t *reply)
 {
-   char *host_and_port = test_framework_get_host_and_port ();
+   char *host_and_port = _get_host_and_port_from_env ();
 
    call_hello_with_host_and_port (host_and_port, reply);
 
@@ -1145,6 +1145,36 @@ test_framework_get_uri (void)
    bson_free (test_uri_str);
 
    return uri;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_host_and_port --
+ *
+ *       Get the "host:port" to connect to a test server.
+ *
+ *       This occurs after bootstrapping the URI from the environment and
+ *       possibly from the reply to a `hello` command.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_host_and_port (void)
+{
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   const mongoc_host_list_t *hosts = mongoc_uri_get_hosts (uri);
+   ASSERT_WITH_MSG (hosts, "could not obtain hosts from test framework URI");
+   char *host_and_port = bson_strdup (hosts->host_and_port);
+   mongoc_uri_destroy (uri);
+
+   return host_and_port;
 }
 
 mongoc_uri_t *

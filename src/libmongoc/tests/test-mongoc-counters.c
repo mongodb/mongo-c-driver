@@ -378,9 +378,7 @@ test_counters_streams (void *ctx)
 static void
 test_counters_auth (void *ctx)
 {
-   char *host_and_port = test_framework_get_host_and_port ();
    char *uri_str = test_framework_get_uri_str ();
-   char *uri_str_bad = bson_strdup_printf ("mongodb://%s:%s@%s/", "bad_user", "bad_pass", host_and_port);
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    bool ret;
@@ -401,8 +399,6 @@ test_counters_auth (void *ctx)
    DIFF_AND_RESET (auth_failure, ==, 0);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
-   bson_free (uri_str_bad);
-   bson_free (host_and_port);
    mongoc_client_destroy (client);
 }
 
