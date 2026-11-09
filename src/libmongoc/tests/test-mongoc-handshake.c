@@ -389,6 +389,8 @@ _override_host_platform_os(void)
    md->compiler_info = bson_strdup("CC=GCC");
    bson_free(md->flags);
    md->flags = bson_strdup(" CFLAGS=\"-fPIE\"");
+   // Docker detection depends on the host filesystem. Tests that need it set it explicitly.
+   md->docker = false;
 }
 
 // erase all FaaS variables used in testing
@@ -558,18 +560,43 @@ test_valid_vercel(void *test_ctx)
 }
 
 static void
-test_multiple_faas(void *test_ctx)
+test_multiple_faas_no_container(void *test_ctx)
 {
    BSON_UNUSED(test_ctx);
-   // Multiple FaaS variables must cause the entire env field to be omitted
+   // Multiple FaaS variables must cause the FaaS fields to be omitted. Without container metadata, `env` is then empty
+   // and must be omitted entirely.
    ASSERT(_mongoc_setenv("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
    ASSERT(_mongoc_setenv("FUNCTIONS_WORKER_RUNTIME", "node"));
+   // Container metadata would populate `env`
+   ASSERT(_mongoc_setenv("KUBERNETES_SERVICE_HOST", ""));
 
    _override_host_platform_os();
    bson_t *doc = _get_handshake_document(true);
    _handshake_check_required_fields(doc);
 
    ASSERT(!bson_has_field(doc, "env"));
+
+   bson_destroy(doc);
+   clear_faas_env();
+   _reset_handshake();
+}
+
+static void
+test_multiple_faas_and_container(void *test_ctx)
+{
+   BSON_UNUSED(test_ctx);
+   // Multiple FaaS variables must cause the FaaS fields to be omitted, but container metadata is still included
+   ASSERT(_mongoc_setenv("AWS_EXECUTION_ENV", "AWS_Lambda_java8"));
+   ASSERT(_mongoc_setenv("FUNCTIONS_WORKER_RUNTIME", "node"));
+   ASSERT(_mongoc_setenv("KUBERNETES_SERVICE_HOST", "1"));
+
+   _override_host_platform_os();
+   bson_t *doc = _get_handshake_document(true);
+   _handshake_check_required_fields(doc);
+
+   ASSERT_CMPSTR(bson_lookup_utf8(doc, "env.container.orchestrator"), "kubernetes");
+   ASSERT(!bson_has_field(doc, "env.name"));
+   ASSERT(!bson_has_field(doc, "container"));
 
    bson_destroy(doc);
    clear_faas_env();
@@ -586,6 +613,7 @@ test_truncate_region(void *test_ctx)
    memset(&long_region, 'a', region_len - 1);
    long_region[region_len - 1] = '\0';
    ASSERT(_mongoc_setenv("AWS_REGION", long_region));
+   ASSERT(_mongoc_setenv("KUBERNETES_SERVICE_HOST", "1"));
 
    _override_host_platform_os();
    bson_t *doc = _get_handshake_document(true);
@@ -600,6 +628,9 @@ test_truncate_region(void *test_ctx)
    ASSERT(!bson_iter_find(&inner_iter, "memory_mb"));
    ASSERT(!bson_iter_find(&inner_iter, "timeout_sec"));
    ASSERT(!bson_iter_find(&inner_iter, "region"));
+   // Container metadata is in `env`, so it is omitted along with the other fields except `env.name`.
+   ASSERT(!bson_has_field(doc, "env.container"));
+   ASSERT(!bson_has_field(doc, "container"));
 
    bson_destroy(doc);
    clear_faas_env();
@@ -637,6 +668,7 @@ test_aws_not_lambda(void *test_ctx)
    BSON_UNUSED(test_ctx);
    // Entire env field must be omitted with non-lambda AWS
    ASSERT(_mongoc_setenv("AWS_EXECUTION_ENV", "EC2"));
+   ASSERT(_mongoc_setenv("KUBERNETES_SERVICE_HOST", ""));
 
    _override_host_platform_os();
    bson_t *doc = _get_handshake_document(true);
@@ -662,12 +694,74 @@ test_aws_and_container(void *test_ctx)
    bson_t *doc = _get_handshake_document(true);
    _handshake_check_required_fields(doc);
 
-   ASSERT_CMPSTR(bson_lookup_utf8(doc, "container.orchestrator"), "kubernetes");
+   // Both container and FaaS metadata must be present in `client.env`.
+   ASSERT_CMPSTR(bson_lookup_utf8(doc, "env.container.orchestrator"), "kubernetes");
    ASSERT_CMPSTR(bson_lookup_utf8(doc, "env.name"), "aws.lambda");
    _handshake_check_env(doc, default_memory_mb, 0, "us-east-2");
+   ASSERT(!bson_has_field(doc, "container"));
 
    bson_destroy(doc);
    clear_faas_env();
+   _reset_handshake();
+}
+
+static void
+test_container_only(void *test_ctx)
+{
+   BSON_UNUSED(test_ctx);
+   // Container metadata is included in `client.env` even when no FaaS is detected.
+   ASSERT(_mongoc_setenv("KUBERNETES_SERVICE_HOST", "1"));
+
+   _override_host_platform_os();
+   _mongoc_handshake_get_unfrozen()->docker = true;
+   bson_t *doc = _get_handshake_document(true);
+   _handshake_check_required_fields(doc);
+
+   ASSERT_CMPSTR(bson_lookup_utf8(doc, "env.container.runtime"), "docker");
+   ASSERT_CMPSTR(bson_lookup_utf8(doc, "env.container.orchestrator"), "kubernetes");
+   ASSERT(!bson_has_field(doc, "env.name"));
+   ASSERT(!bson_has_field(doc, "container"));
+
+   bson_destroy(doc);
+   clear_faas_env();
+   _reset_handshake();
+}
+
+static void
+test_truncate_container_only(void)
+{
+   // When `env` contains only container metadata, omitting fields from `env` except `env.name` must omit `env`
+   // entirely rather than leave an empty document.
+   _override_host_platform_os();
+   mongoc_handshake_t *const md = _mongoc_handshake_get_unfrozen();
+   md->kubernetes = true;
+
+   bson_t *doc = _mongoc_handshake_build_doc_with_application(md, default_appname);
+   ASSERT(doc);
+   ASSERT(bson_has_field(doc, "env.container"));
+   const uint32_t untruncated_len = doc->len;
+   bson_destroy(doc);
+
+   // Grow the platform string so the handshake slightly exceeds the limit.
+   const size_t target_len = HANDSHAKE_MAX_SIZE + 20u;
+   ASSERT_CMPSIZE_T((size_t)untruncated_len, <, target_len);
+   const size_t pad_len = target_len - untruncated_len;
+   char *const old_platform = md->platform;
+   char *const pad = bson_malloc0(pad_len + 1u);
+   memset(pad, 'a', pad_len);
+   md->platform = bson_strdup_printf("%s%s", old_platform, pad);
+   bson_free(pad);
+   bson_free(old_platform);
+
+   doc = _mongoc_handshake_build_doc_with_application(md, default_appname);
+   ASSERT(doc);
+   ASSERT_CMPUINT32(doc->len, <=, (uint32_t)HANDSHAKE_MAX_SIZE);
+   ASSERT(!bson_has_field(doc, "env"));
+   ASSERT(!bson_has_field(doc, "container"));
+   // Truncation stopped after omitting `env`: `os` is not reduced to `os.type`.
+   ASSERT(bson_has_field(doc, "os.name"));
+
+   bson_destroy(doc);
    _reset_handshake();
 }
 
@@ -2497,8 +2591,8 @@ test_handshake_install(TestSuite *suite)
                      NULL /* ctx */,
                      test_framework_skip_if_no_setenv);
    TestSuite_AddFull(suite,
-                     "/MongoDB/handshake/faas/multiple",
-                     test_multiple_faas,
+                     "/MongoDB/handshake/faas/multiple_no_container",
+                     test_multiple_faas_no_container,
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_no_setenv);
@@ -2526,6 +2620,19 @@ test_handshake_install(TestSuite *suite)
                      NULL /* dtor */,
                      NULL /* ctx */,
                      test_framework_skip_if_no_setenv);
+   TestSuite_AddFull(suite,
+                     "/MongoDB/handshake/faas/multiple_and_container",
+                     test_multiple_faas_and_container,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_no_setenv);
+   TestSuite_AddFull(suite,
+                     "/MongoDB/handshake/container_only",
+                     test_container_only,
+                     NULL /* dtor */,
+                     NULL /* ctx */,
+                     test_framework_skip_if_no_setenv);
+   TestSuite_Add(suite, "/MongoDB/handshake/truncate_container_only", test_truncate_container_only);
    TestSuite_Add(suite, "/MongoDB/handshake/includes_c++", test_mongoc_handshake_cpp);
    TestSuite_AddMockServerTest(
       suite, "/MongoDB/handshake/includes_backpressure_version", test_mongoc_handshake_includes_backpressure_version);

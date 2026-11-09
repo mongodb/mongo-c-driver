@@ -10,7 +10,7 @@ Synopsis
 
    #include <mongoac/error.h>
 
-   int32_t mongoac_error_category(const mongoac_error_t *error);
+   mongoac_error_category_t mongoac_error_category(const mongoac_error_t *error);
 
 Description
 -----------

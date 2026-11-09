@@ -22,11 +22,18 @@ Represents a non-owning, read-only string.
 
 .. important::
 
-  All strings handled by the mongoac library are valid UTF-8 strings.
+  All strings returned by the mongoac library are valid UTF-8.
+
+  Strings given to the mongoac library MUST be valid UTF-8.
+  Input string arguments are `fully validated <https://doc.rust-lang.org/std/str/fn.from_utf8.html>`_.
+  Invalid UTF-8 is always rejected as an invalid argument.
 
 ``mongoac_string_view_t`` is a non-owning, read-only view to a string:
 
 - When ``ptr`` is null, ``len`` is unspecified (but typically set to ``0``).
 - When ``ptr`` is not null, the range ``[ptr, ptr + len)`` is valid and accessible.
+
+Lifetime
+--------
 
 The object from which a view is obtained MUST outlive any access to the pointed-to data.

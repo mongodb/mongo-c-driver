@@ -7,6 +7,7 @@ project (kms_message
 set (CMAKE_C_STANDARD 99)
 
 include (CheckCCompilerFlag)
+include (CTest)
 
 set (CMAKE_C_VISIBILITY_PRESET hidden)
 set (KMS_MESSAGE_SOURCES
@@ -245,7 +246,7 @@ install (
 )
 
 # cannot run tests without crypto
-if (NOT DISABLE_NATIVE_CRYPTO)
+if (BUILD_TESTING AND NOT DISABLE_NATIVE_CRYPTO)
    add_executable (
       test_kms_request
       ${KMS_MESSAGE_SOURCES}

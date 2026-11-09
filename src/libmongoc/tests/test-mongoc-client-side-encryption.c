@@ -4452,11 +4452,6 @@ server_supports_queryType(const char *queryType)
        0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX) ||
        0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING)) {
       return test_framework_get_server_version() >= test_framework_str_to_version("9.0.0");
-   } else if (0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW) ||
-              0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW) ||
-              0 == strcmp(queryType, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW)) {
-      return test_framework_get_server_version() >= test_framework_str_to_version("8.2.0") &&
-             test_framework_get_server_version() < test_framework_str_to_version("9.0.0");
    } else {
       test_error("Do not know server support for queryType: %s", queryType);
    }
@@ -4473,10 +4468,6 @@ string_explicit_encryption_setup(void)
       (string_explicit_encryption_fixture *)bson_malloc0(sizeof(string_explicit_encryption_fixture));
    mongoc_client_t *setupClient = test_framework_new_default_client();
 
-   bool server_supports_prefix_suffix_substring = server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_PREFIX) &&
-                                                  server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX) &&
-                                                  server_supports_queryType(MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING);
-
    // Create majority write concern opts for reuse.
    {
       bson_init(&seef->wc_majority_opts);
@@ -4489,21 +4480,9 @@ string_explicit_encryption_setup(void)
 
    // "drop and create" the QE collections:
    {
-      char *names[5] = {0}; // NULL terminated.
+      const char *names[] = {"prefix-suffix", "prefix-suffix-ci-di", "substring", "substring-ci-di", NULL};
 
-      size_t idx = 0;
-
-      if (server_supports_prefix_suffix_substring) {
-         names[idx++] = "prefix-suffix";
-         names[idx++] = "prefix-suffix-ci-di";
-         names[idx++] = "substring";
-         names[idx++] = "substring-ci-di";
-      } else {
-         names[idx++] = "prefix-suffix-preview";
-         names[idx++] = "substring-preview";
-      }
-
-      for (char **name_iter = names; *name_iter; name_iter++) {
+      for (const char **name_iter = names; *name_iter; name_iter++) {
          const char *name = *name_iter;
          bson_t *opts;
 
@@ -4644,7 +4623,7 @@ string_explicit_encryption_setup(void)
    plaintext.value.v_utf8.str = "foobarbaz";
    plaintext.value.v_utf8.len = (uint32_t)strlen(plaintext.value.v_utf8.str);
 
-   // Insert "foobarbaz" into db.prefix-suffix or db.prefix-suffix-preview:
+   // Insert "foobarbaz" into db.prefix-suffix:
    {
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
@@ -4666,8 +4645,7 @@ string_explicit_encryption_setup(void)
 
       ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
-      const char *coll_name = server_supports_prefix_suffix_substring ? "prefix-suffix" : "prefix-suffix-preview";
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", coll_name);
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "prefix-suffix");
       ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
       mongoc_collection_destroy(coll);
@@ -4678,7 +4656,7 @@ string_explicit_encryption_setup(void)
       mongoc_client_encryption_encrypt_opts_destroy(eo);
    }
 
-   // Insert "foobarbaz" into db.substring or db.substring-preview:
+   // Insert "foobarbaz" into db.substring:
    {
       bson_value_t insertPayload;
       bson_t to_insert = BSON_INITIALIZER;
@@ -4699,8 +4677,7 @@ string_explicit_encryption_setup(void)
 
       ASSERT(BSON_APPEND_VALUE(&to_insert, "encryptedText", &insertPayload));
 
-      const char *coll_name = server_supports_prefix_suffix_substring ? "substring" : "substring-preview";
-      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", coll_name);
+      mongoc_collection_t *coll = mongoc_client_get_collection(seef->explicitEncryptedClient, "db", "substring");
       ok = mongoc_collection_insert_one(coll, &to_insert, &seef->wc_majority_opts, NULL /* reply */, &error);
       ASSERT_OR_PRINT(ok, error);
 
@@ -4771,15 +4748,10 @@ test_string_explicit_encryption(void *unused)
       const char *collection;
    } text_subcase_t;
 
-   text_subcase_t prefix_subcases[] = {
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_PREFIX, .collection = "prefix-suffix"},
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_PREFIXPREVIEW, .collection = "prefix-suffix-preview"}};
-   text_subcase_t suffix_subcases[] = {
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX, .collection = "prefix-suffix"},
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIXPREVIEW, .collection = "prefix-suffix-preview"}};
+   text_subcase_t prefix_subcases[] = {{.queryType = MONGOC_ENCRYPT_QUERY_TYPE_PREFIX, .collection = "prefix-suffix"}};
+   text_subcase_t suffix_subcases[] = {{.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUFFIX, .collection = "prefix-suffix"}};
    text_subcase_t substring_subcases[] = {
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING, .collection = "substring"},
-      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW, .collection = "substring-preview"}};
+      {.queryType = MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING, .collection = "substring"}};
 
 
    // Case 1: can find a document by prefix
@@ -5328,7 +5300,7 @@ test_string_explicit_encryption(void *unused)
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
          mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -5387,7 +5359,7 @@ test_string_explicit_encryption(void *unused)
          mongoc_client_encryption_encrypt_opts_t *eo = mongoc_client_encryption_encrypt_opts_new();
          mongoc_client_encryption_encrypt_opts_set_keyid(eo, &seef->key1ID);
          mongoc_client_encryption_encrypt_opts_set_algorithm(eo, MONGOC_ENCRYPT_ALGORITHM_STRING);
-         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRINGPREVIEW);
+         mongoc_client_encryption_encrypt_opts_set_query_type(eo, MONGOC_ENCRYPT_QUERY_TYPE_SUBSTRING);
          mongoc_client_encryption_encrypt_opts_set_contention_factor(eo, 0);
 
          mongoc_client_encryption_encrypt_string_opts_t *topts = mongoc_client_encryption_encrypt_string_opts_new();
@@ -9071,15 +9043,6 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_max_wire_version_less_than_21 /* require server > 7.0 for QE support */,
                         test_framework_skip_if_single, /* QE not supported on standalone */
                         test_framework_skip_if_no_client_side_encryption);
-      TestSuite_AddFull(
-         suite,
-         "/client_side_encryption/explicit_encryption/text",
-         test_string_explicit_encryption,
-         NULL,
-         NULL,
-         test_framework_skip_if_max_wire_version_less_than_27, /* require server 8.2+ for "substringPreview" */
-         test_framework_skip_if_single,                        /* QE not supported on standalone */
-         test_framework_skip_if_no_client_side_encryption);
       TestSuite_AddFull(suite,
                         "/client_side_encryption/kms/connect_callback/wiring [lock:live-server]",
                         test_kms_connect_callback_wiring,
@@ -9131,5 +9094,14 @@ test_client_side_encryption_install(TestSuite *suite)
                         test_framework_skip_if_no_client_side_encryption,
                         _have_test_aws_creds_env,
                         TestSuite_CheckLive);
+
+      TestSuite_AddFull(suite,
+                        "/client_side_encryption/explicit_encryption/text",
+                        test_string_explicit_encryption,
+                        NULL,
+                        NULL,
+                        test_framework_skip_if_max_wire_version_less_than_27, /* 9.0+ is checked per case */
+                        test_framework_skip_if_single,                        /* QE not supported on standalone */
+                        test_framework_skip_if_no_client_side_encryption);
    }
 }

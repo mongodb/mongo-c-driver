@@ -24,6 +24,7 @@ pub const MONGOAC_ERROR_CATEGORY_NONE: mongoac_error_category_t = 0;
 pub const MONGOAC_ERROR_CATEGORY_MONGOAC: mongoac_error_category_t = 1;
 pub const MONGOAC_ERROR_CATEGORY_SERVER: mongoac_error_category_t = 2;
 pub const MONGOAC_ERROR_CATEGORY_RUST: mongoac_error_category_t = 3;
+pub const MONGOAC_ERROR_CATEGORY_BSON: mongoac_error_category_t = 4;
 pub const MONGOAC_ERROR_CATEGORY_UNKNOWN: mongoac_error_category_t = i32::MIN;
 
 #[allow(non_camel_case_types)]
@@ -41,6 +42,7 @@ pub enum ErrorCategoryT {
     MongoAC = MONGOAC_ERROR_CATEGORY_MONGOAC,
     Server = MONGOAC_ERROR_CATEGORY_SERVER,
     Rust = MONGOAC_ERROR_CATEGORY_RUST,
+    Bson = MONGOAC_ERROR_CATEGORY_BSON,
 
     #[num_enum(catch_all)]
     Unknown(i32),
@@ -82,12 +84,12 @@ pub extern "C" fn mongoac_error_new() -> *mut ErrorT {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_error_category(error: *const ErrorT) -> i32 {
+pub extern "C" fn mongoac_error_category(error: *const ErrorT) -> mongoac_error_category_t {
     safe_as_ref!(error).category().into()
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_error_code(error: *const ErrorT) -> i32 {
+pub extern "C" fn mongoac_error_code(error: *const ErrorT) -> mongoac_error_code_t {
     safe_as_ref!(error).code().into()
 }
 
@@ -105,7 +107,11 @@ pub extern "C" fn mongoac_error_clear(error: *mut ErrorT) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_error_set(error: *mut ErrorT, category: i32, code: i32) {
+pub extern "C" fn mongoac_error_set(
+    error: *mut ErrorT,
+    category: mongoac_error_category_t,
+    code: mongoac_error_code_t,
+) {
     safe_as_mut!(error).set(category, code);
 }
 
@@ -119,9 +125,10 @@ pub enum ErrorT {
     },
     Server(mongodb::error::Error), // Command | Write
     Rust(mongodb::error::Error),
+    Bson(mongodb::bson::error::Error),
     Unknown {
-        code: i32,
-        category: i32,
+        code: mongoac_error_code_t,
+        category: mongoac_error_category_t,
     },
 }
 
@@ -138,6 +145,7 @@ impl ErrorT {
             Self::MongoAC { .. } => ErrorCategoryT::MongoAC,
             Self::Server(_) => ErrorCategoryT::Server,
             Self::Rust(_) => ErrorCategoryT::Rust,
+            Self::Bson(_) => ErrorCategoryT::Bson,
             Self::Unknown { code: _, category } => ErrorCategoryT::Unknown(*category),
         }
     }
@@ -152,16 +160,17 @@ impl ErrorT {
                 use mongodb::error::ErrorKind;
                 use mongodb::error::WriteFailure;
 
-                ErrorCodeT::from(match err.kind.as_ref() {
+                match err.kind.as_ref() {
                     ErrorKind::Command(err) => err.code,
                     ErrorKind::Write(WriteFailure::WriteError(err)) => err.code,
                     ErrorKind::Write(WriteFailure::WriteConcernError(err)) => err.code,
 
                     _ => MONGOAC_ERROR_CODE_UNKNOWN, // #[non_exhaustive]
-                })
+                }
+                .into()
             }
 
-            Self::Rust(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
+            Self::Rust(_) | Self::Bson(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
 
             Self::Unknown { code, .. } => ErrorCodeT::Unknown(*code),
         }
@@ -182,6 +191,8 @@ impl ErrorT {
 
             Self::Server(err) | Self::Rust(err) => Some(err.to_string()),
 
+            Self::Bson(err) => Some(err.to_string()),
+
             _ => None,
         }
     }
@@ -190,7 +201,7 @@ impl ErrorT {
         *self = Self::None;
     }
 
-    fn set(&mut self, category: i32, code: i32) {
+    fn set(&mut self, category: mongoac_error_category_t, code: mongoac_error_code_t) {
         match (category, code) {
             // Special case: default state.
             (MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK) => {
@@ -200,7 +211,7 @@ impl ErrorT {
             // Special case: support directly mapping mongoac error codes.
             (MONGOAC_ERROR_CATEGORY_MONGOAC, _) => {
                 *self = Self::MongoAC {
-                    code: ErrorCodeT::from(code),
+                    code: code.into(),
                     message: None,
                 };
             }
@@ -225,6 +236,7 @@ impl Clone for ErrorT {
 
             Self::Server(err) => Self::Server(err.clone()),
             Self::Rust(err) => Self::Rust(err.clone()),
+            Self::Bson(err) => Self::Bson(err.clone()),
 
             Self::Unknown { category, code } => Self::Unknown {
                 category: *category,
@@ -258,5 +270,11 @@ impl From<mongodb::error::Error> for ErrorT {
 
             _ => Self::Rust(err), // `#[non_exhaustive]`
         }
+    }
+}
+
+impl From<mongodb::bson::error::Error> for ErrorT {
+    fn from(err: mongodb::bson::error::Error) -> Self {
+        Self::Bson(err)
     }
 }

@@ -1222,6 +1222,64 @@ test_bad_sizes(void)
    mongoc_client_destroy(client);
 }
 
+// Regression test for CDRIVER-6494.
+static void
+test_download_to_stream_errors(void)
+{
+   mongoc_client_t *client = test_framework_new_default_client();
+   bson_error_t error;
+
+   mongoc_database_t *db = mongoc_client_get_database(client, "test_download_to_stream_errors");
+   mongoc_database_drop(db, NULL);
+
+   mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+   ASSERT_OR_PRINT(bucket, error);
+
+   // Any valid stream will do: it is never written to when the download fails.
+   mongoc_stream_t *destination = mongoc_stream_file_new_for_path(BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
+   ASSERT(destination);
+
+   // Test a file that does not exist:
+   {
+      const bson_value_t file_id = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
+
+      ASSERT(!mongoc_gridfs_bucket_download_to_stream(bucket, &file_id, destination, &error));
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_FILE_NOT_FOUND, "No file with given id exists");
+   }
+
+   // Test a file with a zero chunkSize:
+   {
+      bson_t *doc = tmp_bson(BSON_STR({
+         "_id" : 2,
+         "filename" : "foo.txt",
+         "length" : 1000,
+         "chunkSize" : 0, // Zero!
+         "uploadDate" : {"$date" : 1234567890000}
+      }));
+
+      bson_iter_t id_iter;
+      ASSERT(bson_iter_init_find(&id_iter, doc, "_id"));
+      const bson_value_t *id_value = bson_iter_value(&id_iter);
+
+      // Insert manually:
+      {
+         mongoc_collection_t *files = mongoc_database_get_collection(db, "fs.files");
+         ASSERT_OR_PRINT(mongoc_collection_insert_one(files, doc, NULL, NULL, &error), error);
+         mongoc_collection_destroy(files);
+      }
+
+      ASSERT(!mongoc_gridfs_bucket_download_to_stream(bucket, id_value, destination, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "invalid chunk size");
+   }
+
+   mongoc_stream_destroy(destination);
+   mongoc_gridfs_bucket_destroy(bucket);
+   mongoc_database_drop(db, NULL);
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+}
+
 // test_big_bucket_name is a regression test for CDRIVER-6157.
 static void
 test_big_bucket_name(void)
@@ -1352,6 +1410,7 @@ test_gridfs_bucket_install(TestSuite *suite)
                      test_framework_skip_if_no_crypto);
    TestSuite_AddLive(suite, "/gridfs/options", test_gridfs_bucket_opts);
    TestSuite_AddLive(suite, "/gridfs/bad_sizes", test_bad_sizes);
+   TestSuite_AddLive(suite, "/gridfs/download_to_stream_errors", test_download_to_stream_errors);
    TestSuite_AddLive(suite, "/gridfs/big_bucket_name", test_big_bucket_name);
    TestSuite_AddFull(suite,
                      "/gridfs/prose_test_1",

@@ -111,6 +111,9 @@ The async operation will continue to make progress until it is completed and its
     mongoac_future_clone
 
     mongoac_future_get_bool
+    mongoac_future_get_bson
+    mongoac_future_get_insert_one_result
+    mongoac_future_get_optional_bson
     mongoac_future_get_runtime
     mongoac_future_get_runtime_address
     mongoac_future_get_uint64

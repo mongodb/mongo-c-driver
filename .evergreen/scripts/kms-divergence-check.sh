@@ -13,7 +13,7 @@ LIBMONGOCRYPT_DIR="$MONGOC_DIR/libmongocrypt-for-kms-divergence-check"
 
 # LIBMONGOCRYPT_GITREF is expected to refer to the version of libmongocrypt
 # where kms-message was last copied.
-LIBMONGOCRYPT_GITREF="e692af569c41d2d4feb55152426cec4e632cd2cf"
+LIBMONGOCRYPT_GITREF="6c477ecc52f2dd5f29caa6ef2e44c0f6f00866fe" # tag 1.21.0
 
 cleanup() {
   if [ -d "$LIBMONGOCRYPT_DIR" ]; then

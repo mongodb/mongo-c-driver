@@ -14,10 +14,7 @@ Synopsis
 
    Renamed from the now-deprecated ``text`` API.
 
-StringSubstringOpts specifies options for a Queryable Encryption field supporting "substringPreview" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt_string_opts_set_substring()`.
-
-
-|encrypt-string-substring-is-experimental|
+StringSubstringOpts specifies options for a Queryable Encryption field supporting "substring" queries. Used to set options for :symbol:`mongoc_client_encryption_encrypt_string_opts_set_substring()`.
 
 .. only:: html
 

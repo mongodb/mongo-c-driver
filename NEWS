@@ -4,6 +4,64 @@ libmongoc 2.6.0 [unreleased]
 ## Notes
 
 * Upgraded bundled zlib from 1.3.1 to 1.3.2.
+* Raise required version of libmongocrypt from 1.20.0 to 1.21.0 to support In-Use Encryption (corresponds to the CMake option: `ENABLE_CLIENT_SIDE_ENCRYPTION`).
+  * The `prefixPreview`, `suffixPreview`, and `substringPreview` query types are no longer supported by In-Use Encryption and now return an error. Use the `prefix`, `suffix`, and `substring` query types instead.
+
+libmongoc 2.5.8
+===============
+
+## Fixes
+
+* Fix abort when parsing a cursor namespace without a dot separator.
+* Fix possible abort in `mongoc_gridfs_bucket_download_to_stream` on invalid file metadata.
+* Fix handling of embedded NUL bytes in namespaces.
+* Fix a missing bounds check when reading GridFS files.
+* Fix a memory leak when an OP_COMPRESSED reply fails to parse.
+* Report `writeConcernError` consistently, as mandated by the CRUD spec.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Sabrina Chang
+
+
+libmongoc 1.30.15
+=================
+
+## Fixes
+
+* Fix abort when parsing a cursor namespace without a dot separator.
+* Fix possible abort in `mongoc_gridfs_bucket_download_to_stream` on invalid file metadata.
+* Fix handling of embedded NUL bytes in namespaces.
+* Fix a missing bounds check when reading GridFS files.
+* Fix a memory leak when an OP_COMPRESSED reply fails to parse.
+* Report `writeConcernError` consistently, as mandated by the CRUD spec.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Sabrina Chang
+
+libmongoc 2.5.7
+===============
+
+## Fixes
+
+* Fix handling of large usernames for GSSAPI on Windows.
+* Fix container client metadata.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Sabrina Chang
+
+libmongoc 1.30.14
+=================
+
+## Fixes
+
+* Fix handling of large usernames for GSSAPI on Windows.
 
 libmongoc 2.5.6
 ===============

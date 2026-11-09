@@ -22,7 +22,7 @@ Represents an owning, read-only string.
 
 .. important::
 
-  All strings handled by the mongoac library are valid UTF-8 strings.
+  All strings returned by the mongoac library are valid UTF-8.
 
 ``mongoac_string_t`` is an owning, read-only view to a string:
 

@@ -244,6 +244,10 @@ buildvariants:
       SANITIZE: address,undefined
     tasks:
       - name: mock-server-test
+  - name: mongoac
+    display_name: mongoac
+    tasks:
+      - name: mongoac-rhel8-latest-gcc
   - name: oidc
     display_name: OIDC
     tasks:

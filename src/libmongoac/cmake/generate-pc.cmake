@@ -1,7 +1,6 @@
 set (input_vars
   src_dir
   bin_dir
-  prefix
   includedir
   libdir
   output_name

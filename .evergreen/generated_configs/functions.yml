@@ -912,6 +912,18 @@ functions:
         optional: true
         permissions: public-read
         remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
+  upload-mongoac-test-results:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        args:
+          - -c
+          - |
+            mkdir -p mongoc
+            touch mongoc/mongoac-test-results.xml
+    - command: attach.xunit_results
+      params:
+        file: mongoc/mongoac-test-results.xml
   upload-test-results:
     - command: subprocess.exec
       params:

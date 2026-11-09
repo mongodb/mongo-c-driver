@@ -100,7 +100,7 @@ TEST_CASE("clone", "[mongoac][error]") {
                 INT32_MAX,
             }));
 
-        CHECK_NOTHROW(mongoac_error_set(error, category, code));
+        mongoac_error_set(error, category, code);
 
         auto const copy_owner = make_unique(mongoac_error_clone(error), &mongoac_error_destroy);
         auto const copy = copy_owner.get();
@@ -139,23 +139,22 @@ TEST_CASE("message", "[mongoac][error]") {
 
     SECTION("mongoac") {
         SECTION("ok") {
-            CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_OK));
+            mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_OK);
             CHECK(from_mongoac(mongoac_error_message(error)) == "ok");
         }
 
         SECTION("invalid argument") {
-            CHECK_NOTHROW(
-                mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_INVALID_ARGUMENT));
+            mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_INVALID_ARGUMENT);
             CHECK(from_mongoac(mongoac_error_message(error)) == "invalid argument");
         }
 
         SECTION("runtime error") {
-            CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_RUNTIME_ERROR));
+            mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, MONGOAC_ERROR_CODE_RUNTIME_ERROR);
             CHECK(from_mongoac(mongoac_error_message(error)) == "runtime error");
         }
 
         SECTION("unknown error code") {
-            CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, -1));
+            mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_MONGOAC, -1);
             CHECK(from_mongoac(mongoac_error_message(error)) == "unknown error code");
         }
     }
@@ -172,21 +171,22 @@ TEST_CASE("message", "[mongoac][error]") {
                 INT32_MAX,
             }));
 
-        CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_UNKNOWN, code));
+        mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_UNKNOWN, code);
         CHECK(from_mongoac(mongoac_error_message(error)) == "");
     }
 }
 
 TEST_CASE("clear", "[mongoac][error]") {
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_error_clear(nullptr));
+        mongoac_error_clear(nullptr);
+        SUCCEED();
     }
 
     SECTION("basic") {
         auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
         auto const error = error_owner.get();
 
-        CHECK_NOTHROW(mongoac_error_clear(error));
+        mongoac_error_clear(error);
 
         CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_NONE);
         CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK);
@@ -198,11 +198,12 @@ TEST_CASE("set", "[mongoac][error]") {
     auto const error = error_owner.get();
 
     SECTION("null") {
-        CHECK_NOTHROW(mongoac_error_set(nullptr, MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK));
+        mongoac_error_set(nullptr, MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK);
+        SUCCEED();
     }
 
     SECTION("basic") {
-        CHECK_NOTHROW(mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK));
+        mongoac_error_set(error, MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK);
         CHECK(mongoac_error_category(error) == MONGOAC_ERROR_CATEGORY_NONE);
         CHECK(mongoac_error_code(error) == MONGOAC_ERROR_CODE_OK);
     }
@@ -230,7 +231,7 @@ TEST_CASE("set", "[mongoac][error]") {
                 INT32_MAX,
             }));
 
-        CHECK_NOTHROW(mongoac_error_set(error, category, code));
+        mongoac_error_set(error, category, code);
         CHECK(mongoac_error_category(error) == category);
         CHECK(mongoac_error_code(error) == code);
 

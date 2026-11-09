@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::bson::BsonViewT;
 use crate::error::{ErrorCodeT, ErrorT};
+use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
+
+use mongodb::bson::RawDocumentBuf;
+use mongodb::results::InsertOneResult;
 
 use parking_lot::Mutex;
 use tokio::task::{JoinError, JoinHandle};
@@ -66,6 +71,41 @@ pub extern "C" fn mongoac_future_get_bool(future: *const FutureT, error: *mut Er
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_bson(future: *const FutureT, error: *mut ErrorT) -> BsonViewT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_result!(future.get_bson(), error).into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_insert_one_result(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *const InsertOneResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_ptr_from_ref!(
+        safe_result!(future.get_insert_one_result(), error),
+        InsertOneResult
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_optional_bson(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> BsonViewT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_result!(future.get_optional_bson(), error)
+        .as_ref()
+        .map_or(Default::default(), Into::into)
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_future_get_uint64(future: *const FutureT, error: *mut ErrorT) -> u64 {
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
@@ -108,6 +148,18 @@ impl FutureT {
         self.get::<bool>("bool")
     }
 
+    fn get_bson(&self) -> Result<&RawDocumentBuf, ErrorT> {
+        self.get::<RawDocumentBuf>("bson")
+    }
+
+    fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
+        self.get::<InsertOneResult>("insert_one_result")
+    }
+
+    fn get_optional_bson(&self) -> Result<&Option<RawDocumentBuf>, ErrorT> {
+        self.get::<Option<RawDocumentBuf>>("optional_bson")
+    }
+
     fn get_uint64(&self) -> Result<&u64, ErrorT> {
         self.get::<u64>("uint64")
     }
@@ -134,7 +186,7 @@ impl FutureT {
             Some(fvt) => fvt.result(),
             None => Err(ErrorT::MongoAC {
                 code: ErrorCodeT::InvalidArgument,
-                message: Some(format!("future does not return a {name}")),
+                message: Some(format!("future does not return {name}")),
             }),
         }
     }

@@ -16,11 +16,11 @@ use rayon::prelude::*;
 
 use std::path::{Path, PathBuf};
 
-// Keep synchronized with `skip_cargo_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_CARGO_HEADERS: &[&str] = &["lib", "mod", "version"];
+// Keep synchronized with `skip_crate_headers` in src/libmongoac/CMakeLists.txt.
+const SKIP_CRATE_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_FORWARD_HEADERS: &[&str] = &["string"];
+const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "string"];
 
 // Prelude shared by all generated headers.
 fn generate_header() -> String {
@@ -47,15 +47,41 @@ fn generate_header() -> String {
 // Rename structs from `ExampleT` to `mongoac_example_t`.
 fn rename_structs() -> std::collections::HashMap<String, String> {
     let pairs: &[(&str, &str)] = &[
+        ("BsonArrayT", "mongoac_bson_array_t"),
+        ("BsonT", "mongoac_bson_t"),
+        ("BsonViewArrayT", "mongoac_bson_view_array_t"),
+        ("BsonViewT", "mongoac_bson_view_t"),
+        ("ClientSessionT", "mongoac_client_session_t"),
         ("ClientT", "mongoac_client_t"),
         ("CollectionOptionsT", "mongoac_collection_options_t"),
         ("CollectionT", "mongoac_collection_t"),
+        ("CountOptionsT", "mongoac_count_options_t"),
+        (
+            "CreateCollectionOptionsT",
+            "mongoac_create_collection_options_t",
+        ),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
+        (
+            "DropCollectionOptionsT",
+            "mongoac_drop_collection_options_t",
+        ),
+        ("DropDatabaseOptionsT", "mongoac_drop_database_options_t"),
         ("ErrorT", "mongoac_error_t"),
+        (
+            "EstimatedDocumentCountOptionsT",
+            "mongoac_estimated_document_count_options_t",
+        ),
+        ("FindOneOptionsT", "mongoac_find_one_options_t"),
         ("FutureT", "mongoac_future_t"),
+        ("InsertOneOptionsT", "mongoac_insert_one_options_t"),
+        ("InsertOneResultT", "mongoac_insert_one_result_t"),
+        ("ReadPreferenceT", "mongoac_read_preference_t"),
+        ("RunCommandOptionsT", "mongoac_run_command_options_t"),
         ("RuntimeT", "mongoac_runtime_t"),
+        ("StringArrayT", "mongoac_string_array_t"),
         ("StringT", "mongoac_string_t"),
+        ("StringViewArrayT", "mongoac_string_view_array_t"),
         ("StringViewT", "mongoac_string_view_t"),
     ];
 
@@ -65,19 +91,33 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         .collect()
 }
 
-// Crate-specific configuration options.
+// Module-specific configuration options.
 fn configure(name: &str, config: &mut cbindgen::Config) {
     // Include directives required by each crate header.
     {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
+            "bson" => &["stdint.h"],
+            "client_session" => &[],
             "collection_options" => &[],
             "collection" => &[
+                "mongoac/bson.h",
+                "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
+                "mongoac/count_options-fwd.h",
+                "mongoac/drop_collection_options-fwd.h",
+                "mongoac/error-fwd.h",
+                "mongoac/estimated_document_count_options-fwd.h",
+                "mongoac/find_one_options-fwd.h",
+                "mongoac/future-fwd.h",
+                "mongoac/insert_one_options-fwd.h",
+                "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "count_options" => &[],
+            "create_collection_options" => &[],
             "client" => &[
                 "mongoac/database_options-fwd.h",
                 "mongoac/database-fwd.h",
@@ -89,20 +129,37 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             ],
             "database_options" => &[],
             "database" => &[
+                "mongoac/bson.h",
+                "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/collection_options-fwd.h",
                 "mongoac/collection-fwd.h",
+                "mongoac/create_collection_options-fwd.h",
+                "mongoac/drop_database_options-fwd.h",
+                "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
+                "mongoac/run_command_options-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "drop_collection_options" => &[],
+            "drop_database_options" => &[],
+            "estimated_document_count_options" => &[],
+            "find_one_options" => &[],
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
+                "mongoac/bson.h",
                 "mongoac/error-fwd.h",
+                "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "stdbool.h",
                 "stdint.h",
             ],
+            "insert_one_options" => &[],
+            "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
+            "read_preference" => &["stdbool.h", "stdint.h"],
+            "run_command_options" => &["mongoac/read_preference-fwd.h"],
             "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {
@@ -119,7 +176,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
     // Structs which need to be explicitly exported (due to no exported function referencing the struct).
     {
         let exports: &[&str] = match name {
-            "string" => &["StringViewT"],
+            "bson" => &["BsonViewArrayT", "BsonViewT"],
+            "string" => &["StringViewArrayT", "StringViewT"],
             _ => &[],
         };
 
@@ -154,10 +212,10 @@ fn default_config() -> cbindgen::Config {
     }
 }
 
-fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Path) {
+fn generate_forward_header(mod_path: &Path, rel_stem: &Path, include_dir: &Path) {
     let rel_str = rel_stem.to_str().expect("invalid UTF-8");
 
-    // `path/to/crate` -> `MONGOAC_PATH_TO_CRATE_FWD_H`
+    // `path/to/module` -> `MONGOAC_PATH_TO_MODULE_FWD_H`
     let include_guard = format!(
         "MONGOAC_{}_FWD_H",
         rel_str
@@ -165,7 +223,7 @@ fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Pat
             .to_uppercase()
     );
 
-    // `path/to/crate` -> `<include_dir>/path/to/crate-fwd.h`
+    // `path/to/module` -> `<include_dir>/path/to/module-fwd.h`
     // Parent directories are already created by `generate_crate_header()`.
     let header_path = include_dir.join(rel_stem).with_file_name(format!(
         "{}-fwd.h",
@@ -188,7 +246,7 @@ fn generate_forward_header(crate_path: &Path, rel_stem: &Path, include_dir: &Pat
     cbindgen::Builder::new()
         .with_config(config)
         .with_include_guard(&include_guard)
-        .with_src(crate_path)
+        .with_src(mod_path)
         .generate()
         .expect("cbindgen failed")
         .write_to_file(&header_path);
@@ -222,20 +280,20 @@ fn add_fwd_iwyu_pragma(header_path: &Path, directive: &str) {
         .unwrap_or_else(|_| panic!("failed to write header: {}", header_path.display()));
 }
 
-fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) {
-    let file_stem = crate_path
+fn generate_crate_header(mod_path: &Path, src_dir: &Path, include_dir: &Path) {
+    let file_stem = mod_path
         .file_stem()
         .and_then(|s| s.to_str())
         .expect("invalid UTF-8");
 
-    // `src/libmongoac/src/path/to/crate.rs` -> `path/to/crate`
-    let rel_path = crate_path
+    // `src/libmongoac/src/path/to/module.rs` -> `path/to/module`
+    let rel_path = mod_path
         .strip_prefix(src_dir)
         .expect("file not under src root");
     let rel_stem = rel_path.with_extension("");
     let rel_str = rel_stem.to_str().expect("invalid UTF-8");
 
-    // `path/to/crate` -> `MONGOAC_PATH_TO_CRATE_H`
+    // `path/to/module` -> `MONGOAC_PATH_TO_MODULE_H`
     let include_guard = format!(
         "MONGOAC_{}_H",
         rel_str
@@ -243,14 +301,14 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
             .to_uppercase()
     );
 
-    // `path/to/crate` -> `<include_dir>/path/to/crate.h`
+    // `path/to/module` -> `<include_dir>/path/to/module.h`
     let header_path = include_dir.join(&rel_stem).with_extension("h");
     if let Some(parent) = header_path.parent() {
         std::fs::create_dir_all(parent)
             .unwrap_or_else(|_| panic!("failed to create include directory: {}", parent.display()));
     }
 
-    // Default cbindgen configuration for all crates.
+    // Default cbindgen configuration for all modules.
     let config = {
         let mut config = default_config();
 
@@ -266,14 +324,14 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
 
         // Always include the component's forward header first.
         if !SKIP_FORWARD_HEADERS.contains(&file_stem) {
-            generate_forward_header(crate_path, &rel_stem, include_dir);
+            generate_forward_header(mod_path, &rel_stem, include_dir);
             config.sys_includes.push(format!("mongoac/{rel_str}-fwd.h"));
         }
 
         // Normal headers typically export at least one symbol.
         config.sys_includes.push("mongoac/export.h".into());
 
-        // Apply per-crate configuration options.
+        // Apply per-module configuration options.
         configure(rel_str, &mut config);
 
         config
@@ -283,7 +341,7 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
     cbindgen::Builder::new()
         .with_config(config)
         .with_include_guard(&include_guard)
-        .with_src(crate_path)
+        .with_src(mod_path)
         .generate()
         .expect("cbindgen failed")
         .write_to_file(&header_path);
@@ -295,8 +353,8 @@ fn generate_crate_header(crate_path: &Path, src_dir: &Path, include_dir: &Path) 
     }
 }
 
-// Recursively find all mongoac crates under the source directory which need a header.
-fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
+// Recursively find all mongoac modules under the source directory which need a header.
+fn find_modules(dir: &Path, files: &mut Vec<PathBuf>) {
     for entry in std::fs::read_dir(dir)
         .unwrap_or_else(|_| panic!("failed to read directory: {}", dir.display()))
     {
@@ -307,17 +365,17 @@ fn find_crates(dir: &Path, files: &mut Vec<PathBuf>) {
 
         if path.is_dir() {
             if path.file_name().is_some_and(|name| name == "private") {
-                continue; // Private crates do not need headers.
+                continue; // Private modules do not need headers.
             }
 
-            find_crates(&path, files);
+            find_modules(&path, files);
         } else if path.extension().is_some_and(|e| e == "rs") {
             let file_stem = path
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .expect("invalid UTF-8");
 
-            if !SKIP_CARGO_HEADERS.contains(&file_stem) {
+            if !SKIP_CRATE_HEADERS.contains(&file_stem) {
                 files.push(path);
             }
         }
@@ -334,7 +392,7 @@ fn main() {
     let include_path = Path::new(&include_dir);
 
     let mut files = Vec::new();
-    find_crates(src_path, &mut files);
+    find_modules(src_path, &mut files);
 
     // Generate crate headers in parallel using Rayon.
     files

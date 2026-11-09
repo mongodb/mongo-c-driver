@@ -34,7 +34,7 @@ When enabled, building the mongoac library requires the following toolchain depe
 
 - **CMake: 3.25 or newer**
     - Required to support file sets, path manipulation, and other features used for Rust Toolchain integration.
-- **Rust Toolchain: 1.88 or newer**
+- **Rust Toolchain: 1.92 or newer**
     - Required to build the mongoac library implementation (written in Rust).
     - The ``cargo`` executable is discovered using ``find_program()`` in CMake.
     - See ``src/libmongoac/Cargo.toml`` for further details.

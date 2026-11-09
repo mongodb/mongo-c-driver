@@ -1,7 +1,7 @@
 [package]
 name = "generate-crate-headers"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 publish = false
 
 [dependencies]

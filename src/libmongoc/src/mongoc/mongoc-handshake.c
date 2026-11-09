@@ -54,6 +54,11 @@
 static mongoc_handshake_t gMongocHandshake;
 
 /*
+ * Atomic flag indicating whether the handshake has been frozen.
+ */
+static int8_t gHandshakeFrozen;
+
+/*
  * Used for thread-safety in mongoc_handshake_data_append
  */
 static bson_mutex_t gHandshakeLock;
@@ -574,7 +579,7 @@ _mongoc_handshake_init(void)
    _set_compiler_info();
    _set_flags();
 
-   gMongocHandshake.frozen = false;
+   gHandshakeFrozen = false;
    bson_mutex_init(&gHandshakeLock);
 }
 
@@ -717,7 +722,10 @@ _truncate_handshake(bson_t **doc, const mongoc_handshake_t *md)
          bson_t *new_doc = bson_new();
          bson_copy_to_excluding_noinit(*doc, new_doc, "env", NULL);
 
-         bson_append_document(new_doc, "env", -1, new_env);
+         // `env` may contain only `container` (no FaaS `name`). Omit `env` rather than leave it empty.
+         if (!bson_empty(new_env)) {
+            bson_append_document(new_doc, "env", -1, new_env);
+         }
          bson_destroy(new_env);
          bson_destroy(*doc);
          *doc = new_doc;
@@ -787,6 +795,7 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
       break;
    }
 
+   const bool has_container = md->kubernetes || md->docker;
    bson_t *doc = bson_new();
    // Optimistically include all handshake data
    bsonBuildAppend(
@@ -798,16 +807,16 @@ _mongoc_handshake_build_doc_with_application(const mongoc_handshake_t *md, const
              if (md->os_name, then(kv("name", cstr(md->os_name)))),
              if (md->os_version, then(kv("version", cstr(md->os_version)))),
              if (md->os_architecture, then(kv("architecture", cstr(md->os_architecture)))))),
-      if (env_name,
+      if (env_name || has_container,
           then(kv("env",
-                  doc(kv("name", cstr(env_name)),
+                  doc(if (env_name, then(kv("name", cstr(env_name)))),
                       if (md->env_timeout_sec.set, then(kv("timeout_sec", int32(md->env_timeout_sec.value)))),
                       if (md->env_memory_mb.set, then(kv("memory_mb", int32(md->env_memory_mb.value)))),
-                      if (md->env_region, then(kv("region", cstr(md->env_region)))))))),
-      if (md->kubernetes || md->docker,
-          then(kv("container",
-                  doc(if (md->docker, then(kv("runtime", cstr("docker")))),
-                      if (md->kubernetes, then(kv("orchestrator", cstr("kubernetes")))))))));
+                      if (md->env_region, then(kv("region", cstr(md->env_region)))),
+                      if (has_container,
+                          then(kv("container",
+                                  doc(if (md->docker, then(kv("runtime", cstr("docker")))),
+                                      if (md->kubernetes, then(kv("orchestrator", cstr("kubernetes")))))))))))));
 
    if (md->platform) {
       _append_platform_field(doc, md, false);
@@ -825,7 +834,7 @@ void
 _mongoc_handshake_freeze(void)
 {
    // Ensure all writes to gMongocHandshake are ordered BEFORE this store.
-   mcommon_atomic_int8_exchange(&gMongocHandshake.frozen, true, mcommon_memory_order_release);
+   mcommon_atomic_int8_exchange(&gHandshakeFrozen, true, mcommon_memory_order_release);
 }
 
 /*
@@ -948,7 +957,7 @@ _mongoc_handshake_get_unfrozen(void)
 bool
 _mongoc_handshake_is_frozen(void)
 {
-   return mcommon_atomic_int8_fetch(&gMongocHandshake.frozen, mcommon_memory_order_acquire) != 0;
+   return mcommon_atomic_int8_fetch(&gHandshakeFrozen, mcommon_memory_order_acquire) != 0;
 }
 
 bool

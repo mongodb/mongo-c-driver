@@ -1,0 +1,54 @@
+// Copyright 2009-present MongoDB, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <mongoac/bson.h>
+
+//
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
+
+#include <cstdint>
+
+TEST_CASE("destroy", "[mongoac][bson]") {
+    SECTION("null") {
+        auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
+
+        mongoac_bson_destroy(mongoac_bson_t{nullptr, len});
+        SUCCEED();
+    }
+}
+
+TEST_CASE("destroy", "[mongoac][bson_array]") {
+    SECTION("null") {
+        auto const len = GENERATE(values<std::uintptr_t>({0u, 1u, UINTPTR_MAX - 1u, UINTPTR_MAX}));
+
+        mongoac_bson_array_destroy(mongoac_bson_array_t{nullptr, len});
+        SUCCEED();
+    }
+}
+
+TEST_CASE("default", "[mongoac][bson_view]") {
+    auto const v = mongoac_bson_view_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}
+
+TEST_CASE("default", "[mongoac][bson_view_array]") {
+    auto const v = mongoac_bson_view_array_t{};
+
+    CHECK(v.ptr == nullptr);
+    CHECK(v.len == 0u);
+}
