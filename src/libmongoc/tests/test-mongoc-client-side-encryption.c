@@ -9129,6 +9129,7 @@ test_client_side_encryption_install(TestSuite *suite)
                         NULL, // dtor
                         NULL, // ctx
                         test_framework_skip_if_no_client_side_encryption,
+                        _have_test_aws_creds_env,
                         TestSuite_CheckLive);
    }
 }
