@@ -1,3 +1,20 @@
+libbson 2.5.8
+=============
+
+## Fixes
+
+* Fix possible truncation in BSON binary vector on 32-bit builds.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Adrian Dole
+
+
+libbson 1.30.15
+===============
+
+No changes since 1.30.14. Version incremented to match the libmongoc version.
+
 libbson 2.5.7
 =============
 

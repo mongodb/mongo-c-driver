@@ -423,6 +423,10 @@ mongoc_gridfs_bucket_download_to_stream(mongoc_gridfs_bucket_t *bucket,
    /* Make the download stream */
    download_stream = mongoc_gridfs_bucket_open_download_stream(bucket, file_id, error);
 
+   if (!download_stream) {
+      return false;
+   }
+
    while ((bytes_read = mongoc_stream_read(download_stream, buf, 256, 1, 0)) > 0) {
       bytes_written = mongoc_stream_write(destination, buf, bytes_read, 0);
       if (bytes_written < 0) {
