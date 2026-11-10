@@ -43,7 +43,7 @@ extern const size_t mongoc_psl_rules_count;
 // label) is therefore the LAST stored label and matches exactly one domain
 // label.
 typedef struct _mongoc_psl_rule {
-   char *labels[PSL_MAX_LABELS]; // Owned; labels[i] is the i'th label from the right.
+   char **labels; // Owned array of `nlabels` owned strings; labels[i] is the i'th label from the right.
    size_t nlabels;
    bool exception; // Rule was prefixed '!'.
 } mongoc_psl_rule_t;
@@ -59,6 +59,7 @@ _psl_rule_destroy(mongoc_psl_rule_t *rule)
    for (size_t i = 0; i < rule->nlabels; i++) {
       bson_free(rule->labels[i]);
    }
+   bson_free(rule->labels);
    memset(rule, 0, sizeof(*rule));
 }
 
@@ -114,6 +115,8 @@ _psl_parse_rule(const char *rule, mongoc_psl_rule_t *out)
    }
    mstr_destroy(&canonical);
 
+   // Size the stored array to exactly this rule's label count.
+   out->labels = bson_malloc0(nlabels * sizeof(*out->labels));
    for (size_t i = 0; i < nlabels; i++) {
       out->labels[i] = reversed[i];
       reversed[i] = NULL;
