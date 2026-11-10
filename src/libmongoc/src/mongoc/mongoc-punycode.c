@@ -278,27 +278,33 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
             goto fail; // Leading or doubled dots.
          }
 
-         // ASCII labels are lowercased in place; non-ASCII labels are
-         // Punycode-encoded with the "xn--" prefix.
+         // Every label is ASCII-lowercased (Initial DNS Seedlist Discovery
+         // step 3). Non-ASCII labels are then Punycode-encoded with the "xn--"
+         // prefix. Bytes below 0x80 are never part of a multi-byte UTF-8
+         // sequence, so lowercasing byte-wise cannot corrupt the encoding.
          bool ascii = true;
+         mstr lowered = mstr_new(0);
          for (size_t i = 0; i < label_len; i++) {
             if ((unsigned char)start[i] >= 0x80u) {
                ascii = false;
-               break;
+            }
+            const char ch = (start[i] >= 'A' && start[i] <= 'Z') ? (char)(start[i] - 'A' + 'a') : start[i];
+            if (!mstr_append_char(&lowered, ch)) {
+               mstr_destroy(&lowered);
+               goto fail;
             }
          }
          if (ascii) {
-            for (size_t i = 0; i < label_len; i++) {
-               const char ch = (start[i] >= 'A' && start[i] <= 'Z') ? (char)(start[i] - 'A' + 'a') : start[i];
-               if (!mstr_append_char(&canonical_domain, ch)) {
-                  goto fail;
-               }
-            }
-         } else {
-            if (!mstr_append(&canonical_domain, mstr_view_data("xn--", 4))) {
+            const bool appended = mstr_append(&canonical_domain, lowered);
+            mstr_destroy(&lowered);
+            if (!appended) {
                goto fail;
             }
-            if (!mongoc_punycode_encode_label(start, label_len, &canonical_domain)) {
+         } else {
+            const bool encoded = mstr_append(&canonical_domain, mstr_view_data("xn--", 4)) &&
+                                 mongoc_punycode_encode_label(lowered.data, lowered.len, &canonical_domain);
+            mstr_destroy(&lowered);
+            if (!encoded) {
                goto fail;
             }
          }
