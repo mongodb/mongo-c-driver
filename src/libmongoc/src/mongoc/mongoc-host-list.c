@@ -376,7 +376,7 @@ _mongoc_host_list_canonicalize(mongoc_host_list_t *host, bson_error_t *error)
       _mongoc_set_error(error,
                         MONGOC_ERROR_STREAM,
                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                        "Invalid host \"%s\" returned by SRV: host must be subdomain of service name",
+                        "Invalid host \"%s\" returned by SRV: host is not a well-formed domain name",
                         host->host);
       mstr_destroy(&canonical);
       return false;
@@ -385,8 +385,9 @@ _mongoc_host_list_canonicalize(mongoc_host_list_t *host, bson_error_t *error)
       _mongoc_set_error(error,
                         MONGOC_ERROR_STREAM,
                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                        "Invalid host \"%s\": normalized hostname is too long",
-                        host->host);
+                        "Invalid host \"%s\" returned by SRV: host name exceeds the maximum length of %d bytes",
+                        host->host,
+                        BSON_HOST_NAME_MAX);
       mstr_destroy(&canonical);
       return false;
    }

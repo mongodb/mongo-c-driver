@@ -773,7 +773,7 @@ mongoc_topology_apply_scanned_srv_hosts(mongoc_uri_t *uri,
          // The hostname cannot be canonicalized, so it cannot be validated;
          // skip it. Spec (SRV polling): a failed host MUST NOT be added to the
          // topology, MUST NOT raise an error, and SHOULD be logged.
-         MONGOC_ERROR("Invalid host returned by SRV: %s (%s)", host->host_and_port, canonicalize_error.message);
+         MONGOC_ERROR("%s", canonicalize_error.message);
          continue;
       }
 
@@ -782,7 +782,7 @@ mongoc_topology_apply_scanned_srv_hosts(mongoc_uri_t *uri,
       } else {
          /* Initial DNS Seedlist Discovery Spec: log the non-compliance,
           * including the host name and the validation error. */
-         MONGOC_ERROR("Invalid host returned by SRV: %s (%s)", host->host_and_port, error->message);
+         MONGOC_ERROR("%s", error->message);
          /* Continue on, there may still be valid hosts returned. */
       }
    }

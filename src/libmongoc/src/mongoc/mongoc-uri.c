@@ -90,17 +90,30 @@ static bool
 _mongoc_uri_set_option_as_int64_with_error(mongoc_uri_t *uri, const char *option, int64_t value, bson_error_t *error);
 
 
-#define VALIDATE_SRV_ERR()                                                  \
-   do {                                                                     \
-      _mongoc_set_error(error,                                              \
-                        MONGOC_ERROR_STREAM,                                \
-                        MONGOC_ERROR_STREAM_NAME_RESOLUTION,                \
-                        "Invalid host \"%s\" returned for service \"%s\": " \
-                        "host must be subdomain of service name",           \
-                        host,                                               \
-                        srv_hostname);                                      \
-      return false;                                                         \
-   } while (0)
+// Set `error` to describe why a host returned by SRV was rejected. Always returns false.
+static bool
+_srv_validation_error(bson_error_t *error, const char *host, const char *srv_hostname, const char *reason_fmt, ...)
+   BSON_GNUC_PRINTF(4, 5);
+
+static bool
+_srv_validation_error(bson_error_t *error, const char *host, const char *srv_hostname, const char *reason_fmt, ...)
+{
+   char reason[512];
+   va_list args;
+
+   va_start(args, reason_fmt);
+   bson_vsnprintf(reason, sizeof reason, reason_fmt, args);
+   va_end(args);
+
+   _mongoc_set_error(error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                     "Invalid host \"%s\" returned for service \"%s\": %s",
+                     host,
+                     srv_hostname,
+                     reason);
+   return false;
+}
 
 
 static int
@@ -180,7 +193,7 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
    // 2-3. Punycode-encode non-ASCII labels and ASCII-lowercase everything.
    mstr canonical = mstr_new(0);
    if (!mongoc_punycode_canonicalize_domain(value + start, end - start, &canonical)) {
-      MONGOC_URI_ERROR(error, "%s is not a valid domain name: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, value);
+      MONGOC_URI_ERROR(error, "%s is not a well-formed domain name: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, value);
       mstr_destroy(&canonical);
       return false;
    }
@@ -263,14 +276,14 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
    mstr srv_hostname_canonical = mstr_new(0);
    if (!mongoc_punycode_canonicalize_domain(srv_hostname, strlen(srv_hostname), &srv_hostname_canonical)) {
       mstr_destroy(&srv_hostname_canonical);
-      VALIDATE_SRV_ERR();
+      return _srv_validation_error(error, host, srv_hostname, "service name is not a well-formed domain name");
    }
 
    mstr host_canonical = mstr_new(0);
    if (!mongoc_punycode_canonicalize_domain(host, strlen(host), &host_canonical)) {
       mstr_destroy(&srv_hostname_canonical);
       mstr_destroy(&host_canonical);
-      VALIDATE_SRV_ERR();
+      return _srv_validation_error(error, host, srv_hostname, "host is not a well-formed domain name");
    }
 
    if (uri->srv_allowed_hosts_suffix) {
@@ -279,7 +292,11 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       if (!mongoc_ends_with(host_canonical.data, uri->srv_allowed_hosts_suffix)) {
          mstr_destroy(&srv_hostname_canonical);
          mstr_destroy(&host_canonical);
-         VALIDATE_SRV_ERR();
+         return _srv_validation_error(error,
+                                      host,
+                                      srv_hostname,
+                                      "host must end with " MONGOC_URI_SRVALLOWEDHOSTSSUFFIX " \"%s\"",
+                                      uri->srv_allowed_hosts_suffix);
       }
    } else {
       // TODO (CDRIVER-6456): when srvHostValidator is configured, pass the
@@ -292,11 +309,13 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       const char *srv_host = strchr(srv_hostname_canonical.data, '.');
       BSON_ASSERT(srv_host);
 
-      bool valid = strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
+      const bool in_domain =
+         strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
 
       // When the SRV hostname has fewer than three labels, the returned
       // hostname must have at least one more domain level than the SRV
       // hostname.
+      bool enough_levels = true;
       {
          size_t srv_labels = 1u;
          for (const char *c = srv_hostname_canonical.data; *c; c++) {
@@ -307,14 +326,22 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
             host_labels += (*c == '.');
          }
          if (srv_labels < 3u && host_labels < srv_labels + 1u) {
-            valid = false;
+            enough_levels = false;
          }
       }
 
-      if (!valid) {
+      if (!in_domain || !enough_levels) {
          mstr_destroy(&srv_hostname_canonical);
          mstr_destroy(&host_canonical);
-         VALIDATE_SRV_ERR();
+         if (!in_domain) {
+            return _srv_validation_error(error, host, srv_hostname, "host must be subdomain of service name");
+         }
+         return _srv_validation_error(
+            error,
+            host,
+            srv_hostname,
+            "service name has fewer than three labels, so host must have at least one more domain level than the "
+            "service name");
       }
    }
 
