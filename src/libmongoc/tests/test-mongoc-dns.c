@@ -146,8 +146,6 @@ topology_changed(const mongoc_apm_topology_changed_t *event)
 }
 
 
-// Consider all loopback addresses equivalent.
-// Currently test expectations specify "localhost" but test servers advertise "127.0.0.1".
 static bool
 is_loopback(const mongoc_host_list_t *host)
 {
@@ -160,16 +158,18 @@ host_and_port_equivalent(const char *a, const char *b)
 {
    mongoc_host_list_t host_a, host_b;
 
+   // Check for exact match first:
+   if (!strcmp(a, b)) {
+      return true;
+   }
+
+   // Check if hosts are on equivalent loopback addresses. Some tests expect "localhost" though servers use "127.0.0.1".
    if (!_mongoc_host_list_from_string(&host_a, a) || !_mongoc_host_list_from_string(&host_b, b)) {
       // Parse errors logged in _mongoc_host_list_from_string.
       return false;
    }
 
-   if (host_a.port != host_b.port) {
-      return false;
-   }
-
-   return _mongoc_host_list_compare_one(&host_a, &host_b) || (is_loopback(&host_a) && is_loopback(&host_b));
+   return host_a.port == host_b.port && is_loopback(&host_a) && is_loopback(&host_b);
 }
 
 static bool
