@@ -202,7 +202,17 @@ _mongoc_openssl_check_peer_hostname(SSL *ssl, const char *host, bool allow_inval
    }
 
    peer = SSL_get_peer_certificate(ssl);
-   if (peer && (X509_check_host(peer, host, 0, 0, NULL) == 1 || X509_check_ip_asc(peer, host, 0) == 1)) {
+   mlib_diagnostic_push();
+   mlib_disable_deprecation_warnings();
+   // OpenSSL 4.1 deprecates these APIs in favor of verification parameters.
+   // Eventual migration must preserve hostname checking independently of
+   // certificate-chain validation: allowing an invalid certificate must not
+   // implicitly allow a mismatched hostname. This may require adding a more
+   // sophisticated verification callback that implements the behavior we want.
+   const bool hostname_matches =
+      peer && (X509_check_host(peer, host, 0, 0, NULL) == 1 || X509_check_ip_asc(peer, host, 0) == 1);
+   mlib_diagnostic_pop();
+   if (hostname_matches) {
       X509_free(peer);
       return true;
    }
@@ -624,8 +634,13 @@ _get_must_staple(X509 *cert)
    const ASN1_STRING *const ext_data = X509_EXTENSION_get_data(ext);
 #endif
 
-   /* Data is a DER encoded sequence of integers. */
-   return _mongoc_tlsfeature_has_status_request(ASN1_STRING_get0_data(ext_data), ASN1_STRING_length(ext_data));
+   // Data is a DER encoded sequence of integers.
+   mlib_diagnostic_push();
+   mlib_disable_deprecation_warnings();
+   // Once OpenSSL 4.1 is the minimum, use `ASN1_STRING_get_length`
+   const int ext_length = ASN1_STRING_length(ext_data);
+   mlib_diagnostic_pop();
+   return _mongoc_tlsfeature_has_status_request(ASN1_STRING_get0_data(ext_data), ext_length);
 }
 
 #define ERR_STR (ERR_error_string(ERR_get_error(), NULL))
