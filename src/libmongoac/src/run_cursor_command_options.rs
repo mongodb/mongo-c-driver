@@ -125,7 +125,7 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_as_secs(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_as_subsec_millis(
+pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_subsec_millis(
     options: *const RunCursorCommandOptionsT,
 ) -> u32 {
     safe_as_ref!(options)
