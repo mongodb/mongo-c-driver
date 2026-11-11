@@ -10,10 +10,10 @@ Synopsis
 
    #include <mongoac/database.h>
 
-   mongoac_cursor_t *mongoac_database_run_cursor_command(mongoac_database_t *db,
+   mongoac_cursor_t *mongoac_database_run_cursor_command(const mongoac_database_t *db,
                                                          mongoac_client_session_t *session,
                                                          mongoac_bson_view_t command,
-                                                         const mongoac_run_command_options_t *options,
+                                                         const mongoac_run_cursor_command_options_t *options,
                                                          mongoac_error_t *error);
 
 Description
