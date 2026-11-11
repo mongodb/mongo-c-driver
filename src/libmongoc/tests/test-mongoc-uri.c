@@ -2876,32 +2876,29 @@ test_mongoc_punycode(void)
 static void
 test_mongoc_psl(void)
 {
-   mongoc_psl_t *psl = mongoc_psl_get_singleton();
-   ASSERT(psl);
-
    /* plain public suffixes */
-   ASSERT(mongoc_psl_is_public_suffix(psl, "com"));
-   ASSERT(mongoc_psl_is_public_suffix(psl, "net"));
-   ASSERT(mongoc_psl_is_public_suffix(psl, "org"));
-   ASSERT(mongoc_psl_is_public_suffix(psl, "uk"));
+   ASSERT(mongoc_psl_is_public_suffix("com"));
+   ASSERT(mongoc_psl_is_public_suffix("net"));
+   ASSERT(mongoc_psl_is_public_suffix("org"));
+   ASSERT(mongoc_psl_is_public_suffix("uk"));
 
    /* multi-label public suffixes */
-   ASSERT(mongoc_psl_is_public_suffix(psl, "co.uk"));
-   ASSERT(mongoc_psl_is_public_suffix(psl, "com.ac"));
-   ASSERT(mongoc_psl_is_public_suffix(psl, "github.io"));
+   ASSERT(mongoc_psl_is_public_suffix("co.uk"));
+   ASSERT(mongoc_psl_is_public_suffix("com.ac"));
+   ASSERT(mongoc_psl_is_public_suffix("github.io"));
 
    /* registrable domains and deeper hostnames are not public suffixes */
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "foo.com"));
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "bar.co.uk"));
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "something.github.io"));
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "mydomain.net"));
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "a.b.com.ac"));
+   ASSERT(!mongoc_psl_is_public_suffix("foo.com"));
+   ASSERT(!mongoc_psl_is_public_suffix("bar.co.uk"));
+   ASSERT(!mongoc_psl_is_public_suffix("something.github.io"));
+   ASSERT(!mongoc_psl_is_public_suffix("mydomain.net"));
+   ASSERT(!mongoc_psl_is_public_suffix("a.b.com.ac"));
 
    /* wildcard and exception rules (*.ck / !www.ck) */
-   ASSERT(mongoc_psl_is_public_suffix(psl, "ck"));
-   ASSERT(mongoc_psl_is_public_suffix(psl, "bar.ck"));
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "www.ck"));
-   ASSERT(!mongoc_psl_is_public_suffix(psl, "foo.www.ck"));
+   ASSERT(mongoc_psl_is_public_suffix("ck"));
+   ASSERT(mongoc_psl_is_public_suffix("bar.ck"));
+   ASSERT(!mongoc_psl_is_public_suffix("www.ck"));
+   ASSERT(!mongoc_psl_is_public_suffix("foo.www.ck"));
 }
 
 #define PROHIBITED(_key, _value, _type, _where)                                                      \

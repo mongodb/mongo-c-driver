@@ -19,32 +19,30 @@
 #ifndef MONGOC_PSL_PRIVATE_H
 #define MONGOC_PSL_PRIVATE_H
 
-#include <bson/bson.h>
-
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 // The Public Suffix List, vendored from the MongoDB specifications repository
 // (see src/public-suffix-list/). Used as a deny-list safeguard when validating
 // the srvAllowedHostsSuffix URI option (DRIVERS-3329).
 
-typedef struct _mongoc_psl mongoc_psl_t;
+// One rule of the list, located in `mongoc_psl_label_data`.
+typedef struct {
+   uint32_t labels_offset; // Offset in mongoc_psl_label_data of the rule's first label.
+   uint8_t nlabels;        // Number of labels. Labels are stored right-to-left, each NUL-terminated.
+   uint8_t exception;      // Non-zero if the rule was prefixed with '!'.
+} mongoc_psl_rule_t;
 
-// Load and parse the embedded PSL rules. Returns NULL and sets `error` on failure.
-mongoc_psl_t *
-mongoc_psl_new(bson_error_t *error);
-
-void
-mongoc_psl_destroy(mongoc_psl_t *psl);
-
-// Lazily-initialized singleton wrapping the embedded rule list.
-// Returns NULL if the embedded list failed to parse (internal error).
-mongoc_psl_t *
-mongoc_psl_get_singleton(void);
+// Defined in the generated mongoc-psl-data.c.
+extern const char mongoc_psl_label_data[];
+extern const mongoc_psl_rule_t mongoc_psl_rules[];
+extern const size_t mongoc_psl_rules_count;
 
 // Returns true if `domain` is a public suffix per the PSL algorithm.
 // `domain` MUST be canonical: lowercase, Punycode (A-label), no leading or
 // trailing dots, and no empty labels.
 bool
-mongoc_psl_is_public_suffix(const mongoc_psl_t *psl, const char *domain);
+mongoc_psl_is_public_suffix(const char *domain);
 
 #endif // MONGOC_PSL_PRIVATE_H

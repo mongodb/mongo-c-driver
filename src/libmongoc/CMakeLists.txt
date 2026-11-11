@@ -867,6 +867,21 @@ if (TARGET bson::static)
    set_target_properties (mcd_rpc PROPERTIES OUTPUT_NAME "mcd-rpc")
 endif ()
 
+# Developer tool that generates src/mongoc/mongoc-psl-data.c from the vendored
+# Public Suffix List (see src/public-suffix-list/generate-psl-data.c). It is not
+# part of the default build. It deliberately does not link mongoc_static: that
+# library embeds the file this tool generates.
+if (TARGET bson::static)
+   add_executable (generate-psl-data EXCLUDE_FROM_ALL
+      ${mongo-c-driver_SOURCE_DIR}/src/public-suffix-list/generate-psl-data.c
+      ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-punycode.c
+   )
+   target_include_directories (generate-psl-data PRIVATE ${PROJECT_SOURCE_DIR}/src)
+   target_compile_definitions (generate-psl-data PRIVATE MONGOC_COMPILATION)
+   target_compile_options (generate-psl-data PRIVATE ${mongoc-warning-options})
+   target_link_libraries (generate-psl-data PRIVATE bson::static)
+endif ()
+
 set (
    UTHASH_INCLUDE_DIR
    "${mongo-c-driver_SOURCE_DIR}/src/uthash"
@@ -1115,6 +1130,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ns-validation.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-psl.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-punycode.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c

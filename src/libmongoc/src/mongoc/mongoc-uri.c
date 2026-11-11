@@ -232,19 +232,11 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
    }
 
    // 5. Reject public suffixes per the Public Suffix List (special-use names exempt).
-   {
-      mongoc_psl_t *const psl = mongoc_psl_get_singleton();
-      if (!psl) {
-         MONGOC_URI_ERROR(error, "%s", "failed to load the public suffix list");
-         mstr_destroy(&canonical);
-         return false;
-      }
-      if (mongoc_psl_is_public_suffix(psl, canonical.data) && nlabels >= 2) {
-         MONGOC_URI_ERROR(
-            error, "%s must not be a public suffix: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, canonical.data);
-         mstr_destroy(&canonical);
-         return false;
-      }
+   if (mongoc_psl_is_public_suffix(canonical.data) && nlabels >= 2) {
+      MONGOC_URI_ERROR(
+         error, "%s must not be a public suffix: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, canonical.data);
+      mstr_destroy(&canonical);
+      return false;
    }
 
    // 6. Prepend '.' for label-aligned suffix matching.
