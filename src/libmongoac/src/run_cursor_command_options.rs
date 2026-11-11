@@ -22,8 +22,7 @@ use crate::read_preference::ReadPreferenceT;
 use crate::string::StringViewT;
 
 use mongodb::bson::{Bson, RawDocumentBuf};
-use mongodb::options::SelectionCriteria;
-use mongodb::options::{CursorType, RunCursorCommandOptions};
+use mongodb::options::{CursorType, ReadPreference, RunCursorCommandOptions, SelectionCriteria};
 
 #[derive(Clone)]
 pub struct RunCursorCommandOptionsT(RunCursorCommandOptions);
@@ -107,9 +106,8 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_cursor_type_is_none(
 pub extern "C" fn mongoac_run_cursor_command_options_get_cursor_type(
     options: *const RunCursorCommandOptionsT,
 ) -> mongoac_cursor_type_t {
-    safe_as_ref!(options)
-        .0
-        .cursor_type
+    safe_optional_as_ref!(options)
+        .and_then(|v| v.0.cursor_type)
         .map_or(
             CursorTypeT::Unknown(MONGOAC_CURSOR_TYPE_UNKNOWN),
             Into::into,
@@ -125,7 +123,7 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_as_secs(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_as_subsec_millis(
+pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_subsec_millis(
     options: *const RunCursorCommandOptionsT,
 ) -> u32 {
     safe_as_ref!(options)
@@ -138,7 +136,7 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_as_subsec_mill
 pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_is_none(
     options: *const RunCursorCommandOptionsT,
 ) -> bool {
-    safe_as_ref!(options).0.max_time.is_none()
+    safe_optional_as_ref!(options).map_or(true, |v| v.0.max_time.is_none())
 }
 
 #[unsafe(no_mangle)]
@@ -147,7 +145,7 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_read_preference(
 ) -> *const ReadPreferenceT {
     match &safe_as_ref!(options).0.selection_criteria {
         Some(SelectionCriteria::ReadPreference(v)) => {
-            safe_ptr_from_ref!(v, mongodb::options::ReadPreference)
+            safe_ptr_from_ref!(v, ReadPreference)
         }
         _ => std::ptr::null(),
     }
