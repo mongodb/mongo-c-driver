@@ -22,8 +22,7 @@ use crate::read_preference::ReadPreferenceT;
 use crate::string::StringViewT;
 
 use mongodb::bson::{Bson, RawDocumentBuf};
-use mongodb::options::SelectionCriteria;
-use mongodb::options::{CursorType, RunCursorCommandOptions};
+use mongodb::options::{CursorType, ReadPreference, RunCursorCommandOptions, SelectionCriteria};
 
 #[derive(Clone)]
 pub struct RunCursorCommandOptionsT(RunCursorCommandOptions);
@@ -147,7 +146,7 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_read_preference(
 ) -> *const ReadPreferenceT {
     match &safe_as_ref!(options).0.selection_criteria {
         Some(SelectionCriteria::ReadPreference(v)) => {
-            safe_ptr_from_ref!(v, mongodb::options::ReadPreference)
+            safe_ptr_from_ref!(v, ReadPreference)
         }
         _ => std::ptr::null(),
     }
