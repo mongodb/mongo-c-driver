@@ -92,6 +92,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
 }
 
 // Module-specific configuration options.
+#[allow(clippy::too_many_lines)]
 fn configure(name: &str, config: &mut cbindgen::Config) {
     // Include directives required by each crate header.
     {
