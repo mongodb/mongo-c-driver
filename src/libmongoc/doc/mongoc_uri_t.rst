@@ -84,7 +84,7 @@ Set the environment variable ``MONGOC_EXPERIMENTAL_SRV_PREFER_TCP`` to prefer TC
 The ``srvAllowedHostsSuffix`` Option
 ------------------------------------
 
-When using a "mongodb+srv" connection string, the driver validates every hostname returned by the SRV record against the domain of the SRV hostname itself. The ``srvallowedhostssuffix`` option replaces that validation: the driver instead requires each returned hostname to end in the given suffix (after normalizing both for case, trailing dots, and Punycode encoding).
+When using a "mongodb+srv" connection string, the driver validates every hostname returned by the SRV record against the domain of the SRV hostname itself. The ``srvallowedhostssuffix`` option replaces that validation: the driver instead requires each returned hostname to end in the given suffix (after normalizing both by removing trailing dots, lowercasing ASCII letters, and converting to Punycode). Only ASCII letters are case-folded: a non-ASCII uppercase letter (such as ``Ü``) is not converted to lowercase, and equivalent Unicode forms are not normalized.
 
 .. warning::
 
