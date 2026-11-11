@@ -102,7 +102,7 @@ pub extern "C" fn mongoac_future_get_optional_bson(
 
     safe_result!(future.get_optional_bson(), error)
         .as_ref()
-        .map_or(Default::default(), Into::into)
+        .map_or(BsonViewT::default(), Into::into)
 }
 
 #[unsafe(no_mangle)]

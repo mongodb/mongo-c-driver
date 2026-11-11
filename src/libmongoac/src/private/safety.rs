@@ -180,6 +180,41 @@ macro_rules! safe_as_mut {
     }};
 }
 
+/// Safely convert the raw pointer into a mutable reference when not null.
+///
+/// When `ptr` is null, set `error` and early-return from the function via `return Default::default();`.
+///
+/// Usage:
+///
+/// ```rust
+/// fn example(ptr: *mut T, error: Option<&mut ErrorT>) -> R {
+///     let res: &mut T = safe_as_mut_with_error!(ptr, error);
+///     assert!(!ptr.is_null());
+/// }
+/// ```
+///
+/// Preconditions:
+///
+/// - `ptr` must either be null or a valid pointer to `T`.
+/// - `ptr` must not be accessed concurrently by any other function.
+/// - `error` must be null or in its default state (cleared).
+#[macro_export]
+macro_rules! safe_as_mut_with_error {
+    ($ptr:expr, $error:expr) => {{
+        let ptr = $ptr;
+        match unsafe { ptr.as_mut() } {
+            Some(r) => r,
+            None => {
+                $crate::private::safety::invalid_argument(
+                    $error,
+                    format!("{}: must not be null", stringify!($ptr)),
+                );
+                return Default::default();
+            }
+        }
+    }};
+}
+
 /// Safely convert the raw pointer into an optional mutable reference.
 ///
 /// Usage:
