@@ -106,9 +106,8 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_cursor_type_is_none(
 pub extern "C" fn mongoac_run_cursor_command_options_get_cursor_type(
     options: *const RunCursorCommandOptionsT,
 ) -> mongoac_cursor_type_t {
-    safe_as_ref!(options)
-        .0
-        .cursor_type
+    safe_optional_as_ref!(options)
+        .and_then(|v| v.0.cursor_type)
         .map_or(
             CursorTypeT::Unknown(MONGOAC_CURSOR_TYPE_UNKNOWN),
             Into::into,
@@ -137,7 +136,7 @@ pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_subsec_millis(
 pub extern "C" fn mongoac_run_cursor_command_options_get_max_time_is_none(
     options: *const RunCursorCommandOptionsT,
 ) -> bool {
-    safe_as_ref!(options).0.max_time.is_none()
+    safe_optional_as_ref!(options).map_or(true, |v| v.0.max_time.is_none())
 }
 
 #[unsafe(no_mangle)]
