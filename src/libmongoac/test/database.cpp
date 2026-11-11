@@ -567,30 +567,31 @@ TEST_CASE("run_cursor_command", "[mongoac][database]") {
         auto const cursor = cursor_owner.get();
         REQUIRE(cursor != nullptr);
 
-        auto const doc1 = from_mongoac(mongoac_cursor_next(cursor, error));
+        auto const doc1_owner = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
-        auto const doc2 = from_mongoac(mongoac_cursor_next(cursor, error));
+        auto const doc2_owner = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
         auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
         auto const idempotency = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
 
-        CAPTURE(as_json(doc1));
-        CAPTURE(as_json(doc2));
+        CAPTURE(as_json(doc1_owner));
+        CAPTURE(as_json(doc2_owner));
         CAPTURE(as_json(done));
         CAPTURE(as_json(idempotency));
 
-        REQUIRE(doc1 != nullptr);
-        REQUIRE(doc2 != nullptr);
-        CHECK(done == nullptr);
-        CHECK(idempotency == nullptr);
+        auto const doc1 = REQUIRE_BSON_STATIC(doc1_owner);
+        auto const doc2 = REQUIRE_BSON_STATIC(doc2_owner);
 
-        auto const id1 = REQUIRE_BSON_ITER_FIND(*doc1, "_id");
-        auto const id2 = REQUIRE_BSON_ITER_FIND(*doc2, "_id");
+        auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
+        auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
 
         CHECK(bson_iter_int32(&id1) == 1);
         CHECK(bson_iter_int32(&id2) == 2);
+
+        CHECK(done == nullptr);
+        CHECK(idempotency == nullptr);
     }
 }
 
@@ -658,38 +659,34 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
             REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
         auto const coll = coll_owner.get();
 
-        {
-            auto const x1 = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-            auto const x2 = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
-            auto const x3 = REQUIRE_MAKE_UNIQUE(R"({"x": 3})"_bson, &bson_destroy);
-
-            (void)make_unique(
-                mongoac_collection_insert_one(coll, nullptr, to_mongoac(x1.get()), nullptr, error),
-                &mongoac_insert_one_result_destroy);
-            REQUIRE_MONGOAC_ERROR_OK(error);
-            (void)make_unique(
-                mongoac_collection_insert_one(coll, nullptr, to_mongoac(x2.get()), nullptr, error),
-                &mongoac_insert_one_result_destroy);
-            REQUIRE_MONGOAC_ERROR_OK(error);
-            (void)make_unique(
-                mongoac_collection_insert_one(coll, nullptr, to_mongoac(x3.get()), nullptr, error),
-                &mongoac_insert_one_result_destroy);
-            REQUIRE_MONGOAC_ERROR_OK(error);
-        }
+        (void)make_unique(
+            mongoac_collection_insert_one(
+                coll,
+                nullptr,
+                to_mongoac(REQUIRE_MAKE_UNIQUE(R"({"_id": 1})"_bson, &bson_destroy).get()),
+                nullptr,
+                error),
+            &mongoac_insert_one_result_destroy);
+        REQUIRE_MONGOAC_ERROR_OK(error);
+        (void)make_unique(
+            mongoac_collection_insert_one(
+                coll,
+                nullptr,
+                to_mongoac(REQUIRE_MAKE_UNIQUE(R"({"_id": 2})"_bson, &bson_destroy).get()),
+                nullptr,
+                error),
+            &mongoac_insert_one_result_destroy);
+        REQUIRE_MONGOAC_ERROR_OK(error);
 
         auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_database_get_runtime(db), &mongoac_runtime_destroy);
         auto const runtime = runtime_owner.get();
 
-        auto const find = REQUIRE_MAKE_UNIQUE(
-            R"({
-                "find": "coll",
-                "projection": {"_id": 0},
-                "sort": {"x": 1}
-            })"_bson,
-            &bson_destroy);
-
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
-            mongoac_database_run_cursor_command_async(db, nullptr, to_mongoac(find.get()), nullptr),
+            mongoac_database_run_cursor_command_async(
+                db,
+                nullptr,
+                to_mongoac(REQUIRE_MAKE_UNIQUE(R"({"find": "coll","sort": {"_id": 1}})"_bson, &bson_destroy).get()),
+                nullptr),
             &mongoac_future_destroy);
         auto const future = future_owner.get();
 
@@ -703,41 +700,30 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
         auto const cursor_owner = REQUIRE_MAKE_UNIQUE(mongoac_cursor_clone(cursor_view), &mongoac_cursor_destroy);
         auto const cursor = cursor_owner.get();
 
-        auto const x1 = from_mongoac(mongoac_cursor_next(cursor, error));
+        auto const doc1_owner = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
-        auto const x2 = from_mongoac(mongoac_cursor_next(cursor, error));
-        CHECK_MONGOAC_ERROR_OK(error);
-        auto const x3 = from_mongoac(mongoac_cursor_next(cursor, error));
+        auto const doc2_owner = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
         auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
-
-        CAPTURE(as_json(x1));
-        CAPTURE(as_json(x2));
-        CAPTURE(as_json(x3));
-        CAPTURE(as_json(done));
-
-        REQUIRE(x1 != nullptr);
-        REQUIRE(x2 != nullptr);
-        REQUIRE(x3 != nullptr);
-        CHECK(done == nullptr);
-
-        {
-            auto const get = [](bson_t const* doc) -> std::optional<std::int32_t> {
-                bson_iter_t iter = {};
-                if (bson_iter_init_find(&iter, doc, "x")) {
-                    return bson_iter_int32(&iter);
-                }
-                return {};
-            };
-
-            CHECK(get(x1.get()) == 1);
-            CHECK(get(x2.get()) == 2);
-            CHECK(get(x3.get()) == 3);
-        }
-
         auto const idempotency = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
+
+        CAPTURE(as_json(doc1_owner));
+        CAPTURE(as_json(doc2_owner));
+        CAPTURE(as_json(done));
+        CAPTURE(as_json(idempotency));
+
+        auto const x1 = REQUIRE_BSON_STATIC(doc1_owner);
+        auto const x2 = REQUIRE_BSON_STATIC(doc2_owner);
+
+        auto const id1 = REQUIRE_BSON_ITER_FIND(x1, "_id");
+        auto const id2 = REQUIRE_BSON_ITER_FIND(x2, "_id");
+
+        CHECK(bson_iter_int32(&id1) == 1);
+        CHECK(bson_iter_int32(&id2) == 2);
+
+        CHECK(done == nullptr);
         CHECK(idempotency == nullptr);
     }
 }

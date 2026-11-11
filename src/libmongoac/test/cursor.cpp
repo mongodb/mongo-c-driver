@@ -109,16 +109,15 @@ TEST_CASE("clone", "[mongoac][cursor]") {
             auto const copy_owner = REQUIRE_MAKE_UNIQUE(mongoac_cursor_clone(cursor), &mongoac_cursor_destroy);
             auto const copy = copy_owner.get();
 
-            auto const doc1 = from_mongoac(mongoac_cursor_next(copy, error));
+            auto const doc1_owner = from_mongoac(mongoac_cursor_next(copy, error));
             CHECK_MONGOAC_ERROR_OK(error);
-            auto const doc2 = from_mongoac(mongoac_cursor_next(copy, error));
+            auto const doc2_owner = from_mongoac(mongoac_cursor_next(copy, error));
             CHECK_MONGOAC_ERROR_OK(error);
 
-            REQUIRE(doc1 != nullptr);
-            REQUIRE(doc2 != nullptr);
-
-            auto const id1 = REQUIRE_BSON_ITER_FIND(*doc1, "_id");
-            auto const id2 = REQUIRE_BSON_ITER_FIND(*doc2, "_id");
+            auto const doc1 = REQUIRE_BSON_STATIC(doc1_owner);
+            auto const doc2 = REQUIRE_BSON_STATIC(doc2_owner);
+            auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
+            auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
 
             CHECK(bson_iter_int32(&id1) == 1);
             CHECK(bson_iter_int32(&id2) == 2);
@@ -205,22 +204,22 @@ TEST_CASE("next", "[mongoac][cursor]") {
         REQUIRE_MONGOAC_ERROR_OK(error);
         auto const cursor = cursor_owner.get();
 
-        auto const doc1 = from_mongoac(mongoac_cursor_next(cursor, error));
+        auto const doc1_owner = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
-        auto const doc2 = from_mongoac(mongoac_cursor_next(cursor, error));
+        auto const doc2_owner = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
         auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
         auto const idempotency = from_mongoac(mongoac_cursor_next(cursor, error));
         CHECK_MONGOAC_ERROR_OK(error);
 
-        REQUIRE(doc1 != nullptr);
-        REQUIRE(doc2 != nullptr);
+        auto const doc1 = REQUIRE_BSON_STATIC(doc1_owner);
+        auto const doc2 = REQUIRE_BSON_STATIC(doc2_owner);
         CHECK(done == nullptr);
         CHECK(idempotency == nullptr);
 
-        auto const id1 = REQUIRE_BSON_ITER_FIND(*doc1, "_id");
-        auto const id2 = REQUIRE_BSON_ITER_FIND(*doc2, "_id");
+        auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
+        auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
 
         CHECK(bson_iter_as_int64(&id1) == 1);
         CHECK(bson_iter_as_int64(&id2) == 2);
@@ -321,9 +320,6 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
             CHECK_MONGOAC_ERROR_OK(error);
             auto const doc2_view = mongoac_future_get_optional_bson(f2.get(), error);
             CHECK_MONGOAC_ERROR_OK(error);
-
-            REQUIRE(doc1_view.ptr != nullptr);
-            REQUIRE(doc2_view.ptr != nullptr);
 
             auto const doc1 = REQUIRE_BSON_STATIC(doc1_view);
             auto const doc2 = REQUIRE_BSON_STATIC(doc2_view);
