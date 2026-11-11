@@ -221,8 +221,8 @@ TEST_CASE("next", "[mongoac][cursor]") {
         auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
         auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
 
-        CHECK(bson_iter_as_int64(&id1) == 1);
-        CHECK(bson_iter_as_int64(&id2) == 2);
+        CHECK(bson_iter_int32(&id1) == 1);
+        CHECK(bson_iter_int32(&id2) == 2);
     }
 }
 
@@ -326,8 +326,8 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
             auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
             auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
 
-            auto const actual = std::set<std::int64_t>({bson_iter_as_int64(&id1), bson_iter_as_int64(&id2)});
-            auto const expected = std::set<std::int64_t>({1, 2});
+            auto const actual = std::set<std::int32_t>({bson_iter_int32(&id1), bson_iter_int32(&id2)});
+            auto const expected = std::set<std::int32_t>({1, 2});
 
             CHECK(actual == expected);
         }
