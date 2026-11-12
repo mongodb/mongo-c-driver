@@ -12,6 +12,10 @@ Synopsis
 
    mongoac_bson_t mongoac_cursor_next(mongoac_cursor_t *cursor, mongoac_error_t *error);
 
+.. important::
+
+   This function is a :ref:`progress function <progress-functions>`.
+
 Description
 -----------
 

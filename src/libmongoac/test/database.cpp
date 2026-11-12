@@ -406,9 +406,8 @@ TEST_CASE("run_command", "[mongoac][database]") {
     }
 
     SECTION("invalid BSON command") {
-        std::uint8_t const bytes[] = {0xff};
-        auto const reply =
-            from_mongoac(mongoac_database_run_command(db, nullptr, {bytes, sizeof(bytes)}, nullptr, error));
+        std::uint8_t const bytes = {};
+        auto const reply = from_mongoac(mongoac_database_run_command(db, nullptr, {&bytes, 1u}, nullptr, error));
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(reply == nullptr);
     }
@@ -448,9 +447,9 @@ TEST_CASE("run_command_async", "[mongoac][database]") {
     }
 
     SECTION("invalid BSON command") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const future = make_unique(
-            mongoac_database_run_command_async(db, nullptr, {bytes, sizeof(bytes)}, nullptr), &mongoac_future_destroy);
+            mongoac_database_run_command_async(db, nullptr, {&bytes, 1u}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
