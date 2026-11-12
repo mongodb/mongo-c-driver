@@ -111,7 +111,7 @@ TEST_CASE("get_batch_size_is_none", "[mongoac][run_cursor_command_options]") {
 
 TEST_CASE("get_batch_size", "[mongoac][run_cursor_command_options]") {
     SECTION("null") {
-        CHECK(mongoac_run_cursor_command_options_get_batch_size(nullptr) == 0u);
+        CHECK(mongoac_run_cursor_command_options_get_batch_size(nullptr) == std::uint32_t{}); // Default::default()
     }
 
     SECTION("none") {
@@ -119,7 +119,7 @@ TEST_CASE("get_batch_size", "[mongoac][run_cursor_command_options]") {
             REQUIRE_MAKE_UNIQUE(mongoac_run_cursor_command_options_new(), &mongoac_run_cursor_command_options_destroy);
         auto const options = options_owner.get();
 
-        CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == 0u);
+        CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == std::uint32_t{}); // Default::default()
     }
 }
 
@@ -216,7 +216,8 @@ TEST_CASE("get_cursor_type", "[mongoac][run_cursor_command_options]") {
 
 TEST_CASE("get_max_time_as_secs", "[mongoac][run_cursor_command_options]") {
     SECTION("null") {
-        CHECK(mongoac_run_cursor_command_options_get_max_time_as_secs(nullptr) == 0u);
+        CHECK(
+            mongoac_run_cursor_command_options_get_max_time_as_secs(nullptr) == std::uint64_t{}); // Default::default()
     }
 
     SECTION("none") {
@@ -224,13 +225,16 @@ TEST_CASE("get_max_time_as_secs", "[mongoac][run_cursor_command_options]") {
             REQUIRE_MAKE_UNIQUE(mongoac_run_cursor_command_options_new(), &mongoac_run_cursor_command_options_destroy);
         auto const options = options_owner.get();
 
-        CHECK(mongoac_run_cursor_command_options_get_max_time_as_secs(options) == 0u);
+        CHECK(
+            mongoac_run_cursor_command_options_get_max_time_as_secs(options) == std::uint64_t{}); // Default::default()
     }
 }
 
 TEST_CASE("get_max_time_subsec_millis", "[mongoac][run_cursor_command_options]") {
     SECTION("null") {
-        CHECK(mongoac_run_cursor_command_options_get_max_time_subsec_millis(nullptr) == 0u);
+        CHECK(
+            mongoac_run_cursor_command_options_get_max_time_subsec_millis(nullptr) ==
+            std::uint64_t{}); // Default::default()
     }
 
     SECTION("none") {
@@ -238,7 +242,9 @@ TEST_CASE("get_max_time_subsec_millis", "[mongoac][run_cursor_command_options]")
             REQUIRE_MAKE_UNIQUE(mongoac_run_cursor_command_options_new(), &mongoac_run_cursor_command_options_destroy);
         auto const options = options_owner.get();
 
-        CHECK(mongoac_run_cursor_command_options_get_max_time_subsec_millis(options) == 0u);
+        CHECK(
+            mongoac_run_cursor_command_options_get_max_time_subsec_millis(options) ==
+            std::uint64_t{}); // Default::default()
     }
 }
 
@@ -305,14 +311,14 @@ TEST_CASE("set_batch_size_none", "[mongoac][run_cursor_command_options]") {
 
         mongoac_run_cursor_command_options_set_batch_size_none(options);
         CHECK(mongoac_run_cursor_command_options_get_batch_size_is_none(options));
-        CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == 0u);
+        CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == std::uint32_t{}); // Default::default()
 
         mongoac_run_cursor_command_options_set_batch_size(options, 456);
         CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == 456);
 
         mongoac_run_cursor_command_options_set_batch_size_none(options);
         CHECK(mongoac_run_cursor_command_options_get_batch_size_is_none(options));
-        CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == 0u);
+        CHECK(mongoac_run_cursor_command_options_get_batch_size(options) == std::uint32_t{}); // Default::default()
     }
 }
 
@@ -562,7 +568,8 @@ TEST_CASE("set_max_time_none", "[mongoac][run_cursor_command_options]") {
 
         mongoac_run_cursor_command_options_set_max_time_none(options);
         CHECK(mongoac_run_cursor_command_options_get_max_time_is_none(options));
-        CHECK(mongoac_run_cursor_command_options_get_max_time_as_secs(options) == 0u);
+        CHECK(
+            mongoac_run_cursor_command_options_get_max_time_as_secs(options) == std::uint64_t{}); // Default::default()
 
         mongoac_run_cursor_command_options_set_max_time_from_secs(options, 456u);
         REQUIRE_FALSE(mongoac_run_cursor_command_options_get_max_time_is_none(options));
@@ -570,7 +577,8 @@ TEST_CASE("set_max_time_none", "[mongoac][run_cursor_command_options]") {
 
         mongoac_run_cursor_command_options_set_max_time_none(options);
         CHECK(mongoac_run_cursor_command_options_get_max_time_is_none(options));
-        CHECK(mongoac_run_cursor_command_options_get_max_time_as_secs(options) == 0u);
+        CHECK(
+            mongoac_run_cursor_command_options_get_max_time_as_secs(options) == std::uint64_t{}); // Default::default()
     }
 }
 

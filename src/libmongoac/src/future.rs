@@ -15,13 +15,14 @@
 use crate::bson::BsonViewT;
 use crate::client_session::ClientSessionT;
 use crate::cursor::CursorT;
+use crate::delete_result::DeleteResultT;
 use crate::error::{ErrorCodeT, ErrorT};
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 
 use mongodb::bson::RawDocumentBuf;
-use mongodb::results::InsertOneResult;
+use mongodb::results::{DeleteResult, InsertOneResult};
 
 use parking_lot::Mutex;
 use tokio::task::{JoinError, JoinHandle};
@@ -106,6 +107,20 @@ pub extern "C" fn mongoac_future_get_cursor(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_delete_result(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *const DeleteResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_ptr_from_ref!(
+        safe_result!(future.get_delete_result(), error),
+        DeleteResult
+    )
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_future_get_insert_one_result(
     future: *const FutureT,
     error: *mut ErrorT,
@@ -185,6 +200,10 @@ impl FutureT {
 
     fn get_cursor(&self) -> Result<&CursorT, ErrorT> {
         self.get::<CursorT>("cursor")
+    }
+
+    fn get_delete_result(&self) -> Result<&DeleteResult, ErrorT> {
+        self.get::<DeleteResult>("delete_result")
     }
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
