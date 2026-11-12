@@ -360,8 +360,8 @@ TEST_CASE("set_comment", "[mongoac][run_cursor_command_options]") {
     }
 
     SECTION("invalid BSON") {
-        std::uint8_t const bytes[] = {0xff};
-        mongoac_run_cursor_command_options_set_comment(options, {bytes, sizeof(bytes)}, error);
+        std::uint8_t const bytes = {};
+        mongoac_run_cursor_command_options_set_comment(options, {&bytes, 1u}, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
 
         CHECK(from_mongoac(mongoac_run_cursor_command_options_get_comment_string(options)) == "abc");
