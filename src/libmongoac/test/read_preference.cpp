@@ -21,6 +21,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
 
+#include <cstdint>
+
 using mongoac::test::make_unique;
 
 namespace {
@@ -82,7 +84,7 @@ TEST_CASE("new", "[mongoac][read_preference]") {
 
 TEST_CASE("get_max_staleness_as_secs", "[mongoac][read_preference]") {
     SECTION("null") {
-        CHECK(mongoac_read_preference_get_max_staleness_as_secs(nullptr) == 0);
+        CHECK(mongoac_read_preference_get_max_staleness_as_secs(nullptr) == std::uint64_t{}); // Default::default()
     }
 
     SECTION("default") {
@@ -96,7 +98,9 @@ TEST_CASE("get_max_staleness_as_secs", "[mongoac][read_preference]") {
 
         mongoac_read_preference_set_mode(read_preference, v);
 
-        CHECK(mongoac_read_preference_get_max_staleness_as_secs(read_preference) == 0);
+        CHECK(
+            mongoac_read_preference_get_max_staleness_as_secs(read_preference) ==
+            std::uint64_t{}); // Default::default()
     }
 }
 
@@ -160,7 +164,9 @@ TEST_CASE("set_max_staleness_from_secs", "[mongoac][read_preference]") {
 
         if (v == MONGOAC_READ_PREFERENCE_MODE_PRIMARY) {
             CHECK(mongoac_read_preference_get_max_staleness_is_none(read_preference));
-            CHECK(mongoac_read_preference_get_max_staleness_as_secs(read_preference) == 0);
+            CHECK(
+                mongoac_read_preference_get_max_staleness_as_secs(read_preference) ==
+                std::uint64_t{}); // Default::default()
         } else {
             CHECK_FALSE(mongoac_read_preference_get_max_staleness_is_none(read_preference));
             CHECK(mongoac_read_preference_get_max_staleness_as_secs(read_preference) == 123);
@@ -188,7 +194,9 @@ TEST_CASE("set_max_staleness_none", "[mongoac][read_preference]") {
         mongoac_read_preference_set_max_staleness_none(read_preference);
 
         CHECK(mongoac_read_preference_get_max_staleness_is_none(read_preference));
-        CHECK(mongoac_read_preference_get_max_staleness_as_secs(read_preference) == 0);
+        CHECK(
+            mongoac_read_preference_get_max_staleness_as_secs(read_preference) ==
+            std::uint64_t{}); // Default::default()
     }
 }
 
