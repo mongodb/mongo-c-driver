@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 const SKIP_CRATE_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "string"];
+const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "cursor_type", "string"];
 
 // Prelude shared by all generated headers.
 fn generate_header() -> String {
@@ -62,6 +62,8 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
+        ("DeleteOptionsT", "mongoac_delete_options_t"),
+        ("DeleteResultT", "mongoac_delete_result_t"),
         (
             "DropCollectionOptionsT",
             "mongoac_drop_collection_options_t",
@@ -78,6 +80,10 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("InsertOneResultT", "mongoac_insert_one_result_t"),
         ("ReadPreferenceT", "mongoac_read_preference_t"),
         ("RunCommandOptionsT", "mongoac_run_command_options_t"),
+        (
+            "RunCursorCommandOptionsT",
+            "mongoac_run_cursor_command_options_t",
+        ),
         ("RuntimeT", "mongoac_runtime_t"),
         ("StringArrayT", "mongoac_string_array_t"),
         ("StringT", "mongoac_string_t"),
@@ -92,6 +98,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
 }
 
 // Module-specific configuration options.
+#[allow(clippy::too_many_lines)]
 fn configure(name: &str, config: &mut cbindgen::Config) {
     // Include directives required by each crate header.
     {
@@ -105,6 +112,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/count_options-fwd.h",
+                "mongoac/delete_options-fwd.h",
+                "mongoac/delete_result-fwd.h",
                 "mongoac/drop_collection_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/estimated_document_count_options-fwd.h",
@@ -127,6 +136,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "cursor_type" => &["stdint.h"],
             "database_options" => &[],
             "database" => &[
                 "mongoac/bson.h",
@@ -143,6 +153,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "delete_options" => &[],
+            "delete_result" => &["mongoac/error-fwd.h", "stdint.h"],
             "drop_collection_options" => &[],
             "drop_database_options" => &[],
             "estimated_document_count_options" => &[],
@@ -150,6 +162,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
                 "mongoac/bson.h",
+                "mongoac/delete_result-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
@@ -160,6 +173,15 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "read_preference" => &["stdbool.h", "stdint.h"],
             "run_command_options" => &["mongoac/read_preference-fwd.h"],
+            "run_cursor_command_options" => &[
+                "mongoac/bson.h",
+                "mongoac/cursor_type.h",
+                "mongoac/error-fwd.h",
+                "mongoac/read_preference-fwd.h",
+                "mongoac/string.h",
+                "stdbool.h",
+                "stdint.h",
+            ],
             "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
             "string" => &["stdint.h"],
             _ => {

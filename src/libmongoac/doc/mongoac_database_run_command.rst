@@ -16,6 +16,10 @@ Synopsis
                                                const mongoac_run_command_options_t *options,
                                                mongoac_error_t *error);
 
+.. important::
+
+   This function is a :ref:`progress function <progress-functions>`.
+
 Description
 -----------
 
