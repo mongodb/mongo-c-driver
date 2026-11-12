@@ -14,6 +14,10 @@ Synopsis
                                                         const mongoac_estimated_document_count_options_t *options,
                                                         mongoac_error_t *error);
 
+.. important::
+
+   This function is a :ref:`progress function <progress-functions>`.
+
 Description
 -----------
 
