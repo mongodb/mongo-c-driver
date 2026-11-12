@@ -81,7 +81,7 @@ TEST_CASE("destroy", "[mongoac][collection]") {
 
 TEST_CASE("clone", "[mongoac][collection]") {
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner =
         REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, to_mongoac("db"), nullptr), &mongoac_database_destroy);
@@ -122,7 +122,8 @@ TEST_CASE("get_client", "[mongoac][collection]") {
     }
 
     SECTION("basic") {
-        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const c1 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const db =
             REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(c1.get(), "db"_sv, nullptr), &mongoac_database_destroy);
         auto const coll = REQUIRE_MAKE_UNIQUE(
@@ -142,7 +143,7 @@ TEST_CASE("get_name", "[mongoac][collection]") {
 
     SECTION("basic") {
         auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const client = client_owner.get();
         auto const db_owner = REQUIRE_MAKE_UNIQUE(
             mongoac_client_get_database(client, to_mongoac("db"), nullptr), &mongoac_database_destroy);
@@ -161,7 +162,8 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_count_documents"_sv, nullptr),
@@ -226,7 +228,8 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_count_documents_async"_sv, nullptr),
@@ -335,7 +338,7 @@ TEST_CASE("drop", "[mongoac][collection]") {
 
     SECTION("basic") {
         auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
         auto const client = client_owner.get();
         auto const db_owner =
             REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
@@ -361,7 +364,7 @@ TEST_CASE("drop_async", "[mongoac][collection]") {
 
     SECTION("basic") {
         auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
         auto const client = client_owner.get();
         auto const db_owner =
             REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client, "db"_sv, nullptr), &mongoac_database_destroy);
@@ -389,7 +392,8 @@ TEST_CASE("estimated_document_count", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_estimated_document_count"_sv, nullptr),
@@ -427,7 +431,8 @@ TEST_CASE("estimated_document_count_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_estimated_document_count_async"_sv, nullptr),
@@ -488,7 +493,8 @@ TEST_CASE("find_one", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_find_one"_sv, nullptr), &mongoac_database_destroy);
@@ -551,7 +557,8 @@ TEST_CASE("find_one_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
 
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_find_one_async"_sv, nullptr),
@@ -643,7 +650,7 @@ TEST_CASE("get_runtime", "[mongoac][collection]") {
 
     SECTION("basic") {
         auto const client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const client = client_owner.get();
         auto const db_owner = REQUIRE_MAKE_UNIQUE(
             mongoac_client_get_database(client, to_mongoac("db"), nullptr), &mongoac_database_destroy);
@@ -657,8 +664,10 @@ TEST_CASE("get_runtime", "[mongoac][collection]") {
     }
 
     SECTION("unique") {
-        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
-        auto const c2 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const c1 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const c2 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const d1 = REQUIRE_MAKE_UNIQUE(
             mongoac_client_get_database(c1.get(), to_mongoac("db"), nullptr), &mongoac_database_destroy);
         auto const d2 = REQUIRE_MAKE_UNIQUE(
@@ -677,7 +686,7 @@ TEST_CASE("get_runtime", "[mongoac][collection]") {
 
     SECTION("shared") {
         auto const client =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const db = REQUIRE_MAKE_UNIQUE(
             mongoac_client_get_database(client.get(), to_mongoac("db"), nullptr), &mongoac_database_destroy);
 
@@ -699,7 +708,7 @@ TEST_CASE("get_runtime_address", "[mongoac][collection]") {
 
     SECTION("basic") {
         auto const client =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const db =
             REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client.get(), "db"_sv, nullptr), &mongoac_database_destroy);
         auto const coll = REQUIRE_MAKE_UNIQUE(
@@ -713,7 +722,8 @@ TEST_CASE("get_runtime_address", "[mongoac][collection]") {
 TEST_CASE("insert_many", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_insert_many"_sv, nullptr), &mongoac_database_destroy);
@@ -797,7 +807,8 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
 TEST_CASE("insert_many_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_insert_many_async"_sv, nullptr),
@@ -892,7 +903,8 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
 TEST_CASE("insert_one", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_insert_one"_sv, nullptr), &mongoac_database_destroy);
@@ -944,7 +956,8 @@ TEST_CASE("insert_one", "[mongoac][collection]") {
 TEST_CASE("insert_one_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_insert_one_async"_sv, nullptr),
@@ -1004,7 +1017,8 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
 TEST_CASE("delete_many", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_delete_many"_sv, nullptr), &mongoac_database_destroy);
@@ -1122,7 +1136,8 @@ TEST_CASE("delete_many", "[mongoac][collection]") {
 TEST_CASE("delete_many_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_delete_many_async"_sv, nullptr),
@@ -1188,7 +1203,8 @@ TEST_CASE("delete_many_async", "[mongoac][collection]") {
 TEST_CASE("delete_one", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_delete_one"_sv, nullptr), &mongoac_database_destroy);
@@ -1282,7 +1298,8 @@ TEST_CASE("delete_one", "[mongoac][collection]") {
 TEST_CASE("delete_one_async", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_collection_delete_one_async"_sv, nullptr),

@@ -48,7 +48,7 @@ TEST_CASE("clone", "[mongoac][future]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
 
     SECTION("null") {
@@ -84,7 +84,7 @@ TEST_CASE("clone", "[mongoac][future]") {
 
 TEST_CASE("get_runtime", "[mongoac][future]") {
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
 
     SECTION("null") {
@@ -101,7 +101,7 @@ TEST_CASE("get_runtime", "[mongoac][future]") {
 
     SECTION("unique") {
         auto const other_client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const other_client = other_client_owner.get();
 
         auto const f1 = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
@@ -124,7 +124,7 @@ TEST_CASE("get_runtime", "[mongoac][future]") {
 
 TEST_CASE("get_runtime_address", "[mongoac][future]") {
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
 
     SECTION("null") {
@@ -134,12 +134,12 @@ TEST_CASE("get_runtime_address", "[mongoac][future]") {
     SECTION("basic") {
         auto const future = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
 
-        CHECK(mongoac_future_get_runtime_address(future.get()) != std::uintptr_t{});
+        CHECK(mongoac_future_get_runtime_address(future.get()) != std::uintptr_t{}); // Default::default()
     }
 
     SECTION("unique") {
         auto const other_client_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
         auto const other_client = other_client_owner.get();
 
         auto const f1 = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
@@ -166,7 +166,7 @@ TEST_CASE("is_ready", "[mongoac][future]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
     auto const runtime = runtime_owner.get();
@@ -221,7 +221,7 @@ TEST_CASE("getters", "[mongoac][future]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
     auto const runtime = runtime_owner.get();
@@ -334,7 +334,7 @@ TEST_CASE("poll", "[mongoac][future]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
     auto const client_owner =
-        REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
     auto const runtime = runtime_owner.get();
