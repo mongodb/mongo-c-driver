@@ -84,12 +84,12 @@ pub extern "C" fn mongoac_error_new() -> *mut ErrorT {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_error_category(error: *const ErrorT) -> i32 {
+pub extern "C" fn mongoac_error_category(error: *const ErrorT) -> mongoac_error_category_t {
     safe_as_ref!(error).category().into()
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_error_code(error: *const ErrorT) -> i32 {
+pub extern "C" fn mongoac_error_code(error: *const ErrorT) -> mongoac_error_code_t {
     safe_as_ref!(error).code().into()
 }
 
@@ -107,7 +107,11 @@ pub extern "C" fn mongoac_error_clear(error: *mut ErrorT) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_error_set(error: *mut ErrorT, category: i32, code: i32) {
+pub extern "C" fn mongoac_error_set(
+    error: *mut ErrorT,
+    category: mongoac_error_category_t,
+    code: mongoac_error_code_t,
+) {
     safe_as_mut!(error).set(category, code);
 }
 
@@ -123,8 +127,8 @@ pub enum ErrorT {
     Rust(mongodb::error::Error),
     Bson(mongodb::bson::error::Error),
     Unknown {
-        code: i32,
-        category: i32,
+        code: mongoac_error_code_t,
+        category: mongoac_error_category_t,
     },
 }
 
@@ -156,13 +160,14 @@ impl ErrorT {
                 use mongodb::error::ErrorKind;
                 use mongodb::error::WriteFailure;
 
-                ErrorCodeT::from(match err.kind.as_ref() {
+                match err.kind.as_ref() {
                     ErrorKind::Command(err) => err.code,
                     ErrorKind::Write(WriteFailure::WriteError(err)) => err.code,
                     ErrorKind::Write(WriteFailure::WriteConcernError(err)) => err.code,
 
                     _ => MONGOAC_ERROR_CODE_UNKNOWN, // #[non_exhaustive]
-                })
+                }
+                .into()
             }
 
             Self::Rust(_) | Self::Bson(_) => ErrorCodeT::Unknown(MONGOAC_ERROR_CODE_UNKNOWN),
@@ -196,7 +201,7 @@ impl ErrorT {
         *self = Self::None;
     }
 
-    fn set(&mut self, category: i32, code: i32) {
+    fn set(&mut self, category: mongoac_error_category_t, code: mongoac_error_code_t) {
         match (category, code) {
             // Special case: default state.
             (MONGOAC_ERROR_CATEGORY_NONE, MONGOAC_ERROR_CODE_OK) => {
@@ -206,7 +211,7 @@ impl ErrorT {
             // Special case: support directly mapping mongoac error codes.
             (MONGOAC_ERROR_CATEGORY_MONGOAC, _) => {
                 *self = Self::MongoAC {
-                    code: ErrorCodeT::from(code),
+                    code: code.into(),
                     message: None,
                 };
             }

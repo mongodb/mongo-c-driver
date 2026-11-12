@@ -15,10 +15,13 @@ API Reference
    mongoac_client_t
    mongoac_collection_t
    mongoac_database_t
+   mongoac_delete_result_t
    mongoac_error_t
    mongoac_future_t
    mongoac_insert_many_result_t
    mongoac_insert_one_result_t
+   mongoac_read_preference_t
+   mongoac_run_command_options_t
    mongoac_runtime_t
    mongoac_string_array_t
    mongoac_string_t
