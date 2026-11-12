@@ -40,9 +40,9 @@ namespace mongoac::test {
 
 namespace detail {
 
-template <typename T, std::size_t N, typename A, std::size_t... Idxs>
-constexpr auto to_array_impl(A&& arr, std::index_sequence<Idxs...>) {
-    return std::array<std::remove_cv_t<T>, N>{{std::forward<A>(arr)[Idxs]...}};
+template <typename T, std::size_t N, typename Arr, std::size_t... Idxs>
+constexpr auto to_array(Arr&& arr, std::index_sequence<Idxs...>) {
+    return std::array<std::remove_cv_t<T>, N>{{std::forward<Arr>(arr)[Idxs]...}};
 }
 
 } // namespace detail
@@ -52,7 +52,7 @@ constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&arr)[N]) {
     static_assert(!std::is_array_v<T>);
     static_assert(std::is_constructible_v<std::remove_cv_t<T>, T&>);
 
-    return detail::to_array_impl<T, N>(arr, std::make_index_sequence<N>{});
+    return detail::to_array<T, N>(arr, std::make_index_sequence<N>{});
 }
 
 template <typename T, std::size_t N>
@@ -60,7 +60,7 @@ constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&&arr)[N]) {
     static_assert(!std::is_array_v<T>);
     static_assert(std::is_constructible_v<std::remove_cv_t<T>, T&>);
 
-    return detail::to_array_impl<T, N>(std::move(arr), std::make_index_sequence<N>{});
+    return detail::to_array<T, N>(std::move(arr), std::make_index_sequence<N>{});
 }
 
 } // namespace mongoac::test
