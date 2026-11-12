@@ -16,6 +16,7 @@
 
 //
 
+#include <mongoac/test/array.hh>
 #include <mongoac/test/memory.hh>
 
 #include <catch2/catch_test_macros.hpp>
@@ -24,16 +25,17 @@
 #include <cstdint>
 
 using mongoac::test::make_unique;
+using mongoac::test::to_array;
 
 namespace {
 
-constexpr mongoac_read_preference_mode_t mode_cases[] = {
+constexpr auto mode_cases = to_array<mongoac_read_preference_mode_t>({
     MONGOAC_READ_PREFERENCE_MODE_PRIMARY,
     MONGOAC_READ_PREFERENCE_MODE_SECONDARY,
     MONGOAC_READ_PREFERENCE_MODE_PRIMARY_PREFERRED,
     MONGOAC_READ_PREFERENCE_MODE_SECONDARY_PREFERRED,
     MONGOAC_READ_PREFERENCE_MODE_NEAREST,
-};
+});
 
 } // namespace
 
