@@ -23,6 +23,8 @@ pub mod count_options;
 pub mod create_collection_options;
 pub mod database;
 pub mod database_options;
+pub mod delete_options;
+pub mod delete_result;
 pub mod drop_collection_options;
 pub mod drop_database_options;
 pub mod error;
