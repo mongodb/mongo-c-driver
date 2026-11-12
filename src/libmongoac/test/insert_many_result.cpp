@@ -34,6 +34,12 @@ TEST_CASE("destroy", "[mongoac][insert_many_result]") {
     }
 }
 
+TEST_CASE("clone", "[mongoac][insert_many_result]") {
+    SECTION("null") {
+        CHECK(mongoac_insert_many_result_clone(nullptr) == nullptr);
+    }
+}
+
 TEST_CASE("get_inserted_ids_get", "[mongoac][insert_many_result]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();

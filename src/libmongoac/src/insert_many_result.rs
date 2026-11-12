@@ -19,13 +19,19 @@ use crate::private::macros::*;
 use mongodb::bson::RawDocumentBuf;
 use mongodb::results::InsertManyResult;
 
-// TODO: Clone (requires mongodb crate 3.10.0, which requires MSRV 1.94.1)
-
+#[derive(Clone)]
 pub struct InsertManyResultT(InsertManyResult);
 
 #[unsafe(no_mangle)]
 pub extern "C" fn mongoac_insert_many_result_destroy(result: *mut InsertManyResultT) {
     safe_drop!(result);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_insert_many_result_clone(
+    result: *const InsertManyResultT,
+) -> *mut InsertManyResultT {
+    safe_into_raw!(safe_as_ref!(result).clone())
 }
 
 #[unsafe(no_mangle)]
