@@ -16,6 +16,7 @@
 
 //
 
+#include <mongoac/test/array.hh>
 #include <mongoac/test/bson.hh>
 #include <mongoac/test/error.hh>
 #include <mongoac/test/memory.hh>
@@ -39,6 +40,7 @@ using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
 using mongoac::test::operator""_bson;
 using mongoac::test::operator""_sv;
+using mongoac::test::to_array;
 using mongoac::test::to_bson;
 using mongoac::test::to_mongoac;
 
@@ -442,11 +444,11 @@ TEST_CASE("set_comment_string", "[mongoac][run_cursor_command_options]") {
 
 namespace {
 
-constexpr std::array<mongoac_cursor_type_t, 3u> cursor_type_cases = {
+constexpr auto cursor_type_cases = to_array<mongoac_cursor_type_t>({
     MONGOAC_CURSOR_TYPE_NON_TAILABLE,
     MONGOAC_CURSOR_TYPE_TAILABLE,
     MONGOAC_CURSOR_TYPE_TAILABLE_AWAIT,
-};
+});
 
 } // namespace
 
