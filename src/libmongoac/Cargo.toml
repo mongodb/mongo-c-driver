@@ -15,7 +15,7 @@ exclude = [
 members = ["tools/generate-crate-headers"]
 
 [dependencies.mongodb]
-version = "3.9.0"
+version = "3.10.0"
 features = [
   # BSON.
   "bson-3",
