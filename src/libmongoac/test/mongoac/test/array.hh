@@ -58,7 +58,7 @@ constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&arr)[N]) {
 template <typename T, std::size_t N>
 constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&&arr)[N]) {
     static_assert(!std::is_array_v<T>);
-    static_assert(std::is_constructible_v<std::remove_cv_t<T>, T&>);
+    static_assert(std::is_constructible_v<std::remove_cv_t<T>, T>);
 
     return detail::to_array<T>(std::move(arr), std::make_index_sequence<N>{});
 }
