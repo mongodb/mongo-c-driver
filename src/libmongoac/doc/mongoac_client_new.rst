@@ -12,6 +12,10 @@ Synopsis
 
    mongoac_client_t *mongoac_client_new(mongoac_string_view_t conn_str, mongoac_error_t *error);
 
+.. important::
+
+   This function is a :ref:`progress function <progress-functions>`.
+
 Description
 -----------
 

@@ -22,6 +22,7 @@
 #include <mongoac/test/string.hh>
 
 #include <mongoac/client.h>
+#include <mongoac/delete_result.h>
 #include <mongoac/error.h>
 #include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
@@ -263,6 +264,15 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK(mongoac_future_get_client_session(future, error) == nullptr); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return client_session");
+    }
+
+    SECTION("type mismatch: delete_result") {
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_delete_result(future, error) == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return delete_result");
     }
 
     SECTION("type mismatch: insert_one_result") {

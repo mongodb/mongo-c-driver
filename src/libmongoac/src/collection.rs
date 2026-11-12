@@ -17,6 +17,8 @@ use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::count_options::CountOptionsT;
+use crate::delete_options::DeleteOptionsT;
+use crate::delete_result::DeleteResultT;
 use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
@@ -31,10 +33,10 @@ use crate::string::StringViewT;
 use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
-    CountOptions, DropCollectionOptions, EstimatedDocumentCountOptions, FindOneOptions,
-    InsertOneOptions,
+    CountOptions, DeleteOptions, DropCollectionOptions, EstimatedDocumentCountOptions,
+    FindOneOptions, InsertOneOptions,
 };
-use mongodb::results::InsertOneResult;
+use mongodb::results::{DeleteResult, InsertOneResult};
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -92,6 +94,70 @@ pub extern "C" fn mongoac_collection_count_documents_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.count_documents_async(session, filter, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_many(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+    error: *mut ErrorT,
+) -> *mut DeleteResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.delete_many(session, filter, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_many_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.delete_many_async(session, filter, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_one(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+    error: *mut ErrorT,
+) -> *mut DeleteResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.delete_one(session, filter, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_one_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.delete_one_async(session, filter, options))
 }
 
 #[unsafe(no_mangle)]
@@ -287,6 +353,78 @@ impl CollectionT {
         })
     }
 
+    fn delete_many(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> Result<DeleteResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .delete_many(filter)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn delete_many_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let options: Option<DeleteOptions> = options.map(Into::into);
+
+        self.spawn::<DeleteResult>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(coll.delete_many(filter).with_options(options), session)
+        })
+    }
+
+    fn delete_one(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> Result<DeleteResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .delete_one(filter)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn delete_one_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let options: Option<DeleteOptions> = options.map(Into::into);
+
+        self.spawn::<DeleteResult>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(coll.delete_one(filter).with_options(options), session)
+        })
+    }
+
     fn drop(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -413,8 +551,6 @@ impl CollectionT {
     // TODO: create_indexes
     // TODO: create_search_index
     // TODO: create_search_indexes
-    // TODO: delete_many
-    // TODO: delete_one
     // TODO: distinct
     // TODO: drop_index
     // TODO: drop_indexes

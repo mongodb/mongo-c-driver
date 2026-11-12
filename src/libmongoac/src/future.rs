@@ -14,13 +14,14 @@
 
 use crate::bson::BsonViewT;
 use crate::client_session::ClientSessionT;
+use crate::delete_result::DeleteResultT;
 use crate::error::{ErrorCodeT, ErrorT};
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
 
 use mongodb::bson::RawDocumentBuf;
-use mongodb::results::InsertOneResult;
+use mongodb::results::{DeleteResult, InsertOneResult};
 
 use parking_lot::Mutex;
 use tokio::task::{JoinError, JoinHandle};
@@ -88,6 +89,20 @@ pub extern "C" fn mongoac_future_get_client_session(
     let future = safe_as_ref_with_error!(future, error);
 
     safe_ptr_from_ref!(safe_result!(future.get_client_session(), error), ClientSessionT)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_delete_result(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *const DeleteResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_ptr_from_ref!(
+        safe_result!(future.get_delete_result(), error),
+        DeleteResult
+    )
 }
 
 #[unsafe(no_mangle)]
@@ -166,6 +181,10 @@ impl FutureT {
 
     fn get_client_session(&self) -> Result<&ClientSessionT, ErrorT> {
         self.get::<ClientSessionT>("client_session")
+    }
+
+    fn get_delete_result(&self) -> Result<&DeleteResult, ErrorT> {
+        self.get::<DeleteResult>("delete_result")
     }
 
     fn get_insert_one_result(&self) -> Result<&InsertOneResult, ErrorT> {
