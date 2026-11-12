@@ -107,14 +107,15 @@ mongoc_server_description_reset(mongoc_server_description_t *sd)
  *       Initialize a new server_description_t.
  *
  * Returns:
- *       None.
+ *       True if @address was parsed and @sd was initialized, false otherwise.
+ *       On failure @sd must not be used.
  *
  * Side effects:
  *       None.
  *
  *--------------------------------------------------------------------------
  */
-void
+bool
 mongoc_server_description_init(mongoc_server_description_t *sd, const char *address, uint32_t id)
 {
    ENTRY;
@@ -122,17 +123,18 @@ mongoc_server_description_init(mongoc_server_description_t *sd, const char *addr
    BSON_ASSERT(sd);
    BSON_ASSERT(address);
 
+   // Parse host. On failure do not initialize any members.
+   if (!_mongoc_host_list_from_string(&sd->host, address)) {
+      MONGOC_WARNING("Failed to parse uri for %s", address);
+      RETURN(false);
+   }
+
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
    sd->generation = 0;
    sd->opened = false;
    sd->_generation_map_ = mongoc_generation_map_new();
-
-   if (!_mongoc_host_list_from_string(&sd->host, address)) {
-      MONGOC_WARNING("Failed to parse uri for %s", address);
-      return;
-   }
 
    sd->connection_address = sd->host.host_and_port;
    bson_init(&sd->last_hello_response);
@@ -145,7 +147,7 @@ mongoc_server_description_init(mongoc_server_description_t *sd, const char *addr
 
    mongoc_server_description_reset(sd);
 
-   EXIT;
+   RETURN(true);
 }
 
 /*

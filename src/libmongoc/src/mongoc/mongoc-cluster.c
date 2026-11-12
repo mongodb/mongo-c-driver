@@ -1031,7 +1031,8 @@ _stream_run_hello(mongoc_cluster_t *cluster,
     * invalidates again.
     */
    mongoc_server_description_t empty_sd;
-   mongoc_server_description_init(&empty_sd, address, server_id);
+   // address is a connection address that was already parsed, so init cannot fail here.
+   BSON_ASSERT(mongoc_server_description_init(&empty_sd, address, server_id));
    mongoc_server_stream_t *const server_stream = _mongoc_cluster_create_server_stream(td.ptr, &empty_sd, stream);
    server_stream->needs_hello = true;
    mongoc_server_description_cleanup(&empty_sd);
@@ -1084,7 +1085,8 @@ _stream_run_hello(mongoc_cluster_t *cluster,
       const int64_t rtt_msec = (bson_get_monotonic_time() - start) / 1000;
 
       ret_handshake_sd = BSON_ALIGNED_ALLOC0(mongoc_server_description_t);
-      mongoc_server_description_init(ret_handshake_sd, address, server_id);
+      // address is a connection address that was already parsed, so init cannot fail here.
+      BSON_ASSERT(mongoc_server_description_init(ret_handshake_sd, address, server_id));
       /* send the error from run_command IN to handle_hello */
       mongoc_server_description_handle_hello(ret_handshake_sd, &hello_reply, rtt_msec, error);
 

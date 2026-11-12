@@ -1677,7 +1677,13 @@ mongoc_topology_description_add_server(mongoc_topology_description_t *topology,
       server_id = ++topology->max_server_id;
 
       description = BSON_ALIGNED_ALLOC0(mongoc_server_description_t);
-      mongoc_server_description_init(description, server, server_id);
+      if (!mongoc_server_description_init(description, server, server_id)) {
+         if (id) {
+            *id = 0;
+         }
+         bson_free(description);
+         return false;
+      }
 
       mongoc_set_add(mc_tpld_servers(topology), server_id, description);
 

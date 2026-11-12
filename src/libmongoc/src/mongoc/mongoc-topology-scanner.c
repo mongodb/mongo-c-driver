@@ -1113,7 +1113,8 @@ _async_success(mongoc_async_cmd_t *acmd, const bson_t *hello_response, mlib_dura
       mongoc_server_description_t sd;
 
       /* Store a server description associated with the handshake. */
-      mongoc_server_description_init(&sd, node->host.host_and_port, node->id);
+      // node->host is already parsed, so init cannot fail here.
+      BSON_ASSERT(mongoc_server_description_init(&sd, node->host.host_and_port, node->id));
       mongoc_server_description_handle_hello(&sd, hello_response, mlib_milliseconds_count(elapsed), &acmd->error);
       node->handshake_sd = mongoc_server_description_new_copy(&sd);
       mongoc_server_description_cleanup(&sd);

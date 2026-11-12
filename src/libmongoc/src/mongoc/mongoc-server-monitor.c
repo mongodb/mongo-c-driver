@@ -1020,8 +1020,9 @@ _server_monitor_check_server(mongoc_server_monitor_t *server_monitor,
    *cancelled = false;
    memset(&error, 0, sizeof(bson_error_t));
    description = BSON_ALIGNED_ALLOC0(mongoc_server_description_t);
-   mongoc_server_description_init(
-      description, server_monitor->description->connection_address, server_monitor->description->id);
+   // connection_address was already parsed, so init cannot fail here.
+   BSON_ASSERT(mongoc_server_description_init(
+      description, server_monitor->description->connection_address, server_monitor->description->id));
    start_us = _now_us();
 
    if (!server_monitor->stream) {
