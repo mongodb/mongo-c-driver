@@ -149,3 +149,25 @@ add_test_cmake_project(
       EXPECT_BSON_STATIC=1
       EXPECT_MONGOC_STATIC=1
 )
+
+# Check that a libbson memory vtable is honored by internal library allocations,
+# using only the public API of the installed libbson. System libbson is not built
+# from this source tree, so its behavior is not under test here.
+if(NOT USE_SYSTEM_LIBBSON)
+   # The libbson install options are defined after this file is included, so they
+   # may be unset on a first configure, when they default to on.
+   if(ENABLE_SHARED AND (NOT DEFINED ENABLE_SHARED_LIBBSON_INSTALL OR ENABLE_SHARED_LIBBSON_INSTALL))
+      add_test_cmake_project(
+         mongoc/CMake/bson-allocator-import-shared src/libmongoc/tests/bson-allocator-import
+         INSTALL_PARENT
+         SETTINGS LINK_TARGET=bson::shared
+      )
+   endif()
+   if(ENABLE_STATIC AND (NOT DEFINED ENABLE_STATIC_LIBBSON_INSTALL OR ENABLE_STATIC_LIBBSON_INSTALL))
+      add_test_cmake_project(
+         mongoc/CMake/bson-allocator-import-static src/libmongoc/tests/bson-allocator-import
+         INSTALL_PARENT
+         SETTINGS LINK_TARGET=bson::static
+      )
+   endif()
+endif()

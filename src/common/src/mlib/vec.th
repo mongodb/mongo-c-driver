@@ -26,6 +26,8 @@
  *   is included.
  *
  * Types stored in the vector must be trivially relocatable.
+ * Buffer storage uses the global mlib allocator. Destroy vectors before changing
+ * the allocator; vectors do not retain their own allocator configuration.
  *
  * @copyright Copyright 2009-present MongoDB, Inc.
  *
@@ -42,13 +44,12 @@
  * limitations under the License.
  */
 
+#include <mlib/alloc.h>
 #include <mlib/ckdint.h>
 #include <mlib/intutil.h>
 
-#include <assert.h>  // assert
 #include <stdbool.h> // bool
 #include <stddef.h>  // size_t
-#include <stdlib.h>  // calloc, realloc, free
 #include <string.h>  // memcpy, memset
 
 // Check that the caller provided a `T` macro to be the element type
@@ -179,7 +180,8 @@ fn(max_size(void)) mlib_noexcept
  *
  * @param self The vector object to be modified
  * @param count The new capacity. If this is less than the current size, then
- * the capacity will be capped at the size instead
+ * the capacity will be capped at the size instead. Zero capacity releases the
+ * buffer if the vector is empty.
  *
  * @retval true If-and-only-if the reallocation was successful
  * @retval false If there was an error in allocating the buffer
@@ -202,15 +204,12 @@ fn(reserve(VecName *const self, size_t count)) mlib_noexcept
       // We cannot shrink the capacity below the current size, so just shrink-to-fit
       count = self->size;
    }
-   // Impossible: We will never shrink below `self.size`, and if
-   // `self.size == 0` and `count == 0`, then we early-return'd above.
-   assert(count != 0);
    // The number of bytes we need to allocate. Note that this cannot overflow
    // because we guard against it by checking against `max_size()`
    const size_t new_buffer_size = count * sizeof(T);
    // Attempt to reallocate the region
-   T *const new_buffer = (T *)realloc(self->data, new_buffer_size);
-   if (!new_buffer) {
+   T *const new_buffer = (T *)mlib_reallocate(self->data, new_buffer_size, self->capacity * sizeof(T), NULL);
+   if (!new_buffer && count != 0) {
       // Failed to reallocate a new storage region
       return false;
    }
@@ -362,7 +361,7 @@ fn(destroy(VecName *self)) mlib_noexcept
    // Resizing to zero will destroy all elements
    (void)fn(resize(self, 0));
    // Resizing won't necessarily free the data buffer. Do that now.
-   free(self->data);
+   mlib_deallocate(self->data, self->capacity * sizeof(T));
    self->capacity = 0;
    self->data = NULL;
 }
