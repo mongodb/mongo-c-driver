@@ -185,9 +185,9 @@ TEST_CASE("count_documents", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
 
-        CHECK(mongoac_collection_count_documents(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error) == 0u);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, {&bytes, 1u}, nullptr, error) == 0u);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
@@ -252,11 +252,10 @@ TEST_CASE("count_documents_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
 
         auto const future = make_unique(
-            mongoac_collection_count_documents_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr),
-            &mongoac_future_destroy);
+            mongoac_collection_count_documents_async(coll, nullptr, {&bytes, 1u}, nullptr), &mongoac_future_destroy);
         CHECK(future.get() == nullptr);
     }
 
@@ -512,11 +511,9 @@ TEST_CASE("find_one", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
 
-        CHECK(
-            from_mongoac(mongoac_collection_find_one(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error)) ==
-            nullptr);
+        CHECK(from_mongoac(mongoac_collection_find_one(coll, nullptr, {&bytes, 1u}, nullptr, error)) == nullptr);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
     }
 
@@ -580,10 +577,10 @@ TEST_CASE("find_one_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
 
         auto const future = make_unique(
-            mongoac_collection_find_one_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr), &mongoac_future_destroy);
+            mongoac_collection_find_one_async(coll, nullptr, {&bytes, 1u}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
@@ -916,9 +913,9 @@ TEST_CASE("insert_one", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON document") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const result = make_unique(
-            mongoac_collection_insert_one(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error),
+            mongoac_collection_insert_one(coll, nullptr, {&bytes, 1u}, nullptr, error),
             &mongoac_insert_one_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
@@ -967,10 +964,9 @@ TEST_CASE("insert_one_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON document") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const future = make_unique(
-            mongoac_collection_insert_one_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr),
-            &mongoac_future_destroy);
+            mongoac_collection_insert_one_async(coll, nullptr, {&bytes, 1u}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
@@ -1033,9 +1029,9 @@ TEST_CASE("delete_many", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const result = make_unique(
-            mongoac_collection_delete_many(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error),
+            mongoac_collection_delete_many(coll, nullptr, {&bytes, 1u}, nullptr, error),
             &mongoac_delete_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
@@ -1150,10 +1146,9 @@ TEST_CASE("delete_many_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const future = make_unique(
-            mongoac_collection_delete_many_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr),
-            &mongoac_future_destroy);
+            mongoac_collection_delete_many_async(coll, nullptr, {&bytes, 1u}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 
@@ -1218,10 +1213,9 @@ TEST_CASE("delete_one", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const result = make_unique(
-            mongoac_collection_delete_one(coll, nullptr, {bytes, sizeof(bytes)}, nullptr, error),
-            &mongoac_delete_result_destroy);
+            mongoac_collection_delete_one(coll, nullptr, {&bytes, 1u}, nullptr, error), &mongoac_delete_result_destroy);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK(result == nullptr);
     }
@@ -1312,10 +1306,9 @@ TEST_CASE("delete_one_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON filter") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const future = make_unique(
-            mongoac_collection_delete_one_async(coll, nullptr, {bytes, sizeof(bytes)}, nullptr),
-            &mongoac_future_destroy);
+            mongoac_collection_delete_one_async(coll, nullptr, {&bytes, 1u}, nullptr), &mongoac_future_destroy);
         CHECK(future == nullptr);
     }
 

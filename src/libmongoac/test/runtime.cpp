@@ -16,6 +16,7 @@
 
 //
 
+#include <mongoac/test/array.hh>
 #include <mongoac/test/client.hh>
 #include <mongoac/test/error.hh>
 #include <mongoac/test/memory.hh>
@@ -38,6 +39,7 @@
 using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
+using mongoac::test::to_array;
 using mongoac::test::operator""_sv;
 
 TEST_CASE("destroy", "[mongoac][runtime]") {
@@ -236,9 +238,9 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
     SECTION("zero futures") {
         auto const f1 = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
 
-        mongoac_future_t* const futures[] = {f1.get()};
+        auto const futures = to_array<mongoac_future_t*>({f1.get()});
 
-        CHECK(mongoac_runtime_block_on_any(runtime, futures, 0u, error) == nullptr);
+        CHECK(mongoac_runtime_block_on_any(runtime, futures.data(), 0u, error) == nullptr);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array is empty");
     }
@@ -250,25 +252,25 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
         auto const f2 = f2_owner.get();
 
         SECTION("0") {
-            mongoac_future_t* const futures[] = {nullptr, f1, f2};
+            auto const futures = to_array<mongoac_future_t*>({nullptr, f1, f2});
 
-            CHECK(mongoac_runtime_block_on_any(runtime, futures, 3u, error) == nullptr);
+            CHECK(mongoac_runtime_block_on_any(runtime, futures.data(), 3u, error) == nullptr);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 0: must not be null");
         }
 
         SECTION("1") {
-            mongoac_future_t* const futures[] = {f1, nullptr, f2};
+            auto const futures = to_array<mongoac_future_t*>({f1, nullptr, f2});
 
-            CHECK(mongoac_runtime_block_on_any(runtime, futures, 3u, error) == nullptr);
+            CHECK(mongoac_runtime_block_on_any(runtime, futures.data(), 3u, error) == nullptr);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 1: must not be null");
         }
 
         SECTION("2") {
-            mongoac_future_t* const futures[] = {f1, f2, nullptr};
+            auto const futures = to_array<mongoac_future_t*>({f1, f2, nullptr});
 
-            CHECK(mongoac_runtime_block_on_any(runtime, futures, 3u, error) == nullptr);
+            CHECK(mongoac_runtime_block_on_any(runtime, futures.data(), 3u, error) == nullptr);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 2: must not be null");
         }
@@ -280,10 +282,10 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
         auto const f2_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
         auto const f2 = f2_owner.get();
 
-        mongoac_future_t* const futures[] = {f1, f2};
+        auto const futures = to_array<mongoac_future_t*>({f1, f2});
 
         auto const t1 = std::chrono::steady_clock::now();
-        auto const iter = mongoac_runtime_block_on_any(runtime, futures, 2u, error);
+        auto const iter = mongoac_runtime_block_on_any(runtime, futures.data(), 2u, error);
         auto const t2 = std::chrono::steady_clock::now();
         REQUIRE_MONGOAC_ERROR_OK(error);
         auto const d1 = t2 - t1;
@@ -301,7 +303,7 @@ TEST_CASE("block_on_any", "[mongoac][runtime]") {
 
         // Idempotence.
         auto const t3 = std::chrono::steady_clock::now();
-        auto const iter2 = mongoac_runtime_block_on_any(runtime, futures, 2u, error);
+        auto const iter2 = mongoac_runtime_block_on_any(runtime, futures.data(), 2u, error);
         auto const t4 = std::chrono::steady_clock::now();
         REQUIRE_MONGOAC_ERROR_OK(error);
         CHECK(iter == iter2);
@@ -336,9 +338,9 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
     SECTION("zero futures") {
         auto const f1 = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
 
-        mongoac_future_t* const futures[] = {f1.get()};
+        auto const futures = to_array<mongoac_future_t*>({f1.get()});
 
-        CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures, 0u, 0u, error) == nullptr);
+        CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures.data(), 0u, 0u, error) == nullptr);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array is empty");
     }
@@ -354,25 +356,25 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
         auto const f2 = f2_owner.get();
 
         SECTION("0") {
-            mongoac_future_t* const futures[] = {nullptr, f1, f2};
+            auto const futures = to_array<mongoac_future_t*>({nullptr, f1, f2});
 
-            CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures, 3u, 0u, error) == nullptr);
+            CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures.data(), 3u, 0u, error) == nullptr);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 0: must not be null");
         }
 
         SECTION("1") {
-            mongoac_future_t* const futures[] = {f1, nullptr, f2};
+            auto const futures = to_array<mongoac_future_t*>({f1, nullptr, f2});
 
-            CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures, 3u, 0u, error) == nullptr);
+            CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures.data(), 3u, 0u, error) == nullptr);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 1: must not be null");
         }
 
         SECTION("2") {
-            mongoac_future_t* const futures[] = {f1, f2, nullptr};
+            auto const futures = to_array<mongoac_future_t*>({f1, f2, nullptr});
 
-            CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures, 3u, 0u, error) == nullptr);
+            CHECK(mongoac_runtime_block_on_any_with_timeout(runtime, futures.data(), 3u, 0u, error) == nullptr);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 2: must not be null");
         }
@@ -384,10 +386,10 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
         auto const f2_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
         auto const f2 = f2_owner.get();
 
-        mongoac_future_t* const futures[] = {f1, f2};
+        auto const futures = to_array<mongoac_future_t*>({f1, f2});
 
         auto const t1 = std::chrono::steady_clock::now();
-        auto const iter = mongoac_runtime_block_on_any_with_timeout(runtime, futures, 2u, 0u, error);
+        auto const iter = mongoac_runtime_block_on_any_with_timeout(runtime, futures.data(), 2u, 0u, error);
         auto const t2 = std::chrono::steady_clock::now();
         REQUIRE_MONGOAC_ERROR_OK(error);
         auto const d1 = t2 - t1;
@@ -405,7 +407,7 @@ TEST_CASE("block_on_any_with_timeout", "[mongoac][runtime]") {
 
         // Idempotence.
         auto const t3 = std::chrono::steady_clock::now();
-        auto const iter2 = mongoac_runtime_block_on_any_with_timeout(runtime, futures, 2u, 0u, error);
+        auto const iter2 = mongoac_runtime_block_on_any_with_timeout(runtime, futures.data(), 2u, 0u, error);
         auto const t4 = std::chrono::steady_clock::now();
         REQUIRE_MONGOAC_ERROR_OK(error);
         CHECK(iter == iter2);
@@ -440,9 +442,9 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
     SECTION("zero futures") {
         auto const f1 = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
 
-        mongoac_future_t* const futures[] = {f1.get()};
+        auto const futures = to_array<mongoac_future_t*>({f1.get()});
 
-        mongoac_runtime_block_on_all(runtime, futures, 0u, error);
+        mongoac_runtime_block_on_all(runtime, futures.data(), 0u, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array is empty");
     }
@@ -454,25 +456,25 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
         auto const f2 = f2_owner.get();
 
         SECTION("0") {
-            mongoac_future_t* const futures[] = {nullptr, f1, f2};
+            auto const futures = to_array<mongoac_future_t*>({nullptr, f1, f2});
 
-            mongoac_runtime_block_on_all(runtime, futures, 3u, error);
+            mongoac_runtime_block_on_all(runtime, futures.data(), 3u, error);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 0: must not be null");
         }
 
         SECTION("1") {
-            mongoac_future_t* const futures[] = {f1, nullptr, f2};
+            auto const futures = to_array<mongoac_future_t*>({f1, nullptr, f2});
 
-            mongoac_runtime_block_on_all(runtime, futures, 3u, error);
+            mongoac_runtime_block_on_all(runtime, futures.data(), 3u, error);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 1: must not be null");
         }
 
         SECTION("2") {
-            mongoac_future_t* const futures[] = {f1, f2, nullptr};
+            auto const futures = to_array<mongoac_future_t*>({f1, f2, nullptr});
 
-            mongoac_runtime_block_on_all(runtime, futures, 3u, error);
+            mongoac_runtime_block_on_all(runtime, futures.data(), 3u, error);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 2: must not be null");
         }
@@ -487,11 +489,11 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
         CHECK_FALSE(mongoac_future_is_ready(f1));
         CHECK_FALSE(mongoac_future_is_ready(f2));
 
-        mongoac_future_t* const futures[] = {f1, f2};
+        auto const futures = to_array<mongoac_future_t*>({f1, f2});
 
         // Block on the first element only.
         auto const t1 = std::chrono::steady_clock::now();
-        mongoac_runtime_block_on_all(runtime, futures, 1u, error);
+        mongoac_runtime_block_on_all(runtime, futures.data(), 1u, error);
         auto const t2 = std::chrono::steady_clock::now();
         CHECK_MONGOAC_ERROR_OK(error);
         CHECK(mongoac_future_is_ready(f1));
@@ -499,7 +501,7 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
 
         // Idempotence.
         auto const t3 = std::chrono::steady_clock::now();
-        mongoac_runtime_block_on_all(runtime, futures, 1u, error);
+        mongoac_runtime_block_on_all(runtime, futures.data(), 1u, error);
         auto const t4 = std::chrono::steady_clock::now();
         CHECK_MONGOAC_ERROR_OK(error);
         auto const d2 = t4 - t3;
@@ -508,7 +510,7 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
         CHECK_NOFAIL(d2 <= d1);
 
         // Elements may be a mix of ready and pending futures.
-        mongoac_runtime_block_on_all(runtime, futures, 2u, error);
+        mongoac_runtime_block_on_all(runtime, futures.data(), 2u, error);
         CHECK_MONGOAC_ERROR_OK(error);
         CHECK(mongoac_future_is_ready(f2));
         // Do not benchmark this block-on: due to two shutdown operations, the second shutdown may complete sooner than
@@ -517,7 +519,7 @@ TEST_CASE("block_on_all", "[mongoac][runtime]") {
 
         // Idempotence.
         auto const t5 = std::chrono::steady_clock::now();
-        mongoac_runtime_block_on_all(runtime, futures, 2u, error);
+        mongoac_runtime_block_on_all(runtime, futures.data(), 2u, error);
         auto const t6 = std::chrono::steady_clock::now();
         CHECK_MONGOAC_ERROR_OK(error);
         auto const d3 = t6 - t5;
@@ -551,9 +553,9 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
     SECTION("zero futures") {
         auto const f1 = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
 
-        mongoac_future_t* const futures[] = {f1.get()};
+        auto const futures = to_array<mongoac_future_t*>({f1.get()});
 
-        mongoac_runtime_block_on_all_with_timeout(runtime, futures, 0u, 0u, error);
+        mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 0u, 0u, error);
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array is empty");
     }
@@ -565,25 +567,25 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
         auto const f2 = f2_owner.get();
 
         SECTION("0") {
-            mongoac_future_t* const futures[] = {nullptr, f1, f2};
+            auto const futures = to_array<mongoac_future_t*>({nullptr, f1, f2});
 
-            mongoac_runtime_block_on_all_with_timeout(runtime, futures, 3u, 0u, error);
+            mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 3u, 0u, error);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 0: must not be null");
         }
 
         SECTION("1") {
-            mongoac_future_t* const futures[] = {f1, nullptr, f2};
+            auto const futures = to_array<mongoac_future_t*>({f1, nullptr, f2});
 
-            mongoac_runtime_block_on_all_with_timeout(runtime, futures, 3u, 0u, error);
+            mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 3u, 0u, error);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 1: must not be null");
         }
 
         SECTION("2") {
-            mongoac_future_t* const futures[] = {f1, f2, nullptr};
+            auto const futures = to_array<mongoac_future_t*>({f1, f2, nullptr});
 
-            mongoac_runtime_block_on_all_with_timeout(runtime, futures, 3u, 0u, error);
+            mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 3u, 0u, error);
             CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
             CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "futures array element at index 2: must not be null");
         }
@@ -602,11 +604,11 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
         CHECK_FALSE(mongoac_future_is_ready(f1));
         CHECK_FALSE(mongoac_future_is_ready(f2));
 
-        mongoac_future_t* const futures[] = {f1, f2};
+        auto const futures = to_array<mongoac_future_t*>({f1, f2});
 
         // Block on the first element only.
         auto const t1 = std::chrono::steady_clock::now();
-        mongoac_runtime_block_on_all_with_timeout(runtime, futures, 1u, 0u, error);
+        mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 1u, 0u, error);
         auto const t2 = std::chrono::steady_clock::now();
         CHECK_MONGOAC_ERROR_OK(error);
         CHECK(mongoac_future_is_ready(f1));
@@ -614,7 +616,7 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
 
         // Idempotence.
         auto const t3 = std::chrono::steady_clock::now();
-        mongoac_runtime_block_on_all_with_timeout(runtime, futures, 1u, 0u, error);
+        mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 1u, 0u, error);
         auto const t4 = std::chrono::steady_clock::now();
         CHECK_MONGOAC_ERROR_OK(error);
         auto const d2 = t4 - t3;
@@ -623,14 +625,14 @@ TEST_CASE("block_on_all_with_timeout", "[mongoac][runtime]") {
         CHECK_NOFAIL(d2 <= d1);
 
         // Elements may be a mix of ready and pending futures.
-        mongoac_runtime_block_on_all_with_timeout(runtime, futures, 2u, 0u, error);
+        mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 2u, 0u, error);
         CHECK_MONGOAC_ERROR_OK(error);
         CHECK(mongoac_future_is_ready(f2));
         // Do not benchmark this block-on: due to double-shutdown, the second future may complete sooner than expected.
 
         // Idempotence.
         auto const t5 = std::chrono::steady_clock::now();
-        mongoac_runtime_block_on_all_with_timeout(runtime, futures, 2u, 0u, error);
+        mongoac_runtime_block_on_all_with_timeout(runtime, futures.data(), 2u, 0u, error);
         auto const t6 = std::chrono::steady_clock::now();
         CHECK_MONGOAC_ERROR_OK(error);
         auto const d3 = t6 - t5;
