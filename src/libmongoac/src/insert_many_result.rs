@@ -44,7 +44,7 @@ pub extern "C" fn mongoac_insert_many_result_get_inserted_ids_get(
     let result = safe_as_ref_with_error!(result, error);
 
     let Some(id) = result.0.inserted_ids.get(&key) else {
-        return Default::default();
+        return BsonT::default();
     };
 
     let doc = mongodb::bson::doc! { "v": id.clone() };
