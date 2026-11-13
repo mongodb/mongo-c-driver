@@ -347,7 +347,7 @@ impl DatabaseT {
                     .run_raw_cursor_command(command.to_owned())
                     .with_options(options.map(Into::into)),
                 session,
-                self.runtime.clone()
+                self.runtime.downgrade()
             )
         })
     }
@@ -359,7 +359,7 @@ impl DatabaseT {
         options: Option<&RunCursorCommandOptionsT>,
     ) -> FutureT {
         let db = self.inner.clone();
-        let runtime = self.runtime.clone();
+        let runtime = self.runtime.downgrade();
         let session = session.map(|s| s.clone());
         let command = command.to_owned();
         let options: Option<RunCursorCommandOptions> = options.map(Into::into);

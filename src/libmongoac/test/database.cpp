@@ -38,7 +38,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <string_view>
 
 using mongoac::test::as_json;

@@ -128,19 +128,25 @@ macro_rules! cursor_session_op {
     ($op:expr, $session:expr, $runtime:expr) => {{
         let op = $op;
         let session = $session;
-        let runtime = $runtime;
+        let runtime: std::sync::Weak<tokio::runtime::Runtime> = $runtime;
         match session {
             Some(session) => op
                 .session(&mut *session.lock().await)
                 .await
                 .map_err($crate::error::ErrorT::from)
                 .map(|cursor| {
-                    CursorT::new_with_session(cursor.with_type(), session.clone(), runtime)
+                    CursorT::new_with_session(
+                        cursor.with_type(),
+                        session.clone(),
+                        $crate::runtime::RuntimeT::upgrade(&runtime),
+                    )
                 }),
-            None => op
-                .await
-                .map_err($crate::error::ErrorT::from)
-                .map(|cursor| CursorT::new(cursor.with_type(), runtime)),
+            None => op.await.map_err($crate::error::ErrorT::from).map(|cursor| {
+                CursorT::new(
+                    cursor.with_type(),
+                    $crate::runtime::RuntimeT::upgrade(&runtime),
+                )
+            }),
         }
     }};
 }
