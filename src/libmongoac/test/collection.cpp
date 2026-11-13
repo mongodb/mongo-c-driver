@@ -16,6 +16,7 @@
 
 //
 
+#include <mongoac/test/array.hh>
 #include <mongoac/test/bson.hh>
 #include <mongoac/test/client.hh>
 #include <mongoac/test/error.hh>
@@ -38,7 +39,6 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -49,6 +49,7 @@ using mongoac::test::make_unique;
 using mongoac::test::operator""_bson;
 using mongoac::test::operator""_sv;
 using mongoac::test::default_uri;
+using mongoac::test::to_array;
 using mongoac::test::to_bson;
 using mongoac::test::to_mongoac;
 
@@ -737,7 +738,7 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
 
     SECTION("null document element") {
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
+        auto const docs = to_array<mongoac_bson_view_t>({to_mongoac(doc.get()), {}});
 
         auto const result = make_unique(
             mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
@@ -747,9 +748,9 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON document element") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {bytes, sizeof(bytes)}}};
+        auto const docs = to_array<mongoac_bson_view_t>({to_mongoac(doc.get()), {&bytes, 1u}});
 
         auto const result = make_unique(
             mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
@@ -775,7 +776,8 @@ TEST_CASE("insert_many", "[mongoac][collection]") {
         auto const y = REQUIRE_MAKE_UNIQUE(R"({"y": 2})"_bson, &bson_destroy);
         auto const z = REQUIRE_MAKE_UNIQUE(R"({"z": 3})"_bson, &bson_destroy);
 
-        std::array<mongoac_bson_view_t, 3> const docs{{to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())}};
+        auto const docs =
+            to_array<mongoac_bson_view_t>({to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())});
 
         auto const result_owner = REQUIRE_MAKE_UNIQUE(
             mongoac_collection_insert_many(coll, nullptr, {docs.data(), docs.size()}, nullptr, error),
@@ -819,7 +821,7 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
 
     SECTION("null document element") {
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {}}};
+        auto const docs = to_array<mongoac_bson_view_t>({to_mongoac(doc.get()), {}});
 
         auto const future = make_unique(
             mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
@@ -828,9 +830,9 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
     }
 
     SECTION("invalid BSON document element") {
-        std::uint8_t const bytes[] = {0xff};
+        std::uint8_t const bytes = {};
         auto const doc = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
-        std::array<mongoac_bson_view_t, 2> const docs{{to_mongoac(doc.get()), {bytes, sizeof(bytes)}}};
+        auto const docs = to_array<mongoac_bson_view_t>({to_mongoac(doc.get()), {&bytes, 1u}});
 
         auto const future = make_unique(
             mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
@@ -867,7 +869,8 @@ TEST_CASE("insert_many_async", "[mongoac][collection]") {
         auto const y = REQUIRE_MAKE_UNIQUE(R"({"y": 2})"_bson, &bson_destroy);
         auto const z = REQUIRE_MAKE_UNIQUE(R"({"z": 3})"_bson, &bson_destroy);
 
-        std::array<mongoac_bson_view_t, 3> const docs{{to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())}};
+        auto const docs =
+            to_array<mongoac_bson_view_t>({to_mongoac(x.get()), to_mongoac(y.get()), to_mongoac(z.get())});
 
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
             mongoac_collection_insert_many_async(coll, nullptr, {docs.data(), docs.size()}, nullptr),
