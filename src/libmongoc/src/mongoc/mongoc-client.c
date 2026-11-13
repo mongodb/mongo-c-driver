@@ -1138,6 +1138,9 @@ _mongoc_client_new_from_topology(mongoc_topology_t *topology)
    client->max_adaptive_retries = _mongoc_uri_get_max_adaptive_retries(client->uri);
    client->enable_overload_retargeting = mongoc_uri_get_option_as_bool(
       client->uri, MONGOC_URI_ENABLEOVERLOADRETARGETING, MONGOC_DEFAULT_ENABLEOVERLOADRETARGETING);
+   client->retry_reads = mongoc_uri_get_option_as_bool(client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS);
+   client->retry_writes =
+      mongoc_uri_get_option_as_bool(client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES);
 
    write_concern = mongoc_uri_get_write_concern(client->uri);
    client->write_concern = mongoc_write_concern_copy(write_concern);
@@ -1730,15 +1733,13 @@ _mongoc_client_retryable_read_command_with_stream(mongoc_client_t *client,
 
       // runCommand is not eligible for overload retries if retryReads=false or retryWrites=false.
       if (parts->is_raw_command) {
-         if (!mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS) ||
-             !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+         if (!parts->client->retry_reads || !parts->client->retry_writes) {
             retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
          }
       }
 
       // Reads are not eligible for overload retries if retryReads=false.
-      if (parts->is_read_command &&
-          !mongoc_uri_get_option_as_bool(parts->client->uri, MONGOC_URI_RETRYREADS, MONGOC_DEFAULT_RETRYREADS)) {
+      if (parts->is_read_command && !parts->client->retry_reads) {
          retry_eligibility = MONGOC_RETRY_ELIGIBILITY_NONE;
       }
    }
