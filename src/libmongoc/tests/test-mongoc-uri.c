@@ -1,6 +1,7 @@
 #include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/mongoc-punycode-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
@@ -2611,9 +2612,21 @@ test_mongoc_uri_local_threshold_ms(void)
 }
 
 
-#define INVALID(_uri, _host)                                                                             \
+#define INVALID_WITH_MSG(_uri, _host, _msg)                                                              \
    ASSERT_WITH_MSG(!mongoc_uri_upsert_host((_uri), (_host), 1, &error), "expected host upsert to fail"); \
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, "must be subdomain")
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_NAME_RESOLUTION, _msg)
+
+// The host is outside the domain of the SRV hostname.
+#define INVALID(_uri, _host) INVALID_WITH_MSG(_uri, _host, "must be subdomain")
+
+// The host is malformed (for example, it has an empty label).
+#define INVALID_NAME(_uri, _host) INVALID_WITH_MSG(_uri, _host, "is not a well-formed domain name")
+
+// The host failed the srvAllowedHostsSuffix check, not the default domainname check.
+#define INVALID_SUFFIX(_uri, _host) INVALID_WITH_MSG(_uri, _host, "must end with srvallowedhostssuffix")
+
+// The host is in the domain of a short SRV hostname but does not add a domain level.
+#define INVALID_LEVELS(_uri, _host) INVALID_WITH_MSG(_uri, _host, "at least one more domain level")
 
 #define VALID(_uri, _host) ASSERT_OR_PRINT(mongoc_uri_upsert_host((_uri), (_host), 1, &error), error)
 
@@ -2659,10 +2672,10 @@ test_mongoc_uri_srv(void)
    VALID(uri, "c.d.com");
    VALID(uri, "bc.d.com");
    VALID(uri, "longer-string.d.com");
-   INVALID(uri, ".c.d.com");
+   INVALID_NAME(uri, ".c.d.com");
    VALID(uri, "b.c.d.com");
-   INVALID(uri, ".b.c.d.com");
-   INVALID(uri, "..b.c.d.com");
+   INVALID_NAME(uri, ".b.c.d.com");
+   INVALID_NAME(uri, "..b.c.d.com");
    VALID(uri, "a.b.c.d.com");
 
    mongoc_uri_destroy(uri);
@@ -2683,16 +2696,175 @@ test_mongoc_uri_srv(void)
    ASSERT_CMPSTR(mongoc_uri_get_srv_hostname(uri), "service.consul.");
    ASSERT(mongoc_uri_get_hosts(uri) == NULL);
 
-   INVALID(uri, ".consul.");
-   INVALID(uri, "service.consul");
-   INVALID(uri, "a.service.consul");
-   INVALID(uri, "service.a.consul");
+   INVALID_NAME(uri, ".consul.");
+   /* "service.consul" has fewer than three labels, so returned hosts must
+    * have at least one more domain level than the SRV hostname. */
+   INVALID_LEVELS(uri, "service.consul");
+   /* hosts sharing the {domainname} ("consul") with enough levels are valid */
+   VALID(uri, "a.service.consul");
+   VALID(uri, "service.a.consul");
    INVALID(uri, "a.com");
-   VALID(uri, "service.consul.");
+   /* the SRV hostname itself has too few domain levels to be returned */
+   INVALID_LEVELS(uri, "service.consul.");
    VALID(uri, "a.service.consul.");
    VALID(uri, "a.b.service.consul.");
 
    mongoc_uri_destroy(uri);
+}
+
+
+static void
+test_mongoc_uri_srv_allowed_hosts_suffix(void)
+{
+   mongoc_uri_t *uri;
+   bson_error_t error;
+
+   capture_logs(true);
+
+   /* Option validation: six mandated steps. */
+
+   /* leading/trailing dots are stripped; empty result is an error */
+   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=."));
+   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=.."));
+   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix="));
+
+   /* single labels are rejected unless special-use; reserved single labels
+    * are accepted (prose test 12) */
+   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=net"));
+   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=com"));
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=test");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=localhost");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=internal");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=corp");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+
+   /* underscores are legal in domain labels (CSHARP-6246 precedent) */
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=my_domain.net");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+
+   /* a returned host is validated against an underscore suffix end-to-end
+    * (prose test 15) */
+   uri = mongoc_uri_new("mongodb+srv://blogs.my_domain.net/?srvallowedhostssuffix=.my_domain.net");
+   ASSERT(uri);
+   VALID(uri, "cluster.my_domain.net");
+   INVALID_SUFFIX(uri, "cluster.other.net");
+   mongoc_uri_destroy(uri);
+
+   /* a non-ASCII option value is converted to its A-label form before
+    * comparison (spec normalization step 2), so it matches the Punycode
+    * hostnames returned by DNS */
+   uri = mongoc_uri_new("mongodb+srv://blogs.example.net/?srvallowedhostssuffix=.m\xc3\xbcnchen.example.net");
+   ASSERT(uri);
+   VALID(uri, "cluster.xn--mnchen-3ya.example.net");
+   INVALID_SUFFIX(uri, "cluster.other.example.net");
+   mongoc_uri_destroy(uri);
+
+   /* valid suffixes are accepted, case-insensitively, with leading/trailing dots */
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=MyDomain.NET.");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=.mydomain.net");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+
+   /* the option is prohibited with a non-SRV URI */
+   ASSERT(!mongoc_uri_new("mongodb://c.d.com/?srvallowedhostssuffix=mydomain.net"));
+
+   /* Host validation: when the suffix is configured, returned hostnames must
+    * end in the suffix; the domainname check does not apply. */
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
+   ASSERT(uri);
+
+   VALID(uri, "a.mydomain.net");
+   VALID(uri, "x.y.z.mydomain.net");
+   /* the suffix requires at least one label before it */
+   INVALID_SUFFIX(uri, "mydomain.net");
+   /* a suffix-matching host that would fail the domainname check is allowed */
+   VALID(uri, "other.platform.mydomain.net");
+   /* trailing dots and mixed case on returned hosts are stripped by normalization
+    * (prose test 10: hosts are compared after normalization, not raw) */
+   VALID(uri, "a.mydomain.net.");
+   VALID(uri, "A.MYDOMAIN.NET.");
+
+   INVALID_SUFFIX(uri, "a.other.net");
+   INVALID_SUFFIX(uri, "mydomain.net.evil.com");
+   INVALID_SUFFIX(uri, "mydomain.nett");
+
+   mongoc_uri_destroy(uri);
+}
+
+
+// The topology validates polled SRV hosts against a *copy* of the URI, so a
+// copy must enforce srvAllowedHostsSuffix exactly like the original.
+static void
+test_mongoc_uri_copy_srv_allowed_hosts_suffix(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
+   ASSERT(uri);
+   mongoc_uri_t *copy = mongoc_uri_copy(uri);
+   ASSERT(copy);
+
+   const mongoc_uri_t *const uris[] = {uri, copy};
+   for (size_t i = 0; i < sizeof(uris) / sizeof(*uris); i++) {
+      bson_error_t error;
+      // Allowed only because of the suffix: it would fail the domainname check against "c.d.com".
+      ASSERT_OR_PRINT(mongoc_uri_validate_srv_result(uris[i], "a.mydomain.net", &error), error);
+      ASSERT(!mongoc_uri_validate_srv_result(uris[i], "a.other.net", &error));
+      ASSERT_ERROR_CONTAINS(error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                            "must end with srvallowedhostssuffix \".mydomain.net\"");
+      ASSERT(NULL == strstr(error.message, "subdomain"));
+   }
+
+   mongoc_uri_destroy(copy);
+   mongoc_uri_destroy(uri);
+}
+
+
+static void
+test_mongoc_punycode(void)
+{
+   mstr encoded = mstr_new(0);
+
+   struct {
+      const char *utf8;
+      const char *punycode;
+   } vectors[] = {
+      {"m\xc3\xbc"
+       "nchen",
+       "mnchen-3ya"}, // mnchen-3ya
+      {"b\xc3\xbc"
+       "cher",
+       "bcher-kva"}, // bcher-kva
+      // RFC 3492 section 7.1 sample (J): multiple extended code points.
+      {"Porqu\xc3\xa9"
+       "nopuedensimplementehablarenEspa\xc3\xb1"
+       "ol",
+       "PorqunopuedensimplementehablarenEspaol-fmd56a"},
+      // RFC 3492 section 7.1 sample (B): all code points are 3-byte UTF-8.
+      {"\xe4\xbb\x96\xe4\xbb\xac\xe4\xb8\xba\xe4\xbb\x80\xe4\xb9\x88\xe4\xb8\x8d\xe8\xaf\xb4\xe4\xb8\xad\xe6\x96\x87",
+       "ihqwcrb4cv8a8dqg056pqjye"},
+   };
+
+   for (size_t i = 0; i < sizeof(vectors) / sizeof(vectors[0]); i++) {
+      mstr_resize(&encoded, 0); // Reset for reuse across vectors.
+      ASSERT(mongoc_punycode_encode_label(vectors[i].utf8, strlen(vectors[i].utf8), &encoded));
+      ASSERT_CMPSTR(encoded.data, vectors[i].punycode);
+   }
+
+   mstr_destroy(&encoded);
 }
 
 
@@ -3336,6 +3508,9 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
    TestSuite_Add(suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
    TestSuite_Add(suite, "/Uri/srv", test_mongoc_uri_srv);
+   TestSuite_Add(suite, "/Uri/srv_allowed_hosts_suffix", test_mongoc_uri_srv_allowed_hosts_suffix);
+   TestSuite_Add(suite, "/Uri/copy_srv_allowed_hosts_suffix", test_mongoc_uri_copy_srv_allowed_hosts_suffix);
+   TestSuite_Add(suite, "/Uri/punycode", test_mongoc_punycode);
    TestSuite_Add(suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add(suite, "/Uri/utf8", test_mongoc_uri_utf8);
    TestSuite_Add(suite, "/Uri/duplicates", test_mongoc_uri_duplicates);

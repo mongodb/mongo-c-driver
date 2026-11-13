@@ -81,6 +81,19 @@ On Unix, the MongoDB C Driver relies on libresolv to look up SRV and TXT records
 
 Set the environment variable ``MONGOC_EXPERIMENTAL_SRV_PREFER_TCP`` to prefer TCP for the initial queries. The environment variable is ignored for ``res_search``. Large DNS responses over UDP may be truncated due to UDP size limitations. DNS resolvers are expected to retry over TCP if the UDP response indicates truncation. Some observed DNS environments do not set the truncation flag (TC), preventing the TCP retry. This environment variable is currently experimental and subject to change.
 
+The ``srvAllowedHostsSuffix`` Option
+------------------------------------
+
+When using a "mongodb+srv" connection string, the driver validates every hostname returned by the SRV record against the domain of the SRV hostname itself. The ``srvallowedhostssuffix`` option replaces that validation: the driver instead requires each returned hostname to end in the given suffix (after normalizing both by removing trailing dots, lowercasing ASCII letters, and converting to Punycode). Only ASCII letters are case-folded: a non-ASCII uppercase letter (such as ``Ü``) is not converted to lowercase, and equivalent Unicode forms are not normalized.
+
+.. warning::
+
+   **Modifying the default SRV domain name validation can create vulnerabilities.** The ``srvallowedhostssuffix`` option relaxes the driver's protection against DNS reuse attacks: an attacker who can control DNS responses for any hostname under the configured suffix can cause the driver to connect to a host of their choosing. Specify a suffix that names the deployment's own domain (for example, ``srvallowedhostssuffix=mycompany.net``) and avoid public suffixes (such as ``com`` or ``co.uk``), which could permit connections to hosts operated by unrelated parties.
+
+The value must contain at least two "." separated labels, unless it is a single special-use label (``test``, ``localhost``, ``invalid``, ``example``, ``local``, ``internal``, ``corp``, ``home``, or ``mail``).
+
+This option is only valid with a "mongodb+srv" connection string, and may only be specified at the level of a ``mongoc_client_t``.
+
 IPv4 and IPv6
 -------------
 
@@ -108,6 +121,7 @@ MONGOC_URI_REPLICASET                      replicaset                        Emp
 MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1                                When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
 MONGOC_URI_LOADBALANCED                    loadbalanced                      false                             If true, this indicates the driver is connecting to a MongoDB cluster behind a load balancer.
 MONGOC_URI_SRVMAXHOSTS                     srvmaxhosts                       0                                 If zero, the number of hosts in DNS results is unlimited. If greater than zero, the number of hosts in DNS results is limited to being less than or equal to the given value.
+MONGOC_URI_SRVALLOWEDHOSTSSUFFIX           srvallowedhostssuffix             Empty (not set)                   A domain suffix, such as ``mydomain.net``, that replaces the default validation of the host names returned by the SRV record of a "mongodb+srv" URI: each host name must end in the suffix. Only valid with a "mongodb+srv" URI. **Modifying the default SRV domain name validation can create vulnerabilities.** See "The ``srvAllowedHostsSuffix`` Option" above for the required format and security considerations.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
 .. warning::

@@ -634,6 +634,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ts-pool.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-punycode.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
@@ -1112,6 +1113,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ns-validation.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-punycode.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
