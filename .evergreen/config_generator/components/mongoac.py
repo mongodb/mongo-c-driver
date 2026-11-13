@@ -12,7 +12,7 @@ from config_generator.etc.utils import bash_exec
 TAG = 'mongoac'
 
 MATRIX = [
-    ('rhel8-latest', 'gcc', None),
+    ('rhel9-latest', 'gcc', None),
 ]
 
 
