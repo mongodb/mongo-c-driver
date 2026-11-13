@@ -58,6 +58,8 @@ void check_inserted_ids(mongoac_insert_many_result_t const* result, std::size_t 
     CHECK(mongoac_insert_many_result_get_inserted_ids_len(result) == expected);
 
     for (std::uintptr_t i = 0u; i < expected; ++i) {
+        CAPTURE(i);
+
         auto const id_owner = from_mongoac(mongoac_insert_many_result_get_inserted_ids_get(result, i, error));
         REQUIRE_MONGOAC_ERROR_OK(error);
         auto const id = REQUIRE_BSON_STATIC(id_owner);
