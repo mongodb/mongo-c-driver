@@ -119,7 +119,8 @@ mongoc_client_session_t *
 _mongoc_client_session_new(mongoc_client_t *client,
                            mongoc_server_session_t *server_session,
                            const mongoc_session_opt_t *opts,
-                           uint32_t client_session_id);
+                           uint32_t client_session_id,
+                           bool implicit);
 
 bool
 _mongoc_client_session_from_iter(mongoc_client_t *client,

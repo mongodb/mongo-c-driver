@@ -756,7 +756,8 @@ mongoc_client_session_t *
 _mongoc_client_session_new(mongoc_client_t *client,
                            mongoc_server_session_t *server_session,
                            const mongoc_session_opt_t *opts,
-                           uint32_t client_session_id)
+                           uint32_t client_session_id,
+                           bool implicit)
 {
    mongoc_client_session_t *session;
 
@@ -774,11 +775,16 @@ _mongoc_client_session_new(mongoc_client_t *client,
 
    mongoc_optional_init(&session->opts.causal_consistency);
    mongoc_optional_init(&session->opts.snapshot);
-   txn_opts_set(&session->opts.default_txn_opts,
-                client->read_concern,
-                client->write_concern,
-                client->read_prefs,
-                DEFAULT_MAX_COMMIT_TIME_MS);
+
+   // An implicit session (the driver's own, for one command or one cursor) never starts a transaction: the
+   // transaction defaults and the jitter source (mongoc_client_session_with_transaction) are for explicit ones.
+   if (!implicit) {
+      txn_opts_set(&session->opts.default_txn_opts,
+                   client->read_concern,
+                   client->write_concern,
+                   client->read_prefs,
+                   DEFAULT_MAX_COMMIT_TIME_MS);
+   }
 
    if (opts) {
       mongoc_optional_copy(&opts->causal_consistency, &session->opts.causal_consistency);
@@ -801,7 +807,9 @@ _mongoc_client_session_new(mongoc_client_t *client,
    session->with_txn_timeout_ms = 0;
    session->fail_commit_label = NULL;
 
-   session->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
+   if (!implicit) {
+      session->jitter_source = _mongoc_jitter_source_new(_mongoc_jitter_source_generate_default);
+   }
 
    RETURN(session);
 }
