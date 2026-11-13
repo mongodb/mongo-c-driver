@@ -515,7 +515,9 @@ test_find_and_modify_install(TestSuite *suite)
                      test_find_and_modify_write_concern_failure,
                      NULL,
                      NULL,
-                     test_framework_skip_if_not_replset);
+                     test_framework_skip_if_not_replset,
+                     // DSC accepts the unsatisfiable write concern without a writeConcernError.
+                     test_framework_skip_if_dsc);
    TestSuite_AddMockServerTest(suite, "/find_and_modify/opts", test_find_and_modify_opts);
    TestSuite_AddMockServerTest(suite, "/find_and_modify/opts/write_concern", test_find_and_modify_opts_write_concern);
    TestSuite_AddMockServerTest(suite, "/find_and_modify/collation", test_find_and_modify_collation);

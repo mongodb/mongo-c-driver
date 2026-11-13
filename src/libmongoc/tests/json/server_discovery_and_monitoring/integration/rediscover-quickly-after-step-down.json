@@ -2,6 +2,7 @@
   "runOn": [
     {
       "minServerVersion": "4.4",
+      "dsc": "forbid",
       "topology": [
         "replicaset"
       ]

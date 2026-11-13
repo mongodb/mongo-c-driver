@@ -2747,6 +2747,20 @@ test_framework_is_oidc(void)
    return test_framework_getenv_bool("MONGOC_TEST_OIDC");
 }
 
+// Whether the test server uses disaggregated storage (DSC). This cannot be detected from the server, so the test
+// environment sets MONGOC_TEST_DSC.
+bool
+test_framework_is_dsc(void)
+{
+   return test_framework_getenv_bool("MONGOC_TEST_DSC");
+}
+
+int
+test_framework_skip_if_dsc(void)
+{
+   return test_framework_is_dsc() ? 0 : 1;
+}
+
 static char *
 read_test_token(void)
 {

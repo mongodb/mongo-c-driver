@@ -298,7 +298,8 @@ functions:
           - -c
           - |
             if [[ ! -d drivers-evergreen-tools ]]; then
-                git clone --depth=1 https://github.com/mongodb-labs/drivers-evergreen-tools.git
+                # TODO: revert to mongodb-labs/drivers-evergreen-tools once .evergreen/disagg/ is merged there.
+                git clone --depth=1 --branch dsc https://github.com/mdb-ad/drivers-evergreen-tools.git
             fi
     - command: subprocess.exec
       type: setup
@@ -308,6 +309,26 @@ functions:
         args:
           - -c
           - find .evergreen -type f -name "*.sh" -exec chmod +rx "{}" \;
+  fetch-dsc-crypt-shared:
+    - command: ec2.assume_role
+      params:
+        role_arn: ${aws_test_secrets_role}
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+        args:
+          - -c
+          - ../drivers-evergreen-tools/.evergreen/disagg/download-crypt.sh
+    - command: expansions.update
+      type: setup
+      params:
+        file: mongoc/crypt-shared-expansion.yml
   fetch-enterprise-auth-secrets:
     - command: ec2.assume_role
       params:
@@ -686,6 +707,27 @@ functions:
       type: setup
       params:
         file: expansions.set-cache-dir.yml
+  start-dsc:
+    - command: ec2.assume_role
+      params:
+        role_arn: arn:aws:iam::664315256653:role/disagg-storage-tf-project-ro
+    - command: subprocess.exec
+      type: setup
+      params:
+        binary: bash
+        working_dir: mongoc
+        include_expansions_in_env:
+          - AWS_ACCESS_KEY_ID
+          - AWS_SECRET_ACCESS_KEY
+          - AWS_SESSION_TOKEN
+          - DSC_SLS_TAG
+        args:
+          - -c
+          - ../drivers-evergreen-tools/.evergreen/disagg/setup.sh
+    - command: expansions.update
+      type: setup
+      params:
+        file: mongoc/dsc-expansion.yml
   start-load-balancer:
     - command: subprocess.exec
       type: setup
@@ -712,6 +754,28 @@ functions:
         args:
           - -c
           - .evergreen/scripts/compile-std.sh
+  stop-dsc:
+    - command: subprocess.exec
+      params:
+        binary: bash
+        working_dir: mongoc
+        args:
+          - -c
+          - |
+            if [[ -f ../drivers-evergreen-tools/.evergreen/disagg/teardown.sh ]]; then
+                ../drivers-evergreen-tools/.evergreen/disagg/teardown.sh
+            fi
+    - command: s3.put
+      params:
+        display_name: sls-logs.txt.gz
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        bucket: mciuploads
+        content_type: ${content_type|application/x-gzip}
+        local_file: mongoc/sls-logs.txt.gz
+        optional: true
+        permissions: public-read
+        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-sls-logs.txt.gz
   stop-load-balancer:
     - command: subprocess.exec
       params:

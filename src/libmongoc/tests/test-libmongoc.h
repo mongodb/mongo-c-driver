@@ -288,6 +288,12 @@ test_framework_skip_if_no_exhaust_cursors(void);
 bool
 test_framework_is_oidc(void);
 
+bool
+test_framework_is_dsc(void);
+
+int
+test_framework_skip_if_dsc(void);
+
 void
 test_framework_set_oidc_callback(mongoc_client_t *client);
 
