@@ -5564,9 +5564,9 @@ tasks:
           args:
             - -c
             - .evergreen/scripts/run-mock-server-tests.sh
-  - name: mongoac-rhel8-latest-gcc
-    run_on: rhel8-latest-large
-    tags: [mongoac, rhel8-latest, gcc]
+  - name: mongoac-rhel9-latest-gcc
+    run_on: rhel9-latest-large
+    tags: [mongoac, rhel9-latest, gcc]
     commands:
       - func: set-cache-dir
       - command: subprocess.exec

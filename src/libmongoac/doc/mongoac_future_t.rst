@@ -115,6 +115,7 @@ The async operation will continue to make progress until it is completed and its
     mongoac_future_get_client_session
     mongoac_future_get_cursor
     mongoac_future_get_delete_result
+    mongoac_future_get_insert_many_result
     mongoac_future_get_insert_one_result
     mongoac_future_get_optional_bson
     mongoac_future_get_runtime
