@@ -20,8 +20,7 @@ Description
 Returns the inserted id at the given ``key``, the index of the corresponding document in the ``insertMany`` operation,
 as a BSON document of the form ``{"v": <value>}``.
 
-When ``key`` is not present in the ``insertedIds`` of the ``insertMany`` operation (e.g. the corresponding document
-failed to insert), returns a null :symbol:`mongoac_bson_t`.
+When ``key`` is missing, returns a null :symbol:`mongoac_bson_t`.
 
 The returned :symbol:`mongoac_bson_t` must be destroyed with :symbol:`mongoac_bson_destroy()`.
 
