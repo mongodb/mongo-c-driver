@@ -40,5 +40,6 @@ pub mod read_preference;
 pub mod run_command_options;
 pub mod run_cursor_command_options;
 pub mod runtime;
+pub mod session_options;
 pub mod string;
 pub mod version;

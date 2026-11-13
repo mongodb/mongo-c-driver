@@ -12,6 +12,7 @@ API Reference
    mongoac_bson_t
    mongoac_bson_view_array_t
    mongoac_bson_view_t
+   mongoac_client_session_t
    mongoac_client_t
    mongoac_collection_t
    mongoac_cursor_type_t
