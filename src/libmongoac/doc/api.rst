@@ -21,6 +21,7 @@ API Reference
    mongoac_delete_result_t
    mongoac_error_t
    mongoac_future_t
+   mongoac_insert_many_result_t
    mongoac_insert_one_result_t
    mongoac_read_preference_t
    mongoac_run_command_options_t
