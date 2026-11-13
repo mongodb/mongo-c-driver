@@ -30,6 +30,179 @@ test_mongoc_client_pool_basic(void)
    mongoc_client_pool_destroy(pool);
 }
 
+static void
+test_mongoc_client_pool_max_connecting(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxConnecting=5");
+   mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
+   ASSERT_CMPUINT32(_mongoc_client_pool_get_topology(pool)->max_connecting, ==, 5);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://127.0.0.1/");
+   pool = mongoc_client_pool_new(uri);
+   ASSERT_CMPUINT32(_mongoc_client_pool_get_topology(pool)->max_connecting, ==, 2);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
+
+typedef struct {
+   mongoc_topology_t *topology;
+   uint32_t server_id;
+   bson_mutex_t mutex;
+   mongoc_cond_t cond;
+   uint32_t attempts;
+   uint32_t active;
+   uint32_t peak;
+   bool release_workers;
+} max_connecting_test_state_t;
+
+static BSON_THREAD_FUN(max_connecting_worker, arg)
+{
+   max_connecting_test_state_t *state = arg;
+
+   bson_mutex_lock(&state->mutex);
+   state->attempts++;
+   mongoc_cond_broadcast(&state->cond);
+   bson_mutex_unlock(&state->mutex);
+
+   bson_error_t error;
+   ASSERT_OR_PRINT(_mongoc_topology_connecting_acquire(state->topology, state->server_id, 5000, &error), error);
+
+   bson_mutex_lock(&state->mutex);
+   state->active++;
+   state->peak = BSON_MAX(state->peak, state->active);
+   mongoc_cond_broadcast(&state->cond);
+   while (!state->release_workers) {
+      mongoc_cond_wait(&state->cond, &state->mutex);
+   }
+   state->active--;
+   bson_mutex_unlock(&state->mutex);
+
+   _mongoc_topology_connecting_release(state->topology, state->server_id);
+   BSON_THREAD_RETURN;
+}
+
+static void
+test_mongoc_client_pool_max_connecting_limits_concurrent_connections(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxConnecting=1");
+   mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
+   max_connecting_test_state_t state = {.topology = _mongoc_client_pool_get_topology(pool), .server_id = 1};
+   bson_thread_t threads[4];
+   bson_mutex_init(&state.mutex);
+   mongoc_cond_init(&state.cond);
+
+   for (size_t i = 0; i < sizeof threads / sizeof threads[0]; i++) {
+      ASSERT_CMPINT(mcommon_thread_create(&threads[i], max_connecting_worker, &state), ==, 0);
+   }
+
+   bson_mutex_lock(&state.mutex);
+   mlib_timer timer = mlib_expires_after(5, s);
+   while (state.attempts < sizeof threads / sizeof threads[0] || state.active == 0) {
+      ASSERT(!mlib_timer_is_expired(timer));
+      mongoc_cond_timedwait(&state.cond, &state.mutex, mlib_milliseconds_count(mlib_timer_remaining(timer)));
+   }
+   /* Let all workers reach the connection limit while the first connection is held. */
+   bson_mutex_unlock(&state.mutex);
+   mlib_sleep_for(100, ms);
+   bson_mutex_lock(&state.mutex);
+   ASSERT_CMPUINT32(state.active, ==, 1);
+   ASSERT_CMPUINT32(state.peak, ==, 1);
+   state.release_workers = true;
+   mongoc_cond_broadcast(&state.cond);
+   bson_mutex_unlock(&state.mutex);
+
+   for (size_t i = 0; i < sizeof threads / sizeof threads[0]; i++) {
+      ASSERT_CMPINT(mcommon_thread_join(threads[i]), ==, 0);
+   }
+   ASSERT_CMPUINT32(state.peak, ==, 1);
+
+   mongoc_cond_destroy(&state.cond);
+   bson_mutex_destroy(&state.mutex);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
+
+
+/* Called with state->mutex held. */
+static void
+max_connecting_wait_for(max_connecting_test_state_t *state, const uint32_t *counter, uint32_t expected)
+{
+   const mlib_timer deadline = mlib_expires_after(5, s);
+   while (*counter != expected) {
+      ASSERT(!mlib_timer_is_expired(deadline));
+      mongoc_cond_timedwait(&state->cond, &state->mutex, mlib_milliseconds_count(mlib_timer_remaining(deadline)));
+   }
+}
+
+static void
+test_mongoc_client_pool_max_connecting_wakes_matching_server(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxConnecting=1");
+   mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
+   mongoc_topology_t *topology = _mongoc_client_pool_get_topology(pool);
+   max_connecting_test_state_t states[2] = {
+      {.topology = topology, .server_id = 2}, {.topology = topology, .server_id = 1}};
+   bson_thread_t threads[2];
+   bson_error_t error;
+
+   /* Exhaust both servers, then queue the waiter for server 2 first. */
+   ASSERT_OR_PRINT(_mongoc_topology_connecting_acquire(topology, 1, 5000, &error), error);
+   ASSERT_OR_PRINT(_mongoc_topology_connecting_acquire(topology, 2, 5000, &error), error);
+   for (size_t i = 0; i < 2; i++) {
+      bson_mutex_init(&states[i].mutex);
+      mongoc_cond_init(&states[i].cond);
+      ASSERT_CMPINT(mcommon_thread_create(&threads[i], max_connecting_worker, &states[i]), ==, 0);
+      bson_mutex_lock(&states[i].mutex);
+      max_connecting_wait_for(&states[i], &states[i].attempts, 1);
+      bson_mutex_unlock(&states[i].mutex);
+      mlib_sleep_for(100, ms);
+   }
+
+   /* Server 1 must make progress even though server 2 stays occupied. */
+   _mongoc_topology_connecting_release(topology, 1);
+   bson_mutex_lock(&states[1].mutex);
+   max_connecting_wait_for(&states[1], &states[1].active, 1);
+   states[1].release_workers = true;
+   mongoc_cond_broadcast(&states[1].cond);
+   bson_mutex_unlock(&states[1].mutex);
+   bson_mutex_lock(&states[0].mutex);
+   ASSERT_CMPUINT32(states[0].active, ==, 0);
+   states[0].release_workers = true;
+   mongoc_cond_broadcast(&states[0].cond);
+   bson_mutex_unlock(&states[0].mutex);
+   _mongoc_topology_connecting_release(topology, 2);
+
+   for (size_t i = 0; i < 2; i++) {
+      ASSERT_CMPINT(mcommon_thread_join(threads[i]), ==, 0);
+      ASSERT_CMPUINT32(states[i].peak, ==, 1);
+      mongoc_cond_destroy(&states[i].cond);
+      bson_mutex_destroy(&states[i].mutex);
+   }
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
+
+static void
+test_mongoc_client_pool_max_connecting_timeout(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxConnecting=1");
+   mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
+   mongoc_topology_t *topology = _mongoc_client_pool_get_topology(pool);
+   bson_error_t error;
+   ASSERT_OR_PRINT(_mongoc_topology_connecting_acquire(topology, 1, 5000, &error), error);
+   const int64_t start = bson_get_monotonic_time();
+   ASSERT(!_mongoc_topology_connecting_acquire(topology, 1, 50, &error));
+   ASSERT(bson_get_monotonic_time() - start >= 49000);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_NOT_READY, "maxConnecting slot");
+   _mongoc_topology_connecting_release(topology, 1);
+   /* Timeout must not leak a slot or increment the connection count. */
+   ASSERT_OR_PRINT(_mongoc_topology_connecting_acquire(topology, 1, 50, &error), error);
+   _mongoc_topology_connecting_release(topology, 1);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
 
 static void
 test_mongoc_client_pool_try_pop(void)
@@ -685,6 +858,14 @@ void
 test_client_pool_install(TestSuite *suite)
 {
    TestSuite_Add(suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
+   TestSuite_Add(suite, "/ClientPool/max_connecting", test_mongoc_client_pool_max_connecting);
+   TestSuite_Add(suite, "/ClientPool/max_connecting_timeout", test_mongoc_client_pool_max_connecting_timeout);
+   TestSuite_Add(suite,
+                 "/ClientPool/max_connecting_wakes_matching_server",
+                 test_mongoc_client_pool_max_connecting_wakes_matching_server);
+   TestSuite_Add(suite,
+                 "/ClientPool/max_connecting_limits_concurrent_connections",
+                 test_mongoc_client_pool_max_connecting_limits_concurrent_connections);
    TestSuite_Add(suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
    TestSuite_Add(suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
    TestSuite_Add(suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);

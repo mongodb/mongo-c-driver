@@ -690,6 +690,7 @@ mongoc_uri_option_is_int32(const char *key)
           !strcasecmp(key, MONGOC_URI_HEARTBEATFREQUENCYMS) || !strcasecmp(key, MONGOC_URI_SERVERSELECTIONTIMEOUTMS) ||
           !strcasecmp(key, MONGOC_URI_SOCKETCHECKINTERVALMS) || !strcasecmp(key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp(key, MONGOC_URI_LOCALTHRESHOLDMS) || !strcasecmp(key, MONGOC_URI_MAXPOOLSIZE) ||
+          !strcasecmp(key, MONGOC_URI_MAXCONNECTING) ||
           !strcasecmp(key, MONGOC_URI_MAXSTALENESSSECONDS) || !strcasecmp(key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
           !strcasecmp(key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) || !strcasecmp(key, MONGOC_URI_SRVMAXHOSTS) ||
           !strcasecmp(key, MONGOC_URI_MAXADAPTIVERETRIES);
@@ -2294,6 +2295,7 @@ mongoc_uri_new_with_error(const char *uri_string, bson_error_t *error)
 {
    mongoc_uri_t *uri;
    int32_t max_staleness_seconds;
+   bson_iter_t max_connecting_iter;
 
    uri = BSON_ALIGNED_ALLOC0(mongoc_uri_t);
    bson_init(&uri->raw);
@@ -2314,6 +2316,12 @@ mongoc_uri_new_with_error(const char *uri_string, bson_error_t *error)
    if (!mongoc_uri_parse(uri, uri_string, error)) {
       mongoc_uri_destroy(uri);
       return NULL;
+   }
+
+   if (bson_iter_init_find_case(&max_connecting_iter, &uri->options, MONGOC_URI_MAXCONNECTING) &&
+       BSON_ITER_HOLDS_INT32(&max_connecting_iter) && bson_iter_int32(&max_connecting_iter) < 1) {
+      MONGOC_WARNING("Unsupported value for \"" MONGOC_URI_MAXCONNECTING "\": \"%d\"",
+                     bson_iter_int32(&max_connecting_iter));
    }
 
    uri->str = bson_strdup(uri_string);
