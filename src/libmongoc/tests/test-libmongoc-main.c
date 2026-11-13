@@ -96,7 +96,6 @@ main(int argc, char *argv[])
    TEST_INSTALL(test_mongos_pinning_install);
    TEST_INSTALL(test_queue_install);
    TEST_INSTALL(test_primary_stepdown_install);
-   TEST_INSTALL(test_psl_install);
    TEST_INSTALL(test_punycode_install);
    TEST_INSTALL(test_read_concern_install);
    TEST_INSTALL(test_read_write_concern_install);

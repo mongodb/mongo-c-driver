@@ -21,7 +21,6 @@
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-psl-private.h>
 #include <mongoc/mongoc-punycode-private.h>
 #include <mongoc/mongoc-read-prefs-private.h>
 #include <mongoc/mongoc-structured-log-private.h>

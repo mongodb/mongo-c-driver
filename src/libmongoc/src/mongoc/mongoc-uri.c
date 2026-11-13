@@ -30,7 +30,6 @@
 #include <mongoc/mongoc-handshake-private.h>
 #include <mongoc/mongoc-host-list-private.h>
 #include <mongoc/mongoc-oidc-env-private.h>
-#include <mongoc/mongoc-psl-private.h>
 #include <mongoc/mongoc-punycode-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
 #include <mongoc/mongoc-topology-private.h>
@@ -167,8 +166,10 @@ static const char *const srv_allowed_hosts_suffix_valid_single_labels[] = {
 // 2. Convert to A-label (Punycode) form.
 // 3. Normalize to lowercase using ASCII case folding.
 // 4. Error unless at least two labels, or the single label is special-use.
-// 5. Error if the value is a public suffix per the Public Suffix List.
-// 6. Prepend '.' to make the value a label-aligned suffix.
+// 5. Prepend '.' to make the value a label-aligned suffix.
+//
+// Note: the spec's optional ("SHOULD") public-suffix check is intentionally
+// not implemented, matching the C#/Java drivers.
 //
 // On success, stores the canonical dot-prefixed form in uri->srv_allowed_hosts_suffix.
 static bool
@@ -231,15 +232,7 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
       }
    }
 
-   // 5. Reject public suffixes per the Public Suffix List (special-use names exempt).
-   if (mongoc_psl_is_public_suffix(canonical.data) && nlabels >= 2) {
-      MONGOC_URI_ERROR(
-         error, "%s must not be a public suffix: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, canonical.data);
-      mstr_destroy(&canonical);
-      return false;
-   }
-
-   // 6. Prepend '.' for label-aligned suffix matching.
+   // 5. Prepend '.' for label-aligned suffix matching.
    char *dot_prefixed = bson_malloc0(canonical.len + 2);
    if (!dot_prefixed) {
       MONGOC_URI_ERROR(error, "%s", "out of memory");

@@ -88,9 +88,9 @@ When using a "mongodb+srv" connection string, the driver validates every hostnam
 
 .. warning::
 
-   **Modifying the default SRV domain name validation can create vulnerabilities.** The ``srvallowedhostssuffix`` option relaxes the driver's protection against DNS reuse attacks: an attacker who can control DNS responses for any hostname under the configured suffix can cause the driver to connect to a host of their choosing. Specify a suffix that names the deployment's own domain (for example, ``srvallowedhostssuffix=mycompany.net``) and avoid public suffixes (such as ``com`` or ``co.uk``), which the driver rejects.
+   **Modifying the default SRV domain name validation can create vulnerabilities.** The ``srvallowedhostssuffix`` option relaxes the driver's protection against DNS reuse attacks: an attacker who can control DNS responses for any hostname under the configured suffix can cause the driver to connect to a host of their choosing. Specify a suffix that names the deployment's own domain (for example, ``srvallowedhostssuffix=mycompany.net``) and avoid public suffixes (such as ``com`` or ``co.uk``), which could permit connections to hosts operated by unrelated parties.
 
-The value must contain at least two "." separated labels, unless it is a single special-use label (``test``, ``localhost``, ``invalid``, ``example``, ``local``, ``internal``, ``corp``, ``home``, or ``mail``). Values that are public suffixes per the `Public Suffix List <https://publicsuffix.org/>`_ are rejected; the driver ships with a copy of the list vendored from the `MongoDB specifications repository <https://github.com/mongodb/specifications/blob/master/source/public-suffix-list/public-suffix-list.md>`_.
+The value must contain at least two "." separated labels, unless it is a single special-use label (``test``, ``localhost``, ``invalid``, ``example``, ``local``, ``internal``, ``corp``, ``home``, or ``mail``).
 
 This option is only valid with a "mongodb+srv" connection string, and may only be specified at the level of a ``mongoc_client_t``.
 

@@ -1,7 +1,6 @@
 #include <common-string-private.h>
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-host-list-private.h>
-#include <mongoc/mongoc-psl-private.h>
 #include <mongoc/mongoc-punycode-private.h>
 #include <mongoc/mongoc-topology-private.h>
 #include <mongoc/mongoc-uri-private.h>
@@ -2745,10 +2744,11 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    ASSERT(uri);
    mongoc_uri_destroy(uri);
 
-   /* public suffixes are rejected per the Public Suffix List */
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=co.uk"));
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=github.io"));
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=com.ac"));
+   /* public suffixes are accepted: the spec's public-suffix check is a
+    * SHOULD and is intentionally not implemented (C#/Java precedent) */
+   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=co.uk");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
 
    /* underscores are legal in domain labels (CSHARP-6246 precedent) */
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=my_domain.net");
@@ -2872,34 +2872,6 @@ test_mongoc_punycode(void)
    mstr_destroy(&encoded);
 }
 
-
-static void
-test_mongoc_psl(void)
-{
-   /* plain public suffixes */
-   ASSERT(mongoc_psl_is_public_suffix("com"));
-   ASSERT(mongoc_psl_is_public_suffix("net"));
-   ASSERT(mongoc_psl_is_public_suffix("org"));
-   ASSERT(mongoc_psl_is_public_suffix("uk"));
-
-   /* multi-label public suffixes */
-   ASSERT(mongoc_psl_is_public_suffix("co.uk"));
-   ASSERT(mongoc_psl_is_public_suffix("com.ac"));
-   ASSERT(mongoc_psl_is_public_suffix("github.io"));
-
-   /* registrable domains and deeper hostnames are not public suffixes */
-   ASSERT(!mongoc_psl_is_public_suffix("foo.com"));
-   ASSERT(!mongoc_psl_is_public_suffix("bar.co.uk"));
-   ASSERT(!mongoc_psl_is_public_suffix("something.github.io"));
-   ASSERT(!mongoc_psl_is_public_suffix("mydomain.net"));
-   ASSERT(!mongoc_psl_is_public_suffix("a.b.com.ac"));
-
-   /* wildcard and exception rules (*.ck / !www.ck) */
-   ASSERT(mongoc_psl_is_public_suffix("ck"));
-   ASSERT(mongoc_psl_is_public_suffix("bar.ck"));
-   ASSERT(!mongoc_psl_is_public_suffix("www.ck"));
-   ASSERT(!mongoc_psl_is_public_suffix("foo.www.ck"));
-}
 
 #define PROHIBITED(_key, _value, _type, _where)                                                      \
    do {                                                                                              \
@@ -3544,7 +3516,6 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/srv_allowed_hosts_suffix", test_mongoc_uri_srv_allowed_hosts_suffix);
    TestSuite_Add(suite, "/Uri/copy_srv_allowed_hosts_suffix", test_mongoc_uri_copy_srv_allowed_hosts_suffix);
    TestSuite_Add(suite, "/Uri/punycode", test_mongoc_punycode);
-   TestSuite_Add(suite, "/Uri/psl", test_mongoc_psl);
    TestSuite_Add(suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add(suite, "/Uri/utf8", test_mongoc_uri_utf8);
    TestSuite_Add(suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
