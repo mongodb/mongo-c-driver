@@ -2728,7 +2728,8 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=.."));
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix="));
 
-   /* single labels are rejected unless special-use */
+   /* single labels are rejected unless special-use; reserved single labels
+    * are accepted (prose test 12) */
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=net"));
    ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=com"));
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=test");
@@ -2741,12 +2742,6 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    ASSERT(uri);
    mongoc_uri_destroy(uri);
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=corp");
-   ASSERT(uri);
-   mongoc_uri_destroy(uri);
-
-   /* public suffixes are accepted: the spec's public-suffix check is a
-    * SHOULD and is intentionally not implemented (C#/Java precedent) */
-   uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=co.uk");
    ASSERT(uri);
    mongoc_uri_destroy(uri);
 
