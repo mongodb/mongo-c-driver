@@ -60,6 +60,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
             "CreateCollectionOptionsT",
             "mongoac_create_collection_options_t",
         ),
+        ("CursorT", "mongoac_cursor_t"),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
         ("DeleteOptionsT", "mongoac_delete_options_t"),
@@ -147,6 +148,11 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "cursor" => &[
+                "mongoac/bson.h",
+                "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
+            ],
             "cursor_type" => &["stdint.h"],
             "database_options" => &[],
             "database" => &[
@@ -174,6 +180,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "future" => &[
                 "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
+                "mongoac/cursor-fwd.h",
                 "mongoac/delete_result-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/insert_many_result-fwd.h",
