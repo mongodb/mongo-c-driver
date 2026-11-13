@@ -56,7 +56,8 @@ TEST_CASE("destroy", "[mongoac][cursor]") {
 TEST_CASE("clone", "[mongoac][cursor]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_cursor_clone"_sv, nullptr), &mongoac_database_destroy);
@@ -139,7 +140,8 @@ TEST_CASE("clone", "[mongoac][cursor]") {
 TEST_CASE("next", "[mongoac][cursor]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_cursor_next"_sv, nullptr), &mongoac_database_destroy);
@@ -229,7 +231,8 @@ TEST_CASE("next", "[mongoac][cursor]") {
 TEST_CASE("next_async", "[mongoac][cursor]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
-    auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
     auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
     auto const runtime = runtime_owner.get();

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::client_options::ClientOptionsT;
 use crate::client_session::ClientSessionT;
 use crate::database::DatabaseT;
 use crate::database_options::DatabaseOptionsT;
@@ -43,11 +44,39 @@ pub extern "C" fn mongoac_client_clone(client: *const ClientT) -> *mut ClientT {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn mongoac_client_new(conn_str: StringViewT, error: *mut ErrorT) -> *mut ClientT {
+pub extern "C" fn mongoac_client_new(
+    options: *const ClientOptionsT,
+    error: *mut ErrorT,
+) -> *mut ClientT {
     let error = safe_optional_error_as_mut!(error);
-    let conn_str = safe_string_view_with_error!(conn_str, error);
+    let options = safe_optional_as_ref!(options);
 
-    safe_into_raw!(safe_result!(ClientT::new(conn_str), error))
+    safe_into_raw!(safe_result!(ClientT::new(options), error))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_new_with_uri_str(
+    uri: StringViewT,
+    error: *mut ErrorT,
+) -> *mut ClientT {
+    let error = safe_optional_error_as_mut!(error);
+    let conn_str = safe_string_view_with_error!(uri, error);
+
+    safe_into_raw!(safe_result!(ClientT::new_with_uri_str(conn_str), error))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_client_new_with_uri_str_async(
+    uri: StringViewT,
+    error: *mut ErrorT,
+) -> *mut FutureT {
+    let error = safe_optional_error_as_mut!(error);
+    let conn_str = safe_string_view_with_error!(uri, error);
+
+    safe_into_raw!(safe_result!(
+        ClientT::new_with_uri_str_async(conn_str),
+        error
+    ))
 }
 
 #[unsafe(no_mangle)]
@@ -116,27 +145,75 @@ pub extern "C" fn mongoac_client_get_runtime_address(client: *const ClientT) -> 
 }
 
 impl ClientT {
-    fn new(conn_str: &str) -> Result<ClientT, ErrorT> {
+    fn new(options: Option<&ClientOptionsT>) -> Result<ClientT, ErrorT> {
         // Runtime Error (mongoac)
         let runtime = RuntimeT::new().map_err(|e| ErrorT::MongoAC {
             code: ErrorCodeT::RuntimeError,
             message: Some(format!("runtime creation failed: {e}")),
         })?;
 
+        // Ensure background task spawned by `Client::with_options()` are associated with this runtime.
+        let _guard = runtime.enter();
+
         // Options Error (rust)
-        let client = runtime.block_on(async move {
-            // Parsing Error (rust)
-            let mut opts = ClientOptions::parse(conn_str).await?;
-
-            opts.driver_info = Some(build_driver_info());
-
-            Client::with_options(opts)
-        })?;
+        let client = with_driver_info(
+            options.map_or_else(ClientOptions::default, Into::into),
+            Client::with_options,
+        )?;
 
         Ok(ClientT {
             runtime,
             inner: client,
         })
+    }
+
+    fn new_with_uri_str(uri: &str) -> Result<ClientT, ErrorT> {
+        // Runtime Error (mongoac)
+        let rt = RuntimeT::new().map_err(|e| ErrorT::MongoAC {
+            code: ErrorCodeT::RuntimeError,
+            message: Some(format!("runtime creation failed: {e}")),
+        })?;
+
+        let runtime = rt.clone();
+
+        rt.block_on(async {
+            // Parsing Error (rust)
+            let options = ClientOptions::parse(uri).await?;
+
+            // Options Error (rust)
+            let client = with_driver_info(options, Client::with_options)?;
+
+            Ok(ClientT {
+                runtime,
+                inner: client,
+            })
+        })
+    }
+
+    fn new_with_uri_str_async(uri: &str) -> Result<FutureT, ErrorT> {
+        // Runtime Error (mongoac)
+        let rt = RuntimeT::new().map_err(|e| ErrorT::MongoAC {
+            code: ErrorCodeT::RuntimeError,
+            message: Some(format!("runtime creation failed: {e}")),
+        })?;
+
+        let runtime = rt.downgrade();
+        let conn_str = uri.to_owned();
+
+        let handle = rt.spawn(async move {
+            // Parsing Error (rust)
+            let options = ClientOptions::parse(conn_str).await?;
+
+            // Options Error (rust)
+            let client = with_driver_info(options, Client::with_options)?;
+
+            Ok(ClientT {
+                runtime: RuntimeT::upgrade(&runtime),
+                inner: client,
+            })
+        });
+
+        Ok(FutureT::new(rt, handle))
     }
 
     fn get_database(&self, name: &str, options: Option<&DatabaseOptionsT>) -> DatabaseT {
@@ -214,6 +291,30 @@ impl RuntimeAware for ClientT {
     fn runtime(&self) -> &RuntimeT {
         &self.runtime
     }
+}
+
+fn with_driver_info<Fn>(
+    mut opts: ClientOptions,
+    new_with_options: Fn,
+) -> Result<Client, mongodb::error::Error>
+where
+    Fn: FnOnce(ClientOptions) -> Result<Client, mongodb::error::Error>,
+{
+    // Save user driver info to append after mongoac's driver info.
+    let user_driver_info = opts.driver_info.take();
+
+    // Append mongoac's driver info before user driver info.
+    opts.driver_info = Some(build_driver_info());
+
+    // Construct the client with `opts`.
+    let client = new_with_options(opts)?;
+
+    // Append user driver info after mongoac's driver info.
+    if let Some(user_driver_info) = user_driver_info {
+        client.append_metadata(user_driver_info)?;
+    }
+
+    Ok(client)
 }
 
 fn build_driver_info() -> DriverInfo {

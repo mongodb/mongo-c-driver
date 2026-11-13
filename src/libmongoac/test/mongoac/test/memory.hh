@@ -15,10 +15,11 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 
 namespace mongoac::test {
 
-template <typename T, typename D = void (*)(T*)>
+template <typename T, typename D = void (*)(T*), std::enable_if_t<std::is_invocable_v<D, T*>>* = nullptr>
 std::unique_ptr<T, D> make_unique(T* ptr, D deleter) {
     return std::unique_ptr<T, D>(ptr, deleter);
 }
