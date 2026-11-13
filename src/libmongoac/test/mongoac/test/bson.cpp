@@ -42,6 +42,8 @@ mongoac_bson_view_t to_mongoac(bson_t const* bson) {
     return {bson_get_data(bson), bson->len};
 }
 
+MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_PUSH();
+
 unique_bson_ptr from_mongoac(mongoac_bson_t const& bson) {
     if (!bson.ptr) {
         return {nullptr, &bson_destroy};
@@ -77,6 +79,8 @@ std::optional<bson_t> to_bson(mongoac_bson_view_t bson) {
 
     return std::nullopt;
 }
+
+MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_POP();
 
 std::string as_json(unique_bson_ptr const& bson) {
     return as_json(to_mongoac(bson.get()));
