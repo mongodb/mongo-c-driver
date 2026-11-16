@@ -125,7 +125,6 @@ mongoc_server_description_init(mongoc_server_description_t *sd, const char *addr
 
    // Parse host. On failure do not initialize any members.
    if (!_mongoc_host_list_from_string(&sd->host, address)) {
-      MONGOC_WARNING("Failed to parse uri for %s", address);
       RETURN(false);
    }
 
