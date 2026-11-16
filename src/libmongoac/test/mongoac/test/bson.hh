@@ -75,4 +75,14 @@ bson_t* operator""_bson(char const* ptr, std::size_t len);
         return iter;                                     \
     }()
 
+// Return a `bson_iter_t` to the requested field.
+#define REQUIRE_BSON_ITER_FIND_DESCENDANT(bson, key)                 \
+    [&]() -> bson_iter_t {                                           \
+        bson_iter_t iter = {};                                       \
+        bson_iter_t descendant = {};                                 \
+        REQUIRE(bson_iter_init(&iter, &bson));                       \
+        REQUIRE(bson_iter_find_descendant(&iter, key, &descendant)); \
+        return descendant;                                           \
+    }()
+
 } // namespace mongoac::test
