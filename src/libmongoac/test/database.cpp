@@ -747,6 +747,71 @@ TEST_CASE("run_cursor_command", "[mongoac][database]") {
         CHECK(done == nullptr);
         CHECK(idempotency == nullptr);
     }
+
+    SECTION("session") {
+        auto const session_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_start_session(client, nullptr, error), &mongoac_client_session_destroy);
+        auto const session = session_owner.get();
+
+        {
+            auto const coll_owner = REQUIRE_MAKE_UNIQUE(
+                mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+            auto const coll = coll_owner.get();
+
+            (void)REQUIRE_MAKE_UNIQUE(
+                mongoac_collection_insert_one(
+                    coll,
+                    nullptr,
+                    to_mongoac(REQUIRE_MAKE_UNIQUE(R"({"_id": 1})"_bson, &bson_destroy).get()),
+                    nullptr,
+                    error),
+                &mongoac_insert_one_result_destroy);
+            REQUIRE_MONGOAC_ERROR_OK(error);
+        }
+
+        // Manually create a server-side session using a "find" command with `batchSize: 0`.
+        auto const find = REQUIRE_MAKE_UNIQUE(R"({"find": "coll", "batchSize": 0})"_bson, &bson_destroy);
+
+        // Driver should reject a cursor command with a session from another client.
+        {
+            auto const other_client =
+                REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+            auto const other_session = REQUIRE_MAKE_UNIQUE(
+                mongoac_client_start_session(other_client.get(), nullptr, error), &mongoac_client_session_destroy);
+            REQUIRE_MONGOAC_ERROR_OK(error);
+
+            auto const reply = make_unique(
+                mongoac_database_run_cursor_command(db, other_session.get(), to_mongoac(find.get()), nullptr, error),
+                &mongoac_cursor_destroy);
+            CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+            auto const msg = from_mongoac(mongoac_error_message(error));
+            CHECK_THAT(
+                msg,
+                Catch::Matchers::ContainsSubstring("the session provided to an operation") &&
+                    Catch::Matchers::ContainsSubstring("must be created from the same client"));
+            CHECK(reply == nullptr);
+        }
+
+        // Server should accept a cursor command with the associated session.
+        {
+            auto const cursor_owner = make_unique(
+                mongoac_database_run_cursor_command(db, session, to_mongoac(find.get()), nullptr, error),
+                &mongoac_cursor_destroy);
+            CHECK_MONGOAC_ERROR_OK(error);
+            auto const cursor = cursor_owner.get();
+            REQUIRE(cursor != nullptr);
+
+            // The empty first batch forces next() to send getMore with the original session.
+            auto const reply = from_mongoac(mongoac_cursor_next(cursor, error));
+            CHECK_MONGOAC_ERROR_OK(error);
+            auto const doc = REQUIRE_BSON_STATIC(reply);
+            auto const id = REQUIRE_BSON_ITER_FIND(doc, "_id");
+            CHECK(bson_iter_int32(&id) == 1);
+            auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
+            CHECK_MONGOAC_ERROR_OK(error);
+            CHECK(done == nullptr);
+        }
+    }
 }
 
 TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
@@ -754,6 +819,8 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
     auto const error = error_owner.get();
     auto const client_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
     auto const client = client_owner.get();
+    auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+    auto const runtime = runtime_owner.get();
     auto const db_owner = REQUIRE_MAKE_UNIQUE(
         mongoac_client_get_database(client, "mongoac_database_run_cursor_command_async"_sv, nullptr),
         &mongoac_database_destroy);
@@ -783,9 +850,6 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
     }
 
     SECTION("none") {
-        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_database_get_runtime(db), &mongoac_runtime_destroy);
-        auto const runtime = runtime_owner.get();
-
         auto const find = REQUIRE_MAKE_UNIQUE(R"({"find": "coll"})"_bson, &bson_destroy);
 
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
@@ -832,9 +896,6 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
             &mongoac_insert_one_result_destroy);
         REQUIRE_MONGOAC_ERROR_OK(error);
 
-        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_database_get_runtime(db), &mongoac_runtime_destroy);
-        auto const runtime = runtime_owner.get();
-
         auto const future_owner = REQUIRE_MAKE_UNIQUE(
             mongoac_database_run_cursor_command_async(
                 db,
@@ -879,5 +940,82 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
 
         CHECK(done == nullptr);
         CHECK(idempotency == nullptr);
+    }
+
+    SECTION("session") {
+        auto const session_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_start_session(client, nullptr, error), &mongoac_client_session_destroy);
+        auto const session = session_owner.get();
+
+        {
+            auto const coll_owner = REQUIRE_MAKE_UNIQUE(
+                mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+            auto const coll = coll_owner.get();
+
+            (void)REQUIRE_MAKE_UNIQUE(
+                mongoac_collection_insert_one(
+                    coll,
+                    nullptr,
+                    to_mongoac(REQUIRE_MAKE_UNIQUE(R"({"_id": 1})"_bson, &bson_destroy).get()),
+                    nullptr,
+                    error),
+                &mongoac_insert_one_result_destroy);
+            REQUIRE_MONGOAC_ERROR_OK(error);
+        }
+
+        // Manually create a server-side session using a "find" command with `batchSize: 0`.
+        auto const find = REQUIRE_MAKE_UNIQUE(R"({"find": "coll", "batchSize": 0})"_bson, &bson_destroy);
+
+        auto const other_client =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
+        auto const other_session = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_start_session(other_client.get(), nullptr, error), &mongoac_client_session_destroy);
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const foreign_fut_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_database_run_cursor_command_async(db, other_session.get(), to_mongoac(find.get()), nullptr),
+            &mongoac_future_destroy);
+        auto const session_fut_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_database_run_cursor_command_async(db, session, to_mongoac(find.get()), nullptr),
+            &mongoac_future_destroy);
+
+        auto const foreign_fut = foreign_fut_owner.get();
+        auto const session_fut = session_fut_owner.get();
+
+        {
+            auto const futures = to_array<mongoac_future_t*>({foreign_fut, session_fut});
+            mongoac_runtime_block_on_all(runtime, futures.data(), futures.size(), error);
+            REQUIRE_MONGOAC_ERROR_OK(error);
+        }
+
+        // Driver should reject cursor iteration using an incorrect session.
+        {
+            auto const reply = mongoac_future_get_cursor(foreign_fut, error);
+            CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+            auto const msg = from_mongoac(mongoac_error_message(error));
+            CHECK_THAT(
+                msg,
+                Catch::Matchers::ContainsSubstring("the session provided to an operation") &&
+                    Catch::Matchers::ContainsSubstring("must be created from the same client"));
+            CHECK(reply == nullptr);
+        }
+
+        // Server should accept cursor iteration using the correct session.
+        {
+            auto const cursor_view = mongoac_future_get_cursor(session_fut, error);
+            CHECK_MONGOAC_ERROR_OK(error);
+            auto const cursor_owner = REQUIRE_MAKE_UNIQUE(mongoac_cursor_clone(cursor_view), &mongoac_cursor_destroy);
+            auto const cursor = cursor_owner.get();
+
+            auto const reply = from_mongoac(mongoac_cursor_next(cursor, error));
+            CHECK_MONGOAC_ERROR_OK(error);
+            auto const doc = REQUIRE_BSON_STATIC(reply);
+            auto const id = REQUIRE_BSON_ITER_FIND(doc, "_id");
+            CHECK(bson_iter_int32(&id) == 1);
+
+            auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
+            CHECK_MONGOAC_ERROR_OK(error);
+            CHECK(done == nullptr);
+        }
     }
 }
