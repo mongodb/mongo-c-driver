@@ -115,19 +115,6 @@ _srv_validation_error(bson_error_t *error, const char *host, const char *srv_hos
 }
 
 
-static int
-count_dots(const char *s)
-{
-   int n = 0;
-   const char *dot = s;
-
-   while ((dot = strchr(dot + 1, '.'))) {
-      n++;
-   }
-
-   return n;
-}
-
 static char *
 lowercase_str_new(const char *key)
 {
@@ -288,11 +275,23 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       // host_canonical hostname to the validator callback; its verdict is the
       // complete validation result (no domainname check applies).
 
-      // No options configured: host must be a descendant of the service
-      // root: if service is "a.foo.co" host can be like "a.foo.co",
-      // "b.foo.co", "a.b.foo.co", etc.
-      const char *srv_host = strchr(srv_hostname_canonical.data, '.');
-      BSON_ASSERT(srv_host);
+      // No options configured. Derive the {domainname} that returned hostnames are validated against (Initial DNS
+      // Seedlist Discovery Spec): the portion of the SRV hostname after its leftmost label or when the SRV hostname
+      // has fewer than three labels, the entire hostname (e.g. for "mongodb+srv://mongo.local" the {domainname} is
+      // "mongo.local" itself). The leading dot keeps the comparison label-aligned.
+      size_t srv_labels = 1u;
+      for (const char *c = srv_hostname_canonical.data; *c; c++) {
+         srv_labels += (*c == '.');
+      }
+      char srv_host[BSON_HOST_NAME_MAX + 2];
+      if (srv_labels >= 3u) {
+         const char *const first_dot = strchr(srv_hostname_canonical.data, '.');
+         BSON_ASSERT(first_dot);
+         bson_strncpy(srv_host, first_dot, sizeof srv_host);
+      } else {
+         const int n = snprintf(srv_host, sizeof srv_host, ".%s", srv_hostname_canonical.data);
+         BSON_ASSERT(n > 0);
+      }
 
       const bool in_domain =
          strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
@@ -302,10 +301,6 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       // hostname.
       bool enough_levels = true;
       {
-         size_t srv_labels = 1u;
-         for (const char *c = srv_hostname_canonical.data; *c; c++) {
-            srv_labels += (*c == '.');
-         }
          size_t host_labels = 1u;
          for (const char *c = host_canonical.data; *c; c++) {
             host_labels += (*c == '.');
@@ -563,7 +558,7 @@ _parse_srv_hostname(mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
 
    {
       char *service = _strdup_pct_decode(str, error);
-      if (!service || !valid_hostname(service) || count_dots(service) < 2) {
+      if (!service || !valid_hostname(service)) {
          MONGOC_URI_ERROR(error, "Invalid SRV service name \"%.*s\" in URI: %s", MSTR_FMT(str), error->message);
          bson_free(service);
          return false;
