@@ -21,7 +21,11 @@ Represents a `mongodb::ClientSession <https://docs.rs/mongodb/latest/mongodb/str
 
 .. important::
 
-  A client session may only be used by a single thread at a time!
+  A client session represents a set of *sequential* operations. Operations using the same session SHOULD NOT be executed
+  concurrently. Each :symbol:`mongoac_future_t` representing an async operation associated with a given session must be
+  :ref:`driven to completion <readiness>` before the next async operation associated with the same session is spawned.
+  When two or more async operations associated with the same session are spawned concurrently, the behavior is
+  unspecified.
 
 .. only:: html
 
