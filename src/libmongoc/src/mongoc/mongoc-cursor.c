@@ -1498,13 +1498,17 @@ _mongoc_cursor_response_read(mongoc_cursor_t *cursor, mongoc_cursor_response_t *
 
    ENTRY;
 
-   BSON_UNUSED(cursor);
-
    if (bson_iter_next(&response->batch_iter) && BSON_ITER_HOLDS_DOCUMENT(&response->batch_iter)) {
       bson_iter_document(&response->batch_iter, &data_len, &data);
 
-      /* bson_iter_next guarantees valid BSON, so this must succeed */
-      BSON_ASSERT(bson_init_static(&response->current_doc, data, data_len));
+      /* The batch iterator checks bounds but does not validate the embedded document. */
+      if (!bson_init_static(&response->current_doc, data, data_len)) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_PROTOCOL,
+                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                           "Invalid BSON document in cursor reply.");
+         return;
+      }
       *bson = &response->current_doc;
    }
 }

@@ -826,6 +826,10 @@ mark_invalid:
  *       Advances @iter to the next field of the underlying BSON document.
  *       If all fields have been exhausted, then %false is returned.
  *
+ *       A true return value does not guarantee valid BSON. Embedded documents
+ *       and arrays are checked for buffer bounds, but not for the other
+ *       requirements checked by `bson_init_static` or `bson_validate`.
+ *
  *       It is a programming error to use @iter after this function has
  *       returned false.
  *

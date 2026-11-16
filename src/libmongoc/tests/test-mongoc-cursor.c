@@ -926,6 +926,67 @@ test_cursor_new_invalid(void)
 
 
 static void
+_test_cursor_malformed_batch(const uint8_t *batch_data, size_t batch_len)
+{
+   bson_t batch;
+   ASSERT(bson_init_static(&batch, batch_data, batch_len));
+
+   bson_t *reply = BCON_NEW("cursor",
+                            "{",
+                            "id",
+                            BCON_INT64(0),
+                            "ns",
+                            BCON_UTF8("db.coll"),
+                            "firstBatch",
+                            BCON_ARRAY(&batch),
+                            "}",
+                            "ok",
+                            BCON_DOUBLE(1));
+   mongoc_client_t *client = mongoc_client_new("mongodb://localhost/");
+   ASSERT(client);
+
+   // A zero cursor ID lets this test read the batch without connecting to a server.
+   // `mongoc_cursor_new_from_command_reply_with_opts` takes ownership of `reply`.
+   mongoc_cursor_t *cursor = mongoc_cursor_new_from_command_reply_with_opts(client, reply, NULL);
+   bson_error_t error;
+   ASSERT(cursor);
+   ASSERT_OR_PRINT(!mongoc_cursor_error(cursor, &error), error);
+
+   const bson_t *doc = &batch;
+   ASSERT(!mongoc_cursor_next(cursor, &doc));
+   ASSERT(!doc);
+   ASSERT(mongoc_cursor_error(cursor, &error));
+   ASSERT_ERROR_CONTAINS(
+      error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid BSON document in cursor reply.");
+   ASSERT(!mongoc_cursor_more(cursor));
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_client_destroy(client);
+   bson_destroy(&batch);
+}
+
+static void
+test_cursor_malformed_batch_short_document(void)
+{
+   const uint8_t batch[] = "\x0c\x00\x00\x00" // Array length.
+                           "\x03\x30\x00"     // Document element named "0".
+                           "\x04\x00\x00\x00" // Document length is below the minimum of 5.
+                           "\x00";            // Array terminator.
+   _test_cursor_malformed_batch(batch, sizeof(batch) - 1);
+}
+
+static void
+test_cursor_malformed_batch_missing_terminator(void)
+{
+   const uint8_t batch[] = "\x0d\x00\x00\x00"     // Array length.
+                           "\x03\x30\x00"         // Document element named "0".
+                           "\x05\x00\x00\x00\x01" // Document has a non-NUL final byte.
+                           "\x00";                // Array terminator.
+   _test_cursor_malformed_batch(batch, sizeof(batch) - 1);
+}
+
+
+static void
 test_cursor_new_tailable_await(void)
 {
    mock_server_t *server;
@@ -2952,6 +3013,8 @@ test_cursor_install(TestSuite *suite)
                      NULL,
                      TestSuite_CheckLive);
    TestSuite_AddLive(suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_Add(suite, "/Cursor/malformed_batch/short_document", test_cursor_malformed_batch_short_document);
+   TestSuite_Add(suite, "/Cursor/malformed_batch/missing_terminator", test_cursor_malformed_batch_missing_terminator);
    TestSuite_AddMockServerTest(suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
    TestSuite_AddMockServerTest(suite, "/Cursor/int64_t_maxtimems", test_cursor_int64_t_maxtimems);
    TestSuite_AddMockServerTest(suite, "/Cursor/new_ignores_fields", test_cursor_new_ignores_fields);
