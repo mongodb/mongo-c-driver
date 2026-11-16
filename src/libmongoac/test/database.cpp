@@ -769,10 +769,10 @@ TEST_CASE("run_cursor_command", "[mongoac][database]") {
             REQUIRE_MONGOAC_ERROR_OK(error);
         }
 
-        // Manually create a server-side session using a "find" command with `batchSize: 0`.
+        // Use a "find" command with `batchSize: 0` to require "getMore" command on subsequent cursor iteration.
         auto const find = REQUIRE_MAKE_UNIQUE(R"({"find": "coll", "batchSize": 0})"_bson, &bson_destroy);
 
-        // Driver should reject a cursor command with a session from another client.
+        // Driver should reject an operation given an inconsistent session.
         {
             auto const other_client =
                 REQUIRE_MAKE_UNIQUE(mongoac_client_new(default_uri(), nullptr), &mongoac_client_destroy);
@@ -787,29 +787,25 @@ TEST_CASE("run_cursor_command", "[mongoac][database]") {
             auto const msg = from_mongoac(mongoac_error_message(error));
             CHECK_THAT(
                 msg,
-                Catch::Matchers::ContainsSubstring("the session provided to an operation") &&
-                    Catch::Matchers::ContainsSubstring("must be created from the same client"));
+                Catch::Matchers::ContainsSubstring(
+                    "the session provided to an operation must be created from the same client as the "
+                    "collection/database on which the operation is being performed"));
             CHECK(reply == nullptr);
         }
 
-        // Server should accept a cursor command with the associated session.
+        // Driver should accept an operation given an associated session.
         {
             auto const cursor_owner = make_unique(
                 mongoac_database_run_cursor_command(db, session, to_mongoac(find.get()), nullptr, error),
                 &mongoac_cursor_destroy);
             CHECK_MONGOAC_ERROR_OK(error);
             auto const cursor = cursor_owner.get();
-            REQUIRE(cursor != nullptr);
 
-            // The empty first batch forces next() to send getMore with the original session.
             auto const reply = from_mongoac(mongoac_cursor_next(cursor, error));
             CHECK_MONGOAC_ERROR_OK(error);
             auto const doc = REQUIRE_BSON_STATIC(reply);
             auto const id = REQUIRE_BSON_ITER_FIND(doc, "_id");
             CHECK(bson_iter_int32(&id) == 1);
-            auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
-            CHECK_MONGOAC_ERROR_OK(error);
-            CHECK(done == nullptr);
         }
     }
 }
@@ -963,7 +959,7 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
             REQUIRE_MONGOAC_ERROR_OK(error);
         }
 
-        // Manually create a server-side session using a "find" command with `batchSize: 0`.
+        // Use a "find" command with `batchSize: 0` to require "getMore" command on subsequent cursor iteration.
         auto const find = REQUIRE_MAKE_UNIQUE(R"({"find": "coll", "batchSize": 0})"_bson, &bson_destroy);
 
         auto const other_client =
@@ -988,23 +984,23 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
             REQUIRE_MONGOAC_ERROR_OK(error);
         }
 
-        // Driver should reject cursor iteration using an incorrect session.
+        // Driver should reject an operation given an inconsistent session.
         {
-            auto const reply = mongoac_future_get_cursor(foreign_fut, error);
+            auto const cursor = mongoac_future_get_cursor(foreign_fut, error);
             CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
             auto const msg = from_mongoac(mongoac_error_message(error));
             CHECK_THAT(
                 msg,
                 Catch::Matchers::ContainsSubstring("the session provided to an operation") &&
                     Catch::Matchers::ContainsSubstring("must be created from the same client"));
-            CHECK(reply == nullptr);
+            CHECK(cursor == nullptr);
         }
 
-        // Server should accept cursor iteration using the correct session.
+        // Driver should accept an operation given an associated session.
         {
-            auto const cursor_view = mongoac_future_get_cursor(session_fut, error);
+            auto const cursor_owner = make_unique(
+                mongoac_cursor_clone(mongoac_future_get_cursor(session_fut, error)), &mongoac_cursor_destroy);
             CHECK_MONGOAC_ERROR_OK(error);
-            auto const cursor_owner = REQUIRE_MAKE_UNIQUE(mongoac_cursor_clone(cursor_view), &mongoac_cursor_destroy);
             auto const cursor = cursor_owner.get();
 
             auto const reply = from_mongoac(mongoac_cursor_next(cursor, error));
