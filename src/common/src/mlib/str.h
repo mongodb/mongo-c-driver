@@ -1041,6 +1041,21 @@ mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
       return ok;
    }
    mlib_check(splice_pos <= str->len);
+   // A null string has no characters and no buffer. Handle it explicitly:
+   // every valid splice of a null string is a pure insertion at position zero.
+   if (!str->data) {
+      mlib_check(str->len == 0);
+      if (insert.len == 0) {
+         // Nothing to insert into an empty string
+         return true;
+      }
+      if (!mstr_resize_for_overwrite(str, insert.len)) {
+         // Failed to allocate
+         return false;
+      }
+      memcpy(str->data, insert.data, insert.len);
+      return true;
+   }
    // How many chars is it possible to delete from `splice_pos`?
    size_t n_chars_avail_to_delete = str->len - splice_pos;
    // Clamp to the number of chars available for deletion:
@@ -1073,15 +1088,17 @@ mstr_splice(mstr *str, size_t splice_pos, size_t n_delete, mstr_view insert)
    // Adjust to the begining of the string part that we want to keep
    char *copy_from = mut + n_delete;
    char *copy_to = mut + insert.len;
-   memmove(copy_to, copy_from, tail_len);
+   if (tail_len > 0) {
+      memmove(copy_to, copy_from, tail_len);
+   }
    if (new_len < str->len) {
       // We didn't resize first, so resize now. We are shrinking the string, so this
       // will never fail, and does not create any uninitialized memory:
       mlib_check(mstr_resize_for_overwrite(str, new_len));
       mut = str->data + splice_pos;
    }
-   // Insert the new data if the insertion string is non-null
-   if (insert.data) {
+   // Insert the new data if the insertion string is non-empty
+   if (insert.len > 0) {
       memcpy(mut, insert.data, insert.len);
    }
    return true;
