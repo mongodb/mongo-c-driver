@@ -73,7 +73,8 @@ TEST_CASE("destroy", "[mongoac][runtime]") {
         // Both ClientT and FutureT are runtime-aware (shared ownership of the associated runtime).
         // The async operation must capture a *weak* pointer to the associated runtime, which MUST NOT prevent
         // destruction of the associated runtime, even when the last remaining handle to the runtime is dropped.
-        (void)REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str_async(doesnotexist_uri(), nullptr), &mongoac_future_destroy);
+        (void)REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new_with_uri_str_async(doesnotexist_uri(), nullptr), &mongoac_future_destroy);
     }
 
     SECTION("cursor ownership") {
