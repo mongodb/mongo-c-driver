@@ -46,7 +46,7 @@ The associated runtime may be obtained with :symbol:`mongoac_client_get_runtime(
     mongoac_client_get_runtime
     mongoac_client_get_runtime_address
 
-    mongoac_client_start_session
-    mongoac_client_start_session_async
     mongoac_client_shutdown
     mongoac_client_shutdown_async
+    mongoac_client_start_session
+    mongoac_client_start_session_async

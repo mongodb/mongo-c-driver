@@ -372,9 +372,10 @@ TEST_CASE("start_session", "[mongoac][client]") {
         auto const client = client_owner.get();
 
         auto const session_owner =
-            REQUIRE_MAKE_UNIQUE(mongoac_client_start_session(client, nullptr, error), &mongoac_client_session_destroy);
+            make_unique(mongoac_client_start_session(client, nullptr, error), &mongoac_client_session_destroy);
         auto const session = session_owner.get();
         CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(session != nullptr);
 
         auto const id_doc_owner = from_mongoac(mongoac_client_session_get_id(session, error));
         CHECK_MONGOAC_ERROR_OK(error);
@@ -422,6 +423,7 @@ TEST_CASE("start_session_async", "[mongoac][client]") {
 
         auto const session = mongoac_future_get_client_session(future, error);
         CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(session != nullptr);
 
         auto const id_doc_owner = from_mongoac(mongoac_client_session_get_id(session, error));
         CHECK_MONGOAC_ERROR_OK(error);

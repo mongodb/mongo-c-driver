@@ -111,11 +111,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         let headers: &[&str] = match name {
             "bson" => &["stdint.h"],
             "client_options" => &[],
-            "client_session" => &[
-                "mongoac/bson.h",
-                "mongoac/client-fwd.h",
-                "mongoac/error-fwd.h",
-            ],
+            "client_session" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "collection_options" => &[],
             "collection" => &[
                 "mongoac/bson.h",

@@ -53,17 +53,18 @@ pub extern "C" fn mongoac_client_session_get_id(
     safe_result!(RawDocumentBuf::try_from(&session.id), error).into()
 }
 
-// TODO: start_transaction
+// TODO: abort_transaction
 // TODO: advance_cluster_time
 // TODO: advance_operation_time
 // TODO: cluster_time
 // TODO: commit_transaction
 // TODO: operation_time
 // TODO: snapshot_time
+// TODO: start_transaction
 
 impl ClientSessionT {
     #[must_use]
-    pub fn new(session: ClientSession) -> Self {
+    pub(crate) fn new(session: ClientSession) -> Self {
         let id = session.id().clone(); // Invariant: value never changes.
         let state = Arc::new(Mutex::new(session));
 

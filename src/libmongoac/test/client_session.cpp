@@ -27,7 +27,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 using mongoac::test::from_mongoac;
-using mongoac::test::make_unique;
 
 TEST_CASE("destroy", "[mongoac][client_session]") {
     SECTION("null") {

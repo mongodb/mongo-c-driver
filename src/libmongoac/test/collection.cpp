@@ -503,8 +503,7 @@ TEST_CASE("find_one", "[mongoac][collection]") {
         REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
     auto const coll = coll_owner.get();
 
-    // Start from a known state. A non-existing collection has no matching documents.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null collection") {
@@ -568,8 +567,7 @@ TEST_CASE("find_one_async", "[mongoac][collection]") {
         REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
     auto const coll = coll_owner.get();
 
-    // Start from a known state. A non-existing collection has no matching documents.
-    CHECK_NOTHROW(mongoac_database_drop(db, nullptr, nullptr, error));
+    mongoac_database_drop(db, nullptr, nullptr, error);
     REQUIRE_MONGOAC_ERROR_OK(error);
 
     SECTION("null collection") {
@@ -604,7 +602,7 @@ TEST_CASE("find_one_async", "[mongoac][collection]") {
         auto const future = future_owner.get();
         REQUIRE(future != nullptr);
 
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_future_get_optional_bson(future, error).ptr == nullptr);
@@ -629,7 +627,7 @@ TEST_CASE("find_one_async", "[mongoac][collection]") {
         auto const future = future_owner.get();
         REQUIRE(future != nullptr);
 
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         auto const view = mongoac_future_get_optional_bson(future, error);
