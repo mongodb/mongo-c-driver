@@ -304,7 +304,7 @@ TEST_CASE("getters", "[mongoac][future]") {
     }
 
     SECTION("type mismatch: optional_bson") {
-        CHECK_NOTHROW(mongoac_runtime_block_on(runtime, future, error));
+        mongoac_runtime_block_on(runtime, future, error);
         CHECK_MONGOAC_ERROR_OK(error);
 
         CHECK(mongoac_future_get_optional_bson(future, error).ptr == nullptr); // Default::default()

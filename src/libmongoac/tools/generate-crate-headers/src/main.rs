@@ -109,11 +109,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
             "bson" => &["stdint.h"],
-            "client_session" => &[
-                "mongoac/bson.h",
-                "mongoac/client-fwd.h",
-                "mongoac/error-fwd.h",
-            ],
+            "client_session" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "collection_options" => &[],
             "collection" => &[
                 "mongoac/bson.h",
