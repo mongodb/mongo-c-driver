@@ -64,7 +64,7 @@ pub extern "C" fn mongoac_client_session_get_id(
 
 impl ClientSessionT {
     #[must_use]
-    pub fn new(session: ClientSession) -> Self {
+    pub(crate) fn new(session: ClientSession) -> Self {
         let id = session.id().clone(); // Invariant: value never changes.
         let state = Arc::new(Mutex::new(session));
 
