@@ -27,6 +27,7 @@ Errors
 
 In addition to errors produced by the async operation, this function may also return the following errors:
 
+- Invalid Argument (mongoac): ``uri`` is null or invalid UTF-8.
 - Runtime Error (mongoac): failed to create the associated runtime.
 
 .. seealso::
