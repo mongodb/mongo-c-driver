@@ -61,7 +61,7 @@ typedef struct {
 static bson_mutex_t captured_logs_mutex;
 static mongoc_array_t captured_logs;
 static bool capturing_logs;
-static mongoc_log_level_t capture_level = MONGOC_LOG_LEVEL_INFO;
+static volatile int capture_level = MONGOC_LOG_LEVEL_INFO;
 
 #ifdef MONGOC_ENABLE_SSL
 static mongoc_ssl_opt_t gSSLOptions;
@@ -93,7 +93,7 @@ void
 capture_logs(bool capture)
 {
    capturing_logs = capture;
-   capture_level = MONGOC_LOG_LEVEL_INFO;
+   mcommon_atomic_int_exchange(&capture_level, MONGOC_LOG_LEVEL_INFO, mcommon_memory_order_seq_cst);
    clear_captured_logs();
 }
 
@@ -101,7 +101,7 @@ void
 capture_logs_with_level(mongoc_log_level_t level)
 {
    capture_logs(true);
-   capture_level = level;
+   mcommon_atomic_int_exchange(&capture_level, (int)level, mcommon_memory_order_seq_cst);
 }
 
 
@@ -245,7 +245,7 @@ log_handler(mongoc_log_level_t log_level, const char *log_domain, const char *me
 
    // capture_logs(false) restores the INFO cutoff before destroying the capture
    // mutex. Cleanup may still emit tracing, which must not touch that mutex.
-   if (log_level <= capture_level) {
+   if (log_level <= (mongoc_log_level_t)mcommon_atomic_int_fetch(&capture_level, mcommon_memory_order_seq_cst)) {
       bson_mutex_lock(&captured_logs_mutex);
       if (capturing_logs) {
          log_entry = log_entry_create(log_level, message);
