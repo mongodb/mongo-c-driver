@@ -38,7 +38,7 @@ producers -> input queue -> worker (one client, runtime, and pool) -> output que
 Producers call `mongoac_database_run_command_async()` — `{find: ..., filter: {group: <n>},
 batchSize: <n>, singleBatch: true}` — and hand the future to the worker's bounded input queue. The
 worker keeps up to `k_max_in_flight` futures in flight: it drives the runtime with
-`mongoac_runtime_block_on_any_with_timeout()`, harvests every future that became ready, and
+`mongoac_runtime_block_on_all_with_timeout()`, harvests every future that became ready, and
 refills from the queue. Consumers parse each reply with libbson and check `ok: 1`, `cursor.id ==
 0`, and that the returned documents match the request's filter.
 
@@ -73,7 +73,7 @@ worker: futures are ref-counted handles that may cross threads, but a future can
 the runtime of the client it was started on. Each thread owns its `mongoac_error_t`.
 
 The input queue is bounded, so producers block when the worker falls behind.
-`k_wait_slice_ms` — the timeout passed to `block_on_any_with_timeout()`, and the duration of
+`k_wait_slice_ms` — the timeout passed to `block_on_all_with_timeout()`, and the duration of
 `make_progress_for()` when the worker is idle — trades latency for overhead: it bounds how long
 new work waits and how often the worker wakes. A timeout never cancels an operation.
 

@@ -621,28 +621,25 @@ void worker::run() {
                 continue;
             }
 
-            // Drive the runtime until at least one operation completes, or the wait slice expires. Only one thread
+            // Drive the runtime until every in-flight operation completes, or the wait slice expires. Only one thread
             // drives a given runtime at a time; this worker is the only thread using this runtime.
             futures.clear();
             for (auto const& entry : in_flight) {
                 futures.push_back(entry.future.get());
             }
 
-            mongoac_runtime_block_on_any_with_timeout(
+            mongoac_runtime_block_on_all_with_timeout(
                 runtime, futures.data(), futures.size(), k_wait_slice_ms, error.get());
 
             switch (mongoac_error_code(error.get())) {
                 case MONGOAC_ERROR_CODE_OK:
-                    break; // At least one future is ready (the error object was cleared by the call).
+                    break; // Every in-flight operation completed.
                 case MONGOAC_ERROR_CODE_TIMEOUT:
-                    continue; // Nothing completed within the slice; re-check the input queue.
+                    break; // Not all completed within the slice; harvest the ones that did.
                 default:
-                    throw std::runtime_error{"block_on_any_with_timeout: " + error_text(error.get())};
+                    throw std::runtime_error{"block_on_all_with_timeout: " + error_text(error.get())};
             }
 
-            // A completed future must be polled before its result is ready. The block-on call above polls the
-            // operations it drives, so every completed operation is observable via `mongoac_future_is_ready()`. Harvest
-            // all of them, not just one.
             for (auto it = in_flight.begin(); it != in_flight.end();) {
                 if (mongoac_future_is_ready(it->future.get())) {
                     auto req = std::move(*it);
