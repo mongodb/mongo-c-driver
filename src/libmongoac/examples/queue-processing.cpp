@@ -910,6 +910,8 @@ int main() {
         std::cout << "  verification failures: " << verify_failure_count << '\n';
         std::cout << "  documents returned:    " << docs_returned_count << '\n';
         std::cout << "  elapsed:               " << std::fixed << std::setprecision(2) << elapsed.count() << " s\n";
+        std::cout << "  throughput:            " << std::setprecision(0) << completed_count / elapsed.count()
+                  << " requests/s\n";
 
         // Report a worker failure before declaring the run failed, so that the root cause is visible: a worker failure
         // also shows up as `completed != k_requests` below.

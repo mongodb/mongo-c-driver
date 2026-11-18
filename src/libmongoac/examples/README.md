@@ -47,8 +47,8 @@ documents on every run (via `mongoac_collection_insert_many()`), so don't point 
 data you care about.
 
 Every tunable is a constant at the top of the file. Exit code 0 on success; 1 if any request was
-lost, failed, or failed verification. The printed counters and elapsed time are informational —
-this is not a benchmark.
+lost, failed, or failed verification. The printed counters, elapsed time, and throughput are
+informational — this is not a benchmark.
 
 ### What libmongoac requires of an application
 
