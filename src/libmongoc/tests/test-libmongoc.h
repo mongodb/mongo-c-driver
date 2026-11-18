@@ -45,6 +45,8 @@ bool
 has_captured_log (mongoc_log_level_t level, const char *msg);
 void
 assert_all_captured_logs_have_prefix (const char *prefix);
+void
+assert_no_captured_logs_contain (const char *text);
 bool
 has_captured_logs (void);
 void

@@ -51,7 +51,7 @@ test_sasl_properties (void)
 
    ASSERT_CAPTURED_LOG ("authMechanismProperties should overwrite gssapiServiceName",
                         MONGOC_LOG_LEVEL_WARNING,
-                        "Overwriting previously provided value for 'authmechanismproperties'");
+                        "Overwriting previously provided URI option");
 
    _mongoc_cyrus_destroy (&sasl);
    memset (&sasl, 0, sizeof sasl);

@@ -88,7 +88,7 @@ test_mongoc_client_max_staleness (void)
       "mongodb://a/?" MONGOC_URI_READPREFERENCE "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5", NULL));
 
    ASSERT_CAPTURED_LOG (
-      MONGOC_URI_MAXSTALENESSSECONDS "=10.5", MONGOC_LOG_LEVEL_WARNING, "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
+      MONGOC_URI_MAXSTALENESSSECONDS "=10.5", MONGOC_LOG_LEVEL_WARNING, "Invalid option value: cannot parse integer");
    capture_logs (false);
 
    /* 1 is allowed, it'll be rejected once we begin server selection */

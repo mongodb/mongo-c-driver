@@ -572,7 +572,7 @@ test_mongoc_uri_functions (void)
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://host/?foobar=1");
    ASSERT (uri);
-   ASSERT_CAPTURED_LOG ("setting URI option foobar=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option \"foobar\"");
+   ASSERT_CAPTURED_LOG ("setting URI option foobar=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option");
 
    mongoc_uri_destroy (uri);
 }
@@ -599,10 +599,8 @@ test_mongoc_uri_new_with_error (void)
 
    memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/?readPreference=unknown", &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Unsupported readPreference value [readPreference=unknown]");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported readPreference value");
 
    memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/"
@@ -612,7 +610,7 @@ test_mongoc_uri_new_with_error (void)
                                        "sultInAnError",
                                        &error));
    ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported value for \"appname\""); /* ... */
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported value for URI option"); /* ... */
 
    uri = mongoc_uri_new ("mongodb://localhost");
    ASSERT (!mongoc_uri_set_option_as_utf8 (uri,
@@ -868,7 +866,8 @@ test_mongoc_uri_compressors (void)
    mongoc_uri_set_compressors (uri, "snappy,unknown");
    ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
    ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "unknown"));
-   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'unknown'");
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor in URI option \"compressors\"");
 #endif
 
 
@@ -884,13 +883,15 @@ test_mongoc_uri_compressors (void)
    mongoc_uri_set_compressors (uri, "unknown");
    ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
    ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "unknown"));
-   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'unknown'");
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor in URI option \"compressors\"");
 #endif
 
    capture_logs (true);
    mongoc_uri_set_compressors (uri, "");
    ASSERT (bson_empty (mongoc_uri_get_compressors (uri)));
-   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: ''");
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor in URI option \"compressors\"");
 
 
    /* Disable compression */
@@ -913,7 +914,7 @@ test_mongoc_uri_compressors (void)
    ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
    ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "somethingElse"));
    ASSERT_CAPTURED_LOG (
-      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'somethingElse'");
+      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor in URI option \"compressors\"");
    mongoc_uri_destroy (uri);
 #endif
 
@@ -949,7 +950,7 @@ test_mongoc_uri_compressors (void)
    ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
    ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "somethingElse"));
    ASSERT_CAPTURED_LOG (
-      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'somethingElse'");
+      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor in URI option \"compressors\"");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost/?compressors=zlib&zlibCompressionLevel=-1");
@@ -1088,17 +1089,17 @@ test_mongoc_uri_read_prefs (void)
        false,
        MONGOC_READ_NEAREST,
        NULL,
-       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"foo\""},
+       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": expected key:value pairs"},
       {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS "=foo,bar",
        false,
        MONGOC_READ_NEAREST,
        NULL,
-       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"foo,bar\""},
+       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": expected key:value pairs"},
       {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS "=1",
        false,
        MONGOC_READ_NEAREST,
        NULL,
-       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"1\""},
+       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": expected key:value pairs"},
       {NULL}};
 
    for (i = 0; tests[i].uri; i++) {
@@ -1531,30 +1532,17 @@ test_mongoc_uri_tls_ssl (const char *tls,
    bson_snprintf (url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=true&%s=false", tls, tls);
    uri = mongoc_uri_new (url_buffer);
    ASSERT (!mongoc_uri_get_option_as_bool (uri, tls, true));
-   if (strcmp (tls, "tls")) {
-      ASSERT_CAPTURED_LOG ("option: ssl", MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided value for 'ssl'");
-   } else {
-      ASSERT_CAPTURED_LOG ("option: tls", MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided value for 'tls'");
-   }
+   ASSERT_CAPTURED_LOG ("option: tls", MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided URI option");
    mongoc_uri_destroy (uri);
 
    /* Mixing options not okay if values differ */
    capture_logs (false);
    bson_snprintf (url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=true&%s=false", tls, tlsalt);
    uri = mongoc_uri_new_with_error (url_buffer, &err);
-   if (strcmp (tls, "tls")) {
-      ASSERT_ERROR_CONTAINS (err,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Deprecated option 'ssl=true' conflicts with "
-                             "canonical name 'tls=false'");
-   } else {
-      ASSERT_ERROR_CONTAINS (err,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Deprecated option 'ssl=false' conflicts with "
-                             "canonical name 'tls=true'");
-   }
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Deprecated option conflicts with canonical name 'tls'");
    mongoc_uri_destroy (uri);
 
    /* No conflict appears with implicit tls=true via SRV */
@@ -1841,8 +1829,9 @@ test_mongoc_uri_dns_options (void)
    {
       capture_logs (true);
       ASSERT (mongoc_uri_parse_options (uri, "replicaSet=db2", true, NULL));
-      ASSERT_CAPTURED_LOG (
-         "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
+      ASSERT_CAPTURED_LOG ("parsing replicaSet from TXT",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Ignoring URI option from TXT record. Option is already present in URI");
       capture_logs (false);
       ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
    }
@@ -1903,7 +1892,7 @@ test_mongoc_uri_duplicates (void)
       (void) 0
 
 #define ASSERT_LOG_DUPE(opt) \
-   ASSERT_CAPTURED_LOG ("option: " opt, MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided value for '" opt "'")
+   ASSERT_CAPTURED_LOG ("option: " opt, MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided URI option")
 
 /* iterate iter to key, and check that no other occurrences exist. */
 #define BSON_ITER_UNIQUE(key)                                             \
@@ -1959,9 +1948,8 @@ test_mongoc_uri_duplicates (void)
 
    /* exception: GSSAPISERVICENAME does not overwrite. */
    RECREATE_URI (MONGOC_URI_GSSAPISERVICENAME "=a&" MONGOC_URI_GSSAPISERVICENAME "=b");
-   ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_GSSAPISERVICENAME,
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Overwriting previously provided value for 'gssapiservicename'");
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_GSSAPISERVICENAME, MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided URI option");
    bson = mongoc_uri_get_credentials (uri);
    BSON_ASSERT (bson_compare (bson, tmp_bson ("{'authmechanismproperties': {'SERVICE_NAME': 'b' }}")) == 0);
 
@@ -2318,6 +2306,53 @@ test_uri_depr (void)
    }
 }
 
+/* Regression test for DRIVERS-3623 / CDRIVER-6441: a URI that fails to parse
+ * (or parses with warnings) must not include any part of the connection string
+ * in its diagnostics. */
+static void
+test_mongoc_uri_no_input_in_diagnostics (void)
+{
+   const char *const sentinel = "SENTINELpassword1234";
+   const char *const uris[] = {
+      "mongodb://localhost/?madeUpOption=SENTINELpassword1234",
+      "mongodb://localhost/?SENTINELpassword1234=value",
+      "mongodb://localhost/?connectTimeoutMS=SENTINELpassword1234",
+      "mongodb://localhost/?authMechanism=SENTINELpassword1234",
+      "mongodb://localhost/?readPreference=SENTINELpassword1234",
+      "mongodb://localhost/?w=SENTINELpassword1234",
+      "mongodb://localhost/?readPreferenceTags=SENTINELpassword1234",
+      "mongodb://localhost/?compressors=SENTINELpassword1234",
+      "mongodb://localhost/?serverMonitoringMode=SENTINELpassword1234",
+      "mongodb://localhost/?replicaSet=SENTINELpassword1234",
+      "mongodb://localhost/?connectTimeoutMS=1&connectTimeoutMS=2&madeUpOption=SENTINELpassword1234",
+      "mongodb://testuser:SENTINELpassword1234,x@localhost:notaport/admin",
+      "mongodb://localhost:notaport/SENTINELpassword1234",
+      "mongodb://localhost/SENTINELpassword1234.db",
+      "mongodb+srv://SENTINELpassword1234",
+      NULL,
+   };
+   size_t i;
+
+   for (i = 0; uris[i]; i++) {
+      bson_error_t error = {0};
+      mongoc_uri_t *uri;
+
+      capture_logs (true);
+      uri = mongoc_uri_new_with_error (uris[i], &error);
+      if (error.domain) {
+         ASSERT_WITH_MSG (!strstr (error.message, sentinel), "diagnostic discloses input: %s", error.message);
+      }
+      assert_no_captured_logs_contain (sentinel);
+      mongoc_uri_destroy (uri);
+
+      capture_logs (true);
+      uri = mongoc_uri_new (uris[i]);
+      assert_no_captured_logs_contain (sentinel);
+      capture_logs (false);
+      mongoc_uri_destroy (uri);
+   }
+}
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -2346,4 +2381,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
    TestSuite_Add (suite, "/Uri/parses_long_ipv6", test_parses_long_ipv6);
    TestSuite_Add (suite, "/Uri/depr", test_uri_depr);
+   TestSuite_Add (suite, "/Uri/no_input_in_diagnostics", test_mongoc_uri_no_input_in_diagnostics);
 }

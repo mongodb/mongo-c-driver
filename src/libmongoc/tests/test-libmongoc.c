@@ -164,6 +164,23 @@ assert_all_captured_logs_have_prefix (const char *prefix)
 
 
 void
+assert_no_captured_logs_contain (const char *text)
+{
+   size_t i;
+   log_entry_t *log_entry;
+
+   bson_mutex_lock (&captured_logs_mutex);
+
+   for (i = 0; i < captured_logs.len; i++) {
+      log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
+      ASSERT_WITH_MSG (!strstr (log_entry->msg, text), "Captured log discloses input: %s", log_entry->msg);
+   }
+
+   bson_mutex_unlock (&captured_logs_mutex);
+}
+
+
+void
 print_captured_logs (const char *prefix)
 {
    size_t i;
