@@ -6563,10 +6563,8 @@ test_auto_aws_succeed(void *unused)
 }
 
 static int
-_have_aws_creds_env(void *unused)
+_have_aws_creds_env(void)
 {
-   BSON_UNUSED(unused);
-
    // State variable:
    //    Zero: Haven't checked yet
    //    One: We have AWS creds
@@ -6588,9 +6586,9 @@ _have_aws_creds_env(void *unused)
 }
 
 static int
-_not_have_aws_creds_env(void *unused)
+_not_have_aws_creds_env(void)
 {
-   return !_have_aws_creds_env(unused);
+   return !_have_aws_creds_env();
 }
 
 // Test calling mongoc_collection_drop with a NULL bson_error_t when the state
