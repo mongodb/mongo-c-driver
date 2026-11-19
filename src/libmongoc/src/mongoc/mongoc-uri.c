@@ -194,7 +194,7 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
    // 2-3. Punycode-encode non-ASCII labels and ASCII-lowercase everything.
    mstr canonical = mstr_new(0);
    if (!mongoc_punycode_canonicalize_domain(value + start, end - start, &canonical)) {
-      MONGOC_URI_ERROR(error, "%s is not a well-formed domain name: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, value);
+      MONGOC_URI_ERROR(error, "%s is not a well-formed domain name", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX);
       mstr_destroy(&canonical);
       return false;
    }
