@@ -45,6 +45,7 @@
 #include <bson/bson.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -691,102 +692,66 @@ void populate_collection(mongoac_database_t* database) {
 // Producer and consumer threads
 
 // A producer thread decides what operations to perform (here, a `find`) and starts them on the given database, then
-// hands each operation's future to the given input queue.
-class producer {
-   public:
-    producer(mongoac_database_t* database, queue<request>& input) : _database{database}, _input{input} {}
+// hands each operation's future to the given input queue. Each producer produces an equal share of the requests, and
+// returns the number of requests it produced. Stops early if the queue is closed (the worker stopped accepting
+// operations). Called on a producer thread.
+std::uint64_t run_producer(mongoac_database_t* database, queue<request>& input) {
+    std::uint64_t produced_count = 0;
+    for (std::uint64_t id = 0; id < k_requests / k_producers && !input.is_closed(); ++id) {
+        request req;
+        req.group = static_cast<std::uint32_t>(id % k_groups);
+        req.expected_doc_count = static_cast<std::uint32_t>(
+            std::min<std::uint64_t>(count_in_group(k_doc_count, k_groups, req.group), k_batch_size));
 
-    // The loop of a producer thread. Each producer produces an equal share of the requests. Stops
-    // early if the queue is closed (the worker stopped accepting operations). Called on a producer
-    // thread.
-    void run() {
-        for (std::uint64_t id = 0; id < k_requests / k_producers && !_input.is_closed(); ++id) {
-            request req;
-            req.group = static_cast<std::uint32_t>(id % k_groups);
-            req.expected_doc_count = static_cast<std::uint32_t>(
-                std::min<std::uint64_t>(count_in_group(k_doc_count, k_groups, req.group), k_batch_size));
+        auto const command = build_find_command(k_collection, req.group, k_batch_size);
+        req.future.reset(mongoac_database_run_command_async(database, nullptr, to_view(*command), nullptr));
+        // `run_command_async()` only returns null on invalid arguments: a null database pointer, a null BSON view,
+        // or invalid BSON. None can occur here.
+        BSON_ASSERT(req.future != nullptr);
 
-            auto const command = build_find_command(k_collection, req.group, k_batch_size);
-            req.future.reset(mongoac_database_run_command_async(_database, nullptr, to_view(*command), nullptr));
-            // `run_command_async()` only returns null on invalid arguments: a null database pointer, a null BSON view,
-            // or invalid BSON. None can occur here.
-            BSON_ASSERT(req.future != nullptr);
-
-            if (!_input.push(std::move(req))) {
-                break; // The worker stopped accepting operations.
-            }
-            ++_produced_count;
+        if (!input.push(std::move(req))) {
+            break; // The worker stopped accepting operations.
         }
+        ++produced_count;
     }
+    return produced_count;
+}
 
-    std::uint64_t get_produced_count() const {
-        return _produced_count;
-    }
-
-   private:
-    mongoac_database_t* _database;
-    queue<request>& _input;
-    std::uint64_t _produced_count = 0;
+// The counts reported by a consumer thread.
+struct run_consumer_result {
+    std::uint64_t ok_count = 0;
+    std::uint64_t failed_count = 0;
+    std::uint64_t verify_failure_count = 0;
+    std::uint64_t docs_returned_count = 0;
 };
 
 // A consumer thread pops results from the output queue, verifies each reply, and counts what it saw. It never touches a
-// driver object.
-class consumer {
-   public:
-    explicit consumer(queue<result>& output) : _output{output} {}
+// driver object. The loop pops results until the queue is closed and drained. Errors are streamed to stderr; each
+// message is built as one string, so concurrent writes do not interleave. Called on a consumer thread.
+run_consumer_result run_consumer(queue<result>& output) {
+    run_consumer_result counts;
 
-    // The loop of a consumer thread: pops results until the queue is closed and drained. Called on a consumer thread.
-    // Errors are streamed to stderr; each message is built as one string, so concurrent writes do not interleave.
-    void run() {
-        while (auto res = _output.pop()) {
-            if (!res->error.empty()) {
-                ++_failed_count;
-                std::cerr << "request " + std::to_string(res->id) + " failed: " + res->error << '\n';
-                continue;
-            }
-
-            std::uint32_t doc_count = 0;
-            try {
-                doc_count = check_find_reply(res->reply, res->group, res->expected_doc_count, k_batch_size);
-            } catch (std::exception const& exc) {
-                ++_verify_failure_count;
-                std::cerr << "request " + std::to_string(res->id) + " failed verification: " + exc.what() << '\n';
-                continue;
-            }
-
-            ++_ok_count;
-            _docs_returned_count += doc_count;
+    while (auto res = output.pop()) {
+        if (!res->error.empty()) {
+            ++counts.failed_count;
+            std::cerr << "request " + std::to_string(res->id) + " failed: " + res->error << '\n';
+            continue;
         }
+
+        std::uint32_t doc_count = 0;
+        try {
+            doc_count = check_find_reply(res->reply, res->group, res->expected_doc_count, k_batch_size);
+        } catch (std::exception const& exc) {
+            ++counts.verify_failure_count;
+            std::cerr << "request " + std::to_string(res->id) + " failed verification: " + exc.what() << '\n';
+            continue;
+        }
+
+        ++counts.ok_count;
+        counts.docs_returned_count += doc_count;
     }
-
-    std::uint64_t get_completed_count() const {
-        return _ok_count + _failed_count + _verify_failure_count;
-    }
-
-    std::uint64_t get_ok_count() const {
-        return _ok_count;
-    }
-
-    std::uint64_t get_failed_count() const {
-        return _failed_count;
-    }
-
-    std::uint64_t get_verify_failure_count() const {
-        return _verify_failure_count;
-    }
-
-    std::uint64_t get_docs_returned_count() const {
-        return _docs_returned_count;
-    }
-
-   private:
-    queue<result>& _output;
-
-    std::uint64_t _ok_count = 0;
-    std::uint64_t _failed_count = 0;
-    std::uint64_t _verify_failure_count = 0;
-    std::uint64_t _docs_returned_count = 0;
-};
+    return counts;
+}
 
 // ---------------------------------------------------------------------------------------------
 // Connection string
@@ -819,28 +784,32 @@ int main() {
 
         auto const start_time = std::chrono::steady_clock::now();
 
-        std::vector<producer> producers;
-        producers.reserve(k_producers);
-        for (std::uint32_t i = 0; i < k_producers; ++i) {
-            producers.emplace_back(worker.get_database(), worker.get_input());
-        }
-
-        std::vector<consumer> consumers;
-        consumers.reserve(k_consumers);
-        for (std::uint32_t i = 0; i < k_consumers; ++i) {
-            consumers.emplace_back(worker.get_output());
-        }
+        // Atomic counters that each thread adds to when it finishes, so there is no separate summing step.
+        std::atomic<std::uint64_t> produced_count{0};
+        std::atomic<std::uint64_t> ok_count{0};
+        std::atomic<std::uint64_t> failed_count{0};
+        std::atomic<std::uint64_t> verify_failure_count{0};
+        std::atomic<std::uint64_t> docs_returned_count{0};
 
         std::vector<std::thread> producer_threads;
         producer_threads.reserve(k_producers);
-        for (auto& producer : producers) {
-            producer_threads.emplace_back(&producer::run, &producer);
+        for (std::uint32_t i = 0; i < k_producers; ++i) {
+            producer_threads.emplace_back([database = worker.get_database(),
+                                           &input = worker.get_input(),
+                                           &produced_count] { produced_count += run_producer(database, input); });
         }
 
         std::vector<std::thread> consumer_threads;
         consumer_threads.reserve(k_consumers);
-        for (auto& consumer : consumers) {
-            consumer_threads.emplace_back(&consumer::run, &consumer);
+        for (std::uint32_t i = 0; i < k_consumers; ++i) {
+            consumer_threads.emplace_back(
+                [&output = worker.get_output(), &ok_count, &failed_count, &verify_failure_count, &docs_returned_count] {
+                    auto const counts = run_consumer(output);
+                    ok_count += counts.ok_count;
+                    failed_count += counts.failed_count;
+                    verify_failure_count += counts.verify_failure_count;
+                    docs_returned_count += counts.docs_returned_count;
+                });
         }
 
         for (auto& thread : producer_threads) {
@@ -857,24 +826,7 @@ int main() {
 
         auto const elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time);
 
-        // Total the counts internal to each producer and consumer.
-        std::uint64_t produced_count = 0;
-        std::uint64_t completed_count = 0;
-        std::uint64_t ok_count = 0;
-        std::uint64_t failed_count = 0;
-        std::uint64_t verify_failure_count = 0;
-        std::uint64_t docs_returned_count = 0;
-
-        for (auto const& producer : producers) {
-            produced_count += producer.get_produced_count();
-        }
-        for (auto const& consumer : consumers) {
-            completed_count += consumer.get_completed_count();
-            ok_count += consumer.get_ok_count();
-            failed_count += consumer.get_failed_count();
-            verify_failure_count += consumer.get_verify_failure_count();
-            docs_returned_count += consumer.get_docs_returned_count();
-        }
+        auto const completed_count = ok_count + failed_count + verify_failure_count;
 
         std::cout << "summary:\n";
         std::cout << "  requests produced:     " << produced_count << '\n';
