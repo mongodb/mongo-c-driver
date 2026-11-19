@@ -526,19 +526,10 @@ worker::worker(std::string_view uri) {
     auto const error = make_error();
 
     _client.reset(mongoac_client_new(to_view(uri), error.get()));
-    if (!_client) {
-        throw std::runtime_error{"mongoac_client_new: " + error_text(error.get())};
-    }
+    check_ok(error.get(), "mongoac_client_new");
 
     _database.reset(mongoac_client_get_database(_client.get(), to_view(k_database), nullptr));
-    if (!_database) {
-        throw std::runtime_error{"mongoac_client_get_database returned null"};
-    }
-
     _runtime.reset(mongoac_client_get_runtime(_client.get()));
-    if (!_runtime) {
-        throw std::runtime_error{"mongoac_client_get_runtime returned null"};
-    }
 
     _thread = std::thread(&worker::run, this);
 }
