@@ -30,6 +30,7 @@ use crate::insert_one_options::InsertOneOptionsT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::private::pipeline::to_documents;
+use crate::replace_options::ReplaceOptionsT;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
 use crate::update_options::UpdateOptionsT;
@@ -39,7 +40,8 @@ use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
     CountOptions, DeleteOptions, DropCollectionOptions, EstimatedDocumentCountOptions,
-    FindOneOptions, InsertManyOptions, InsertOneOptions, UpdateModifications, UpdateOptions,
+    FindOneOptions, InsertManyOptions, InsertOneOptions, ReplaceOptions, UpdateModifications,
+    UpdateOptions,
 };
 use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult, UpdateResult};
 
@@ -313,6 +315,48 @@ pub extern "C" fn mongoac_collection_insert_one_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(collection.insert_one_async(session, doc, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_replace_one(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    replacement: BsonViewT,
+    options: *const ReplaceOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let replacement = safe_bson_view_with_error!(replacement, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.replace_one(session, filter, replacement, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_replace_one_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    replacement: BsonViewT,
+    options: *const ReplaceOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let replacement = safe_bson_view!(replacement);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.replace_one_async(session, filter, replacement, options))
 }
 
 #[unsafe(no_mangle)]
@@ -785,6 +829,48 @@ impl CollectionT {
         })
     }
 
+    fn replace_one(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        replacement: &RawDocument,
+        options: Option<&ReplaceOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .replace_one(filter, replacement.to_owned())
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn replace_one_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        replacement: &RawDocument,
+        options: Option<&ReplaceOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let replacement = replacement.to_owned();
+        let options: Option<ReplaceOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                coll.replace_one(filter, replacement).with_options(options),
+                session
+            )
+        })
+    }
+
     fn update_many_document(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -984,7 +1070,6 @@ impl CollectionT {
     // TODO: list_search_indexes
     // TODO: namespace
     // TODO: read_concern
-    // TODO: replace_one
     // TODO: replace_one_model
     // TODO: selection_criteria
     // TODO: update_search_index
