@@ -60,3 +60,9 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
 
     mongoac_collection_insert_one
     mongoac_collection_insert_one_async
+
+    mongoac_collection_update_one_document
+    mongoac_collection_update_one_document_async
+
+    mongoac_collection_update_one_pipeline
+    mongoac_collection_update_one_pipeline_async

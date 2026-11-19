@@ -134,6 +134,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
+                "mongoac/update_options-fwd.h",
+                "mongoac/update_result-fwd.h",
                 "stdint.h",
             ],
             "count_options" => &[],
