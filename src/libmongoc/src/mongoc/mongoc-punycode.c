@@ -184,7 +184,8 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
    BSON_ASSERT_PARAM(domain);
    BSON_ASSERT_PARAM(dst);
 
-   if (domain_len == 0) {
+   const size_t upper_bound = 1024;
+   if (domain_len == 0 || domain_len > upper_bound) {
       return false;
    }
 
