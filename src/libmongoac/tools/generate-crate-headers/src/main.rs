@@ -191,6 +191,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/insert_many_result-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
+                "mongoac/update_result-fwd.h",
                 "stdbool.h",
                 "stdint.h",
             ],

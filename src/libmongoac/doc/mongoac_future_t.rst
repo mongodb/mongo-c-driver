@@ -122,6 +122,7 @@ The async operation will continue to make progress until it is completed and its
     mongoac_future_get_runtime
     mongoac_future_get_runtime_address
     mongoac_future_get_uint64
+    mongoac_future_get_update_result
     mongoac_future_get_void
     mongoac_future_is_ready
 

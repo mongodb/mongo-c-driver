@@ -27,6 +27,7 @@
 #include <mongoac/insert_many_result.h>
 #include <mongoac/insert_one_result.h>
 #include <mongoac/runtime.h>
+#include <mongoac/update_result.h>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -328,6 +329,15 @@ TEST_CASE("getters", "[mongoac][future]") {
         CHECK(mongoac_future_get_uint64(future, error) == uint64_t{}); // Default::default()
         CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
         CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return uint64");
+    }
+
+    SECTION("type mismatch: update_result") {
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_update_result(future, error) == nullptr); // Default::default()
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "future does not return update_result");
     }
 
     SECTION("basic") {

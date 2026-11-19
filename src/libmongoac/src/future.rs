@@ -22,9 +22,10 @@ use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
 use crate::runtime::{RuntimeAware, RuntimeT};
+use crate::update_result::UpdateResultT;
 
 use mongodb::bson::RawDocumentBuf;
-use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult};
+use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult, UpdateResult};
 
 use parking_lot::Mutex;
 use tokio::task::{JoinError, JoinHandle};
@@ -183,6 +184,20 @@ pub extern "C" fn mongoac_future_get_uint64(future: *const FutureT, error: *mut 
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_update_result(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *const UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_ptr_from_ref!(
+        safe_result!(future.get_update_result(), error),
+        UpdateResult
+    )
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_future_get_void(future: *const FutureT, error: *mut ErrorT) {
     let error = safe_optional_error_as_mut!(error);
     let future = safe_as_ref_with_error!(future, error);
@@ -251,6 +266,10 @@ impl FutureT {
 
     fn get_uint64(&self) -> Result<&u64, ErrorT> {
         self.get::<u64>("uint64")
+    }
+
+    fn get_update_result(&self) -> Result<&UpdateResult, ErrorT> {
+        self.get::<UpdateResult>("update_result")
     }
 
     fn get_void(&self) -> Result<&(), ErrorT> {
