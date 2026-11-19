@@ -316,6 +316,90 @@ pub extern "C" fn mongoac_collection_insert_one_async(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_document(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    update: BsonViewT,
+    options: *const UpdateOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let update = safe_bson_view_with_error!(update, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.update_many_document(session, filter, update, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_document_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    update: BsonViewT,
+    options: *const UpdateOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let update = safe_bson_view!(update);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.update_many_document_async(session, filter, update, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_pipeline(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    pipeline: BsonViewArrayT,
+    options: *const UpdateOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let pipeline = safe_bson_view_array_with_error!(pipeline, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.update_many_pipeline(session, filter, pipeline, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_pipeline_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    pipeline: BsonViewArrayT,
+    options: *const UpdateOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let pipeline = safe_bson_view_array!(pipeline);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.update_many_pipeline_async(session, filter, pipeline, options))
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_collection_update_one_document(
     collection: *const CollectionT,
     session: *mut ClientSessionT,
@@ -701,6 +785,96 @@ impl CollectionT {
         })
     }
 
+    fn update_many_document(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        update: &RawDocument,
+        options: Option<&UpdateOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+            let update = Document::try_from(update)?;
+
+            session_op!(
+                self.inner
+                    .update_many(filter, update)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn update_many_document_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        update: &RawDocument,
+        options: Option<&UpdateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let update = update.to_owned();
+        let options: Option<UpdateOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+            let update = Document::try_from(update)?;
+
+            session_op!(
+                coll.update_many(filter, update).with_options(options),
+                session
+            )
+        })
+    }
+
+    fn update_many_pipeline(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&UpdateOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+            let update = UpdateModifications::Pipeline(to_documents(&pipeline)?);
+
+            session_op!(
+                self.inner
+                    .update_many(filter, update)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn update_many_pipeline_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&UpdateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<UpdateOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+            let update = UpdateModifications::Pipeline(to_documents(&pipeline)?);
+
+            session_op!(
+                coll.update_many(filter, update).with_options(options),
+                session
+            )
+        })
+    }
+
     fn update_one_document(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -813,7 +987,6 @@ impl CollectionT {
     // TODO: replace_one
     // TODO: replace_one_model
     // TODO: selection_criteria
-    // TODO: update_many
     // TODO: update_search_index
     // TODO: watch
     // TODO: write_concern

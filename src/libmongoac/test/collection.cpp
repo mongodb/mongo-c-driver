@@ -1376,6 +1376,605 @@ TEST_CASE("delete_one_async", "[mongoac][collection]") {
     }
 }
 
+TEST_CASE("update_many_document", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_update_many_document"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state.
+    mongoac_database_drop(db, nullptr, nullptr, error);
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(nullptr, nullptr, {}, to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null filter") {
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(coll, nullptr, {}, to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null update") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(coll, nullptr, to_mongoac(filter.get()), {}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("invalid BSON filter") {
+        std::uint8_t const bytes = {};
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(
+                coll, nullptr, {&bytes, 1u}, to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("invalid BSON update") {
+        std::uint8_t const bytes = {};
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter.get()), {&bytes, 1u}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("invalid update document") {
+        auto const filter = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "update document must only contain update modifiers");
+        CHECK(result == nullptr);
+    }
+
+    SECTION("empty update document") {
+        auto const filter = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "update document must not be empty");
+        CHECK(result == nullptr);
+    }
+
+    SECTION("no match") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"y": 1}})"_bson, &bson_destroy);
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 0u, 0u, error);
+    }
+
+    SECTION("basic") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 4}})"_bson, &bson_destroy);
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 1u, 1u, error);
+
+        auto const filter_x4 = REQUIRE_MAKE_UNIQUE(R"({"x": 4})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_x4.get()), nullptr, error) == 1u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("all of several matches") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 1}, {"x": 1}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"y": 1}})"_bson, &bson_destroy);
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 3u, 3u, error);
+
+        auto const filter_y1 = REQUIRE_MAKE_UNIQUE(R"({"y": 1})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_y1.get()), nullptr, error) == 3u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("only matching documents") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 1}, {"x": 2}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter_x1 = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"y": 1}})"_bson, &bson_destroy);
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_document(
+                coll, nullptr, to_mongoac(filter_x1.get()), to_mongoac(update.get()), nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 2u, 2u, error);
+
+        auto const filter_y1 = REQUIRE_MAKE_UNIQUE(R"({"y": 1})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_y1.get()), nullptr, error) == 2u);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const filter_x2 = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_x2.get()), nullptr, error) == 1u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("update_many_document_async", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_update_many_document_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state.
+    mongoac_database_drop(db, nullptr, nullptr, error);
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const future = make_unique(
+            mongoac_collection_update_many_document_async(nullptr, nullptr, {}, to_mongoac(update.get()), nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null filter") {
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const future = make_unique(
+            mongoac_collection_update_many_document_async(coll, nullptr, {}, to_mongoac(update.get()), nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null update") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const future = make_unique(
+            mongoac_collection_update_many_document_async(coll, nullptr, to_mongoac(filter.get()), {}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON filter") {
+        std::uint8_t const bytes = {};
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const future = make_unique(
+            mongoac_collection_update_many_document_async(
+                coll, nullptr, {&bytes, 1u}, to_mongoac(update.get()), nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON update") {
+        std::uint8_t const bytes = {};
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const future = make_unique(
+            mongoac_collection_update_many_document_async(
+                coll, nullptr, to_mongoac(filter.get()), {&bytes, 1u}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid update document") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const filter = REQUIRE_MAKE_UNIQUE("{}"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_document_async(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const result = mongoac_future_get_update_result(future, error);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "update document must only contain update modifiers");
+        CHECK(result == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+        auto const update = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 4}})"_bson, &bson_destroy);
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_document_async(
+                coll, nullptr, to_mongoac(filter.get()), to_mongoac(update.get()), nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const result = mongoac_future_get_update_result(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(result != nullptr);
+
+        check_update_result(result, 1u, 1u, error);
+    }
+}
+
+TEST_CASE("update_many_pipeline", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_update_many_pipeline"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state.
+    mongoac_database_drop(db, nullptr, nullptr, error);
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_pipeline(
+                nullptr, nullptr, {}, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null filter") {
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, {}, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null pipeline") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_pipeline(coll, nullptr, to_mongoac(filter.get()), {}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("null pipeline element") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {}});
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("invalid BSON filter") {
+        std::uint8_t const bytes = {};
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, {&bytes, 1u}, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("invalid BSON pipeline element") {
+        std::uint8_t const bytes = {};
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {&bytes, 1u}});
+
+        auto const result = make_unique(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(result == nullptr);
+    }
+
+    SECTION("no match") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"y": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 0u, 0u, error);
+    }
+
+    SECTION("basic") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+        auto const stage1 = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 4}})"_bson, &bson_destroy);
+        auto const stage2 = REQUIRE_MAKE_UNIQUE(R"({"$set": {"z": 5}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage1.get()), to_mongoac(stage2.get())});
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 1u, 1u, error);
+
+        auto const filter_x4_z5 = REQUIRE_MAKE_UNIQUE(R"({"x": 4, "z": 5})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_x4_z5.get()), nullptr, error) == 1u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("all of several matches") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 1}, {"x": 1}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"y": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 3u, 3u, error);
+
+        auto const filter_y1 = REQUIRE_MAKE_UNIQUE(R"({"y": 1})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_y1.get()), nullptr, error) == 3u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("only matching documents") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 1}, {"x": 2}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter_x1 = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"y": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const result_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_pipeline(
+                coll, nullptr, to_mongoac(filter_x1.get()), {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_update_result_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        check_update_result(result_owner.get(), 2u, 2u, error);
+
+        auto const filter_y1 = REQUIRE_MAKE_UNIQUE(R"({"y": 1})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_y1.get()), nullptr, error) == 2u);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const filter_x2 = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+        CHECK(mongoac_collection_count_documents(coll, nullptr, to_mongoac(filter_x2.get()), nullptr, error) == 1u);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("update_many_pipeline_async", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_update_many_pipeline_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    // Start from a known state.
+    mongoac_database_drop(db, nullptr, nullptr, error);
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const future = make_unique(
+            mongoac_collection_update_many_pipeline_async(
+                nullptr, nullptr, {}, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null filter") {
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const future = make_unique(
+            mongoac_collection_update_many_pipeline_async(
+                coll, nullptr, {}, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null pipeline") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+
+        auto const future = make_unique(
+            mongoac_collection_update_many_pipeline_async(coll, nullptr, to_mongoac(filter.get()), {}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null pipeline element") {
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {}});
+
+        auto const future = make_unique(
+            mongoac_collection_update_many_pipeline_async(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON filter") {
+        std::uint8_t const bytes = {};
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get())});
+
+        auto const future = make_unique(
+            mongoac_collection_update_many_pipeline_async(
+                coll, nullptr, {&bytes, 1u}, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON pipeline element") {
+        std::uint8_t const bytes = {};
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 1})"_bson, &bson_destroy);
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {&bytes, 1u}});
+
+        auto const future = make_unique(
+            mongoac_collection_update_many_pipeline_async(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_collection_get_runtime(coll), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"x": 1}, {"x": 2}, {"x": 3}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const filter = REQUIRE_MAKE_UNIQUE(R"({"x": 2})"_bson, &bson_destroy);
+        auto const stage1 = REQUIRE_MAKE_UNIQUE(R"({"$set": {"x": 4}})"_bson, &bson_destroy);
+        auto const stage2 = REQUIRE_MAKE_UNIQUE(R"({"$set": {"z": 5}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage1.get()), to_mongoac(stage2.get())});
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_update_many_pipeline_async(
+                coll, nullptr, to_mongoac(filter.get()), {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        REQUIRE(future != nullptr);
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const result = mongoac_future_get_update_result(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(result != nullptr);
+
+        check_update_result(result, 1u, 1u, error);
+    }
+}
+
 TEST_CASE("update_one_document", "[mongoac][collection]") {
     auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
     auto const error = error_owner.get();
