@@ -1299,7 +1299,7 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
 
       } else if (!strcmp(key, MONGOC_URI_SRVALLOWEDHOSTSSUFFIX)) {
          if (!mongoc_uri_check_srv_allowed_hosts_suffix(uri, value, error)) {
-            goto UNSUPPORTED_VALUE;
+            return false;
          }
          _bson_upsert_utf8_icase(&uri->options, mstr_cstring(canon), value);
 

@@ -2724,14 +2724,19 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    /* Option validation: six mandated steps. */
 
    /* leading/trailing dots are stripped; empty result is an error */
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=."));
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=.."));
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix="));
+   ASSERT(!mongoc_uri_new_with_error("mongodb+srv://c.d.com/?srvallowedhostssuffix=.", &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must not be empty");
+   ASSERT(!mongoc_uri_new_with_error("mongodb+srv://c.d.com/?srvallowedhostssuffix=..", &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must not be empty");
+   ASSERT(!mongoc_uri_new_with_error("mongodb+srv://c.d.com/?srvallowedhostssuffix=", &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must not be empty");
 
    /* single labels are rejected unless special-use; reserved single labels
     * are accepted (prose test 12) */
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=net"));
-   ASSERT(!mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=com"));
+   ASSERT(!mongoc_uri_new_with_error("mongodb+srv://c.d.com/?srvallowedhostssuffix=net", &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must contain at least two");
+   ASSERT(!mongoc_uri_new_with_error("mongodb+srv://c.d.com/?srvallowedhostssuffix=com", &error));
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must contain at least two");
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=test");
    ASSERT(uri);
    mongoc_uri_destroy(uri);
@@ -2779,7 +2784,9 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    mongoc_uri_destroy(uri);
 
    /* the option is prohibited with a non-SRV URI */
-   ASSERT(!mongoc_uri_new("mongodb://c.d.com/?srvallowedhostssuffix=mydomain.net"));
+   ASSERT(!mongoc_uri_new_with_error("mongodb://c.d.com/?srvallowedhostssuffix=mydomain.net", &error));
+   ASSERT_ERROR_CONTAINS(
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must not be specified with a non-SRV URI");
 
    /* Host validation: when the suffix is configured, returned hostnames must
     * end in the suffix; the domainname check does not apply. */
