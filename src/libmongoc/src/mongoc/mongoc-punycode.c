@@ -137,8 +137,8 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
       return false;
    }
 
-   // DNS labels are at most 63 octets, so a bounded code point buffer suffices.
-   uint32_t codepoints[64];
+   //U-labels could be up to 252 characters (RFC-5890 4.2), add defensive bound
+   uint32_t codepoints[255];
    size_t ncodepoints = 0;
 
    {
@@ -150,8 +150,8 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
          if (consumed < 0) {
             return false; // Not valid UTF-8.
          }
-         if (ncodepoints == 64) {
-            return false; // Exceeds a DNS label.
+         if (ncodepoints == 255) {
+            return false;
          }
          codepoints[ncodepoints++] = cp;
          cursor += (size_t)consumed;
