@@ -70,60 +70,6 @@ _punycode_threshold(uint32_t k, uint32_t bias)
    return k - bias;
 }
 
-// Decode one UTF-8 sequence. Returns the number of bytes consumed, or -1 on
-// invalid input (including overlong encodings, surrogates, and out-of-range).
-static ssize_t
-_utf8_decode(const uint8_t *data, size_t len, uint32_t *out)
-{
-   BSON_ASSERT(len > 0);
-
-   const uint8_t b0 = data[0];
-   if (b0 < 0x80u) {
-      *out = b0;
-      return 1;
-   }
-
-   size_t expect = 0;
-   uint32_t cp = 0;
-   if ((b0 & 0xE0u) == 0xC0u) {
-      expect = 1;
-      cp = b0 & 0x1Fu;
-   } else if ((b0 & 0xF0u) == 0xE0u) {
-      expect = 2;
-      cp = b0 & 0x0Fu;
-   } else if ((b0 & 0xF8u) == 0xF0u) {
-      expect = 3;
-      cp = b0 & 0x07u;
-   } else {
-      return -1; // Continuation byte or invalid leading byte.
-   }
-
-   if (len < expect + 1) {
-      return -1; // Truncated sequence.
-   }
-
-   for (size_t i = 1; i <= expect; i++) {
-      const uint8_t b = data[i];
-      if ((b & 0xC0u) != 0x80u) {
-         return -1;
-      }
-      cp = (cp << 6) | (b & 0x3Fu);
-   }
-
-   // Reject overlong encodings and out-of-range code points.
-   if ((expect == 1 && cp < 0x80u) || (expect == 2 && cp < 0x800u) || (expect == 3 && cp < 0x10000u) ||
-       cp > 0x10FFFFu) {
-      return -1;
-   }
-   // Reject surrogates (encoded UTF-8 must not contain them).
-   if (cp >= 0xD800u && cp <= 0xDFFFu) {
-      return -1;
-   }
-
-   *out = cp;
-   return (ssize_t)(expect + 1);
-}
-
 bool
 mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
 {
@@ -137,24 +83,17 @@ mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
       return false;
    }
 
-   //U-labels could be up to 252 characters (RFC-5890 4.2), add defensive bound
+   // U-labels could be up to 252 characters (RFC-5890 4.2), add defensive bound
    uint32_t codepoints[255];
    size_t ncodepoints = 0;
 
    {
-      const uint8_t *cursor = (const uint8_t *)label;
-      const uint8_t *const end = cursor + label_len;
-      while (cursor < end) {
-         uint32_t cp = 0;
-         const ssize_t consumed = _utf8_decode(cursor, (size_t)(end - cursor), &cp);
-         if (consumed < 0) {
-            return false; // Not valid UTF-8.
-         }
+      const char *const end = label + label_len;
+      for (const char *cursor = label; cursor < end; cursor = bson_utf8_next_char(cursor)) {
          if (ncodepoints == 255) {
             return false;
          }
-         codepoints[ncodepoints++] = cp;
-         cursor += (size_t)consumed;
+         codepoints[ncodepoints++] = bson_utf8_get_char(cursor);
       }
    }
 
@@ -246,6 +185,12 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
    BSON_ASSERT_PARAM(dst);
 
    if (domain_len == 0) {
+      return false;
+   }
+
+   // Reject invalid UTF-8 up front: input may come from DNS-returned records,
+   // which cannot be assumed to be well-formed.
+   if (!bson_utf8_validate(domain, domain_len, false)) {
       return false;
    }
 
