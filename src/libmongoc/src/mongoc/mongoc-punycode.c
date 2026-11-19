@@ -198,9 +198,9 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
    // Build into a local string, handing the result to `dst` only on success.
    mstr canonical_domain = mstr_new(0);
 
-   // Pre-reserve for efficiency: one allocation up front. The bound covers
-   // the dot separators plus the "xn--" prefixes and digit expansion the
-   // labels can produce.
+   // Pre-reserve for efficiency: one allocation up front, sized for typical
+   // inputs (input length plus room for dot separators, "xn--" prefixes, and
+   // digit expansion).
    if (!mstr_reserve(&canonical_domain, domain_len + 32)) {
       mstr_destroy(&canonical_domain);
       return false;
@@ -210,7 +210,7 @@ mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr 
    const char *const end = domain + domain_len;
 
    for (const char *c = domain;; c++) {
-      if (*c == '.' || c == end) {
+      if (c == end || *c == '.') {
          const size_t label_len = (size_t)(c - start);
          if (label_len == 0) {
             if (c == end && canonical_domain.len > 0) {

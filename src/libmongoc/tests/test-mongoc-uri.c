@@ -2721,7 +2721,8 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
 
    capture_logs(true);
 
-   /* Option validation: six mandated steps. */
+   /* Option validation: five mandated steps (spec steps 1-4 and 6; the
+    * spec's public-suffix step is intentionally not implemented). */
 
    /* leading/trailing dots are stripped; empty result is an error */
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://c.d.com/?srvallowedhostssuffix=.", &error));
