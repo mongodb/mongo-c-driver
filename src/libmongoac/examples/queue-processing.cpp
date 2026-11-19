@@ -182,23 +182,20 @@ void check_ok(mongoac_error_t* error, std::string_view what) {
 template <typename T>
 class queue {
    public:
-    explicit queue(std::size_t capacity) : _state{std::make_unique<state>(capacity)} {}
-
-    queue(queue&&) = default;
-    queue& operator=(queue&&) = default;
+    explicit queue(std::size_t capacity) : _capacity{capacity} {}
 
     // Push an item, blocking while the queue is full. Returns `false` — without pushing — if the queue is closed, so
     // that a producer is never left blocking on a queue whose consumer has stopped.
     bool push(T value) {
         {
-            std::unique_lock<std::mutex> lock{_state->mutex};
-            _state->not_full.wait(lock, [this] { return _state->items.size() < _state->capacity || _state->closed; });
-            if (_state->closed) {
+            std::unique_lock<std::mutex> lock{_mutex};
+            _not_full.wait(lock, [this] { return _items.size() < _capacity || _closed; });
+            if (_closed) {
                 return false;
             }
-            _state->items.push_back(std::move(value));
+            _items.push_back(std::move(value));
         }
-        _state->not_empty.notify_one();
+        _not_empty.notify_one();
         return true;
     }
 
@@ -206,11 +203,11 @@ class queue {
     std::optional<T> try_pop() {
         std::optional<T> value;
         {
-            std::unique_lock<std::mutex> const lock{_state->mutex};
+            std::unique_lock<std::mutex> const lock{_mutex};
             value = pop_locked();
         }
         if (value) {
-            _state->not_full.notify_one(); // A producer may be waiting for space.
+            _not_full.notify_one(); // A producer may be waiting for space.
         }
         return value;
     }
@@ -219,12 +216,12 @@ class queue {
     std::optional<T> pop() {
         std::optional<T> value;
         {
-            std::unique_lock<std::mutex> lock{_state->mutex};
-            _state->not_empty.wait(lock, [this] { return !_state->items.empty() || _state->closed; });
+            std::unique_lock<std::mutex> lock{_mutex};
+            _not_empty.wait(lock, [this] { return !_items.empty() || _closed; });
             value = pop_locked();
         }
         if (value) {
-            _state->not_full.notify_one(); // A producer may be waiting for space.
+            _not_full.notify_one(); // A producer may be waiting for space.
         }
         return value;
     }
@@ -232,50 +229,42 @@ class queue {
     // No more items will be pushed.
     void close() {
         {
-            std::unique_lock<std::mutex> const lock{_state->mutex};
-            _state->closed = true;
+            std::unique_lock<std::mutex> const lock{_mutex};
+            _closed = true;
         }
-        _state->not_empty.notify_all();
-        _state->not_full.notify_all();
+        _not_empty.notify_all();
+        _not_full.notify_all();
     }
 
     // True when the queue is closed and fully drained.
     bool is_finished() {
-        std::unique_lock<std::mutex> const lock{_state->mutex};
-        return _state->closed && _state->items.empty();
+        std::unique_lock<std::mutex> const lock{_mutex};
+        return _closed && _items.empty();
     }
 
     // True when the queue is closed (items may remain).
     bool is_closed() {
-        std::unique_lock<std::mutex> const lock{_state->mutex};
-        return _state->closed;
+        std::unique_lock<std::mutex> const lock{_mutex};
+        return _closed;
     }
 
    private:
     std::optional<T> pop_locked() {
-        if (_state->items.empty()) {
+        if (_items.empty()) {
             return std::nullopt;
         }
 
-        T value = std::move(_state->items.front());
-        _state->items.pop_front();
+        T value = std::move(_items.front());
+        _items.pop_front();
         return value;
     }
 
-    struct state {
-        explicit state(std::size_t capacity) : capacity{capacity} {}
-
-        std::size_t const capacity;
-        std::mutex mutex;
-        std::condition_variable not_empty;
-        std::condition_variable not_full;
-        std::deque<T> items;
-        bool closed = false;
-    };
-
-    // The synchronization state lives behind a pointer so that the queue is movable (a moved-from queue must not be
-    // used).
-    std::unique_ptr<state> _state;
+    std::size_t const _capacity;
+    std::mutex _mutex;
+    std::condition_variable _not_empty;
+    std::condition_variable _not_full;
+    std::deque<T> _items;
+    bool _closed = false;
 };
 
 // ---------------------------------------------------------------------------------------------
