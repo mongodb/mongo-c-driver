@@ -312,10 +312,6 @@ mongoac_bson_view_t to_view(bson_t const& bson) {
     return mongoac_bson_view_t{bson_get_data(&bson), bson.len};
 }
 
-mongoac_bson_view_t to_view(std::vector<std::uint8_t> const& bytes) {
-    return mongoac_bson_view_t{bytes.data(), bytes.size()};
-}
-
 // Suppress noisy `-Wignored-attributes` warnings due to using `bson_t` for template arguments.
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
@@ -331,8 +327,8 @@ using unique_bson_ptr = std::unique_ptr<bson_t, void (*)(bson_t*)>;
 // `singleBatch: true` is required here: the alpha has no cursor API, so there is no way to iterate a cursor or send
 // `killCursors`. `singleBatch` makes the server return the first batch and close the cursor, and the consumer verifies
 // `cursor.id == 0` in every reply.
-std::vector<std::uint8_t> build_find_command(char const* collection, std::uint32_t group, std::uint32_t batch_size) {
-    unique_bson_ptr const command{
+unique_bson_ptr build_find_command(char const* collection, std::uint32_t group, std::uint32_t batch_size) {
+    return {
         BCON_NEW(
             "find",
             BCON_UTF8(collection),
@@ -346,8 +342,6 @@ std::vector<std::uint8_t> build_find_command(char const* collection, std::uint32
             "singleBatch",
             BCON_BOOL(true)),
         &bson_destroy};
-
-    return std::vector<std::uint8_t>{bson_get_data(command.get()), bson_get_data(command.get()) + command->len};
 }
 
 std::optional<double> iter_as_double(bson_iter_t const& iter) {
@@ -724,7 +718,7 @@ class producer {
                 std::min<std::uint64_t>(count_in_group(k_doc_count, k_groups, req.group), k_batch_size));
 
             auto const command = build_find_command(k_collection, req.group, k_batch_size);
-            req.future.reset(mongoac_database_run_command_async(_database, nullptr, to_view(command), nullptr));
+            req.future.reset(mongoac_database_run_command_async(_database, nullptr, to_view(*command), nullptr));
             // `run_command_async()` only returns null on invalid arguments: a null database pointer, a null BSON view,
             // or invalid BSON. None can occur here.
             BSON_ASSERT(req.future != nullptr);
