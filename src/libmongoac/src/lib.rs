@@ -46,4 +46,5 @@ pub mod runtime;
 pub mod session_options;
 pub mod string;
 pub mod update_options;
+pub mod update_result;
 pub mod version;

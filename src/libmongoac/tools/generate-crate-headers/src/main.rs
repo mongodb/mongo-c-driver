@@ -96,6 +96,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("StringViewArrayT", "mongoac_string_view_array_t"),
         ("StringViewT", "mongoac_string_view_t"),
         ("UpdateOptionsT", "mongoac_update_options_t"),
+        ("UpdateResultT", "mongoac_update_result_t"),
     ];
 
     pairs
@@ -213,6 +214,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "session_options" => &[],
             "string" => &["stdint.h"],
             "update_options" => &[],
+            "update_result" => &["mongoac/bson.h", "mongoac/error-fwd.h", "stdint.h"],
             _ => {
                 eprintln!("warning: missing generate-crate-headers entry: {name}");
                 &[]
