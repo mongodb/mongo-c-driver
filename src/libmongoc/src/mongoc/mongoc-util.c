@@ -466,14 +466,8 @@ _validate_name(const char *name, int64_t name_len, bool is_db, bson_error_t *err
    }
 
    if (is_db && memchr(name, '.', len)) {
-      const int print_len = mlib_in_range(int, len) ? (int)len : INT_MAX;
-
-      _mongoc_set_error(error,
-                        MONGOC_ERROR_NAMESPACE,
-                        MONGOC_ERROR_NAMESPACE_INVALID,
-                        "database name \"%.*s\" invalid: contains \".\"",
-                        print_len,
-                        name);
+      _mongoc_set_error(
+         error, MONGOC_ERROR_NAMESPACE, MONGOC_ERROR_NAMESPACE_INVALID, "database name invalid: contains \".\"");
       return false;
    }
 
@@ -626,6 +620,10 @@ _mongoc_parse_port(mstr_view spelling, uint16_t *out, bson_error_t *error)
    // Parse a strict natural number
    uint64_t u = 0;
    int ec = mlib_nat64_parse(spelling, 10, &u);
+   // IMPORTANT: Do not include the `spelling` string within any error messages, because
+   // it may be user input that was part of a credential string. Instead, retain only
+   // the useful information about why we reject the port number without actually
+   // noting the string that we are rejecting.
 
    if (!ec && u == 0) {
       // Successful parse, but the value is zero
