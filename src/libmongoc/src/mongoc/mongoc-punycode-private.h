@@ -25,21 +25,23 @@
 #include <stddef.h>
 
 // Encode one DNS label (UTF-8, no dot separators) as Punycode (RFC 3492),
-// without the "xn--" prefix. The input label MUST have already been case-folded
-// and validated as UTF-8 by the caller (IDNA processing is done there).
+// without the "xn--" prefix. The input label MUST be valid UTF-8 (checked by
+// mongoc_punycode_canonicalize_domain) and MUST have already been case-folded
+// by the caller.
 //
 // Returns true and appends the Punycode form to `dst` (an mstr) on success.
-// Returns false if the label is not valid UTF-8 or exceeds INT32_MAX code points.
+// Returns false if the label exceeds a defensive bound of 255 code points.
 bool
 mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst);
 
 // Canonicalize a dot-separated domain per the Initial DNS Seedlist Discovery
 // Spec: ASCII-lowercase each label, and convert non-ASCII labels to their
-// Punycode A-label form ("xn--..." prefix). Empty labels (leading, trailing,
-// or doubled dots) are rejected.
+// Punycode A-label form ("xn--..." prefix). A single trailing dot is stripped.
+// Leading or doubled dots create empty labels, which are rejected.
 //
 // Returns true and replaces the contents of `dst` with the canonical form on
-// success. On failure, `dst` is not modified.
+// success. Returns false if the domain is not valid UTF-8 or contains empty
+// labels; on failure, `dst` is not modified.
 bool
 mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr *dst);
 

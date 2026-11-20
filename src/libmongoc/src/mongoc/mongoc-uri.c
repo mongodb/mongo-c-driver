@@ -115,6 +115,19 @@ _srv_validation_error(bson_error_t *error, const char *host, const char *srv_hos
 }
 
 
+static size_t
+count_dots(const char *s)
+{
+   size_t n = 0;
+   const char *dot = s;
+
+   while ((dot = strchr(dot + 1, '.'))) {
+      n++;
+   }
+
+   return n;
+}
+
 static char *
 lowercase_str_new(const char *key)
 {
@@ -155,7 +168,7 @@ static const char *const srv_allowed_hosts_suffix_valid_single_labels[] = {
 // 4. Error unless at least two labels, or the single label is special-use.
 // 5. Prepend '.' to make the value a label-aligned suffix.
 //
-// Note: the spec's optional ("SHOULD") public-suffix check is intentionally
+// Note: the spec's optional ("MAY") public-suffix check is intentionally
 // not implemented, matching the C#/Java drivers.
 //
 // On success, stores the canonical dot-prefixed form in uri->srv_allowed_hosts_suffix.
@@ -181,24 +194,20 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
    // 2-3. Punycode-encode non-ASCII labels and ASCII-lowercase everything.
    mstr canonical = mstr_new(0);
    if (!mongoc_punycode_canonicalize_domain(value + start, end - start, &canonical)) {
-      MONGOC_URI_ERROR(error, "%s is not a well-formed domain name: \"%s\"", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX, value);
+      MONGOC_URI_ERROR(error, "%s is not a well-formed domain name", MONGOC_URI_SRVALLOWEDHOSTSSUFFIX);
       mstr_destroy(&canonical);
       return false;
    }
 
    // The canonicalizer guarantees a non-empty result on success; assert the
    // invariants so the analyzer (and debug builds) can prune the impossible
-   // paths in the mstr operations below.
+   // paths in the suffix construction below.
    BSON_ASSERT(canonical.data != NULL);
    mlib_check(canonical.len > 0);
 
-   // 4. At least two labels, unless a special-use single label.
-   size_t nlabels = 1;
-   for (const char *c = canonical.data; *c; c++) {
-      if (*c == '.') {
-         nlabels++;
-      }
-   }
+   // 4. At least two labels, unless a special-use single label. The input is
+   // canonicalized (no empty labels), so labels = dots + 1.
+   const size_t nlabels = count_dots(canonical.data) + 1;
    if (nlabels < 2) {
       bool special_use = false;
       for (size_t i = 0; i < sizeof(srv_allowed_hosts_suffix_valid_single_labels) /
@@ -271,44 +280,22 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
                                       uri->srv_allowed_hosts_suffix);
       }
    } else {
-      // TODO (CDRIVER-6456): when srvHostValidator is configured, pass the
-      // host_canonical hostname to the validator callback; its verdict is the
-      // complete validation result (no domainname check applies).
-
-      // No options configured. Derive the {domainname} that returned hostnames are validated against (Initial DNS
-      // Seedlist Discovery Spec): the portion of the SRV hostname after its leftmost label or when the SRV hostname
-      // has fewer than three labels, the entire hostname (e.g. for "mongodb+srv://mongo.local" the {domainname} is
-      // "mongo.local" itself). The leading dot keeps the comparison label-aligned.
-      size_t srv_labels = 1u;
-      for (const char *c = srv_hostname_canonical.data; *c; c++) {
-         srv_labels += (*c == '.');
-      }
-      char srv_host[BSON_HOST_NAME_MAX + 2];
-      if (srv_labels >= 3u) {
-         const char *const first_dot = strchr(srv_hostname_canonical.data, '.');
-         BSON_ASSERT(first_dot);
-         bson_strncpy(srv_host, first_dot, sizeof srv_host);
-      } else {
-         const int n = snprintf(srv_host, sizeof srv_host, ".%s", srv_hostname_canonical.data);
-         BSON_ASSERT(n > 0);
-      }
+      // No options configured: host must be a descendant of the service
+      // root: if service is "a.foo.co" host can be like "a.foo.co",
+      // "b.foo.co", "a.b.foo.co", etc.
+      const char *srv_host = strchr(srv_hostname_canonical.data, '.');
+      BSON_ASSERT(srv_host);
 
       const bool in_domain =
          strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
 
       // When the SRV hostname has fewer than three labels, the returned
       // hostname must have at least one more domain level than the SRV
-      // hostname.
-      bool enough_levels = true;
-      {
-         size_t host_labels = 1u;
-         for (const char *c = host_canonical.data; *c; c++) {
-            host_labels += (*c == '.');
-         }
-         if (srv_labels < 3u && host_labels < srv_labels + 1u) {
-            enough_levels = false;
-         }
-      }
+      // hostname. Both strings are canonicalized (no empty labels), so
+      // labels = dots + 1.
+      const size_t srv_labels = count_dots(srv_hostname_canonical.data) + 1u;
+      const size_t host_labels = count_dots(host_canonical.data) + 1u;
+      const bool enough_levels = !(srv_labels < 3u && host_labels < srv_labels + 1u);
 
       if (!in_domain || !enough_levels) {
          mstr_destroy(&srv_hostname_canonical);
@@ -558,7 +545,7 @@ _parse_srv_hostname(mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
 
    {
       char *service = _strdup_pct_decode(str, error);
-      if (!service || !valid_hostname(service)) {
+      if (!service || !valid_hostname(service) || count_dots(service) < 2) {
          MONGOC_URI_ERROR(error, "Invalid SRV service name \"%.*s\" in URI: %s", MSTR_FMT(str), error->message);
          bson_free(service);
          return false;
