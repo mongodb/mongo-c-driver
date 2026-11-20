@@ -31,3 +31,4 @@ API Reference
    mongoac_string_t
    mongoac_string_view_array_t
    mongoac_string_view_t
+   mongoac_update_result_t
