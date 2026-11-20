@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <mongoac/database.h>
 #include <mongoac/runtime.h>
 
 //
 
 #include <mongoac/test/array.hh>
+#include <mongoac/test/bson.hh>
 #include <mongoac/test/client.hh>
 #include <mongoac/test/error.hh>
 #include <mongoac/test/memory.hh>
@@ -25,6 +27,8 @@
 #include <mongoac/client.h>
 #include <mongoac/error.h>
 #include <mongoac/future.h>
+
+#include <bson/bson.h>
 
 #include <catch2/benchmark/catch_benchmark.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -40,6 +44,8 @@ using mongoac::test::doesnotexist_uri;
 using mongoac::test::from_mongoac;
 using mongoac::test::make_unique;
 using mongoac::test::to_array;
+using mongoac::test::to_mongoac;
+using mongoac::test::operator""_bson;
 using mongoac::test::operator""_sv;
 
 TEST_CASE("destroy", "[mongoac][runtime]") {
@@ -60,6 +66,28 @@ TEST_CASE("destroy", "[mongoac][runtime]") {
 
         // Destroy the runtime after its associated client.
         runtime.reset();
+    }
+
+    SECTION("future") {
+        // ClientT and DatabaseT are runtime-aware (shared ownership of the associated runtime).
+        auto client = REQUIRE_MAKE_UNIQUE(mongoac_client_new(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto db =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_get_database(client.get(), "db"_sv, nullptr), &mongoac_database_destroy);
+
+        // FutureT and CursorT are also runtime-aware.
+        // CursorT construction requires a *weak* pointer to the associated runtime.
+        auto future = REQUIRE_MAKE_UNIQUE(
+            mongoac_database_run_cursor_command_async(
+                db.get(), nullptr, {to_mongoac(REQUIRE_MAKE_UNIQUE(R"({})"_bson, &bson_destroy).get())}, nullptr),
+            &mongoac_future_destroy);
+
+        // Drop all other handles which share ownership of the associated runtime.
+        db.reset();
+        client.reset();
+
+        // Drop the final remaining runtime-aware handle.
+        // The *weak* pointer to the associated runtime MUST NOT prevent destruction of the associated runtime.
+        future.reset();
     }
 }
 
