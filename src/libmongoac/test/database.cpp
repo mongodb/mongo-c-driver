@@ -478,14 +478,14 @@ TEST_CASE("run_command", "[mongoac][database]") {
 
         // Server should reject cursor "getMore" command without the associated session.
         {
+            using Catch::Matchers::ContainsSubstring;
+
             auto const reply =
                 from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(get_more.get()), nullptr, error));
             CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_SERVER);
-            auto const msg = from_mongoac(mongoac_error_message(error));
-            CHECK_THAT(
-                msg,
-                Catch::Matchers::ContainsSubstring("Cannot run getMore on cursor") &&
-                    Catch::Matchers::ContainsSubstring("which was created in session"));
+            CHECK_THAT_MONGOAC_ERROR_MESSAGE(
+                error,
+                ContainsSubstring("Cannot run getMore on cursor") && ContainsSubstring("which was created in session"));
             CHECK(reply == nullptr);
         }
 
@@ -602,6 +602,8 @@ TEST_CASE("run_command_async", "[mongoac][database]") {
 
         // Server should reject cursor "getMore" command without the associated session.
         {
+            using Catch::Matchers::ContainsSubstring;
+
             auto const missing_fut_owner = REQUIRE_MAKE_UNIQUE(
                 mongoac_database_run_command_async(db, nullptr, to_mongoac(get_more.get()), nullptr),
                 &mongoac_future_destroy);
@@ -611,11 +613,9 @@ TEST_CASE("run_command_async", "[mongoac][database]") {
 
             auto const reply = mongoac_future_get_bson(missing_fut, error);
             CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_SERVER);
-            auto const msg = from_mongoac(mongoac_error_message(error));
-            CHECK_THAT(
-                msg,
-                Catch::Matchers::ContainsSubstring("Cannot run getMore on cursor") &&
-                    Catch::Matchers::ContainsSubstring("which was created in session"));
+            CHECK_THAT_MONGOAC_ERROR_MESSAGE(
+                error,
+                ContainsSubstring("Cannot run getMore on cursor") && ContainsSubstring("which was created in session"));
             CHECK(reply.ptr == nullptr);
         }
 
@@ -792,12 +792,10 @@ TEST_CASE("run_cursor_command", "[mongoac][database]") {
                 mongoac_database_run_cursor_command(db, other_session.get(), to_mongoac(find.get()), nullptr, error),
                 &mongoac_cursor_destroy);
             CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
-            auto const msg = from_mongoac(mongoac_error_message(error));
-            CHECK_THAT(
-                msg,
-                Catch::Matchers::ContainsSubstring(
-                    "the session provided to an operation must be created from the same client as the "
-                    "collection/database on which the operation is being performed"));
+            CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(
+                error,
+                "the session provided to an operation must be created from the same client as the "
+                "collection/database on which the operation is being performed");
             CHECK(reply == nullptr);
         }
 
@@ -995,13 +993,14 @@ TEST_CASE("run_cursor_command_async", "[mongoac][database]") {
 
         // Driver should reject an operation given an inconsistent session.
         {
+            using Catch::Matchers::ContainsSubstring;
+
             auto const cursor = mongoac_future_get_cursor(foreign_fut, error);
             CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
-            auto const msg = from_mongoac(mongoac_error_message(error));
-            CHECK_THAT(
-                msg,
-                Catch::Matchers::ContainsSubstring("the session provided to an operation") &&
-                    Catch::Matchers::ContainsSubstring("must be created from the same client"));
+            CHECK_THAT_MONGOAC_ERROR_MESSAGE(
+                error,
+                ContainsSubstring("the session provided to an operation") &&
+                    ContainsSubstring("must be created from the same client"));
             CHECK(cursor == nullptr);
         }
 
