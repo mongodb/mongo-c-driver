@@ -781,6 +781,33 @@ _test_ckdint_partial(void)
 }
 
 static void
+_test_count_utf8_codepoints(void)
+{
+   const struct {
+      mstr_view text;
+      size_t count;
+   } cases[] = {
+      {mstr_view_data(NULL, 0), 0},
+      {mstr_cstring(""), 0},
+      {mstr_cstring("ASCII"), 5},
+      {mstr_cstring("\xc2\xa2"), 1},
+      {mstr_cstring("\xe2\x82\xac"), 1},
+      {mstr_cstring("\xf0\x9f\x98\x80"), 1},
+      {mstr_cstring("a\xc2\xa2\xe2\x82\xac\xf0\x9f\x98\x80"), 4},
+      // A combining mark is a separate codepoint, not a separate grapheme.
+      {mstr_cstring("e\xcc\x81"), 2},
+      {mstr_view_data("a\0\xc2\xa2", 4), 3},
+      {mstr_view_data("\xc2\xa2"
+                      "extra",
+                      2),
+       1},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      mlib_check(mstr_count_utf8_codepoints(cases[i].text), eq, cases[i].count);
+   }
+}
+
+static void
 _test_str_view(void)
 {
    mstr_view sv = mstr_cstring("Hello, world!");
@@ -1353,6 +1380,7 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add(suite, "/mlib/str/count_utf8_codepoints", _test_count_utf8_codepoints);
    TestSuite_Add(suite, "/mlib/str", _test_str);
    TestSuite_Add(suite, "/mlib/str-format", _test_str_format);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);

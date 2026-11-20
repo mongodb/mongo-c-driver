@@ -40,11 +40,17 @@ get_test_collection(mongoc_client_t *client, const char *prefix);
 void
 capture_logs(bool capture);
 void
+capture_logs_with_level(mongoc_log_level_t level);
+void
 clear_captured_logs(void);
 bool
 has_captured_log(mongoc_log_level_t level, const char *msg);
 void
 assert_all_captured_logs_have_prefix(const char *prefix);
+void
+assert_no_captured_logs_contain(const char *text);
+void
+assert_no_captured_logs_contain_exact(const char *text);
 bool
 has_captured_logs(void);
 void

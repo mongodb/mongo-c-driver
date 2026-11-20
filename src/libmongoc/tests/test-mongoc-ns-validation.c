@@ -261,12 +261,27 @@ test_ns_validation_auth_source(void)
    ASSERT(!mongoc_uri_new_with_error("mongodb://user:pwd@localhost:27017/?authSource=db.bad", &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid: contains \".\"");
 
+   const char *const invalid_sources[] = {
+      "mongodb://localhost/?authSource=SENTINELpassword1234.bad",
+      "mongodb://localhost/?authSource=SENTINELpassword1234%2Ebad",
+   };
+   for (size_t i = 0; i < sizeof invalid_sources / sizeof invalid_sources[0]; i++) {
+      ASSERT(!mongoc_uri_new_with_error(invalid_sources[i], &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "invalid: contains \".\"");
+      ASSERT(!strstr(error.message, "SENTINELpassword1234"));
+      capture_logs(true);
+      ASSERT(!mongoc_uri_new(invalid_sources[i]));
+      ASSERT_CAPTURED_LOG("authSource diagnostic", MONGOC_LOG_LEVEL_WARNING, "invalid: contains \".\"");
+      assert_no_captured_logs_contain("SENTINELpassword1234");
+   }
+
    mongoc_uri_t *const uri = mongoc_uri_new("mongodb://user:pwd@localhost:27017");
    ASSERT(uri);
 
    capture_logs(true);
-   ASSERT(!mongoc_uri_set_auth_source(uri, BAD_DB));
+   ASSERT(!mongoc_uri_set_auth_source(uri, "SENTINELpassword1234.bad"));
    ASSERT_CAPTURED_LOG("mongoc_uri_set_auth_source", MONGOC_LOG_LEVEL_ERROR, "invalid: contains \".\"");
+   assert_no_captured_logs_contain("SENTINELpassword1234");
    clear_captured_logs();
 
    ASSERT(mongoc_uri_set_auth_source(uri, "$external"));
