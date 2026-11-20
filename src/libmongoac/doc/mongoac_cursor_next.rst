@@ -19,7 +19,7 @@ Synopsis
 Description
 -----------
 
-Retrieve the next result from the given :symbol:`mongoac_cursor_t` via `Stream<T>::next() <https://docs.rs/mongodb/latest/mongodb/struct.Cursor.html#method.poll_next>`_.
+Retrieve the next result from the given :symbol:`mongoac_cursor_t` via `StreamExt::try_next() <https://docs.rs/mongodb/latest/mongodb/struct.Cursor.html#method.try_next>`_.
 
 When the cursor is exhausted, returns a null :symbol:`mongoac_bson_t`.
 
