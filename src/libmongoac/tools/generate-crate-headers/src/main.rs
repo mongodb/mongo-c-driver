@@ -195,7 +195,12 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "insert_many_result" => &["mongoac/bson.h", "mongoac/error-fwd.h", "stdint.h"],
             "insert_one_options" => &[],
             "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
-            "read_preference" => &["stdbool.h", "stdint.h"],
+            "read_preference" => &[
+                "mongoac/error-fwd.h",
+                "mongoac/string.h",
+                "stdbool.h",
+                "stdint.h",
+            ],
             "run_command_options" => &["mongoac/read_preference-fwd.h"],
             "run_cursor_command_options" => &[
                 "mongoac/bson.h",

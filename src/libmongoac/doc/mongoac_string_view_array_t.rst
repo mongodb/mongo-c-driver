@@ -18,7 +18,7 @@ Synopsis
 Description
 -----------
 
-Represents a non-owning, read-only array of :symbol:`mongoac_string_view_t`:
+Represents a read-only array of :symbol:`mongoac_string_view_t`:
 
 - When ``ptr`` is null, ``len`` is unspecified (but typically set to ``0``).
 - When ``ptr`` is not null, the range ``[ptr, ptr + len)`` is valid and accessible.
@@ -26,4 +26,15 @@ Represents a non-owning, read-only array of :symbol:`mongoac_string_view_t`:
 Lifetime
 --------
 
-The object from which a view is obtained MUST outlive any access to the pointed-to data.
+The object from which the array is obtained MUST outlive any access to the pointed-to data.
+
+.. only:: html
+
+  Functions
+  ---------
+
+  .. toctree::
+    :titlesonly:
+    :maxdepth: 1
+
+    mongoac_string_view_array_destroy
