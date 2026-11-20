@@ -6708,10 +6708,8 @@ _parse_proxy_connect_count(const char *body)
 
 /* Skip condition: real AWS credentials are not configured in the environment. */
 static int
-_have_test_aws_creds_env(void *unused)
+_have_test_aws_creds_env(void)
 {
-   BSON_UNUSED(unused);
-
    char *access_key_id = test_framework_getenv("MONGOC_TEST_AWS_ACCESS_KEY_ID");
    char *secret_access_key = test_framework_getenv("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
    const bool have = access_key_id && secret_access_key;
@@ -7173,10 +7171,8 @@ test_auto_aws_succeed(void *unused)
 }
 
 static int
-_have_aws_creds_env(void *unused)
+_have_aws_creds_env(void)
 {
-   BSON_UNUSED(unused);
-
    // State variable:
    //    Zero: Haven't checked yet
    //    One: We have AWS creds
@@ -7198,9 +7194,9 @@ _have_aws_creds_env(void *unused)
 }
 
 static int
-_not_have_aws_creds_env(void *unused)
+_not_have_aws_creds_env(void)
 {
-   return !_have_aws_creds_env(unused);
+   return !_have_aws_creds_env();
 }
 
 // Test calling mongoc_collection_drop with a NULL bson_error_t when the state
