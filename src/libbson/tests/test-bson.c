@@ -22,8 +22,10 @@
 #include <bson/bson-bcon.h>
 #include <bson/bson.h>
 
+#include <mlib/alloc.h>
 #include <mlib/ckdint.h>
 #include <mlib/intencode.h>
+#include <mlib/str_vec.h>
 #include <mlib/test.h>
 
 #include <TestSuite.h>
@@ -36,6 +38,183 @@
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT(1 == 1);
 
+
+static struct {
+   size_t malloc_calls;
+   size_t realloc_calls;
+   size_t free_calls;
+   size_t requested_size;
+   size_t live_allocations;
+   bool fail;
+} bson_allocator_state;
+
+static void *BSON_CALL
+_test_bson_malloc(size_t size)
+{
+   ++bson_allocator_state.malloc_calls;
+   if (bson_allocator_state.fail) {
+      return NULL;
+   }
+   void *const ptr = malloc(size);
+   if (ptr) {
+      ++bson_allocator_state.live_allocations;
+   }
+   return ptr;
+}
+
+static void *BSON_CALL
+_test_bson_calloc(size_t count, size_t size)
+{
+   void *const ptr = _test_bson_malloc(count * size);
+   if (ptr) {
+      memset(ptr, 0, count * size);
+   }
+   return ptr;
+}
+
+static void *BSON_CALL
+_test_bson_realloc(void *ptr, size_t size)
+{
+   ++bson_allocator_state.realloc_calls;
+   bson_allocator_state.requested_size = size;
+   if (bson_allocator_state.fail) {
+      return NULL;
+   }
+   const bool is_new = ptr == NULL;
+   void *const ret = realloc(ptr, size);
+   if (ret && is_new) {
+      ++bson_allocator_state.live_allocations;
+   }
+   return ret;
+}
+
+static void BSON_CALL
+_test_bson_free(void *ptr)
+{
+   ++bson_allocator_state.free_calls;
+   if (ptr) {
+      --bson_allocator_state.live_allocations;
+      free(ptr);
+   }
+}
+
+static bson_mem_vtable_t
+_test_bson_allocator_install(void)
+{
+   memset(&bson_allocator_state, 0, sizeof bson_allocator_state);
+   const bson_mem_vtable_t vtable = {
+      .malloc = _test_bson_malloc,
+      .calloc = _test_bson_calloc,
+      .realloc = _test_bson_realloc,
+      .free = _test_bson_free,
+   };
+   bson_mem_set_vtable(&vtable);
+   return vtable;
+}
+
+static void
+test_bson_allocator_mlib_routing(void)
+{
+   _test_bson_allocator_install();
+   size_t actual_size = 71;
+   mlib_check(mlib_reallocate(NULL, 0, 0, &actual_size), ptr_eq, NULL);
+   mlib_check(actual_size, eq, 0);
+   mlib_deallocate(NULL, 0);
+   mlib_check(bson_allocator_state.free_calls, eq, 0);
+   mlib_check(bson_allocator_state.malloc_calls, eq, 0);
+   mlib_check(bson_allocator_state.realloc_calls, eq, 0);
+
+   char *ptr = (char *)mlib_reallocate(NULL, 8, 0, &actual_size);
+   mlib_check(ptr != NULL);
+   mlib_check(bson_allocator_state.malloc_calls, eq, 1);
+   mlib_check(bson_allocator_state.realloc_calls, eq, 0);
+   mlib_check(actual_size, eq, 8);
+   memcpy(ptr, "abcdefg", 8);
+   ptr = (char *)mlib_reallocate(ptr, 16, 8, &actual_size);
+   mlib_check(ptr != NULL);
+   mlib_check(bson_allocator_state.realloc_calls, eq, 1);
+   mlib_check(bson_allocator_state.requested_size, eq, 16);
+   mlib_check(actual_size, eq, 16);
+   mlib_check(memcmp(ptr, "abcdefg", 8), eq, 0);
+   mlib_check(mlib_reallocate(ptr, 0, 16, &actual_size), ptr_eq, NULL);
+   mlib_check(actual_size, eq, 0);
+   mlib_check(bson_allocator_state.free_calls, eq, 1);
+
+   // Both libraries must use the same copied vtable, including its aligned fallback.
+   ptr = (char *)bson_malloc(8);
+   bson_free(ptr);
+   ptr = (char *)bson_aligned_alloc(8, 8);
+   bson_free(ptr);
+   mlib_check(bson_allocator_state.malloc_calls, eq, 3);
+   mlib_check(bson_allocator_state.free_calls, eq, 3);
+
+   mstr_vec strings = mstr_vec_new();
+   mlib_check(mstr_vec_resize(&strings, 1));
+   mlib_check(mstr_assign(&strings.data[0], mstr_cstring("abc")));
+   mlib_check(mstr_append_char(&strings.data[0], 'd'));
+   mlib_check(strings.data[0].data, str_eq, "abcd");
+   mlib_check(bson_allocator_state.malloc_calls, eq, 5);
+   mlib_check(bson_allocator_state.realloc_calls, eq, 2);
+   mlib_check(bson_allocator_state.live_allocations, eq, 2);
+   mstr_vec_destroy(&strings);
+   mlib_check(bson_allocator_state.free_calls, eq, 5);
+   mlib_check(bson_allocator_state.live_allocations, eq, 0);
+   bson_mem_restore_vtable();
+}
+
+static void
+test_bson_allocator_mlib_failure(void)
+{
+   _test_bson_allocator_install();
+   char *const ptr = (char *)mlib_allocate(8);
+   mlib_check(ptr != NULL);
+   memcpy(ptr, "abcdefg", 8);
+   bson_allocator_state.fail = true;
+   const size_t sizes[] = {16, 4};
+   for (size_t i = 0; i != 2; ++i) {
+      size_t actual_size = 71;
+      mlib_check(mlib_reallocate(ptr, sizes[i], 8, &actual_size), ptr_eq, NULL);
+      mlib_check(actual_size, eq, 71);
+      mlib_check(memcmp(ptr, "abcdefg", 8), eq, 0);
+   }
+   mlib_check(mlib_allocate(8), ptr_eq, NULL);
+   mlib_check(bson_allocator_state.malloc_calls, eq, 2);
+   mlib_check(bson_allocator_state.realloc_calls, eq, 2);
+   mlib_deallocate(ptr, 8);
+   mlib_check(bson_allocator_state.live_allocations, eq, 0);
+   // BSON wrappers retain their fatal OOM contract.
+   mlib_assert_aborts () {
+      bson_malloc(8);
+   }
+   mlib_assert_aborts () {
+      bson_realloc(NULL, 8);
+   }
+   bson_mem_restore_vtable();
+}
+
+static void
+test_bson_allocator_mlib_configuration(void)
+{
+   bson_mem_vtable_t invalid = _test_bson_allocator_install();
+   invalid.free = NULL;
+   bson_mem_set_vtable(&invalid);
+   void *ptr = mlib_allocate(8);
+   mlib_check(ptr != NULL);
+   mlib_deallocate(ptr, 8);
+   ptr = bson_malloc(8);
+   bson_free(ptr);
+   mlib_check(bson_allocator_state.malloc_calls, eq, 2);
+   mlib_check(bson_allocator_state.free_calls, eq, 2);
+   bson_mem_restore_vtable();
+   ptr = mlib_allocate(8);
+   mlib_check(ptr != NULL);
+   mlib_deallocate(ptr, 8);
+   ptr = bson_malloc(8);
+   bson_free(ptr);
+   mlib_check(bson_allocator_state.malloc_calls, eq, 2);
+   mlib_check(bson_allocator_state.realloc_calls, eq, 0);
+   mlib_check(bson_allocator_state.free_calls, eq, 2);
+}
 
 static bson_t *
 get_bson(const char *filename)
@@ -3090,6 +3269,9 @@ test_bson_array_builder(void)
 void
 test_bson_install(TestSuite *suite)
 {
+   TestSuite_Add(suite, "/bson/allocator/mlib/routing", test_bson_allocator_mlib_routing);
+   TestSuite_Add(suite, "/bson/allocator/mlib/failure", test_bson_allocator_mlib_failure);
+   TestSuite_Add(suite, "/bson/allocator/mlib/configuration", test_bson_allocator_mlib_configuration);
    TestSuite_Add(suite, "/bson/new", test_bson_new);
    TestSuite_Add(suite, "/bson/new_from_buffer", test_bson_new_from_buffer);
    TestSuite_Add(suite, "/bson/init", test_bson_init);

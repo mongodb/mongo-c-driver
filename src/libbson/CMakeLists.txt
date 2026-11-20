@@ -156,6 +156,8 @@ file(GLOB_RECURSE all_sources CONFIGURE_DEPENDS
    # will be mangled with MCOMMON_NAME_PREFIX)
    "${mongo-c-driver_SOURCE_DIR}/src/common/src/*.c"
    )
+# The allocator is compiled once by its OBJECT target, not as a common source.
+list(REMOVE_ITEM all_sources "${mongo-c-driver_SOURCE_DIR}/src/common/src/mlib/alloc.c")
 
 # List of the primary BSON library targets that we are building
 set(bson_libs)
@@ -208,6 +210,14 @@ endif()
 if(NOT bson_libs)
    message(FATAL_ERROR "Neither bson_shared nor bson_static is going to be built. Did you mean to enable at least one of them?")
 endif()
+
+# libbson owns the mlib allocator translation unit through the object library.
+# Other library images reference its exported accessors. The OBJECT dependency
+# is build-only: installed libraries already contain its object, so they don't
+# need to link it again.
+foreach(bson_lib IN LISTS bson_libs)
+   target_link_libraries(${bson_lib} PRIVATE $<BUILD_INTERFACE:mongo::mlib::allocator>)
+endforeach()
 
 # Set target properties for the libraries.
 mongo_target_requirements(
