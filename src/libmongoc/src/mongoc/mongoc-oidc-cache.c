@@ -130,7 +130,7 @@ mongoc_oidc_cache_has_user_callback(const mongoc_oidc_cache_t *cache)
 {
    BSON_ASSERT_PARAM(cache);
 
-   return cache->user_callback;
+   return cache->user_callback != NULL;
 }
 
 void
