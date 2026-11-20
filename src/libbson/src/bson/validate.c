@@ -250,8 +250,8 @@ _validate_regex_elem(validator *self, bson_iter_t const *iter)
    mlib_check(BSON_ITER_HOLDS_REGEX(iter));
    const char *opts;
    const char *const rx = bson_iter_regex(iter, &opts);
-   mlib_check(rx);
-   mlib_check(opts);
+   mlib_check(rx != NULL);
+   mlib_check(opts != NULL);
    return _maybe_validate_utf8_cstring(self, iter->off, rx) //
           && _maybe_validate_utf8_cstring(self, iter->off, opts);
 }
@@ -316,7 +316,7 @@ _validate_element_key(validator *self, bson_iter_t const *iter)
    BSON_ASSERT_PARAM(iter);
 
    const char *const key = bson_iter_key(iter);
-   mlib_check(key);
+   mlib_check(key != NULL);
    const size_t key_len = bson_iter_key_len(iter);
 
    // Check the UTF-8 of the key
