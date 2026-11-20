@@ -1781,6 +1781,10 @@ _mongoc_topology_description_add_new_servers(mongoc_topology_description_t *topo
       BSON_ASSERT(bson_iter_init(&member_iter, rs_members[i]));
 
       while (bson_iter_next(&member_iter)) {
+         // A server may report non-string members. Ignore them.
+         if (!BSON_ITER_HOLDS_UTF8(&member_iter)) {
+            continue;
+         }
          mongoc_topology_description_add_server(topology, log_and_monitor, bson_iter_utf8(&member_iter, NULL), NULL);
       }
    }

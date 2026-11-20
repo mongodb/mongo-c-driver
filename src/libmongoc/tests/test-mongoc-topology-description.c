@@ -333,7 +333,7 @@ test_topology_pool_clear_by_serviceid(void)
    mongoc_topology_destroy(topology);
 }
 
-// Test a "hello" reply with bad hosts. Regression test for CDRIVER-6559.
+// Test a "hello" reply with bad hosts. Regression test for CDRIVER-6559 and SECBUG-7089.
 static void
 _test_hello_with_bad_host(const char *array_field)
 {
@@ -351,13 +351,14 @@ _test_hello_with_bad_host(const char *array_field)
    bson_t *members = bson_new();
    BSON_APPEND_UTF8(members, "0", "a:27017");
    BSON_APPEND_UTF8(members, "1", bad_host);
+   BSON_APPEND_INT32(members, "2", 1); // Non-string member.
    BSON_APPEND_ARRAY(hello, array_field, members);
 
    const mongoc_server_description_t *sd = _sd_for_host(tdmod.new_td, "a");
    mongoc_topology_description_handle_hello(
       tdmod.new_td, &log_and_monitor, sd->id, hello, 100, MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE, NULL);
 
-   // Expect bad host is not added.
+   // Expect bad host and non-string member are not added.
    ASSERT_CMPSIZE_T(mc_tpld_servers_const(tdmod.new_td)->items_len, ==, 1);
    ASSERT_CMPSTR(_sd_for_host(tdmod.new_td, "a")->host.host, "a");
 

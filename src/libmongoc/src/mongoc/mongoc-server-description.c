@@ -213,6 +213,10 @@ mongoc_server_description_has_rs_member(const mongoc_server_description_t *serve
          BSON_ASSERT(bson_iter_init(&member_iter, rs_members[i]));
 
          while (bson_iter_next(&member_iter)) {
+            // A server may report non-string members. Ignore them.
+            if (!BSON_ITER_HOLDS_UTF8(&member_iter)) {
+               continue;
+            }
             if (strcasecmp(address, bson_iter_utf8(&member_iter, NULL)) == 0) {
                return true;
             }
