@@ -168,7 +168,7 @@ static const char *const srv_allowed_hosts_suffix_valid_single_labels[] = {
 // 4. Error unless at least two labels, or the single label is special-use.
 // 5. Prepend '.' to make the value a label-aligned suffix.
 //
-// Note: the spec's optional ("SHOULD") public-suffix check is intentionally
+// Note: the spec's optional ("MAY") public-suffix check is intentionally
 // not implemented, matching the C#/Java drivers.
 //
 // On success, stores the canonical dot-prefixed form in uri->srv_allowed_hosts_suffix.
