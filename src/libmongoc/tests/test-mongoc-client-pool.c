@@ -15,6 +15,47 @@
 
 
 static void
+test_client_pool_stats(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxPoolSize=2");
+   mongoc_client_pool_t *pool = mongoc_client_pool_new(uri);
+   mongoc_client_pool_stats_t stats = {0};
+   mongoc_client_pool_get_stats(pool, &stats);
+   ASSERT_CMPUINT(stats.clients_created, ==, 0);
+   ASSERT_CMPUINT(stats.clients_destroyed, ==, 0);
+   ASSERT_CMPUINT(stats.clients_in_pool, ==, 0);
+
+   mongoc_client_t *first = mongoc_client_pool_pop(pool);
+   ASSERT(first);
+   mongoc_client_pool_get_stats(pool, &stats);
+   ASSERT_CMPUINT(stats.clients_created, ==, 1);
+   ASSERT_CMPUINT(stats.clients_destroyed, ==, 0);
+   ASSERT_CMPUINT(stats.clients_in_pool, ==, 1);
+
+   mongoc_client_t *second = mongoc_client_pool_try_pop(pool);
+   ASSERT(second);
+   mongoc_client_pool_get_stats(pool, &stats);
+   ASSERT_CMPUINT(stats.clients_created, ==, 2);
+   ASSERT_CMPUINT(stats.clients_in_pool, ==, 2);
+   ASSERT(!mongoc_client_pool_try_pop(pool));
+
+   mongoc_client_pool_push(pool, first);
+   ASSERT(mongoc_client_pool_try_pop(pool) == first);
+   mongoc_client_pool_push(pool, first);
+   mongoc_client_pool_push(pool, second);
+   ASSERT(mongoc_client_pool_pop(pool) == second);
+   mongoc_client_pool_push(pool, second);
+   mongoc_client_pool_get_stats(pool, &stats);
+   ASSERT_CMPUINT(stats.clients_created, ==, 2);
+   ASSERT_CMPUINT(stats.clients_destroyed, ==, 0);
+   ASSERT_CMPUINT(stats.clients_in_pool, ==, 2);
+
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
+}
+
+
+static void
 test_mongoc_client_pool_basic(void)
 {
    mongoc_client_pool_t *pool;
@@ -684,6 +725,7 @@ test_mongoc_client_set_stream_initiator(void)
 void
 test_client_pool_install(TestSuite *suite)
 {
+   TestSuite_Add(suite, "/ClientPool/stats", test_client_pool_stats);
    TestSuite_Add(suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
    TestSuite_Add(suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
    TestSuite_Add(suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
