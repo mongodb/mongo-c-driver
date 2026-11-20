@@ -1277,8 +1277,11 @@ mongoc_client_get_uri(const mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 
-mongoc_client_session_t *
-mongoc_client_start_session(mongoc_client_t *client, const mongoc_session_opt_t *opts, bson_error_t *error)
+static mongoc_client_session_t *
+_mongoc_client_start_session(mongoc_client_t *client,
+                             const mongoc_session_opt_t *opts,
+                             bool implicit,
+                             bson_error_t *error)
 {
    BSON_ASSERT_PARAM(client);
 
@@ -1323,13 +1326,28 @@ mongoc_client_start_session(mongoc_client_t *client, const mongoc_session_opt_t 
       }
    }
 
-   cs = _mongoc_client_session_new(client, ss, opts, csid);
+   cs = _mongoc_client_session_new(client, ss, opts, csid, implicit);
 
    /* remember session so if we see its client_session_id in a command, we can
     * find its lsid and clusterTime */
    mongoc_set_add(client->client_sessions, csid, cs);
 
    RETURN(cs);
+}
+
+
+mongoc_client_session_t *
+mongoc_client_start_session(mongoc_client_t *client, const mongoc_session_opt_t *opts, bson_error_t *error)
+{
+   return _mongoc_client_start_session(client, opts, false, error);
+}
+
+
+// The driver's own session for one command or one cursor - errors ignored, as its callers do
+mongoc_client_session_t *
+_mongoc_client_start_implicit_session(mongoc_client_t *client, const mongoc_session_opt_t *opts)
+{
+   return _mongoc_client_start_session(client, opts, true, NULL);
 }
 
 

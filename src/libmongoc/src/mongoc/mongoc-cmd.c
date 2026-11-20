@@ -805,7 +805,7 @@ mongoc_cmd_parts_assemble(mongoc_cmd_parts_t *parts, mongoc_server_stream_t *ser
       /* If an explicit session was not provided and lsid is not prohibited,
        * attempt to create an implicit session (ignoring any errors). */
       if (!cs && !parts->prohibit_lsid && parts->assembled.is_acknowledged) {
-         cs = mongoc_client_start_session(parts->client, NULL, NULL);
+         cs = _mongoc_client_start_implicit_session(parts->client, NULL);
 
          if (cs) {
             parts->assembled.session = cs;
