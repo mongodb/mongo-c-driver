@@ -66,4 +66,8 @@
 
 // Assert that `error` contains the given substring in its error message.
 #define CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, str) \
-    CHECK_THAT(::mongoac::test::from_mongoac(::mongoac_error_message(error)), Catch::Matchers::ContainsSubstring(str))
+    CHECK_THAT(::mongoac::test::from_mongoac(::mongoac_error_message(error)), ::Catch::Matchers::ContainsSubstring(str))
+
+// Assert that `error` matches the given expressions.
+#define CHECK_THAT_MONGOAC_ERROR_MESSAGE(error, ...) \
+    CHECK_THAT(::mongoac::test::from_mongoac(::mongoac_error_message(error)), __VA_ARGS__)
