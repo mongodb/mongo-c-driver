@@ -482,7 +482,7 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
                 auto const doc = REQUIRE_BSON_STATIC(reply);
                 auto const id = REQUIRE_BSON_ITER_FIND(doc, "_id");
 
-                CHECK(bson_iter_int32(&id) == static_cast<std::int32_t>(1));
+                CHECK(bson_iter_int32(&id) == 1);
             }
 
             {
@@ -498,7 +498,7 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
                 auto const doc2 = REQUIRE_BSON_STATIC(reply2);
                 auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
 
-                CHECK(bson_iter_int32(&id2) == static_cast<std::int32_t>(2));
+                CHECK(bson_iter_int32(&id2) == 2);
             }
         }
 
