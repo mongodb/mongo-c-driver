@@ -1,0 +1,275 @@
+/*
+ * Copyright 2009-present MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <mongoc/mongoc-punycode-private.h>
+
+#include <bson/bson.h>
+
+#include <mlib/ckdint.h>
+#include <mlib/str.h>
+
+#include <stdint.h>
+
+// Punycode (RFC 3492) parameterization.
+enum {
+   punycode_base = 36,
+   punycode_tmin = 1,
+   punycode_tmax = 26,
+   punycode_skew = 38,
+   punycode_damp = 700,
+   punycode_initial_bias = 72,
+   punycode_initial_n = 128u,
+};
+
+static char
+_punycode_digit(uint32_t d)
+{
+   if (d < 26) {
+      return (char)('a' + d);
+   }
+   return (char)('0' + d - 26);
+}
+
+static uint32_t
+_punycode_adapt(uint32_t delta, uint32_t numpoints, bool firsttime)
+{
+   delta = firsttime ? delta / punycode_damp : delta / 2;
+   delta += delta / numpoints;
+
+   uint32_t k = 0;
+   while (delta > ((punycode_base - punycode_tmin) * punycode_tmax) / 2) {
+      delta /= punycode_base - punycode_tmin;
+      k += punycode_base;
+   }
+
+   return k + (((punycode_base - punycode_tmin + 1) * delta) / (delta + punycode_skew));
+}
+
+static uint32_t
+_punycode_threshold(uint32_t k, uint32_t bias)
+{
+   if (k <= bias) {
+      return punycode_tmin;
+   }
+   if (k >= bias + punycode_tmax) {
+      return punycode_tmax;
+   }
+   return k - bias;
+}
+
+bool
+mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst)
+{
+   BSON_ASSERT_PARAM(label);
+   BSON_ASSERT_PARAM(dst);
+
+   // Pre-reserve so dst's buffer is provably non-null before any append: dst
+   // is caller-provided, and its state cannot be proven across the translation
+   // unit boundary.
+   if (!mstr_reserve(dst, 64)) {
+      return false;
+   }
+
+   // U-labels could be up to 252 characters (RFC-5890 4.2), add defensive bound
+   uint32_t codepoints[255];
+   size_t ncodepoints = 0;
+
+   {
+      const char *const end = label + label_len;
+      for (const char *cursor = label; cursor < end; cursor = bson_utf8_next_char(cursor)) {
+         if (ncodepoints == 255) {
+            return false;
+         }
+         codepoints[ncodepoints++] = bson_utf8_get_char(cursor);
+      }
+   }
+
+   // Copy the basic code points (ASCII) as-is.
+   size_t basic = 0;
+   for (size_t i = 0; i < ncodepoints; i++) {
+      if (codepoints[i] < 0x80u) {
+         if (!mstr_append_char(dst, (char)codepoints[i])) {
+            return false;
+         }
+         basic++;
+      }
+   }
+   if (basic > 0) {
+      if (!mstr_append_char(dst, '-')) {
+         return false;
+      }
+   }
+
+   uint32_t n = punycode_initial_n;
+   uint32_t delta = 0;
+   uint32_t bias = punycode_initial_bias;
+   size_t handled = basic;
+
+   while (handled < ncodepoints) {
+      // Find the smallest code point >= n.
+      uint32_t m = UINT32_MAX;
+      for (size_t i = 0; i < ncodepoints; i++) {
+         if (codepoints[i] >= n && codepoints[i] < m) {
+            m = codepoints[i];
+         }
+      }
+      if (m == UINT32_MAX) {
+         return false;
+      }
+
+      // delta += (m - n) * (handled + 1), overflow-checked.
+      {
+         uint32_t step = 0;
+         if (mlib_mul(&step, m - n, (uint32_t)(handled + 1u)) || mlib_add(&delta, delta, step)) {
+            return false;
+         }
+      }
+      n = m;
+
+      for (size_t i = 0; i < ncodepoints; i++) {
+         const uint32_t c = codepoints[i];
+         if (c < n) {
+            delta++;
+            continue;
+         }
+         if (c != n) {
+            continue;
+         }
+
+         // Emit the variable-length base-36 encoding of `delta`.
+         uint32_t q = delta;
+         for (uint32_t k = punycode_base;; k += punycode_base) {
+            const uint32_t t = _punycode_threshold(k, bias);
+            if (q < t) {
+               break;
+            }
+            if (!mstr_append_char(dst, _punycode_digit(t + (q - t) % (punycode_base - t)))) {
+               return false;
+            }
+            q = (q - t) / (punycode_base - t);
+         }
+         if (!mstr_append_char(dst, _punycode_digit(q))) {
+            return false;
+         }
+
+         bias = _punycode_adapt(delta, (uint32_t)(handled + 1u), handled == basic);
+         delta = 0;
+         handled++;
+      }
+
+      // RFC 3492 section 6.3: "increment delta and n".
+      delta++;
+      n++;
+   }
+
+   return true;
+}
+
+bool
+mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr *dst)
+{
+   BSON_ASSERT_PARAM(domain);
+   BSON_ASSERT_PARAM(dst);
+
+   const size_t upper_bound = 1024;
+   if (domain_len == 0 || domain_len > upper_bound) {
+      return false;
+   }
+
+   // Reject invalid UTF-8 up front: input may come from DNS-returned records,
+   // which cannot be assumed to be well-formed.
+   if (!bson_utf8_validate(domain, domain_len, false)) {
+      return false;
+   }
+
+   // Build into a local string, handing the result to `dst` only on success.
+   mstr canonical_domain = mstr_new(0);
+
+   // Pre-reserve for efficiency: one allocation up front, sized for typical
+   // inputs (input length plus room for dot separators, "xn--" prefixes, and
+   // digit expansion).
+   if (!mstr_reserve(&canonical_domain, domain_len + 32)) {
+      mstr_destroy(&canonical_domain);
+      return false;
+   }
+
+   const char *start = domain;
+   const char *const end = domain + domain_len;
+
+   for (const char *c = domain;; c++) {
+      if (c == end || *c == '.') {
+         const size_t label_len = (size_t)(c - start);
+         if (label_len == 0) {
+            if (c == end && canonical_domain.len > 0) {
+               // A trailing dot merely terminates the domain; drop the
+               // separator that was just appended for it.
+               if (!mstr_resize(&canonical_domain, canonical_domain.len - 1)) {
+                  goto fail;
+               }
+               break; // Success.
+            }
+            goto fail; // Leading or doubled dots.
+         }
+
+         // Every label is ASCII-lowercased (Initial DNS Seedlist Discovery
+         // step 3). Non-ASCII labels are then Punycode-encoded with the "xn--"
+         // prefix. Bytes below 0x80 are never part of a multi-byte UTF-8
+         // sequence, so lowercasing byte-wise cannot corrupt the encoding.
+         bool ascii = true;
+         mstr lowered = mstr_new(0);
+         for (size_t i = 0; i < label_len; i++) {
+            if ((unsigned char)start[i] >= 0x80u) {
+               ascii = false;
+            }
+            const char ch = (start[i] >= 'A' && start[i] <= 'Z') ? (char)(start[i] - 'A' + 'a') : start[i];
+            if (!mstr_append_char(&lowered, ch)) {
+               mstr_destroy(&lowered);
+               goto fail;
+            }
+         }
+         if (ascii) {
+            const bool appended = mstr_append(&canonical_domain, lowered);
+            mstr_destroy(&lowered);
+            if (!appended) {
+               goto fail;
+            }
+         } else {
+            const bool encoded = mstr_append(&canonical_domain, mstr_view_data("xn--", 4)) &&
+                                 mongoc_punycode_encode_label(lowered.data, lowered.len, &canonical_domain);
+            mstr_destroy(&lowered);
+            if (!encoded) {
+               goto fail;
+            }
+         }
+
+         if (c == end) {
+            break; // Success.
+         }
+         if (!mstr_append_char(&canonical_domain, '.')) {
+            goto fail;
+         }
+         start = c + 1;
+      }
+   }
+
+   mstr_destroy(dst);
+   *dst = canonical_domain;
+   return true;
+
+fail:
+   mstr_destroy(&canonical_domain);
+   return false;
+}
