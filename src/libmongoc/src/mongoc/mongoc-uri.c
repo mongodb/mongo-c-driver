@@ -280,11 +280,20 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
                                       uri->srv_allowed_hosts_suffix);
       }
    } else {
-      // No options configured: host must be a descendant of the service
-      // root: if service is "a.foo.co" host can be like "a.foo.co",
-      // "b.foo.co", "a.b.foo.co", etc.
-      const char *srv_host = strchr(srv_hostname_canonical.data, '.');
-      BSON_ASSERT(srv_host);
+      // No options configured. Derive the {domainname} that returned hostnames are validated against (Initial DNS
+      // Seedlist Discovery Spec): the portion of the SRV hostname after its leftmost label or when the SRV hostname
+      // has fewer than three labels, the entire hostname (e.g. for "mongodb+srv://mongo.local" the {domainname} is
+      // "mongo.local" itself). The leading dot keeps the comparison label-aligned.
+      const size_t srv_labels = count_dots(srv_hostname_canonical.data) + 1u;
+      char srv_host[BSON_HOST_NAME_MAX + 2];
+      if (srv_labels >= 3u) {
+         const char *const first_dot = strchr(srv_hostname_canonical.data, '.');
+         BSON_ASSERT(first_dot);
+         bson_strncpy(srv_host, first_dot, sizeof srv_host);
+      } else {
+         const int n = snprintf(srv_host, sizeof srv_host, ".%s", srv_hostname_canonical.data);
+         BSON_ASSERT(n > 0);
+      }
 
       const bool in_domain =
          strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
@@ -293,7 +302,6 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       // hostname must have at least one more domain level than the SRV
       // hostname. Both strings are canonicalized (no empty labels), so
       // labels = dots + 1.
-      const size_t srv_labels = count_dots(srv_hostname_canonical.data) + 1u;
       const size_t host_labels = count_dots(host_canonical.data) + 1u;
       const bool enough_levels = !(srv_labels < 3u && host_labels < srv_labels + 1u);
 
@@ -545,7 +553,7 @@ _parse_srv_hostname(mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
 
    {
       char *service = _strdup_pct_decode(str, error);
-      if (!service || !valid_hostname(service) || count_dots(service) < 2) {
+      if (!service || !valid_hostname(service)) {
          MONGOC_URI_ERROR(error, "Invalid SRV service name \"%.*s\" in URI: %s", MSTR_FMT(str), error->message);
          bson_free(service);
          return false;
@@ -1281,7 +1289,7 @@ mongoc_uri_apply_options(mongoc_uri_t *uri, const bson_t *options, bool from_dns
 
       } else if (!strcmp(key, MONGOC_URI_SRVALLOWEDHOSTSSUFFIX)) {
          if (!mongoc_uri_check_srv_allowed_hosts_suffix(uri, value, error)) {
-            goto UNSUPPORTED_VALUE;
+            return false;
          }
          _bson_upsert_utf8_icase(&uri->options, mstr_cstring(canon), value);
 
