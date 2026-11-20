@@ -347,3 +347,9 @@ include (CTest)
 if ((NOT DEFINED ENABLE_TESTS OR ENABLE_TESTS) AND BUILD_TESTING)
   add_subdirectory (test)
 endif ()
+
+# The examples are built via the `mongo_c_driver_examples` target. They are also buildable as a
+# standalone CMake project against an installed mongoac: see examples/README.md.
+if (ENABLE_EXAMPLES)
+  add_subdirectory (examples)
+endif ()

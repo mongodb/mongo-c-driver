@@ -47,6 +47,11 @@ def make_task(distro_name: str, compiler: str, arch: str | None) -> EvgTask:
                     test -f cmake-build/src/libmongoac/Debug/libmongoac.so
                 """,
             ),
+            bash_exec(
+                command_type=EvgCommandType.TEST,
+                working_dir='mongoc',
+                script='.evergreen/scripts/build-mongoac-examples.sh',
+            ),
             expansions_update(
                 updates=[
                     KeyValueParam(key='AUTH', value='noauth'),
