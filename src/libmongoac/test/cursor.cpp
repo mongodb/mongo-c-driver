@@ -338,7 +338,7 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
         auto const f2 = REQUIRE_MAKE_UNIQUE(mongoac_cursor_next_async(cursor), &mongoac_future_destroy);
 
         {
-            std::array<mongoac_future_t*, 2u> futures = {{f1.get(), f2.get()}};
+            auto const futures = to_array<mongoac_future_t*>({f1.get(), f2.get()});
             mongoac_runtime_block_on_all(runtime, futures.data(), futures.size(), error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
@@ -387,7 +387,7 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
         auto const f4 = REQUIRE_MAKE_UNIQUE(mongoac_cursor_next_async(cursor), &mongoac_future_destroy);
 
         {
-            std::array<mongoac_future_t*, 2u> futures = {{f1.get(), f2.get()}};
+            auto const futures = to_array<mongoac_future_t*>({f1.get(), f2.get()});
             mongoac_runtime_block_on_all(runtime, futures.data(), futures.size(), error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
@@ -410,7 +410,7 @@ TEST_CASE("next_async", "[mongoac][cursor]") {
         }
 
         {
-            std::array<mongoac_future_t*, 2u> futures = {{f3.get(), f4.get()}};
+            auto const futures = to_array<mongoac_future_t*>({f3.get(), f4.get()});
             mongoac_runtime_block_on_all(runtime, futures.data(), futures.size(), error);
             CHECK_MONGOAC_ERROR_OK(error);
         }
