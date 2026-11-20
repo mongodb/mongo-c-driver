@@ -14,7 +14,10 @@
 
 #pragma once
 
+#include <mongoac/string.h>
+
 #include <array>
+#include <utility>
 
 #if defined(__cpp_lib_to_array) && __cpp_lib_to_array >= 201907L
 #define MONGOAC_TEST_TO_ARRAY_CXX20() true
@@ -34,7 +37,6 @@ using std::to_array;
 
 #include <cstddef>
 #include <type_traits>
-#include <utility>
 
 namespace mongoac::test {
 
@@ -66,3 +68,59 @@ constexpr std::array<std::remove_cv_t<T>, N> to_array(T (&&arr)[N]) {
 } // namespace mongoac::test
 
 #endif // !MONGOAC_TEST_TO_ARRAY_CXX20()
+
+namespace mongoac::test {
+
+template <typename ArrayT, void (*deleter)(ArrayT)>
+class unique_array_ptr {
+   private:
+    ArrayT _value = {}; // mongoac_*_array_t
+
+   public:
+    ~unique_array_ptr() {
+        deleter(_value);
+    }
+
+    unique_array_ptr(unique_array_ptr&& other) noexcept : _value(std::exchange(other._value, ArrayT{})) {}
+
+    unique_array_ptr& operator=(unique_array_ptr&& other) noexcept {
+        if (this != &other) {
+            auto tmp = std::move(other);
+            this->swap(tmp);
+        }
+        return *this;
+    }
+
+    unique_array_ptr(unique_array_ptr const& other) noexcept = delete;
+    unique_array_ptr& operator=(unique_array_ptr const& other) noexcept = delete;
+
+    unique_array_ptr() = default;
+
+    explicit unique_array_ptr(ArrayT value) : _value(value) {}
+
+    ArrayT value() const {
+        return _value;
+    }
+
+    auto begin() const {
+        return _value.ptr;
+    }
+
+    auto end() const {
+        return _value.ptr ? _value.ptr + _value.len : nullptr;
+    }
+
+    void swap(unique_array_ptr& other) noexcept {
+        std::swap(_value, other._value);
+    }
+
+    void reset() noexcept {
+        *this = {};
+    }
+};
+
+inline auto make_unique(mongoac_string_view_array_t array) {
+    return unique_array_ptr<mongoac_string_view_array_t, &mongoac_string_view_array_destroy>{array};
+}
+
+} // namespace mongoac::test

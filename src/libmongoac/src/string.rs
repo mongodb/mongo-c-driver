@@ -51,6 +51,11 @@ pub extern "C" fn mongoac_string_destroy(string: StringT) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn mongoac_string_view_array_destroy(array: StringViewArrayT) {
+    safe_array_drop!(array, |_| {});
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn mongoac_string_array_destroy(array: StringArrayT) {
     safe_array_drop!(array, mongoac_string_destroy);
 }
@@ -85,6 +90,18 @@ impl AsSafeRefs for StringViewArrayT {
 
     fn fields(&self) -> (*const Self::T, usize) {
         (self.ptr, self.len)
+    }
+}
+
+impl From<Vec<&str>> for StringViewArrayT {
+    fn from(strings: Vec<&str>) -> Self {
+        let elements: Vec<StringViewT> = strings.into_iter().map(Into::into).collect();
+        let raw = safe_slice_into_raw!(elements);
+
+        StringViewArrayT {
+            ptr: raw.cast(),
+            len: raw.len(),
+        }
     }
 }
 
