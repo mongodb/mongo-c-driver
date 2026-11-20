@@ -50,7 +50,8 @@ Fields
 
 The following `ReadPreferenceOptions <https://docs.rs/mongodb/latest/mongodb/options/struct.ReadPreferenceOptions.html>`_ fields are supported for all modes except "primary":
 
-- `max_staleness <https://docs.rs/mongodb/latest/mongodb/options/struct.ReadPreferenceOptions.html#structfield.max_staleness>`_
+- `max staleness <https://docs.rs/mongodb/latest/mongodb/options/struct.ReadPreferenceOptions.html#structfield.max_staleness>`_
+- `tag sets <https://docs.rs/mongodb/latest/mongodb/options/struct.ReadPreferenceOptions.html#structfield.tag_sets>`_
 
 Fields are preserved across all modes except "primary".
 
@@ -72,7 +73,13 @@ When the mode is set to "primary", all fields are reset to ``None``.
     mongoac_read_preference_get_max_staleness_as_secs
     mongoac_read_preference_get_max_staleness_is_none
     mongoac_read_preference_get_mode
+    mongoac_read_preference_get_tag_sets_get_get
+    mongoac_read_preference_get_tag_sets_get_keys
+    mongoac_read_preference_get_tag_sets_get_len
+    mongoac_read_preference_get_tag_sets_len
 
     mongoac_read_preference_set_max_staleness_from_secs
     mongoac_read_preference_set_max_staleness_none
     mongoac_read_preference_set_mode
+    mongoac_read_preference_set_tag_sets_none
+    mongoac_read_preference_set_tag_sets_push

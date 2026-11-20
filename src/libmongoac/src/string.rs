@@ -69,6 +69,15 @@ impl From<&str> for StringViewT {
     }
 }
 
+impl From<&String> for StringViewT {
+    fn from(s: &String) -> Self {
+        StringViewT {
+            ptr: s.as_ptr().cast(),
+            len: s.len(),
+        }
+    }
+}
+
 impl AsSafeRef for StringViewT {
     type Element = u8;
     type T = str;
