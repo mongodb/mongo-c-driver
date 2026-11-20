@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::bson::BsonViewT;
+use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::cursor::CursorT;
 use crate::delete_result::DeleteResultT;
@@ -80,6 +81,17 @@ pub extern "C" fn mongoac_future_get_bson(future: *const FutureT, error: *mut Er
     let future = safe_as_ref_with_error!(future, error);
 
     safe_result!(future.get_bson(), error).into()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_future_get_client(
+    future: *const FutureT,
+    error: *mut ErrorT,
+) -> *const ClientT {
+    let error = safe_optional_error_as_mut!(error);
+    let future = safe_as_ref_with_error!(future, error);
+
+    safe_ptr_from_ref!(safe_result!(future.get_client(), error), ClientT)
 }
 
 #[unsafe(no_mangle)]
@@ -207,6 +219,10 @@ impl FutureT {
 
     fn get_bson(&self) -> Result<&RawDocumentBuf, ErrorT> {
         self.get::<RawDocumentBuf>("bson")
+    }
+
+    fn get_client(&self) -> Result<&ClientT, ErrorT> {
+        self.get::<ClientT>("client")
     }
 
     fn get_client_session(&self) -> Result<&ClientSessionT, ErrorT> {

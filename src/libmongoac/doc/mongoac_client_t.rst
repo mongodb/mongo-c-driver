@@ -38,6 +38,8 @@ The associated runtime may be obtained with :symbol:`mongoac_client_get_runtime(
     mongoac_client_destroy
     mongoac_client_clone
     mongoac_client_new
+    mongoac_client_new_with_uri_str
+    mongoac_client_new_with_uri_str_async
 
     mongoac_client_get_database
     mongoac_client_get_default_database

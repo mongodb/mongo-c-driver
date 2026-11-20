@@ -28,4 +28,4 @@ Must be destroyed with :symbol:`mongoac_client_destroy()`.
 .. seealso::
 
    | :symbol:`mongoac_client_destroy`
-   | :symbol:`mongoac_client_new`
+   | :symbol:`mongoac_client_new_with_uri_str`

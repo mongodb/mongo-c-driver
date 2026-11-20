@@ -371,6 +371,11 @@ impl RuntimeT {
             .block_on(async { tokio::time::sleep(duration).await });
     }
 
+    /// For convenience: equivalent to `self.runtime.enter()`.
+    pub(crate) fn enter(&self) -> tokio::runtime::EnterGuard<'_> {
+        self.runtime.enter()
+    }
+
     /// For convenience: equivalent to `self.runtime.block_on(future)`.
     pub(crate) fn block_on<F: Future>(&self, future: F) -> F::Output {
         self.runtime.block_on(future)
