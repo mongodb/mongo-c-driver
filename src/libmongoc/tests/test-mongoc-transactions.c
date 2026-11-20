@@ -14,6 +14,39 @@
 #include <mock_server/mock-rs.h>
 #include <test-libmongoc.h>
 
+/* Copy the test URI, restricted to host_str if non-NULL. A NULL host_str keeps the URI's own hosts (e.g. the members
+ * of a replica set). */
+static mongoc_uri_t *
+_copy_uri_for_host(json_test_ctx_t *ctx, const char *host_str)
+{
+   if (host_str) {
+      return _mongoc_uri_copy_and_replace_host_list(ctx->test_framework_uri, host_str);
+   }
+   return mongoc_uri_copy(ctx->test_framework_uri);
+}
+
+/* Run fn(ctx, host) once per mongos when the test uses multiple mongoses, otherwise once against the test URI. */
+static void
+_for_each_server(json_test_ctx_t *ctx, const bson_t *test, void (*fn)(json_test_ctx_t *, const char *))
+{
+   bson_iter_t test_iter;
+   bool is_multi_mongos = bson_iter_init_find(&test_iter, test, "useMultipleMongoses") && bson_iter_as_bool(&test_iter);
+
+   if (!is_multi_mongos || !test_framework_is_mongos()) {
+      // "useMultipleMongoses" only applies to sharded clusters. Elsewhere the test URI already names the servers.
+      fn(ctx, NULL);
+      return;
+   }
+
+   bson_error_t error;
+   mongoc_uri_t *uri = mongoc_uri_copy(ctx->test_framework_uri);
+   ASSERT_OR_PRINT(test_framework_uri_apply_multi_mongos(uri, true, &error), error);
+   for (const mongoc_host_list_t *host = mongoc_uri_get_hosts(uri); host; host = host->next) {
+      fn(ctx, host->host_and_port);
+   }
+   mongoc_uri_destroy(uri);
+}
+
 /* Reset server state by disabling failpoints, killing sessions, and... running
  * a distinct command. */
 static void
@@ -21,7 +54,7 @@ _reset_server(json_test_ctx_t *ctx, const char *host_str)
 {
    mongoc_client_t *client;
    bson_error_t error;
-   mongoc_uri_t *uri = _mongoc_uri_copy_and_replace_host_list(ctx->test_framework_uri, host_str);
+   mongoc_uri_t *uri = _copy_uri_for_host(ctx, host_str);
 
    client = test_framework_client_new_from_uri(uri, NULL);
    test_framework_set_ssl_opts(client);
@@ -55,7 +88,7 @@ _disable_failpoints(json_test_ctx_t *ctx, const char *host_str)
    mongoc_client_t *client;
    bson_error_t error;
    int i;
-   mongoc_uri_t *uri = _mongoc_uri_copy_and_replace_host_list(ctx->test_framework_uri, host_str);
+   mongoc_uri_t *uri = _copy_uri_for_host(ctx, host_str);
 
    /* Some transactions tests have a failCommand for "hello" repeat seven
     * times. Repeat this seven times. And set a reduced server selection timeout
@@ -82,32 +115,14 @@ _disable_failpoints(json_test_ctx_t *ctx, const char *host_str)
 static void
 transactions_test_before_test(json_test_ctx_t *ctx, const bson_t *test)
 {
-   bson_iter_t test_iter;
-   bool is_multi_mongos;
-
-   _reset_server(ctx, "localhost:27017");
-
-   is_multi_mongos = bson_iter_init_find(&test_iter, test, "useMultipleMongoses") && bson_iter_as_bool(&test_iter);
-
-   if (is_multi_mongos) {
-      _reset_server(ctx, "localhost:27018");
-   }
+   _for_each_server(ctx, test, _reset_server);
 }
 
 
 static void
 transactions_test_after_test(json_test_ctx_t *ctx, const bson_t *test)
 {
-   bson_iter_t test_iter;
-   bool is_multi_mongos;
-
-   _disable_failpoints(ctx, "localhost:27017");
-
-   is_multi_mongos = bson_iter_init_find(&test_iter, test, "useMultipleMongoses") && bson_iter_as_bool(&test_iter);
-
-   if (is_multi_mongos) {
-      _disable_failpoints(ctx, "localhost:27018");
-   }
+   _for_each_server(ctx, test, _disable_failpoints);
 }
 
 

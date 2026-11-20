@@ -14,6 +14,7 @@ check_var_opt CLIENT_SIDE_ENCRYPTION
 check_var_opt COMPRESSORS "nocompressors"
 check_var_opt COVERAGE # CMake default: OFF.
 check_var_opt DNS "nodns"
+check_var_opt DSC "off"
 check_var_opt LOADBALANCED "noloadbalanced"
 check_var_opt MARCH
 check_var_opt MONGODB_API_VERSION
@@ -55,6 +56,11 @@ export MONGOC_TEST_URI="${URI}"
 export MONGOC_TEST_SERVER_LOG="json"
 export MONGOC_TEST_SKIP_MOCK="on"
 export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
+
+if [[ "${DSC}" == "on" ]]; then
+  # Skips tests that forbid disaggregated storage (e.g. the "dsc: forbid" runOnRequirement).
+  export MONGOC_TEST_DSC="on"
+fi
 
 # Only set creds if testing with Client Side Encryption.
 # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)

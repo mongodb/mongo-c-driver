@@ -670,8 +670,10 @@ check_schema_version(test_file_t *test_file)
    // 1.23 is partially supported (automatic encryption)
    // 1.25 is partially supported (minLibmongocryptVersion)
    // 1.28 is partially supported (accessToken)
+   // 1.29 is partially supported ($$gte and span assertions are not implemented)
+   // 1.30 is supported (dsc runOnRequirement)
    semver_t schema_version;
-   semver_parse("1.28", &schema_version);
+   semver_parse("1.30", &schema_version);
 
    if (schema_version.major != test_file->schema_version.major) {
       goto fail;
@@ -775,6 +777,33 @@ check_run_on_requirement(test_runner_t *test_runner,
       if (0 == strcmp(key, "serverless")) {
          // Ignore deprecated serverless runOnRequirement. Serverless is not tested.
          continue;
+      }
+
+      if (0 == strcmp(key, "dsc")) {
+         if (!BSON_ITER_HOLDS_UTF8(&req_iter)) {
+            test_error("Unexpected type for dsc, should be string");
+         }
+         const char *dsc_mode = bson_iter_utf8(&req_iter, NULL);
+         const bool is_dsc = test_framework_is_dsc();
+
+         if (0 == strcmp(dsc_mode, "allow")) {
+            continue;
+         }
+         if (0 == strcmp(dsc_mode, "require")) {
+            if (is_dsc) {
+               continue;
+            }
+            *fail_reason = bson_strdup("Test requires disaggregated storage (DSC)");
+            return false;
+         }
+         if (0 == strcmp(dsc_mode, "forbid")) {
+            if (!is_dsc) {
+               continue;
+            }
+            *fail_reason = bson_strdup("Test forbids disaggregated storage (DSC)");
+            return false;
+         }
+         test_error("Unexpected value for dsc: %s", dsc_mode);
       }
 
       if (0 == strcmp(key, "auth")) {

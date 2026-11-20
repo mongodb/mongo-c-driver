@@ -1788,7 +1788,9 @@ _test_mongoc_client_ipv6(bool pooled)
 #endif
    bson_error_t error;
 
-   uri_str = test_framework_add_user_password_from_env("mongodb://[::1]/");
+   char *ipv6_base = bson_strdup_printf("mongodb://[::1]:%hu/", test_framework_get_port());
+   uri_str = test_framework_add_user_password_from_env(ipv6_base);
+   bson_free(ipv6_base);
    uri = mongoc_uri_new(uri_str);
    BSON_ASSERT(uri);
 
