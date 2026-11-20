@@ -62,15 +62,9 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
 
    mongoc_server_description_t const *server_description = cmd->initial_server_description;
 
-   mongoc_deprioritized_servers_t *const deprioritized_servers = mongoc_deprioritized_servers_new();
-
-   const mongoc_retry_backoff_params_t retry_backoff_params = {
-      .growth_factor = MONGOC_RETRYABLE_CMD_BACKOFF_GROWTH_FACTOR,
-      .backoff_max = MONGOC_RETRYABLE_CMD_BACKOFF_MAX,
-   };
-
-   mongoc_retry_backoff_generator_t *const retry_backoff_generator =
-      _mongoc_retry_backoff_generator_new(retry_backoff_params, cmd->jitter_source);
+   // Created on the first retry: a command that succeeds at once (nearly every command) needs neither.
+   mongoc_deprioritized_servers_t *deprioritized_servers = NULL;
+   mongoc_retry_backoff_generator_t *retry_backoff_generator = NULL;
 
    while (true) {
       ret = cmd->execute(cmd->user_data, reply, error);
@@ -106,6 +100,16 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
          break;
       }
 
+      if (!deprioritized_servers) {
+         const mongoc_retry_backoff_params_t retry_backoff_params = {
+            .growth_factor = MONGOC_RETRYABLE_CMD_BACKOFF_GROWTH_FACTOR,
+            .backoff_max = MONGOC_RETRYABLE_CMD_BACKOFF_MAX,
+         };
+
+         deprioritized_servers = mongoc_deprioritized_servers_new();
+         retry_backoff_generator = _mongoc_retry_backoff_generator_new(retry_backoff_params, cmd->jitter_source);
+      }
+
       if (server_description->type == MONGOC_SERVER_MONGOS || (is_overload && cmd->enable_overload_retargeting)) {
          TRACE("deprioritization: add to list: %s (id: %" PRIu32 ")",
                server_description->host.host_and_port,
@@ -130,8 +134,10 @@ _mongoc_retryable_cmd_run(const mongoc_retryable_cmd_t *cmd, bson_t *reply, bson
       bson_destroy(reply);
    }
 
-   _mongoc_retry_backoff_generator_destroy(retry_backoff_generator);
-   mongoc_deprioritized_servers_destroy(deprioritized_servers);
+   if (deprioritized_servers) {
+      _mongoc_retry_backoff_generator_destroy(retry_backoff_generator);
+      mongoc_deprioritized_servers_destroy(deprioritized_servers);
+   }
 
    RETURN(ret);
 }
