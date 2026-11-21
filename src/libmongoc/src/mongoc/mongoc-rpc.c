@@ -82,20 +82,45 @@ _parse_error_reply(const bson_t *doc, bool check_wce, uint32_t *code, const char
    BSON_ASSERT(code);
    *code = 0;
 
+   // One pass over the reply for the four fields below (a reply without an error has none of them, and four
+   // bson_iter_init_find calls walk it four times). As bson_iter_find, the first occurrence of each field counts.
+   bool have_code = false, have_errmsg = false, have_err = false, have_wce = false;
+   bson_iter_t code_iter, errmsg_iter, err_iter, wce_iter;
+
+   if (bson_iter_init(&iter, doc)) {
+      while (bson_iter_next(&iter)) {
+         const char *key = bson_iter_key(&iter);
+
+         if (!have_code && !strcmp(key, "code")) {
+            code_iter = iter;
+            have_code = true;
+         } else if (!have_errmsg && !strcmp(key, "errmsg")) {
+            errmsg_iter = iter;
+            have_errmsg = true;
+         } else if (!have_err && !strcmp(key, "$err")) {
+            err_iter = iter;
+            have_err = true;
+         } else if (!have_wce && !strcmp(key, "writeConcernError")) {
+            wce_iter = iter;
+            have_wce = true;
+         }
+      }
+   }
+
    /* The server only returns real error codes as int32.
     * But it may return as a double or int64 if a failpoint
     * based on how it is configured to error. */
-   if (bson_iter_init_find(&iter, doc, "code") && BSON_ITER_HOLDS_NUMBER(&iter)) {
-      *code = (uint32_t)bson_iter_as_int64(&iter);
+   if (have_code && BSON_ITER_HOLDS_NUMBER(&code_iter)) {
+      *code = (uint32_t)bson_iter_as_int64(&code_iter);
       BSON_ASSERT(*code);
       found_error = true;
    }
 
-   if (bson_iter_init_find(&iter, doc, "errmsg") && BSON_ITER_HOLDS_UTF8(&iter)) {
-      *msg = bson_iter_utf8(&iter, NULL);
+   if (have_errmsg && BSON_ITER_HOLDS_UTF8(&errmsg_iter)) {
+      *msg = bson_iter_utf8(&errmsg_iter, NULL);
       found_error = true;
-   } else if (bson_iter_init_find(&iter, doc, "$err") && BSON_ITER_HOLDS_UTF8(&iter)) {
-      *msg = bson_iter_utf8(&iter, NULL);
+   } else if (have_err && BSON_ITER_HOLDS_UTF8(&err_iter)) {
+      *msg = bson_iter_utf8(&err_iter, NULL);
       found_error = true;
    }
 
@@ -106,15 +131,15 @@ _parse_error_reply(const bson_t *doc, bool check_wce, uint32_t *code, const char
 
    if (check_wce) {
       /* check for a write concern error */
-      if (bson_iter_init_find(&iter, doc, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      if (have_wce && BSON_ITER_HOLDS_DOCUMENT(&wce_iter)) {
          bson_iter_t child;
-         BSON_ASSERT(bson_iter_recurse(&iter, &child));
+         BSON_ASSERT(bson_iter_recurse(&wce_iter, &child));
          if (bson_iter_find(&child, "code") && BSON_ITER_HOLDS_NUMBER(&child)) {
             *code = (uint32_t)bson_iter_as_int64(&child);
             BSON_ASSERT(*code);
             found_error = true;
          }
-         BSON_ASSERT(bson_iter_recurse(&iter, &child));
+         BSON_ASSERT(bson_iter_recurse(&wce_iter, &child));
          if (bson_iter_find(&child, "errmsg") && BSON_ITER_HOLDS_UTF8(&child)) {
             *msg = bson_iter_utf8(&child, NULL);
             found_error = true;
