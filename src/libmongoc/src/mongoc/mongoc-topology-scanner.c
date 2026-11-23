@@ -295,8 +295,16 @@ _mongoc_topology_scanner_parse_speculative_authentication(const bson_t *hello, b
       return;
    }
 
+   // The field comes from the server reply. If it is not a well-formed document, treat it as absent: speculative
+   // authentication is ignored and the client authenticates normally.
+   if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      return;
+   }
+
    bson_iter_document(&iter, &data_len, &data);
-   BSON_ASSERT(bson_init_static(&auth_response, data, data_len));
+   if (!bson_init_static(&auth_response, data, data_len)) {
+      return;
+   }
 
    bson_destroy(speculative_authenticate);
    bson_copy_to(&auth_response, speculative_authenticate);
