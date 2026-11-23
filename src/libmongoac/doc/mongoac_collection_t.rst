@@ -52,6 +52,9 @@ The associated runtime may be obtained with :symbol:`mongoac_collection_get_runt
     mongoac_collection_estimated_document_count
     mongoac_collection_estimated_document_count_async
 
+    mongoac_collection_find
+    mongoac_collection_find_async
+
     mongoac_collection_find_one
     mongoac_collection_find_one_async
 
