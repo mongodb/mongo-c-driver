@@ -671,30 +671,24 @@ test_srv_polling_mocked(void *unused)
 }
 
 static void
-test_srv_polling_normalize_hosts(void *unused)
+test_srv_polling_normalize_hosts(void)
 {
-   mongoc_uri_t *uri;
-   mongoc_topology_description_t td;
-   bson_error_t error;
-   mongoc_host_list_t *hosts;
-   mongoc_host_list_t *expected;
-   bool ret;
-
-   BSON_UNUSED(unused);
-
    mongoc_log_and_monitor_instance_t log_and_monitor;
    mongoc_log_and_monitor_instance_init(&log_and_monitor);
 
+   mongoc_topology_description_t td;
    mongoc_topology_description_init(&td, 0);
-   uri = mongoc_uri_new("mongodb+srv://server.test.com/?tls=true");
+
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb+srv://server.test.com/?tls=true");
    capture_logs(true);
 
    /* Polled hosts are normalized (trailing dot stripped, ASCII lowercased)
     * before validation and before populating the topology: the topology
     * stores the canonical form. */
-   hosts = MAKE_HOSTS("A.TEST.COM.", "b.test.com");
-   expected = MAKE_HOSTS("a.test.com", "b.test.com");
-   ret = mongoc_topology_apply_scanned_srv_hosts(uri, &td, &log_and_monitor, hosts, &error);
+   mongoc_host_list_t *hosts = MAKE_HOSTS("A.TEST.COM.", "b.test.com");
+   mongoc_host_list_t *expected = MAKE_HOSTS("a.test.com", "b.test.com");
+   bson_error_t error;
+   bool ret = mongoc_topology_apply_scanned_srv_hosts(uri, &td, &log_and_monitor, hosts, &error);
    ASSERT_OR_PRINT(ret, error);
    check_topology_description(&td, expected);
    _mongoc_host_list_destroy_all(expected);
@@ -1454,12 +1448,8 @@ test_dns_install(TestSuite *suite)
    test_all_spec_tests(suite);
    TestSuite_AddFull(
       suite, "/initial_dns_seedlist_discovery/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
-   TestSuite_AddFull(suite,
-                     "/initial_dns_seedlist_discovery/srv_polling/normalize_hosts",
-                     test_srv_polling_normalize_hosts,
-                     NULL,
-                     NULL,
-                     NULL);
+   TestSuite_Add(
+      suite, "/initial_dns_seedlist_discovery/srv_polling/normalize_hosts", test_srv_polling_normalize_hosts);
    TestSuite_AddFull(suite,
                      "/initial_dns_seedlist_discovery/small_initial_buffer [lock:live-server]",
                      test_small_initial_buffer,

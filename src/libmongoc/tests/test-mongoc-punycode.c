@@ -22,24 +22,26 @@
 
 // Canonicalize `domain` and expect success with the result `expect`.
 #define ASSERT_CANONICAL(domain, expect)                                                    \
-   do {                                                                                     \
+   if (1) {                                                                                 \
       mstr _dst = mstr_new(0);                                                              \
       ASSERT_WITH_MSG(mongoc_punycode_canonicalize_domain((domain), strlen(domain), &_dst), \
                       "expected \"%s\" to canonicalize",                                    \
                       (domain));                                                            \
       ASSERT_CMPSTR(_dst.data, (expect));                                                   \
       mstr_destroy(&_dst);                                                                  \
-   } while (0)
+   } else                                                                                   \
+      ((void)0)
 
 // Canonicalize `domain` and expect failure.
 #define ASSERT_NOT_CANONICAL(domain)                                                         \
-   do {                                                                                      \
+   if (1) {                                                                                  \
       mstr _dst = mstr_new(0);                                                               \
       ASSERT_WITH_MSG(!mongoc_punycode_canonicalize_domain((domain), strlen(domain), &_dst), \
                       "expected \"%s\" to be rejected",                                      \
                       (domain));                                                             \
       mstr_destroy(&_dst);                                                                   \
-   } while (0)
+   } else                                                                                    \
+      ((void)0)
 
 static void
 test_punycode_ascii(void)
