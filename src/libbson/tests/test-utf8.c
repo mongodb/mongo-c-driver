@@ -27,6 +27,14 @@ test_bson_utf8_validate(void)
    static const unsigned char out_of_bound[] = {0xfd, 0x9f, 0xb0, 0x80, 0x80, 0x80, 0};
    static const unsigned char bad[] = {0xed, 0xa0, 0xa5, 0};
 
+   /* An empty string is valid UTF-8: it contains no characters and no NUL
+    * byte within its (zero) declared length. */
+   BSON_ASSERT(bson_utf8_validate("", 0, false));
+   BSON_ASSERT(bson_utf8_validate("", 0, true));
+
+   BSON_ASSERT(!bson_utf8_validate("\0abc", 4, false));
+   BSON_ASSERT(bson_utf8_validate("\0abc", 4, true));
+
    BSON_ASSERT(bson_utf8_validate("asdf", 4, false));
    BSON_ASSERT(bson_utf8_validate("asdf", 4, true));
    BSON_ASSERT(bson_utf8_validate("asdf", 5, true));
