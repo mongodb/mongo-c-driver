@@ -2789,8 +2789,9 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    ASSERT_ERROR_CONTAINS(
       error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "must not be specified with a non-SRV URI");
 
-   /* Host validation: when the suffix is configured, returned hostnames must
-    * end in the suffix; the domainname check does not apply. */
+   /* Host validation: srvAllowedHostsSuffix acts as the {domainname};
+    * returned hostnames must end in the suffix, and the URI's hostname is
+    * not used for the check. */
    uri = mongoc_uri_new("mongodb+srv://c.d.com/?srvallowedhostssuffix=mydomain.net");
    ASSERT(uri);
 
@@ -2800,6 +2801,7 @@ test_mongoc_uri_srv_allowed_hosts_suffix(void)
    INVALID_SUFFIX(uri, "mydomain.net");
    /* a suffix-matching host that would fail the domainname check is allowed */
    VALID(uri, "other.platform.mydomain.net");
+   INVALID_SUFFIX(uri, "b.c.d.com"); // `c.d.com` is in the URI, but the check uses `srvAllowedHostsSuffix`.
    /* trailing dots and mixed case on returned hosts are stripped by normalization
     * (prose test 10: hosts are compared after normalization, not raw) */
    VALID(uri, "a.mydomain.net.");
