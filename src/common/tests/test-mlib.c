@@ -36,8 +36,25 @@ _test_checks(void)
    mlib_assert_aborts () {
       mlib_check("foo", str_eq, "bar");
    }
-   // ptr_eq
+   // Pointer checks use explicit comparisons, with or without a reason.
    const char *s = "foo";
+   mlib_check(s != NULL);
+   mlib_check(s != NULL, because, "non-null pointers are true");
+   const char *null_ptr = NULL;
+   mlib_assert_aborts () {
+      mlib_check(null_ptr != NULL);
+   }
+   mlib_assert_aborts () {
+      mlib_check(null_ptr != NULL, because, "null pointers are false");
+   }
+   // Conditions must not be evaluated more than once.
+   int evaluations = 0;
+   mlib_check((++evaluations, s != NULL));
+   mlib_check(evaluations, eq, 1);
+   mlib_check((++evaluations, s != NULL), because, "evaluate a pointer condition once");
+   mlib_check(evaluations, eq, 2);
+
+   // ptr_eq
    mlib_check(s, ptr_eq, s);
    mlib_assert_aborts () {
       mlib_check(s, ptr_eq, NULL);
@@ -783,6 +800,33 @@ _test_ckdint_partial(void)
 }
 
 static void
+_test_count_utf8_codepoints(void)
+{
+   const struct {
+      mstr_view text;
+      size_t count;
+   } cases[] = {
+      {mstr_view_data(NULL, 0), 0},
+      {mstr_cstring(""), 0},
+      {mstr_cstring("ASCII"), 5},
+      {mstr_cstring("\xc2\xa2"), 1},
+      {mstr_cstring("\xe2\x82\xac"), 1},
+      {mstr_cstring("\xf0\x9f\x98\x80"), 1},
+      {mstr_cstring("a\xc2\xa2\xe2\x82\xac\xf0\x9f\x98\x80"), 4},
+      // A combining mark is a separate codepoint, not a separate grapheme.
+      {mstr_cstring("e\xcc\x81"), 2},
+      {mstr_view_data("a\0\xc2\xa2", 4), 3},
+      {mstr_view_data("\xc2\xa2"
+                      "extra",
+                      2),
+       1},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      mlib_check(mstr_count_utf8_codepoints(cases[i].text), eq, cases[i].count);
+   }
+}
+
+static void
 _test_str_view(void)
 {
    mstr_view sv = mstr_cstring("Hello, world!");
@@ -1389,7 +1433,7 @@ _test_int_vec(void)
 
    // Append an element
    int *el;
-   mlib_check((el = int_vec_push(&ints)));
+   mlib_check((el = int_vec_push(&ints)) != NULL);
    *el = 42;
    mlib_check(int_vec_begin(&ints)[0], eq, 42);
    mlib_check(ints.size, eq, 1);
@@ -1479,6 +1523,7 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add(suite, "/mlib/str/count_utf8_codepoints", _test_count_utf8_codepoints);
    TestSuite_Add(suite, "/mlib/str", _test_str);
    TestSuite_Add(suite, "/mlib/str-capacity", _test_str_capacity);
    TestSuite_Add(suite, "/mlib/str-append-growth", _test_str_append_growth);

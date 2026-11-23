@@ -30,5 +30,5 @@ When ``client`` is null, does nothing.
 .. seealso::
 
    | :symbol:`mongoac_client_clone`
-   | :symbol:`mongoac_client_new`
+   | :symbol:`mongoac_client_new_with_uri_str`
    | :symbol:`mongoac_client_shutdown`

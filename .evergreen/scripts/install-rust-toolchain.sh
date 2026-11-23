@@ -30,7 +30,7 @@ declare tarball_path="${rust_toolchain_dir:?}/${tarball_name:?}"
 export CARGO_HOME="${CARGO_HOME:-"${cache_dir:?}/.cargo"}"
 
 # See: https://static.rust-lang.org/dist/${tarball_name:?}.sha256
-declare rust_checksum="d2ccef59dd9f7439f2c694948069f789a044dc1addcc0803613232af8f88ee0c"
+declare rust_checksum="294b3d81fa72e62581276290c60c81eb8b58498d333d422ca1dfc432877d0c40"
 
 download_rust_toolchain() {
   declare tarball_tmp

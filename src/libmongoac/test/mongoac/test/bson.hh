@@ -25,6 +25,17 @@
 
 namespace mongoac::test {
 
+// Suppress noisy `-Wignored-attributes` warnings due to using `bson_t` for template arguments.
+#if defined(__GNUC__) && !defined(__clang__)
+#define MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_PUSH() \
+    _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wignored-attributes\"") static_assert(true)
+#define MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_POP() _Pragma("GCC diagnostic pop") static_assert(true)
+#else
+#define MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_PUSH() static_assert(true)
+#define MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_POP() static_assert(true)
+#endif
+
+MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_PUSH();
 using unique_bson_ptr = std::unique_ptr<bson_t, void (*)(bson_t*)>;
 
 mongoac_bson_view_t to_mongoac(bson_t const* bson);
@@ -37,6 +48,7 @@ std::optional<bson_t> to_bson(unique_bson_ptr&& bson) = delete;
 std::optional<bson_t> to_bson(mongoac_bson_t const& bson);
 std::optional<bson_t> to_bson(mongoac_bson_t&& bson) = delete;
 std::optional<bson_t> to_bson(mongoac_bson_view_t bson);
+MONGOAC_TEST_DISABLE_IGNORED_ATTRIBUTES_GCC_POP();
 
 std::string as_json(unique_bson_ptr const& bson);
 std::string as_json(unique_bson_ptr&& bson) = delete;
@@ -61,6 +73,16 @@ bson_t* operator""_bson(char const* ptr, std::size_t len);
         bson_iter_t iter = {};                           \
         REQUIRE(bson_iter_init_find(&iter, &bson, key)); \
         return iter;                                     \
+    }()
+
+// Return a `bson_iter_t` to the requested field.
+#define REQUIRE_BSON_ITER_FIND_DESCENDANT(bson, key)                 \
+    [&]() -> bson_iter_t {                                           \
+        bson_iter_t iter = {};                                       \
+        bson_iter_t descendant = {};                                 \
+        REQUIRE(bson_iter_init(&iter, &bson));                       \
+        REQUIRE(bson_iter_find_descendant(&iter, key, &descendant)); \
+        return descendant;                                           \
     }()
 
 } // namespace mongoac::test

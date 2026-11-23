@@ -176,7 +176,7 @@ _mongoc_host_list_from_string(mongoc_host_list_t *link_, const char *address)
    bson_error_t error = {0};
    bool r = _mongoc_host_list_from_string_with_err(link_, address, &error);
    if (!r) {
-      MONGOC_ERROR("Could not parse address %s: %s", address, error.message);
+      MONGOC_ERROR("Could not parse address: %s", error.message);
       return false;
    }
    return true;
@@ -186,7 +186,9 @@ static inline bool
 _parse_host_ipv6(mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
 {
    bson_error_reset(error);
-   _mongoc_set_error(error, 0, 0, "Invalid IPv6 literal address '%.*s'", MSTR_FMT(addr));
+   // Apparent host or port text may be a credential from malformed user information.
+   // Keep diagnostics input-free so callers can safely forward these specific reasons.
+   _mongoc_set_error(error, 0, 0, "Invalid IPv6 literal address");
    // Find the opening bracket (must be the first char)
    const size_t open_square_pos = mstr_find(addr, mstr_cstring("["), 0, 1);
    if (open_square_pos != 0) {
@@ -204,7 +206,7 @@ _parse_host_ipv6(mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
       _mongoc_set_error(error,
                         MONGOC_ERROR_COMMAND,
                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                        "%s: Mising closing bracket ']'",
+                        "%s: Missing closing bracket ']'",
                         error->message);
       return false;
    }
@@ -232,9 +234,8 @@ _parse_host_ipv6(mongoc_host_list_t *link, mstr_view addr, bson_error_t *error)
          _mongoc_set_error(error,
                            MONGOC_ERROR_COMMAND,
                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                           "%s: Invalid port '%.*s': %s",
+                           "%s: Invalid port: %s",
                            error->message,
-                           MSTR_FMT(port_str),
                            err2.message);
          return false;
       }
@@ -264,9 +265,7 @@ _parse_host(mongoc_host_list_t *link, mstr_view spec, bson_error_t *error)
          _mongoc_set_error(error,
                            MONGOC_ERROR_COMMAND,
                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                           "Invalid host specifier '%.*s': Invalid port string '%.*s': %s",
-                           MSTR_FMT(spec),
-                           MSTR_FMT(port_str),
+                           "Invalid host specifier: Invalid port string: %s",
                            e2.message);
          return false;
       }

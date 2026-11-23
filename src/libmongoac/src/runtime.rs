@@ -17,9 +17,11 @@ use crate::future::{FutureExt, FutureT};
 use crate::private::macros::*;
 
 use futures_util::stream::{FuturesUnordered, StreamExt};
-use std::future::Future;
-use std::sync::Arc;
+use tokio::runtime::Runtime;
 use tokio::time::Duration;
+
+use std::future::Future;
+use std::sync::{Arc, Weak};
 
 /// Safely convert the given raw pointer into a future associated with the specified runtime.
 ///
@@ -124,7 +126,7 @@ macro_rules! safe_futures_from_runtime_with_error {
 
 #[derive(Clone)]
 pub struct RuntimeT {
-    runtime: Arc<tokio::runtime::Runtime>,
+    runtime: Arc<Runtime>,
 }
 
 #[unsafe(no_mangle)]
@@ -277,6 +279,23 @@ impl RuntimeT {
         Arc::as_ptr(&self.runtime) as usize
     }
 
+    #[must_use]
+    pub(crate) fn downgrade(&self) -> Weak<Runtime> {
+        // An async operation MUST NOT capture an owning handle to the associated runtime with which it was spawned.
+        std::sync::Arc::downgrade(&self.runtime)
+    }
+
+    pub(crate) fn upgrade(ptr: &Weak<Runtime>) -> Self {
+        let Some(runtime) = ptr.upgrade() else {
+            // Invariant: this method can only be invoked via a progress function, which requires a live `RuntimeT`
+            // handle. Therefore, the associated runtime is guaranteed-by-construction to be alive at this point.
+            // This method MUST be invoked after the *last* `.await` in the given async operation.
+            unreachable!("the associated runtime was destroyed")
+        };
+
+        Self { runtime }
+    }
+
     // Named `block_on_future()` to avoid conflict with the generic `block_on::<F>()`.
     fn block_on_future(&self, future: &FutureT) {
         if future.is_ready() {
@@ -350,6 +369,11 @@ impl RuntimeT {
     fn make_progress_for(&self, duration: Duration) {
         self.runtime
             .block_on(async { tokio::time::sleep(duration).await });
+    }
+
+    /// For convenience: equivalent to `self.runtime.enter()`.
+    pub(crate) fn enter(&self) -> tokio::runtime::EnterGuard<'_> {
+        self.runtime.enter()
     }
 
     /// For convenience: equivalent to `self.runtime.block_on(future)`.

@@ -171,6 +171,28 @@ mstr_cstring(const char *s)
 }
 
 /**
+ * @brief Count Unicode codepoints in a view containing valid UTF-8.
+ *
+ * The input must contain complete, valid UTF-8 sequences; this function does not
+ * validate the encoding. Embedded NULs count as codepoints, and combining marks
+ * are counted separately rather than grouped into graphemes.
+ */
+static inline size_t
+mstr_count_utf8_codepoints(mstr_view s)
+{
+   size_t count = 0;
+   for (size_t i = 0; i < s.len; i++) {
+      // Each codepoint has exactly one byte that is not a continuation byte.
+      if (((unsigned char)s.data[i] & 0xc0) != 0x80) {
+         count++;
+      }
+   }
+   return count;
+}
+
+#define mstr_count_utf8_codepoints(S) (mstr_count_utf8_codepoints)(mstr_view_from(S))
+
+/**
  * @brief Compare two strings lexicographically by each code unit
  *
  * If called with two arguments behaves the same as `strcmp`. If called with

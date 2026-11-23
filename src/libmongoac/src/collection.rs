@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::bson::{BsonT, BsonViewT};
+use crate::bson::{BsonT, BsonViewArrayT, BsonViewT};
 use crate::client::ClientT;
 use crate::client_session::ClientSessionT;
 use crate::collection_options::CollectionOptionsT;
 use crate::count_options::CountOptionsT;
+use crate::delete_options::DeleteOptionsT;
+use crate::delete_result::DeleteResultT;
 use crate::drop_collection_options::DropCollectionOptionsT;
 use crate::error::ErrorT;
 use crate::estimated_document_count_options::EstimatedDocumentCountOptionsT;
 use crate::find_one_options::FindOneOptionsT;
 use crate::future::FutureT;
+use crate::insert_many_options::InsertManyOptionsT;
+use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_options::InsertOneOptionsT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
@@ -31,10 +35,10 @@ use crate::string::StringViewT;
 use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
-    CountOptions, DropCollectionOptions, EstimatedDocumentCountOptions, FindOneOptions,
-    InsertOneOptions,
+    CountOptions, DeleteOptions, DropCollectionOptions, EstimatedDocumentCountOptions,
+    FindOneOptions, InsertManyOptions, InsertOneOptions,
 };
-use mongodb::results::InsertOneResult;
+use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult};
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -92,6 +96,70 @@ pub extern "C" fn mongoac_collection_count_documents_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(coll.count_documents_async(session, filter, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_many(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+    error: *mut ErrorT,
+) -> *mut DeleteResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.delete_many(session, filter, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_many_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.delete_many_async(session, filter, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_one(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+    error: *mut ErrorT,
+) -> *mut DeleteResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.delete_one(session, filter, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_delete_one_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    options: *const DeleteOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.delete_one_async(session, filter, options))
 }
 
 #[unsafe(no_mangle)]
@@ -178,6 +246,38 @@ pub extern "C" fn mongoac_collection_find_one_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(collection.find_one_async(session, filter, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_many(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    docs: BsonViewArrayT,
+    options: *const InsertManyOptionsT,
+    error: *mut ErrorT,
+) -> *mut InsertManyResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let docs = safe_bson_view_array_with_error!(docs, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(safe_result!(collection.insert_many(session, docs, options), error).into())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_insert_many_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    docs: BsonViewArrayT,
+    options: *const InsertManyOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let docs = safe_bson_view_array!(docs);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.insert_many_async(session, docs, options))
 }
 
 #[unsafe(no_mangle)]
@@ -287,6 +387,78 @@ impl CollectionT {
         })
     }
 
+    fn delete_many(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> Result<DeleteResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .delete_many(filter)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn delete_many_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let options: Option<DeleteOptions> = options.map(Into::into);
+
+        self.spawn::<DeleteResult>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(coll.delete_many(filter).with_options(options), session)
+        })
+    }
+
+    fn delete_one(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> Result<DeleteResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .delete_one(filter)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn delete_one_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        options: Option<&DeleteOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let options: Option<DeleteOptions> = options.map(Into::into);
+
+        self.spawn::<DeleteResult>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(coll.delete_one(filter).with_options(options), session)
+        })
+    }
+
     fn drop(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -376,6 +548,40 @@ impl CollectionT {
         })
     }
 
+    fn insert_many(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        docs: Vec<&RawDocument>,
+        options: Option<&InsertManyOptionsT>,
+    ) -> Result<InsertManyResult, ErrorT> {
+        let docs: Vec<RawDocumentBuf> = docs.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            session_op!(
+                self.inner
+                    .insert_many(docs)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn insert_many_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        docs: Vec<&RawDocument>,
+        options: Option<&InsertManyOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let docs: Vec<RawDocumentBuf> = docs.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<InsertManyOptions> = options.map(Into::into);
+
+        self.spawn::<InsertManyResult>(async move {
+            session_op!(coll.insert_many(docs).with_options(options), session)
+        })
+    }
+
     fn insert_one(
         &self,
         session: Option<&mut ClientSessionT>,
@@ -413,8 +619,6 @@ impl CollectionT {
     // TODO: create_indexes
     // TODO: create_search_index
     // TODO: create_search_indexes
-    // TODO: delete_many
-    // TODO: delete_one
     // TODO: distinct
     // TODO: drop_index
     // TODO: drop_indexes
@@ -423,7 +627,6 @@ impl CollectionT {
     // TODO: find_one_and_delete
     // TODO: find_one_and_replace
     // TODO: find_one_and_update
-    // TODO: insert_many
     // TODO: insert_one_model
     // TODO: list_index_names
     // TODO: list_indexes

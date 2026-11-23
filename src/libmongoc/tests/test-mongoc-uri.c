@@ -269,7 +269,7 @@ test_mongoc_uri_new(void)
    capture_logs(true);
    uri = mongoc_uri_new("mongodb://user:pwd@local% host:27017");
    ASSERT(!uri);
-   ASSERT_CAPTURED_LOG("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence \"% h\"");
+   ASSERT_CAPTURED_LOG("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-sequence");
    capture_logs(false);
 
    uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/?replicaset=%20");
@@ -291,7 +291,7 @@ test_mongoc_uri_new(void)
    uri = mongoc_uri_new("mongodb://host/?minPoolSize=1");
    ASSERT(uri);
    ASSERT_CAPTURED_LOG(
-      "setting URI option minPoolSize=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option \"minpoolsize\"");
+      "setting URI option minPoolSize=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option at query position 0");
    mongoc_uri_destroy(uri);
    capture_logs(false);
 }
@@ -531,7 +531,7 @@ _auth_mechanism_properties_allowed(const char *mechanism, const char *userpass_p
       ASSERT_ERROR_CONTAINS(error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            tmp_str("Unsupported '%s' authentication mechanism property: 'invalid'", mechanism));
+                            tmp_str("Unsupported '%s' authentication mechanism property", mechanism));
    }
 }
 
@@ -618,12 +618,10 @@ _auth_mechanism_source_external_only(const char *mechanism, const char *userpass
                                                           &error);
       ASSERT_NO_CAPTURED_LOGS("mongoc_uri_new_with_error");
       ASSERT(!uri);
-      ASSERT_ERROR_CONTAINS(
-         error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_COMMAND_INVALID_ARG,
-         tmp_str("'%s' authentication mechanism requires \"$external\" authSource, but \"source\" was specified",
-                 mechanism));
+      ASSERT_ERROR_CONTAINS(error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            tmp_str("'%s' authentication mechanism requires \"$external\" authSource", mechanism));
       mongoc_uri_destroy(uri);
    }
 
@@ -1152,7 +1150,7 @@ test_mongoc_uri_auth_mechanisms(void)
          ASSERT_ERROR_CONTAINS(error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "Unsupported value for authMechanism '': must be one of ['MONGODB-OIDC', "
+                               "Unsupported value for authMechanism: must be one of ['MONGODB-OIDC', "
                                "'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']");
          mongoc_uri_destroy(uri);
       }
@@ -1178,7 +1176,7 @@ test_mongoc_uri_auth_mechanisms(void)
          ASSERT_ERROR_CONTAINS(error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "Unsupported value for authMechanism 'SCRAM': must be one of ['MONGODB-OIDC', "
+                               "Unsupported value for authMechanism: must be one of ['MONGODB-OIDC', "
                                "'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']");
          mongoc_uri_destroy(uri);
       }
@@ -1193,7 +1191,7 @@ test_mongoc_uri_auth_mechanisms(void)
          ASSERT_ERROR_CONTAINS(error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "Unsupported value for authMechanism 'MONGODB-CR': must be one of ['MONGODB-OIDC', "
+                               "Unsupported value for authMechanism: must be one of ['MONGODB-OIDC', "
                                "'SCRAM-SHA-1', 'SCRAM-SHA-256', 'PLAIN', 'MONGODB-X509', 'GSSAPI', 'MONGODB-AWS']");
          mongoc_uri_destroy(uri);
       }
@@ -1400,7 +1398,8 @@ test_mongoc_uri_functions(void)
    capture_logs(true);
    uri = mongoc_uri_new("mongodb://host/?foobar=1");
    ASSERT(uri);
-   ASSERT_CAPTURED_LOG("setting URI option foobar=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option \"foobar\"");
+   ASSERT_CAPTURED_LOG(
+      "setting URI option foobar=1", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option at query position 0");
 
    mongoc_uri_destroy(uri);
 }
@@ -1428,14 +1427,12 @@ test_mongoc_uri_new_with_error(void)
    ASSERT_ERROR_CONTAINS(error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid URI scheme \"mongo://\". Expected one of \"mongodb://\" or \"mongodb+srv://\"");
+                         "Invalid URI scheme. Expected one of \"mongodb://\" or \"mongodb+srv://\"");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost/?readPreference=unknown", &error));
-   ASSERT_ERROR_CONTAINS(error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Unsupported readPreference value [readPreference=unknown]");
+   ASSERT_ERROR_CONTAINS(
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported readPreference value");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost/"
@@ -1462,8 +1459,7 @@ test_mongoc_uri_new_with_error(void)
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://l%oc, alhost/", &error));
-   ASSERT_ERROR_CONTAINS(
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier \"l%oc\"");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb:///tmp/mongodb.sock", &error));
@@ -1472,16 +1468,16 @@ test_mongoc_uri_new_with_error(void)
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost/db.na%me", &error));
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid %-sequence \"%me\"");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid %-sequence");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost/db?journal=true&w=0", &error));
    ASSERT_ERROR_CONTAINS(
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Journal conflicts with w value [w=0]");
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Journal conflicts with w value");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost/db?w=-5", &error));
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported w value [w=-5]");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Unsupported w value");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost/db?heartbeatfrequencyms=10", &error));
@@ -1504,18 +1500,15 @@ test_mongoc_uri_new_with_error(void)
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://%", &error));
-   ASSERT_ERROR_CONTAINS(
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name \"%\" in URI");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://x", &error));
-   ASSERT_ERROR_CONTAINS(
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name \"x\" in URI");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://x.y", &error));
-   ASSERT_ERROR_CONTAINS(
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name \"x.y\" in URI");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://a.b.c,d.e.f", &error));
@@ -1572,6 +1565,64 @@ test_mongoc_uri_compound_setters(void)
    mongoc_uri_destroy(uri);
 }
 
+
+static void
+test_mongoc_host_list_diagnostic_input_disclosure(void)
+{
+   const struct {
+      const char *address;
+      const char *reason;
+   } cases[] = {
+      {"host:SENTINELpassword1234", "Port string is not a valid integer"},
+      {"SENTINELpassword1234:0", "Port number cannot be zero"},
+      {"SENTINELpassword1234:65536", "Port number is out-of-range"},
+      {"SENTINELpassword1234]", "Must start with a bracket"},
+      {"[::1]SENTINELpassword1234", "Invalid trailing content"},
+      {"[::1]:SENTINELpassword1234", "Port string is not a valid integer"},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      mongoc_host_list_t host = {0};
+      bson_error_t error = {0};
+      ASSERT(!_mongoc_host_list_from_string_with_err(&host, cases[i].address, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, cases[i].reason);
+      ASSERT(!strstr(error.message, "SENTINELpassword1234"));
+
+      // The logging wrapper must not reintroduce input omitted by the parser.
+      capture_logs(true);
+      ASSERT(!_mongoc_host_list_from_string(&host, cases[i].address));
+      ASSERT_CAPTURED_LOG("Host diagnostic", MONGOC_LOG_LEVEL_ERROR, cases[i].reason);
+      assert_no_captured_logs_contain("SENTINELpassword1234");
+   }
+   capture_logs(false);
+}
+
+static void
+test_mongoc_uri_host_diagnostic_reasons(void)
+{
+   const struct {
+      const char *uri;
+      const char *reason;
+   } cases[] = {
+      {"mongodb://host:SENTINELpassword1234", "Port string is not a valid integer"},
+      {"mongodb://SENTINELpassword1234:0", "Port number cannot be zero"},
+      {"mongodb://SENTINELpassword1234:65536", "Port number is out-of-range"},
+      {"mongodb://SENTINELpassword1234]", "Must start with a bracket"},
+      {"mongodb://[::1]SENTINELpassword1234", "Invalid trailing content"},
+      {"mongodb://[::1]:SENTINELpassword1234", "Port string is not a valid integer"},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      bson_error_t error = {0};
+      ASSERT(!mongoc_uri_new_with_error(cases[i].uri, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, cases[i].reason);
+      ASSERT(!strstr(error.message, "SENTINELpassword1234"));
+
+      capture_logs(true);
+      ASSERT(!mongoc_uri_new(cases[i].uri));
+      ASSERT_CAPTURED_LOG("URI host diagnostic", MONGOC_LOG_LEVEL_WARNING, cases[i].reason);
+      assert_no_captured_logs_contain("SENTINELpassword1234");
+   }
+   capture_logs(false);
+}
 
 static void
 test_mongoc_host_list_from_string(void)
@@ -1693,7 +1744,7 @@ test_mongoc_uri_compressors(void)
    capture_logs(true);
    mongoc_uri_set_compressors(uri, "snappy,unknown");
    ASSERT_MATCH(mongoc_uri_get_compressors(uri), "{'snappy': {'$exists': true}, 'unknown': {'$exists': false}}");
-   ASSERT_CAPTURED_LOG("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'unknown'");
+   ASSERT_CAPTURED_LOG("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor");
 #endif
 
 
@@ -1707,7 +1758,7 @@ test_mongoc_uri_compressors(void)
    capture_logs(true);
    mongoc_uri_set_compressors(uri, "unknown");
    ASSERT_MATCH(mongoc_uri_get_compressors(uri), "{'snappy': {'$exists': false}, 'unknown': {'$exists': false}}");
-   ASSERT_CAPTURED_LOG("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'unknown'");
+   ASSERT_CAPTURED_LOG("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor");
 #endif
 
    capture_logs(true);
@@ -1734,8 +1785,7 @@ test_mongoc_uri_compressors(void)
    capture_logs(true);
    uri = mongoc_uri_new("mongodb://localhost/?compressors=snappy,somethingElse");
    ASSERT_MATCH(mongoc_uri_get_compressors(uri), "{'snappy': {'$exists': true}, 'somethingElse': {'$exists': false}}");
-   ASSERT_CAPTURED_LOG(
-      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'somethingElse'");
+   ASSERT_CAPTURED_LOG("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor");
    mongoc_uri_destroy(uri);
 #endif
 
@@ -1766,8 +1816,7 @@ test_mongoc_uri_compressors(void)
    capture_logs(true);
    uri = mongoc_uri_new("mongodb://localhost/?compressors=zlib,somethingElse");
    ASSERT_MATCH(mongoc_uri_get_compressors(uri), "{'zlib': {'$exists': true}, 'somethingElse': {'$exists': false}}");
-   ASSERT_CAPTURED_LOG(
-      "mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor: 'somethingElse'");
+   ASSERT_CAPTURED_LOG("mongoc_uri_set_compressors", MONGOC_LOG_LEVEL_WARNING, "Unsupported compressor");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://localhost/?compressors=zlib&zlibCompressionLevel=-1");
@@ -1936,19 +1985,19 @@ test_mongoc_uri_read_prefs(void)
          .uri = "mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS "=foo",
          .parses = false,
          .mode = MONGOC_READ_NEAREST,
-         .log_msg = "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"foo\"",
+         .log_msg = "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": expected key:value pairs",
       },
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS "=foo,bar",
          .parses = false,
          .mode = MONGOC_READ_NEAREST,
-         .log_msg = "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"foo,bar\"",
+         .log_msg = "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": expected key:value pairs",
       },
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS "=1",
          .parses = false,
          .mode = MONGOC_READ_NEAREST,
-         .log_msg = "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"1\"",
+         .log_msg = "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": expected key:value pairs",
       },
       {0}};
 
@@ -2015,7 +2064,7 @@ test_mongoc_uri_write_concern(void)
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=-1",
          .parses = false,
-         .log_msg = "Unsupported w value [w=-1]",
+         .log_msg = "Unsupported w value",
       },
       {
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=0",
@@ -2103,7 +2152,7 @@ test_mongoc_uri_write_concern(void)
          .uri = "mongodb://localhost/?" MONGOC_URI_W "=0&" MONGOC_URI_JOURNAL "=true",
          .parses = false,
          .w = MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED,
-         .log_msg = "Journal conflicts with w value [" MONGOC_URI_W "=0]",
+         .log_msg = "Journal conflicts with w value",
       },
       {0}};
 
@@ -2237,11 +2286,11 @@ test_mongoc_uri_long_hostname(void)
 
    capture_logs(true);
    ASSERT(!mongoc_uri_new(uri_str));
-   ASSERT_CAPTURED_LOG("mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "too long");
+   ASSERT_CAPTURED_LOG("mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "Invalid host specifier");
 
    clear_captured_logs();
    ASSERT(!mongoc_uri_new_for_host_port(host, 12345));
-   ASSERT_CAPTURED_LOG("mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "too long");
+   ASSERT_CAPTURED_LOG("mongoc_uri_new", MONGOC_LOG_LEVEL_WARNING, "Invalid host specifier");
 
    bson_free(uri_str);
    bson_free(host_and_port);
@@ -2432,30 +2481,17 @@ test_mongoc_uri_tls_ssl(const char *tls,
    bson_snprintf(url_buffer, sizeof(url_buffer), "mongodb://localhost/?%s=true&%s=false", tls, tls);
    uri = mongoc_uri_new(url_buffer);
    ASSERT(!mongoc_uri_get_option_as_bool(uri, tls, true));
-   if (strcmp(tls, "tls")) {
-      ASSERT_CAPTURED_LOG("option: ssl", MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided value for 'ssl'");
-   } else {
-      ASSERT_CAPTURED_LOG("option: tls", MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided value for 'tls'");
-   }
+   ASSERT_CAPTURED_LOG("option: tls", MONGOC_LOG_LEVEL_WARNING, "Overwriting previously provided value for 'tls'");
    mongoc_uri_destroy(uri);
 
    /* Mixing options not okay if values differ */
    capture_logs(false);
    bson_snprintf(url_buffer, sizeof(url_buffer), "mongodb://localhost/?%s=true&%s=false", tls, tlsalt);
    uri = mongoc_uri_new_with_error(url_buffer, &err);
-   if (strcmp(tls, "tls")) {
-      ASSERT_ERROR_CONTAINS(err,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Deprecated option 'ssl=true' conflicts with "
-                            "canonical name 'tls=false'");
-   } else {
-      ASSERT_ERROR_CONTAINS(err,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Deprecated option 'ssl=false' conflicts with "
-                            "canonical name 'tls=true'");
-   }
+   ASSERT_ERROR_CONTAINS(err,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Deprecated option conflicts with canonical name 'tls'");
    mongoc_uri_destroy(uri);
 
    /* No conflict appears with implicit tls=true via SRV */
@@ -2650,6 +2686,25 @@ test_mongoc_uri_srv(void)
    ASSERT(!mongoc_uri_new("mongodb+srv://foo\x08\x00bar"));
    ASSERT(!mongoc_uri_new("mongodb+srv://foo%00bar"));
    ASSERT(!mongoc_uri_new("mongodb+srv://example.com"));
+
+   const struct {
+      const char *uri;
+      const char *reason;
+   } decoding_errors[] = {
+      {"mongodb+srv://SENTINELpassword1234.example.%zz/", "expected two hexadecimal digits"},
+      {"mongodb+srv://SENTINELpassword1234.example.%/", "expected two hexadecimal digits"},
+      {"mongodb+srv://SENTINELpassword1234.example.%00/", "not valid UTF-8 or contains null characters"},
+      {"mongodb+srv://SENTINELpassword1234.example.%ff/", "not valid UTF-8 or contains null characters"},
+   };
+   for (size_t i = 0; i < sizeof decoding_errors / sizeof decoding_errors[0]; i++) {
+      ASSERT(!mongoc_uri_new_with_error(decoding_errors[i].uri, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, decoding_errors[i].reason);
+      ASSERT(!strstr(error.message, "SENTINELpassword1234"));
+      capture_logs(true);
+      ASSERT(!mongoc_uri_new(decoding_errors[i].uri));
+      ASSERT_CAPTURED_LOG("SRV decoding diagnostic", MONGOC_LOG_LEVEL_WARNING, decoding_errors[i].reason);
+      assert_no_captured_logs_contain("SENTINELpassword1234");
+   }
 
    uri = mongoc_uri_new_with_error("mongodb+srv://c.d.com", &error);
    ASSERT_OR_PRINT(uri, error);
@@ -2924,7 +2979,7 @@ test_mongoc_uri_dns_options(void)
       capture_logs(true);
       ASSERT(_mongoc_uri_apply_query_string(uri, mstr_cstring("replicaSet=db2"), true, NULL));
       ASSERT_CAPTURED_LOG(
-         "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaSet\"");
+         "parsing replicaSet from TXT", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaset\"");
       capture_logs(false);
       ASSERT_MATCH(mongoc_uri_get_options(uri), "{'replicaset': 'rs1'}");
    }
@@ -3378,8 +3433,7 @@ test_parses_long_ipv6(void)
       capture_logs(false);
 
       ASSERT(!uri);
-      ASSERT_ERROR_CONTAINS(
-         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier \"[");
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid host specifier");
 
       mongoc_uri_destroy(uri);
       bson_free(uri_string);
@@ -3495,7 +3549,7 @@ test_uri_bad_oidc(void)
    ASSERT_ERROR_CONTAINS(error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "'MONGODB-OIDC' authentication with test environment does not accept a TOKEN_RESOURCE");
+                         "'MONGODB-OIDC' authentication environment does not accept TOKEN_RESOURCE");
 }
 
 void
@@ -3510,6 +3564,8 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/read_concern", test_mongoc_uri_read_concern);
    TestSuite_Add(suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add(suite, "/HostList/from_string", test_mongoc_host_list_from_string);
+   TestSuite_Add(suite, "/HostList/diagnostic_input_disclosure", test_mongoc_host_list_diagnostic_input_disclosure);
+   TestSuite_Add(suite, "/Uri/host_diagnostic_reasons", test_mongoc_uri_host_diagnostic_reasons);
    TestSuite_Add(suite, "/Uri/auth_mechanisms", test_mongoc_uri_auth_mechanisms);
    TestSuite_Add(suite, "/Uri/functions", test_mongoc_uri_functions);
    TestSuite_Add(suite, "/Uri/ssl", test_mongoc_uri_ssl);

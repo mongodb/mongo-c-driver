@@ -21,8 +21,13 @@ Description
 
 Fetches the URI as a string.
 
+.. warning::
+
+   This function returns the original, unredacted connection string, which may
+   contain usernames, passwords, and sensitive option arguments. Do not include
+   its result in logs or diagnostic messages.
+
 Returns
 -------
 
 Returns a string which should not be modified or freed.
-
