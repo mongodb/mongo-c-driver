@@ -106,6 +106,15 @@ mongoc_async_run(mongoc_async_t *async)
          }
 
          if (acmd->stream) {
+            // Resize the set of polled streams if needed to match the number of async commands.
+            // In rare cases, `mongoc_async_cmd_run` may increase the number of async commands due to reconnecting.
+            if (nstreams == poll_size) {
+               ++poll_size;
+               poller = (mongoc_stream_poll_t *)bson_realloc(poller, sizeof(*poller) * poll_size);
+               acmds_polled = (mongoc_async_cmd_t **)bson_realloc(acmds_polled, sizeof(*acmds_polled) * poll_size);
+            }
+            BSON_ASSERT(nstreams < poll_size);
+
             acmds_polled[nstreams] = acmd;
             poller[nstreams].stream = acmd->stream;
             poller[nstreams].events = acmd->events;

@@ -6,6 +6,7 @@
 #include <mongoc/mongoc.h>
 
 #include <mlib/time_point.h>
+#include <mlib/timer.h>
 
 #include <TestSuite.h>
 #include <test-libmongoc.h>
@@ -139,6 +140,85 @@ test_mongoc_client_pool_set_max_size(void)
    _mongoc_array_destroy(&conns);
    mongoc_uri_destroy(uri);
    mongoc_client_pool_destroy(pool);
+}
+
+typedef struct {
+   mongoc_client_pool_t *pool;
+   bson_mutex_t mutex;
+   mongoc_cond_t cond;
+   int started;
+   int completed;
+   mongoc_client_t *clients[3];
+} pool_resize_state_t;
+
+static BSON_THREAD_FUN(pool_resize_worker, arg)
+{
+   pool_resize_state_t *state = arg;
+   bson_mutex_lock(&state->mutex);
+   ++state->started;
+   mongoc_cond_broadcast(&state->cond);
+   bson_mutex_unlock(&state->mutex);
+
+   mongoc_client_t *client = mongoc_client_pool_pop(state->pool);
+   BSON_ASSERT(client);
+
+   bson_mutex_lock(&state->mutex);
+   state->clients[state->completed++] = client;
+   mongoc_cond_broadcast(&state->cond);
+   bson_mutex_unlock(&state->mutex);
+   BSON_THREAD_RETURN;
+}
+
+/* Called with state->mutex locked. */
+static bool
+pool_resize_wait(pool_resize_state_t *state, const int *counter, int expected, int64_t timeout_ms)
+{
+   mlib_timer timer = mlib_expires_after(timeout_ms, ms);
+   while (*counter != expected) {
+      if (mlib_timer_is_expired(timer)) {
+         return false;
+      }
+      mongoc_cond_timedwait(&state->cond, &state->mutex, mlib_milliseconds_count(mlib_timer_remaining(timer)));
+   }
+   return true;
+}
+
+static void
+test_mongoc_client_pool_max_size_wakes_waiters(void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://127.0.0.1/?maxPoolSize=1");
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri(uri, NULL);
+   mongoc_client_t *first = mongoc_client_pool_pop(pool);
+   BSON_ASSERT(first);
+   pool_resize_state_t state = {.pool = pool};
+   bson_thread_t threads[3];
+   bson_mutex_init(&state.mutex);
+   mongoc_cond_init(&state.cond);
+
+   for (int i = 0; i < 3; ++i) {
+      ASSERT_CMPINT(mcommon_thread_create(&threads[i], pool_resize_worker, &state), ==, 0);
+   }
+   bson_mutex_lock(&state.mutex);
+   ASSERT(pool_resize_wait(&state, &state.started, 3, 5000));
+   /* Give all started threads time to enter the exhausted pool's wait. */
+   ASSERT(!pool_resize_wait(&state, &state.completed, 1, 100));
+   bson_mutex_unlock(&state.mutex);
+
+   mongoc_client_pool_max_size(pool, 4);
+
+   /* All waiters must obtain new clients without returning the original client. */
+   bson_mutex_lock(&state.mutex);
+   ASSERT(pool_resize_wait(&state, &state.completed, 3, 5000));
+   bson_mutex_unlock(&state.mutex);
+   for (int i = 0; i < 3; ++i) {
+      ASSERT_CMPINT(mcommon_thread_join(threads[i]), ==, 0);
+      mongoc_client_pool_push(pool, state.clients[i]);
+   }
+   mongoc_client_pool_push(pool, first);
+   mongoc_cond_destroy(&state.cond);
+   bson_mutex_destroy(&state.mutex);
+   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy(uri);
 }
 
 #ifndef MONGOC_ENABLE_SSL
@@ -609,6 +689,7 @@ test_client_pool_install(TestSuite *suite)
    TestSuite_Add(suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
    TestSuite_Add(suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);
    TestSuite_Add(suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
+   TestSuite_Add(suite, "/ClientPool/max_size_wakes_waiters", test_mongoc_client_pool_max_size_wakes_waiters);
 
    TestSuite_Add(suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 

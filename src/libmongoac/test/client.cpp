@@ -1,0 +1,447 @@
+// Copyright 2009-present MongoDB, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <mongoac/client.h>
+
+//
+
+#include <mongoac/test/bson.hh>
+#include <mongoac/test/client.hh>
+#include <mongoac/test/error.hh>
+#include <mongoac/test/memory.hh>
+#include <mongoac/test/string.hh>
+
+#include <mongoac/client_session.h>
+#include <mongoac/database.h>
+#include <mongoac/error.h>
+#include <mongoac/future.h>
+#include <mongoac/runtime.h>
+
+#include <bson/bson.h>
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_range.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+
+#include <cstdint>
+#include <string_view>
+
+using mongoac::test::operator""_sv;
+using mongoac::test::default_uri;
+using mongoac::test::doesnotexist_uri;
+using mongoac::test::from_mongoac;
+using mongoac::test::make_unique;
+using mongoac::test::to_bson;
+using mongoac::test::to_mongoac;
+
+TEST_CASE("destroy", "[mongoac][client]") {
+    SECTION("null") {
+        mongoac_client_destroy(nullptr);
+        SUCCEED();
+    }
+}
+
+TEST_CASE("new", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null options") {
+        auto const client = make_unique(mongoac_client_new(nullptr, error), &mongoac_client_destroy);
+
+        CHECK(client != nullptr); // localhost:27017
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("unique runtime") {
+        auto const c1 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(nullptr, error), &mongoac_client_destroy);
+        auto const c2 = REQUIRE_MAKE_UNIQUE(mongoac_client_new(nullptr, error), &mongoac_client_destroy);
+
+        CHECK(mongoac_client_get_runtime_address(c1.get()) != mongoac_client_get_runtime_address(c2.get()));
+    }
+}
+
+TEST_CASE("new_with_uri_str", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null connection string") {
+        auto const client = make_unique(mongoac_client_new_with_uri_str({}, error), &mongoac_client_destroy);
+
+        CHECK(client == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("invalid UTF-8") {
+        auto const client = make_unique(mongoac_client_new_with_uri_str("\xff"_sv, error), &mongoac_client_destroy);
+
+        CHECK(client == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "invalid UTF-8");
+    }
+
+    SECTION("invalid connection string") {
+        auto const client = make_unique(mongoac_client_new_with_uri_str(""_sv, error), &mongoac_client_destroy);
+
+        CHECK(client == nullptr);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "contains no scheme");
+    }
+
+    SECTION("valid") {
+        auto const client =
+            make_unique(mongoac_client_new_with_uri_str(doesnotexist_uri(), error), &mongoac_client_destroy);
+
+        CHECK(client != nullptr);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+
+    SECTION("unique runtime") {
+        auto const c1 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), error), &mongoac_client_destroy);
+        auto const c2 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), error), &mongoac_client_destroy);
+
+        CHECK(mongoac_client_get_runtime_address(c1.get()) != mongoac_client_get_runtime_address(c2.get()));
+    }
+}
+
+TEST_CASE("new_with_uri_str_async", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null connection string") {
+        auto const future = make_unique(mongoac_client_new_with_uri_str_async({}, error), &mongoac_future_destroy);
+
+        CHECK(future == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("invalid UTF-8") {
+        auto const future =
+            make_unique(mongoac_client_new_with_uri_str_async("\xff"_sv, error), &mongoac_future_destroy);
+
+        CHECK(future == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "invalid UTF-8");
+    }
+
+    SECTION("invalid connection string") {
+        auto const future_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str_async(""_sv, error), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_future_get_runtime(future), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_client(future, error) == nullptr);
+        CHECK_MONGOAC_ERROR_CATEGORY(error, MONGOAC_ERROR_CATEGORY_RUST);
+        CHECK_MONGOAC_ERROR_MESSAGE_CONTAINS(error, "contains no scheme");
+    }
+
+    SECTION("basic") {
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new_with_uri_str_async(doesnotexist_uri(), error), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_future_get_runtime(future), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        CHECK(mongoac_future_get_runtime_address(future) != std::uintptr_t{}); // Default::default()
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        CHECK(mongoac_future_is_ready(future));
+
+        auto const client = mongoac_future_get_client(future, error);
+        CHECK(client != nullptr);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        CHECK(mongoac_future_get_runtime_address(future) == mongoac_client_get_runtime_address(client));
+    }
+
+    SECTION("unique runtime") {
+        auto const f1_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new_with_uri_str_async(doesnotexist_uri(), error), &mongoac_future_destroy);
+        auto const f2_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new_with_uri_str_async(doesnotexist_uri(), error), &mongoac_future_destroy);
+
+        CHECK(mongoac_future_get_runtime_address(f1_owner.get()) != mongoac_future_get_runtime_address(f2_owner.get()));
+    }
+}
+
+TEST_CASE("clone", "[mongoac][client]") {
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+
+    SECTION("null") {
+        auto const copy = make_unique(mongoac_client_clone(nullptr), &mongoac_client_destroy);
+        CHECK(copy == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const copy_owner = make_unique(mongoac_client_clone(client), &mongoac_client_destroy);
+        auto const copy = copy_owner.get();
+        CHECK(copy != nullptr);
+
+        CHECK(client != copy);
+
+        auto const rt_orig = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+        auto const rt_copy = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(copy), &mongoac_runtime_destroy);
+
+        CHECK(mongoac_runtime_address(rt_orig.get()) == mongoac_runtime_address(rt_copy.get()));
+
+        SUCCEED("TODO: validate URI options are inherited using command monitoring events");
+    }
+
+    SECTION("custom") {
+        SUCCEED("TODO: validate URI options are inherited using command monitoring events");
+    }
+}
+
+TEST_CASE("get_database", "[mongoac][client]") {
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+
+    SECTION("null client") {
+        auto const db = make_unique(mongoac_client_get_database(nullptr, {}, nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("null name") {
+        auto const db = make_unique(mongoac_client_get_database(client, {}, nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const name = GENERATE(values<std::string_view>({"", "db", "a.b.c"}));
+        auto const db =
+            make_unique(mongoac_client_get_database(client, to_mongoac(name), nullptr), &mongoac_database_destroy);
+        CHECK(db.get() != nullptr);
+        CHECK(from_mongoac(mongoac_database_get_name(db.get())) == name);
+    }
+}
+
+TEST_CASE("get_default_database", "[mongoac][client]") {
+    SECTION("null client") {
+        auto const db = make_unique(mongoac_client_get_default_database(nullptr), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        // A connection string with a database path specifies the default database.
+        auto const client_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_client_new_with_uri_str(
+                "mongodb://doesnotexist.invalid:27017/mydb?serverSelectionTimeoutMS=1"_sv, nullptr),
+            &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const db = REQUIRE_MAKE_UNIQUE(mongoac_client_get_default_database(client), &mongoac_database_destroy);
+        CHECK(from_mongoac(mongoac_database_get_name(db.get())) == "mydb");
+    }
+
+    SECTION("no default") {
+        // A connection string without a database path specifies no default database.
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const db = make_unique(mongoac_client_get_default_database(client), &mongoac_database_destroy);
+        CHECK(db.get() == nullptr);
+    }
+}
+
+TEST_CASE("get_runtime", "[mongoac][client]") {
+    SECTION("null") {
+        auto const runtime = make_unique(mongoac_client_get_runtime(nullptr), &mongoac_runtime_destroy);
+        CHECK(runtime.get() == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const client =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+
+        auto const runtime = make_unique(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
+        CHECK(runtime.get() != nullptr);
+    }
+
+    SECTION("unique") {
+        auto const c1 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const r1 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c1.get()), &mongoac_runtime_destroy);
+        auto const c2 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const r2 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c2.get()), &mongoac_runtime_destroy);
+
+        CHECK(mongoac_runtime_address(r1.get()) != mongoac_runtime_address(r2.get()));
+    }
+
+    SECTION("shared") {
+        auto const c1 =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const r1 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c1.get()), &mongoac_runtime_destroy);
+        auto const c2 = REQUIRE_MAKE_UNIQUE(mongoac_client_clone(c1.get()), &mongoac_client_destroy);
+        auto const r2 = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(c2.get()), &mongoac_runtime_destroy);
+
+        CHECK(mongoac_runtime_address(r1.get()) == mongoac_runtime_address(r2.get()));
+    }
+}
+
+TEST_CASE("get_runtime_address", "[mongoac][client]") {
+    SECTION("null") {
+        CHECK(mongoac_client_get_runtime_address(nullptr) == std::uintptr_t{});
+    }
+
+    SECTION("basic") {
+        auto const client =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+
+        auto const runtime = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client.get()), &mongoac_runtime_destroy);
+        CHECK(mongoac_runtime_address(runtime.get()) == mongoac_client_get_runtime_address(client.get()));
+    }
+}
+
+TEST_CASE("shutdown", "[mongoac][client]") {
+    SECTION("null") {
+        mongoac_client_shutdown(nullptr);
+        SUCCEED();
+    }
+
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        mongoac_client_shutdown(client);
+    }
+}
+
+TEST_CASE("shutdown_async", "[mongoac][client]") {
+    SECTION("null") {
+        auto const future = make_unique(mongoac_client_shutdown_async(nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+        auto const error = error_owner.get();
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(doesnotexist_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_shutdown_async(client), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        mongoac_future_get_void(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("start_session", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null") {
+        CHECK(mongoac_client_start_session(nullptr, nullptr, error) == nullptr);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+    }
+
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+
+        auto const session_owner =
+            make_unique(mongoac_client_start_session(client, nullptr, error), &mongoac_client_session_destroy);
+        auto const session = session_owner.get();
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(session != nullptr);
+
+        auto const id_doc_owner = from_mongoac(mongoac_client_session_get_id(session, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(id_doc_owner != nullptr);
+        auto const id_doc = REQUIRE_BSON_STATIC(id_doc_owner);
+        auto const iter = REQUIRE_BSON_ITER_FIND(id_doc, "id");
+
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_BINARY);
+        {
+            std::uint8_t const* ptr = {};
+            std::uint32_t len = {};
+            bson_subtype_t subtype = {};
+
+            bson_iter_binary(&iter, &subtype, &len, &ptr);
+
+            CHECK(ptr != nullptr);
+            CHECK(subtype == BSON_SUBTYPE_UUID);
+            CHECK(len == 16u);
+        }
+    }
+}
+
+TEST_CASE("start_session_async", "[mongoac][client]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+
+    SECTION("null") {
+        auto const future = make_unique(mongoac_client_start_session_async(nullptr, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const client_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+        auto const client = client_owner.get();
+        auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+        auto const runtime = runtime_owner.get();
+
+        auto const future_owner =
+            REQUIRE_MAKE_UNIQUE(mongoac_client_start_session_async(client, nullptr), &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const session = mongoac_future_get_client_session(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(session != nullptr);
+
+        auto const id_doc_owner = from_mongoac(mongoac_client_session_get_id(session, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(id_doc_owner != nullptr);
+        auto const id_doc = REQUIRE_BSON_STATIC(id_doc_owner);
+        auto const iter = REQUIRE_BSON_ITER_FIND(id_doc, "id");
+
+        CHECK(bson_iter_type(&iter) == BSON_TYPE_BINARY);
+        {
+            std::uint8_t const* ptr = {};
+            std::uint32_t len = {};
+            bson_subtype_t subtype = {};
+
+            bson_iter_binary(&iter, &subtype, &len, &ptr);
+
+            CHECK(ptr != nullptr);
+            CHECK(subtype == BSON_SUBTYPE_UUID);
+            CHECK(len == 16u);
+        }
+    }
+}

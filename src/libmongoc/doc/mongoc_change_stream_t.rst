@@ -34,7 +34,7 @@ Additionally, change streams can start returning changes at an operation time by
 
 ``resumeAfter``, ``startAfter``, and ``startAtOperationTime`` are mutually exclusive options. Setting more than one will result in a server error.
 
-The following example implements custom resuming logic, persisting the resume token in a file.
+The following example implements custom resuming logic, persisting the pipeline, options, and resume token in a file.
 
 .. literalinclude:: ../examples/example-resume.c
    :language: c

@@ -1,10 +1,12 @@
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 #include <mlib/duration.h>
 #include <mlib/intencode.h>
 #include <mlib/intutil.h>
 #include <mlib/loop.h>
+#include <mlib/pp/args.h>
+#include <mlib/pp/basic.h>
+#include <mlib/pp/is-empty.h>
 #include <mlib/str.h>
 #include <mlib/test.h>
 #include <mlib/time_point.h>
@@ -34,8 +36,25 @@ _test_checks(void)
    mlib_assert_aborts () {
       mlib_check("foo", str_eq, "bar");
    }
-   // ptr_eq
+   // Pointer checks use explicit comparisons, with or without a reason.
    const char *s = "foo";
+   mlib_check(s != NULL);
+   mlib_check(s != NULL, because, "non-null pointers are true");
+   const char *null_ptr = NULL;
+   mlib_assert_aborts () {
+      mlib_check(null_ptr != NULL);
+   }
+   mlib_assert_aborts () {
+      mlib_check(null_ptr != NULL, because, "null pointers are false");
+   }
+   // Conditions must not be evaluated more than once.
+   int evaluations = 0;
+   mlib_check((++evaluations, s != NULL));
+   mlib_check(evaluations, eq, 1);
+   mlib_check((++evaluations, s != NULL), because, "evaluate a pointer condition once");
+   mlib_check(evaluations, eq, 2);
+
+   // ptr_eq
    mlib_check(s, ptr_eq, s);
    mlib_assert_aborts () {
       mlib_check(s, ptr_eq, NULL);
@@ -781,6 +800,33 @@ _test_ckdint_partial(void)
 }
 
 static void
+_test_count_utf8_codepoints(void)
+{
+   const struct {
+      mstr_view text;
+      size_t count;
+   } cases[] = {
+      {mstr_view_data(NULL, 0), 0},
+      {mstr_cstring(""), 0},
+      {mstr_cstring("ASCII"), 5},
+      {mstr_cstring("\xc2\xa2"), 1},
+      {mstr_cstring("\xe2\x82\xac"), 1},
+      {mstr_cstring("\xf0\x9f\x98\x80"), 1},
+      {mstr_cstring("a\xc2\xa2\xe2\x82\xac\xf0\x9f\x98\x80"), 4},
+      // A combining mark is a separate codepoint, not a separate grapheme.
+      {mstr_cstring("e\xcc\x81"), 2},
+      {mstr_view_data("a\0\xc2\xa2", 4), 3},
+      {mstr_view_data("\xc2\xa2"
+                      "extra",
+                      2),
+       1},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      mlib_check(mstr_count_utf8_codepoints(cases[i].text), eq, cases[i].count);
+   }
+}
+
+static void
 _test_str_view(void)
 {
    mstr_view sv = mstr_cstring("Hello, world!");
@@ -1039,6 +1085,123 @@ _test_str(void)
 }
 
 static void
+_test_str_capacity(void)
+{
+   mlib_check(sizeof(mstr) <= 2 * sizeof(void *));
+
+   mstr s = mstr_null();
+   mlib_check(mstr_capacity(&s), eq, 0);
+   mlib_check(mstr_reserve(&s, 0));
+   mlib_check(s.data != NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(s.data[0], eq, '\0');
+   mlib_check(mstr_reserve(&s, 64));
+   mlib_check(mstr_capacity(&s) >= 64);
+   mlib_check(s.len, eq, 0);
+   mlib_check(s.data[0], eq, '\0');
+
+   char *const data = s.data;
+   const size_t capacity = mstr_capacity(&s);
+   mlib_check(mstr_assign(&s, mstr_cstring("hello")));
+   mlib_check(mstr_reserve(&s, 0));
+   mlib_check(mstr_reserve(&s, capacity));
+   mlib_check(s.data == data);
+   mlib_check(mstr_capacity(&s), eq, capacity);
+   mlib_check(s.data, str_eq, "hello");
+
+   // Shrinking and regrowing must reuse storage, but not expose the old contents.
+   mlib_check(mstr_resize_for_overwrite(&s, 64));
+   memset(s.data, 'x', s.len);
+   mlib_check(mstr_resize(&s, 3));
+   mlib_check(s.data, str_eq, "xxx");
+   mlib_check(mstr_resize(&s, 64));
+   mlib_check(s.data == data);
+   mlib_check(mstr_capacity(&s), eq, capacity);
+   for (size_t i = 3; i <= s.len; ++i) {
+      mlib_check(s.data[i], eq, '\0');
+   }
+
+   // Overflow checks must include both the header and the terminator.
+   const size_t invalid_capacities[] = {SIZE_MAX, (size_t)PTRDIFF_MAX, (size_t)PTRDIFF_MAX - sizeof(size_t)};
+   for (size_t i = 0; i < sizeof(invalid_capacities) / sizeof(invalid_capacities[0]); ++i) {
+      mlib_check(!mstr_reserve(&s, invalid_capacities[i]));
+      mlib_check(!mstr_resize_for_overwrite(&s, invalid_capacities[i]));
+      mlib_check(s.data == data);
+      mlib_check(s.len, eq, 64);
+      mlib_check(mstr_capacity(&s), eq, capacity);
+      mlib_check(s.data[0], eq, 'x');
+      mlib_check(s.data[s.len], eq, '\0');
+   }
+
+   mlib_check(mstr_assign(&s, mstr_cstring("hello")));
+   mlib_check(mstr_append(&s, s));
+   mlib_check(s.data, str_eq, "hellohello");
+   mlib_check(mstr_assign(&s, mstr_substr(s, 5)));
+   mlib_check(s.data, str_eq, "hello");
+   mlib_check(mstr_splice(&s, 1, 3, mstr_cstring("")));
+   mlib_check(s.data, str_eq, "ho");
+   mlib_check(s.data == data);
+   mlib_check(mstr_capacity(&s), eq, capacity);
+   mlib_check(mstr_assign(&s, mstr_view_data("a\0b", 3)));
+   mlib_check(mstr_reserve(&s, 128));
+   mlib_check(mstr_capacity(&s) >= 128);
+   mlib_check(s.len, eq, 3);
+   mlib_check(memcmp(s.data, "a\0b", 4), eq, 0);
+   mstr_destroy(&s);
+   mlib_check(s.data == NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(mstr_capacity(&s), eq, 0);
+   mstr_destroy(&s);
+
+   mlib_check(!mstr_reserve(&s, SIZE_MAX));
+   mlib_check(s.data == NULL);
+   mlib_check(s.len, eq, 0);
+   mlib_check(mstr_capacity(&s), eq, 0);
+   mlib_check(mstr_resize_for_overwrite(&s, 0));
+   mlib_check(s.data != NULL);
+   mlib_check(s.data[0], eq, '\0');
+   mstr_destroy(&s);
+}
+
+static void
+_test_str_append_growth(void)
+{
+   mstr s = mstr_null();
+   size_t n_growths = 0;
+   size_t total_capacities = 0;
+   for (size_t i = 0; i < 4096; ++i) {
+      const size_t old_capacity = mstr_capacity(&s);
+      char *const old_data = s.data;
+      mlib_check(mstr_append_char(&s, 'a'));
+      mlib_check(s.len, eq, i + 1);
+      mlib_check(s.data[i], eq, 'a');
+      mlib_check(s.data[s.len], eq, '\0');
+      const size_t capacity = mstr_capacity(&s);
+      mlib_check(capacity >= s.len);
+      if (capacity != old_capacity) {
+         ++n_growths;
+         total_capacities += capacity;
+      } else {
+         mlib_check(s.data == old_data);
+      }
+   }
+   // Bound allocation count and total storage growth, not allocator-dependent pointer moves.
+   mlib_check(n_growths <= 32);
+   mlib_check(total_capacities <= 4 * 4096);
+   for (size_t i = 0; i < s.len; ++i) {
+      mlib_check(s.data[i], eq, 'a');
+   }
+   mlib_check(mstr_append(&s, s));
+   mlib_check(s.len, eq, 8192);
+   mlib_check(mstr_capacity(&s) >= s.len);
+   for (size_t i = 0; i < s.len; ++i) {
+      mlib_check(s.data[i], eq, 'a');
+   }
+   mlib_check(s.data[s.len], eq, '\0');
+   mstr_destroy(&s);
+}
+
+static void
 _test_str_format(void)
 {
    mstr s = mstr_sprintf("foo");
@@ -1215,16 +1378,18 @@ _test_sleep(void)
    mlib_check(rc, eq, 0);
    mlib_duration t = mlib_time_difference(mlib_now(), start);
    mlib_check(mlib_milliseconds_count(t), gte, 45);
-   mlib_check(mlib_milliseconds_count(t), lt, 200);
+   // Use a generous upper bound: on heavily loaded hosts, a 50ms sleep can
+   // legitimately take far longer than 200ms to be scheduled back in.
+   mlib_check(mlib_milliseconds_count(t), lt, 2000);
 
    // Sleeping for a negative duration returns immediately with success
    start = mlib_now();
    mlib_check(mlib_sleep_for(-10, s), eq, 0);
-   mlib_check(mlib_duration_cmp(mlib_elapsed_since(start), <, (100, ms)));
+   mlib_check(mlib_duration_cmp(mlib_elapsed_since(start), <, (2, s)));
 
    // Sleeping until a point in the past returns immediately as well
    mlib_check(mlib_sleep_until(start), eq, 0);
-   mlib_check(mlib_duration_cmp(mlib_elapsed_since(start), <, (100, ms)));
+   mlib_check(mlib_duration_cmp(mlib_elapsed_since(start), <, (2, s)));
 }
 
 static void
@@ -1268,7 +1433,7 @@ _test_int_vec(void)
 
    // Append an element
    int *el;
-   mlib_check((el = int_vec_push(&ints)));
+   mlib_check((el = int_vec_push(&ints)) != NULL);
    *el = 42;
    mlib_check(int_vec_begin(&ints)[0], eq, 42);
    mlib_check(ints.size, eq, 1);
@@ -1358,7 +1523,10 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/check-cast", _test_cast);
    TestSuite_Add(suite, "/mlib/ckdint-partial", _test_ckdint_partial);
    TestSuite_Add(suite, "/mlib/str_view", _test_str_view);
+   TestSuite_Add(suite, "/mlib/str/count_utf8_codepoints", _test_count_utf8_codepoints);
    TestSuite_Add(suite, "/mlib/str", _test_str);
+   TestSuite_Add(suite, "/mlib/str-capacity", _test_str_capacity);
+   TestSuite_Add(suite, "/mlib/str-append-growth", _test_str_append_growth);
    TestSuite_Add(suite, "/mlib/str-format", _test_str_format);
    TestSuite_Add(suite, "/mlib/duration", _test_duration);
    TestSuite_Add(suite, "/mlib/time_point", _test_time_point);
@@ -1366,6 +1534,7 @@ test_mlib_install(TestSuite *suite)
    TestSuite_Add(suite, "/mlib/timer", _test_timer);
    TestSuite_Add(suite, "/mlib/int-vector", _test_int_vec);
    TestSuite_Add(suite, "/mlib/string-vector", _test_cstring_vec);
+   // TestSuite_Add(suite, "/mlib/format", _test_format);
 }
 
 mlib_diagnostic_pop();

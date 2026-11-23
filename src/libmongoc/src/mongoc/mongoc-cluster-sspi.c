@@ -157,7 +157,7 @@ _mongoc_cluster_auth_node_sspi(mongoc_cluster_t *cluster,
 
          res = _mongoc_sspi_auth_sspi_client_unwrap(state, buf);
          response = bson_strdup(state->response);
-         _mongoc_sspi_auth_sspi_client_wrap(state, response, (SEC_CHAR *)state->sasl.user, (ULONG)tmp_creds_len, 0);
+         _mongoc_sspi_auth_sspi_client_wrap(state, response, (SEC_CHAR *)state->sasl.user, tmp_creds_len, 0);
          bson_free(response);
       }
 

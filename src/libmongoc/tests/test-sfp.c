@@ -258,8 +258,8 @@ run_test(sfp_auth_t auth_type, sfp_variant_t variant)
    ok = test_connection_status(t, auth_type != SFP_AUTH_UNAUTHENTICATED) && ok;
    if (auth_type != SFP_AUTH_UNAUTHENTICATED) {
       ok = test_crud_operations(t) && ok;
+      test_sfp_drop_collection(t); // Drop before asserting.
    }
-   test_sfp_drop_collection(t); // Drop before asserting.
    if (!ok) {
       fprintf(
          stderr, "%s test FAILED for variant: %s\n", sfp_auth_to_string(auth_type), sfp_variant_to_string(variant));

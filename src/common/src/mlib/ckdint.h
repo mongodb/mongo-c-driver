@@ -50,8 +50,8 @@
  */
 #pragma once
 
-#include <mlib/config.h>
 #include <mlib/intutil.h>
+#include <mlib/platform/endian.h>
 #include <mlib/test.h>
 
 #include <stdbool.h>

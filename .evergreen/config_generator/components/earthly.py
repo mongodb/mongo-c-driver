@@ -347,7 +347,9 @@ def tasks() -> Iterable[EvgTask]:
                 s3_put(
                     aws_key='${aws_key}',
                     aws_secret='${aws_secret}',
-                    remote_file='${project}/${branch_name}/mongo-c-driver-debian-packages-' + plat + '-${CURRENT_VERSION}.tar.gz',
+                    remote_file='${project}/${branch_name}/mongo-c-driver-debian-packages-'
+                    + plat
+                    + '-${CURRENT_VERSION}.tar.gz',
                     bucket='mciuploads',
                     permissions='public-read',
                     local_file='mongoc/deb-pkg.tgz',
@@ -356,7 +358,9 @@ def tasks() -> Iterable[EvgTask]:
                 s3_put(
                     aws_key='${aws_key}',
                     aws_secret='${aws_secret}',
-                    remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-' + plat + '.tar.gz',
+                    remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages-'
+                    + plat
+                    + '.tar.gz',
                     bucket='mciuploads',
                     permissions='public-read',
                     local_file='mongoc/deb-pkg.tgz',

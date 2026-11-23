@@ -250,6 +250,8 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
    ssize_t bytes_read;
    ssize_t bytes_written;
    char buf[512];
+   // `mongoc_gridfs_bucket_stream_error` asserts on a non-NULL error.
+   bson_error_t local_error;
 
    BSON_ASSERT(bucket);
    BSON_ASSERT(file_id);
@@ -265,7 +267,7 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
    while ((bytes_read = mongoc_stream_read(source, buf, 512, 1, 0)) > 0) {
       bytes_written = mongoc_stream_write(upload_stream, buf, bytes_read, 0);
       if (bytes_written < 0) {
-         BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error));
+         BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error ? error : &local_error));
          mongoc_gridfs_bucket_abort_upload(upload_stream);
          mongoc_stream_destroy(upload_stream);
          return false;
@@ -278,10 +280,19 @@ mongoc_gridfs_bucket_upload_from_stream_with_id(mongoc_gridfs_bucket_t *bucket,
          error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_BUCKET_STREAM, "Error occurred on the provided stream.");
       mongoc_stream_destroy(upload_stream);
       return false;
-   } else {
-      mongoc_stream_destroy(upload_stream);
-      return true;
    }
+
+   // Explicitly call `mongoc_stream_close` to surface an error on final writes.
+   if (mongoc_stream_close(upload_stream) != 0) {
+      BSON_ASSERT(mongoc_gridfs_bucket_stream_error(upload_stream, error ? error : &local_error));
+      // Per the GridFS spec, do not attempt to clean up orphaned chunks on error.
+      // `mongoc_stream_destroy` will not save the file since an error is set on it.
+      mongoc_stream_destroy(upload_stream);
+      return false;
+   }
+
+   mongoc_stream_destroy(upload_stream);
+   return true;
 }
 
 bool
@@ -411,6 +422,10 @@ mongoc_gridfs_bucket_download_to_stream(mongoc_gridfs_bucket_t *bucket,
 
    /* Make the download stream */
    download_stream = mongoc_gridfs_bucket_open_download_stream(bucket, file_id, error);
+
+   if (!download_stream) {
+      return false;
+   }
 
    while ((bytes_read = mongoc_stream_read(download_stream, buf, 256, 1, 0)) > 0) {
       bytes_written = mongoc_stream_write(destination, buf, bytes_read, 0);

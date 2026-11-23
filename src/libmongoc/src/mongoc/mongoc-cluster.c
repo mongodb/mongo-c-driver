@@ -3484,6 +3484,10 @@ mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len, 
    BSON_ASSERT_PARAM(data);
    BSON_ASSERT_PARAM(data_len);
 
+   // Always "reset" out-parameters first. See also `mcd_rpc_message_decompress_if_necessary()`.
+   *data = NULL;
+   *data_len = 0u;
+
    // Precondition: `maxMessageSizeBytes` must always be greater than the minimum message size.
    BSON_ASSERT(max_msg_size > message_header_length);
 
@@ -3538,12 +3542,18 @@ mcd_rpc_message_decompress(mcd_rpc_message *rpc, void **data, size_t *data_len, 
       return false;
    }
 
+   mcd_rpc_message_reset(rpc);
+
+   // Correctly handle potential failure condition.
+   if (!mcd_rpc_message_from_data_in_place(rpc, ptr, original_message_length, NULL)) {
+      bson_free(ptr);
+      return false;
+   }
+
    *data_len = original_message_length;
    *data = ptr; // Ownership transfer.
 
-   mcd_rpc_message_reset(rpc);
-
-   return mcd_rpc_message_from_data_in_place(rpc, *data, *data_len, NULL);
+   return true;
 }
 
 bool

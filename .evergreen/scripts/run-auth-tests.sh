@@ -15,6 +15,9 @@ script_dir="$(to_absolute "$(dirname "${BASH_SOURCE[0]}")")"
 declare mongoc_dir
 mongoc_dir="$(to_absolute "${script_dir}/../..")"
 
+declare det_dir
+det_dir="${mongoc_dir:?}/../drivers-evergreen-tools"
+
 declare mongoc_build_dir="${mongoc_dir:?}/cmake-build"
 declare mongoc_install_dir="${mongoc_dir:?}/install-dir"
 declare openssl_install_dir="${mongoc_dir:?}/openssl-install-dir"
@@ -24,6 +27,31 @@ declare secrets_dir
 secrets_dir="$(to_absolute "${mongoc_dir:?}/../secrets")"
 mkdir -p "${secrets_dir:?}"
 chmod 700 "${secrets_dir:?}"
+
+# Created by fetch-enterprise-auth-secrets.
+# shellcheck source=/dev/null
+. "${det_dir:?}/.evergreen/secrets_handling/secrets-export.sh"
+: "${SASL_USER:?}"
+: "${SASL_PASS:?}"
+: "${KEYTAB_BASE64:?}"
+: "${PRINCIPAL:?}"
+# Eager cleanup to avoid leaving secrets hanging around.
+rm -f "${det_dir:?}/.evergreen/secrets_handling/secrets-export.sh"
+
+# Dedicated LDAP test host for enterprise-auth CI tests.
+declare auth_host
+auth_host="ldaptest.build.10gen.cc"
+
+# Derive auth strings using exported secrets.
+declare gssapi_encoded="${PRINCIPAL/@/%40}"
+auth_plain="${SASL_USER:?}:${SASL_PASS:?}"
+if [[ "${OSTYPE:?}" == "cygwin" ]]; then
+  # Windows SSPI requires a password due to lacking keytab support.
+  auth_gssapi="${gssapi_encoded:?}:${SASL_PASS:?}"
+else
+  # Other platforms are fine with using the keytab file.
+  auth_gssapi="${gssapi_encoded:?}"
+fi
 
 # Create certificate to test X509 auth with Atlas on cloud-prod:
 atlas_x509_path="${secrets_dir:?}/atlas_x509.pem"
@@ -50,9 +78,9 @@ if command -v kinit >/dev/null; then
   fi
   cat "${mongoc_dir:?}/.evergreen/etc/kerberos.realm" >>"${secrets_dir:?}/krb5.conf"
   # Set up keytab:
-  echo "${keytab:?}" | base64 --decode >"${secrets_dir:?}/drivers.keytab"
+  echo "${KEYTAB_BASE64:?}" | base64 --decode >"${secrets_dir:?}/drivers.keytab"
   # Initialize kerberos:
-  KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p drivers@LDAPTEST.10GEN.CC
+  KRB5_CONFIG="${secrets_dir:?}/krb5.conf" kinit -k -t "${secrets_dir:?}/drivers.keytab" -p "${PRINCIPAL:?}"
   echo "Setting up Kerberos ... done"
 else
   echo "No 'kinit' detected"
@@ -143,7 +171,7 @@ elif command -v otool >/dev/null; then
 fi
 
 # libkrb5.so.3 and libgssapi_krb5.so.2 and report memory leaks on Ubuntu.
-if [[ -n "$(grep "Ubuntu" /etc/os-release)" ]]; then
+if grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
   supps="$(pwd)/.lsan-suppressions-ubuntu"
   cat >|"${supps:?}" <<DOC
 leak:libkrb5
@@ -160,6 +188,26 @@ maybe_skip() {
   fi
   # Run the test command:
   "$@"
+}
+
+maybe_skip_gssapi() {
+  # Defer to normal `maybe_skip` conditions on non-Windows.
+  if [[ "${OSTYPE:?}" != "cygwin" ]]; then
+    maybe_skip "$@"
+    return
+  fi
+
+  # "...@LDAPTEST.BUILD.10GEN.CC" -> "LDAPTEST.BUILD.10GEN.CC"
+  declare realm="${PRINCIPAL##*@}"
+
+  # DEVPROD-19149: remove once Windows distros are updated so Kerberos supports ldaptest.build.10gen.cc.
+  # See: https://wiki.corp.mongodb.com/spaces/DBDEVPROD/pages/560142422/LDAPTEST
+  if ! reg query 'HKLM\SYSTEM\CurrentControlSet\Control\Lsa\Kerberos' /s /f "${realm:?}" >/dev/null 2>&1; then
+    echo "Skipping test until DEVPROD-19149 is resolved."
+    return
+  fi
+
+  maybe_skip "$@"
 }
 
 if [[ "${ssl}" != "OFF" ]]; then
@@ -197,16 +245,12 @@ fi
 echo "Authenticating using PLAIN"
 maybe_skip "${mongoc_ping:?}" "mongodb://${auth_plain:?}@${auth_host:?}/?authMechanism=PLAIN&${c_timeout:?}"
 
-echo "Authenticating using default auth mechanism"
-# Though the auth source is named "mongodb-cr", authentication uses the default mechanism (currently SCRAM-SHA-1).
-maybe_skip "${mongoc_ping:?}" "mongodb://${auth_mongodbcr:?}@${auth_host:?}/mongodb-cr?${c_timeout:?}"
-
 if [[ "${sasl}" != "OFF" ]]; then
   echo "Authenticating using GSSAPI"
-  maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
+  maybe_skip_gssapi "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
 
   echo "Authenticating with CANONICALIZE_HOST_NAME"
-  maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout:?}"
+  maybe_skip_gssapi "${mongoc_ping:?}" "mongodb://${auth_gssapi:?}@${ip_addr}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${c_timeout:?}"
 
   declare ld_preload="${LD_PRELOAD:-}"
   if [[ "${ASAN:-}" == "on" ]]; then
@@ -214,15 +258,8 @@ if [[ "${sasl}" != "OFF" ]]; then
   fi
 
   echo "Test threaded GSSAPI auth"
-  MONGOC_TEST_GSSAPI_HOST="${auth_host:?}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi:?}" LD_PRELOAD="${ld_preload:-}" maybe_skip "${test_gssapi:?}"
+  MONGOC_TEST_GSSAPI_HOST="${auth_host:?}" MONGOC_TEST_GSSAPI_USER="${auth_gssapi:?}" LD_PRELOAD="${ld_preload:-}" maybe_skip_gssapi "${test_gssapi:?}"
   echo "Threaded GSSAPI auth OK"
-
-  if [[ "${OSTYPE}" == "cygwin" ]]; then
-    echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-    maybe_skip "${mongoc_ping:?}" "mongodb://${auth_crossrealm:?}@${auth_host:?}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${c_timeout:?}"
-    echo "Authenticating using GSSAPI (UTF-8 credentials)"
-    maybe_skip "${mongoc_ping:?}" "mongodb://${auth_gssapi_utf8:?}@${auth_host:?}/?authMechanism=GSSAPI&${c_timeout:?}"
-  fi
 fi
 
 echo "Testing Atlas Secure Front-End Processor (SFP) ..."

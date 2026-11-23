@@ -21,7 +21,7 @@
 
 #include <mongoc/uthash.h>
 
-#include <mlib/config.h>
+#include <mlib/platform/attributes.h>
 
 typedef struct {
    char *ns; // Hash key.

@@ -173,9 +173,11 @@ test_decompress_max_msg_size_invalid(void)
    // Subtract one to trigger invalid uncompressedSize failure.
    const int32_t max_msg_size = 36 - 1;
 
-   void *decompressed = NULL;
-   size_t decompressed_len = 0u;
+   void *decompressed = data; // Set to a non-NULL address to verify reset-to-NULL on failure.
+   size_t decompressed_len = sizeof(data);
    ASSERT(!mcd_rpc_message_decompress(rpc, &decompressed, &decompressed_len, max_msg_size));
+   ASSERT(decompressed == NULL);
+   ASSERT(decompressed_len == 0u);
 
    mcd_rpc_message_destroy(rpc);
 }
@@ -190,9 +192,30 @@ test_decompress_max_msg_size_invariant(void)
    // `maxMessageSizeBytes` returned by server must never be greater than `MONGOC_DEFAULT_MAX_MSG_SIZE`.
    const int32_t max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE + 1;
 
-   void *decompressed = NULL;
-   size_t decompressed_len = 0u;
+   void *decompressed = data; // Set to a non-NULL address to verify reset-to-NULL on failure.
+   size_t decompressed_len = sizeof(data);
    ASSERT(!mcd_rpc_message_decompress(rpc, &decompressed, &decompressed_len, max_msg_size));
+   ASSERT(decompressed == NULL);
+   ASSERT(decompressed_len == 0u);
+
+   mcd_rpc_message_destroy(rpc);
+}
+
+static void
+test_decompress_invalid_message(void)
+{
+   uint8_t data[] = {TEST_DATA_OP_COMPRESSED};
+
+   data[25] = 0xffu; // OP_MSG flagBits: invalid.
+
+   mcd_rpc_message *const rpc = mcd_rpc_message_from_data(data, sizeof(data), NULL);
+   ASSERT(rpc);
+
+   void *decompressed = data; // Set to a non-NULL address to verify reset-to-NULL on failure.
+   size_t decompressed_len = sizeof(data);
+   ASSERT(!mcd_rpc_message_decompress(rpc, &decompressed, &decompressed_len, MONGOC_DEFAULT_MAX_MSG_SIZE));
+   ASSERT(decompressed == NULL);
+   ASSERT(decompressed_len == 0u);
 
    mcd_rpc_message_destroy(rpc);
 }
@@ -1919,6 +1942,7 @@ test_cluster_install(TestSuite *suite)
    TestSuite_Add(suite, "/Cluster/decompress/max_msg_size_valid", test_decompress_max_msg_size_valid);
    TestSuite_Add(suite, "/Cluster/decompress/max_msg_size_invalid", test_decompress_max_msg_size_invalid);
    TestSuite_Add(suite, "/Cluster/decompress/max_msg_size_invariant", test_decompress_max_msg_size_invariant);
+   TestSuite_Add(suite, "/Cluster/decompress/invalid_message", test_decompress_invalid_message);
    TestSuite_AddFull(suite,
                      "/Cluster/disconnect/single [timeout:30]",
                      test_cluster_node_disconnect_single,

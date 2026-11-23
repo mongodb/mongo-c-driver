@@ -1,0 +1,40 @@
+// Copyright 2009-present MongoDB, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//! Re-exports exported macros in a single module for convenient import-all via `use crate::private::macros::*;`.
+
+pub use crate::cursor_session_op;
+pub use crate::safe_array_drop;
+pub use crate::safe_as_mut;
+pub use crate::safe_as_mut_with_error;
+pub use crate::safe_as_ref;
+pub use crate::safe_as_ref_with_error;
+pub use crate::safe_bson_view;
+pub use crate::safe_bson_view_array;
+pub use crate::safe_bson_view_array_with_error;
+pub use crate::safe_bson_view_with_error;
+pub use crate::safe_drop;
+pub use crate::safe_into_raw;
+pub use crate::safe_optional_as_mut;
+pub use crate::safe_optional_as_ref;
+pub use crate::safe_optional_error_as_mut;
+pub use crate::safe_ptr_from_ref;
+pub use crate::safe_result;
+pub use crate::safe_slice_drop;
+pub use crate::safe_slice_into_raw;
+pub use crate::safe_string_view;
+pub use crate::safe_string_view_array;
+pub use crate::safe_string_view_array_with_error;
+pub use crate::safe_string_view_with_error;
+pub use crate::session_op;

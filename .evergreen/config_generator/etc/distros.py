@@ -42,16 +42,17 @@ DEBIAN_DISTROS = [
 ]
 
 MACOS_DISTROS = [
-    Distro(name='macos-14', os='macos', os_type='macos', os_ver='14'),
+    Distro(name='macos-15-amd64', os='macos', os_type='macos', os_ver='15'),
 ]
 
 MACOS_ARM64_DISTROS = [
-    Distro(name='macos-14-arm64', os='macos', os_type='macos', os_ver='14', arch='arm64'),
+    Distro(name='macos-15-arm64', os='macos', os_type='macos', os_ver='15', arch='arm64'),
 ]
 
 RHEL_DISTROS = [
     *ls_distro(name='rhel7-latest', os='rhel', os_type='linux', os_ver='7'),
     *ls_distro(name='rhel8-latest', os='rhel', os_type='linux', os_ver='8'),
+    *ls_distro(name='rhel9-latest', os='rhel', os_type='linux', os_ver='9'),
     *ls_distro(name='rhel80', os='rhel', os_type='linux', os_ver='8.0'),
     *ls_distro(name='rhel84', os='rhel', os_type='linux', os_ver='8.4'),
     *ls_distro(name='rhel90', os='rhel', os_type='linux', os_ver='9.0'),

@@ -61,6 +61,7 @@ typedef struct {
 static bson_mutex_t captured_logs_mutex;
 static mongoc_array_t captured_logs;
 static bool capturing_logs;
+static volatile int capture_level = MONGOC_LOG_LEVEL_INFO;
 
 #ifdef MONGOC_ENABLE_SSL
 static mongoc_ssl_opt_t gSSLOptions;
@@ -92,7 +93,15 @@ void
 capture_logs(bool capture)
 {
    capturing_logs = capture;
+   mcommon_atomic_int_exchange(&capture_level, MONGOC_LOG_LEVEL_INFO, mcommon_memory_order_seq_cst);
    clear_captured_logs();
+}
+
+void
+capture_logs_with_level(mongoc_log_level_t level)
+{
+   capture_logs(true);
+   mcommon_atomic_int_exchange(&capture_level, (int)level, mcommon_memory_order_seq_cst);
 }
 
 
@@ -184,6 +193,40 @@ print_captured_logs(const char *prefix)
 }
 
 
+static void
+assert_captured_logs_exclude(const char *text, bool ignore_case)
+{
+   char *needle = bson_strdup(text);
+   if (ignore_case) {
+      mongoc_lowercase_inplace(needle);
+   }
+   bson_mutex_lock(&captured_logs_mutex);
+   for (size_t i = 0; i < captured_logs.len; i++) {
+      const log_entry_t *entry = _mongoc_array_index(&captured_logs, log_entry_t *, i);
+      char *message = bson_strdup(entry->msg);
+      if (ignore_case) {
+         mongoc_lowercase_inplace(message);
+      }
+      ASSERT_WITH_MSG(!strstr(message, needle), "Captured log discloses input: %s", entry->msg);
+      bson_free(message);
+   }
+   bson_mutex_unlock(&captured_logs_mutex);
+   bson_free(needle);
+}
+
+void
+assert_no_captured_logs_contain(const char *text)
+{
+   assert_captured_logs_exclude(text, true);
+}
+
+void
+assert_no_captured_logs_contain_exact(const char *text)
+{
+   assert_captured_logs_exclude(text, false);
+}
+
+
 #define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
 
 int64_t
@@ -200,7 +243,9 @@ log_handler(mongoc_log_level_t log_level, const char *log_domain, const char *me
 
    suite = (TestSuite *)user_data;
 
-   if (log_level <= MONGOC_LOG_LEVEL_INFO) {
+   // capture_logs(false) restores the INFO cutoff before destroying the capture
+   // mutex. Cleanup may still emit tracing, which must not touch that mutex.
+   if (log_level <= (mongoc_log_level_t)mcommon_atomic_int_fetch(&capture_level, mcommon_memory_order_seq_cst)) {
       bson_mutex_lock(&captured_logs_mutex);
       if (capturing_logs) {
          log_entry = log_entry_create(log_level, message);
@@ -209,7 +254,9 @@ log_handler(mongoc_log_level_t log_level, const char *log_domain, const char *me
          return;
       }
       bson_mutex_unlock(&captured_logs_mutex);
+   }
 
+   if (log_level <= MONGOC_LOG_LEVEL_INFO) {
       if (!suite->silent) {
          mongoc_log_default_handler(log_level, log_domain, message, NULL);
       }
@@ -547,8 +594,8 @@ test_framework_get_port(void)
    return (uint16_t)port;
 }
 
-char *
-test_framework_get_host_and_port(void)
+static char *
+_get_host_and_port_from_env(void)
 {
    {
       char *const from_srv = test_framework_get_host_and_port_srv();
@@ -953,7 +1000,7 @@ call_hello_with_host_and_port(const char *host_and_port, bson_t *reply)
 static void
 call_hello(bson_t *reply)
 {
-   char *host_and_port = test_framework_get_host_and_port();
+   char *host_and_port = _get_host_and_port_from_env();
 
    call_hello_with_host_and_port(host_and_port, reply);
 
@@ -1181,6 +1228,33 @@ test_framework_get_uri(void)
    bson_free(test_uri_str);
 
    return uri;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_host_and_port --
+ *
+ *       Get the "host:port" to connect to a test server.
+ *
+ *       This occurs after bootstrapping the URI from the environment and
+ *       possibly from the reply to a `hello` command.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_host_and_port(void)
+{
+   mongoc_uri_t *uri = test_framework_get_uri();
+   const mongoc_host_list_t *hosts = mongoc_uri_get_hosts(uri);
+   ASSERT_WITH_MSG(hosts, "could not obtain hosts from test framework URI");
+   char *host_and_port = bson_strdup(hosts->host_and_port);
+   mongoc_uri_destroy(uri);
+
+   return host_and_port;
 }
 
 mongoc_uri_t *
@@ -2402,6 +2476,43 @@ test_framework_skip_if_no_failpoint(void)
    }
 
    /* proceed. */
+   return 1;
+}
+
+// `test_framework_skip_if_no_server_side_javascript` skips if the server cannot
+// evaluate server-side JavaScript (`$where`, `$function`, `mapReduce`).
+//
+// This is detected by probing with a trivial `$where` query.
+int
+test_framework_skip_if_no_server_side_javascript(void)
+{
+   if (!TestSuite_CheckLive()) {
+      return 0;
+   }
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "test", "test_server_side_javascript");
+
+   bson_t *const filter = tmp_bson("{'$where': 'function() { return true; }'}");
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, filter, NULL, NULL);
+
+   // The collection need not exist: the server parses `$where` regardless, which
+   // is what this probe checks.
+   const bson_t *ignored;
+   (void)mongoc_cursor_next(cursor, &ignored);
+
+   bson_error_t error;
+   const bool failed = mongoc_cursor_error(cursor, &error);
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+
+   if (failed) {
+      MONGOC_DEBUG("Skipping test requiring server-side JavaScript: %s", error.message);
+      return 0;
+   }
+
    return 1;
 }
 

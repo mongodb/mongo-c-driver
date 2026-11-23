@@ -28,7 +28,7 @@
 
 #include <bson/bson.h>
 
-#include <mlib/config.h>
+#include <mlib/platform/attributes.h>
 
 #include <ctype.h>
 

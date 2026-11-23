@@ -26,8 +26,6 @@ Parameters
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_t`.
 * ``str_max_query_length``: The maximum query length for substring search. Must be greater than zero.
 
-|encrypt-string-substring-is-experimental|
-
 .. seealso::
    | :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_new`
    | :symbol:`mongoc_client_encryption_encrypt_string_opts_set_substring`

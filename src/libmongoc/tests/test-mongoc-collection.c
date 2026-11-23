@@ -2800,6 +2800,24 @@ _test_insert_validate(insert_fn_t insert_fn)
 
    BSON_ASSERT(insert_fn(collection, tmp_bson("{'a': 1}"), tmp_bson("{'validate': 31}"), &error));
 
+   /* BSON_VALIDATE_DUPLICATE_KEYS */
+   BSON_ASSERT(!insert_fn(
+      collection, tmp_bson("{'a': 1, 'a': 2}"), tmp_bson("{'validate': %d}", BSON_VALIDATE_DUPLICATE_KEYS), &error));
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "invalid document for insert: Duplicate element key: \"a\"");
+
+   /* Unrecognized flags are prohibited */
+   BSON_ASSERT(!insert_fn(collection, tmp_bson("{'a': 1}"), tmp_bson("{'validate': %d}", 1 << 7), &error));
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid field \"validate\" in opts, must be a bitwise-OR of bson_validate_flags_t values.");
+
+   /* Negative values are permitted for backwards compatibility */
+   BSON_ASSERT(insert_fn(collection, tmp_bson("{'a': 1}"), tmp_bson("{'validate': -1}"), &error));
+
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
 }

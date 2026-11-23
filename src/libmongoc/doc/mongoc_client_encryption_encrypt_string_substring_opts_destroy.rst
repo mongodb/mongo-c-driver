@@ -23,7 +23,5 @@ Parameters
 
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_t` to destroy.
 
-|encrypt-string-substring-is-experimental|
-
 .. seealso::
    | :symbol:`mongoc_client_encryption_encrypt_string_substring_opts_new`

@@ -165,6 +165,10 @@ _mongoc_set_cursor_ns(mongoc_cursor_t *cursor, const char *ns, uint32_t nslen)
 {
    const char *dot;
 
+   // Precondition: `ns` must not contain an embedded NUL. Callers reject such namespaces; a NUL here would make
+   // `bson_strndup` copy less than `nslen`, leaving `cursor->nslen` larger than the buffer it describes.
+   BSON_ASSERT(memchr(ns, '\0', nslen) == NULL);
+
    bson_free(cursor->ns);
    cursor->ns = bson_strndup(ns, nslen);
    cursor->nslen = nslen;
@@ -603,6 +607,9 @@ mongoc_cursor_destroy(mongoc_cursor_t *cursor)
       }
    } else if (cursor->client_generation == cursor->client->generation) {
       if (cursor->cursor_id) {
+         // Invariant: a non-zero cursor ID has a namespace with a collection.
+         // Enforced in `_mongoc_cursor_start_reading_response`.
+         BSON_ASSERT(cursor->dblen < cursor->nslen);
          db = bson_strndup(cursor->ns, cursor->dblen);
 
          _mongoc_client_kill_cursor(cursor->client,
@@ -951,15 +958,20 @@ _mongoc_cursor_run_command(mongoc_cursor_t *cursor, const bson_t *command, const
       bson_copy_to(reply, &cursor->error_doc);
    }
 
-   /* Read and Write Concern Spec: "Drivers SHOULD parse server replies for a
-    * "writeConcernError" field and report the error only in command-specific
-    * helper methods that take a separate write concern parameter or an options
-    * parameter that may contain a write concern option.
+   /* Read and Write Concern Spec: "Drivers MUST parse server replies for a
+    * "writeConcernError" field and report the error in all driver methods that
+    * send a server command that may include a `WriteConcern`, excluding
+    * `abortTransaction` and generic command methods."
     *
-    * Only command helpers with names like "_with_write_concern" can create
-    * cursors with a non-NULL write_concern field.
+    * Of the commands sent by cursors, only "aggregate" may include a write
+    * concern, whether passed in opts or inherited (an inherited write concern
+    * is applied to the command via cursor->write_concern above). Such an
+    * aggregate has $out or $merge, which _mongoc_aggregate marks with
+    * is_aggr_with_write_stage, so check the reply if it is set. Generic
+    * command methods (e.g. mongoc_cursor_new_from_command_reply_with_opts)
+    * create cursors without the flag set and are excluded per the spec.
     */
-   if (ret && cursor->write_concern) {
+   if (ret && cursor->is_aggr_with_write_stage) {
       ret = !_mongoc_parse_wc_err(reply, &cursor->error);
    }
 
@@ -1207,6 +1219,7 @@ mongoc_cursor_clone(const mongoc_cursor_t *cursor)
    _clone->nslen = cursor->nslen;
    _clone->dblen = cursor->dblen;
    _clone->explicit_session = cursor->explicit_session;
+   _clone->is_aggr_with_write_stage = cursor->is_aggr_with_write_stage;
 
    if (cursor->read_prefs) {
       _clone->read_prefs = mongoc_read_prefs_copy(cursor->read_prefs);
@@ -1412,8 +1425,9 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
 {
    bson_iter_t iter;
    bson_iter_t child;
-   const char *ns;
+   const char *ns = NULL;
    uint32_t nslen;
+   bool ns_invalid_type = false;
    bool in_batch = false;
 
    if (bson_iter_init_find(&iter, &response->reply, "cursor") && BSON_ITER_HOLDS_DOCUMENT(&iter) &&
@@ -1422,8 +1436,12 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
          if (BSON_ITER_IS_KEY(&child, "id")) {
             cursor->cursor_id = bson_iter_as_int64(&child);
          } else if (BSON_ITER_IS_KEY(&child, "ns")) {
-            ns = bson_iter_utf8(&child, &nslen);
-            _mongoc_set_cursor_ns(cursor, ns, nslen);
+            if (BSON_ITER_HOLDS_UTF8(&child)) {
+               ns = bson_iter_utf8(&child, &nslen);
+            } else {
+               // ns not a string. Handle as malformed rather than absent.
+               ns_invalid_type = true;
+            }
          } else if (BSON_ITER_IS_KEY(&child, "firstBatch") || BSON_ITER_IS_KEY(&child, "nextBatch")) {
             if (BSON_ITER_HOLDS_ARRAY(&child) && bson_iter_recurse(&child, &response->batch_iter)) {
                in_batch = true;
@@ -1439,6 +1457,33 @@ _mongoc_cursor_start_reading_response(mongoc_cursor_t *cursor, mongoc_cursor_res
    if (cursor->cursor_id == 0 && cursor->client_session && !cursor->explicit_session) {
       mongoc_client_session_destroy(cursor->client_session);
       cursor->client_session = NULL;
+   }
+
+   if (ns) {
+      // Expect a reply namespace (if present) to have the form "<db>.<coll>".
+      // Note: a database aggregate cursor returns a namespace like "<db>.$cmd.aggregate".
+      const char *const dot = memchr(ns, '.', nslen);
+      const bool has_collection = dot && mlib_cmp((dot - ns) + 1, <, nslen);
+      // A namespace can never contain an embedded NUL. Reject one rather than adopting it.
+      const bool has_embedded_nul = memchr(ns, '\0', nslen) != NULL;
+      if (has_collection && !has_embedded_nul) {
+         _mongoc_set_cursor_ns(cursor, ns, nslen);
+      } else if (cursor->cursor_id) {
+         // Set 0 cursor ID to prevent sending killCursors.
+         cursor->cursor_id = 0;
+         return false;
+      }
+   } else if (ns_invalid_type && cursor->cursor_id) {
+      // "ns" was present but not a string: set 0 cursor ID to prevent sending killCursors.
+      cursor->cursor_id = 0;
+      return false;
+   }
+
+   // A non-zero cursor ID requires a collection to send "getMore" and "killCursors".
+   if (cursor->cursor_id && cursor->dblen + 1 >= cursor->nslen) {
+      // Set 0 cursor ID to prevent sending killCursors.
+      cursor->cursor_id = 0;
+      return false;
    }
 
    return in_batch;

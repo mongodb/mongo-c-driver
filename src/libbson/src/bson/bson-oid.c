@@ -36,7 +36,7 @@
  * to hex formatted ASCII. Performing two characters at a time roughly
  * reduces the number of operations by one-half.
  */
-BSON_MAYBE_UNUSED static const uint16_t gHexCharPairs[] = {
+static const uint16_t gHexCharPairs[] = {
 #if BSON_BYTE_ORDER == BSON_BIG_ENDIAN
    12336, 12337, 12338, 12339, 12340, 12341, 12342, 12343, 12344, 12345, 12385, 12386, 12387, 12388, 12389,
    12390, 12592, 12593, 12594, 12595, 12596, 12597, 12598, 12599, 12600, 12601, 12641, 12642, 12643, 12644,
@@ -134,47 +134,28 @@ void
 bson_oid_to_string(const bson_oid_t *oid,                      /* IN */
                    char str[BSON_ENSURE_ARRAY_PARAM_SIZE(25)]) /* OUT */
 {
-#if !defined(__i386__) && !defined(__x86_64__) && !defined(_M_IX86) && !defined(_M_X64)
-   BSON_ASSERT(oid);
-   BSON_ASSERT(str);
-
-   bson_snprintf(str,
-                 25,
-                 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-                 oid->bytes[0],
-                 oid->bytes[1],
-                 oid->bytes[2],
-                 oid->bytes[3],
-                 oid->bytes[4],
-                 oid->bytes[5],
-                 oid->bytes[6],
-                 oid->bytes[7],
-                 oid->bytes[8],
-                 oid->bytes[9],
-                 oid->bytes[10],
-                 oid->bytes[11]);
-#else
-   uint16_t *dst;
    uint8_t *id = (uint8_t *)oid;
 
    BSON_ASSERT(oid);
    BSON_ASSERT(str);
 
-   dst = (uint16_t *)(void *)str;
-   dst[0] = gHexCharPairs[id[0]];
-   dst[1] = gHexCharPairs[id[1]];
-   dst[2] = gHexCharPairs[id[2]];
-   dst[3] = gHexCharPairs[id[3]];
-   dst[4] = gHexCharPairs[id[4]];
-   dst[5] = gHexCharPairs[id[5]];
-   dst[6] = gHexCharPairs[id[6]];
-   dst[7] = gHexCharPairs[id[7]];
-   dst[8] = gHexCharPairs[id[8]];
-   dst[9] = gHexCharPairs[id[9]];
-   dst[10] = gHexCharPairs[id[10]];
-   dst[11] = gHexCharPairs[id[11]];
+   /* Copy each pair with memcpy, because str is not guaranteed to be 2-byte
+    * aligned. The loop is written out because compilers only unroll it at -O2
+    * and above. */
+   memcpy(str + 0, &gHexCharPairs[id[0]], 2);
+   memcpy(str + 2, &gHexCharPairs[id[1]], 2);
+   memcpy(str + 4, &gHexCharPairs[id[2]], 2);
+   memcpy(str + 6, &gHexCharPairs[id[3]], 2);
+   memcpy(str + 8, &gHexCharPairs[id[4]], 2);
+   memcpy(str + 10, &gHexCharPairs[id[5]], 2);
+   memcpy(str + 12, &gHexCharPairs[id[6]], 2);
+   memcpy(str + 14, &gHexCharPairs[id[7]], 2);
+   memcpy(str + 16, &gHexCharPairs[id[8]], 2);
+   memcpy(str + 18, &gHexCharPairs[id[9]], 2);
+   memcpy(str + 20, &gHexCharPairs[id[10]], 2);
+   memcpy(str + 22, &gHexCharPairs[id[11]], 2);
+
    str[24] = '\0';
-#endif
 }
 
 

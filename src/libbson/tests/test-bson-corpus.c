@@ -304,9 +304,113 @@ test_bson_corpus_prose_1(void)
     * bson_append_regex_w_len does not accept a length for options. */
 }
 
+// BSON for { 'foo': 1, 'foo': 2 }
+static const uint8_t duplicate_keys_data[] = {0x17, 0x00, 0x00, 0x00, 0x10, 0x66, 0x6f, 0x6f, 0x00, 0x01, 0x00, 0x00,
+                                              0x00, 0x10, 0x66, 0x6f, 0x6f, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00};
+
+static void
+test_bson_corpus_prose_2_1(void)
+{
+   // Test encoding. Appending a duplicate key is permitted.
+   bson_t *bson = bson_new();
+   ASSERT(bson_append_int32(bson, "foo", -1, 1));
+   ASSERT(bson_append_int32(bson, "foo", -1, 2));
+   ASSERT_CMPUINT32(bson->len, ==, (uint32_t)sizeof(duplicate_keys_data));
+   ASSERT_MEMCMP(bson_get_data(bson), duplicate_keys_data, sizeof(duplicate_keys_data));
+   bson_destroy(bson);
+}
+
+static void
+test_bson_corpus_prose_2_2(void)
+{
+   // Test decoding.
+   bson_t bson;
+   ASSERT(bson_init_static(&bson, duplicate_keys_data, sizeof(duplicate_keys_data)));
+
+   // Iterating elements returns all elements.
+   {
+      bson_iter_t iter;
+      ASSERT(bson_iter_init(&iter, &bson));
+      ASSERT(bson_iter_next(&iter));
+      ASSERT_CMPSTR(bson_iter_key(&iter), "foo");
+      ASSERT_CMPINT32(bson_iter_int32(&iter), ==, 1);
+      ASSERT(bson_iter_next(&iter));
+      ASSERT_CMPSTR(bson_iter_key(&iter), "foo");
+      ASSERT_CMPINT32(bson_iter_int32(&iter), ==, 2);
+      ASSERT(!bson_iter_next(&iter));
+      ASSERT_CMPUINT32(bson_count_keys(&bson), ==, 2u);
+   }
+
+   // Looking up a key returns the first match.
+   {
+      bson_iter_t iter;
+      ASSERT(bson_iter_init_find(&iter, &bson, "foo"));
+      ASSERT_CMPINT32(bson_iter_int32(&iter), ==, 1);
+   }
+
+   // Converting to a native map is not applicable. libbson has no map type.
+
+   // Converting to Extended JSON includes all elements.
+   {
+      char *got = bson_as_canonical_extended_json(&bson, NULL);
+      ASSERT_CMPSTR(got, "{ \"foo\" : { \"$numberInt\" : \"1\" }, \"foo\" : { \"$numberInt\" : \"2\" } }");
+      bson_free(got);
+
+      got = bson_as_relaxed_extended_json(&bson, NULL);
+      ASSERT_CMPSTR(got, "{ \"foo\" : 1, \"foo\" : 2 }");
+      bson_free(got);
+   }
+}
+
+static void
+test_bson_corpus_prose_2_3(void)
+{
+   // Test round-trip. libbson has no separate language representation. Test round-tripping through a copy and through
+   // Extended JSON.
+   bson_t bson;
+   ASSERT(bson_init_static(&bson, duplicate_keys_data, sizeof(duplicate_keys_data)));
+
+   // Copying preserves duplicate keys.
+   {
+      bson_t *got = bson_copy(&bson);
+      ASSERT_CMPUINT32(got->len, ==, (uint32_t)sizeof(duplicate_keys_data));
+      ASSERT_MEMCMP(bson_get_data(got), duplicate_keys_data, sizeof(duplicate_keys_data));
+      bson_destroy(got);
+   }
+
+   // Round-tripping through Extended JSON preserves duplicate keys.
+   {
+      bson_error_t error;
+      char *json = bson_as_canonical_extended_json(&bson, NULL);
+      bson_t *got = bson_new_from_json((const uint8_t *)json, -1, &error);
+      ASSERT_OR_PRINT(got, error);
+      ASSERT_CMPUINT32(got->len, ==, (uint32_t)sizeof(duplicate_keys_data));
+      ASSERT_MEMCMP(bson_get_data(got), duplicate_keys_data, sizeof(duplicate_keys_data));
+      bson_destroy(got);
+      bson_free(json);
+   }
+}
+
+static void
+test_bson_corpus_prose_2_4(void)
+{
+   // Test parsing Extended JSON. Duplicate keys are preserved.
+   bson_error_t error;
+   const char *json = "{ \"foo\": 1, \"foo\": 2 }";
+   bson_t *got = bson_new_from_json((const uint8_t *)json, -1, &error);
+   ASSERT_OR_PRINT(got, error);
+   ASSERT_CMPUINT32(got->len, ==, (uint32_t)sizeof(duplicate_keys_data));
+   ASSERT_MEMCMP(bson_get_data(got), duplicate_keys_data, sizeof(duplicate_keys_data));
+   bson_destroy(got);
+}
+
 void
 test_bson_corpus_install(TestSuite *suite)
 {
    install_json_test_suite_with_check(suite, BSON_JSON_DIR, "bson_corpus", test_bson_corpus_cb);
    TestSuite_Add(suite, "/bson_corpus/prose_1", test_bson_corpus_prose_1);
+   TestSuite_Add(suite, "/bson_corpus/prose_2_1", test_bson_corpus_prose_2_1);
+   TestSuite_Add(suite, "/bson_corpus/prose_2_2", test_bson_corpus_prose_2_2);
+   TestSuite_Add(suite, "/bson_corpus/prose_2_3", test_bson_corpus_prose_2_3);
+   TestSuite_Add(suite, "/bson_corpus/prose_2_4", test_bson_corpus_prose_2_4);
 }

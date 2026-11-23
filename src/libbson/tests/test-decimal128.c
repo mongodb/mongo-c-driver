@@ -342,6 +342,31 @@ test_decimal128_from_string__invalid_inputs(void)
    ASSERT(IS_NAN(dec));
    ASSERT(!bson_decimal128_from_string_w_len("e+02", 4, &dec));
    ASSERT(IS_NAN(dec));
+
+   /* Inexact: more than 34 significant digits after leading zeros. */
+   ASSERT(!bson_decimal128_from_string("0100000000000000000000000000000000001", &dec));
+   ASSERT(IS_NAN(dec));
+   ASSERT(!bson_decimal128_from_string("-00100000000000000000000000000000000001", &dec));
+   ASSERT(IS_NAN(dec));
+   ASSERT(!bson_decimal128_from_string("0.0100000000000000000000000000000000001E+40", &dec));
+   ASSERT(IS_NAN(dec));
+}
+
+
+static void
+test_decimal128_from_string__leading_zeros_excess_digits(void)
+{
+   bson_decimal128_t dec;
+   bson_decimal128_t expected;
+
+   /* Excess trailing zeros after leading zeros are exact and must be accepted. */
+   ASSERT(bson_decimal128_from_string("010000000000000000000000000000000000", &dec));
+   ASSERT(bson_decimal128_from_string("1.000000000000000000000000000000000E+34", &expected));
+   ASSERT(dec.high == expected.high && dec.low == expected.low);
+
+   ASSERT(bson_decimal128_from_string("001234567890123456789012345678901234000", &dec));
+   ASSERT(bson_decimal128_from_string("1234567890123456789012345678901234E+3", &expected));
+   ASSERT(dec.high == expected.high && dec.low == expected.low);
 }
 
 
@@ -730,6 +755,9 @@ test_decimal128_install(TestSuite *suite)
    TestSuite_Add(suite, "/bson/decimal128/to_string/scientific", test_decimal128_to_string__scientific);
    TestSuite_Add(suite, "/bson/decimal128/to_string/zero", test_decimal128_to_string__zeros);
    TestSuite_Add(suite, "/bson/decimal128/from_string/invalid", test_decimal128_from_string__invalid_inputs);
+   TestSuite_Add(suite,
+                 "/bson/decimal128/from_string/leading_zeros_excess_digits",
+                 test_decimal128_from_string__leading_zeros_excess_digits);
    TestSuite_Add(suite, "/bson/decimal128/from_string/nan", test_decimal128_from_string__nan);
    TestSuite_Add(suite, "/bson/decimal128/from_string/infinity", test_decimal128_from_string__infinity);
    TestSuite_Add(suite, "/bson/decimal128/from_string/basic", test_decimal128_from_string__simple);

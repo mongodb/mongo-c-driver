@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generate the config.rs crate declaring constants dependent on CMake configuration options.
-fn generate_config_crate() {
+// Generate the config.rs module declaring constants dependent on CMake configuration options.
+fn generate_config_module() {
     use std::fs;
     use std::path::Path;
 
-    let full = std::env::var("MONGOAC_VERSION_FULL")
-        .expect("MONGOAC_VERSION_FULL is unset: build via the CMake configuration");
+    let full = std::env::var("MONGOAC_VERSION_FULL").unwrap_or("0.0.0".to_string());
     println!("cargo:rerun-if-env-changed=MONGOAC_VERSION_FULL");
 
     let build_type = std::env::var("MONGOAC_CMAKE_BUILD_TYPE").unwrap_or_default();
@@ -78,5 +77,5 @@ fn generate_config_crate() {
 }
 
 fn main() {
-    generate_config_crate();
+    generate_config_module();
 }

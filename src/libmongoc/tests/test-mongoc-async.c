@@ -370,6 +370,128 @@ test_hello_delay(void)
    mock_server_destroy(server);
 }
 
+// Test that `mongoc_async_run` can handle adding async commands mid-loop.
+// This is a regression test for CDRIVER-6404.
+//
+// Two commands are needed to start. `DL_FOREACH_SAFE` captures the next pointer before running a command, so a command
+// appended while iterating the last is processed in the next loop pass. But a command appended while iterating the
+// first (of two) is processed in the same pass.
+#define GROW_NSTREAMS 3
+
+typedef struct _grow_ctx_t {
+   mongoc_async_t *async;
+   bson_t *cmd;
+   mongoc_stream_t *streams[GROW_NSTREAMS];
+   bool appended;
+   int nfinished;
+} grow_ctx_t;
+
+static void
+test_grow_callback(mongoc_async_cmd_t *acmd,
+                   mongoc_async_cmd_result_t result,
+                   const bson_t *bson,
+                   mlib_duration duration)
+{
+   BSON_UNUSED(bson);
+   BSON_UNUSED(duration);
+
+   if (result == MONGOC_ASYNC_CMD_CONNECTED) {
+      return;
+   }
+
+   _acmd_userdata(grow_ctx_t, acmd)->nfinished++;
+}
+
+// Reports a successful connect and appends a new command.
+static mongoc_stream_t *
+test_grow_initiator(mongoc_async_cmd_t *acmd)
+{
+   grow_ctx_t *ctx = _acmd_userdata(grow_ctx_t, acmd);
+
+   BSON_ASSERT(!ctx->appended);
+   ctx->appended = true;
+
+   mongoc_async_cmd_new(ctx->async,
+                        ctx->streams[2],
+                        false, /* is setup done. */
+                        NULL,  /* dns result. */
+                        NULL,  /* initiator. */
+                        mlib_duration(),
+                        NULL, /* setup function. */
+                        NULL, /* setup ctx. */
+                        "admin",
+                        ctx->cmd,
+                        MONGOC_OP_CODE_QUERY,
+                        &test_grow_callback,
+                        ctx,
+                        mlib_duration(TIMEOUT, ms));
+
+   return ctx->streams[0];
+}
+
+static void
+test_async_grow_mid_walk(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MAX);
+   mongoc_async_t *async = mongoc_async_new();
+   bson_t hello_cmd = BSON_INITIALIZER;
+   grow_ctx_t ctx = {0};
+
+   mock_server_run(server);
+
+   BSON_ASSERT(BSON_APPEND_INT32(&hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1));
+
+   ctx.async = async;
+   ctx.cmd = &hello_cmd;
+   for (int i = 0; i < GROW_NSTREAMS; i++) {
+      ctx.streams[i] = get_localhost_stream(mock_server_get_port(server));
+   }
+
+   // Appends a third command in `test_grow_initiator` callback.
+   mongoc_async_cmd_new(async,
+                        NULL,  /* stream, acquired by the initiator. */
+                        false, /* is setup done. */
+                        NULL,  /* dns result. */
+                        test_grow_initiator,
+                        mlib_duration(), /* no delay: initiates in the fill loop. */
+                        NULL,            /* setup function. */
+                        NULL,            /* setup ctx. */
+                        "admin",
+                        &hello_cmd,
+                        MONGOC_OP_CODE_QUERY,
+                        &test_grow_callback,
+                        &ctx,
+                        mlib_duration(TIMEOUT, ms));
+
+   // Add a trailing command, so the appended command is processed in the same loop pass.
+   mongoc_async_cmd_new(async,
+                        ctx.streams[1],
+                        false, /* is setup done. */
+                        NULL,  /* dns result. */
+                        NULL,  /* initiator. */
+                        mlib_duration(),
+                        NULL, /* setup function. */
+                        NULL, /* setup ctx. */
+                        "admin",
+                        &hello_cmd,
+                        MONGOC_OP_CODE_QUERY,
+                        &test_grow_callback,
+                        &ctx,
+                        mlib_duration(TIMEOUT, ms));
+
+   mongoc_async_run(async);
+
+   BSON_ASSERT(ctx.appended);
+   ASSERT_CMPINT(ctx.nfinished, ==, GROW_NSTREAMS);
+
+   bson_destroy(&hello_cmd);
+   for (int i = 0; i < GROW_NSTREAMS; i++) {
+      mongoc_stream_destroy(ctx.streams[i]);
+   }
+   mongoc_async_destroy(async);
+   mock_server_destroy(server);
+}
+
 void
 test_async_install(TestSuite *suite)
 {
@@ -388,4 +510,5 @@ test_async_install(TestSuite *suite)
                      test_framework_skip_if_windows);
 #endif
    TestSuite_AddMockServerTest(suite, "/Async/delay", test_hello_delay);
+   TestSuite_AddMockServerTest(suite, "/Async/grow_mid_walk", test_async_grow_mid_walk);
 }

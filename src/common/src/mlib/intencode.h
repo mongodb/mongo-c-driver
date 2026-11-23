@@ -19,8 +19,8 @@
  */
 #pragma once
 
-#include <mlib/config.h>
 #include <mlib/loop.h>
+#include <mlib/platform/endian.h>
 #include <mlib/str.h>
 
 #include <errno.h>

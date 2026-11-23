@@ -29,8 +29,8 @@ BSON_BEGIN_DECLS
 
 #define SECURITY_WIN32 1 /* Required for SSPI */
 
-#include <Windows.h>
 #include <sspi.h>
+#include <windows.h>
 
 #include <limits.h>
 #include <string.h>
@@ -76,7 +76,7 @@ _mongoc_sspi_auth_sspi_client_unwrap(mongoc_sspi_client_state_t *state, SEC_CHAR
 
 int
 _mongoc_sspi_auth_sspi_client_wrap(
-   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, ULONG ulen, INT protect);
+   mongoc_sspi_client_state_t *state, SEC_CHAR *data, SEC_CHAR *user, SIZE_T ulen, INT protect);
 
 
 BSON_END_DECLS

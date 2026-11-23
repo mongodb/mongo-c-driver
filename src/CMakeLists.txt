@@ -4,8 +4,8 @@
 
 # Copy zconf.h.in to zconf.h, used by zlib
 configure_file (
-   "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.1/zconf.h.in"
-   "${CMAKE_BINARY_DIR}/src/zlib-1.3.1/zconf.h"
+   "${mongo-c-driver_SOURCE_DIR}/src/zlib-1.3.2/zconf.h.in"
+   "${CMAKE_BINARY_DIR}/src/zlib-1.3.2/zconf.h"
    COPYONLY
 )
 

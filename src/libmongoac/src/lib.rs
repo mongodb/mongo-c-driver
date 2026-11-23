@@ -1,1 +1,47 @@
+// Copyright 2009-present MongoDB, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+mod private;
+
+pub mod bson;
+pub mod client;
+pub mod client_options;
+pub mod client_session;
+pub mod collection;
+pub mod collection_options;
+pub mod count_options;
+pub mod create_collection_options;
+pub mod cursor;
+pub mod cursor_type;
+pub mod database;
+pub mod database_options;
+pub mod delete_options;
+pub mod delete_result;
+pub mod drop_collection_options;
+pub mod drop_database_options;
+pub mod error;
+pub mod estimated_document_count_options;
+pub mod find_one_options;
+pub mod future;
+pub mod insert_many_options;
+pub mod insert_many_result;
+pub mod insert_one_options;
+pub mod insert_one_result;
+pub mod read_preference;
+pub mod run_command_options;
+pub mod run_cursor_command_options;
+pub mod runtime;
+pub mod session_options;
+pub mod string;
 pub mod version;

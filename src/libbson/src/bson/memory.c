@@ -22,7 +22,6 @@
 #include <bson/config.h>
 
 #include <mlib/ckdint.h>
-#include <mlib/config.h>
 
 #include <errno.h>
 #include <stdio.h>

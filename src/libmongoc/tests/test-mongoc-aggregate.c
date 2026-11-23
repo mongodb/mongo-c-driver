@@ -170,10 +170,89 @@ test_write_respects_read_prefs(void *unused)
    bson_mutex_destroy(&lc.lock);
 }
 
+// `test_write_concern_error_after_clone` tests that an aggregate with a write
+// stage checks its reply for a "writeConcernError" after a call to
+// mongoc_cursor_clone. The check in _mongoc_cursor_run_command is gated on
+// cursor->is_aggr_with_write_stage, which mongoc_cursor_clone must copy to the
+// clone. This is a regression test for CDRIVER-6523.
+static void
+test_write_concern_error_after_clone(void *unused)
+{
+   BSON_UNUSED(unused);
+
+   mongoc_client_t *client = test_framework_new_default_client();
+   ASSERT(mongoc_client_set_error_api(client, 2));
+   mongoc_collection_t *coll = get_test_collection(client, "test_aggregate_wce_after_clone");
+
+   // Create the collection. On sharded clusters, an "aggregate" against a non-existent
+   // database fails with "database test not found" before the failpoint can reply with
+   // a writeConcernError.
+   {
+      bson_error_t error;
+      ASSERT_OR_PRINT(mongoc_collection_insert_one(coll, tmp_bson(BSON_STR({"x" : 1})), NULL, NULL, &error), error);
+   }
+
+   // Configure a failpoint to reply to "aggregate" with a writeConcernError, like the
+   // write-concern-errors spec tests:
+   {
+      bson_error_t error;
+      bson_t reply;
+      const char *cmd_str = BSON_STR({
+         "configureFailPoint" : "failCommand",
+         "mode" : {"times" : 1},
+         "data" : {
+            "failCommands" : ["aggregate"],
+            "writeConcernError" : {"code" : 100, "errmsg" : "Not enough data-bearing nodes"}
+         }
+      });
+      bson_t *failpoint_cmd = bson_new_from_json((const uint8_t *)cmd_str, -1, &error);
+      ASSERT_OR_PRINT(failpoint_cmd, error);
+      ASSERT_OR_PRINT(
+         mongoc_client_command_simple(client, "admin", failpoint_cmd, NULL /* read_prefs */, &reply, &error), error);
+      bson_destroy(failpoint_cmd);
+      bson_destroy(&reply);
+   }
+
+   // Aggregate with $out and an explicit write concern in opts, so the cursor has no
+   // write_concern of its own and the reply check depends on is_aggr_with_write_stage.
+   // The cursor is cloned before iteration; only the clone's aggregate is sent.
+   {
+      bson_error_t error;
+      bson_t opts = BSON_INITIALIZER;
+      mongoc_write_concern_t *wc = mongoc_write_concern_new();
+      mongoc_write_concern_set_wtag(wc, "majority");
+      mongoc_write_concern_append(wc, &opts);
+
+      mongoc_cursor_t *cursor = mongoc_collection_aggregate(
+         coll, MONGOC_QUERY_NONE, tmp_bson(BSON_STR({"pipeline" : [ {"$out" : "aggregate_out"} ]})), &opts, NULL);
+      mongoc_cursor_t *clone = mongoc_cursor_clone(cursor);
+
+      const bson_t *doc;
+      ASSERT(!mongoc_cursor_next(clone, &doc));
+      ASSERT(mongoc_cursor_error(clone, &error));
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_WRITE_CONCERN, 100, "Not enough data-bearing nodes");
+
+      mongoc_cursor_destroy(clone);
+      mongoc_cursor_destroy(cursor);
+      bson_destroy(&opts);
+      mongoc_write_concern_destroy(wc);
+   }
+
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+}
+
 void
 test_aggregate_install(TestSuite *suite)
 {
    TestSuite_AddMockServerTest(suite, "/Aggregate/query_flags", test_query_flags);
+   TestSuite_AddFull(suite,
+                     "/Aggregate/write_concern_error_after_clone [lock:live-server]",
+                     test_write_concern_error_after_clone,
+                     NULL /* _dtor */,
+                     NULL /* _ctx */,
+                     // requires failpoint
+                     test_framework_skip_if_no_failpoint);
    TestSuite_AddFull(suite,
                      "/Aggregate/write_respects_read_prefs [lock:live-server]",
                      test_write_respects_read_prefs,

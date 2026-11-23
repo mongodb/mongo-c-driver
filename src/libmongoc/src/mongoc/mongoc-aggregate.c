@@ -184,8 +184,8 @@ fail:
  *       information on how to build aggregation pipelines.
  *
  * Parameters:
- *       @db: Database name used. Separated from @ns to validate.
  *       @ns: Namespace (or database name for database-level aggregation).
+ *       @db: Database name used. Separated from @ns to validate.
  *       @flags: Bitwise or of mongoc_query_flags_t or 0.
  *       @pipeline: A bson_t containing the pipeline request. @pipeline
  *                  will be sent as an array type in the request.

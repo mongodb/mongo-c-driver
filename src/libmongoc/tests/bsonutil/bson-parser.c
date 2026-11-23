@@ -18,8 +18,6 @@
 
 #include <mongoc/utlist.h>
 
-#include <mlib/config.h>
-
 #include <TestSuite.h>
 #include <test-conveniences.h>
 #include <unified/util.h>

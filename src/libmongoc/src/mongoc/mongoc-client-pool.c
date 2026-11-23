@@ -562,7 +562,11 @@ mongoc_client_pool_max_size(mongoc_client_pool_t *pool, uint32_t max_pool_size)
    BSON_ASSERT_PARAM(pool);
 
    bson_mutex_lock(&pool->mutex);
+   const bool increased = max_pool_size > pool->max_pool_size;
    pool->max_pool_size = max_pool_size;
+   if (increased) {
+      mongoc_cond_broadcast(&pool->cond);
+   }
    bson_mutex_unlock(&pool->mutex);
 
    EXIT;

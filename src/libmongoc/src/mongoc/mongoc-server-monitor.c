@@ -32,7 +32,6 @@
 
 #include <bson/macros.h>
 
-#include <mlib/config.h>
 #include <mlib/intencode.h>
 
 #include <inttypes.h>

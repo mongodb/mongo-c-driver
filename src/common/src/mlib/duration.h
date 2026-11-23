@@ -31,8 +31,9 @@
 
 #include <mlib/ckdint.h>
 #include <mlib/cmp.h>
-#include <mlib/config.h>
 #include <mlib/intutil.h>
+#include <mlib/pp/args.h>
+#include <mlib/pp/is-empty.h>
 
 #include <stdint.h>
 #include <time.h>
@@ -128,7 +129,7 @@ mlib_seconds_count(const mlib_duration dur) mlib_noexcept
  * All duration arithmetic/conversion operations use well-defined saturating
  * arithmetic, and never wrap or trap.
  */
-#define mlib_duration(...) MLIB_EVAL_16(_mlibDurationMagic(__VA_ARGS__))
+#define mlib_duration(...) MLIB_EVAL(_mlibDurationMagic(__VA_ARGS__))
 #define _mlibDurationMagic(...)                                \
    MLIB_DEFERRED(MLIB_ARGC_PASTE(_mlib_duration, __VA_ARGS__)) \
    (__VA_ARGS__)
@@ -139,7 +140,7 @@ mlib_seconds_count(const mlib_duration dur) mlib_noexcept
    /* then: */ (_mlibDurationMagic X) /* else: */ (X)
 
 // Wrap a macro argument that should support the duration DSL
-#define mlib_duration_arg(X) MLIB_EVAL_16(_mlibDurationArgument(X))
+#define mlib_duration_arg(X) MLIB_EVAL(_mlibDurationArgument(X))
 
 // Zero arguments, just return a zero duration:
 #define _mlib_duration_argc_0() (mlib_init(mlib_duration){0})
