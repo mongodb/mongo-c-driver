@@ -1,0 +1,48 @@
+/*
+ * Copyright 2009-present MongoDB, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <mongoc/mongoc-prelude.h>
+
+#ifndef MONGOC_PUNYCODE_PRIVATE_H
+#define MONGOC_PUNYCODE_PRIVATE_H
+
+#include <mlib/str.h>
+
+#include <stdbool.h>
+#include <stddef.h>
+
+// Encode one DNS label (UTF-8, no dot separators) as Punycode (RFC 3492),
+// without the "xn--" prefix. The input label MUST be valid UTF-8 (checked by
+// mongoc_punycode_canonicalize_domain) and MUST have already been case-folded
+// by the caller.
+//
+// Returns true and appends the Punycode form to `dst` (an mstr) on success.
+// Returns false if the label exceeds a defensive bound of 255 code points.
+bool
+mongoc_punycode_encode_label(const char *label, size_t label_len, mstr *dst);
+
+// Canonicalize a dot-separated domain per the Initial DNS Seedlist Discovery
+// Spec: ASCII-lowercase each label, and convert non-ASCII labels to their
+// Punycode A-label form ("xn--..." prefix). A single trailing dot is stripped.
+// Leading or doubled dots create empty labels, which are rejected.
+//
+// Returns true and replaces the contents of `dst` with the canonical form on
+// success. Returns false if the domain is not valid UTF-8 or contains empty
+// labels; on failure, `dst` is not modified.
+bool
+mongoc_punycode_canonicalize_domain(const char *domain, size_t domain_len, mstr *dst);
+
+#endif // MONGOC_PUNYCODE_PRIVATE_H
