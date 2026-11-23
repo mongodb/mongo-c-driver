@@ -230,11 +230,6 @@ mongoc_uri_check_srv_allowed_hosts_suffix(mongoc_uri_t *uri, const char *value, 
 
    // 5. Prepend '.' for label-aligned suffix matching.
    char *dot_prefixed = bson_malloc0(canonical.len + 2);
-   if (!dot_prefixed) {
-      MONGOC_URI_ERROR(error, "%s", "out of memory");
-      mstr_destroy(&canonical);
-      return false;
-   }
    dot_prefixed[0] = '.';
    memcpy(dot_prefixed + 1, canonical.data, canonical.len);
    mstr_destroy(&canonical);
