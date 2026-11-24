@@ -2774,6 +2774,8 @@ test_mongoc_uri_srv(void)
    VALID(uri, "a.service.consul");
    INVALID(uri, "service.a.consul");
    INVALID(uri, "a.com");
+   /* a host that is only the last label of the service name is not in the domain */
+   INVALID(uri, "consul");
    /* the SRV hostname itself has too few domain levels to be returned */
    INVALID_LEVELS(uri, "service.consul.");
    VALID(uri, "a.service.consul.");
@@ -2785,6 +2787,7 @@ test_mongoc_uri_srv(void)
     * is the entire hostname; hosts sharing only a broader suffix are rejected. */
    uri = mongoc_uri_new("mongodb+srv://localhost");
    ASSERT(uri);
+   INVALID_LEVELS(uri, "localhost");
    INVALID(uri, "localhost.mongodb");
    INVALID(uri, "test_1.evil.local");
    VALID(uri, "a.localhost");
