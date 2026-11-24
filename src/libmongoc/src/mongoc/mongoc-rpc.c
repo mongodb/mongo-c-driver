@@ -387,7 +387,7 @@ mcd_rpc_message_egress(const mcd_rpc_message *rpc)
    }
 }
 
-void
+bool
 mcd_rpc_message_ingress(const mcd_rpc_message *rpc)
 {
    // `mcd_rpc_message_ingress` is expected be called after
@@ -403,45 +403,26 @@ mcd_rpc_message_ingress(const mcd_rpc_message *rpc)
    }
 
    switch (op_code) {
-   case MONGOC_OP_CODE_COMPRESSED:
-      BSON_UNREACHABLE("invalid opcode (double compression?!)");
-      break;
-
    case MONGOC_OP_CODE_MSG:
       mongoc_counter_op_ingress_msg_inc();
       mongoc_counter_op_ingress_total_inc();
-      break;
+      return true;
 
    case MONGOC_OP_CODE_REPLY:
       mongoc_counter_op_ingress_reply_inc();
       mongoc_counter_op_ingress_total_inc();
-      break;
+      return true;
 
+   case MONGOC_OP_CODE_COMPRESSED:
    case MONGOC_OP_CODE_UPDATE:
-      BSON_UNREACHABLE("unexpected OP_UPDATE ingress");
-      break;
-
    case MONGOC_OP_CODE_INSERT:
-      BSON_UNREACHABLE("unexpected OP_INSERT ingress");
-      break;
-
    case MONGOC_OP_CODE_QUERY:
-      BSON_UNREACHABLE("unexpected OP_QUERY ingress");
-      break;
-
    case MONGOC_OP_CODE_GET_MORE:
-      BSON_UNREACHABLE("unexpected OP_GET_MORE ingress");
-      break;
-
    case MONGOC_OP_CODE_DELETE:
-      BSON_UNREACHABLE("unexpected OP_DELETE ingress");
-      break;
-
    case MONGOC_OP_CODE_KILL_CURSORS:
-      BSON_UNREACHABLE("unexpected OP_KILL_CURSORS ingress");
-      break;
-
    default:
-      BSON_UNREACHABLE("invalid opcode");
+      /* A reply must be OP_MSG or OP_REPLY (possibly wrapped in OP_COMPRESSED). The server may send anything; report
+       * an error rather than aborting. */
+      return false;
    }
 }

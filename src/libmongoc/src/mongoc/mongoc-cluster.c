@@ -464,7 +464,10 @@ _mongoc_cluster_run_command_opquery_recv(
       goto done;
    }
 
-   mcd_rpc_message_ingress(rpc);
+   if (!mcd_rpc_message_ingress(rpc)) {
+      RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "unexpected opcode in reply");
+      goto done;
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary(rpc, &decompressed_data, &decompressed_data_len, max_msg_size)) {
       RUN_CMD_ERR(MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "could not decompress server reply");
@@ -3266,7 +3269,14 @@ _mongoc_cluster_run_opmsg_recv(
       server_stream->stream = NULL;
       goto done;
    }
-   mcd_rpc_message_ingress(rpc);
+   if (!mcd_rpc_message_ingress(rpc)) {
+      RUN_CMD_ERR(MONGOC_ERROR_PROTOCOL,
+                  MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                  "malformed message from server: unexpected opCode");
+      _handle_network_error(cluster, cmd, reply, error);
+      server_stream->stream = NULL;
+      goto done;
+   }
 
    void *decompressed_data = NULL;
    size_t decompressed_data_len = 0u;

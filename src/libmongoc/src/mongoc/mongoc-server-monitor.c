@@ -338,7 +338,13 @@ _server_monitor_send_and_recv_hello_opmsg(mongoc_server_monitor_t *server_monito
       goto fail;
    }
 
-   mcd_rpc_message_ingress(rpc);
+   if (!mcd_rpc_message_ingress(rpc)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_PROTOCOL,
+                        MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                        "invalid reply from server: unexpected opcode");
+      goto fail;
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary(
           rpc, &decompressed_data, &decompressed_data_len, server_monitor->description->max_msg_size)) {
@@ -453,7 +459,13 @@ _server_monitor_send_and_recv_opquery(mongoc_server_monitor_t *server_monitor,
       goto fail;
    }
 
-   mcd_rpc_message_ingress(rpc);
+   if (!mcd_rpc_message_ingress(rpc)) {
+      _mongoc_set_error(error,
+                        MONGOC_ERROR_PROTOCOL,
+                        MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                        "invalid reply from server: unexpected opcode");
+      goto fail;
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary(
           rpc, &decompressed_data, &decompressed_data_len, server_monitor->description->max_msg_size)) {
@@ -724,7 +736,11 @@ _server_monitor_awaitable_hello_recv(mongoc_server_monitor_t *server_monitor,
       GOTO(fail);
    }
 
-   mcd_rpc_message_ingress(rpc);
+   if (!mcd_rpc_message_ingress(rpc)) {
+      _mongoc_set_error(
+         error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "unexpected opcode in reply");
+      GOTO(fail);
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary(
           rpc, &decompressed_data, &decompressed_data_len, server_monitor->description->max_msg_size)) {

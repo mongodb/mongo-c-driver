@@ -1,3 +1,5 @@
+#include <mongoc/mongoc-rpc-private.h>
+
 #include <mongoc/mcd-rpc.h>
 #include <mongoc/mongoc-iovec.h>
 
@@ -2815,9 +2817,42 @@ test_rpc_message_from_data_in_place(void)
 }
 
 
+/* A reply whose opcode is not valid for ingress (here, OP_COMPRESSED wrapping OP_COMPRESSED) must be reported, not
+ * abort. */
+static void
+test_rpc_message_ingress_unexpected_opcode(void)
+{
+   const uint8_t data[] = {
+      0x19, 0x00, 0x00, 0x00, /* messageLength (25) */
+      0x04, 0x03, 0x02, 0x01, /* requestID */
+      0x08, 0x07, 0x06, 0x05, /* responseTo */
+      0xdc, 0x07, 0x00, 0x00, /* opCode (OP_COMPRESSED) */
+      0xdc, 0x07, 0x00, 0x00, /* originalOpcode (OP_COMPRESSED) */
+      0x00, 0x00, 0x00, 0x00, /* uncompressedSize */
+      0x00                    /* compressorId */
+   };
+
+   mcd_rpc_message *rpc = mcd_rpc_message_new();
+   ASSERT(mcd_rpc_message_from_data_in_place(rpc, data, sizeof data, NULL));
+   ASSERT(!mcd_rpc_message_ingress(rpc));
+   mcd_rpc_message_destroy(rpc);
+}
+
+static void
+test_rpc_message_ingress_valid(void)
+{
+   uint8_t data[] = {TEST_DATA_OP_COMPRESSED};
+   mcd_rpc_message *rpc = mcd_rpc_message_new();
+   ASSERT(mcd_rpc_message_from_data_in_place(rpc, data, sizeof data, NULL));
+   ASSERT(mcd_rpc_message_ingress(rpc));
+   mcd_rpc_message_destroy(rpc);
+}
+
 void
 test_mcd_rpc_install(TestSuite *suite)
 {
+   TestSuite_Add(suite, "/rpc_message/ingress/valid", test_rpc_message_ingress_valid);
+   TestSuite_Add(suite, "/rpc_message/ingress/unexpected_opcode", test_rpc_message_ingress_unexpected_opcode);
    TestSuite_Add(suite, "/rpc_message/from_data/op_compressed/valid", test_rpc_message_from_data_op_compressed_valid);
    TestSuite_Add(suite, "/rpc_message/from_data/op_msg/valid", test_rpc_message_from_data_op_msg_valid);
    TestSuite_Add(suite, "/rpc_message/from_data/op_reply/valid", test_rpc_message_from_data_op_reply_valid);
