@@ -709,8 +709,9 @@ _mongoc_bson_array_copy_labels_to(const bson_t *reply, bson_t *dst)
    bson_iter_t iter;
    bson_iter_t label;
 
-   if (bson_iter_init_find(&iter, reply, "errorLabels")) {
-      BSON_ASSERT(bson_iter_recurse(&iter, &label));
+   // The reply comes from the server: do not assume "errorLabels" is an array.
+   if (bson_iter_init_find(&iter, reply, "errorLabels") && BSON_ITER_HOLDS_ARRAY(&iter) &&
+       bson_iter_recurse(&iter, &label)) {
       while (bson_iter_next(&label)) {
          if (BSON_ITER_HOLDS_UTF8(&label)) {
             _mongoc_bson_array_add_label(dst, bson_iter_utf8(&label, NULL));

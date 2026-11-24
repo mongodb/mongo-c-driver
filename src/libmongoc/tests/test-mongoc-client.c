@@ -1777,6 +1777,44 @@ test_get_database_names(void)
 
 /* A listDatabases reply whose "databases" array has a non-document element is invalid. The driver must fail with an
  * error rather than abort the process. */
+/* A listDatabases reply without a well-formed "databases" array is invalid. The driver must report an error, not
+ * silently return an empty list. */
+static void
+_test_get_database_names_invalid_databases(const char *reply_json)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   bson_error_t error = {0};
+   char **names;
+
+   future_t *future = future_client_get_database_names_with_opts(client, NULL, &error);
+   request_t *request = mock_server_receives_msg(
+      server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'admin', 'listDatabases': 1, 'nameOnly': true}"));
+   reply_to_request_simple(request, reply_json);
+   request_destroy(request);
+
+   names = future_get_char_ptr_ptr(future);
+   BSON_ASSERT(!names);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "databases");
+
+   future_destroy(future);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+static void
+test_get_database_names_missing_databases(void)
+{
+   _test_get_database_names_invalid_databases("{'ok': 1}");
+}
+
+static void
+test_get_database_names_non_array_databases(void)
+{
+   _test_get_database_names_invalid_databases("{'ok': 1, 'databases': 123}");
+}
+
 static void
 test_get_database_names_non_document_element(void)
 {
@@ -3918,6 +3956,10 @@ test_client_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddMockServerTest(
       suite, "/Client/database_names/non_document_element", test_get_database_names_non_document_element);
+   TestSuite_AddMockServerTest(
+      suite, "/Client/database_names/missing_databases", test_get_database_names_missing_databases);
+   TestSuite_AddMockServerTest(
+      suite, "/Client/database_names/non_array_databases", test_get_database_names_non_array_databases);
    TestSuite_AddFull(suite,
                      "/Client/connect/uds [lock:live-server]",
                      test_mongoc_client_unix_domain_socket,

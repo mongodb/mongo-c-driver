@@ -87,7 +87,8 @@ _parse_error_reply(const bson_t *doc, bool check_wce, uint32_t *code, const char
     * based on how it is configured to error. */
    if (bson_iter_init_find(&iter, doc, "code") && BSON_ITER_HOLDS_NUMBER(&iter)) {
       *code = (uint32_t)bson_iter_as_int64(&iter);
-      BSON_ASSERT(*code);
+      // The server replied with an error but may omit or zero the code. _mongoc_cmd_set_error maps code 0 to a
+      // driver error code.
       found_error = true;
    }
 
@@ -111,7 +112,7 @@ _parse_error_reply(const bson_t *doc, bool check_wce, uint32_t *code, const char
          BSON_ASSERT(bson_iter_recurse(&iter, &child));
          if (bson_iter_find(&child, "code") && BSON_ITER_HOLDS_NUMBER(&child)) {
             *code = (uint32_t)bson_iter_as_int64(&child);
-            BSON_ASSERT(*code);
+            // See the note on the top-level "code" field: code 0 is handled by _mongoc_cmd_set_error.
             found_error = true;
          }
          BSON_ASSERT(bson_iter_recurse(&iter, &child));

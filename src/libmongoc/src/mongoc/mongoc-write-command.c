@@ -572,11 +572,13 @@ _mongoc_write_result_merge(mongoc_write_result_t *result,   /* IN */
        * append it to the result->writeConcernErrors array */
       bson_iter_document(&iter, &len, &data);
       if (!bson_init_static(&write_concern_error, data, len)) {
-         // Do not drop a write concern error: report the result as failed.
-         _mongoc_set_error(&result->error,
-                           MONGOC_ERROR_PROTOCOL,
-                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                           "Invalid server reply: writeConcernError is a malformed document");
+         // Do not drop a write concern error: report the result as failed. Keep an existing, more specific error.
+         if (!result->error.domain) {
+            _mongoc_set_error(&result->error,
+                              MONGOC_ERROR_PROTOCOL,
+                              MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                              "Invalid server reply: writeConcernError is a malformed document");
+         }
          result->failed = true;
       } else {
          bson_uint32_to_string(result->n_writeConcernErrors, &key, str, sizeof str);
@@ -784,8 +786,9 @@ _mongoc_write_opmsg(mongoc_write_command_t *command,
       mongoc_server_stream_cleanup(retry_server_stream);
    }
 
-   if (ret) {
-      /* if a retry succeeded, clear the initial error */
+   if (ret && result->error.domain != MONGOC_ERROR_PROTOCOL) {
+      /* if a retry succeeded, clear the initial error. A protocol error means the reply itself was invalid, so keep
+       * it: a retry will not produce a valid reply. */
       memset(&result->error, 0, sizeof(bson_error_t));
    }
 
@@ -1025,7 +1028,12 @@ _set_error_from_response(bson_t *bson_array,
                if (BSON_ITER_IS_KEY(&doc_iter, "code") && code == 0) {
                   code = (uint32_t)bson_iter_as_int64(&doc_iter);
                } else if (BSON_ITER_IS_KEY(&doc_iter, "errmsg")) {
-                  errmsg = bson_iter_utf8(&doc_iter, NULL);
+                  // The error document comes from the server: do not assume "errmsg" is a string.
+                  if (BSON_ITER_HOLDS_UTF8(&doc_iter)) {
+                     errmsg = bson_iter_utf8(&doc_iter, NULL);
+                  } else {
+                     errmsg = "(non-string errmsg)";
+                  }
 
                   /* build message like 'Multiple write errors: "foo", "bar"' */
                   if (n_keys > 1) {

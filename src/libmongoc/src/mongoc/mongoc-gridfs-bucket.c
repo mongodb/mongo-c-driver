@@ -380,6 +380,15 @@ mongoc_gridfs_bucket_open_download_stream(mongoc_gridfs_bucket_t *bucket,
          }
          bson_iter_document(&iter, &data_len, &data);
          file->metadata = bson_new_from_data(data, data_len);
+         if (!file->metadata) {
+            bson_destroy(&file_doc);
+            _mongoc_set_error(error,
+                              MONGOC_ERROR_GRIDFS,
+                              MONGOC_ERROR_GRIDFS_CORRUPT,
+                              "File document contains invalid metadata: malformed document");
+            _mongoc_gridfs_bucket_file_destroy(file);
+            return NULL;
+         }
       }
    }
 

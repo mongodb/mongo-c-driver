@@ -2718,7 +2718,13 @@ mongoc_client_encryption_rewrap_many_datakey(mongoc_client_encryption_t *client_
             goto doc_done;
          }
 
-         BSON_ASSERT(bson_append_iter(&selector, "_id", 3, &key_iter));
+         if (!bson_append_iter(&selector, "_id", 3, &key_iter)) {
+            _mongoc_set_error(error,
+                              MONGOC_ERROR_CLIENT,
+                              MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                              "could not copy _id from key document");
+            goto doc_done;
+         }
       }
 
       /* Find and include potentially updated fields. */
@@ -2726,16 +2732,25 @@ mongoc_client_encryption_rewrap_many_datakey(mongoc_client_encryption_t *client_
          bson_t child;
 
          BSON_ASSERT(BSON_APPEND_DOCUMENT_BEGIN(&document, "$set", &child));
+         bool appended = true;
          {
             if (bson_iter_init_find(&key_iter, &key, "masterKey")) {
-               BSON_ASSERT(bson_append_iter(&child, "masterKey", -1, &key_iter));
+               appended = bson_append_iter(&child, "masterKey", -1, &key_iter);
             }
 
-            if (bson_iter_init_find(&key_iter, &key, "keyMaterial")) {
-               BSON_ASSERT(bson_append_iter(&child, "keyMaterial", -1, &key_iter));
+            if (appended && bson_iter_init_find(&key_iter, &key, "keyMaterial")) {
+               appended = bson_append_iter(&child, "keyMaterial", -1, &key_iter);
             }
          }
          BSON_ASSERT(bson_append_document_end(&document, &child));
+         if (!appended) {
+            // The key document came from the server (key vault): do not abort on a malformed value.
+            _mongoc_set_error(error,
+                              MONGOC_ERROR_CLIENT,
+                              MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                              "could not copy fields from key document");
+            goto doc_done;
+         }
       }
 
       /* Update updateDate field. */

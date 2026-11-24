@@ -229,7 +229,11 @@ _mongoc_error_copy_labels_and_upsert(const bson_t *src, bson_t *dst, const char 
 
    /* append any other errorLabels already in "src" */
    if (bson_iter_init_find(&iter, src, "errorLabels") && bson_iter_recurse(&iter, &src_label)) {
-      while (bson_iter_next(&src_label) && BSON_ITER_HOLDS_UTF8(&src_label)) {
+      while (bson_iter_next(&src_label)) {
+         // The labels come from the server reply: skip non-string entries but keep checking later ones.
+         if (!BSON_ITER_HOLDS_UTF8(&src_label)) {
+            continue;
+         }
          if (strcmp(bson_iter_utf8(&src_label, NULL), label) != 0) {
             bson_array_builder_append_utf8(dst_labels, bson_iter_utf8(&src_label, NULL), -1);
          }

@@ -1103,6 +1103,10 @@ mongoc_server_description_compressor_id(const mongoc_server_description_t *descr
    BSON_ASSERT(bson_iter_init(&iter, &description->compressors));
 
    while (bson_iter_next(&iter)) {
+      // The compressor list comes from the server reply: ignore non-string members.
+      if (!BSON_ITER_HOLDS_UTF8(&iter)) {
+         continue;
+      }
       id = mongoc_compressor_name_to_id(bson_iter_utf8(&iter, NULL));
       if (id != -1) {
          return id;

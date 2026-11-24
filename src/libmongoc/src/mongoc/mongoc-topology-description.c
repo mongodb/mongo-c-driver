@@ -2466,7 +2466,8 @@ mongoc_topology_description_handle_hello(
       uint32_t len;
 
       bson_iter_document(&iter, &len, &bytes);
-      // A malformed topologyVersion is not compared here. mongoc_server_description_handle_hello rejects it below.
+      // A malformed topologyVersion (from the server reply) is not compared here. It is treated as absent when the
+      // hello reply is processed.
       if (bson_init_static(&incoming_topology_version, bytes, len) &&
           mongoc_server_description_topology_version_cmp(&sd->topology_version, &incoming_topology_version) == 1) {
          TRACE("%s", "topology version is strictly less. Skipping.");

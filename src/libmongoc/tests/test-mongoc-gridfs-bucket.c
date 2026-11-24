@@ -1400,9 +1400,10 @@ static BSON_THREAD_FUN(download_thread, arg)
    BSON_THREAD_RETURN;
 }
 
-/* A file document whose "metadata" is not a document is invalid. The driver must fail with an error, not abort. */
+/* A file document whose "metadata" is invalid must fail with an error, not abort. When `malformed` is true the
+ * metadata is a document with a corrupted terminator. Otherwise, it is not a document. */
 static void
-test_download_non_document_metadata(void)
+_test_download_invalid_metadata(bool malformed)
 {
    mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
    mock_server_run(server);
@@ -1419,15 +1420,33 @@ test_download_non_document_metadata(void)
 
    request_t *request =
       mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'db', 'find': 'fs.files'}"));
-   reply_to_request_simple(request,
-                           "{'ok': 1, 'cursor': {'id': {'$numberLong': '0'}, 'ns': 'db.fs.files', "
-                           "'firstBatch': [{'_id': 1, 'length': 0, 'chunkSize': 255, 'filename': 'f', "
-                           "'metadata': 'not a document'}]}}");
+   bson_t *reply = tmp_bson(BSON_STR({
+      "ok" : 1,
+      "cursor" : {
+         "id" : {"$numberLong" : "0"},
+         "ns" : "db.fs.files",
+         "firstBatch" : [ {"_id" : 1, "length" : 0, "chunkSize" : 255, "filename" : "f", "metadata" : {"a" : 1}} ]
+      }
+   }));
+   if (malformed) {
+      test_corrupt_subdocument_terminator(reply, "cursor.firstBatch.0.metadata");
+   } else {
+      bson_t *replacement = tmp_bson(BSON_STR({
+         "ok" : 1,
+         "cursor" : {
+            "id" : {"$numberLong" : "0"},
+            "ns" : "db.fs.files",
+            "firstBatch" : [ {"_id" : 1, "length" : 0, "chunkSize" : 255, "filename" : "f", "metadata" : "x"} ]
+         }
+      }));
+      reply = replacement;
+   }
+   reply_to_op_msg_request(request, MONGOC_MSG_NONE, reply);
    request_destroy(request);
 
    ASSERT_CMPINT(mcommon_thread_join(thread), ==, 0);
    ASSERT(!args.stream);
-   ASSERT_ERROR_CONTAINS(args.error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "not a document");
+   ASSERT_ERROR_CONTAINS(args.error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "invalid metadata");
 
    mongoc_gridfs_bucket_destroy(bucket);
    mongoc_database_destroy(db);
@@ -1435,11 +1454,24 @@ test_download_non_document_metadata(void)
    mock_server_destroy(server);
 }
 
+static void
+test_download_non_document_metadata(void)
+{
+   _test_download_invalid_metadata(false);
+}
+
+static void
+test_download_malformed_metadata(void)
+{
+   _test_download_invalid_metadata(true);
+}
+
 void
 test_gridfs_bucket_install(TestSuite *suite)
 {
    test_all_spec_tests(suite);
    TestSuite_AddMockServerTest(suite, "/gridfs/download/non_document_metadata", test_download_non_document_metadata);
+   TestSuite_AddMockServerTest(suite, "/gridfs/download/malformed_metadata", test_download_malformed_metadata);
    TestSuite_AddLive(suite, "/gridfs/create_bucket", test_create_bucket);
    TestSuite_AddLive(suite, "/gridfs/upload_and_download", test_upload_and_download);
    TestSuite_AddFull(
