@@ -576,20 +576,23 @@ mongoc_server_description_handle_hello(mongoc_server_description_t *sd,
          }
          sd->me = bson_iter_utf8(&iter, NULL);
       } else if (strcmp("maxMessageSizeBytes", bson_iter_key(&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32(&iter)) {
+         int32_t v;
+         if (!BSON_ITER_HOLDS_INT32(&iter) || (v = bson_iter_int32(&iter)) < 0) {
             GOTO(typefailure);
          }
-         sd->max_msg_size = bson_iter_int32(&iter);
+         sd->max_msg_size = v;
       } else if (strcmp("maxBsonObjectSize", bson_iter_key(&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32(&iter)) {
+         int32_t v;
+         if (!BSON_ITER_HOLDS_INT32(&iter) || (v = bson_iter_int32(&iter)) < 0) {
             GOTO(typefailure);
          }
-         sd->max_bson_obj_size = bson_iter_int32(&iter);
+         sd->max_bson_obj_size = v;
       } else if (strcmp("maxWriteBatchSize", bson_iter_key(&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32(&iter)) {
+         int32_t v;
+         if (!BSON_ITER_HOLDS_INT32(&iter) || (v = bson_iter_int32(&iter)) < 0) {
             GOTO(typefailure);
          }
-         sd->max_write_batch_size = bson_iter_int32(&iter);
+         sd->max_write_batch_size = v;
       } else if (strcmp("logicalSessionTimeoutMinutes", bson_iter_key(&iter)) == 0) {
          if (BSON_ITER_HOLDS_NUMBER(&iter)) {
             sd->session_timeout_minutes = bson_iter_as_int64(&iter);
