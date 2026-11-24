@@ -2799,6 +2799,8 @@ test_mongoc_uri_srv(void)
    VALID(uri, "x.mongo.local");
    /* Prose test 3: the SRV hostname itself is not one more domain level */
    INVALID_LEVELS(uri, "mongo.local");
+   /* test canonicalization */
+   VALID(uri, "X.MONGO.LOCAL");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb+srv://blogs.mongodb.com");
