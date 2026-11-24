@@ -14,6 +14,7 @@
 
 mod private;
 
+pub mod aggregate_options;
 pub mod bson;
 pub mod client;
 pub mod client_options;
