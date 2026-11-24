@@ -275,10 +275,12 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
                                       uri->srv_allowed_hosts_suffix);
       }
    } else {
-      // No options configured. Derive the {domainname} that returned hostnames are validated against (Initial DNS
-      // Seedlist Discovery Spec): the portion of the SRV hostname after its leftmost label or when the SRV hostname
-      // has fewer than three labels, the entire hostname (e.g. for "mongodb+srv://mongo.local" the {domainname} is
-      // "mongo.local" itself). The leading dot keeps the comparison label-aligned.
+      // No options configured. Derive the {domainname} that returned hostnames
+      // are validated against (Initial DNS Seedlist Discovery Spec):
+      //   - "a.b.c.com" -> ".b.c.com"  (the portion after the leftmost label)
+      //   - "mongo.local" -> ".mongo.local"  (fewer than three labels: the
+      //     entire hostname is its own {domainname})
+      // The leading dot keeps the comparison label-aligned.
       const size_t srv_labels = count_dots(srv_hostname_canonical.data) + 1u;
       char srv_host[BSON_HOST_NAME_MAX + 2];
       if (srv_labels >= 3u) {
