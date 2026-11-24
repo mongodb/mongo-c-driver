@@ -867,30 +867,6 @@ _mongoc_write_command_execute_idl(mongoc_write_command_t *command,
       }
    }
 
-   if (command->flags.has_update_hint) {
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_UPDATE_HINT &&
-          !mongoc_write_concern_is_acknowledged(crud->writeConcern)) {
-         _mongoc_set_error(&result->error,
-                           MONGOC_ERROR_COMMAND,
-                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                           "The selected server does not support hint for update");
-         result->failed = true;
-         EXIT;
-      }
-   }
-
-   if (command->flags.has_delete_hint) {
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_DELETE_HINT &&
-          !mongoc_write_concern_is_acknowledged(crud->writeConcern)) {
-         _mongoc_set_error(&result->error,
-                           MONGOC_ERROR_COMMAND,
-                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                           "The selected server does not support hint for delete");
-         result->failed = true;
-         EXIT;
-      }
-   }
-
    if (command->flags.bypass_document_validation) {
       if (!mongoc_write_concern_is_acknowledged(crud->writeConcern)) {
          result->failed = true;

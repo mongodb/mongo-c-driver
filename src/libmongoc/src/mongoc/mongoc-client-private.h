@@ -49,17 +49,8 @@
 
 BSON_BEGIN_DECLS
 
-/* first version to support hint for "update" command */
-#define WIRE_VERSION_UPDATE_HINT 8
-/* version corresponding to client side field level encryption support. */
-#define WIRE_VERSION_CSE 8
-/* first version to throw server-side errors for unsupported hint in
- * "findAndModify" command */
-#define WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR 8
 /* first version to support hint for "delete" command */
 #define WIRE_VERSION_DELETE_HINT 9
-/* first version to support hint for "findAndModify" command */
-#define WIRE_VERSION_FIND_AND_MODIFY_HINT 9
 /* version corresponding to server 4.4 release */
 #define WIRE_VERSION_4_4 9
 /* version corresponding to retryable writes error label */

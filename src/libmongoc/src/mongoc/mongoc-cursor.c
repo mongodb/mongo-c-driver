@@ -1568,16 +1568,15 @@ _mongoc_cursor_prepare_getmore_command(mongoc_cursor_t *cursor, bson_t *command)
       mongoc_server_stream_t *server_stream;
 
       /* CRUD spec: If a comment is provided, drivers MUST attach this comment
-       * to all subsequent getMore commands run on the same cursor for server
-       * versions 4.4 and above. For server versions below 4.4 drivers MUST NOT
-       * attach a comment to getMore commands.
+       * to all subsequent getMore commands run on the same cursor (supported
+       * since server 4.4, the minimum supported version).
        *
        * Since this function has no error reporting, we also no-op if we cannot
        * fetch a stream. */
       const mongoc_ss_log_context_t ss_log_context = {.operation = "getMore"};
       server_stream = _mongoc_cursor_fetch_stream(cursor, &ss_log_context);
 
-      if (server_stream != NULL && server_stream->sd->max_wire_version >= WIRE_VERSION_4_4) {
+      if (server_stream != NULL) {
          bson_append_value(command, MONGOC_CURSOR_COMMENT, MONGOC_CURSOR_COMMENT_LEN, comment);
       }
 

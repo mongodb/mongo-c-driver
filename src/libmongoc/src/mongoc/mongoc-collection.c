@@ -2368,18 +2368,6 @@ mongoc_collection_find_and_modify_with_opts(mongoc_collection_t *collection,
    }
 
    if (appended_opts.hint.value_type) {
-      int max_wire_version = mongoc_write_concern_is_acknowledged(write_concern)
-                                ? WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR
-                                : WIRE_VERSION_FIND_AND_MODIFY_HINT;
-
-      if (server_stream->sd->max_wire_version < max_wire_version) {
-         _mongoc_set_error(error,
-                           MONGOC_ERROR_COMMAND,
-                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                           "The selected server does not support hint for findAndModify");
-         GOTO(done);
-      }
-
       bson_append_value(&parts.extra, "hint", 4, &appended_opts.hint);
    }
 
@@ -2574,7 +2562,6 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
    // `error` may be NULL.
    bson_t reply_local = BSON_INITIALIZER;
    bson_t *reply_ptr;
-   mongoc_server_stream_t *server_stream = NULL;
    bool ok = false;
    bson_t cmd = BSON_INITIALIZER;
 
@@ -2582,27 +2569,6 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
    // Always initialize `reply` if set. Caller is expected to `bson_destroy
    // (reply)`.
    bson_init(reply_ptr);
-
-   // Check for commitQuorum option.
-   if (opts && bson_has_field(opts, "commitQuorum")) {
-      const mongoc_ss_log_context_t ss_log_context = {.operation = "createIndexes"};
-      server_stream = mongoc_cluster_stream_for_writes(&collection->client->cluster,
-                                                       &ss_log_context,
-                                                       NULL /* mongoc_client_session_t */,
-                                                       NULL /* deprioritized servers */,
-                                                       reply_ptr,
-                                                       error);
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_4_4) {
-         // Raise an error required by the specification:
-         // "Drivers MUST manually raise an error if this option is specified
-         // when creating an index on a pre 4.4 server."
-         _mongoc_set_error(error,
-                           MONGOC_ERROR_COMMAND,
-                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                           "The selected server does not support the commitQuorum option");
-         GOTO(fail);
-      }
-   }
 
    // Build the createIndexes command.
    BSON_ASSERT(BSON_APPEND_UTF8(&cmd, "createIndexes", collection->collection));
@@ -2648,7 +2614,6 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
    ok = mongoc_collection_write_command_with_opts(collection, &cmd, opts, reply_ptr, error);
 
 fail:
-   mongoc_server_stream_cleanup(server_stream);
    bson_destroy(&cmd);
    bson_destroy(&reply_local);
    return ok;
