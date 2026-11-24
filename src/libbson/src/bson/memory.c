@@ -21,6 +21,7 @@
 
 #include <bson/config.h>
 
+#include <mlib/alloc.h>
 #include <mlib/ckdint.h>
 
 #include <errno.h>
@@ -456,6 +457,37 @@ _aligned_alloc_as_malloc(size_t alignment, size_t num_bytes)
    return gMemVtable.malloc(num_bytes);
 }
 
+/**
+ * Allocator adapter function that exposes the libbson memory vtable as the global
+ * mlib allocator.
+ *
+ * This shim is only used when someone actually sets the libbson allocator.
+ *
+ * @param userdata Pointer to the libbson memory vtable. We could access it through
+ *    the global, but that's not necessary when we have a real userdata pointer.
+ * @param previous_size This is passed from mlib, but libbson allocators don't
+ *    actually use it. Take it here for compatibility.
+ */
+static void *
+_bson_mlib_reallocate(void *userdata, void *ptr, size_t size, size_t previous_size, size_t *out_new_size)
+{
+   const bson_mem_vtable_t *const vtable = (const bson_mem_vtable_t *)userdata;
+   BSON_UNUSED(previous_size);
+   if (size == 0) {
+      vtable->free(ptr);
+      if (out_new_size) {
+         *out_new_size = 0;
+      }
+      return NULL;
+   }
+   // Use the raw callbacks so that mlib allocation failure remains recoverable.
+   void *const ret = ptr ? vtable->realloc(ptr, size) : vtable->malloc(size);
+   if (ret && out_new_size) {
+      *out_new_size = size;
+   }
+   return ret;
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -495,6 +527,8 @@ bson_mem_set_vtable(const bson_mem_vtable_t *vtable)
    if (!gMemVtable.aligned_alloc) {
       gMemVtable.aligned_alloc = _aligned_alloc_as_malloc;
    }
+
+   mlib_set_allocator(_bson_mlib_reallocate, &gMemVtable);
 }
 
 void
@@ -508,4 +542,5 @@ bson_mem_restore_vtable(void)
                                .padding = {0}};
 
    bson_mem_set_vtable(&vtable);
+   mlib_restore_allocator();
 }
