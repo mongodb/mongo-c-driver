@@ -474,7 +474,7 @@ test_find_and_modify_hint(void)
    bson_error_t error;
    bool ret;
 
-   /* Test setting a hint as a string. Should fail on server < 4.2. */
+   /* Test setting a hint as a string. */
    client = test_framework_new_default_client();
    mongoc_client_set_error_api(client, MONGOC_ERROR_API_VERSION_2);
    coll = get_test_collection(client, "fam_hint");
@@ -482,19 +482,7 @@ test_find_and_modify_hint(void)
    mongoc_find_and_modify_opts_append(opts, tmp_bson("{'hint': 'abc'}"));
    mongoc_find_and_modify_opts_set_update(opts, tmp_bson("{}"));
    ret = mongoc_collection_find_and_modify_with_opts(coll, tmp_bson("{}"), opts, NULL /* reply */, &error);
-   if (test_framework_max_wire_version_at_least(WIRE_VERSION_FIND_AND_MODIFY_HINT)) {
-      ASSERT_OR_PRINT(ret, error);
-   } else if (test_framework_max_wire_version_at_least(WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR)) {
-      BSON_ASSERT(!ret);
-      BSON_ASSERT(error.domain == MONGOC_ERROR_SERVER);
-      /* server error. */
-   } else {
-      BSON_ASSERT(!ret);
-      ASSERT_ERROR_CONTAINS(error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support hint for findAndModify");
-   }
+   ASSERT_OR_PRINT(ret, error);
 
    mongoc_find_and_modify_opts_destroy(opts);
    mongoc_collection_destroy(coll);

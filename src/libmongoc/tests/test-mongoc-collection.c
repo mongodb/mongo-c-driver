@@ -4774,34 +4774,6 @@ test_create_indexes_with_opts_no_retry(void *unused)
    mongoc_client_destroy(client);
 }
 
-// Test creating an index with the 'commitQuorum' option results in a driver
-// error on Server Version <4.4.
-static void
-test_create_indexes_with_opts_commitQuorum_pre44(void *unused)
-{
-   BSON_UNUSED(unused);
-   mongoc_client_t *client = test_framework_new_default_client();
-   mongoc_collection_t *coll = get_test_collection(client, "test_create_indexes_with_opts");
-   bson_error_t error;
-
-   // Create index.
-   {
-      const bson_t *keys = tmp_bson("{'x': 1}");
-      mongoc_index_model_t *im = mongoc_index_model_new(keys, NULL);
-      bool ok = mongoc_collection_create_indexes_with_opts(
-         coll, &im, 1, tmp_bson("{'commitQuorum': 'majority'}"), NULL /* reply */, &error);
-      ASSERT(!ok);
-      ASSERT_ERROR_CONTAINS(error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support the commitQuorum option");
-      mongoc_index_model_destroy(im);
-   }
-
-   mongoc_collection_destroy(coll);
-   mongoc_client_destroy(client);
-}
-
 // Test creating an index with the 'commitQuorum' option succeeds on Server
 // Version >=4.4.
 static void
@@ -5124,15 +5096,6 @@ test_collection_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/Collection/hint_is_validated/aggregate", test_hint_is_validated_aggregate);
    TestSuite_AddLive(suite, "/Collection/hint_is_validated/countDocuments", test_hint_is_validated_countDocuments);
    TestSuite_AddLive(suite, "/Collection/create_indexes_with_opts", test_create_indexes_with_opts);
-   TestSuite_AddFull(suite,
-                     "/Collection/create_indexes_with_opts/commitQuorum/pre44 [lock:live-server]",
-                     test_create_indexes_with_opts_commitQuorum_pre44,
-                     NULL /* _dtor */,
-                     NULL /* _ctx */,
-                     // commitQuorum option is not available on standalone servers.
-                     test_framework_skip_if_not_replset,
-                     // Server Version 4.4 has Wire Version 9.
-                     test_framework_skip_if_max_wire_version_more_than_8);
    TestSuite_AddFull(suite,
                      "/Collection/create_indexes_with_opts/commitQuorum/post44 [lock:live-server]",
                      test_create_indexes_with_opts_commitQuorum_post44,
