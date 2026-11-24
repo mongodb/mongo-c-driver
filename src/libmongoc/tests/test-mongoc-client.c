@@ -1775,6 +1775,34 @@ test_get_database_names(void)
    mock_server_destroy(server);
 }
 
+/* A listDatabases reply whose "databases" array has a non-document element is invalid. The driver must fail with an
+ * error rather than abort the process. */
+static void
+test_get_database_names_non_document_element(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mongoc_client_t *client;
+   bson_error_t error = {0};
+   future_t *future;
+   request_t *request;
+   char **names;
+
+   mock_server_run(server);
+   client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   future = future_client_get_database_names_with_opts(client, NULL, &error);
+   request = mock_server_receives_msg(
+      server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'admin', 'listDatabases': 1, 'nameOnly': true}"));
+   reply_to_request(request, 0, 0, 0, 1, "{'ok': 1.0, 'databases': [{'name': 'a'}, 123]}");
+   names = future_get_char_ptr_ptr(future);
+   BSON_ASSERT(!names);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "not a document");
+
+   request_destroy(request);
+   future_destroy(future);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
 
 static void
 _test_mongoc_client_ipv6(bool pooled)
@@ -3888,6 +3916,8 @@ test_client_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
    TestSuite_AddFull(suite, "/Client/recovering", test_recovering, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite, "/Client/database_names", test_get_database_names);
+   TestSuite_AddMockServerTest(
+      suite, "/Client/database_names/non_document_element", test_get_database_names_non_document_element);
    TestSuite_AddFull(suite,
                      "/Client/connect/uds [lock:live-server]",
                      test_mongoc_client_unix_domain_socket,

@@ -1457,6 +1457,47 @@ test_set_id(void)
    mongoc_client_destroy(client);
 }
 
+/* A listIndexes reply with an index whose "key" is not a document is invalid. The driver must not abort. It ignores
+ * that index and creates the missing one. */
+static void
+test_ensure_index_non_document_key(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   bson_error_t error;
+
+   future_t *future = future_client_get_gridfs(client, "db", NULL, &error);
+
+   request_t *request =
+      mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'db', 'listIndexes': 'fs.chunks'}"));
+   reply_to_request_simple(request,
+                           "{'ok': 1, 'cursor': {'id': {'$numberLong': '0'}, 'ns': 'db.fs.chunks', "
+                           "'firstBatch': [{'v': 2, 'key': 123, 'name': 'bad'}]}}");
+   request_destroy(request);
+
+   request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'db', 'createIndexes': 'fs.chunks'}"));
+   reply_to_request_with_ok_and_destroy(request);
+
+   request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'db', 'listIndexes': 'fs.files'}"));
+   reply_to_request_simple(request,
+                           "{'ok': 0, 'errmsg': 'ns does not exist: db.fs.files', 'code': 26, "
+                           "'codeName': 'NamespaceNotFound'}");
+   request_destroy(request);
+
+   request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'db', 'createIndexes': 'fs.files'}"));
+   reply_to_request_with_ok_and_destroy(request);
+
+   mongoc_gridfs_t *gridfs = future_get_mongoc_gridfs_ptr(future);
+   ASSERT(gridfs);
+
+   future_destroy(future);
+   mongoc_gridfs_destroy(gridfs);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+
 /* check gridfs inherits read / write concern, read prefs from the client */
 static void
 test_inherit_client_config(void)
@@ -1901,6 +1942,7 @@ test_gridfs_install(TestSuite *suite)
    TestSuite_AddLive(suite, "/gridfs_old/find_with_opts", test_find_with_opts);
    TestSuite_AddMockServerTest(suite, "/gridfs_old/find_one_with_opts/limit", test_find_one_with_opts_limit);
    TestSuite_AddMockServerTest(suite, "/gridfs_old/append_to_short_final_chunk", test_append_to_short_final_chunk);
+   TestSuite_AddMockServerTest(suite, "/gridfs_old/ensure_index/non_document_key", test_ensure_index_non_document_key);
    TestSuite_AddLive(suite, "/gridfs_old/properties", test_properties);
    TestSuite_AddLive(suite, "/gridfs_old/empty", test_empty);
    TestSuite_AddLive(suite, "/gridfs_old/read", test_read);

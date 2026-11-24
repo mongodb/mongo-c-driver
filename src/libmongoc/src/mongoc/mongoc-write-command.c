@@ -571,15 +571,22 @@ _mongoc_write_result_merge(mongoc_write_result_t *result,   /* IN */
       /* writeConcernError is a subdocument in the server response
        * append it to the result->writeConcernErrors array */
       bson_iter_document(&iter, &len, &data);
-      BSON_ASSERT(bson_init_static(&write_concern_error, data, len));
+      if (!bson_init_static(&write_concern_error, data, len)) {
+         // Do not drop a write concern error: report the result as failed.
+         _mongoc_set_error(&result->error,
+                           MONGOC_ERROR_PROTOCOL,
+                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                           "Invalid server reply: writeConcernError is a malformed document");
+         result->failed = true;
+      } else {
+         bson_uint32_to_string(result->n_writeConcernErrors, &key, str, sizeof str);
 
-      bson_uint32_to_string(result->n_writeConcernErrors, &key, str, sizeof str);
+         if (!bson_append_document(&result->writeConcernErrors, key, -1, &write_concern_error)) {
+            MONGOC_ERROR("Error adding \"%s\" to writeConcernErrors.\n", key);
+         }
 
-      if (!bson_append_document(&result->writeConcernErrors, key, -1, &write_concern_error)) {
-         MONGOC_ERROR("Error adding \"%s\" to writeConcernErrors.\n", key);
+         result->n_writeConcernErrors++;
       }
-
-      result->n_writeConcernErrors++;
    }
 
    /* If a server error ocurred, then append the raw response to the

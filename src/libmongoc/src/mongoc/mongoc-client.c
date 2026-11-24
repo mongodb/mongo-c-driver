@@ -2304,7 +2304,11 @@ mongoc_client_get_database_names_with_opts(mongoc_client_t *client, const bson_t
       }
    }
 
-   if (!ret && !mongoc_cursor_error(cursor, error)) {
+   if (mongoc_cursor_error(cursor, error)) {
+      // Do not return a partial list if the cursor failed (e.g. on an invalid server reply).
+      bson_strfreev(ret);
+      ret = NULL;
+   } else if (!ret) {
       ret = (char **)bson_malloc0(sizeof(void *));
    }
 

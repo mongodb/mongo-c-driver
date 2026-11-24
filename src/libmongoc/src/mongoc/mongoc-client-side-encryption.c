@@ -2916,9 +2916,16 @@ mongoc_client_encryption_add_key_alt_name(mongoc_client_encryption_t *client_enc
 
          if (value->value_type == BSON_TYPE_DOCUMENT) {
             bson_t bson;
-            BSON_ASSERT(bson_init_static(&bson, value->value.v_doc.data, value->value.v_doc.data_len));
-            bson_copy_to(&bson, key_doc);
-            bson_destroy(&bson);
+            if (bson_init_static(&bson, value->value.v_doc.data, value->value.v_doc.data_len)) {
+               bson_copy_to(&bson, key_doc);
+               bson_destroy(&bson);
+            } else {
+               _mongoc_set_error(error,
+                                 MONGOC_ERROR_CLIENT,
+                                 MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                                 "expected field value to be a well-formed document or null");
+               ret = false;
+            }
          } else if (value->value_type == BSON_TYPE_NULL) {
             bson_t bson = BSON_INITIALIZER;
             bson_copy_to(&bson, key_doc);
@@ -3013,9 +3020,16 @@ mongoc_client_encryption_remove_key_alt_name(mongoc_client_encryption_t *client_
 
          if (value->value_type == BSON_TYPE_DOCUMENT) {
             bson_t bson;
-            BSON_ASSERT(bson_init_static(&bson, value->value.v_doc.data, value->value.v_doc.data_len));
-            bson_copy_to(&bson, key_doc);
-            bson_destroy(&bson);
+            if (bson_init_static(&bson, value->value.v_doc.data, value->value.v_doc.data_len)) {
+               bson_copy_to(&bson, key_doc);
+               bson_destroy(&bson);
+            } else {
+               _mongoc_set_error(error,
+                                 MONGOC_ERROR_CLIENT,
+                                 MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                                 "expected field value to be a well-formed document or null");
+               ret = false;
+            }
          } else if (value->value_type == BSON_TYPE_NULL) {
             bson_t bson = BSON_INITIALIZER;
             bson_copy_to(&bson, key_doc);

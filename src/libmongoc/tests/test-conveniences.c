@@ -1834,3 +1834,24 @@ semver_to_string(semver_t *semver)
 {
    return tmp_str("%d.%d.%d", semver->major, semver->minor, semver->patch);
 }
+
+
+void
+test_corrupt_subdocument_terminator(bson_t *doc, const char *path)
+{
+   bson_iter_t iter;
+   bson_iter_t found;
+   uint32_t len = 0;
+   const uint8_t *data = NULL;
+
+   ASSERT(bson_iter_init(&iter, doc));
+   ASSERT_WITH_MSG(bson_iter_find_descendant(&iter, path, &found), "path not found: %s", path);
+   if (BSON_ITER_HOLDS_ARRAY(&found)) {
+      bson_iter_array(&found, &len, &data);
+   } else {
+      ASSERT(BSON_ITER_HOLDS_DOCUMENT(&found));
+      bson_iter_document(&found, &len, &data);
+   }
+   ASSERT(data && len >= 5);
+   ((uint8_t *)data)[len - 1] = 1;
+}

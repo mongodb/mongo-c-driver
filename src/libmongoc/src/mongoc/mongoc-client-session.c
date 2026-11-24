@@ -667,9 +667,10 @@ _mongoc_client_session_handle_reply(mongoc_client_session_t *session,
    while (bson_iter_next(&iter)) {
       if (!strcmp(bson_iter_key(&iter), "$clusterTime") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
          bson_iter_document(&iter, &len, &data);
-         BSON_ASSERT(bson_init_static(&cluster_time, data, (size_t)len));
-
-         mongoc_client_session_advance_cluster_time(session, &cluster_time);
+         // A malformed $clusterTime (from the server reply) is ignored.
+         if (bson_init_static(&cluster_time, data, (size_t)len)) {
+            mongoc_client_session_advance_cluster_time(session, &cluster_time);
+         }
       } else if (!strcmp(bson_iter_key(&iter), "operationTime") && BSON_ITER_HOLDS_TIMESTAMP(&iter) &&
                  is_acknowledged) {
          bson_iter_timestamp(&iter, &operation_t, &operation_i);

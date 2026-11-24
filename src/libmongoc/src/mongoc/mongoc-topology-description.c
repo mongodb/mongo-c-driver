@@ -1755,7 +1755,10 @@ mongoc_topology_description_update_cluster_time(mongoc_topology_description_t *t
    }
 
    bson_iter_document(&iter, &size, &data);
-   BSON_ASSERT(bson_init_static(&cluster_time, data, (size_t)size));
+   if (!bson_init_static(&cluster_time, data, (size_t)size)) {
+      MONGOC_ERROR("Can't parse $clusterTime");
+      return;
+   }
 
    if (bson_empty(&td->cluster_time) || _mongoc_cluster_time_greater(&cluster_time, &td->cluster_time)) {
       bson_destroy(&td->cluster_time);
@@ -2463,9 +2466,9 @@ mongoc_topology_description_handle_hello(
       uint32_t len;
 
       bson_iter_document(&iter, &len, &bytes);
-      BSON_ASSERT(bson_init_static(&incoming_topology_version, bytes, len));
-
-      if (mongoc_server_description_topology_version_cmp(&sd->topology_version, &incoming_topology_version) == 1) {
+      // A malformed topologyVersion is not compared here. mongoc_server_description_handle_hello rejects it below.
+      if (bson_init_static(&incoming_topology_version, bytes, len) &&
+          mongoc_server_description_topology_version_cmp(&sd->topology_version, &incoming_topology_version) == 1) {
          TRACE("%s", "topology version is strictly less. Skipping.");
          if (prev_td) {
             mongoc_topology_description_cleanup(prev_td);

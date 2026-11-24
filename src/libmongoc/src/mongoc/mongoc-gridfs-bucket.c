@@ -368,6 +368,16 @@ mongoc_gridfs_bucket_open_download_stream(mongoc_gridfs_bucket_t *bucket,
       } else if (strcmp(key, "filename") == 0) {
          file->filename = bson_strdup(bson_iter_utf8(&iter, NULL));
       } else if (strcmp(key, "metadata") == 0) {
+         // The file document comes from the server: do not assume "metadata" is a document.
+         if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+            bson_destroy(&file_doc);
+            _mongoc_set_error(error,
+                              MONGOC_ERROR_GRIDFS,
+                              MONGOC_ERROR_GRIDFS_CORRUPT,
+                              "File document contains invalid metadata: not a document");
+            _mongoc_gridfs_bucket_file_destroy(file);
+            return NULL;
+         }
          bson_iter_document(&iter, &data_len, &data);
          file->metadata = bson_new_from_data(data, data_len);
       }

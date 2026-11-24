@@ -289,6 +289,12 @@ semver_to_string(semver_t *str);
  */
 #define BSON_FOREACH(bson, iter_varname) for (bson_iter_init(&(iter_varname), (bson)); bson_iter_next(&(iter_varname));)
 
+/* Corrupt the document or array at `path` (dotted path, as in bson_iter_find_descendant) in-place by overwriting its
+ * NUL terminator. The enclosing document stays well-formed, and iterating it still succeeds, but bson_init_static
+ * fails on the sub-document. Models a malformed sub-document in a server reply. */
+void
+test_corrupt_subdocument_terminator(bson_t *doc, const char *path);
+
 #define TEST_ERROR_DOMAIN 123456
 #define TEST_ERROR_CODE 654321
 #define test_set_error(error, ...) bson_set_error(error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)

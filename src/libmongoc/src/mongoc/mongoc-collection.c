@@ -1012,8 +1012,16 @@ _mongoc_collection_create_index_if_not_exists(mongoc_collection_t *collection,
          continue;
       }
 
+      // The listIndexes reply comes from the server. An index whose "key" is not a well-formed document cannot match
+      // the requested keys.
+      if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+         continue;
+      }
+
       bson_iter_document(&iter, &data_len, &data);
-      BSON_ASSERT(bson_init_static(&inner_doc, data, data_len));
+      if (!bson_init_static(&inner_doc, data, data_len)) {
+         continue;
+      }
 
       if (_mongoc_collection_index_keys_equal(keys, &inner_doc)) {
          index_exists = true;

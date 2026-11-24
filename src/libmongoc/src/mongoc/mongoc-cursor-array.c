@@ -52,8 +52,24 @@ _pop_from_batch(mongoc_cursor_t *cursor)
    const uint8_t *document;
    data_array_t *data = (data_array_t *)cursor->impl.data;
    if (bson_iter_next(&data->iter)) {
+      // The array comes from the server reply: do not assume its elements are documents.
+      if (!BSON_ITER_HOLDS_DOCUMENT(&data->iter)) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_CURSOR,
+                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                           "Invalid server reply: element of '%s' array is not a document",
+                           data->field_name);
+         return DONE;
+      }
       bson_iter_document(&data->iter, &document_len, &document);
-      BSON_ASSERT(bson_init_static(&data->bson, document, document_len));
+      if (!bson_init_static(&data->bson, document, document_len)) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_CURSOR,
+                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                           "Invalid server reply: element of '%s' array is a malformed document",
+                           data->field_name);
+         return DONE;
+      }
       cursor->current = &data->bson;
       return IN_BATCH;
    }
