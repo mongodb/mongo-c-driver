@@ -2769,13 +2769,13 @@ test_mongoc_uri_srv(void)
    /* "service.consul" has fewer than three labels: its {domainname} is the
     * entire hostname, and returned hosts must have at least one more domain
     * level than the SRV hostname. */
-   INVALID(uri, "service.consul");
+   INVALID_LEVELS(uri, "service.consul");
    /* hosts sharing the {domainname} ("service.consul") with enough levels are valid */
    VALID(uri, "a.service.consul");
    INVALID(uri, "service.a.consul");
    INVALID(uri, "a.com");
    /* the SRV hostname itself has too few domain levels to be returned */
-   INVALID(uri, "service.consul.");
+   INVALID_LEVELS(uri, "service.consul.");
    VALID(uri, "a.service.consul.");
    VALID(uri, "a.b.service.consul.");
 
@@ -2795,7 +2795,7 @@ test_mongoc_uri_srv(void)
    INVALID(uri, "test_1.evil.local");
    VALID(uri, "x.mongo.local");
    /* Prose test 3: the SRV hostname itself is not one more domain level */
-   INVALID(uri, "mongo.local");
+   INVALID_LEVELS(uri, "mongo.local");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb+srv://blogs.mongodb.com");

@@ -303,17 +303,21 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       const bool enough_levels = !(srv_labels < 3u && host_labels < srv_labels + 1u);
 
       if (!in_domain || !enough_levels) {
+         // The host is in the domain but not one level deeper for a
+         // service name with fewer than three labels
+         const bool is_service_name = strcmp(host_canonical.data, srv_hostname_canonical.data) == 0;
+         const bool lacks_level = (in_domain && !enough_levels) || (srv_labels < 3u && is_service_name);
          mstr_destroy(&srv_hostname_canonical);
          mstr_destroy(&host_canonical);
-         if (!in_domain) {
-            return _srv_validation_error(error, host, srv_hostname, "host must be subdomain of service name");
+         if (lacks_level) {
+            return _srv_validation_error(
+               error,
+               host,
+               srv_hostname,
+               "service name has fewer than three labels, so host must have at least one more domain level than the "
+               "service name");
          }
-         return _srv_validation_error(
-            error,
-            host,
-            srv_hostname,
-            "service name has fewer than three labels, so host must have at least one more domain level than the "
-            "service name");
+         return _srv_validation_error(error, host, srv_hostname, "host must be subdomain of service name");
       }
    }
 
