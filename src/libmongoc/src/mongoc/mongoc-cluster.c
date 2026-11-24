@@ -367,7 +367,10 @@ _mongoc_cluster_run_command_opquery_recv (
       goto done;
    }
 
-   mcd_rpc_message_ingress (rpc);
+   if (!mcd_rpc_message_ingress (rpc)) {
+      RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "unexpected opcode in reply");
+      goto done;
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
       RUN_CMD_ERR (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "could not decompress server reply");
@@ -832,7 +835,8 @@ _stream_run_hello (mongoc_cluster_t *cluster,
     * invalidates again.
     */
    mongoc_server_description_t empty_sd;
-   mongoc_server_description_init (&empty_sd, address, server_id);
+   // address is a connection address that was already parsed, so init cannot fail here.
+   BSON_ASSERT (mongoc_server_description_init (&empty_sd, address, server_id));
    mongoc_server_stream_t *const server_stream = _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, stream);
    mongoc_server_description_cleanup (&empty_sd);
 
@@ -883,7 +887,8 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       const int64_t rtt_msec = (bson_get_monotonic_time () - start) / 1000;
 
       ret_handshake_sd = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
-      mongoc_server_description_init (ret_handshake_sd, address, server_id);
+      // address is a connection address that was already parsed, so init cannot fail here.
+      BSON_ASSERT (mongoc_server_description_init (ret_handshake_sd, address, server_id));
       /* send the error from run_command IN to handle_hello */
       mongoc_server_description_handle_hello (ret_handshake_sd, &reply, rtt_msec, error);
 
@@ -3222,7 +3227,14 @@ _mongoc_cluster_run_opmsg_recv (
       network_error_reply (reply, cmd);
       goto done;
    }
-   mcd_rpc_message_ingress (rpc);
+   if (!mcd_rpc_message_ingress (rpc)) {
+      RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                   MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                   "malformed message from server: unexpected opCode");
+      _handle_network_error (cluster, server_stream, error);
+      server_stream->stream = NULL;
+      goto done;
+   }
 
    void *decompressed_data = NULL;
    size_t decompressed_data_len = 0u;

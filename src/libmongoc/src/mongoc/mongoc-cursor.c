@@ -1697,13 +1697,25 @@ _mongoc_cursor_response_read (mongoc_cursor_t *cursor, mongoc_cursor_response_t 
 
    ENTRY;
 
-   BSON_UNUSED (cursor);
+   if (bson_iter_next (&response->batch_iter)) {
+      /* the batch comes from the server reply: do not assume its elements are well-formed documents. A cursor error
+       * ends iteration (see _call_transition). */
+      if (!BSON_ITER_HOLDS_DOCUMENT (&response->batch_iter)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Invalid server reply: element of cursor batch is not a document");
+         return;
+      }
 
-   if (bson_iter_next (&response->batch_iter) && BSON_ITER_HOLDS_DOCUMENT (&response->batch_iter)) {
       bson_iter_document (&response->batch_iter, &data_len, &data);
-
-      /* bson_iter_next guarantees valid BSON, so this must succeed */
-      BSON_ASSERT (bson_init_static (&response->current_doc, data, data_len));
+      if (!bson_init_static (&response->current_doc, data, data_len)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Invalid server reply: element of cursor batch is a malformed document");
+         return;
+      }
       *bson = &response->current_doc;
    }
 }

@@ -1536,7 +1536,10 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology, const bson_t 
    }
 
    bson_iter_document (&iter, &size, &data);
-   BSON_ASSERT (bson_init_static (&cluster_time, data, (size_t) size));
+   if (!bson_init_static (&cluster_time, data, (size_t) size)) {
+      MONGOC_ERROR ("Can't parse $clusterTime");
+      return;
+   }
 
    td = mc_tpld_take_ref (topology);
 
@@ -1735,7 +1738,10 @@ _find_topology_version (const bson_t *reply, bson_t *topology_version)
       return;
    }
    bson_iter_document (&iter, &len, &bytes);
-   BSON_ASSERT (bson_init_static (topology_version, bytes, len));
+   if (!bson_init_static (topology_version, bytes, len)) {
+      // Malformed (from the server reply): treat as absent.
+      bson_init (topology_version);
+   }
 }
 
 

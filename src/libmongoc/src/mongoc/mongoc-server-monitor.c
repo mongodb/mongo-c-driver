@@ -21,6 +21,9 @@
 #include <mongoc/mongoc-client-private.h>
 #include <mongoc/mongoc-error-private.h>
 #include <mongoc/mongoc-handshake-private.h>
+#include <mongoc/mongoc-rpc-private.h>
+#include <mongoc/mongoc-server-description-private.h>
+#include <mongoc/mongoc-server-monitor-private.h>
 #include <mongoc/mongoc-ssl-private.h>
 #include <mongoc/mongoc-stream-private.h>
 #include <mongoc/mongoc-topology-background-monitoring-private.h>
@@ -92,6 +95,16 @@ struct _mongoc_server_monitor_t {
    bool is_rtt;
    mongoc_server_monitoring_mode_t mode;
 };
+
+/* Bound the reply size with the driver default. A server-advertised maxMessageSizeBytes may be arbitrarily large;
+ * the monitor sizes its read buffer from this value. Heartbeat replies are small. */
+static int32_t
+_monitor_max_msg_size (const mongoc_server_monitor_t *server_monitor)
+{
+   const int32_t advertised = server_monitor->description->max_msg_size;
+   return advertised > 0 && advertised < MONGOC_DEFAULT_MAX_MSG_SIZE ? advertised : MONGOC_DEFAULT_MAX_MSG_SIZE;
+}
+
 
 static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (mongoc_server_monitor_t *server_monitor,
                                                          mongoc_log_level_t level,
@@ -322,7 +335,9 @@ _server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monit
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
-   if (message_length < message_header_length) {
+   // Malformed message.
+   if (BSON_UNLIKELY (message_length < message_header_length ||
+                      message_length > _monitor_max_msg_size (server_monitor))) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -346,7 +361,13 @@ _server_monitor_send_and_recv_hello_opmsg (mongoc_server_monitor_t *server_monit
       goto fail;
    }
 
-   mcd_rpc_message_ingress (rpc);
+   if (!mcd_rpc_message_ingress (rpc)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "invalid reply from server: unexpected opcode");
+      goto fail;
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
@@ -435,7 +456,8 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
-   if (message_length < message_header_length) {
+   if (BSON_UNLIKELY (message_length < message_header_length ||
+                      message_length > _monitor_max_msg_size (server_monitor))) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -459,7 +481,13 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
       goto fail;
    }
 
-   mcd_rpc_message_ingress (rpc);
+   if (!mcd_rpc_message_ingress (rpc)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "invalid reply from server: unexpected opcode");
+      goto fail;
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error,
@@ -704,13 +732,13 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    // msgHeader consists of four int32 fields.
    const int32_t message_header_length = 4u * sizeof (int32_t);
 
-   if ((message_length < message_header_length) || (message_length > server_monitor->description->max_msg_size)) {
+   if ((message_length < message_header_length) || (message_length > _monitor_max_msg_size (server_monitor))) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "message size %" PRId32 " is not within expected range 16-%" PRId32 " bytes",
                       message_length,
-                      server_monitor->description->max_msg_size);
+                      _monitor_max_msg_size (server_monitor));
       GOTO (fail);
    }
 
@@ -732,7 +760,10 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
       GOTO (fail);
    }
 
-   mcd_rpc_message_ingress (rpc);
+   if (!mcd_rpc_message_ingress (rpc)) {
+      bson_set_error (error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "unexpected opcode in reply");
+      GOTO (fail);
+   }
 
    if (!mcd_rpc_message_decompress_if_necessary (rpc, &decompressed_data, &decompressed_data_len)) {
       bson_set_error (error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "decompression failure");
@@ -1008,8 +1039,9 @@ _server_monitor_check_server (mongoc_server_monitor_t *server_monitor,
    *cancelled = false;
    memset (&error, 0, sizeof (bson_error_t));
    description = BSON_ALIGNED_ALLOC0 (mongoc_server_description_t);
-   mongoc_server_description_init (
-      description, server_monitor->description->connection_address, server_monitor->description->id);
+   // connection_address was already parsed, so init cannot fail here.
+   BSON_ASSERT (mongoc_server_description_init (
+      description, server_monitor->description->connection_address, server_monitor->description->id));
    start_us = _now_us ();
 
    if (!server_monitor->stream) {

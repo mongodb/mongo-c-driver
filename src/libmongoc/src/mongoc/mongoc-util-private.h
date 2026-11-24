@@ -236,6 +236,12 @@ _mongoc_rand_size_t (size_t min, size_t max);
 
 /* _mongoc_iter_document_as_bson attempts to read the document from @iter into
  * @bson. */
+/* Copy @src to @dst, excluding the field named @exclude (if non-NULL). Unlike bson_copy_to_excluding_noinit, this does
+ * not abort on a malformed value: it returns false. @dst must be initialized by the caller. On failure @dst may have
+ * been partially written; the caller is responsible for destroying it. */
+bool
+_mongoc_bson_copy_to_excluding_noinit (const bson_t *src, bson_t *dst, const char *exclude);
+
 bool
 _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error_t *error);
 

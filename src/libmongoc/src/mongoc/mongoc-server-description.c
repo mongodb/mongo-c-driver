@@ -106,14 +106,15 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
  *       Initialize a new server_description_t.
  *
  * Returns:
- *       None.
+ *       True if @address was parsed and @sd was initialized, false otherwise.
+ *       On failure @sd must not be used.
  *
  * Side effects:
  *       None.
  *
  *--------------------------------------------------------------------------
  */
-void
+bool
 mongoc_server_description_init (mongoc_server_description_t *sd, const char *address, uint32_t id)
 {
    ENTRY;
@@ -121,17 +122,17 @@ mongoc_server_description_init (mongoc_server_description_t *sd, const char *add
    BSON_ASSERT (sd);
    BSON_ASSERT (address);
 
+   // Parse host. On failure do not initialize any members.
+   if (!_mongoc_host_list_from_string (&sd->host, address)) {
+      RETURN (false);
+   }
+
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
    sd->generation = 0;
    sd->opened = false;
    sd->_generation_map_ = mongoc_generation_map_new ();
-
-   if (!_mongoc_host_list_from_string (&sd->host, address)) {
-      MONGOC_WARNING ("Failed to parse uri for %s", address);
-      return;
-   }
 
    sd->connection_address = sd->host.host_and_port;
    bson_init (&sd->last_hello_response);
@@ -144,7 +145,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd, const char *add
 
    mongoc_server_description_reset (sd);
 
-   EXIT;
+   RETURN (true);
 }
 
 /*
@@ -211,6 +212,10 @@ mongoc_server_description_has_rs_member (const mongoc_server_description_t *serv
          BSON_ASSERT (bson_iter_init (&member_iter, rs_members[i]));
 
          while (bson_iter_next (&member_iter)) {
+            // A server may report non-string members. Ignore them.
+            if (!BSON_ITER_HOLDS_UTF8 (&member_iter)) {
+               continue;
+            }
             if (strcasecmp (address, bson_iter_utf8 (&member_iter, NULL)) == 0) {
                return true;
             }
@@ -574,29 +579,38 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          }
       } else if (strcmp ("isWritablePrimary", bson_iter_key (&iter)) == 0 ||
                  strcmp (HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          is_primary = bson_iter_bool (&iter);
       } else if (strcmp ("helloOk", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter))
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             GOTO (typefailure);
+         }
          sd->hello_ok = bson_iter_bool (&iter);
       } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter))
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
             GOTO (typefailure);
+         }
          sd->me = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         int32_t v;
+         if (!BSON_ITER_HOLDS_INT32 (&iter) || (v = bson_iter_int32 (&iter)) < 0) {
             GOTO (typefailure);
-         sd->max_msg_size = bson_iter_int32 (&iter);
+         }
+         sd->max_msg_size = v;
       } else if (strcmp ("maxBsonObjectSize", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         int32_t v;
+         if (!BSON_ITER_HOLDS_INT32 (&iter) || (v = bson_iter_int32 (&iter)) < 0) {
             GOTO (typefailure);
-         sd->max_bson_obj_size = bson_iter_int32 (&iter);
+         }
+         sd->max_bson_obj_size = v;
       } else if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter))
+         int32_t v;
+         if (!BSON_ITER_HOLDS_INT32 (&iter) || (v = bson_iter_int32 (&iter)) < 0) {
             GOTO (typefailure);
-         sd->max_write_batch_size = bson_iter_int32 (&iter);
+         }
+         sd->max_write_batch_size = v;
       } else if (strcmp ("logicalSessionTimeoutMinutes", bson_iter_key (&iter)) == 0) {
          if (BSON_ITER_HOLDS_NUMBER (&iter)) {
             sd->session_timeout_minutes = bson_iter_as_int64 (&iter);
@@ -1094,6 +1108,10 @@ mongoc_server_description_compressor_id (const mongoc_server_description_t *desc
    BSON_ASSERT (bson_iter_init (&iter, &description->compressors));
 
    while (bson_iter_next (&iter)) {
+      // The compressor list comes from the server reply: ignore non-string members.
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         continue;
+      }
       id = mongoc_compressor_name_to_id (bson_iter_utf8 (&iter, NULL));
       if (id != -1) {
          return id;

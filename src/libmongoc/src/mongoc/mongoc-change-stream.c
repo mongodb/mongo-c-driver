@@ -541,7 +541,14 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 
    /* copy the resume token. */
    bson_iter_document (&iter, &len, &data);
-   BSON_ASSERT (bson_init_static (&doc_resume_token, data, len));
+   if (!bson_init_static (&doc_resume_token, data, len)) {
+      bson_set_error (&stream->err,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
+                      "Cannot provide resume functionality when the resume "
+                      "token is malformed");
+      goto end;
+   }
    _set_resume_token (stream, &doc_resume_token);
 
    /* clear out the operation time, since we no longer need it to resume. */

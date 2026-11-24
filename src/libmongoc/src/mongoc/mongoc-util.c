@@ -637,8 +637,9 @@ _mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst)
    bson_iter_t iter;
    bson_iter_t label;
 
-   if (bson_iter_init_find (&iter, reply, "errorLabels")) {
-      BSON_ASSERT (bson_iter_recurse (&iter, &label));
+   // The reply comes from the server: do not assume "errorLabels" is an array.
+   if (bson_iter_init_find (&iter, reply, "errorLabels") && BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &label)) {
       while (bson_iter_next (&label)) {
          if (BSON_ITER_HOLDS_UTF8 (&label)) {
             _mongoc_bson_array_add_label (dst, bson_iter_utf8 (&label, NULL));
@@ -954,6 +955,33 @@ _mongoc_rand_size_t (size_t min, size_t max)
 #error "Implementation of _mongoc_simple_rand_size_t() requires size_t be exactly 32-bit or 64-bit"
 
 #endif
+
+bool
+_mongoc_bson_copy_to_excluding_noinit (const bson_t *src, bson_t *dst, const char *exclude)
+{
+   BSON_ASSERT_PARAM (src);
+   BSON_ASSERT_PARAM (dst);
+   BSON_OPTIONAL_PARAM (exclude);
+
+   bson_iter_t iter;
+   if (!bson_iter_init (&iter, src)) {
+      return true;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (exclude && strcmp (bson_iter_key (&iter), exclude) == 0) {
+         continue;
+      }
+      if (!bson_append_iter (dst, NULL, 0, &iter)) {
+         // A malformed nested document or array. Do not abort: report failure. `dst` may have been partially written
+         // and remains owned by the caller.
+         return false;
+      }
+   }
+
+   return true;
+}
+
 
 bool
 _mongoc_iter_document_as_bson (const bson_iter_t *iter, bson_t *bson, bson_error_t *error)
