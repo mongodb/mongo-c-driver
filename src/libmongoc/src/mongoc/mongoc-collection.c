@@ -2613,7 +2613,6 @@ mongoc_collection_create_indexes_with_opts(mongoc_collection_t *collection,
 
    ok = mongoc_collection_write_command_with_opts(collection, &cmd, opts, reply_ptr, error);
 
-fail:
    bson_destroy(&cmd);
    bson_destroy(&reply_local);
    return ok;
