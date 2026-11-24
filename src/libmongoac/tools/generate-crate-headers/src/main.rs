@@ -116,10 +116,12 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "client_session" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "collection_options" => &[],
             "collection" => &[
+                "mongoac/aggregate_options-fwd.h",
                 "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
                 "mongoac/count_options-fwd.h",
+                "mongoac/cursor-fwd.h",
                 "mongoac/delete_options-fwd.h",
                 "mongoac/delete_result-fwd.h",
                 "mongoac/drop_collection_options-fwd.h",

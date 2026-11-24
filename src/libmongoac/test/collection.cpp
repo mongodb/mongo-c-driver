@@ -23,7 +23,9 @@
 #include <mongoac/test/memory.hh>
 #include <mongoac/test/string.hh>
 
+#include <mongoac/aggregate_options.h>
 #include <mongoac/client.h>
+#include <mongoac/cursor.h>
 #include <mongoac/database.h>
 #include <mongoac/delete_options.h>
 #include <mongoac/delete_result.h>
@@ -1357,5 +1359,240 @@ TEST_CASE("delete_one_async", "[mongoac][collection]") {
 
         CHECK(mongoac_delete_result_get_deleted_count(result, error) == 1u);
         CHECK_MONGOAC_ERROR_OK(error);
+    }
+}
+
+TEST_CASE("aggregate", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_aggregate"_sv, nullptr), &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    mongoac_database_drop(db, nullptr, nullptr, error);
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const cursor =
+            make_unique(mongoac_collection_aggregate(nullptr, nullptr, {}, nullptr, error), &mongoac_cursor_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(cursor == nullptr);
+    }
+
+    SECTION("null pipeline") {
+        auto const cursor =
+            make_unique(mongoac_collection_aggregate(coll, nullptr, {}, nullptr, error), &mongoac_cursor_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(cursor == nullptr);
+    }
+
+    SECTION("null pipeline element") {
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {}});
+
+        auto const cursor = make_unique(
+            mongoac_collection_aggregate(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_cursor_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(cursor == nullptr);
+    }
+
+    SECTION("invalid BSON pipeline element") {
+        std::uint8_t const bytes = {};
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {&bytes, 1u}});
+
+        auto const cursor = make_unique(
+            mongoac_collection_aggregate(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_cursor_destroy);
+        CHECK_MONGOAC_ERROR_INVALID_ARGUMENT(error);
+        CHECK(cursor == nullptr);
+    }
+
+    SECTION("none") {
+        auto const match = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(match.get())});
+
+        auto const cursor_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_aggregate(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_cursor_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const cursor = cursor_owner.get();
+        REQUIRE(cursor != nullptr);
+
+        auto const doc_owner = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        CHECK(doc_owner == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"_id": 3}, {"_id": 1}, {"_id": 2}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const sort = REQUIRE_MAKE_UNIQUE(R"({"$sort": {"_id": 1}})"_bson, &bson_destroy);
+        auto const match = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": {"$lt": 3}}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(sort.get()), to_mongoac(match.get())});
+
+        auto const cursor_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_aggregate(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr, error),
+            &mongoac_cursor_destroy);
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const cursor = cursor_owner.get();
+        REQUIRE(cursor != nullptr);
+
+        auto const doc1_owner = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const doc2_owner = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const idempotency = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const doc1 = REQUIRE_BSON_STATIC(doc1_owner);
+        auto const doc2 = REQUIRE_BSON_STATIC(doc2_owner);
+
+        auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
+        auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
+
+        CHECK(bson_iter_int32(&id1) == 1);
+        CHECK(bson_iter_int32(&id2) == 2);
+
+        CHECK(done == nullptr);
+        CHECK(idempotency == nullptr);
+    }
+}
+
+TEST_CASE("aggregate_async", "[mongoac][collection]") {
+    auto const error_owner = REQUIRE_MAKE_UNIQUE(mongoac_error_new(), &mongoac_error_destroy);
+    auto const error = error_owner.get();
+    auto const client_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_client_new_with_uri_str(default_uri(), nullptr), &mongoac_client_destroy);
+    auto const client = client_owner.get();
+    auto const runtime_owner = REQUIRE_MAKE_UNIQUE(mongoac_client_get_runtime(client), &mongoac_runtime_destroy);
+    auto const runtime = runtime_owner.get();
+    auto const db_owner = REQUIRE_MAKE_UNIQUE(
+        mongoac_client_get_database(client, "mongoac_collection_aggregate_async"_sv, nullptr),
+        &mongoac_database_destroy);
+    auto const db = db_owner.get();
+    auto const coll_owner =
+        REQUIRE_MAKE_UNIQUE(mongoac_database_get_collection(db, "coll"_sv, nullptr), &mongoac_collection_destroy);
+    auto const coll = coll_owner.get();
+
+    mongoac_database_drop(db, nullptr, nullptr, error);
+    REQUIRE_MONGOAC_ERROR_OK(error);
+
+    SECTION("null collection") {
+        auto const future =
+            make_unique(mongoac_collection_aggregate_async(nullptr, nullptr, {}, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null pipeline") {
+        auto const future =
+            make_unique(mongoac_collection_aggregate_async(coll, nullptr, {}, nullptr), &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("null pipeline element") {
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {}});
+
+        auto const future = make_unique(
+            mongoac_collection_aggregate_async(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("invalid BSON pipeline element") {
+        std::uint8_t const bytes = {};
+        auto const stage = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(stage.get()), {&bytes, 1u}});
+
+        auto const future = make_unique(
+            mongoac_collection_aggregate_async(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        CHECK(future == nullptr);
+    }
+
+    SECTION("none") {
+        auto const match = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": 1}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(match.get())});
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_aggregate_async(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const cursor = mongoac_future_get_cursor(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(cursor != nullptr);
+
+        auto const owned_owner = REQUIRE_MAKE_UNIQUE(mongoac_cursor_clone(cursor), &mongoac_cursor_destroy);
+        auto const owned = owned_owner.get();
+
+        auto const doc_owner = from_mongoac(mongoac_cursor_next(owned, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        CHECK(doc_owner == nullptr);
+    }
+
+    SECTION("basic") {
+        auto const insert = REQUIRE_MAKE_UNIQUE(
+            R"({"insert": "coll", "documents": [{"_id": 3}, {"_id": 1}, {"_id": 2}]})"_bson, &bson_destroy);
+
+        (void)from_mongoac(mongoac_database_run_command(db, nullptr, to_mongoac(insert.get()), nullptr, error));
+        REQUIRE_MONGOAC_ERROR_OK(error);
+
+        auto const sort = REQUIRE_MAKE_UNIQUE(R"({"$sort": {"_id": 1}})"_bson, &bson_destroy);
+        auto const match = REQUIRE_MAKE_UNIQUE(R"({"$match": {"_id": {"$lt": 3}}})"_bson, &bson_destroy);
+        auto const pipeline = to_array<mongoac_bson_view_t>({to_mongoac(sort.get()), to_mongoac(match.get())});
+
+        auto const future_owner = REQUIRE_MAKE_UNIQUE(
+            mongoac_collection_aggregate_async(coll, nullptr, {pipeline.data(), pipeline.size()}, nullptr),
+            &mongoac_future_destroy);
+        auto const future = future_owner.get();
+
+        mongoac_runtime_block_on(runtime, future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const cursor_view = mongoac_future_get_cursor(future, error);
+        CHECK_MONGOAC_ERROR_OK(error);
+        REQUIRE(cursor_view != nullptr);
+
+        auto const cursor_owner = REQUIRE_MAKE_UNIQUE(mongoac_cursor_clone(cursor_view), &mongoac_cursor_destroy);
+        auto const cursor = cursor_owner.get();
+
+        auto const doc1_owner = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const doc2_owner = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const done = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+        auto const idempotency = from_mongoac(mongoac_cursor_next(cursor, error));
+        CHECK_MONGOAC_ERROR_OK(error);
+
+        auto const doc1 = REQUIRE_BSON_STATIC(doc1_owner);
+        auto const doc2 = REQUIRE_BSON_STATIC(doc2_owner);
+
+        auto const id1 = REQUIRE_BSON_ITER_FIND(doc1, "_id");
+        auto const id2 = REQUIRE_BSON_ITER_FIND(doc2, "_id");
+
+        CHECK(bson_iter_int32(&id1) == 1);
+        CHECK(bson_iter_int32(&id2) == 2);
+
+        CHECK(done == nullptr);
+        CHECK(idempotency == nullptr);
     }
 }
