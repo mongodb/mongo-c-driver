@@ -984,7 +984,7 @@ test_max_commit_time_ms_is_reset(void *ctx)
 
    BSON_UNUSED(ctx);
 
-   rs = mock_rs_with_auto_hello(WIRE_VERSION_4_2, true /* has primary */, 2 /* secondaries */, 0 /* arbiters */);
+   rs = mock_rs_with_auto_hello(WIRE_VERSION_4_4, true /* has primary */, 2 /* secondaries */, 0 /* arbiters */);
 
    mock_rs_run(rs);
    uri = mongoc_uri_copy(mock_rs_get_uri(rs));
