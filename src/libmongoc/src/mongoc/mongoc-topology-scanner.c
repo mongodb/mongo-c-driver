@@ -1755,18 +1755,31 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded(const mongoc_topology_scann
 
    bson_t hello_redacted;
    bson_init(&hello_redacted);
-   bson_copy_to_excluding_noinit(reply, &hello_redacted, "speculativeAuthenticate", NULL);
 
-   mongoc_structured_log(ts->log_and_monitor->structured_log,
-                         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-                         MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
-                         "Server heartbeat succeeded",
-                         oid("topologyId", &ts->topology_id),
-                         utf8("serverHost", host->host),
-                         int32("serverPort", host->port),
-                         boolean("awaited", false),
-                         monotonic_time_duration(mlib_microseconds_count(elapsed)),
-                         bson_as_json("reply", &hello_redacted));
+   /* Omit reply from the log if it cannot be copied. */
+   const bool reply_valid = _mongoc_bson_copy_to_excluding_noinit(reply, &hello_redacted, "speculativeAuthenticate");
+   if (reply_valid) {
+      mongoc_structured_log(ts->log_and_monitor->structured_log,
+                            MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                            MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                            "Server heartbeat succeeded",
+                            oid("topologyId", &ts->topology_id),
+                            utf8("serverHost", host->host),
+                            int32("serverPort", host->port),
+                            boolean("awaited", false),
+                            monotonic_time_duration(mlib_microseconds_count(elapsed)),
+                            bson_as_json("reply", &hello_redacted));
+   } else {
+      mongoc_structured_log(ts->log_and_monitor->structured_log,
+                            MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                            MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                            "Server heartbeat succeeded",
+                            oid("topologyId", &ts->topology_id),
+                            utf8("serverHost", host->host),
+                            int32("serverPort", host->port),
+                            boolean("awaited", false),
+                            monotonic_time_duration(mlib_microseconds_count(elapsed)));
+   }
 
    if (ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;

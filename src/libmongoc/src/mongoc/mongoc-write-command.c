@@ -1246,7 +1246,10 @@ _mongoc_write_error_update_if_unsupported_storage_engine(bool cmd_ret, bson_erro
 
       if (reply) {
          bson_t *new_reply = bson_new();
-         bson_copy_to_excluding_noinit(reply, new_reply, "errmsg", NULL);
+         if (!_mongoc_bson_copy_to_excluding_noinit(reply, new_reply, "errmsg")) {
+            bson_destroy(new_reply);
+            new_reply = bson_new();
+         }
          BSON_APPEND_UTF8(new_reply, "errmsg", replacement);
          bson_destroy(reply);
          bson_steal(reply, new_reply);

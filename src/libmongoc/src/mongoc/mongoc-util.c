@@ -1024,6 +1024,33 @@ _mongoc_rand_size_t(size_t min, size_t max)
 #endif
 
 bool
+_mongoc_bson_copy_to_excluding_noinit(const bson_t *src, bson_t *dst, const char *exclude)
+{
+   BSON_ASSERT_PARAM(src);
+   BSON_ASSERT_PARAM(dst);
+   BSON_OPTIONAL_PARAM(exclude);
+
+   bson_iter_t iter;
+   if (!bson_iter_init(&iter, src)) {
+      return true;
+   }
+
+   while (bson_iter_next(&iter)) {
+      if (exclude && strcmp(bson_iter_key(&iter), exclude) == 0) {
+         continue;
+      }
+      if (!bson_append_iter(dst, NULL, 0, &iter)) {
+         // A malformed nested document or array. Do not abort: report failure. `dst` may have been partially written
+         // and remains owned by the caller.
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
+bool
 _mongoc_iter_document_as_bson(const bson_iter_t *iter, bson_t *bson, bson_error_t *error)
 {
    uint32_t len;

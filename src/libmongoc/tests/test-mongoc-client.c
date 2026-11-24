@@ -3857,6 +3857,62 @@ test_killCursors(void)
    mongoc_client_destroy(client);
 }
 
+/* Respond to hello with a malformed nested document, and to ping with success. The heartbeat monitoring path must not
+ * abort on the malformed reply. */
+static bool
+_auto_hello_malformed_hosts(request_t *request, void *data)
+{
+   BSON_UNUSED(data);
+
+   if (!request->is_command) {
+      return false;
+   }
+
+   if (!strcmp(request->command_name, "ping")) {
+      reply_to_request_simple(request, "{'ok': 1}");
+      request_destroy(request);
+      return true;
+   }
+
+   if (strcmp(request->command_name, "hello") != 0 && strcasecmp(request->command_name, "isMaster") != 0) {
+      return false;
+   }
+
+   bson_t *reply = BCON_NEW("ok",
+                            BCON_INT32(1),
+                            "isWritablePrimary",
+                            BCON_BOOL(true),
+                            "minWireVersion",
+                            BCON_INT32(WIRE_VERSION_MIN),
+                            "maxWireVersion",
+                            BCON_INT32(WIRE_VERSION_MAX),
+                            "hosts",
+                            "[",
+                            BCON_UTF8("a:1"),
+                            "]");
+   test_corrupt_subdocument_terminator(reply, "hosts");
+   reply_to_op_msg_request(request, MONGOC_MSG_NONE, reply);
+   bson_destroy(reply);
+   request_destroy(request);
+   return true;
+}
+
+static void
+test_heartbeat_malformed_hello(void)
+{
+   mock_server_t *server = mock_server_new();
+   mock_server_autoresponds(server, _auto_hello_malformed_hosts, NULL, NULL);
+   mock_server_run(server);
+
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   bson_error_t error;
+   bool ok = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
 void
 test_client_install(TestSuite *suite)
 {
@@ -3960,6 +4016,7 @@ test_client_install(TestSuite *suite)
       suite, "/Client/database_names/missing_databases", test_get_database_names_missing_databases);
    TestSuite_AddMockServerTest(
       suite, "/Client/database_names/non_array_databases", test_get_database_names_non_array_databases);
+   TestSuite_AddMockServerTest(suite, "/Client/heartbeat/malformed_hello", test_heartbeat_malformed_hello);
    TestSuite_AddFull(suite,
                      "/Client/connect/uds [lock:live-server]",
                      test_mongoc_client_unix_domain_socket,
