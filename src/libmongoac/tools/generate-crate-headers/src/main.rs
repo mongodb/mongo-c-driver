@@ -157,6 +157,7 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "cursor_type" => &["stdint.h"],
             "database_options" => &[],
             "database" => &[
+                "mongoac/aggregate_options-fwd.h",
                 "mongoac/bson.h",
                 "mongoac/client_session-fwd.h",
                 "mongoac/client-fwd.h",
