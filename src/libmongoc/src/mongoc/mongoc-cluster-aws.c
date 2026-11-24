@@ -747,7 +747,7 @@ fail:
  *
  * Credentials may be passed in multiple ways. The precedence is as follows:
  * 1. Username/password in the URI (and authMechanismProperty for session token)
- * 2. From environment variables.
+ * 2. From cache and environment variables.
  * 3. From querying the ECS local HTTP server.
  * 4. From querying the EC2 local HTTP server.
  *
@@ -762,14 +762,6 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri, _mongoc_aws_credentials_t *cr
    BSON_ASSERT_PARAM (creds);
    *creds = MONGOC_AWS_CREDENTIALS_INIT;
 
-   // Check cache before enviroment variables. This is required by the
-   // specification: "Even if the environment variables are present in
-   // subsequent authorization attempts, the driver MUST use the cached
-   // credentials"
-   if (_mongoc_aws_credentials_cache_get (creds)) {
-      goto succeed;
-   }
-
    if (uri) {
       TRACE ("%s", "checking URI for credentials");
       if (!_obtain_creds_from_uri (creds, uri, error)) {
@@ -778,6 +770,14 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri, _mongoc_aws_credentials_t *cr
       if (!_creds_empty (creds)) {
          goto succeed;
       }
+   }
+
+   // Check cache before enviroment variables. This is required by the
+   // specification: "Even if the environment variables are present in
+   // subsequent authorization attempts, the driver MUST use the cached
+   // credentials"
+   if (_mongoc_aws_credentials_cache_get (creds)) {
+      goto succeed;
    }
 
    TRACE ("%s", "checking environment variables for credentials");
