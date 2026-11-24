@@ -1,3 +1,17 @@
+libmongoc 2.5.10
+================
+
+## Fixes
+
+* Fix improper validation of OCSP responder authorization.
+* Fix incorrect AWS credential selection when a process-wide credential cache is populated.
+* Fix possible abort or invalid memory access when handling malformed server replies.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
 libmongoc 2.5.9
 ===============
 
