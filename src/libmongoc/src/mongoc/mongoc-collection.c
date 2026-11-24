@@ -1012,8 +1012,16 @@ _mongoc_collection_create_index_if_not_exists(mongoc_collection_t *collection,
          continue;
       }
 
+      // The listIndexes reply comes from the server. An index whose "key" is not a well-formed document cannot match
+      // the requested keys.
+      if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+         continue;
+      }
+
       bson_iter_document(&iter, &data_len, &data);
-      BSON_ASSERT(bson_init_static(&inner_doc, data, data_len));
+      if (!bson_init_static(&inner_doc, data, data_len)) {
+         continue;
+      }
 
       if (_mongoc_collection_index_keys_equal(keys, &inner_doc)) {
          index_exists = true;
@@ -2415,7 +2423,7 @@ mongoc_collection_find_and_modify_with_opts(mongoc_collection_t *collection,
       cluster, &parts.assembled, parts.is_retryable_write, &retry_server_stream, reply, error);
 
    if (bson_iter_init_find(&iter, reply, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
-      const char *errmsg = NULL;
+      const char *errmsg = "(missing or non-string errmsg)";
       uint32_t code = 0;
 
       BSON_ASSERT(bson_iter_recurse(&iter, &inner));
@@ -2423,7 +2431,9 @@ mongoc_collection_find_and_modify_with_opts(mongoc_collection_t *collection,
          if (BSON_ITER_IS_KEY(&inner, "code")) {
             code = (uint32_t)bson_iter_as_int64(&inner);
          } else if (BSON_ITER_IS_KEY(&inner, "errmsg")) {
-            errmsg = bson_iter_utf8(&inner, NULL);
+            if (BSON_ITER_HOLDS_UTF8(&inner)) {
+               errmsg = bson_iter_utf8(&inner, NULL);
+            }
          }
       }
       _mongoc_set_error_with_category(

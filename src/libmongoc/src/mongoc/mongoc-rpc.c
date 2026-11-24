@@ -87,7 +87,8 @@ _parse_error_reply(const bson_t *doc, bool check_wce, uint32_t *code, const char
     * based on how it is configured to error. */
    if (bson_iter_init_find(&iter, doc, "code") && BSON_ITER_HOLDS_NUMBER(&iter)) {
       *code = (uint32_t)bson_iter_as_int64(&iter);
-      BSON_ASSERT(*code);
+      // The server replied with an error but may omit or zero the code. _mongoc_cmd_set_error maps code 0 to a
+      // driver error code.
       found_error = true;
    }
 
@@ -111,7 +112,7 @@ _parse_error_reply(const bson_t *doc, bool check_wce, uint32_t *code, const char
          BSON_ASSERT(bson_iter_recurse(&iter, &child));
          if (bson_iter_find(&child, "code") && BSON_ITER_HOLDS_NUMBER(&child)) {
             *code = (uint32_t)bson_iter_as_int64(&child);
-            BSON_ASSERT(*code);
+            // See the note on the top-level "code" field: code 0 is handled by _mongoc_cmd_set_error.
             found_error = true;
          }
          BSON_ASSERT(bson_iter_recurse(&iter, &child));
@@ -386,7 +387,7 @@ mcd_rpc_message_egress(const mcd_rpc_message *rpc)
    }
 }
 
-void
+bool
 mcd_rpc_message_ingress(const mcd_rpc_message *rpc)
 {
    // `mcd_rpc_message_ingress` is expected be called after
@@ -402,45 +403,26 @@ mcd_rpc_message_ingress(const mcd_rpc_message *rpc)
    }
 
    switch (op_code) {
-   case MONGOC_OP_CODE_COMPRESSED:
-      BSON_UNREACHABLE("invalid opcode (double compression?!)");
-      break;
-
    case MONGOC_OP_CODE_MSG:
       mongoc_counter_op_ingress_msg_inc();
       mongoc_counter_op_ingress_total_inc();
-      break;
+      return true;
 
    case MONGOC_OP_CODE_REPLY:
       mongoc_counter_op_ingress_reply_inc();
       mongoc_counter_op_ingress_total_inc();
-      break;
+      return true;
 
+   case MONGOC_OP_CODE_COMPRESSED:
    case MONGOC_OP_CODE_UPDATE:
-      BSON_UNREACHABLE("unexpected OP_UPDATE ingress");
-      break;
-
    case MONGOC_OP_CODE_INSERT:
-      BSON_UNREACHABLE("unexpected OP_INSERT ingress");
-      break;
-
    case MONGOC_OP_CODE_QUERY:
-      BSON_UNREACHABLE("unexpected OP_QUERY ingress");
-      break;
-
    case MONGOC_OP_CODE_GET_MORE:
-      BSON_UNREACHABLE("unexpected OP_GET_MORE ingress");
-      break;
-
    case MONGOC_OP_CODE_DELETE:
-      BSON_UNREACHABLE("unexpected OP_DELETE ingress");
-      break;
-
    case MONGOC_OP_CODE_KILL_CURSORS:
-      BSON_UNREACHABLE("unexpected OP_KILL_CURSORS ingress");
-      break;
-
    default:
-      BSON_UNREACHABLE("invalid opcode");
+      /* A reply must be OP_MSG or OP_REPLY (possibly wrapped in OP_COMPRESSED). The server may send anything; report
+       * an error rather than aborting. */
+      return false;
    }
 }

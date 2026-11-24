@@ -455,6 +455,88 @@ _test_invalid_wc_server_error(void *unused)
    mongoc_client_destroy(client);
 }
 
+/* A write reply whose writeErrors[].errmsg is not a string is invalid. The driver must report an error, not abort. */
+static void
+test_write_errors_non_string_errmsg(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   bson_t reply;
+   bson_error_t error = {0};
+
+   future_t *future = future_collection_insert_one(coll, tmp_bson("{'x': 1}"), NULL, &reply, &error);
+   request_t *request =
+      mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'insert': 'coll'}"), tmp_bson("{'x': 1}"));
+   reply_to_request_simple(request, "{'ok': 1, 'n': 1, 'writeErrors': [{'index': 0, 'code': 1, 'errmsg': 123}]}");
+   request_destroy(request);
+
+   ASSERT(!future_get_bool(future));
+   ASSERT_CMPINT(error.code, ==, 1);
+   ASSERT_CONTAINS(error.message, "non-string errmsg");
+   future_destroy(future);
+
+   bson_destroy(&reply);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+/* A write reply whose errorLabels is not an array is invalid. The driver must ignore it, not abort. */
+static void
+test_error_labels_non_array(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   bson_t reply;
+   bson_error_t error = {0};
+
+   future_t *future = future_collection_insert_one(coll, tmp_bson("{'x': 1}"), NULL, &reply, &error);
+   request_t *request =
+      mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'insert': 'coll'}"), tmp_bson("{'x': 1}"));
+   reply_to_request_simple(request, "{'ok': 1, 'n': 1, 'errorLabels': 123}");
+   request_destroy(request);
+
+   ASSERT_OR_PRINT(future_get_bool(future), error);
+   future_destroy(future);
+
+   bson_destroy(&reply);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+/* A reply that is an error (ok: 0) but carries code 0 is invalid but must not abort. _mongoc_cmd_set_error maps it
+ * to a driver error. */
+static void
+test_error_reply_zero_code(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   bson_t reply;
+   bson_error_t error = {0};
+
+   future_t *future = future_collection_insert_one(coll, tmp_bson("{'x': 1}"), NULL, &reply, &error);
+   request_t *request =
+      mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'insert': 'coll'}"), tmp_bson("{'x': 1}"));
+   reply_to_request_simple(request, "{'ok': 0, 'code': 0, 'errmsg': 'invalid reply'}");
+   request_destroy(request);
+
+   ASSERT(!future_get_bool(future));
+   ASSERT_CONTAINS(error.message, "invalid reply");
+   future_destroy(future);
+
+   bson_destroy(&reply);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
 void
 test_write_command_install(TestSuite *suite)
 {
@@ -468,6 +550,9 @@ test_write_command_install(TestSuite *suite)
                      NULL,
                      TestSuite_CheckLive);
    TestSuite_AddMockServerTest(suite, "/WriteCommand/insert_disconnect_mid_batch", test_disconnect_mid_batch);
+   TestSuite_AddMockServerTest(suite, "/WriteCommand/non_string_errmsg", test_write_errors_non_string_errmsg);
+   TestSuite_AddMockServerTest(suite, "/WriteCommand/non_array_error_labels", test_error_labels_non_array);
+   TestSuite_AddMockServerTest(suite, "/WriteCommand/error_reply_zero_code", test_error_reply_zero_code);
    TestSuite_AddFull(suite,
                      "/WriteCommand/invalid_wc_server_error [lock:live-server]",
                      _test_invalid_wc_server_error,

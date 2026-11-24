@@ -445,7 +445,11 @@ _mongoc_async_cmd_phase_recv_rpc(mongoc_async_cmd_t *acmd)
             &acmd->error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply from server.");
          return MONGOC_ASYNC_CMD_ERROR;
       }
-      mcd_rpc_message_ingress(acmd->rpc);
+      if (!mcd_rpc_message_ingress(acmd->rpc)) {
+         _mongoc_set_error(
+            &acmd->error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "Invalid reply from server.");
+         return MONGOC_ASYNC_CMD_ERROR;
+      }
 
       void *decompressed_data = NULL;
       size_t decompressed_data_len = 0u;

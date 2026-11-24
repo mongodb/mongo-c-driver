@@ -295,8 +295,16 @@ _mongoc_topology_scanner_parse_speculative_authentication(const bson_t *hello, b
       return;
    }
 
+   // The field comes from the server reply. If it is not a well-formed document, treat it as absent: speculative
+   // authentication is ignored and the client authenticates normally.
+   if (!BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+      return;
+   }
+
    bson_iter_document(&iter, &data_len, &data);
-   BSON_ASSERT(bson_init_static(&auth_response, data, data_len));
+   if (!bson_init_static(&auth_response, data, data_len)) {
+      return;
+   }
 
    bson_destroy(speculative_authenticate);
    bson_copy_to(&auth_response, speculative_authenticate);
@@ -1113,7 +1121,8 @@ _async_success(mongoc_async_cmd_t *acmd, const bson_t *hello_response, mlib_dura
       mongoc_server_description_t sd;
 
       /* Store a server description associated with the handshake. */
-      mongoc_server_description_init(&sd, node->host.host_and_port, node->id);
+      // node->host is already parsed, so init cannot fail here.
+      BSON_ASSERT(mongoc_server_description_init(&sd, node->host.host_and_port, node->id));
       mongoc_server_description_handle_hello(&sd, hello_response, mlib_milliseconds_count(elapsed), &acmd->error);
       node->handshake_sd = mongoc_server_description_new_copy(&sd);
       mongoc_server_description_cleanup(&sd);
@@ -1746,18 +1755,31 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded(const mongoc_topology_scann
 
    bson_t hello_redacted;
    bson_init(&hello_redacted);
-   bson_copy_to_excluding_noinit(reply, &hello_redacted, "speculativeAuthenticate", NULL);
 
-   mongoc_structured_log(ts->log_and_monitor->structured_log,
-                         MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
-                         MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
-                         "Server heartbeat succeeded",
-                         oid("topologyId", &ts->topology_id),
-                         utf8("serverHost", host->host),
-                         int32("serverPort", host->port),
-                         boolean("awaited", false),
-                         monotonic_time_duration(mlib_microseconds_count(elapsed)),
-                         bson_as_json("reply", &hello_redacted));
+   /* Omit reply from the log if it cannot be copied. */
+   const bool reply_valid = _mongoc_bson_copy_to_excluding_noinit(reply, &hello_redacted, "speculativeAuthenticate");
+   if (reply_valid) {
+      mongoc_structured_log(ts->log_and_monitor->structured_log,
+                            MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                            MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                            "Server heartbeat succeeded",
+                            oid("topologyId", &ts->topology_id),
+                            utf8("serverHost", host->host),
+                            int32("serverPort", host->port),
+                            boolean("awaited", false),
+                            monotonic_time_duration(mlib_microseconds_count(elapsed)),
+                            bson_as_json("reply", &hello_redacted));
+   } else {
+      mongoc_structured_log(ts->log_and_monitor->structured_log,
+                            MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
+                            MONGOC_STRUCTURED_LOG_COMPONENT_TOPOLOGY,
+                            "Server heartbeat succeeded",
+                            oid("topologyId", &ts->topology_id),
+                            utf8("serverHost", host->host),
+                            int32("serverPort", host->port),
+                            boolean("awaited", false),
+                            monotonic_time_duration(mlib_microseconds_count(elapsed)));
+   }
 
    if (ts->log_and_monitor->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;

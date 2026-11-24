@@ -2536,9 +2536,27 @@ test_handshake_metadata_append_strip_delimiters(void)
    _reset_handshake();
 }
 
+/* A hello reply whose saslSupportedMechs array is malformed must be ignored, not abort. */
+static void
+test_handshake_malformed_sasl_supported_mechs(void)
+{
+   bson_t *hello = BCON_NEW("saslSupportedMechs", "[", "SCRAM-SHA-1", "]");
+   test_corrupt_subdocument_terminator(hello, "saslSupportedMechs");
+
+   // A malformed array is a parse error: parsing reports no mechanisms and does not abort.
+   mongoc_handshake_sasl_supported_mechs_t mechs;
+   _mongoc_handshake_parse_sasl_supported_mechs(hello, &mechs);
+   ASSERT(!mechs.scram_sha_1);
+   ASSERT(!mechs.scram_sha_256);
+
+   bson_destroy(hello);
+}
+
 void
 test_handshake_install(TestSuite *suite)
 {
+   TestSuite_Add(
+      suite, "/MongoDB/handshake/malformed_sasl_supported_mechs", test_handshake_malformed_sasl_supported_mechs);
    TestSuite_Add(suite, "/MongoDB/handshake/appname_in_uri", test_mongoc_handshake_appname_in_uri);
    TestSuite_Add(suite, "/MongoDB/handshake/appname_frozen_single", test_mongoc_handshake_appname_frozen_single);
    TestSuite_Add(suite, "/MongoDB/handshake/appname_frozen_pooled", test_mongoc_handshake_appname_frozen_pooled);

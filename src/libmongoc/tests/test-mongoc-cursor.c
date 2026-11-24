@@ -925,6 +925,66 @@ test_cursor_new_invalid(void)
 }
 
 
+/* A server reply whose cursor batch has an invalid element must end iteration with an error, not abort. When
+ * `malformed` is true the element is a document with a corrupted terminator. Otherwise, it is not a document. */
+static void
+_test_cursor_invalid_batch_element(bool malformed)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_collection_t *coll = mongoc_client_get_collection(client, "db", "coll");
+   mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(coll, tmp_bson("{}"), NULL, NULL);
+   const bson_t *doc;
+   bson_error_t error;
+
+   future_t *future = future_cursor_next(cursor, &doc);
+   request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'find': 'coll'}"));
+
+   bson_t *reply;
+   if (malformed) {
+      reply = tmp_bson(BSON_STR({
+         "ok" : 1,
+         "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.coll", "firstBatch" : [ {"a" : 1}, {"b" : 2} ]}
+      }));
+      test_corrupt_subdocument_terminator(reply, "cursor.firstBatch.1");
+   } else {
+      reply = tmp_bson(BSON_STR(
+         {"ok" : 1, "cursor" : {"id" : {"$numberLong" : "0"}, "ns" : "db.coll", "firstBatch" : [ {"a" : 1}, 123 ]}}));
+   }
+   reply_to_op_msg_request(request, MONGOC_MSG_NONE, reply);
+   request_destroy(request);
+
+   // The valid first document is returned.
+   ASSERT(future_get_bool(future));
+   future_destroy(future);
+
+   // The invalid element fails the cursor.
+   ASSERT(!mongoc_cursor_next(cursor, &doc));
+   ASSERT(mongoc_cursor_error(cursor, &error));
+   ASSERT_ERROR_CONTAINS(error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         malformed ? "malformed document" : "not a document");
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(coll);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+static void
+test_cursor_batch_non_document_element(void)
+{
+   _test_cursor_invalid_batch_element(false);
+}
+
+static void
+test_cursor_batch_malformed_document(void)
+{
+   _test_cursor_invalid_batch_element(true);
+}
+
 static void
 test_cursor_new_tailable_await(void)
 {
@@ -2931,6 +2991,8 @@ test_cursor_install(TestSuite *suite)
                      ""
                      "/Cursor/kill/live",
                      test_kill_cursor_live);
+   TestSuite_AddMockServerTest(suite, "/Cursor/batch/non_document_element", test_cursor_batch_non_document_element);
+   TestSuite_AddMockServerTest(suite, "/Cursor/batch/malformed_document", test_cursor_batch_malformed_document);
    TestSuite_AddMockServerTest(suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_AddMockServerTest(suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
    TestSuite_AddLive(suite, "/Cursor/empty_collection", test_cursor_empty_collection);

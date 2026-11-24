@@ -1775,6 +1775,72 @@ test_get_database_names(void)
    mock_server_destroy(server);
 }
 
+/* A listDatabases reply whose "databases" array has a non-document element is invalid. The driver must fail with an
+ * error rather than abort the process. */
+/* A listDatabases reply without a well-formed "databases" array is invalid. The driver must report an error, not
+ * silently return an empty list. */
+static void
+_test_get_database_names_invalid_databases(const char *reply_json)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   bson_error_t error = {0};
+   char **names;
+
+   future_t *future = future_client_get_database_names_with_opts(client, NULL, &error);
+   request_t *request = mock_server_receives_msg(
+      server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'admin', 'listDatabases': 1, 'nameOnly': true}"));
+   reply_to_request_simple(request, reply_json);
+   request_destroy(request);
+
+   names = future_get_char_ptr_ptr(future);
+   BSON_ASSERT(!names);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_INVALID_REPLY, "databases");
+
+   future_destroy(future);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+static void
+test_get_database_names_missing_databases(void)
+{
+   _test_get_database_names_invalid_databases("{'ok': 1}");
+}
+
+static void
+test_get_database_names_non_array_databases(void)
+{
+   _test_get_database_names_invalid_databases("{'ok': 1, 'databases': 123}");
+}
+
+static void
+test_get_database_names_non_document_element(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mongoc_client_t *client;
+   bson_error_t error = {0};
+   future_t *future;
+   request_t *request;
+   char **names;
+
+   mock_server_run(server);
+   client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   future = future_client_get_database_names_with_opts(client, NULL, &error);
+   request = mock_server_receives_msg(
+      server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'admin', 'listDatabases': 1, 'nameOnly': true}"));
+   reply_to_request(request, 0, 0, 0, 1, "{'ok': 1.0, 'databases': [{'name': 'a'}, 123]}");
+   names = future_get_char_ptr_ptr(future);
+   BSON_ASSERT(!names);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_CURSOR, MONGOC_ERROR_CURSOR_INVALID_CURSOR, "not a document");
+
+   request_destroy(request);
+   future_destroy(future);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
 
 static void
 _test_mongoc_client_ipv6(bool pooled)
@@ -3791,6 +3857,62 @@ test_killCursors(void)
    mongoc_client_destroy(client);
 }
 
+/* Respond to hello with a malformed nested document, and to ping with success. The heartbeat monitoring path must not
+ * abort on the malformed reply. */
+static bool
+_auto_hello_malformed_hosts(request_t *request, void *data)
+{
+   BSON_UNUSED(data);
+
+   if (!request->is_command) {
+      return false;
+   }
+
+   if (!strcmp(request->command_name, "ping")) {
+      reply_to_request_simple(request, "{'ok': 1}");
+      request_destroy(request);
+      return true;
+   }
+
+   if (strcmp(request->command_name, "hello") != 0 && strcasecmp(request->command_name, "isMaster") != 0) {
+      return false;
+   }
+
+   bson_t *reply = BCON_NEW("ok",
+                            BCON_INT32(1),
+                            "isWritablePrimary",
+                            BCON_BOOL(true),
+                            "minWireVersion",
+                            BCON_INT32(WIRE_VERSION_MIN),
+                            "maxWireVersion",
+                            BCON_INT32(WIRE_VERSION_MAX),
+                            "hosts",
+                            "[",
+                            BCON_UTF8("a:1"),
+                            "]");
+   test_corrupt_subdocument_terminator(reply, "hosts");
+   reply_to_op_msg_request(request, MONGOC_MSG_NONE, reply);
+   bson_destroy(reply);
+   request_destroy(request);
+   return true;
+}
+
+static void
+test_heartbeat_malformed_hello(void)
+{
+   mock_server_t *server = mock_server_new();
+   mock_server_autoresponds(server, _auto_hello_malformed_hosts, NULL, NULL);
+   mock_server_run(server);
+
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   bson_error_t error;
+   bool ok = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
 void
 test_client_install(TestSuite *suite)
 {
@@ -3888,6 +4010,13 @@ test_client_install(TestSuite *suite)
    TestSuite_AddMockServerTest(suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
    TestSuite_AddFull(suite, "/Client/recovering", test_recovering, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddMockServerTest(suite, "/Client/database_names", test_get_database_names);
+   TestSuite_AddMockServerTest(
+      suite, "/Client/database_names/non_document_element", test_get_database_names_non_document_element);
+   TestSuite_AddMockServerTest(
+      suite, "/Client/database_names/missing_databases", test_get_database_names_missing_databases);
+   TestSuite_AddMockServerTest(
+      suite, "/Client/database_names/non_array_databases", test_get_database_names_non_array_databases);
+   TestSuite_AddMockServerTest(suite, "/Client/heartbeat/malformed_hello", test_heartbeat_malformed_hello);
    TestSuite_AddFull(suite,
                      "/Client/connect/uds [lock:live-server]",
                      test_mongoc_client_unix_domain_socket,

@@ -433,6 +433,75 @@ test_server_description_connection_id(void)
    }
 }
 
+/* A hello reply's "compression" array may contain non-string members. They must be ignored, not passed to
+ * strcasecmp as NULL. */
+static void
+test_server_description_non_string_compressor(void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error = {0};
+   bson_t hello = BSON_INITIALIZER;
+
+   BCON_APPEND(&hello,
+               "ok",
+               BCON_INT32(1),
+               "isWritablePrimary",
+               BCON_BOOL(true),
+               "minWireVersion",
+               BCON_INT32(WIRE_VERSION_MIN),
+               "maxWireVersion",
+               BCON_INT32(WIRE_VERSION_MAX),
+               "compression",
+               "[",
+               BCON_INT32(1),
+               BCON_UTF8("noop"),
+               "]");
+
+   mongoc_server_description_init(&sd, "host:1234", 1);
+   mongoc_server_description_handle_hello(&sd, &hello, 0 /* rtt */, &error);
+   // "noop" is the only supported entry, so a non-negative id proves the non-string member was skipped.
+   ASSERT_CMPINT(mongoc_server_description_compressor_id(&sd), !=, -1);
+
+   mongoc_server_description_cleanup(&sd);
+   bson_destroy(&hello);
+}
+
+#define HELLO(...)                        \
+   BCON_NEW("ok",                         \
+            BCON_INT32(1),                \
+            "isWritablePrimary",          \
+            BCON_BOOL(true),              \
+            "minWireVersion",             \
+            BCON_INT32(WIRE_VERSION_MIN), \
+            "maxWireVersion",             \
+            BCON_INT32(WIRE_VERSION_MAX), \
+            __VA_ARGS__)
+
+static void
+_test_hello_expect_unknown(bson_t *hello)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error = {0};
+
+   mongoc_server_description_init(&sd, "host:1234", 1);
+   mongoc_server_description_handle_hello(&sd, hello, 0 /* rtt */, &error);
+   ASSERT_CMPINT(sd.type, ==, MONGOC_SERVER_UNKNOWN);
+
+   mongoc_server_description_cleanup(&sd);
+   bson_destroy(hello);
+}
+
+/* Out-of-range or wrong-typed hello values mark the server Unknown rather than being used. */
+static void
+test_server_description_invalid_hello_values(void)
+{
+   _test_hello_expect_unknown(HELLO("maxWriteBatchSize", BCON_INT32(-1)));
+   _test_hello_expect_unknown(HELLO("maxMessageSizeBytes", BCON_INT32(-1)));
+   _test_hello_expect_unknown(HELLO("maxBsonObjectSize", BCON_INT32(-1)));
+}
+
+#undef HELLO
+
 static void
 test_server_description_hello_type_error(void)
 {
@@ -585,5 +654,7 @@ test_server_description_install(TestSuite *suite)
    TestSuite_Add(suite, "/server_description/legacy_hello_ok", test_server_description_legacy_hello_ok);
    TestSuite_Add(suite, "/server_description/connection_id", test_server_description_connection_id);
    TestSuite_Add(suite, "/server_description/hello_type_error", test_server_description_hello_type_error);
+   TestSuite_Add(suite, "/server_description/non_string_compressor", test_server_description_non_string_compressor);
+   TestSuite_Add(suite, "/server_description/invalid_hello_values", test_server_description_invalid_hello_values);
    TestSuite_Add(suite, "/server_description/copy", test_server_description_copy);
 }

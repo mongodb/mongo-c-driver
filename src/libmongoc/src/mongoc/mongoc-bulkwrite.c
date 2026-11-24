@@ -1264,6 +1264,24 @@ lookup_string(
    return false;
 }
 
+/* Apply a server-reported count. Counts must be non-negative and must not overflow. */
+static bool
+_apply_count(int64_t *dst, int64_t n, const char *key, mongoc_bulkwriteexception_t *exc)
+{
+   if (n < 0 || *dst > INT64_MAX - n) {
+      bson_error_t error;
+      _mongoc_set_error(&error,
+                        MONGOC_ERROR_COMMAND,
+                        MONGOC_ERROR_COMMAND_INVALID_ARG,
+                        "invalid server reply: `%s` is negative or overflows",
+                        key);
+      _bulkwriteexception_set_error(exc, &error);
+      return false;
+   }
+   *dst += n;
+   return true;
+}
+
 // `_bulkwritereturn_apply_reply` applies the top-level fields of a server reply to the returned results.
 static bool
 _bulkwritereturn_apply_reply(mongoc_bulkwritereturn_t *self, const bson_t *cmd_reply)
@@ -1278,37 +1296,49 @@ _bulkwritereturn_apply_reply(mongoc_bulkwritereturn_t *self, const bson_t *cmd_r
    if (!lookup_as_int64(cmd_reply, "nInserted", &nInserted, NULL, self->exc)) {
       return false;
    }
-   self->res->insertedcount += nInserted;
+   if (!_apply_count(&self->res->insertedcount, nInserted, "nInserted", self->exc)) {
+      return false;
+   }
 
    int64_t nMatched;
    if (!lookup_as_int64(cmd_reply, "nMatched", &nMatched, NULL, self->exc)) {
       return false;
    }
-   self->res->matchedcount += nMatched;
+   if (!_apply_count(&self->res->matchedcount, nMatched, "nMatched", self->exc)) {
+      return false;
+   }
 
    int64_t nModified;
    if (!lookup_as_int64(cmd_reply, "nModified", &nModified, NULL, self->exc)) {
       return false;
    }
-   self->res->modifiedcount += nModified;
+   if (!_apply_count(&self->res->modifiedcount, nModified, "nModified", self->exc)) {
+      return false;
+   }
 
    int64_t nDeleted;
    if (!lookup_as_int64(cmd_reply, "nDeleted", &nDeleted, NULL, self->exc)) {
       return false;
    }
-   self->res->deletedcount += nDeleted;
+   if (!_apply_count(&self->res->deletedcount, nDeleted, "nDeleted", self->exc)) {
+      return false;
+   }
 
    int64_t nUpserted;
    if (!lookup_as_int64(cmd_reply, "nUpserted", &nUpserted, NULL, self->exc)) {
       return false;
    }
-   self->res->upsertedcount += nUpserted;
+   if (!_apply_count(&self->res->upsertedcount, nUpserted, "nUpserted", self->exc)) {
+      return false;
+   }
 
    int64_t nErrors;
    if (!lookup_as_int64(cmd_reply, "nErrors", &nErrors, NULL, self->exc)) {
       return false;
    }
-   self->res->errorscount += nErrors;
+   if (!_apply_count(&self->res->errorscount, nErrors, "nErrors", self->exc)) {
+      return false;
+   }
 
    bson_error_t error;
    bson_iter_t iter;
