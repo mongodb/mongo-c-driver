@@ -275,11 +275,22 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
                                       uri->srv_allowed_hosts_suffix);
       }
    } else {
-      // No options configured: host must be a descendant of the service
-      // root: if service is "a.foo.co" host can be like "a.foo.co",
-      // "b.foo.co", "a.b.foo.co", etc.
-      const char *srv_host = strchr(srv_hostname_canonical.data, '.');
-      BSON_ASSERT(srv_host);
+      // No options configured. Derive the {domainname} that returned hostnames
+      // are validated against (Initial DNS Seedlist Discovery Spec):
+      //   - "a.b.c.com" -> ".b.c.com"  (the portion after the leftmost label)
+      //   - "mongo.local" -> ".mongo.local"  (fewer than three labels: the
+      //     entire hostname is its own {domainname})
+      // The leading dot keeps the comparison label-aligned.
+      const size_t srv_labels = count_dots(srv_hostname_canonical.data) + 1u;
+      char srv_host[BSON_HOST_NAME_MAX + 2];
+      if (srv_labels >= 3u) {
+         const char *const first_dot = strchr(srv_hostname_canonical.data, '.');
+         BSON_ASSERT(first_dot);
+         bson_strncpy(srv_host, first_dot, sizeof srv_host);
+      } else {
+         const int n = bson_snprintf(srv_host, sizeof srv_host, ".%s", srv_hostname_canonical.data);
+         BSON_ASSERT(n > 0);
+      }
 
       const bool in_domain =
          strlen(host_canonical.data) >= strlen(srv_host) && mongoc_ends_with(host_canonical.data, srv_host);
@@ -288,22 +299,25 @@ mongoc_uri_validate_srv_result(const mongoc_uri_t *uri, const char *host, bson_e
       // hostname must have at least one more domain level than the SRV
       // hostname. Both strings are canonicalized (no empty labels), so
       // labels = dots + 1.
-      const size_t srv_labels = count_dots(srv_hostname_canonical.data) + 1u;
       const size_t host_labels = count_dots(host_canonical.data) + 1u;
       const bool enough_levels = !(srv_labels < 3u && host_labels < srv_labels + 1u);
 
       if (!in_domain || !enough_levels) {
+         // The host is in the domain but not one level deeper for a
+         // service name with fewer than three labels
+         const bool is_service_name = strcmp(host_canonical.data, srv_hostname_canonical.data) == 0;
+         const bool lacks_level = (in_domain && !enough_levels) || (srv_labels < 3u && is_service_name);
          mstr_destroy(&srv_hostname_canonical);
          mstr_destroy(&host_canonical);
-         if (!in_domain) {
-            return _srv_validation_error(error, host, srv_hostname, "host must be subdomain of service name");
+         if (lacks_level) {
+            return _srv_validation_error(
+               error,
+               host,
+               srv_hostname,
+               "service name has fewer than three labels, so host must have at least one more domain level than the "
+               "service name");
          }
-         return _srv_validation_error(
-            error,
-            host,
-            srv_hostname,
-            "service name has fewer than three labels, so host must have at least one more domain level than the "
-            "service name");
+         return _srv_validation_error(error, host, srv_hostname, "host must be subdomain of service name");
       }
    }
 
@@ -543,8 +557,10 @@ _parse_srv_hostname(mongoc_uri_t *uri, mstr_view str, bson_error_t *error)
          MONGOC_URI_ERROR(error, "Invalid SRV service name: %s", error->message);
          return false;
       }
-      if (!valid_hostname(service) || count_dots(service) < 2) {
-         MONGOC_URI_ERROR(error, "%s", "Invalid SRV service name: expected a hostname with at least three components");
+      if (!valid_hostname(service)) {
+         // DRIVERS-2922: hostnames with fewer than three labels are valid; they
+         // are validated further only at DNS result validation time.
+         MONGOC_URI_ERROR(error, "%s", "Invalid SRV service name: expected a well-formed hostname");
          bson_free(service);
          return false;
       }

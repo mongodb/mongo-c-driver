@@ -1506,9 +1506,12 @@ test_mongoc_uri_new_with_error(void)
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://x", &error));
    ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name");
 
-   error = BSON_ERROR_INIT;
-   ASSERT(!mongoc_uri_new_with_error("mongodb+srv://x.y", &error));
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid SRV service name");
+   /* DRIVERS-2922: SRV hostnames with fewer than three parts are valid.
+    * "x.y" parses; it fails later, at DNS validation. */
+   uri = mongoc_uri_new_with_error("mongodb+srv://x.y", &error);
+   ASSERT_OR_PRINT(uri, error);
+   ASSERT_CMPSTR(mongoc_uri_get_srv_hostname(uri), "x.y");
+   mongoc_uri_destroy(uri);
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb+srv://a.b.c,d.e.f", &error));
@@ -2676,16 +2679,27 @@ test_mongoc_uri_srv(void)
    capture_logs(true);
 
    ASSERT(!mongoc_uri_new("mongodb+srv://"));
-   /* requires a subdomain, domain, and TLD: "a.example.com" */
-   ASSERT(!mongoc_uri_new("mongodb+srv://foo"));
-   ASSERT(!mongoc_uri_new("mongodb+srv://foo."));
+   /* DRIVERS-2922: SRV hostnames with fewer than three parts are allowed
+    * (prose test 1). */
+   uri = mongoc_uri_new_with_error("mongodb+srv://localhost", &error);
+   ASSERT_OR_PRINT(uri, error);
+   ASSERT_CMPSTR(mongoc_uri_get_srv_hostname(uri), "localhost");
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new_with_error("mongodb+srv://mongo.local", &error);
+   ASSERT_OR_PRINT(uri, error);
+   ASSERT_CMPSTR(mongoc_uri_get_srv_hostname(uri), "mongo.local");
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://example.com");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+
+   /* still invalid: empty labels and control characters */
    ASSERT(!mongoc_uri_new("mongodb+srv://.foo"));
    ASSERT(!mongoc_uri_new("mongodb+srv://.."));
    ASSERT(!mongoc_uri_new("mongodb+srv://.a."));
    ASSERT(!mongoc_uri_new("mongodb+srv://.a.b.c.com"));
    ASSERT(!mongoc_uri_new("mongodb+srv://foo\x08\x00bar"));
    ASSERT(!mongoc_uri_new("mongodb+srv://foo%00bar"));
-   ASSERT(!mongoc_uri_new("mongodb+srv://example.com"));
 
    const struct {
       const char *uri;
@@ -2752,18 +2766,72 @@ test_mongoc_uri_srv(void)
    ASSERT(mongoc_uri_get_hosts(uri) == NULL);
 
    INVALID_NAME(uri, ".consul.");
-   /* "service.consul" has fewer than three labels, so returned hosts must
-    * have at least one more domain level than the SRV hostname. */
+   /* "service.consul" has fewer than three labels: its {domainname} is the
+    * entire hostname, and returned hosts must have at least one more domain
+    * level than the SRV hostname. */
    INVALID_LEVELS(uri, "service.consul");
-   /* hosts sharing the {domainname} ("consul") with enough levels are valid */
+   /* hosts sharing the {domainname} ("service.consul") with enough levels are valid */
    VALID(uri, "a.service.consul");
-   VALID(uri, "service.a.consul");
+   INVALID(uri, "service.a.consul");
    INVALID(uri, "a.com");
+   /* a host that is only the last label of the service name is not in the domain */
+   INVALID(uri, "consul");
    /* the SRV hostname itself has too few domain levels to be returned */
    INVALID_LEVELS(uri, "service.consul.");
    VALID(uri, "a.service.consul.");
    VALID(uri, "a.b.service.consul.");
 
+   mongoc_uri_destroy(uri);
+
+   /* Prose test 2: the {domainname} of an SRV hostname with one or two parts
+    * is the entire hostname; hosts sharing only a broader suffix are rejected. */
+   uri = mongoc_uri_new("mongodb+srv://localhost");
+   ASSERT(uri);
+   INVALID_LEVELS(uri, "localhost");
+   INVALID(uri, "localhost.mongodb");
+   INVALID(uri, "test_1.evil.local");
+   VALID(uri, "a.localhost");
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb+srv://mongo.local");
+   ASSERT(uri);
+   INVALID(uri, "test_1.evil.local");
+   VALID(uri, "x.mongo.local");
+   /* Prose test 3: the SRV hostname itself is not one more domain level */
+   INVALID_LEVELS(uri, "mongo.local");
+   /* test canonicalization */
+   VALID(uri, "X.MONGO.LOCAL");
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb+srv://blogs.mongodb.com");
+   ASSERT(uri);
+   INVALID(uri, "blogs.evil.com");
+   mongoc_uri_destroy(uri);
+
+   /* Prose test 4: a returned host sharing the {domainname} without a
+    * separating dot is rejected. */
+   uri = mongoc_uri_new("mongodb+srv://localhost");
+   ASSERT(uri);
+   INVALID(uri, "test_1.cluster_1localhost");
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://mongo.local");
+   ASSERT(uri);
+   INVALID(uri, "test_1.my_hostmongo.local");
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://blogs.mongodb.com");
+   ASSERT(uri);
+   INVALID(uri, "cluster.testmongodb.com");
+   mongoc_uri_destroy(uri);
+
+   /* DRIVERS-3162: when the SRV hostname has three or more labels, the
+    * returned hostname may be identical to it. */
+   uri = mongoc_uri_new("mongodb+srv://a.b.com");
+   ASSERT(uri);
+   VALID(uri, "a.b.com");
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb+srv://a.b.c.com");
+   ASSERT(uri);
+   VALID(uri, "a.b.c.com");
    mongoc_uri_destroy(uri);
 }
 
