@@ -305,6 +305,8 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
    ctx.hosts = NULL;
    expect_ssl = strstr(uri_str, "ssl=false") == NULL;
    expect_error = _mongoc_lookup_bool(test, "error", false /* default */);
+   // Spec: if `ping` is false, drivers MUST NOT run a "ping" operation.
+   const bool do_ping = _mongoc_lookup_bool(test, "ping", true /* default */);
 
    uri = mongoc_uri_new_with_error(uri_str, &error);
    if (!expect_error) {
@@ -381,7 +383,7 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
    if (pooled) {
       if (n_hosts > 0 && !expect_error) {
          WAIT_UNTIL(_host_list_matches(test, &ctx));
-      } else {
+      } else if (do_ping) {
          r = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT(!r);
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
@@ -395,7 +397,7 @@ _test_dns_maybe_pooled(bson_t *test, bool pooled)
          r = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
          ASSERT_OR_PRINT(r, error);
          WAIT_UNTIL(_host_list_matches(test, &ctx));
-      } else {
+      } else if (do_ping) {
          r = mongoc_client_command_simple(client, "admin", tmp_bson("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT(!r);
          ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_SERVER_SELECTION, MONGOC_ERROR_SERVER_SELECTION_FAILURE, "");
@@ -662,6 +664,36 @@ test_srv_polling_mocked(void *unused)
    _mongoc_host_list_destroy_all(expected);
    _mongoc_host_list_destroy_all(hosts);
    ASSERT_CAPTURED_LOG("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
+
+   mongoc_topology_description_cleanup(&td);
+   mongoc_uri_destroy(uri);
+   mongoc_log_and_monitor_instance_destroy_contents(&log_and_monitor);
+}
+
+static void
+test_srv_polling_normalize_hosts(void)
+{
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init(&log_and_monitor);
+
+   mongoc_topology_description_t td;
+   mongoc_topology_description_init(&td, 0);
+
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb+srv://server.test.com/?tls=true");
+   capture_logs(true);
+
+   /* Polled hosts are normalized (trailing dot stripped, ASCII lowercased)
+    * before validation and before populating the topology: the topology
+    * stores the canonical form. */
+   mongoc_host_list_t *hosts = MAKE_HOSTS("A.TEST.COM.", "b.test.com");
+   mongoc_host_list_t *expected = MAKE_HOSTS("a.test.com", "b.test.com");
+   bson_error_t error;
+   bool ret = mongoc_topology_apply_scanned_srv_hosts(uri, &td, &log_and_monitor, hosts, &error);
+   ASSERT_OR_PRINT(ret, error);
+   check_topology_description(&td, expected);
+   _mongoc_host_list_destroy_all(expected);
+   _mongoc_host_list_destroy_all(hosts);
+   ASSERT_NO_CAPTURED_LOGS("topology");
 
    mongoc_topology_description_cleanup(&td);
    mongoc_uri_destroy(uri);
@@ -1416,6 +1448,8 @@ test_dns_install(TestSuite *suite)
    test_all_spec_tests(suite);
    TestSuite_AddFull(
       suite, "/initial_dns_seedlist_discovery/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
+   TestSuite_Add(
+      suite, "/initial_dns_seedlist_discovery/srv_polling/normalize_hosts", test_srv_polling_normalize_hosts);
    TestSuite_AddFull(suite,
                      "/initial_dns_seedlist_discovery/small_initial_buffer [lock:live-server]",
                      test_small_initial_buffer,

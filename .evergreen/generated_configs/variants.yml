@@ -247,7 +247,7 @@ buildvariants:
   - name: mongoac
     display_name: mongoac
     tasks:
-      - name: mongoac-rhel8-latest-gcc
+      - name: mongoac-rhel9-latest-gcc
   - name: oidc
     display_name: OIDC
     tasks:

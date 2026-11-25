@@ -634,6 +634,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ts-pool.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-punycode.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
@@ -1112,6 +1113,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ns-validation.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-punycode.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
@@ -1329,6 +1331,7 @@ if (ENABLE_EXAMPLES AND ENABLE_SHARED)
       mongoc_add_example (client-side-encryption-explicit ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c)
       mongoc_add_example (client-side-encryption-auto-decryption ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c)
       mongoc_add_example (client-side-encryption-doc-snippets ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
+      mongoc_add_example (client-side-encryption-kms-http-proxy ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-kms-http-proxy.c)
    endif ()
 
    # examples/tutorial

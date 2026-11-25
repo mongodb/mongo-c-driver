@@ -44,7 +44,6 @@ process.
        - [ ] Signed & Upload the Release
        - [ ] Publish Release Artifacts
        - [ ] Publish Documentation
-       - [ ] Announce the Release on the Community Forums
        - [ ] Copy the Release Updates to the ``master`` Branch
        - [ ] Close the Jira Release
        - [ ] Update the GitHub Webhook
@@ -455,28 +454,6 @@ Publish Documentation
 with the following command::
 
    $ python $CDRIVER_TOOLS/release.py docs $NEW_VERSION
-
-
-Announce the Release on the Community Forums
-********************************************
-
-Open the `MongoDB Developer Community / Product & Driver Announcments`__ page on
-the Community Forums and prepare a new post for the release.
-
-__ https://www.mongodb.com/community/forums/c/announcements/driver-releases/110
-
-To generate the release template text, use the following::
-
-   $ git checkout $RELEASE_BRANCH
-   $ python $CDRIVER_TOOLS/release.py announce -t community $NEW_VERSION
-
-Update/fix-up the generated text for the new release and publish the new post.
-
-.. seealso::
-
-   `An example of a release announcment post`__
-
-   __ https://www.mongodb.com/community/forums/t/mongodb-c-driver-1-24-0-released/232021
 
 
 Copy the Release Updates to the ``master`` Branch

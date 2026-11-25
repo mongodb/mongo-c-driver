@@ -1,9 +1,12 @@
+#include <mongoc/mongoc-client.h>
 #include <mongoc/mongoc-uri.h>
 
 //
 
 #include <common-bson-dsl-private.h>
 #include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-trace-private.h>
+#include <mongoc/mongoc-uri-private.h>
 #include <mongoc/mongoc-util-private.h>
 
 #include <bson/bson.h>
@@ -91,7 +94,7 @@ run_uri_test(const char *uri_string,
          if (strchr(bson_iter_utf8(&iter, NULL), '.')) {
             BSON_ASSERT(!uri);
             ASSERT_ERROR_CONTAINS(
-               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database specifier \"admin.");
+               error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid database specifier");
             clear_captured_logs();
             return;
          }
@@ -483,9 +486,244 @@ test_all_spec_tests(TestSuite *suite)
    install_json_test_suite(suite, JSON_DIR, "auth/legacy", &test_connection_uri_cb);
 }
 
+static void
+assert_message_excludes(const char *message, const char *text)
+{
+   char *lower_message = bson_strdup(message);
+   char *lower_text = bson_strdup(text);
+   mongoc_lowercase_inplace(lower_message);
+   mongoc_lowercase_inplace(lower_text);
+   ASSERT_WITH_MSG(!strstr(lower_message, lower_text), "Diagnostic discloses input: %s", message);
+   bson_free(lower_message);
+   bson_free(lower_text);
+}
+
+static void
+check_uri_disclosure(const char *uri_string, const char *text)
+{
+   // Both constructors can warn even when parsing succeeds; rejection alone is not the assertion.
+   const bool tracing = gLogTrace;
+   mongoc_log_trace_enable();
+   capture_logs_with_level(MONGOC_LOG_LEVEL_TRACE);
+   bson_error_t error = {0};
+   mongoc_uri_t *uri = mongoc_uri_new_with_error(uri_string, &error);
+   if (!uri) {
+      ASSERT(error.domain);
+      assert_message_excludes(error.message, text);
+      // Rejected inputs never reach client setup or DNS, so the client's logging
+      // wrapper can also be checked without introducing a network dependency.
+      mongoc_client_t *client = mongoc_client_new(uri_string);
+      ASSERT(!client);
+   }
+   assert_no_captured_logs_contain(text);
+   mongoc_uri_destroy(uri);
+
+   capture_logs_with_level(MONGOC_LOG_LEVEL_TRACE);
+   uri = mongoc_uri_new(uri_string);
+   assert_no_captured_logs_contain(text);
+   mongoc_uri_destroy(uri);
+   capture_logs(false);
+   if (!tracing) {
+      mongoc_log_trace_disable();
+   }
+}
+
+static void
+test_credential_disclosure_cb(void *scenario_vp)
+{
+   const bson_t *scenario = scenario_vp;
+   bson_iter_t tests;
+   ASSERT(bson_iter_init_find(&tests, scenario, "tests"));
+   ASSERT(bson_iter_recurse(&tests, &tests));
+   while (bson_iter_next(&tests)) {
+      bson_t test;
+      bson_iter_bson(&tests, &test);
+      if (test_suite_debug_output()) {
+         printf("  - %s\n", bson_lookup_utf8(&test, "description"));
+      }
+      const char *uri_string = bson_lookup_utf8(&test, "uri");
+      check_uri_disclosure(uri_string, "SENTINELpassword1234");
+      check_uri_disclosure(uri_string, "%53%45%4E%54%49%4E%45%4C%70%61%73%73%77%6F%72%64%31%32%33%34");
+      bson_destroy(&test);
+   }
+}
+
+static void
+test_diagnostic_input_disclosure(void)
+{
+   // Non-secret input must also be omitted: boundaries in a malformed URI are not trustworthy.
+   const struct {
+      const char *uri;
+      const char *input;
+   } cases[] = {
+      {"badScheme://localhost/", "badScheme"},
+      {"mongodb://badHost:notaport/", "badHost"},
+      {"mongodb://localhost/badDatabase.name", "badDatabase"},
+      {"mongodb://localhost/?connectTimeoutMS=654321oops", "654321oops"},
+      {"mongodb://localhost/?madeUpOption=value", "madeUpOption"},
+      {"mongodb://localhost/?madeUpOption=value&madeUpOption=other", "madeUpOption"},
+      {"mongodb://localhost/?madeUpOption", "madeUpOption"},
+      {"mongodb://localhost/?readPreferenceTags=brokenTags", "brokenTags"},
+      {"mongodb://localhost/?compressors=madeUpCompressor", "madeUpCompressor"},
+      {"mongodb://localhost/?authMechanism=MONGODB-OIDC&authMechanismProperties=ENVIRONMENT:madeUpEnvironment",
+       "madeUpEnvironment"},
+      {"mongodb://localhost/?authMechanism=MONGODB-OIDC&authMechanismProperties=madeUpProperty:value",
+       "madeUpProperty"},
+      {"mongodb://localhost/?sslCertificateAuthorityFile=firstPath&tlsCAFile=secondPath", "firstPath"},
+      {"mongodb://localhost/?sslCertificateAuthorityFile=firstPath&tlsCAFile=secondPath", "secondPath"},
+      {"mongodb://localhost/?connectTimeoutMS=654321&madeUpOption=value", "654321"},
+      {"mongodb://localhost/?authMechanism=madeUpMechanism", "madeUpMechanism"},
+      {"mongodb://localhost/?authMechanism=MONGODB-X509&authSource=madeUpSource", "madeUpSource"},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      check_uri_disclosure(cases[i].uri, cases[i].input);
+   }
+}
+
+static void
+test_diagnostic_typed_values(void)
+{
+   const struct {
+      const char *uri;
+      const char *message;
+      const char *input;
+   } cases[] = {
+      {"mongodb://localhost/?authMechanism=sCrAm-ShA-1", "'SCRAM-SHA-1'", "sCrAm-ShA-1"},
+      {"mongodb://localhost/?authMechanism=sCrAm-ShA-256", "'SCRAM-SHA-256'", "sCrAm-ShA-256"},
+      {"mongodb://user@localhost/?authMechanism=pLaIn", "'PLAIN'", "pLaIn"},
+      {"mongodb://localhost/?authMechanism=gSsApI", "'GSSAPI'", "gSsApI"},
+      {"mongodb://user:@localhost/?authMechanism=mOnGoDb-X509", "'MONGODB-X509'", "mOnGoDb-X509"},
+      {"mongodb://user@localhost/?authMechanism=mOnGoDb-AwS", "'MONGODB-AWS'", "mOnGoDb-AwS"},
+      {"mongodb://user:@localhost/?authMechanism=mOnGoDb-OiDc", "'MONGODB-OIDC'", "mOnGoDb-OiDc"},
+      {"mongodb://localhost/?heartbeatFrequencyMS=%34%32", "of 42", "%34%32"},
+      {"mongodb://localhost/?zlibCompressionLevel=%31%30", "of 10", "%31%30"},
+      {"mongodb+srv://a.example.com/?srvMaxHosts=-%34%32", "value -42", "-%34%32"},
+      {"mongodb://localhost/?wTimeoutMS=-%32%31%34%37%34%38%33%36%34%39",
+       "-2147483649",
+       "-%32%31%34%37%34%38%33%36%34%39"},
+      {"mongodb://localhost/?w=-00042", "[w=-42]", "-00042"},
+      {"mongodb://localhost/?w=0000&journal=true", "[w=0]", "0000"},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      bson_error_t error = {0};
+      capture_logs(true);
+      mongoc_uri_t *uri = mongoc_uri_new_with_error(cases[i].uri, &error);
+      ASSERT(!uri);
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, cases[i].message);
+      // Exact spelling, including casing and numeric encoding, is never copied.
+      ASSERT(!strstr(error.message, cases[i].input));
+      assert_no_captured_logs_contain_exact(cases[i].input);
+      mongoc_uri_t *logged_uri = mongoc_uri_new(cases[i].uri);
+      ASSERT(!logged_uri);
+      ASSERT_CAPTURED_LOG("Typed-value diagnostic", MONGOC_LOG_LEVEL_WARNING, cases[i].message);
+      assert_no_captured_logs_contain_exact(cases[i].input);
+   }
+
+   const struct {
+      const char *uri;
+      const char *message;
+   } warnings[] = {
+      {"mongodb://localhost/?maxStalenessSeconds=-42", "\"-42\""},
+      {"mongodb://localhost/?maxAdaptiveRetries=-42", "of -42"},
+   };
+   for (size_t i = 0; i < sizeof warnings / sizeof warnings[0]; i++) {
+      capture_logs(true);
+      mongoc_uri_t *uri = mongoc_uri_new(warnings[i].uri);
+      ASSERT(uri);
+      ASSERT_CAPTURED_LOG("Parsed integer diagnostic", MONGOC_LOG_LEVEL_WARNING, warnings[i].message);
+      mongoc_uri_destroy(uri);
+   }
+   check_uri_disclosure("mongodb://localhost/?heartbeatFrequencyMS=42oops", "42oops");
+   check_uri_disclosure("mongodb://localhost/?unknownNumericOption=654321", "654321");
+   check_uri_disclosure("mongodb://localhost/?authMechanism=MONGODB-X509&authSource=654321", "654321");
+   check_uri_disclosure(
+      "mongodb://localhost/?tlsCertificateKeyFilePassword=654321&tlsCertificateKeyFilePassword=123456", "654321");
+   check_uri_disclosure("mongodb://localhost/?w=42oops&journal=true", "42oops");
+   check_uri_disclosure("mongodb://localhost:654321/", "654321");
+   bson_error_t error = {0};
+   mongoc_uri_t *uri = mongoc_uri_new_with_error("mongodb://user:pass@localhost/?authMechanism=sCrAm-ShA-256", &error);
+   ASSERT_OR_PRINT(uri, error);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "sCrAm-ShA-256");
+   mongoc_uri_destroy(uri);
+   capture_logs(false);
+}
+
+static void
+test_diagnostic_positions(void)
+{
+   const struct {
+      const char *uri;
+      const char *warning;
+   } cases[] = {
+      {"mongodb://localhost/?unknown=value", "query position 0"},
+      {"mongodb://user:short@localhost/?appname=x&unknown=value", "query position 10"},
+      {"mongodb://user:muchlongerpassword@localhost/?appname=x&unknown=value", "query position 10"},
+      {"mongodb://localhost/?appname=\xc3\xa9&unknown=value", "query position 10"},
+      {"mongodb://localhost/?appname=\xe2\x82\xac\xf0\x9f\x98\x80&unknown=value", "query position 11"},
+      {"mongodb://localhost/?appname=e\xcc\x81&unknown=value", "query position 11"},
+      {"mongodb://localhost/?appname=%C3%A9&unknown=value", "query position 15"},
+      {"mongodb://localhost/?SSL=true&tls=false", "canonical name 'tls'"},
+   };
+   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
+      capture_logs(true);
+      mongoc_uri_t *uri = mongoc_uri_new(cases[i].uri);
+      ASSERT_CAPTURED_LOG("URI diagnostic", MONGOC_LOG_LEVEL_WARNING, cases[i].warning);
+      mongoc_uri_destroy(uri);
+   }
+
+   bson_error_t error = {0};
+   mongoc_uri_t *uri = mongoc_uri_new_with_error("mongodb://localhost/?appname=x&missingEquals", &error);
+   ASSERT(!uri);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "query position 10");
+
+   uri = mongoc_uri_new("mongodb://localhost/?replicaSet=original");
+   ASSERT(uri);
+   capture_logs_with_level(MONGOC_LOG_LEVEL_TRACE);
+   ASSERT(_mongoc_uri_apply_query_string(uri, mstr_cstring("replicaSet=SENTINELpassword1234"), true, &error));
+   ASSERT_CAPTURED_LOG("TXT precedence", MONGOC_LOG_LEVEL_WARNING, "Ignoring URI option \"replicaset\"");
+   assert_no_captured_logs_contain("SENTINELpassword1234");
+   ASSERT_CMPSTR(mongoc_uri_get_replica_set(uri), "original");
+   const bool tracing = gLogTrace;
+   mongoc_log_trace_enable();
+   ASSERT(mongoc_uri_set_auth_source(uri, "original"));
+   ASSERT(_mongoc_uri_apply_query_string(uri, mstr_cstring("authSource=SENTINELpassword1234"), true, &error));
+   assert_no_captured_logs_contain("SENTINELpassword1234");
+   if (MONGOC_TRACE_ENABLED) {
+      ASSERT_CAPTURED_LOG("TXT precedence", MONGOC_LOG_LEVEL_TRACE, "Cannot override URI option \"authsource\"");
+   }
+   ASSERT(_mongoc_uri_apply_query_string(uri, mstr_cstring("authSource=SENTINELpassword1234"), true, &error));
+   assert_no_captured_logs_contain("SENTINELpassword1234");
+   if (MONGOC_TRACE_ENABLED) {
+      ASSERT_CAPTURED_LOG("TXT precedence", MONGOC_LOG_LEVEL_TRACE, "Ignoring URI option \"authsource\"");
+   }
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "original");
+   if (!tracing) {
+      mongoc_log_trace_disable();
+   }
+   const struct {
+      const char *options;
+      const char *message;
+   } txt_errors[] = {
+      {"SENTINELpassword1234=value", "TXT record position 0 prohibited"},
+      {"SENTINELpassword1234", "TXT record position 0 contains no \"=\""},
+      {"replicaSet=SENTINELpassword1234%zz", "TXT record position 0 is invalid"},
+      {"authSource=\xc3\xa9&replicaSet=SENTINELpassword1234%zz", "TXT record position 13 is invalid"},
+   };
+   for (size_t i = 0; i < sizeof txt_errors / sizeof txt_errors[0]; i++) {
+      ASSERT(!_mongoc_uri_apply_query_string(uri, mstr_cstring(txt_errors[i].options), true, &error));
+      assert_message_excludes(error.message, "SENTINELpassword1234");
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, txt_errors[i].message);
+   }
+   mongoc_uri_destroy(uri);
+   capture_logs(false);
+}
 
 void
 test_connection_uri_install(TestSuite *suite)
 {
    test_all_spec_tests(suite);
+   install_json_test_suite_with_check(suite, JSON_DIR, "credential_disclosure", test_credential_disclosure_cb);
+   TestSuite_Add(suite, "/uri/diagnostic_input_disclosure", test_diagnostic_input_disclosure);
+   TestSuite_Add(suite, "/uri/diagnostic_positions", test_diagnostic_positions);
+   TestSuite_Add(suite, "/uri/diagnostic_typed_values", test_diagnostic_typed_values);
 }

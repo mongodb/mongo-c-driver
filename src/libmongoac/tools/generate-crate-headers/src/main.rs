@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 const SKIP_CRATE_HEADERS: &[&str] = &["lib", "mod", "version"];
 
 // Keep synchronized with `skip_forward_headers` in src/libmongoac/CMakeLists.txt.
-const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "string"];
+const SKIP_FORWARD_HEADERS: &[&str] = &["bson", "cursor_type", "string"];
 
 // Prelude shared by all generated headers.
 fn generate_header() -> String {
@@ -51,6 +51,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ("BsonT", "mongoac_bson_t"),
         ("BsonViewArrayT", "mongoac_bson_view_array_t"),
         ("BsonViewT", "mongoac_bson_view_t"),
+        ("ClientOptionsT", "mongoac_client_options_t"),
         ("ClientSessionT", "mongoac_client_session_t"),
         ("ClientT", "mongoac_client_t"),
         ("CollectionOptionsT", "mongoac_collection_options_t"),
@@ -60,6 +61,7 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
             "CreateCollectionOptionsT",
             "mongoac_create_collection_options_t",
         ),
+        ("CursorT", "mongoac_cursor_t"),
         ("DatabaseOptionsT", "mongoac_database_options_t"),
         ("DatabaseT", "mongoac_database_t"),
         ("DeleteOptionsT", "mongoac_delete_options_t"),
@@ -76,11 +78,18 @@ fn rename_structs() -> std::collections::HashMap<String, String> {
         ),
         ("FindOneOptionsT", "mongoac_find_one_options_t"),
         ("FutureT", "mongoac_future_t"),
+        ("InsertManyOptionsT", "mongoac_insert_many_options_t"),
+        ("InsertManyResultT", "mongoac_insert_many_result_t"),
         ("InsertOneOptionsT", "mongoac_insert_one_options_t"),
         ("InsertOneResultT", "mongoac_insert_one_result_t"),
         ("ReadPreferenceT", "mongoac_read_preference_t"),
         ("RunCommandOptionsT", "mongoac_run_command_options_t"),
+        (
+            "RunCursorCommandOptionsT",
+            "mongoac_run_cursor_command_options_t",
+        ),
         ("RuntimeT", "mongoac_runtime_t"),
+        ("SessionOptionsT", "mongoac_session_options_t"),
         ("StringArrayT", "mongoac_string_array_t"),
         ("StringT", "mongoac_string_t"),
         ("StringViewArrayT", "mongoac_string_view_array_t"),
@@ -101,7 +110,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
         #[allow(clippy::match_same_arms)]
         let headers: &[&str] = match name {
             "bson" => &["stdint.h"],
-            "client_session" => &[],
+            "client_options" => &[],
+            "client_session" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "collection_options" => &[],
             "collection" => &[
                 "mongoac/bson.h",
@@ -115,6 +125,8 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/estimated_document_count_options-fwd.h",
                 "mongoac/find_one_options-fwd.h",
                 "mongoac/future-fwd.h",
+                "mongoac/insert_many_options-fwd.h",
+                "mongoac/insert_many_result-fwd.h",
                 "mongoac/insert_one_options-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
@@ -124,14 +136,23 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "count_options" => &[],
             "create_collection_options" => &[],
             "client" => &[
+                "mongoac/client_options-fwd.h",
+                "mongoac/client_session-fwd.h",
                 "mongoac/database_options-fwd.h",
                 "mongoac/database-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/future-fwd.h",
                 "mongoac/runtime-fwd.h",
+                "mongoac/session_options-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
             ],
+            "cursor" => &[
+                "mongoac/bson.h",
+                "mongoac/error-fwd.h",
+                "mongoac/future-fwd.h",
+            ],
+            "cursor_type" => &["stdint.h"],
             "database_options" => &[],
             "database" => &[
                 "mongoac/bson.h",
@@ -140,10 +161,12 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
                 "mongoac/collection_options-fwd.h",
                 "mongoac/collection-fwd.h",
                 "mongoac/create_collection_options-fwd.h",
+                "mongoac/cursor-fwd.h",
                 "mongoac/drop_database_options-fwd.h",
                 "mongoac/error-fwd.h",
                 "mongoac/future-fwd.h",
                 "mongoac/run_command_options-fwd.h",
+                "mongoac/run_cursor_command_options-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "mongoac/string.h",
                 "stdint.h",
@@ -157,18 +180,34 @@ fn configure(name: &str, config: &mut cbindgen::Config) {
             "error" => &["mongoac/string.h", "stdint.h"],
             "future" => &[
                 "mongoac/bson.h",
+                "mongoac/client_session-fwd.h",
+                "mongoac/client-fwd.h",
+                "mongoac/cursor-fwd.h",
                 "mongoac/delete_result-fwd.h",
                 "mongoac/error-fwd.h",
+                "mongoac/insert_many_result-fwd.h",
                 "mongoac/insert_one_result-fwd.h",
                 "mongoac/runtime-fwd.h",
                 "stdbool.h",
                 "stdint.h",
             ],
+            "insert_many_options" => &[],
+            "insert_many_result" => &["mongoac/bson.h", "mongoac/error-fwd.h", "stdint.h"],
             "insert_one_options" => &[],
             "insert_one_result" => &["mongoac/bson.h", "mongoac/error-fwd.h"],
             "read_preference" => &["stdbool.h", "stdint.h"],
             "run_command_options" => &["mongoac/read_preference-fwd.h"],
+            "run_cursor_command_options" => &[
+                "mongoac/bson.h",
+                "mongoac/cursor_type.h",
+                "mongoac/error-fwd.h",
+                "mongoac/read_preference-fwd.h",
+                "mongoac/string.h",
+                "stdbool.h",
+                "stdint.h",
+            ],
             "runtime" => &["mongoac/future-fwd.h", "mongoac/error-fwd.h", "stdint.h"],
+            "session_options" => &[],
             "string" => &["stdint.h"],
             _ => {
                 eprintln!("warning: missing generate-crate-headers entry: {name}");
