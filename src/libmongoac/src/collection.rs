@@ -29,16 +29,21 @@ use crate::insert_many_result::InsertManyResultT;
 use crate::insert_one_options::InsertOneOptionsT;
 use crate::insert_one_result::InsertOneResultT;
 use crate::private::macros::*;
+use crate::private::pipeline::to_documents;
+use crate::replace_options::ReplaceOptionsT;
 use crate::runtime::{RuntimeAware, RuntimeT};
 use crate::string::StringViewT;
+use crate::update_options::UpdateOptionsT;
+use crate::update_result::UpdateResultT;
 
 use mongodb::Collection;
 use mongodb::bson::{Document, RawDocument, RawDocumentBuf};
 use mongodb::options::{
     CountOptions, DeleteOptions, DropCollectionOptions, EstimatedDocumentCountOptions,
-    FindOneOptions, InsertManyOptions, InsertOneOptions,
+    FindOneOptions, InsertManyOptions, InsertOneOptions, ReplaceOptions, UpdateModifications,
+    UpdateOptions,
 };
-use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult};
+use mongodb::results::{DeleteResult, InsertManyResult, InsertOneResult, UpdateResult};
 
 #[derive(Clone)]
 pub struct CollectionT {
@@ -310,6 +315,216 @@ pub extern "C" fn mongoac_collection_insert_one_async(
     let options = safe_optional_as_ref!(options);
 
     safe_into_raw!(collection.insert_one_async(session, doc, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_replace_one(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    replacement: BsonViewT,
+    options: *const ReplaceOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let replacement = safe_bson_view_with_error!(replacement, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.replace_one(session, filter, replacement, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_replace_one_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    replacement: BsonViewT,
+    options: *const ReplaceOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let replacement = safe_bson_view!(replacement);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.replace_one_async(session, filter, replacement, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_document(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    update: BsonViewT,
+    options: *const UpdateOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let update = safe_bson_view_with_error!(update, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.update_many_document(session, filter, update, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_document_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    update: BsonViewT,
+    options: *const UpdateOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let update = safe_bson_view!(update);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.update_many_document_async(session, filter, update, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_pipeline(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    pipeline: BsonViewArrayT,
+    options: *const UpdateOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let pipeline = safe_bson_view_array_with_error!(pipeline, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.update_many_pipeline(session, filter, pipeline, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_many_pipeline_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    pipeline: BsonViewArrayT,
+    options: *const UpdateOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let pipeline = safe_bson_view_array!(pipeline);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.update_many_pipeline_async(session, filter, pipeline, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_one_document(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    update: BsonViewT,
+    options: *const UpdateOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let update = safe_bson_view_with_error!(update, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.update_one_document(session, filter, update, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_one_document_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    update: BsonViewT,
+    options: *const UpdateOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let update = safe_bson_view!(update);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.update_one_document_async(session, filter, update, options))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_one_pipeline(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    pipeline: BsonViewArrayT,
+    options: *const UpdateOptionsT,
+    error: *mut ErrorT,
+) -> *mut UpdateResultT {
+    let error = safe_optional_error_as_mut!(error);
+    let collection = safe_as_ref_with_error!(collection, error);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view_with_error!(filter, error);
+    let pipeline = safe_bson_view_array_with_error!(pipeline, error);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(
+        safe_result!(
+            collection.update_one_pipeline(session, filter, pipeline, options),
+            error
+        )
+        .into()
+    )
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn mongoac_collection_update_one_pipeline_async(
+    collection: *const CollectionT,
+    session: *mut ClientSessionT,
+    filter: BsonViewT,
+    pipeline: BsonViewArrayT,
+    options: *const UpdateOptionsT,
+) -> *mut FutureT {
+    let collection = safe_as_ref!(collection);
+    let session = safe_optional_as_mut!(session);
+    let filter = safe_bson_view!(filter);
+    let pipeline = safe_bson_view_array!(pipeline);
+    let options = safe_optional_as_ref!(options);
+
+    safe_into_raw!(collection.update_one_pipeline_async(session, filter, pipeline, options))
 }
 
 #[unsafe(no_mangle)]
@@ -614,6 +829,228 @@ impl CollectionT {
         })
     }
 
+    fn replace_one(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        replacement: &RawDocument,
+        options: Option<&ReplaceOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                self.inner
+                    .replace_one(filter, replacement.to_owned())
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn replace_one_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        replacement: &RawDocument,
+        options: Option<&ReplaceOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let replacement = replacement.to_owned();
+        let options: Option<ReplaceOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+
+            session_op!(
+                coll.replace_one(filter, replacement).with_options(options),
+                session
+            )
+        })
+    }
+
+    fn update_many_document(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        update: &RawDocument,
+        options: Option<&UpdateOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+            let update = Document::try_from(update)?;
+
+            session_op!(
+                self.inner
+                    .update_many(filter, update)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn update_many_document_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        update: &RawDocument,
+        options: Option<&UpdateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let update = update.to_owned();
+        let options: Option<UpdateOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+            let update = Document::try_from(update)?;
+
+            session_op!(
+                coll.update_many(filter, update).with_options(options),
+                session
+            )
+        })
+    }
+
+    fn update_many_pipeline(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&UpdateOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+            let update = UpdateModifications::Pipeline(to_documents(&pipeline)?);
+
+            session_op!(
+                self.inner
+                    .update_many(filter, update)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn update_many_pipeline_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&UpdateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<UpdateOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+            let update = UpdateModifications::Pipeline(to_documents(&pipeline)?);
+
+            session_op!(
+                coll.update_many(filter, update).with_options(options),
+                session
+            )
+        })
+    }
+
+    fn update_one_document(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        update: &RawDocument,
+        options: Option<&UpdateOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+            let update = Document::try_from(update)?;
+
+            session_op!(
+                self.inner
+                    .update_one(filter, update)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn update_one_document_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        update: &RawDocument,
+        options: Option<&UpdateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let update = update.to_owned();
+        let options: Option<UpdateOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+            let update = Document::try_from(update)?;
+
+            session_op!(
+                coll.update_one(filter, update).with_options(options),
+                session
+            )
+        })
+    }
+
+    fn update_one_pipeline(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&UpdateOptionsT>,
+    ) -> Result<UpdateResult, ErrorT> {
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+
+        self.runtime.block_on(async {
+            let filter = Document::try_from(filter)?;
+            let update = UpdateModifications::Pipeline(to_documents(&pipeline)?);
+
+            session_op!(
+                self.inner
+                    .update_one(filter, update)
+                    .with_options(options.map(Into::into)),
+                session
+            )
+        })
+    }
+
+    fn update_one_pipeline_async(
+        &self,
+        session: Option<&mut ClientSessionT>,
+        filter: &RawDocument,
+        pipeline: Vec<&RawDocument>,
+        options: Option<&UpdateOptionsT>,
+    ) -> FutureT {
+        let coll = self.inner.clone();
+        let session = session.map(|s| s.clone());
+        let filter = filter.to_owned();
+        let pipeline: Vec<RawDocumentBuf> = pipeline.into_iter().map(ToOwned::to_owned).collect();
+        let options: Option<UpdateOptions> = options.map(Into::into);
+
+        self.spawn::<UpdateResult>(async move {
+            let filter = Document::try_from(filter)?;
+            let update = UpdateModifications::Pipeline(to_documents(&pipeline)?);
+
+            session_op!(
+                coll.update_one(filter, update).with_options(options),
+                session
+            )
+        })
+    }
+
     // TODO: aggregate
     // TODO: create_index
     // TODO: create_indexes
@@ -633,11 +1070,8 @@ impl CollectionT {
     // TODO: list_search_indexes
     // TODO: namespace
     // TODO: read_concern
-    // TODO: replace_one
     // TODO: replace_one_model
     // TODO: selection_criteria
-    // TODO: update_many
-    // TODO: update_one
     // TODO: update_search_index
     // TODO: watch
     // TODO: write_concern
