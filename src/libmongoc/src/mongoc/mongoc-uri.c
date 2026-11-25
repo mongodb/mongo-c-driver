@@ -436,11 +436,17 @@ _strdup_pct_decode(mstr_view const sv, bson_error_t *error)
       remain = mstr_substr(remain, 3);
    }
 
-   // Check whether the decoded result is valid UTF-8
    size_t len = (size_t)(out - buf);
-   if (!bson_utf8_validate(buf, len, false)) {
-      MONGOC_URI_ERROR(
-         error, "%s", "Invalid %%-encoded string: The decoded result is not valid UTF-8 or contains null characters");
+   // Reject a percent-encoded NUL ("%00"). The Authentication spec requires a specific error message substring.
+   if (memchr(buf, '\0', len)) {
+      MONGOC_URI_ERROR(error, "%s", "The decoded value cannot contain NUL characters");
+      bson_free(buf);
+      return NULL;
+   }
+
+   // Check whether the decoded result is valid UTF-8.
+   if (!bson_utf8_validate(buf, len, true)) {
+      MONGOC_URI_ERROR(error, "%s", "Invalid %%-encoded string: The decoded result is not valid UTF-8");
       bson_free(buf);
       return NULL;
    }
@@ -481,7 +487,9 @@ _uri_parse_userinfo(mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    // Store the username and password on the URI
    uri->username = _strdup_pct_decode(username, error);
    if (!uri->username) {
-      MONGOC_URI_ERROR(error, "%s", "Invalid %-encoding in username in URI string");
+      // Keep the component name and the decoder's reason (e.g. "cannot
+      // contain NUL characters") without quoting the user's input.
+      MONGOC_URI_ERROR(error, "Invalid %%-encoding in username: %s", error->message);
       return false;
    }
 
@@ -489,7 +497,7 @@ _uri_parse_userinfo(mongoc_uri_t *uri, mstr_view userpass, bson_error_t *error)
    if (has_password) {
       uri->password = _strdup_pct_decode(password, error);
       if (!uri->password) {
-         MONGOC_URI_ERROR(error, "%s", "Invalid %-encoding in password in URI string");
+         MONGOC_URI_ERROR(error, "Invalid %%-encoding in password: %s", error->message);
          return false;
       }
    }

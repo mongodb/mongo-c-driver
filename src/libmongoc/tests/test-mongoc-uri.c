@@ -257,13 +257,13 @@ test_mongoc_uri_new(void)
    capture_logs(true);
    uri = mongoc_uri_new("mongodb://u%ser:pwd@localhost:27017");
    ASSERT(!uri);
-   ASSERT_CAPTURED_LOG("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-encoding in username in URI string");
+   ASSERT_CAPTURED_LOG("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-encoding in username");
    capture_logs(false);
 
    capture_logs(true);
    uri = mongoc_uri_new("mongodb://user:p%wd@localhost:27017");
    ASSERT(!uri);
-   ASSERT_CAPTURED_LOG("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-encoding in password in URI string");
+   ASSERT_CAPTURED_LOG("uri", MONGOC_LOG_LEVEL_WARNING, "Invalid %-encoding in password");
    capture_logs(false);
 
    capture_logs(true);
@@ -1455,7 +1455,7 @@ test_mongoc_uri_new_with_error(void)
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://user%p:pass@localhost/", &error));
    ASSERT_ERROR_CONTAINS(
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid %-encoding in username in URI string");
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "Invalid %-encoding in username");
 
    error = BSON_ERROR_INIT;
    ASSERT(!mongoc_uri_new_with_error("mongodb://l%oc, alhost/", &error));
@@ -3620,6 +3620,32 @@ test_uri_bad_oidc(void)
                          "'MONGODB-OIDC' authentication environment does not accept TOKEN_RESOURCE");
 }
 
+// Test error message returned for embedded NUL in username/password (CDRIVER-6449):
+static void
+test_uri_pct_encoded_nul_credentials(void)
+{
+   // NUL in the username.
+   {
+      bson_error_t error;
+      mongoc_uri_t *const uri = mongoc_uri_new_with_error(
+         "mongodb://user%00name:password@localhost/?" MONGOC_URI_AUTHMECHANISM "=PLAIN", &error);
+      ASSERT(!uri);
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "cannot contain NUL characters");
+      mongoc_uri_destroy(uri);
+   }
+
+   // NUL in the password.
+   {
+      bson_error_t error;
+      mongoc_uri_t *const uri =
+         mongoc_uri_new_with_error("mongodb://user:pass%00word@localhost/?" MONGOC_URI_AUTHMECHANISM "=PLAIN", &error);
+      ASSERT(!uri);
+      ASSERT_ERROR_CONTAINS(
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "cannot contain NUL characters");
+   }
+}
+
 void
 test_uri_install(TestSuite *suite)
 {
@@ -3647,6 +3673,7 @@ test_uri_install(TestSuite *suite)
    TestSuite_Add(suite, "/Uri/punycode", test_mongoc_punycode);
    TestSuite_Add(suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add(suite, "/Uri/utf8", test_mongoc_uri_utf8);
+   TestSuite_Add(suite, "/Uri/pct_encoded_nul_credentials", test_uri_pct_encoded_nul_credentials);
    TestSuite_Add(suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
    TestSuite_Add(suite, "/Uri/int_options", test_mongoc_uri_int_options);
    TestSuite_Add(suite, "/Uri/one_tls_option_enables_tls", test_one_tls_option_enables_tls);

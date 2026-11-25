@@ -249,7 +249,7 @@ test_ns_validation_uri_path(void)
 
    // A %-encoded NUL byte is rejected.
    ASSERT(!mongoc_uri_new_with_error("mongodb://localhost:27017/db%00bad", &error));
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "null characters");
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, "cannot contain NUL characters");
 }
 
 static void
