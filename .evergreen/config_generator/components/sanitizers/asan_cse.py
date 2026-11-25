@@ -9,7 +9,7 @@ COMPILE_MATRIX = [
     ('rhel8-latest',     'clang', None, ['cyrus']),
 ]
 
-# CSFLE requires 4.4+ (the driver minimum). QE requires 7.0+ and are skipped on "server" tasks.
+# CSFLE requires 4.2+ (driver minimum is 4.4+). QE requires 7.0+ and are skipped on "server" tasks.
 TEST_MATRIX = [
     # rhel8-latest provides 4.4 through latest.
     ('rhel8-latest', 'clang', None, 'cyrus', ['auth'], ['server', 'replica'], ['4.4', '5.0', '6.0', '7.0', '8.0', '9.0', 'rapid', 'latest']),
