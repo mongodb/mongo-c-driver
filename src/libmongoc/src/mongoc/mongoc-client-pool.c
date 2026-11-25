@@ -244,9 +244,12 @@ mongoc_client_pool_destroy(mongoc_client_pool_t *pool)
    }
 
    if (!mongoc_server_session_pool_is_empty(pool->topology->session_pool)) {
-      client = mongoc_client_pool_pop(pool);
-      _mongoc_client_end_sessions(client);
-      mongoc_client_pool_push(pool, client);
+      /* A drained pool with a zero maximum cannot provide a client. */
+      client = mongoc_client_pool_try_pop(pool);
+      if (client) {
+         _mongoc_client_end_sessions(client);
+         mongoc_client_pool_push(pool, client);
+      }
    }
 
    while ((client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
@@ -392,6 +395,20 @@ mongoc_client_pool_try_pop(mongoc_client_pool_t *pool)
    RETURN(client);
 }
 
+/* Called with pool->mutex locked. */
+static void
+_mongoc_client_pool_enforce_max_size(mongoc_client_pool_t *pool)
+{
+   while (pool->size > pool->max_pool_size) {
+      mongoc_client_t *client = (mongoc_client_t *)_mongoc_queue_pop_tail(&pool->queue);
+      if (!client) {
+         break;
+      }
+      mongoc_client_destroy(client);
+      --pool->size;
+   }
+}
+
 typedef struct {
    mongoc_array_t *known_server_ids;
    mongoc_cluster_t *cluster;
@@ -494,6 +511,7 @@ mongoc_client_pool_push(mongoc_client_pool_t *pool, mongoc_client_t *client)
 
    // Push client back into pool.
    _mongoc_queue_push_head(&pool->queue, client);
+   _mongoc_client_pool_enforce_max_size(pool);
 
    mongoc_cond_signal(&pool->cond);
    bson_mutex_unlock(&pool->mutex);
@@ -564,6 +582,7 @@ mongoc_client_pool_max_size(mongoc_client_pool_t *pool, uint32_t max_pool_size)
    bson_mutex_lock(&pool->mutex);
    const bool increased = max_pool_size > pool->max_pool_size;
    pool->max_pool_size = max_pool_size;
+   _mongoc_client_pool_enforce_max_size(pool);
    if (increased) {
       mongoc_cond_broadcast(&pool->cond);
    }
