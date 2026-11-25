@@ -604,28 +604,34 @@ mlib_gnu_warning_disable("-Wshadow");
          break;                                                               \
       }                                                                       \
       bson_t inner;                                                           \
-      BSON_ASSERT(bson_init_static(&inner, data, len));                       \
+      if (!bson_init_static(&inner, data, len)) {                             \
+         bsonParseError = "Invalid BSON data: malformed document or array";   \
+         break;                                                               \
+      }                                                                       \
       _bsonVisitEach(inner, __VA_ARGS__);                                     \
    } while (0);                                                               \
    _bsonDSL_end
 
 #define _bsonVisitOperation_nop _bsonDSLDebug("[nop]")
-#define _bsonVisitOperation_parse(...)                                   \
-   do {                                                                  \
-      const uint8_t *data;                                               \
-      uint32_t len;                                                      \
-      bson_type_t typ = bson_iter_type(&bsonVisitIter);                  \
-      if (typ == BSON_TYPE_ARRAY)                                        \
-         bson_iter_array(&bsonVisitIter, &len, &data);                   \
-      else if (typ == BSON_TYPE_DOCUMENT)                                \
-         bson_iter_document(&bsonVisitIter, &len, &data);                \
-      else {                                                             \
-         _bsonDSLDebug("Ignoring parse() for non-document/array value"); \
-         break;                                                          \
-      }                                                                  \
-      bson_t inner;                                                      \
-      BSON_ASSERT(bson_init_static(&inner, data, len));                  \
-      _bsonParse(inner, __VA_ARGS__);                                    \
+#define _bsonVisitOperation_parse(...)                                      \
+   do {                                                                     \
+      const uint8_t *data;                                                  \
+      uint32_t len;                                                         \
+      bson_type_t typ = bson_iter_type(&bsonVisitIter);                     \
+      if (typ == BSON_TYPE_ARRAY)                                           \
+         bson_iter_array(&bsonVisitIter, &len, &data);                      \
+      else if (typ == BSON_TYPE_DOCUMENT)                                   \
+         bson_iter_document(&bsonVisitIter, &len, &data);                   \
+      else {                                                                \
+         _bsonDSLDebug("Ignoring parse() for non-document/array value");    \
+         break;                                                             \
+      }                                                                     \
+      bson_t inner;                                                         \
+      if (!bson_init_static(&inner, data, len)) {                           \
+         bsonParseError = "Invalid BSON data: malformed document or array"; \
+         break;                                                             \
+      }                                                                     \
+      _bsonParse(inner, __VA_ARGS__);                                       \
    } while (0);
 
 #define _bsonVisitOperation_continue _bvContinue = true

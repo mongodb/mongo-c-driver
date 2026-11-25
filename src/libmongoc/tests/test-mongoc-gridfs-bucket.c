@@ -1386,10 +1386,92 @@ prose_test_1(void *unused)
    mongoc_client_destroy(client);
 }
 
+typedef struct {
+   mongoc_gridfs_bucket_t *bucket;
+   const bson_value_t *file_id;
+   mongoc_stream_t *stream;
+   bson_error_t error;
+} download_args_t;
+
+static BSON_THREAD_FUN(download_thread, arg)
+{
+   download_args_t *args = arg;
+   args->stream = mongoc_gridfs_bucket_open_download_stream(args->bucket, args->file_id, &args->error);
+   BSON_THREAD_RETURN;
+}
+
+/* A file document whose "metadata" is invalid must fail with an error, not abort. When `malformed` is true the
+ * metadata is a document with a corrupted terminator. Otherwise, it is not a document. */
+static void
+_test_download_invalid_metadata(bool malformed)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_MIN);
+   mock_server_run(server);
+   mongoc_client_t *client = test_framework_client_new_from_uri(mock_server_get_uri(server), NULL);
+   mongoc_database_t *db = mongoc_client_get_database(client, "db");
+   bson_error_t error;
+   mongoc_gridfs_bucket_t *bucket = mongoc_gridfs_bucket_new(db, NULL, NULL, &error);
+   ASSERT_OR_PRINT(bucket, error);
+
+   bson_value_t file_id = {.value_type = BSON_TYPE_INT32, .value.v_int32 = 1};
+   download_args_t args = {.bucket = bucket, .file_id = &file_id};
+   bson_thread_t thread;
+   ASSERT_CMPINT(mcommon_thread_create(&thread, download_thread, &args), ==, 0);
+
+   request_t *request =
+      mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'$db': 'db', 'find': 'fs.files'}"));
+   bson_t *reply = tmp_bson(BSON_STR({
+      "ok" : 1,
+      "cursor" : {
+         "id" : {"$numberLong" : "0"},
+         "ns" : "db.fs.files",
+         "firstBatch" : [ {"_id" : 1, "length" : 0, "chunkSize" : 255, "filename" : "f", "metadata" : {"a" : 1}} ]
+      }
+   }));
+   if (malformed) {
+      test_corrupt_subdocument_terminator(reply, "cursor.firstBatch.0.metadata");
+   } else {
+      bson_t *replacement = tmp_bson(BSON_STR({
+         "ok" : 1,
+         "cursor" : {
+            "id" : {"$numberLong" : "0"},
+            "ns" : "db.fs.files",
+            "firstBatch" : [ {"_id" : 1, "length" : 0, "chunkSize" : 255, "filename" : "f", "metadata" : "x"} ]
+         }
+      }));
+      reply = replacement;
+   }
+   reply_to_op_msg_request(request, MONGOC_MSG_NONE, reply);
+   request_destroy(request);
+
+   ASSERT_CMPINT(mcommon_thread_join(thread), ==, 0);
+   ASSERT(!args.stream);
+   ASSERT_ERROR_CONTAINS(args.error, MONGOC_ERROR_GRIDFS, MONGOC_ERROR_GRIDFS_CORRUPT, "invalid metadata");
+
+   mongoc_gridfs_bucket_destroy(bucket);
+   mongoc_database_destroy(db);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
+static void
+test_download_non_document_metadata(void)
+{
+   _test_download_invalid_metadata(false);
+}
+
+static void
+test_download_malformed_metadata(void)
+{
+   _test_download_invalid_metadata(true);
+}
+
 void
 test_gridfs_bucket_install(TestSuite *suite)
 {
    test_all_spec_tests(suite);
+   TestSuite_AddMockServerTest(suite, "/gridfs/download/non_document_metadata", test_download_non_document_metadata);
+   TestSuite_AddMockServerTest(suite, "/gridfs/download/malformed_metadata", test_download_malformed_metadata);
    TestSuite_AddLive(suite, "/gridfs/create_bucket", test_create_bucket);
    TestSuite_AddLive(suite, "/gridfs/upload_and_download", test_upload_and_download);
    TestSuite_AddFull(

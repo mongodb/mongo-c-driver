@@ -42,9 +42,11 @@ _update_post_batch_resume_token(mongoc_cursor_t *cursor)
       bson_t post_batch_resume_token;
 
       bson_iter_document(&child, &len, &buf);
-      BSON_ASSERT(bson_init_static(&post_batch_resume_token, buf, len));
-      bson_destroy(&data->post_batch_resume_token);
-      bson_copy_to(&post_batch_resume_token, &data->post_batch_resume_token);
+      // A malformed postBatchResumeToken (from the server reply) is ignored.
+      if (bson_init_static(&post_batch_resume_token, buf, len)) {
+         bson_destroy(&data->post_batch_resume_token);
+         bson_copy_to(&post_batch_resume_token, &data->post_batch_resume_token);
+      }
    }
 }
 

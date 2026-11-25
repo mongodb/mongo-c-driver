@@ -903,6 +903,55 @@ test_bulkwrite_check_acknowledged(void *unused)
    mongoc_client_destroy(client);
 }
 
+// A bulkWrite reply with a negative "nErrors" is invalid. The driver must report an error, not abort.
+static void
+test_bulkwrite_negative_nErrors(void)
+{
+   mock_server_t *server = mock_server_with_auto_hello(WIRE_VERSION_8_0);
+   mock_server_run(server);
+   mongoc_client_t *client = mongoc_client_new_from_uri(mock_server_get_uri(server));
+   mongoc_bulkwrite_t *bw = mongoc_client_bulkwrite_new(client);
+
+   bson_error_t error;
+   bool ok = mongoc_bulkwrite_append_updateone(
+      bw, "db.coll", tmp_bson("{'_id': 1}"), tmp_bson("{'$set': {'x': 1}}"), NULL, &error);
+   ASSERT_OR_PRINT(ok, error);
+
+   mongoc_bulkwriteopts_t *bwo = mongoc_bulkwriteopts_new();
+   mongoc_bulkwriteopts_set_verboseresults(bwo, true);
+
+   future_t *fut = future_bulkwrite_execute(bw, bwo);
+   request_t *req = mock_server_receives_msg(server,
+                                             MONGOC_MSG_NONE,
+                                             tmp_bson("{'bulkWrite': 1, 'errorsOnly': false}"),
+                                             tmp_bson("{'ns': 'db.coll'}"),
+                                             tmp_bson("{'update': 0}"));
+   reply_to_request_simple(req, BSON_STR({
+                              "ok" : 1,
+                              "nInserted" : 0,
+                              "nMatched" : 0,
+                              "nModified" : 0,
+                              "nDeleted" : 0,
+                              "nUpserted" : 0,
+                              "nErrors" : -1,
+                              "cursor" : {"id" : 0, "firstBatch" : [], "ns" : "admin.$cmd.bulkWrite"}
+                           }));
+   mongoc_bulkwritereturn_t bwr = future_get_mongoc_bulkwritereturn_t(fut);
+
+   ASSERT(bwr.exc);
+   ASSERT(mongoc_bulkwriteexception_error(bwr.exc, &error));
+   ASSERT_CONTAINS(error.message, "negative or overflows");
+
+   future_destroy(fut);
+   request_destroy(req);
+   mongoc_bulkwriteexception_destroy(bwr.exc);
+   mongoc_bulkwriteresult_destroy(bwr.res);
+   mongoc_bulkwriteopts_destroy(bwo);
+   mongoc_bulkwrite_destroy(bw);
+   mongoc_client_destroy(client);
+   mock_server_destroy(server);
+}
+
 // test_bulkwrite_missing_nModified mocks a server reply missing "nModified" in a per-operation update result.
 // The missing "nModified" is a bug: SERVER-113026. This tests how the driver handles the reply.
 static void
@@ -1215,6 +1264,7 @@ test_bulkwrite_install(TestSuite *suite)
                      test_framework_skip_if_max_wire_version_less_than_25 // require server 8.0
    );
 
+   TestSuite_AddMockServerTest(suite, "/bulkwrite/negative_nErrors", test_bulkwrite_negative_nErrors);
    TestSuite_AddMockServerTest(suite, "/bulkwrite/missing_nModified", test_bulkwrite_missing_nModified);
    TestSuite_AddMockServerTest(suite, "/bulkwrite/unexpected_results", test_bulkwrite_unexpected_results);
    TestSuite_AddMockServerTest(suite, "/bulkwrite/bad_result_index", test_bulkwrite_bad_result_index);

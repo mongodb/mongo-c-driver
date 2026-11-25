@@ -44,7 +44,8 @@ _mongoc_cmd_check_ok_no_wce(const bson_t *doc, int32_t error_api_version, bson_e
 
 void
 mcd_rpc_message_egress(const mcd_rpc_message *rpc);
-void
+// Returns false if the opcode is not valid for an ingress (reply) message.
+bool
 mcd_rpc_message_ingress(const mcd_rpc_message *rpc);
 
 BSON_END_DECLS

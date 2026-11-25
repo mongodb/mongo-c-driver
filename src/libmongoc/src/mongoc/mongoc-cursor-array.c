@@ -36,10 +36,19 @@ _prime(mongoc_cursor_t *cursor)
    bson_destroy(&data->array);
    /* this cursor is only used with the listDatabases command. it iterates
     * over the array in the response's "databases" field. */
-   if (_mongoc_cursor_run_command(cursor, &data->cmd, &cursor->opts, &data->array) &&
-       bson_iter_init_find(&iter, &data->array, data->field_name) && BSON_ITER_HOLDS_ARRAY(&iter) &&
-       bson_iter_recurse(&iter, &data->iter)) {
-      return IN_BATCH;
+   if (_mongoc_cursor_run_command(cursor, &data->cmd, &cursor->opts, &data->array)) {
+      if (bson_iter_init_find(&iter, &data->array, data->field_name) && BSON_ITER_HOLDS_ARRAY(&iter) &&
+          bson_iter_recurse(&iter, &data->iter)) {
+         return IN_BATCH;
+      }
+      // The reply comes from the server. A successful reply without the expected array is invalid.
+      if (!cursor->error.domain) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_PROTOCOL,
+                           MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                           "Invalid server reply: expected array field '%s'",
+                           data->field_name);
+      }
    }
    return DONE;
 }
@@ -52,8 +61,24 @@ _pop_from_batch(mongoc_cursor_t *cursor)
    const uint8_t *document;
    data_array_t *data = (data_array_t *)cursor->impl.data;
    if (bson_iter_next(&data->iter)) {
+      // The array comes from the server reply: do not assume its elements are documents.
+      if (!BSON_ITER_HOLDS_DOCUMENT(&data->iter)) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_CURSOR,
+                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                           "Invalid server reply: element of '%s' array is not a document",
+                           data->field_name);
+         return DONE;
+      }
       bson_iter_document(&data->iter, &document_len, &document);
-      BSON_ASSERT(bson_init_static(&data->bson, document, document_len));
+      if (!bson_init_static(&data->bson, document, document_len)) {
+         _mongoc_set_error(&cursor->error,
+                           MONGOC_ERROR_CURSOR,
+                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                           "Invalid server reply: element of '%s' array is a malformed document",
+                           data->field_name);
+         return DONE;
+      }
       cursor->current = &data->bson;
       return IN_BATCH;
    }

@@ -667,28 +667,30 @@ _mongoc_client_session_handle_reply(mongoc_client_session_t *session,
    while (bson_iter_next(&iter)) {
       if (!strcmp(bson_iter_key(&iter), "$clusterTime") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
          bson_iter_document(&iter, &len, &data);
-         BSON_ASSERT(bson_init_static(&cluster_time, data, (size_t)len));
-
-         mongoc_client_session_advance_cluster_time(session, &cluster_time);
+         // A malformed $clusterTime (from the server reply) is ignored.
+         if (bson_init_static(&cluster_time, data, (size_t)len)) {
+            mongoc_client_session_advance_cluster_time(session, &cluster_time);
+         }
       } else if (!strcmp(bson_iter_key(&iter), "operationTime") && BSON_ITER_HOLDS_TIMESTAMP(&iter) &&
                  is_acknowledged) {
          bson_iter_timestamp(&iter, &operation_t, &operation_i);
          mongoc_client_session_advance_operation_time(session, operation_t, operation_i);
       } else if (is_find_aggregate_distinct && !strcmp(bson_iter_key(&iter), "atClusterTime") &&
-                 mongoc_session_opts_get_snapshot(&session->opts) && !session->snapshot_time_set) {
+                 BSON_ITER_HOLDS_TIMESTAMP(&iter) && mongoc_session_opts_get_snapshot(&session->opts) &&
+                 !session->snapshot_time_set) {
          /* If command is "find", "aggregate" or "distinct", atClusterTime is on
           * top level of reply, snapshot is enabled for the session, and
           * snapshot_time has not already been set, set it. */
          bson_iter_timestamp(&iter, &snapshot_t, &snapshot_i);
          _mongoc_client_session_set_snapshot_time(session, snapshot_t, snapshot_i);
       } else if (is_find_aggregate_distinct && !strcmp(bson_iter_key(&iter), "cursor") &&
-                 mongoc_session_opts_get_snapshot(&session->opts) && !session->snapshot_time_set) {
+                 mongoc_session_opts_get_snapshot(&session->opts) && !session->snapshot_time_set &&
+                 bson_iter_recurse(&iter, &cursor_iter)) {
          /* If command is "find", "aggregate" or "distinct", cursor is present,
           * snapshot is enabled for the session, and snapshot_time has not
           * already been set, try to find atClusterTime in cursor field to set
-          * snapshot_time. */
-         bson_iter_recurse(&iter, &cursor_iter);
-
+          * snapshot_time. Do not assume "cursor" is a document: it comes from
+          * the server reply. */
          while (bson_iter_next(&cursor_iter)) {
             /* If atClusterTime is in cursor and is a valid timestamp, use it to
              * set snapshot_time. */

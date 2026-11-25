@@ -1677,7 +1677,13 @@ mongoc_topology_description_add_server(mongoc_topology_description_t *topology,
       server_id = ++topology->max_server_id;
 
       description = BSON_ALIGNED_ALLOC0(mongoc_server_description_t);
-      mongoc_server_description_init(description, server, server_id);
+      if (!mongoc_server_description_init(description, server, server_id)) {
+         if (id) {
+            *id = 0;
+         }
+         bson_free(description);
+         return false;
+      }
 
       mongoc_set_add(mc_tpld_servers(topology), server_id, description);
 
@@ -1749,7 +1755,10 @@ mongoc_topology_description_update_cluster_time(mongoc_topology_description_t *t
    }
 
    bson_iter_document(&iter, &size, &data);
-   BSON_ASSERT(bson_init_static(&cluster_time, data, (size_t)size));
+   if (!bson_init_static(&cluster_time, data, (size_t)size)) {
+      MONGOC_ERROR("Can't parse $clusterTime");
+      return;
+   }
 
    if (bson_empty(&td->cluster_time) || _mongoc_cluster_time_greater(&cluster_time, &td->cluster_time)) {
       bson_destroy(&td->cluster_time);
@@ -1775,6 +1784,10 @@ _mongoc_topology_description_add_new_servers(mongoc_topology_description_t *topo
       BSON_ASSERT(bson_iter_init(&member_iter, rs_members[i]));
 
       while (bson_iter_next(&member_iter)) {
+         // A server may report non-string members. Ignore them.
+         if (!BSON_ITER_HOLDS_UTF8(&member_iter)) {
+            continue;
+         }
          mongoc_topology_description_add_server(topology, log_and_monitor, bson_iter_utf8(&member_iter, NULL), NULL);
       }
    }
@@ -2453,9 +2466,10 @@ mongoc_topology_description_handle_hello(
       uint32_t len;
 
       bson_iter_document(&iter, &len, &bytes);
-      BSON_ASSERT(bson_init_static(&incoming_topology_version, bytes, len));
-
-      if (mongoc_server_description_topology_version_cmp(&sd->topology_version, &incoming_topology_version) == 1) {
+      // A malformed topologyVersion (from the server reply) is not compared here. It is treated as absent when the
+      // hello reply is processed.
+      if (bson_init_static(&incoming_topology_version, bytes, len) &&
+          mongoc_server_description_topology_version_cmp(&sd->topology_version, &incoming_topology_version) == 1) {
          TRACE("%s", "topology version is strictly less. Skipping.");
          if (prev_td) {
             mongoc_topology_description_cleanup(prev_td);

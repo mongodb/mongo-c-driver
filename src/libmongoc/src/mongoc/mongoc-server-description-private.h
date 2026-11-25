@@ -164,7 +164,7 @@ mc_tpl_sd_get_generation(const mongoc_server_description_t *sd, const bson_oid_t
    return mongoc_generation_map_get(mc_tpl_sd_generation_map_const(sd), service_id);
 }
 
-void
+bool
 mongoc_server_description_init(mongoc_server_description_t *sd, const char *address, uint32_t id);
 bool
 mongoc_server_description_has_rs_member(const mongoc_server_description_t *description, const char *address);

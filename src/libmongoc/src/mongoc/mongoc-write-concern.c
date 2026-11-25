@@ -386,14 +386,16 @@ _mongoc_parse_wc_err(const bson_t *doc, bson_error_t *error)
    bson_iter_t inner;
 
    if (bson_iter_init_find(&iter, doc, "writeConcernError") && BSON_ITER_HOLDS_DOCUMENT(&iter)) {
-      const char *errmsg = NULL;
+      const char *errmsg = "(missing or non-string errmsg)";
       int32_t code = 0;
       BSON_ASSERT(bson_iter_recurse(&iter, &inner));
       while (bson_iter_next(&inner)) {
          if (BSON_ITER_IS_KEY(&inner, "code")) {
             code = (uint32_t)bson_iter_as_int64(&inner);
          } else if (BSON_ITER_IS_KEY(&inner, "errmsg")) {
-            errmsg = bson_iter_utf8(&inner, NULL);
+            if (BSON_ITER_HOLDS_UTF8(&inner)) {
+               errmsg = bson_iter_utf8(&inner, NULL);
+            }
          }
       }
       _mongoc_set_error(error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);

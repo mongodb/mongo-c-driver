@@ -333,6 +333,84 @@ test_topology_pool_clear_by_serviceid(void)
    mongoc_topology_destroy(topology);
 }
 
+// Test a "hello" reply with bad hosts. Regression test for CDRIVER-6559 and SECBUG-7089.
+static void
+_test_hello_with_bad_host(const char *array_field)
+{
+   char *bad_host = bson_malloc0(BSON_HOST_NAME_MAX + 1 /* too-long */ + 1 /* trailing NUL */);
+   memset(bad_host, 'a', BSON_HOST_NAME_MAX + 1);
+
+   mongoc_uri_t *uri = mongoc_uri_new("mongodb://a:27017/?replicaSet=rs0");
+   mongoc_topology_t *topology = mongoc_topology_new(uri, true /* single-threaded */);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin(topology);
+
+   mongoc_log_and_monitor_instance_t log_and_monitor;
+   mongoc_log_and_monitor_instance_init(&log_and_monitor);
+
+   bson_t *hello = BCON_NEW("ok", BCON_INT32(1), "isWritablePrimary", BCON_BOOL(true), "setName", "rs0");
+   bson_t *members = bson_new();
+   BSON_APPEND_UTF8(members, "0", "a:27017");
+   BSON_APPEND_UTF8(members, "1", bad_host);
+   BSON_APPEND_INT32(members, "2", 1); // Non-string member.
+   BSON_APPEND_ARRAY(hello, array_field, members);
+
+   const mongoc_server_description_t *sd = _sd_for_host(tdmod.new_td, "a");
+   mongoc_topology_description_handle_hello(
+      tdmod.new_td, &log_and_monitor, sd->id, hello, 100, MONGOC_TOPOLOGY_DESCRIPTION_HELLO_CLUSTER_TIME_UPDATE, NULL);
+
+   // Expect bad host and non-string member are not added.
+   ASSERT_CMPSIZE_T(mc_tpld_servers_const(tdmod.new_td)->items_len, ==, 1);
+   ASSERT_CMPSTR(_sd_for_host(tdmod.new_td, "a")->host.host, "a");
+
+   bson_destroy(members);
+   bson_destroy(hello);
+   bson_free(bad_host);
+   mc_tpld_modify_drop(tdmod);
+   mongoc_topology_destroy(topology);
+   mongoc_uri_destroy(uri);
+   mongoc_log_and_monitor_instance_destroy_contents(&log_and_monitor);
+}
+
+static void
+test_topology_description_bad_host(void)
+{
+   _test_hello_with_bad_host("hosts");
+   _test_hello_with_bad_host("passives");
+   _test_hello_with_bad_host("arbiters");
+}
+
+/* A malformed $clusterTime in a server reply is ignored, not an abort. */
+static void
+test_cluster_time_malformed(void)
+{
+   bson_t *reply =
+      tmp_bson(BSON_STR({"ok" : 1, "$clusterTime" : {"clusterTime" : {"$timestamp" : {"t" : 1, "i" : 1}}}}));
+   test_corrupt_subdocument_terminator(reply, "$clusterTime");
+
+   capture_logs(true);
+
+   // mongoc_topology_description_update_cluster_time:
+   {
+      mongoc_topology_description_t td;
+      mongoc_topology_description_init(&td, 0 /* heartbeat_msec */);
+      mongoc_topology_description_update_cluster_time(&td, reply);
+      ASSERT(bson_empty(&td.cluster_time));
+      mongoc_topology_description_cleanup(&td);
+   }
+
+   // _mongoc_topology_update_cluster_time:
+   {
+      mongoc_client_t *client = test_framework_client_new("mongodb://localhost/", NULL);
+      _mongoc_topology_update_cluster_time(client->topology, reply);
+      mc_shared_tpld td = mc_tpld_take_ref(client->topology);
+      ASSERT(bson_empty(&td.ptr->cluster_time));
+      mc_tpld_drop_ref(&td);
+      mongoc_client_destroy(client);
+   }
+
+   capture_logs(false);
+}
+
 void
 test_topology_description_install(TestSuite *suite)
 {
@@ -341,6 +419,8 @@ test_topology_description_install(TestSuite *suite)
    TestSuite_Add(suite, "/TopologyDescription/get_servers", test_get_servers);
    TestSuite_Add(suite, "/TopologyDescription/topology_version_equal", test_topology_version_equal);
    TestSuite_Add(suite, "/TopologyDescription/new_copy", test_topology_description_new_copy);
+   TestSuite_Add(suite, "/TopologyDescription/cluster_time_malformed", test_cluster_time_malformed);
    TestSuite_Add(suite, "/TopologyDescription/pool_clear", test_topology_pool_clear);
    TestSuite_Add(suite, "/TopologyDescription/pool_clear_by_serviceid", test_topology_pool_clear_by_serviceid);
+   TestSuite_Add(suite, "/TopologyDescription/hello/bad_host", test_topology_description_bad_host);
 }

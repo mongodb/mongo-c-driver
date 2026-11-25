@@ -553,6 +553,51 @@ test_mongoc_speculative_auth_request_scram_pool(void)
 
    bson_destroy(response);
 }
+
+// A server may reply to hello with a `speculativeAuthenticate` field that is not a document. That is an invalid
+// reply, but the driver must not abort. It treats the field as absent and falls back to a regular saslStart.
+static void
+test_mongoc_speculative_auth_non_document_response(void)
+{
+   mock_server_t *server = mock_server_new();
+   mock_server_run(server);
+
+   mongoc_uri_t *uri = mongoc_uri_copy(mock_server_get_uri(server));
+   mongoc_uri_set_option_as_int32(uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 15000);
+   _setup_speculative_auth_scram(uri);
+
+   mongoc_client_t *client = test_framework_client_new_from_uri(uri, NULL);
+   ASSERT(client);
+
+   future_t *future = _force_hello_with_ping(client);
+
+   {
+      request_t *request = mock_server_receives_any_hello(server);
+      ASSERT(request);
+      ASSERT(bson_has_field(request_get_doc(request, 0), "speculativeAuthenticate"));
+      reply_to_request_simple(request,
+                              tmp_str("{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': %d, "
+                                      "'maxWireVersion': %d, 'speculativeAuthenticate': 123}",
+                                      WIRE_VERSION_MIN,
+                                      WIRE_VERSION_MAX));
+      request_destroy(request);
+   }
+
+   // Speculative authentication was ignored: expect a regular saslStart. Hang up to end the exchange.
+   {
+      request_t *request = mock_server_receives_msg(server, MONGOC_MSG_NONE, tmp_bson("{'saslStart': 1}"));
+      ASSERT(request);
+      reply_to_request_with_hang_up(request);
+      request_destroy(request);
+   }
+
+   ASSERT(!future_get_bool(future));
+   future_destroy(future);
+
+   mongoc_client_destroy(client);
+   mongoc_uri_destroy(uri);
+   mock_server_destroy(server);
+}
 #endif /* MONGOC_ENABLE_CRYPTO */
 
 void
@@ -561,6 +606,8 @@ test_speculative_auth_install(TestSuite *suite)
 #ifdef MONGOC_ENABLE_CRYPTO
    TestSuite_AddMockServerTest(suite, "/speculative_auth/request_none", test_mongoc_speculative_auth_request_none);
    TestSuite_AddMockServerTest(suite, "/speculative_auth/request_scram", test_mongoc_speculative_auth_request_scram);
+   TestSuite_AddMockServerTest(
+      suite, "/speculative_auth/non_document_response", test_mongoc_speculative_auth_non_document_response);
    TestSuite_AddMockServerTest(
       suite, "/speculative_auth_pool/request_none", test_mongoc_speculative_auth_request_none_pool);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
