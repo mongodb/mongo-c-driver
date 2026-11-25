@@ -85,6 +85,7 @@ run_exhaust_find(bool expect_error, mongoc_client_t *client, mock_server_t *serv
       /* The exhaust find is sent with the exhaust-allowed OP_MSG flag. */
       request = mock_server_receives_msg(server, MONGOC_OP_MSG_FLAG_EXHAUST_ALLOWED, tmp_bson("{'find': 'coll'}"));
       reply_to_request_simple(request, "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1}");
+      request_destroy(request);
       /* No documents, but no error either. */
       ASSERT(!future_get_bool(future));
       ASSERT(!mongoc_cursor_error(cursor, &error));
