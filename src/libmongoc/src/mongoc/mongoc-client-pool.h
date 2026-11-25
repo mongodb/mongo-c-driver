@@ -37,6 +37,15 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_client_pool_t mongoc_client_pool_t;
 
+typedef struct {
+   uint64_t clients_created;
+   uint64_t clients_destroyed;
+   uint64_t clients_in_pool;
+} mongoc_client_pool_stats_t;
+
+MONGOC_EXPORT(void)
+mongoc_client_pool_get_stats(mongoc_client_pool_t *pool, mongoc_client_pool_stats_t *stats);
+
 
 MONGOC_EXPORT(mongoc_client_pool_t *)
 mongoc_client_pool_new(const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
